@@ -32,7 +32,10 @@ dependencies {
 }
 
 application {
+    applicationName = "k2l"
     mainClass.set("dev.k2l.MainKt")
+    // The Analysis API indexes the whole classpath at startup.
+    applicationDefaultJvmArgs = listOf("-Xss8m", "-XX:+UseParallelGC")
 }
 
 tasks.named<JavaExec>("run") {
@@ -104,9 +107,4 @@ tasks.register<KotlinOracle>("kotlinOracle") {
     casesDir.set(testCases)
     workDir.set(layout.buildDirectory.dir("oracle"))
     update.set(providers.gradleProperty("updateOracle").isPresent)
-}
-
-tasks.register("printClasspath") {
-    val cp = configurations.runtimeClasspath
-    doLast { cp.get().files.forEach { println(it) } }
 }
