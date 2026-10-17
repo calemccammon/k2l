@@ -40,17 +40,23 @@ class CasesTest {
                     DynamicTest.dynamicTest("transpiles") {
                         assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
                         val expected = File(dir, "expected.lua")
-                        val actual = result.outputs.single { it.path == "main.lua" }.code
+                        val actual = goldenText(result.outputs)
                         if (update) expected.writeText(actual) else assertSameText(expected.readText(), actual)
                     },
                     DynamicTest.dynamicTest("runs") {
                         assumeTrue(luaAvailable, "$lua not found")
                         assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
-                        assertEquals(File(dir, "stdout.txt").readText(), runLua(result.outputs))
+                        assertEquals(File(dir, "stdout.txt").readText(), runLua(result.outputs, dir.toPath()))
                     },
                 ),
             )
         }
+    }
+
+    /** The generated files except the shared lualib bundle; several files are concatenated with headers. */
+    private fun goldenText(outputs: List<LuaOutput>): String {
+        val files = outputs.filter { it.path != "lualib_bundle.lua" }.sortedBy { it.path }
+        return files.singleOrNull()?.code ?: files.joinToString("") { "-- ==== ${it.path} ====\n${it.code}" }
     }
 
     /** Like assertEquals, but the message points at the first differing line instead of dumping both files. */
@@ -63,11 +69,27 @@ class CasesTest {
         throw org.opentest4j.AssertionFailedError(message, expected, actual)
     }
 
-    private fun runLua(outputs: List<LuaOutput>): String {
+    /** Runs the generated files plus any hand-written Lua the case calls into (the `lib` directory). */
+    private fun runLua(outputs: List<LuaOutput>, caseDir: Path): String {
         val dir = Files.createTempDirectory("k2l-case")
         try {
-            outputs.forEach { Files.writeString(dir.resolve(it.path), it.code) }
-            val process = ProcessBuilder(lua, "main.lua").directory(dir.toFile()).redirectErrorStream(true).start()
+            outputs.forEach {
+                val path = dir.resolve(it.path)
+                Files.createDirectories(path.parent)
+                Files.writeString(path, it.code)
+            }
+            val lib = caseDir.resolve("lib")
+            if (Files.isDirectory(lib)) {
+                Files.walk(lib).use { paths ->
+                    paths.filter { it.toString().endsWith(".lua") }.forEach { source ->
+                        val target = dir.resolve(caseDir.relativize(source).toString())
+                        Files.createDirectories(target.parent)
+                        Files.copy(source, target)
+                    }
+                }
+            }
+            val entry = outputs.firstOrNull { it.path == "main.lua" }?.path ?: outputs.first { it.path != "lualib_bundle.lua" }.path
+            val process = ProcessBuilder(lua, entry).directory(dir.toFile()).redirectErrorStream(true).start()
             val output = process.inputStream.readBytes().toString(Charsets.UTF_8)
             check(process.waitFor(30, TimeUnit.SECONDS)) { "lua timed out" }
             check(process.exitValue() == 0) { "lua exited with ${process.exitValue()}:\n$output" }

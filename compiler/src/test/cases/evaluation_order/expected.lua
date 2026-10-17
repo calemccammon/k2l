@@ -1,7 +1,8 @@
-local log = ""
+local ____exports = {}
+____exports.log = ""
 
 local function trace(label, value)
-    log = log .. label
+    ____exports.log = ____exports.log .. label
     return value
 end
 
@@ -15,12 +16,12 @@ local function main()
     if trace("b", 0) > 0 then
         ____temp = 10
     else
-        log = log .. "!"
+        ____exports.log = ____exports.log .. "!"
         ____temp = 20
     end
     local r = add(____arg, ____temp, trace("c", 3))
     print(r)
-    print(log)
+    print(____exports.log)
     local i = 0
     local ____old = i
     i = i + 1
@@ -28,7 +29,7 @@ local function main()
     i = i + 1
     local new = i
     print(old .. " " .. new .. " " .. i)
-    log = ""
+    ____exports.log = ""
     local ____cond = trace("x", 0) > 0
     if ____cond then
         local ____temp_1
@@ -41,8 +42,8 @@ local function main()
         ____cond = ____temp_1
     end
     local both = ____cond
-    print(tostring(both) .. " " .. log)
-    log = ""
+    print(tostring(both) .. " " .. ____exports.log)
+    ____exports.log = ""
     local ____cond_1 = trace("x", 1) > 0
     if not ____cond_1 then
         local ____temp_2
@@ -55,8 +56,10 @@ local function main()
         ____cond_1 = ____temp_2
     end
     local either = ____cond_1
-    print(tostring(either) .. " " .. log)
+    print(tostring(either) .. " " .. ____exports.log)
 end
 
+____exports.trace = trace
+____exports.add = add
 main()
-return {log = log, trace = trace, add = add}
+return ____exports

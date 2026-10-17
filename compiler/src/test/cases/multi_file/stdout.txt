@@ -1,0 +1,10 @@
+HELLO!
+2
+square: 4.0 <square>
+circle: 3.0 <circle>
+1
+1
+Point(x=1, y=5)
+10
+true
+false

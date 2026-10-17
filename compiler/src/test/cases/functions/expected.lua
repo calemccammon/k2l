@@ -1,6 +1,7 @@
+local ____exports = {}
 local isOdd
 local greeting = "Hi"
-local counter = 0
+____exports.counter = 0
 
 local function isEven(n)
     if n == 0 then
@@ -27,8 +28,8 @@ local function factorial(n)
 end
 
 local function bump()
-    counter = counter + 1
-    return counter
+    ____exports.counter = ____exports.counter + 1
+    return ____exports.counter
 end
 
 local function ____end(____local, ____nil)
@@ -57,12 +58,20 @@ local function main()
     print(factorial(20))
     bump()
     bump()
-    print(counter)
+    print(____exports.counter)
     print(____end(1, 2))
     hidden()
     print(outer(3))
     unit()
 end
 
+____exports.greeting = greeting
+____exports.isEven = isEven
+____exports.isOdd = isOdd
+____exports.factorial = factorial
+____exports.bump = bump
+____exports.____end = ____end
+____exports.outer = outer
+____exports.unit = unit
 main()
-return {greeting = greeting, counter = counter, isEven = isEven, isOdd = isOdd, factorial = factorial, bump = bump, ____end = ____end, outer = outer, unit = unit}
+return ____exports

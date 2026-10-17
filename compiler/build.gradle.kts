@@ -68,16 +68,19 @@ abstract class KotlinOracle @Inject constructor(private val exec: ExecOperations
         val cases = casesDir.get().asFile.listFiles().orEmpty().filter { File(it, "main.kt").isFile && !File(it, "errors.txt").isFile }.sortedBy { it.name }
         val mismatched = mutableListOf<String>()
         for (case in cases) {
+            if (File(case, "jvm-skip").isFile) continue // calls into hand-written Lua, so it can't run on the JVM
             val classes = workDir.get().dir(case.name).asFile.apply { deleteRecursively(); mkdirs() }
+            val sources = case.walkTopDown().filter { it.extension == "kt" }.map { it.path }.toList()
+            val pkg = Regex("""^package\s+([\w.]+)""", RegexOption.MULTILINE).find(File(case, "main.kt").readText())?.groupValues?.get(1)
             exec.javaexec {
                 classpath = compilerClasspath
                 mainClass.set("org.jetbrains.kotlin.cli.jvm.K2JVMCompiler")
-                args("-no-stdlib", "-no-reflect", "-nowarn", "-classpath", stdlib.path, "-d", classes.path, File(case, "main.kt").path)
+                args(listOf("-no-stdlib", "-no-reflect", "-nowarn", "-classpath", stdlib.path, "-d", classes.path) + sources)
             }
             val stdout = ByteArrayOutputStream()
             exec.javaexec {
                 classpath(classes, stdlib)
-                mainClass.set("MainKt")
+                mainClass.set(if (pkg != null) "$pkg.MainKt" else "MainKt")
                 standardOutput = stdout
             }
             val actual = stdout.toString(Charsets.UTF_8)

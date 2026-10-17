@@ -12,6 +12,9 @@ class TransformContext(val options: CompilerOptions) {
     /** Lualib features this file needs, and the `__K2L_*` names it references. */
     val lualib = sortedSetOf<String>()
     val lualibNames = sortedSetOf<String>()
+
+    /** Other files of the module this file requires: Lua module name -> local name. */
+    val imports = LinkedHashMap<String, String>()
     private val generated = mutableMapOf<String, Int>()
 
     fun error(element: PsiElement, message: String) {

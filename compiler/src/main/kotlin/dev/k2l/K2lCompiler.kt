@@ -5,6 +5,10 @@ import dev.k2l.frontend.SourceSession
 import dev.k2l.lua.LuaPrinter
 import dev.k2l.lua.Lualib
 import dev.k2l.transform.FileTransformer
+import dev.k2l.transform.ModuleContext
+import org.jetbrains.kotlin.idea.references.mainReference
+import org.jetbrains.kotlin.psi.KtReferenceExpression
+import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import dev.k2l.transform.TransformContext
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter
@@ -26,7 +30,9 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val outputs = mutableListOf<LuaOutput>()
         val diagnostics = mutableListOf<Diagnostic>()
         val usedFeatures = sortedSetOf<String>()
-        for (file in session.files(module.name)) {
+        val files = session.files(module.name)
+        val moduleContext = moduleContext(module, files)
+        for (file in files) {
             analyze(file) {
                 val kotlinErrors = file.collectDiagnostics(KaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS)
                     .filter { it.severity == KaSeverity.ERROR }
@@ -36,7 +42,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
                     return@analyze
                 }
                 val ctx = TransformContext(options)
-                val chunk = FileTransformer(this, file, ctx).transformFile()
+                val chunk = FileTransformer(this, file, ctx, moduleContext).transformFile()
                 diagnostics += ctx.diagnostics
                 usedFeatures += ctx.lualib
                 outputs += LuaOutput(outputPath(module, file), render(chunk, ctx))
@@ -59,6 +65,49 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
                 append("\n").append(code)
             }
         }
+    }
+
+    /** Which files reference which: needed to break import cycles and to find entry points. */
+    private fun moduleContext(module: SourceModule, files: List<KtFile>): ModuleContext {
+        val fileSet = files.toSet()
+        val edges = files.associateWith { file ->
+            val targets = LinkedHashSet<KtFile>()
+            analyze(file) {
+                file.accept(object : KtTreeVisitorVoid() {
+                    override fun visitReferenceExpression(expression: KtReferenceExpression) {
+                        super.visitReferenceExpression(expression)
+                        val target = expression.mainReference.resolve()?.containingFile as? KtFile ?: return
+                        if (target != file && target in fileSet) targets += target
+                    }
+                })
+            }
+            targets
+        }
+        return ModuleContext(
+            files = fileSet,
+            modulePath = { outputPath(module, it).removeSuffix(".lua").replace('/', '.') },
+            cyclic = cyclicFiles(edges),
+            imported = edges.values.flatten().toSet(),
+        )
+    }
+
+    /** Files on some import cycle (members of a strongly connected component of size > 1). */
+    private fun cyclicFiles(edges: Map<KtFile, Set<KtFile>>): Set<KtFile> {
+        val result = HashSet<KtFile>()
+        for (start in edges.keys) {
+            // A file is cyclic if it can reach itself.
+            val seen = HashSet<KtFile>()
+            val stack = ArrayDeque(edges[start].orEmpty())
+            while (stack.isNotEmpty()) {
+                val next = stack.removeLast()
+                if (next == start) {
+                    result += start
+                    break
+                }
+                if (seen.add(next)) stack.addAll(edges[next].orEmpty())
+            }
+        }
+        return result
     }
 
     private fun outputPath(module: SourceModule, file: KtFile): String {
