@@ -40,7 +40,8 @@ internal val IDENTITY_TYPES = setOf(
 )
 
 /** Collection kinds that `for` loops iterate directly. */
-internal val ITERATED_KINDS = setOf(CollectionKind.List, CollectionKind.Array, CollectionKind.Set, CollectionKind.Iterable, CollectionKind.Range)
+internal val ITERATED_KINDS =
+    setOf(CollectionKind.List, CollectionKind.Array, CollectionKind.Set, CollectionKind.Iterable, CollectionKind.Range)
 
 /** Name of the per-module table that collects exported declarations. */
 internal const val EXPORTS = "____exports"

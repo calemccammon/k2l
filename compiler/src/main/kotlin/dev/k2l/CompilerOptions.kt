@@ -1,7 +1,12 @@
 package dev.k2l
 
 enum class LuaTarget(val id: String) {
-    Lua51("5.1"), Lua52("5.2"), Lua53("5.3"), Lua54("5.4"), LuaJIT("JIT");
+    Lua51("5.1"),
+    Lua52("5.2"),
+    Lua53("5.3"),
+    Lua54("5.4"),
+    LuaJIT("JIT"),
+    ;
 
     /** 5.3+ have an integer subtype, `//` and native bitwise operators. */
     val hasIntegers get() = this == Lua53 || this == Lua54
@@ -19,9 +24,8 @@ enum class LuaTarget(val id: String) {
         }
 
     companion object {
-        fun parse(id: String): LuaTarget =
-            entries.firstOrNull { it.id.equals(id, ignoreCase = true) }
-                ?: throw IllegalArgumentException("Unknown Lua target '$id' (expected one of ${entries.joinToString { it.id }})")
+        fun parse(id: String): LuaTarget = entries.firstOrNull { it.id.equals(id, ignoreCase = true) }
+            ?: throw IllegalArgumentException("Unknown Lua target '$id' (expected one of ${entries.joinToString { it.id }})")
     }
 }
 
@@ -34,7 +38,4 @@ enum class LuaLibImport {
     Inline,
 }
 
-data class CompilerOptions(
-    val luaTarget: LuaTarget = LuaTarget.Lua54,
-    val luaLibImport: LuaLibImport = LuaLibImport.Require,
-)
+data class CompilerOptions(val luaTarget: LuaTarget = LuaTarget.Lua54, val luaLibImport: LuaLibImport = LuaLibImport.Require)

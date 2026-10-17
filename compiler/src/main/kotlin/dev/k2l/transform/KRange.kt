@@ -23,19 +23,25 @@ internal fun KaSession.parseRange(e: KtExpression): KRange? {
     val right = ex.right ?: return null
     return when (ex.operationToken) {
         KtTokens.RANGE -> KRange(left, right, inclusive = true, descending = false)
+
         KtTokens.RANGE_UNTIL -> KRange(left, right, inclusive = false, descending = false)
+
         KtTokens.IDENTIFIER -> {
             val id = (ex.resolveToCall()?.successfulCallOrNull<KaCallableMemberCall<*, *>>())
                 ?.partiallyAppliedSymbol?.symbol?.callableId?.toString() ?: return null
             if (!id.startsWith("kotlin/ranges/")) return null
             when (ex.operationReference.getReferencedName()) {
                 "until" -> KRange(left, right, inclusive = false, descending = false)
+
                 "downTo" -> KRange(left, right, inclusive = true, descending = true)
+
                 "step" -> parseRange(left)?.takeIf { it.step == null }
                     ?.let { KRange(it.first, it.last, it.inclusive, it.descending, right) }
+
                 else -> null
             }
         }
+
         else -> null
     }
 }

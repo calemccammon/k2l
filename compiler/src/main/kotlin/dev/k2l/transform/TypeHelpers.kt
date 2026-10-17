@@ -6,7 +6,9 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.types.Variance
 
 context(s: KaSession)
-val KaType.isIntegral: Boolean get() = with(s) { withoutFlexibility.let { it.isIntType || it.isLongType || it.isShortType || it.isByteType } }
+val KaType.isIntegral: Boolean get() = with(s) {
+    withoutFlexibility.let { it.isIntType || it.isLongType || it.isShortType || it.isByteType }
+}
 
 context(s: KaSession)
 val KaType.isNumber: Boolean get() = with(s) {

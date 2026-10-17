@@ -27,12 +27,26 @@ sealed interface LuaField {
 
 /** Binary operators with Lua 5.4 precedence (higher binds tighter). */
 enum class LuaBinOp(val token: String, val precedence: Int, val rightAssoc: Boolean = false) {
-    Or("or", 1), And("and", 2),
-    Lt("<", 3), Gt(">", 3), Le("<=", 3), Ge(">=", 3), Ne("~=", 3), Eq("==", 3),
-    BOr("|", 4), BXor("~", 5), BAnd("&", 6), Shl("<<", 7), Shr(">>", 7),
+    Or("or", 1),
+    And("and", 2),
+    Lt("<", 3),
+    Gt(">", 3),
+    Le("<=", 3),
+    Ge(">=", 3),
+    Ne("~=", 3),
+    Eq("==", 3),
+    BOr("|", 4),
+    BXor("~", 5),
+    BAnd("&", 6),
+    Shl("<<", 7),
+    Shr(">>", 7),
     Concat("..", 9, rightAssoc = true),
-    Add("+", 10), Sub("-", 10),
-    Mul("*", 11), Div("/", 11), IDiv("//", 11), Mod("%", 11),
+    Add("+", 10),
+    Sub("-", 10),
+    Mul("*", 11),
+    Div("/", 11),
+    IDiv("//", 11),
+    Mod("%", 11),
     Pow("^", 13, rightAssoc = true),
 }
 
@@ -50,25 +64,15 @@ data class LuaCallStmt(val call: LuaExpr) : LuaStmt
 data class LuaIf(val cond: LuaExpr, val then: List<LuaStmt>, val orElse: List<LuaStmt>? = null) : LuaStmt
 data class LuaWhile(val cond: LuaExpr, val body: List<LuaStmt>) : LuaStmt
 data class LuaRepeat(val body: List<LuaStmt>, val until: LuaExpr) : LuaStmt
-data class LuaNumericFor(
-    val variable: String,
-    val start: LuaExpr,
-    val limit: LuaExpr,
-    val step: LuaExpr?,
-    val body: List<LuaStmt>,
-) : LuaStmt
+data class LuaNumericFor(val variable: String, val start: LuaExpr, val limit: LuaExpr, val step: LuaExpr?, val body: List<LuaStmt>) :
+    LuaStmt
 data class LuaGenericFor(val names: List<String>, val exprs: List<LuaExpr>, val body: List<LuaStmt>) : LuaStmt
 
 /**
  * `name` is a [LuaName] or [LuaIndex]; `isLocal` emits `local function`. With `isMethod`, `name` is
  * `Class.method`, printed as `function Class:method(...)` with an implicit `self`.
  */
-data class LuaFunctionDecl(
-    val name: LuaExpr,
-    val fn: LuaFunction,
-    val isLocal: Boolean,
-    val isMethod: Boolean = false,
-) : LuaStmt
+data class LuaFunctionDecl(val name: LuaExpr, val fn: LuaFunction, val isLocal: Boolean, val isMethod: Boolean = false) : LuaStmt
 data class LuaReturn(val values: List<LuaExpr> = emptyList()) : LuaStmt
 data object LuaBreak : LuaStmt
 data class LuaGoto(val label: String) : LuaStmt
@@ -79,7 +83,6 @@ data class LuaComment(val text: String) : LuaStmt
 data class LuaChunk(val body: List<LuaStmt>)
 
 /** `luaPath("math", "max")` is `math.max`. */
-fun luaPath(root: String, vararg keys: String): LuaExpr =
-    keys.fold(LuaName(root) as LuaExpr) { acc, key -> LuaIndex(acc, LuaString(key)) }
+fun luaPath(root: String, vararg keys: String): LuaExpr = keys.fold(LuaName(root) as LuaExpr) { acc, key -> LuaIndex(acc, LuaString(key)) }
 
 fun luaCall(fn: LuaExpr, vararg args: LuaExpr): LuaCall = LuaCall(fn, args.toList())

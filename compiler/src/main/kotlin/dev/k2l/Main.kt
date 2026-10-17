@@ -26,7 +26,7 @@ private val USAGE = """
     |      --classpath PATHS   extra jars or class directories, e.g. Lua bindings (':'-separated)
     |  -h, --help              show this help
     |      --version           show the version
-    """.trimMargin()
+""".trimMargin()
 
 /** Settings from k2l.json and the command line; command-line options win. */
 private data class Settings(
@@ -72,16 +72,27 @@ private fun parseArgs(args: Array<String>): Settings {
     while (remaining.hasNext()) {
         when (val arg = remaining.next()) {
             "-p", "--project" -> project = Paths.get(value(arg))
+
             "-o", "--out" -> Paths.get(value(arg)).let { out -> overrides += { s -> s.copy(out = out) } }
+
             "-t", "--target" -> LuaTarget.parse(value(arg)).let { target -> overrides += { s -> s.copy(target = target) } }
+
             "--lualib" -> parseLualib(value(arg)).let { lualib -> overrides += { s -> s.copy(lualib = lualib) } }
+
             "--classpath" -> value(arg).split(java.io.File.pathSeparatorChar).filter { p -> p.isNotEmpty() }.map { p -> Paths.get(p) }
                 .let { cp -> overrides += { s -> s.copy(classpath = s.classpath + cp) } }
+
             "-h", "--help" -> exit(0, USAGE)
+
             "--version" -> exit(0, "k2l $VERSION")
+
             else -> if (arg.startsWith("-")) throw IllegalArgumentException("unknown option $arg") else sources.add(Paths.get(arg))
         }
     }
+    return resolveSettings(project, sources, overrides)
+}
+
+private fun resolveSettings(project: Path?, sources: List<Path>, overrides: List<(Settings) -> Settings>): Settings {
     val defaultProject = Paths.get("k2l.json").takeIf { project == null && sources.isEmpty() && Files.isRegularFile(it) }
     val base = (project ?: defaultProject)?.let(::readProject) ?: Settings()
     val withSources = if (sources.isEmpty()) base else base.copy(sources = sources)
@@ -99,14 +110,13 @@ private fun parseLualib(mode: String) = when (mode.lowercase()) {
  * `{"srcDirs": ["src"], "outDir": "out", "luaTarget": "5.4", "luaLibImport": "require", "classpath": []}`
  */
 private fun readProject(file: Path): Settings {
-    if (!Files.isRegularFile(file)) throw IllegalArgumentException("project file $file not found")
-    val json = Json.parseToJsonElement(Files.readString(file)) as? JsonObject
-        ?: throw IllegalArgumentException("$file must contain a JSON object")
+    require(Files.isRegularFile(file)) { "project file $file not found" }
+    val json = requireNotNull(Json.parseToJsonElement(Files.readString(file)) as? JsonObject) { "$file must contain a JSON object" }
     val dir = file.toAbsolutePath().parent
     fun string(key: String) = (json[key] as? JsonPrimitive)?.takeIf { it.isString }?.content
     fun paths(key: String) = (json[key] as? JsonArray).orEmpty().map { dir.resolve((it as JsonPrimitive).content) }
     val unknown = json.keys - setOf("srcDirs", "outDir", "luaTarget", "luaLibImport", "classpath")
-    if (unknown.isNotEmpty()) throw IllegalArgumentException("unknown key(s) in $file: ${unknown.joinToString()}")
+    require(unknown.isEmpty()) { "unknown key(s) in $file: ${unknown.joinToString()}" }
     return Settings(
         sources = paths("srcDirs"),
         out = string("outDir")?.let(dir::resolve) ?: dir.resolve("out"),

@@ -19,8 +19,7 @@ class CallSite(
 ) {
     val self: LuaExpr get() = receiver ?: error("call has no receiver")
     fun arg(i: Int) = args[i]
-    fun str(value: LuaExpr, type: KaType?, forConcat: Boolean = false) =
-        with(transformer) { session.str(value, type, forConcat) }
+    fun str(value: LuaExpr, type: KaType?, forConcat: Boolean = false) = with(transformer) { session.str(value, type, forConcat) }
     fun lualib(feature: String, vararg args: LuaExpr) = transformer.lualibCall(feature, *args)
     fun unsupported(what: String) = transformer.unsupported(element, what)
     fun ref(feature: String, name: String) = transformer.lualibRef(feature, name)
@@ -31,6 +30,7 @@ class CallSite(
  * to Lua. A mapping returns null when it doesn't handle that overload.
  */
 object StdlibMappings {
+    private val VARARG_MIN_MAX_ARITY = 2..3
     private val mappings = mutableMapOf<String, CallSite.() -> LuaExpr?>()
 
     private fun def(vararg ids: String, mapping: CallSite.() -> LuaExpr?) = ids.forEach { mappings[it] = mapping }
@@ -84,7 +84,13 @@ object StdlibMappings {
                 if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shl, self, arg(0)) else bitCall("__K2L_Shl")
             }
             def("kotlin/$t.shr") {
-                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.IDiv, self, LuaBinary(LuaBinOp.Shl, LuaNumber("1"), arg(0))) else bitCall("__K2L_Shr")
+                if (target.hasIntegers &&
+                    isLong
+                ) {
+                    LuaBinary(LuaBinOp.IDiv, self, LuaBinary(LuaBinOp.Shl, LuaNumber("1"), arg(0)))
+                } else {
+                    bitCall("__K2L_Shr")
+                }
             }
             def("kotlin/$t.ushr") {
                 if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shr, self, arg(0)) else bitCall("__K2L_Ushr")
@@ -101,8 +107,24 @@ object StdlibMappings {
         def("kotlin/text/isNotEmpty") { LuaBinary(LuaBinOp.Gt, LuaUnary(LuaUnOp.Len, self), LuaNumber("0")) }
 
         // kotlin.comparisons / kotlin.math
-        def("kotlin/comparisons/maxOf", "kotlin/math/max") { if (args.size in 2..3) lua("math.max", *args.toTypedArray()) else null }
-        def("kotlin/comparisons/minOf", "kotlin/math/min") { if (args.size in 2..3) lua("math.min", *args.toTypedArray()) else null }
+        def("kotlin/comparisons/maxOf", "kotlin/math/max") {
+            if (args.size in
+                VARARG_MIN_MAX_ARITY
+            ) {
+                lua("math.max", *args.toTypedArray())
+            } else {
+                null
+            }
+        }
+        def("kotlin/comparisons/minOf", "kotlin/math/min") {
+            if (args.size in
+                VARARG_MIN_MAX_ARITY
+            ) {
+                lua("math.min", *args.toTypedArray())
+            } else {
+                null
+            }
+        }
         def("kotlin/math/abs") { lua("math.abs", arg(0)) }
         def("kotlin/math/sqrt") { lua("math.sqrt", arg(0)) }
         def("kotlin/math/sin") { lua("math.sin", arg(0)) }
@@ -130,23 +152,29 @@ object StdlibMappings {
     private fun CallSite.bitCall(name: String): LuaExpr = LuaCall(ref("Bit", name), listOfNotNull(receiver) + args)
 
     fun map(callableId: String?, site: CallSite): LuaExpr? {
-        // toString() and compareTo(x) on anything from the kotlin package.
-        if (site.receiver != null && callableId?.startsWith("kotlin/") == true) {
-            if (site.name == "toString" && site.args.isEmpty()) return site.str(site.self, site.receiverType)
-            if (site.name == "compareTo" && site.args.size == 1) {
-                return LuaCall(site.ref("Compare", "__K2L_Compare"), listOf(site.self, site.arg(0)))
-            }
-        }
-        callableId?.let { mappings[it] }?.invoke(site)?.let { return it }
-        return CollectionMappings.map(callableId, site)
+        val special = if (site.receiver != null && callableId?.startsWith("kotlin/") == true) universalMethod(site) else null
+        return special
+            ?: callableId?.let { mappings[it] }?.invoke(site)
+            ?: CollectionMappings.map(callableId, site)
+    }
+
+    /** toString() and compareTo(x) on anything from the kotlin package. */
+    private fun universalMethod(site: CallSite): LuaExpr? = when {
+        site.name == "toString" && site.args.isEmpty() -> site.str(site.self, site.receiverType)
+
+        site.name == "compareTo" && site.args.size == 1 ->
+            LuaCall(site.ref("Compare", "__K2L_Compare"), listOf(site.self, site.arg(0)))
+
+        else -> null
     }
 
     /** Lua's `print` formats integers, strings and booleans the way Kotlin does. */
     private fun CallSite.printable(value: LuaExpr, type: KaType?): LuaExpr = with(session) {
         val longWithoutIntegers = !target.hasIntegers && type?.withoutFlexibility?.isLongType == true
-        if (type != null && !type.isMarkedNullable && !longWithoutIntegers &&
-            (type.isStringType || type.isCharType || type.isIntegral || type.isBooleanType)
-        ) value
-        else str(value, type)
+        if (!longWithoutIntegers && type.printsLikeKotlin()) value else str(value, type)
     }
+
+    context(s: KaSession)
+    private fun KaType?.printsLikeKotlin() =
+        this != null && with(s) { !isMarkedNullable && (isStringType || isCharType || isIntegral || isBooleanType) }
 }

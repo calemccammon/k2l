@@ -8,8 +8,7 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 
 /** Lua names of Kotlin declarations. */
 internal class DeclarationNames(private val session: KaSession, private val classes: ClassHierarchy) {
-    fun of(decl: KtNamedDeclaration): String =
-        if (decl is KtNamedFunction) function(decl) else LuaNames.of(decl.name ?: "_")
+    fun of(decl: KtNamedDeclaration): String = if (decl is KtNamedFunction) function(decl) else LuaNames.of(decl.name ?: "_")
 
     private val functionNames = HashMap<KtNamedFunction, String>()
 

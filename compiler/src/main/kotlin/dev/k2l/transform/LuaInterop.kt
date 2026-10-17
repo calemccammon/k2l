@@ -18,10 +18,9 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 /** Resolves declarations implemented in Lua (`@LuaExternal`, `external`) to the Lua values they live in. */
 internal class LuaInterop(private val session: KaSession, private val ctx: TransformContext) {
     /** `@LuaExternal` or `external` on [decl] or an enclosing class (checked on PSI, for declarations being emitted). */
-    fun isExternalDeclaration(decl: KtDeclaration): Boolean =
-        generateSequence(decl) { it.containingClassOrObject }.any { d ->
-            d.hasModifier(KtTokens.EXTERNAL_KEYWORD) || d.annotationEntries.any { it.shortName?.asString() == "LuaExternal" }
-        }
+    fun isExternalDeclaration(decl: KtDeclaration): Boolean = generateSequence(decl) { it.containingClassOrObject }.any { d ->
+        d.hasModifier(KtTokens.EXTERNAL_KEYWORD) || d.annotationEntries.any { it.shortName?.asString() == "LuaExternal" }
+    }
 
     fun isExternal(symbol: KaSymbol?): Boolean = with(session) {
         if (symbol == null) return false
@@ -37,12 +36,10 @@ internal class LuaInterop(private val session: KaSession, private val ctx: Trans
         return value?.value?.value as? String
     }
 
-    fun luaName(symbol: KaSymbol): String =
-        annotationString(symbol, LUA_NAME) ?: (symbol as? KaNamedSymbol)?.name?.asString() ?: "_"
+    fun luaName(symbol: KaSymbol): String = annotationString(symbol, LUA_NAME) ?: (symbol as? KaNamedSymbol)?.name?.asString() ?: "_"
 
     /** A Lua module's table: `local ____socket = require("socket")`. */
-    fun moduleRequire(path: String): LuaExpr =
-        LuaName(ctx.imports.getOrPut(path) { ctx.temp(LuaNames.of(path.substringAfterLast('.'))) })
+    fun moduleRequire(path: String): LuaExpr = LuaName(ctx.imports.getOrPut(path) { ctx.temp(LuaNames.of(path.substringAfterLast('.'))) })
 
     /** `@file:LuaRequire("module")` of the file declaring [psi]. */
     fun fileRequire(psi: PsiElement?): String? {

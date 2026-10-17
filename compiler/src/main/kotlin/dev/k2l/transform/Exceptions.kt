@@ -58,8 +58,8 @@ private fun FileTransformer.catchDispatch(
         emit(LuaLocal(listOf(errorName), listOf(lualibCall("ToThrowable", LuaName(result)))))
         var tail: List<LuaStmt> = listOf(LuaCallStmt(luaCall(LuaName("error"), LuaName(errorName), LuaNumber("0"))))
         for (clause in catches.reversed()) {
-            val param = clause.catchParameter ?: continue
-            val type = param.typeReference?.type ?: continue
+            val param = clause.catchParameter
+            val type = param?.typeReference?.type ?: continue
             val body = listOf(LuaLocal(listOf(naming.of(param)), listOf(LuaName(errorName)))) + (clause.catchBody?.let(branch).orEmpty())
             val catchesAll = type.expandedSymbol?.classId?.asString() in setOf("java/lang/Throwable", "kotlin/Throwable")
             tail = if (catchesAll) body else listOf(LuaIf(typeTest(LuaName(errorName), type, clause), body, tail))
@@ -79,14 +79,17 @@ private fun FileTransformer.rewriteReturns(stmts: List<LuaStmt>, element: KtElem
                 found = true
                 LuaReturn(listOf(LuaBool(true)) + s.values.ifEmpty { listOf(LuaNil) })
             }
+
             LuaBreak -> {
                 if (depth == 0) ctx.error(element, "break out of a try block is not supported yet")
                 s
             }
+
             is LuaGoto -> {
                 if (s.label !in labels) ctx.error(element, "Jumping out of a try block is not supported yet")
                 s
             }
+
             else -> s
         }
     }
