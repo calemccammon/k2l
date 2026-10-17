@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 
 internal class SuperInfo(
     val base: KtClassOrObject?,
@@ -51,6 +52,11 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
     private val superInfoCache = HashMap<KtClassOrObject, SuperInfo>()
 
     fun superInfo(c: KtClassOrObject): SuperInfo = superInfoCache.getOrPut(c) {
+        if (c is KtEnumEntry) {
+            // an entry with a body is a subclass of its enum class
+            val call = c.initializerList?.initializers?.firstOrNull() as? KtSuperTypeCallEntry
+            return@getOrPut SuperInfo(c.containingClassOrObject, call, emptyList(), null)
+        }
         with(session) {
             var base: KtClassOrObject? = null
             var baseCall: KtSuperTypeCallEntry? = null
@@ -92,10 +98,11 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
             info.libraryBase != null || info.base?.let { !hasPrimary(it) || initNeeded(it) } == true
     }
 
-    private fun KtClassOrObject.hasConstructorState() = this is KtClass && (isEnum() || primaryConstructorParameters.isNotEmpty())
+    private fun KtClassOrObject.hasConstructorState() =
+        this is KtClass && (isEnum() || isInner() || primaryConstructorParameters.isNotEmpty())
 
     private fun KtClassOrObject.hasInitializers() =
-        declarations.any { (it is KtProperty && it.initializer != null) || it is KtAnonymousInitializer }
+        declarations.any { (it is KtProperty && (it.initializer != null || it.delegate != null)) || it is KtAnonymousInitializer }
 
     fun mayOverrideEquals(t: KaType?): Boolean = with(session) {
         val symbol = t?.expandedSymbol ?: return true

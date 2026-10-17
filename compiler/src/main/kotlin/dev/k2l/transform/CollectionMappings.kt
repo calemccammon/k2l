@@ -38,6 +38,7 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "kotlin/collections/ArrayList",
         "java/util/AbstractList",
         "java/util/LinkedList",
+        "kotlin/enums/EnumEntries",
     )
     val arrayTypes =
         listOf("Array", "IntArray", "LongArray", "DoubleArray", "FloatArray", "BooleanArray", "CharArray", "ShortArray", "ByteArray")

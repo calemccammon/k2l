@@ -147,6 +147,7 @@ internal fun FileTransformer.callableReference(e: KtCallableReferenceExpression)
     return when {
         symbol is KaConstructorSymbol -> {
             val cls = symbol.containingClassId?.let(classes::classInFile) ?: return unsupported(e, "Reference to a library constructor")
+            if (isInner(cls)) return unsupported(e, "Reference to an inner class constructor")
             LuaIndex(classRef(cls), LuaString("new" + constructorSuffix(psi)))
         }
 

@@ -44,6 +44,7 @@ Direction.NORTH = Direction.new("NORTH", 0)
 Direction.EAST = Direction.new("EAST", 1)
 Direction.SOUTH = Direction.new("SOUTH", 2)
 Direction.WEST = Direction.new("WEST", 3)
+Direction.____values = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}
 local Planet = __K2L_Class("Planet")
 
 function Planet:____init(name, ordinal, mass, radius)
@@ -63,6 +64,7 @@ end
 
 Planet.MERCURY = Planet.new("MERCURY", 0, 3.303E23, 2439700.0)
 Planet.EARTH = Planet.new("EARTH", 1, 5.976E24, 6378140.0)
+Planet.____values = {Planet.MERCURY, Planet.EARTH}
 local Point = __K2L_Class("Point")
 
 function Point:____init(x, y)
