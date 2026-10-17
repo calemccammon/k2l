@@ -1,11 +1,13 @@
 package dev.k2l.transform
 
 import dev.k2l.lua.*
+import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.KtExpression
 
 /** A call to a Kotlin library function or property, with operands already transformed. */
 class CallSite(
+    val session: KaSession,
     val transformer: FileTransformer,
     val element: KtExpression,
     /** Simple name of the callee, e.g. `toString`. */
@@ -17,7 +19,8 @@ class CallSite(
 ) {
     val self: LuaExpr get() = receiver ?: error("call has no receiver")
     fun arg(i: Int) = args[i]
-    fun str(value: LuaExpr, type: KaType?) = transformer.str(value, type)
+    fun str(value: LuaExpr, type: KaType?, forConcat: Boolean = false) =
+        with(transformer) { session.str(value, type, forConcat) }
     fun lualib(feature: String, vararg args: LuaExpr) = transformer.lualibCall(feature, *args)
     fun unsupported(what: String) = transformer.unsupported(element, what)
 }
@@ -61,7 +64,7 @@ object StdlibMappings {
 
         // Strings
         def("kotlin/String.length") { LuaUnary(LuaUnOp.Len, self) }
-        def("kotlin/String.plus") { LuaBinary(LuaBinOp.Concat, self, transformer.str(arg(0), argTypes[0], forConcat = true)) }
+        def("kotlin/String.plus") { LuaBinary(LuaBinOp.Concat, self, str(arg(0), argTypes[0], forConcat = true)) }
         def("kotlin/text/uppercase") { if (args.isEmpty()) method(self, "upper") else null }
         def("kotlin/text/lowercase") { if (args.isEmpty()) method(self, "lower") else null }
         def("kotlin/text/repeat") { method(self, "rep", arg(0)) }
@@ -98,7 +101,7 @@ object StdlibMappings {
     }
 
     /** Lua's `print` formats integers, strings and booleans the way Kotlin does. */
-    private fun CallSite.printable(value: LuaExpr, type: KaType?): LuaExpr = with(transformer) {
+    private fun CallSite.printable(value: LuaExpr, type: KaType?): LuaExpr = with(session) {
         if (type != null && !type.isMarkedNullable && (type.isStringType || type.isCharType || type.isIntegral || type.isBooleanType)) value
         else str(value, type)
     }

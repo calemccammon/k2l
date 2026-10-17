@@ -1,8 +1,6 @@
 package dev.k2l.transform
 
 import dev.k2l.lua.*
-import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
-import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.base.KaConstantValue
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
@@ -22,7 +20,6 @@ import com.intellij.psi.tree.IElementType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.isPrivate
-import org.jetbrains.kotlin.types.Variance
 import java.util.Collections
 import java.util.IdentityHashMap
 
@@ -30,12 +27,11 @@ import java.util.IdentityHashMap
  * Translates one Kotlin file into a Lua chunk. Expressions may need statements to run before them
  * (e.g. an `if` used as a value); those are emitted into the current statement buffer, see [collect].
  */
-@OptIn(KaImplementationDetail::class)
 class FileTransformer(
-    session: KaSession,
+    private val session: KaSession,
     private val file: KtFile,
     val ctx: TransformContext,
-) : KaSession by session {
+) {
 
     // ---- statement buffers ----
 
@@ -82,7 +78,9 @@ class FileTransformer(
 
     // ---- file ----
 
-    fun transformFile(): LuaChunk {
+    fun transformFile(): LuaChunk = with(session) { transformChunk() }
+
+    private fun KaSession.transformChunk(): LuaChunk {
         val body = mutableListOf<LuaStmt>()
         val topLevel = file.declarations.filter { it is KtNamedFunction || it is KtProperty }
         val forward = forwardReferenced(topLevel.toSet())
@@ -111,7 +109,7 @@ class FileTransformer(
         fn.name == "main" && fn.receiverTypeReference == null && fn.valueParameters.size <= 1
 
     /** Top-level declarations referenced textually before they are declared need a forward `local`. */
-    private fun forwardReferenced(candidates: Set<KtDeclaration>): Set<KtDeclaration> {
+    private fun KaSession.forwardReferenced(candidates: Set<KtDeclaration>): Set<KtDeclaration> {
         val result = LinkedHashSet<KtDeclaration>()
         file.accept(object : KtTreeVisitorVoid() {
             override fun visitReferenceExpression(expression: KtReferenceExpression) {
@@ -124,7 +122,7 @@ class FileTransformer(
         return candidates.filter { it in result }.toCollection(LinkedHashSet())
     }
 
-    private fun topLevelDeclaration(decl: KtDeclaration, forwardDeclared: Boolean) {
+    private fun KaSession.topLevelDeclaration(decl: KtDeclaration, forwardDeclared: Boolean) {
         when (decl) {
             is KtNamedFunction -> emit(LuaFunctionDecl(LuaName(nameOf(decl)), function(decl), isLocal = !forwardDeclared))
             is KtProperty -> property(decl, isLocal = !forwardDeclared)
@@ -143,7 +141,7 @@ class FileTransformer(
 
     private var loops = ArrayDeque<LoopFrame>()
 
-    private fun function(fn: KtNamedFunction): LuaFunction {
+    private fun KaSession.function(fn: KtNamedFunction): LuaFunction {
         if (fn.receiverTypeReference != null) unsupported(fn, "Extension function")
         val params = fn.valueParameters.map { p ->
             if (p.hasDefaultValue()) unsupported(p, "Default parameter value")
@@ -159,7 +157,7 @@ class FileTransformer(
         }
     }
 
-    private fun functionBody(fn: KtDeclarationWithBody) {
+    private fun KaSession.functionBody(fn: KtDeclarationWithBody) {
         val body = fn.bodyExpression ?: return
         if (fn.hasBlockBody()) {
             block(body)
@@ -172,13 +170,13 @@ class FileTransformer(
 
     // ---- statements ----
 
-    private fun block(e: KtExpression) {
-        if (e is KtBlockExpression) e.statements.forEach(::statement) else statement(e)
+    private fun KaSession.block(e: KtExpression) {
+        if (e is KtBlockExpression) e.statements.forEach{ statement(it) } else statement(e)
     }
 
-    private fun statement(e: KtExpression) {
+    private fun KaSession.statement(e: KtExpression) {
         when (e) {
-            is KtParenthesizedExpression -> e.expression?.let(::statement)
+            is KtParenthesizedExpression -> e.expression?.let{ statement(it) }
             is KtProperty -> property(e, isLocal = true)
             is KtNamedFunction -> emit(LuaFunctionDecl(LuaName(nameOf(e)), function(e), isLocal = true))
             is KtBinaryExpression -> if (e.operationToken in ASSIGNMENTS) assignment(e) else expressionStatement(e)
@@ -198,7 +196,7 @@ class FileTransformer(
         }
     }
 
-    private fun expressionStatement(e: KtExpression) {
+    private fun KaSession.expressionStatement(e: KtExpression) {
         val value = expression(e)
         when {
             value is LuaCall || value is LuaMethodCall -> emit(LuaCallStmt(value))
@@ -207,7 +205,7 @@ class FileTransformer(
         }
     }
 
-    private fun property(p: KtProperty, isLocal: Boolean) {
+    private fun KaSession.property(p: KtProperty, isLocal: Boolean) {
         if (p.delegate != null) {
             unsupported(p, "Delegated property")
             return
@@ -226,7 +224,7 @@ class FileTransformer(
         }
     }
 
-    private fun assignment(e: KtBinaryExpression) {
+    private fun KaSession.assignment(e: KtBinaryExpression) {
         val left = e.left ?: return
         val right = e.right ?: return
         val target = assignTarget(left) ?: return
@@ -244,7 +242,7 @@ class FileTransformer(
         emit(LuaAssign(listOf(target), listOf(value)))
     }
 
-    private fun assignTarget(e: KtExpression): LuaExpr? {
+    private fun KaSession.assignTarget(e: KtExpression): LuaExpr? {
         val ref = KtPsiUtil.safeDeparenthesize(e) as? KtNameReferenceExpression
         val decl = ref?.mainReference?.resolve()
         if (ref == null || decl !is KtProperty || decl.containingFile != file) {
@@ -254,14 +252,14 @@ class FileTransformer(
         return LuaName(nameOf(decl))
     }
 
-    private fun increment(e: KtUnaryExpression) {
+    private fun KaSession.increment(e: KtUnaryExpression) {
         val base = e.baseExpression ?: return
         val target = assignTarget(base) ?: return
         val op = if (e.operationToken == KtTokens.PLUSPLUS) LuaBinOp.Add else LuaBinOp.Sub
         emit(LuaAssign(listOf(target), listOf(LuaBinary(op, target, LuaNumber("1")))))
     }
 
-    private fun returnStatement(e: KtReturnExpression) {
+    private fun KaSession.returnStatement(e: KtReturnExpression) {
         if (e.getLabelName() != null) {
             unsupported(e, "Labeled return")
             return
@@ -271,22 +269,22 @@ class FileTransformer(
         else emitAll(valueInto(value) { listOf(LuaReturn(listOf(it))) })
     }
 
-    private fun ifStatement(e: KtIfExpression) {
+    private fun KaSession.ifStatement(e: KtIfExpression) {
         val cond = expression(e.condition ?: return)
-        val then = collect { e.then?.let(::block) }
+        val then = collect { e.then?.let{ block(it) } }
         val orElse = e.`else`?.let { collect { block(it) } }
         emit(LuaIf(cond, then, orElse?.takeIf { it.isNotEmpty() }))
     }
 
     // ---- loops ----
 
-    private fun labeled(e: KtLabeledExpression) {
+    private fun KaSession.labeled(e: KtLabeledExpression) {
         val base = e.baseExpression
         if (base is KtLoopExpression) loop(base, e.getLabelName())
         else unsupported(e, "Labeled expression")
     }
 
-    private fun loop(e: KtLoopExpression, label: String?) {
+    private fun KaSession.loop(e: KtLoopExpression, label: String?) {
         val frame = LoopFrame(label)
         when (e) {
             is KtWhileExpression -> {
@@ -309,10 +307,10 @@ class FileTransformer(
         frame.breakLabel?.let { emit(LuaLabel(it)) }
     }
 
-    private fun loopBody(frame: LoopFrame, body: KtExpression?): List<LuaStmt> {
+    private fun KaSession.loopBody(frame: LoopFrame, body: KtExpression?): List<LuaStmt> {
         loops.addLast(frame)
         val stmts = try {
-            collect { body?.let(::block) }
+            collect { body?.let{ block(it) } }
         } finally {
             loops.removeLast()
         }
@@ -321,7 +319,7 @@ class FileTransformer(
         return listOf(LuaDo(stmts), LuaLabel(cont))
     }
 
-    private fun forLoop(e: KtForExpression, frame: LoopFrame) {
+    private fun KaSession.forLoop(e: KtForExpression, frame: LoopFrame) {
         val rangeExpr = e.loopRange ?: return
         val param = e.loopParameter
         if (param == null || param.destructuringDeclaration != null) {
@@ -356,14 +354,14 @@ class FileTransformer(
         }
     }
 
-    private fun jumpTarget(e: KtExpressionWithLabel): LoopFrame? {
+    private fun KaSession.jumpTarget(e: KtExpressionWithLabel): LoopFrame? {
         val label = e.getLabelName()
         val frame = if (label != null) loops.lastOrNull { it.label == label } else loops.lastOrNull()
         if (frame == null) unsupported(e, "Jump outside of a loop")
         return frame
     }
 
-    private fun breakStatement(e: KtBreakExpression) {
+    private fun KaSession.breakStatement(e: KtBreakExpression) {
         val frame = jumpTarget(e) ?: return
         if (frame === loops.last()) {
             emit(LuaBreak)
@@ -373,7 +371,7 @@ class FileTransformer(
         }
     }
 
-    private fun continueStatement(e: KtContinueExpression) {
+    private fun KaSession.continueStatement(e: KtContinueExpression) {
         val frame = jumpTarget(e) ?: return
         val label = frame.continueLabel ?: ctx.temp("continue").also { frame.continueLabel = it }
         emit(LuaGoto(label))
@@ -389,7 +387,7 @@ class FileTransformer(
         val step: KtExpression? = null,
     )
 
-    private fun parseRange(e: KtExpression): KRange? {
+    private fun KaSession.parseRange(e: KtExpression): KRange? {
         val ex = KtPsiUtil.safeDeparenthesize(e) as? KtBinaryExpression ?: return null
         val left = ex.left ?: return null
         val right = ex.right ?: return null
@@ -413,7 +411,7 @@ class FileTransformer(
     }
 
     /** `x in range` for ranges without a step. */
-    private fun rangeContains(value: LuaExpr, range: KRange, element: KtElement): LuaExpr {
+    private fun KaSession.rangeContains(value: LuaExpr, range: KRange, element: KtElement): LuaExpr {
         if (range.step != null) return unsupported(element, "'in' with a stepped range")
         val (first, last) = ordered(listOf(range.first, range.last)).let { it[0] to it[1] }
         val x = cache(value, "value")
@@ -433,7 +431,7 @@ class FileTransformer(
 
     // ---- branching values ----
 
-    private fun needsBranching(e: KtExpression): Boolean {
+    private fun KaSession.needsBranching(e: KtExpression): Boolean {
         val ex = KtPsiUtil.safeDeparenthesize(e)
         return ex is KtWhenExpression || (ex is KtIfExpression && !canTernary(ex))
     }
@@ -442,13 +440,13 @@ class FileTransformer(
      * Emits statements that compute [e] and hand its value to [sink], pushing the sink into the
      * branches of `if`/`when` so no temporary is needed.
      */
-    private fun valueInto(e: KtExpression, sink: (LuaExpr) -> List<LuaStmt>): List<LuaStmt> = collect {
+    private fun KaSession.valueInto(e: KtExpression, sink: (LuaExpr) -> List<LuaStmt>): List<LuaStmt> = collect {
         val ex = KtPsiUtil.safeDeparenthesize(e)
         when {
             ex is KtIfExpression && !canTernary(ex) -> ifInto(ex, sink)
             ex is KtWhenExpression -> whenInto(ex, sink)
             ex is KtBlockExpression -> {
-                ex.statements.dropLast(1).forEach(::statement)
+                ex.statements.dropLast(1).forEach{ statement(it) }
                 ex.statements.lastOrNull()?.let { emitAll(valueInto(it, sink)) }
             }
             isJump(ex) -> statement(ex)
@@ -456,11 +454,11 @@ class FileTransformer(
         }
     }
 
-    private fun isJump(e: KtExpression) =
+    private fun KaSession.isJump(e: KtExpression) =
         e is KtReturnExpression || e is KtBreakExpression || e is KtContinueExpression || e is KtThrowExpression ||
             e.expressionType.let { it != null && it.isNothingType && !it.isMarkedNullable }
 
-    private fun ifInto(e: KtIfExpression, sink: (LuaExpr) -> List<LuaStmt>) {
+    private fun KaSession.ifInto(e: KtIfExpression, sink: (LuaExpr) -> List<LuaStmt>) {
         val cond = expression(e.condition ?: return)
         val then = e.then?.let { valueInto(it, sink) }.orEmpty()
         val orElse = e.`else`?.let { valueInto(it, sink) }
@@ -471,21 +469,21 @@ class FileTransformer(
      * `c and a or b` is only equivalent to `if (c) a else b` when `a` can never be nil or false, and
      * when no operand needs preceding statements (checked syntactically, so this has no side effects).
      */
-    private fun canTernary(e: KtIfExpression): Boolean {
+    private fun KaSession.canTernary(e: KtIfExpression): Boolean {
         val cond = e.condition ?: return false
-        val then = e.then?.let(::singleExpression) ?: return false
-        val orElse = e.`else`?.let(::singleExpression) ?: return false
+        val then = e.then?.let{ singleExpression(it) } ?: return false
+        val orElse = e.`else`?.let{ singleExpression(it) } ?: return false
         val thenType = then.expressionType ?: return false
         if (thenType.isMarkedNullable || thenType.isBooleanType || thenType.isNothingType || thenType.isUnitType) return false
-        return !isJump(orElse) && listOf(cond, then, orElse).none(::mayNeedStatements)
+        return !isJump(orElse) && listOf(cond, then, orElse).none{ mayNeedStatements(it) }
     }
 
-    private fun ternary(e: KtIfExpression): LuaExpr {
-        val parts = listOf(e.condition!!, singleExpression(e.then!!)!!, singleExpression(e.`else`!!)!!).map(::expression)
+    private fun KaSession.ternary(e: KtIfExpression): LuaExpr {
+        val parts = listOf(e.condition!!, singleExpression(e.then!!)!!, singleExpression(e.`else`!!)!!).map{ expression(it) }
         return LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.And, parts[0], parts[1]), parts[2])
     }
 
-    private fun mayNeedStatements(e: KtExpression): Boolean {
+    private fun KaSession.mayNeedStatements(e: KtExpression): Boolean {
         var found = false
         e.accept(object : KtTreeVisitorVoid() {
             override fun visitElement(element: com.intellij.psi.PsiElement) {
@@ -502,10 +500,10 @@ class FileTransformer(
         return found
     }
 
-    private fun singleExpression(e: KtExpression): KtExpression? =
+    private fun KaSession.singleExpression(e: KtExpression): KtExpression? =
         if (e is KtBlockExpression) e.statements.singleOrNull()?.takeIf { it !is KtDeclaration } else e
 
-    private fun branchingValue(e: KtExpression): LuaExpr {
+    private fun KaSession.branchingValue(e: KtExpression): LuaExpr {
         val name = ctx.temp("temp")
         emit(LuaLocal(listOf(name)))
         emitAll(valueInto(e) { listOf(LuaAssign(listOf(LuaName(name)), listOf(it))) })
@@ -514,7 +512,7 @@ class FileTransformer(
 
     // ---- when ----
 
-    private fun whenInto(e: KtWhenExpression, sink: ((LuaExpr) -> List<LuaStmt>)?) {
+    private fun KaSession.whenInto(e: KtWhenExpression, sink: ((LuaExpr) -> List<LuaStmt>)?) {
         val subjectVar = e.subjectVariable
         val subjectExpr = e.subjectExpression
         val subject: LuaExpr? = when {
@@ -541,20 +539,20 @@ class FileTransformer(
             }
             tail = pre + LuaIf(cond, body, tail?.takeIf { it.isNotEmpty() })
         }
-        tail?.let(::emitAll)
+        tail?.let { emitAll(it) }
     }
 
     private fun List<() -> LuaExpr>.reduceOr(): LuaExpr =
         drop(1).fold(first()()) { acc, next -> shortCircuit(LuaBinOp.Or, acc, next) }
 
-    private fun condition(c: KtWhenCondition, subject: LuaExpr?, subjectType: KaType?): LuaExpr = when (c) {
+    private fun KaSession.condition(c: KtWhenCondition, subject: LuaExpr?, subjectType: KaType?): LuaExpr = when (c) {
         is KtWhenConditionWithExpression -> {
             val expr = c.expression ?: return LuaNil
             if (subject == null) expression(expr)
             else operator(LuaBinOp.Eq, subject, subjectType, expression(expr), expr.expressionType, c)
         }
         is KtWhenConditionInRange -> {
-            val range = c.rangeExpression?.let(::parseRange)
+            val range = c.rangeExpression?.let{ parseRange(it) }
             if (subject == null || range == null) {
                 unsupported(c, "This 'in' condition")
             } else {
@@ -569,7 +567,7 @@ class FileTransformer(
         else -> unsupported(c, "This 'when' condition")
     }
 
-    private fun typeTest(value: LuaExpr, type: KaType, element: KtElement): LuaExpr {
+    private fun KaSession.typeTest(value: LuaExpr, type: KaType, element: KtElement): LuaExpr {
         val luaType = when {
             type.isStringType || type.isCharType -> "string"
             type.isBooleanType -> "boolean"
@@ -582,8 +580,8 @@ class FileTransformer(
 
     // ---- expressions ----
 
-    fun expression(e: KtExpression): LuaExpr = when (e) {
-        is KtParenthesizedExpression -> e.expression?.let(::expression) ?: LuaNil
+    fun KaSession.expression(e: KtExpression): LuaExpr = when (e) {
+        is KtParenthesizedExpression -> e.expression?.let{ expression(it) } ?: LuaNil
         is KtConstantExpression -> constant(e)
         is KtStringTemplateExpression -> template(e)
         is KtNameReferenceExpression -> reference(e)
@@ -601,7 +599,7 @@ class FileTransformer(
         else -> unsupported(e, "Expression '${e.javaClass.simpleName.removePrefix("Kt")}'")
     }
 
-    private fun constant(e: KtExpression): LuaExpr = when (val c = e.evaluate()) {
+    private fun KaSession.constant(e: KtExpression): LuaExpr = when (val c = e.evaluate()) {
         is KaConstantValue.IntValue -> LuaNumber(c.value.toString())
         is KaConstantValue.LongValue -> LuaNumber(c.value.toString())
         is KaConstantValue.ShortValue -> LuaNumber(c.value.toString())
@@ -616,14 +614,14 @@ class FileTransformer(
         else -> unsupported(e, "Constant of type ${c.javaClass.simpleName}")
     }
 
-    private fun doubleLiteral(d: Double): LuaExpr = when {
+    private fun KaSession.doubleLiteral(d: Double): LuaExpr = when {
         d.isNaN() -> LuaBinary(LuaBinOp.Div, LuaNumber("0.0"), LuaNumber("0.0"))
         d == Double.POSITIVE_INFINITY -> luaPath("math", "huge")
         d == Double.NEGATIVE_INFINITY -> LuaUnary(LuaUnOp.Neg, luaPath("math", "huge"))
         else -> LuaNumber(d.toString())
     }
 
-    private fun template(e: KtStringTemplateExpression): LuaExpr {
+    private fun KaSession.template(e: KtStringTemplateExpression): LuaExpr {
         val parts = mutableListOf<LuaExpr>()
         var lone: Pair<KtExpression, LuaExpr>? = null
         val pending = StringBuilder()
@@ -657,7 +655,7 @@ class FileTransformer(
      * Converts [value] to a string the way Kotlin's `toString()` would. With [forConcat], numbers that
      * Lua's `..` already formats identically are left alone.
      */
-    fun str(value: LuaExpr, type: KaType?, forConcat: Boolean = false): LuaExpr {
+    fun KaSession.str(value: LuaExpr, type: KaType?, forConcat: Boolean = false): LuaExpr {
         if (type != null && !type.isMarkedNullable) {
             when {
                 type.isStringType || type.isCharType -> return value
@@ -673,7 +671,7 @@ class FileTransformer(
         return LuaCall(LuaName(Lualib.functionName(feature)), args.toList())
     }
 
-    private fun reference(e: KtNameReferenceExpression, full: KtExpression = e): LuaExpr {
+    private fun KaSession.reference(e: KtNameReferenceExpression, full: KtExpression = e): LuaExpr {
         val symbol = e.mainReference.resolveToSymbol()
         val psi = symbol?.psi
         return when {
@@ -688,7 +686,7 @@ class FileTransformer(
         }
     }
 
-    private fun binary(e: KtBinaryExpression): LuaExpr {
+    private fun KaSession.binary(e: KtBinaryExpression): LuaExpr {
         val token = e.operationToken
         val left = e.left ?: return LuaNil
         val right = e.right ?: return LuaNil
@@ -724,7 +722,7 @@ class FileTransformer(
      * A Kotlin operator applied to primitive/String operands. [op] is the Lua operator the Kotlin token
      * maps to; division and remainder get Kotlin's truncating semantics.
      */
-    private fun operator(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?, element: KtElement): LuaExpr {
+    private fun KaSession.operator(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?, element: KtElement): LuaExpr {
         val numeric = lt != null && rt != null && lt.isNumber && rt.isNumber
         return when (op) {
             LuaBinOp.Add -> when {
@@ -747,7 +745,7 @@ class FileTransformer(
         }
     }
 
-    private fun prefix(e: KtPrefixExpression): LuaExpr {
+    private fun KaSession.prefix(e: KtPrefixExpression): LuaExpr {
         val base = e.baseExpression ?: return LuaNil
         return when (e.operationToken) {
             KtTokens.MINUS -> LuaUnary(LuaUnOp.Neg, expression(base))
@@ -761,7 +759,7 @@ class FileTransformer(
         }
     }
 
-    private fun postfix(e: KtPostfixExpression): LuaExpr {
+    private fun KaSession.postfix(e: KtPostfixExpression): LuaExpr {
         val base = e.baseExpression ?: return LuaNil
         return when (e.operationToken) {
             KtTokens.PLUSPLUS, KtTokens.MINUSMINUS -> {
@@ -787,7 +785,7 @@ class FileTransformer(
      * Transforms [exprs] left to right. If a later expression needs preceding statements, earlier
      * results are cached in locals first so evaluation order is preserved.
      */
-    private fun ordered(exprs: List<KtExpression>): List<LuaExpr> {
+    private fun KaSession.ordered(exprs: List<KtExpression>): List<LuaExpr> {
         val results = exprs.map { withPreceding { expression(it) } }
         val last = results.indexOfLast { it.second.isNotEmpty() }
         return results.mapIndexed { i, (value, pre) ->
@@ -802,7 +800,7 @@ class FileTransformer(
      * A resolved call or property access. [element] is what the Analysis API resolves (a call,
      * name reference or infix binary expression); [full] includes any explicit receiver.
      */
-    private fun call(element: KtExpression, full: KtExpression): LuaExpr {
+    private fun KaSession.call(element: KtExpression, full: KtExpression): LuaExpr {
         val call = element.resolveToCall()?.successfulCallOrNull<KaCallableMemberCall<*, *>>()
             ?: return unsupported(full, "Unresolved call '${full.text}'")
         val symbol = call.partiallyAppliedSymbol.symbol
@@ -839,7 +837,8 @@ class FileTransformer(
 
         val values = ordered(listOfNotNull(receiver) + args)
         val site = CallSite(
-            transformer = this,
+            session = this,
+            transformer = this@FileTransformer,
             element = full,
             name = symbol.callableId?.callableName?.asString(),
             receiver = if (receiver != null) values[0] else null,
@@ -851,20 +850,11 @@ class FileTransformer(
         return unsupported(full, "Kotlin library API '${callableId ?: full.text}'")
     }
 
-    private fun explicitReceiver(value: KaReceiverValue): KtExpression? = when (value) {
+    private fun KaSession.explicitReceiver(value: KaReceiverValue): KtExpression? = when (value) {
         is KaExplicitReceiverValue -> value.expression
         is KaSmartCastedReceiverValue -> explicitReceiver(value.original)
         else -> null
     }
-
-    // ---- type helpers ----
-
-    @OptIn(KaExperimentalApi::class)
-    private fun KaType?.pretty(): String = this?.render(position = Variance.INVARIANT) ?: "?"
-
-    val KaType.isIntegral get() = isIntType || isLongType || isShortType || isByteType
-    val KaType.isNumber get() = !isMarkedNullable && (isIntegral || isDoubleType || isFloatType)
-    private val KaType?.isTextual get() = this != null && !isMarkedNullable && (isStringType || isCharType)
 
     companion object {
         private val ASSIGNMENTS: Set<IElementType> = setOf(
