@@ -2,6 +2,7 @@ package dev.k2l
 
 import dev.k2l.frontend.SourceModule
 import dev.k2l.frontend.SourceSession
+import dev.k2l.lua.LuaChunk
 import dev.k2l.lua.LuaPrinter
 import dev.k2l.lua.Lualib
 import dev.k2l.transform.FileTransformer
@@ -55,7 +56,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         return CompileResult(outputs, diagnostics)
     }
 
-    private fun render(chunk: dev.k2l.lua.LuaChunk, ctx: TransformContext): String {
+    private fun render(chunk: LuaChunk, ctx: TransformContext): String {
         val code = LuaPrinter().print(chunk)
         if (ctx.lualib.isEmpty()) return code
         return when (options.luaLibImport) {
