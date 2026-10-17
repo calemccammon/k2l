@@ -96,7 +96,8 @@ local function __K2L_StringToIntOrNull(s)
     if not s:match("^[+-]?%d+$") then
         return nil
     end
-    return math.tointeger(tonumber(s))
+    local n = tonumber(s)
+    return math.tointeger and math.tointeger(n) or n
 end
 
 local function __K2L_StringToInt(s)
@@ -138,13 +139,14 @@ end
 
 -- String.format: Java and C format strings mostly agree; non-numbers are formatted with toString().
 local function __K2L_StringFormat(format, ...)
-    local args = table.pack(...)
-    for i = 1, args.n do
+    local n = select("#", ...)
+    local args = {...}
+    for i = 1, n do
         if type(args[i]) ~= "number" then
             args[i] = __K2L_Str(args[i])
         end
     end
-    return string.format(format, table.unpack(args, 1, args.n))
+    return string.format(format, (table.unpack or unpack)(args, 1, n))
 end
 
 ------------------------------------------------------------------ StringBuilder

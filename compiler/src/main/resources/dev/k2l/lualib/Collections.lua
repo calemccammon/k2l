@@ -1318,7 +1318,8 @@ end
 function __K2L_Map:hashCode()
     local h = 0
     for i = 1, self.size do
-        h = __K2L_ToInt32(h + (__K2L_Hash(self.____keys[i]) ~ __K2L_Hash(self.____values[i])))
+        -- The JVM xors key and value hashes; Lua 5.1 has no xor, so this combination is portable instead.
+        h = __K2L_ToInt32(h + 31 * __K2L_Hash(self.____keys[i]) + __K2L_Hash(self.____values[i]))
     end
     return h
 end

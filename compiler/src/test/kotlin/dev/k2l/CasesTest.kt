@@ -46,9 +46,18 @@ class CasesTest {
                     DynamicTest.dynamicTest("runs") {
                         assumeTrue(luaAvailable, "$lua not found")
                         assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
-                        assertEquals(File(dir, "stdout.txt").readText(), runLua(result.outputs, dir.toPath()))
+                        assertEquals(File(dir, "stdout.txt").readText(), runLua(lua, result.outputs, dir.toPath()))
                     },
-                ),
+                ) + otherTargets.map { (target, interpreter) ->
+                    // The golden Lua is for 5.4; other targets only have to print the same output.
+                    DynamicTest.dynamicTest("runs on ${target.id}") {
+                        val skip = skippedTargets(dir)[target.id]
+                        assumeTrue(skip == null, "skipped on ${target.id}: $skip")
+                        val targetResult = K2lCompiler(CompilerOptions(luaTarget = target)).compile(session, module)
+                        assertEquals("", targetResult.diagnostics.joinToString("\n"), "unexpected diagnostics")
+                        assertEquals(File(dir, "stdout.txt").readText(), runLua(interpreter, targetResult.outputs, dir.toPath()))
+                    }
+                },
             )
         }
     }
@@ -70,7 +79,12 @@ class CasesTest {
     }
 
     /** Runs the generated files plus any hand-written Lua the case calls into (the `lib` directory). */
-    private fun runLua(outputs: List<LuaOutput>, caseDir: Path): String {
+    /** `targets-skip.txt`: lines of `5.1: reason` for known, documented differences on a target. */
+    private fun skippedTargets(dir: File): Map<String, String> =
+        File(dir, "targets-skip.txt").takeIf { it.isFile }?.readLines().orEmpty()
+            .filter { ':' in it }.associate { it.substringBefore(':').trim() to it.substringAfter(':').trim() }
+
+    private fun runLua(lua: String, outputs: List<LuaOutput>, caseDir: Path): String {
         val dir = Files.createTempDirectory("k2l-case")
         try {
             outputs.forEach {
@@ -103,8 +117,25 @@ class CasesTest {
         private val casesDir: Path = Paths.get(System.getProperty("k2l.casesDir") ?: "src/test/cases")
         private val update = System.getProperty("k2l.updateGolden").toBoolean()
         private val lua = System.getProperty("k2l.lua") ?: "lua5.4"
-        private val luaAvailable by lazy {
-            runCatching { ProcessBuilder(lua, "-v").start().waitFor() == 0 }.getOrDefault(false)
+        private val luaAvailable by lazy { versionOf(lua) != null }
+
+        private fun versionOf(interpreter: String): String? = runCatching {
+            val p = ProcessBuilder(interpreter, "-v").redirectErrorStream(true).start()
+            p.inputStream.readBytes().toString(Charsets.UTF_8).takeIf { p.waitFor() == 0 }
+        }.getOrNull()
+
+        /** Interpreters for the other targets, found by name and confirmed by their version banner. */
+        private val otherTargets: List<Pair<LuaTarget, String>> by lazy {
+            val candidates = mapOf(
+                LuaTarget.Lua51 to (listOf(System.getProperty("k2l.lua51")) + listOf("lua5.1", "lua51", "lua")) to "Lua 5.1",
+                LuaTarget.Lua52 to (listOf(System.getProperty("k2l.lua52")) + listOf("lua5.2", "lua52")) to "Lua 5.2",
+                LuaTarget.Lua53 to (listOf(System.getProperty("k2l.lua53")) + listOf("lua5.3", "lua53")) to "Lua 5.3",
+                LuaTarget.LuaJIT to (listOf(System.getProperty("k2l.luajit")) + listOf("luajit")) to "LuaJIT",
+            )
+            candidates.mapNotNull { (targetAndNames, banner) ->
+                val (target, names) = targetAndNames
+                names.filterNotNull().firstOrNull { versionOf(it)?.contains(banner) == true }?.let { target to it }
+            }
         }
 
         private val modules: List<SourceModule> by lazy {

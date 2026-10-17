@@ -8,7 +8,7 @@ function M.greet(name)
 end
 
 function M.divmod(a, b)
-    return a // b, a % b
+    return math.floor(a / b), a % b
 end
 
 function M.each(items, f)

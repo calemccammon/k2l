@@ -71,6 +71,26 @@ object StdlibMappings {
         def("kotlin/Enum.name") { LuaIndex(self, LuaString("name")) }
         def("kotlin/Enum.ordinal") { LuaIndex(self, LuaString("ordinal")) }
 
+        // Bitwise operations. Int results stay in 32-bit range; Long uses Lua's 64-bit integers (5.3+ only).
+        for (t in listOf("Int", "Long")) {
+            val isLong = t == "Long"
+            def("kotlin/$t.and") { bitwise("BAnd", LuaBinOp.BAnd, isLong) }
+            def("kotlin/$t.or") { bitwise("BOr", LuaBinOp.BOr, isLong) }
+            def("kotlin/$t.xor") { bitwise("BXor", LuaBinOp.BXor, isLong) }
+            def("kotlin/$t.inv") {
+                if (target.hasIntegers) LuaUnary(LuaUnOp.BNot, self) else bitCall("__K2L_BNot", this)
+            }
+            def("kotlin/$t.shl") {
+                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shl, self, arg(0)) else bitCall("__K2L_Shl", this)
+            }
+            def("kotlin/$t.shr") {
+                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.IDiv, self, LuaBinary(LuaBinOp.Shl, LuaNumber("1"), arg(0))) else bitCall("__K2L_Shr", this)
+            }
+            def("kotlin/$t.ushr") {
+                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shr, self, arg(0)) else bitCall("__K2L_Ushr", this)
+            }
+        }
+
         // Strings
         def("kotlin/String.length") { LuaUnary(LuaUnOp.Len, self) }
         def("kotlin/String.plus") { LuaBinary(LuaBinOp.Concat, self, str(arg(0), argTypes[0], forConcat = true)) }
@@ -101,6 +121,15 @@ object StdlibMappings {
 
     fun has(callableId: String?) = callableId in mappings
 
+    private val CallSite.target get() = transformer.ctx.options.luaTarget
+
+    /** and/or/xor: native operators on 5.3+, lualib helpers (bit32, LuaJIT's bit, or plain Lua) elsewhere. */
+    private fun CallSite.bitwise(helper: String, op: LuaBinOp, isLong: Boolean): LuaExpr =
+        if (target.hasIntegers) LuaBinary(op, self, arg(0)) else bitCall("__K2L_$helper", this)
+
+    private fun bitCall(name: String, site: CallSite): LuaExpr =
+        LuaCall(site.ref("Bit", name), listOfNotNull(site.receiver) + site.args)
+
     fun map(callableId: String?, site: CallSite): LuaExpr? {
         // toString() with no arguments, on anything from the kotlin package.
         if (site.name == "toString" && site.args.isEmpty() && site.receiver != null && callableId?.startsWith("kotlin/") == true) {
@@ -115,7 +144,10 @@ object StdlibMappings {
 
     /** Lua's `print` formats integers, strings and booleans the way Kotlin does. */
     private fun CallSite.printable(value: LuaExpr, type: KaType?): LuaExpr = with(session) {
-        if (type != null && !type.isMarkedNullable && (type.isStringType || type.isCharType || type.isIntegral || type.isBooleanType)) value
+        val longWithoutIntegers = !target.hasIntegers && type?.withoutFlexibility?.isLongType == true
+        if (type != null && !type.isMarkedNullable && !longWithoutIntegers &&
+            (type.isStringType || type.isCharType || type.isIntegral || type.isBooleanType)
+        ) value
         else str(value, type)
     }
 }

@@ -50,7 +50,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
             }
         }
         if (options.luaLibImport == LuaLibImport.Require && usedFeatures.isNotEmpty()) {
-            outputs += LuaOutput("${Lualib.BUNDLE_MODULE}.lua", Lualib.bundle(usedFeatures))
+            outputs += LuaOutput("${Lualib.BUNDLE_MODULE}.lua", Lualib.bundle(usedFeatures, options.luaTarget))
         }
         return CompileResult(outputs, diagnostics)
     }
@@ -59,7 +59,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val code = LuaPrinter().print(chunk)
         if (ctx.lualib.isEmpty()) return code
         return when (options.luaLibImport) {
-            LuaLibImport.Inline -> Lualib.resolve(ctx.lualib).joinToString("\n\n", postfix = "\n\n") { it.code } + code
+            LuaLibImport.Inline -> Lualib.resolve(ctx.lualib, options.luaTarget).joinToString("\n\n", postfix = "\n\n") { it.code } + code
             LuaLibImport.Require -> buildString {
                 append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")
                 ctx.lualibNames.forEach { append("local $it = ____lualib.$it\n") }

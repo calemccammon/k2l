@@ -125,6 +125,8 @@ class FileTransformer(
     private fun isStable(e: LuaExpr) =
         e is LuaNil || e is LuaBool || e is LuaNumber || e is LuaString || e in stable
 
+    private val target get() = ctx.options.luaTarget
+
     fun unsupported(element: KtElement, what: String): LuaExpr {
         ctx.error(element, "$what is not supported yet")
         return LuaNil
@@ -279,6 +281,13 @@ class FileTransformer(
     private class LoopFrame(val label: String?) {
         var continueLabel: String? = null
         var breakLabel: String? = null
+
+        /** Lua 5.1 (no goto): flags that carry `break@outer` / `continue@outer` out of inner loops. */
+        var breakFlag: String? = null
+        var continueFlag: String? = null
+
+        /** Checks emitted right after this loop, in the enclosing loop's body. */
+        val checksAfter = mutableListOf<LuaStmt>()
     }
 
     private var loops = ArrayDeque<LoopFrame>()
@@ -578,6 +587,8 @@ class FileTransformer(
 
     private fun KaSession.loop(e: KtLoopExpression, label: String?) {
         val frame = LoopFrame(label)
+        // On Lua 5.1 a break@thisLoop from an inner loop sets a flag declared before this loop.
+        val flagAt = buffer.size
         when (e) {
             is KtWhileExpression -> {
                 val (cond, pre) = withPreceding { expression(e.condition ?: return) }
@@ -596,7 +607,9 @@ class FileTransformer(
             is KtForExpression -> forLoop(e, frame)
             else -> unsupported(e, "Loop")
         }
+        frame.breakFlag?.let { buffer.add(flagAt, LuaLocal(listOf(it), listOf(LuaBool(false)))) }
         frame.breakLabel?.let { emit(LuaLabel(it)) }
+        emitAll(frame.checksAfter)
     }
 
     private fun KaSession.loopBody(frame: LoopFrame, body: KtExpression?): List<LuaStmt> {
@@ -608,7 +621,35 @@ class FileTransformer(
         }
         val cont = frame.continueLabel ?: return stmts
         // The label sits outside a do-block so `goto` never jumps into the scope of a body local.
-        return listOf(LuaDo(stmts), LuaLabel(cont))
+        if (target.hasGoto) return listOf(LuaDo(stmts), LuaLabel(cont))
+        // Lua 5.1 has no goto: `continue` breaks out of a one-iteration repeat, and a real break sets a flag.
+        val broke = ctx.temp("broke")
+        var usesBreak = false
+        fun rewrite(list: List<LuaStmt>, depth: Int): List<LuaStmt> = list.flatMap { s ->
+            when (s) {
+                is LuaGoto -> if (s.label == cont && depth == 0) listOf(LuaBreak) else {
+                    ctx.error(file, "continue to an outer loop needs goto, which Lua 5.1 lacks")
+                    listOf(s)
+                }
+                LuaBreak -> if (depth == 0) {
+                    usesBreak = true
+                    listOf(LuaAssign(listOf(LuaName(broke)), listOf(LuaBool(true))), LuaBreak)
+                } else {
+                    listOf(s)
+                }
+                is LuaIf -> listOf(LuaIf(s.cond, rewrite(s.then, depth), s.orElse?.let { rewrite(it, depth) }))
+                is LuaDo -> listOf(LuaDo(rewrite(s.body, depth)))
+                is LuaWhile -> listOf(LuaWhile(s.cond, rewrite(s.body, depth + 1)))
+                is LuaRepeat -> listOf(LuaRepeat(rewrite(s.body, depth + 1), s.until))
+                is LuaNumericFor -> listOf(s.copy(body = rewrite(s.body, depth + 1)))
+                is LuaGenericFor -> listOf(s.copy(body = rewrite(s.body, depth + 1)))
+                else -> listOf(s)
+            }
+        }
+        val resetContinue = frame.continueFlag?.let { listOf(LuaLocal(listOf(it), listOf(LuaBool(false)))) }.orEmpty()
+        val body = LuaRepeat(resetContinue + rewrite(stmts, 0), LuaBool(true))
+        if (!usesBreak) return listOf(body)
+        return listOf(LuaLocal(listOf(broke), listOf(LuaBool(false))), body, LuaIf(LuaName(broke), listOf(LuaBreak)))
     }
 
     private fun KaSession.forLoop(e: KtForExpression, frame: LoopFrame) {
@@ -759,6 +800,12 @@ class FileTransformer(
         val frame = jumpTarget(e) ?: return
         if (frame === loops.last()) {
             emit(LuaBreak)
+        } else if (!target.hasGoto) {
+            // break@outer without goto: set a flag, and have each loop in between break when it is set.
+            val flag = frame.breakFlag ?: ctx.temp("break").also { frame.breakFlag = it }
+            emit(LuaAssign(listOf(LuaName(flag)), listOf(LuaBool(true))))
+            emit(LuaBreak)
+            innerFrames(frame).forEach { inner -> inner.addCheck(LuaIf(LuaName(flag), listOf(LuaBreak))) }
         } else {
             val label = frame.breakLabel ?: ctx.temp("break").also { frame.breakLabel = it }
             emit(LuaGoto(label))
@@ -768,7 +815,24 @@ class FileTransformer(
     private fun KaSession.continueStatement(e: KtContinueExpression) {
         val frame = jumpTarget(e) ?: return
         val label = frame.continueLabel ?: ctx.temp("continue").also { frame.continueLabel = it }
-        emit(LuaGoto(label))
+        if (target.hasGoto || frame === loops.last()) {
+            emit(LuaGoto(label))
+            return
+        }
+        // continue@outer without goto: break out of the inner loops, then continue the outer one.
+        val flag = frame.continueFlag ?: ctx.temp("continue").also { frame.continueFlag = it }
+        emit(LuaAssign(listOf(LuaName(flag)), listOf(LuaBool(true))))
+        emit(LuaBreak)
+        val inner = innerFrames(frame)
+        inner.dropLast(1).forEach { it.addCheck(LuaIf(LuaName(flag), listOf(LuaBreak))) }
+        inner.last().addCheck(LuaIf(LuaName(flag), listOf(LuaGoto(label))))
+    }
+
+    /** Loops nested inside [outer], innermost first. */
+    private fun innerFrames(outer: LoopFrame): List<LoopFrame> = loops.toList().takeLastWhile { it !== outer }.reversed()
+
+    private fun LoopFrame.addCheck(check: LuaStmt) {
+        if (check !in checksAfter) checksAfter += check
     }
 
     // ---- ranges ----
@@ -968,8 +1032,16 @@ class FileTransformer(
         val luaType = when {
             type.isStringType || type.isCharType -> "string"
             type.isBooleanType -> "boolean"
-            type.isIntegral -> return LuaBinary(LuaBinOp.Eq, luaCall(luaPath("math", "type"), value), LuaString("integer"))
-            type.isDoubleType || type.isFloatType -> return LuaBinary(LuaBinOp.Eq, luaCall(luaPath("math", "type"), value), LuaString("float"))
+            type.isIntegral || type.isDoubleType || type.isFloatType -> {
+                val wantInteger = type.isIntegral
+                if (target.hasIntegers) {
+                    return LuaBinary(LuaBinOp.Eq, luaCall(luaPath("math", "type"), value), LuaString(if (wantInteger) "integer" else "float"))
+                }
+                // Without an integer subtype, an Int is an integral number (so 2.0 is Int and Double).
+                val isNumber = LuaBinary(LuaBinOp.Eq, luaCall(LuaName("type"), value), LuaString("number"))
+                return if (wantInteger) LuaBinary(LuaBinOp.And, isNumber, LuaBinary(LuaBinOp.Eq, LuaBinary(LuaBinOp.Mod, value, LuaNumber("1")), LuaNumber("0")))
+                else isNumber
+            }
             else -> {
                 val symbol = type.expandedSymbol
                 val psi = symbol?.psi as? KtClassOrObject
@@ -1093,6 +1165,11 @@ class FileTransformer(
     fun KaSession.str(value: LuaExpr, type: KaType?, forConcat: Boolean = false): LuaExpr {
         if (type != null && !type.isMarkedNullable) {
             when {
+                // At runtime 2.0 and 2 look the same without integers, so use the static type.
+                !target.hasIntegers && (type.withoutFlexibility.isDoubleType || type.withoutFlexibility.isFloatType) ->
+                    return lualibCall("DoubleToString", value)
+                // tostring() keeps only 14 digits of a large Long when numbers are doubles.
+                !target.hasIntegers && type.withoutFlexibility.isLongType -> return lualibCall("Str", value)
                 type.isStringType || type.isCharType -> return value
                 type.isIntegral -> return if (forConcat) value else luaCall(LuaName("tostring"), value)
                 type.isBooleanType -> return luaCall(LuaName("tostring"), value)
@@ -1959,6 +2036,25 @@ class FileTransformer(
             inFrame(frame) { lambdaBody(literal, sink) }
         }
         val end = frame.endLabel
+        if (end != null && !target.hasGoto) {
+            // No goto on Lua 5.1: `return@label` breaks out of a one-iteration repeat.
+            fun rewrite(list: List<LuaStmt>, depth: Int): List<LuaStmt> = list.map { s ->
+                when (s) {
+                    is LuaGoto -> if (s.label == end && depth == 0) LuaBreak else s.also {
+                        ctx.error(lambda, "return@label from inside a loop in an inlined lambda needs goto (Lua 5.1)")
+                    }
+                    is LuaIf -> LuaIf(s.cond, rewrite(s.then, depth), s.orElse?.let { rewrite(it, depth) })
+                    is LuaDo -> LuaDo(rewrite(s.body, depth))
+                    is LuaWhile -> LuaWhile(s.cond, rewrite(s.body, depth + 1))
+                    is LuaRepeat -> LuaRepeat(rewrite(s.body, depth + 1), s.until)
+                    is LuaNumericFor -> s.copy(body = rewrite(s.body, depth + 1))
+                    is LuaGenericFor -> s.copy(body = rewrite(s.body, depth + 1))
+                    else -> s
+                }
+            }
+            emit(LuaRepeat(rewrite(body, 0), LuaBool(true)))
+            return
+        }
         val needsBlock = end != null || body.any { it is LuaLocal || it is LuaFunctionDecl }
         if (needsBlock) emit(LuaDo(body + listOfNotNull(end?.let(::LuaLabel)))) else emitAll(body)
     }

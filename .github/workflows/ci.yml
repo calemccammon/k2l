@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Every test case runs on each of these; missing interpreters are skipped, so install them all.
+      - name: Install Lua interpreters
+        run: sudo apt-get update && sudo apt-get install -y lua5.1 lua5.2 lua5.3 lua5.4 luajit
+
+      - name: Test (all Lua targets)
+        run: ./gradlew check
+
+      # Confirms every case's stdout.txt is what Kotlin/JVM really prints.
+      - name: Kotlin/JVM oracle
+        run: ./gradlew :compiler:kotlinOracle

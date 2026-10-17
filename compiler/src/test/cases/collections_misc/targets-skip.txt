@@ -1,0 +1,3 @@
+5.1: without an integer subtype, Triple(1, "two", 3.0).toString() can't tell 3.0 from 3 at runtime
+5.2: without an integer subtype, Triple(1, "two", 3.0).toString() can't tell 3.0 from 3 at runtime
+JIT: without an integer subtype, Triple(1, "two", 3.0).toString() can't tell 3.0 from 3 at runtime
