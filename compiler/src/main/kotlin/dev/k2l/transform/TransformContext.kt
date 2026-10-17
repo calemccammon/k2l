@@ -1,0 +1,43 @@
+package dev.k2l.transform
+
+import com.intellij.psi.PsiElement
+import dev.k2l.CompilerOptions
+import dev.k2l.Diagnostic
+import dev.k2l.Severity
+import dev.k2l.lua.LuaPrinter
+
+/** Per-file state shared by the transformer: diagnostics, lualib usage and generated names. */
+class TransformContext(val options: CompilerOptions) {
+    val diagnostics = mutableListOf<Diagnostic>()
+    val lualib = sortedSetOf<String>()
+    private val generated = mutableMapOf<String, Int>()
+
+    fun error(element: PsiElement, message: String) {
+        diagnostics += Diagnostic.at(element, Severity.Error, message)
+    }
+
+    /** A fresh generated name: `____temp`, `____temp_1`, ... (Kotlin code never declares `____` names in practice). */
+    fun temp(hint: String): String {
+        val n = generated.merge(hint, 1, Int::plus)!! - 1
+        return if (n == 0) "____$hint" else "____${hint}_$n"
+    }
+}
+
+object LuaNames {
+    /** Globals the generated code relies on; user declarations must not shadow them. */
+    private val RESERVED_GLOBALS = setOf(
+        "_G", "_ENV", "assert", "coroutine", "debug", "error", "getmetatable", "io", "ipairs", "load", "math",
+        "next", "os", "package", "pairs", "pcall", "print", "rawequal", "rawget", "rawlen", "rawset", "require",
+        "select", "setmetatable", "string", "table", "tonumber", "tostring", "type", "unpack", "utf8", "xpcall",
+    )
+
+    fun of(kotlinName: String): String {
+        val cleaned = buildString {
+            for (c in kotlinName) {
+                if ((c.isLetterOrDigit() || c == '_') && c.code < 128) append(c) else append("_").append(c.code.toString(16))
+            }
+        }
+        val safe = if (cleaned.isEmpty() || cleaned[0].isDigit()) "_$cleaned" else cleaned
+        return if (safe in LuaPrinter.KEYWORDS || safe in RESERVED_GLOBALS) "____$safe" else safe
+    }
+}

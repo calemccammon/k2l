@@ -1,0 +1,18 @@
+positive
+negative
+zero
+7 is odd and small
+42 is even and medium
+1000 is even and large
+0
+1
+2
+3
+4
+true
+false
+null
+nonpositive
+null
+FizzBuzz
+1

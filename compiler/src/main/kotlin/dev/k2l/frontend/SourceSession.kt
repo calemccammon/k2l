@@ -11,15 +11,21 @@ import org.jetbrains.kotlin.psi.KtFile
 import java.nio.file.Path
 import java.nio.file.Paths
 
-/** A parsed and analyzable set of Kotlin sources. Close it to release the IntelliJ core environment. */
+/** A Kotlin source module to transpile: its files live under [roots]. */
+data class SourceModule(val name: String, val roots: List<Path>)
+
+/** Parsed, analyzable source modules. Close it to release the IntelliJ core environment. */
 class SourceSession private constructor(
     private val disposable: Disposable,
-    val files: List<KtFile>,
+    val modules: List<SourceModule>,
+    private val filesByModule: Map<String, List<KtFile>>,
 ) : AutoCloseable {
+    fun files(module: String): List<KtFile> = filesByModule[module].orEmpty().sortedBy { it.virtualFile.path }
+
     override fun close() = Disposer.dispose(disposable)
 
     companion object {
-        fun create(sourceRoots: List<Path>, classpath: List<Path> = emptyList()): SourceSession {
+        fun create(modules: List<SourceModule>, classpath: List<Path> = emptyList()): SourceSession {
             val disposable = Disposer.newDisposable("k2l")
             val platform = JvmPlatforms.defaultJvmPlatform
             val session = buildStandaloneAnalysisAPISession(disposable) {
@@ -35,17 +41,21 @@ class SourceSession private constructor(
                         this.platform = platform
                         libraryName = "classpath"
                     })
-                    addModule(buildKtSourceModule {
-                        addSourceRoots(sourceRoots)
-                        addRegularDependency(jdk)
-                        addRegularDependency(libs)
-                        this.platform = platform
-                        moduleName = "main"
-                    })
+                    for (module in modules) {
+                        addModule(buildKtSourceModule {
+                            addSourceRoots(module.roots)
+                            addRegularDependency(jdk)
+                            addRegularDependency(libs)
+                            this.platform = platform
+                            moduleName = module.name
+                        })
+                    }
                 }
             }
-            val files = session.modulesWithFiles.values.flatten().filterIsInstance<KtFile>()
-            return SourceSession(disposable, files)
+            val files = session.modulesWithFiles.entries.associate { (module, files) ->
+                module.name to files.filterIsInstance<KtFile>()
+            }
+            return SourceSession(disposable, modules, files)
         }
 
         private fun kotlinStdlibJar(): Path =

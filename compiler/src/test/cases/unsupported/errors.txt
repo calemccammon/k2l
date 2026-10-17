@@ -1,0 +1,2 @@
+1:1: Declaration 'Class' is not supported yet
+4:14: Kotlin library API 'kotlin/collections/listOf' is not supported yet
