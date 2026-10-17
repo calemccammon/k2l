@@ -7,16 +7,16 @@ import dev.k2l.lua.LuaPrinter
 import dev.k2l.lua.Lualib
 import dev.k2l.transform.FileTransformer
 import dev.k2l.transform.ModuleContext
-import org.jetbrains.kotlin.idea.references.mainReference
-import org.jetbrains.kotlin.psi.KtReferenceExpression
-import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import dev.k2l.transform.TransformContext
+import java.nio.file.Path
+import java.nio.file.Paths
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity
+import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.KtFile
-import java.nio.file.Path
-import java.nio.file.Paths
+import org.jetbrains.kotlin.psi.KtReferenceExpression
+import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 
 /** A generated Lua file; [path] is relative to the output directory. */
 data class LuaOutput(val path: String, val code: String)

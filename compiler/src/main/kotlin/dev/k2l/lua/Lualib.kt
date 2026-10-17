@@ -14,6 +14,7 @@ object Lualib {
     }
 
     const val BUNDLE_MODULE = "lualib_bundle"
+    private const val REQUIRES_PREFIX = "-- requires:"
 
     /** The shared runtime: every used feature, returning a table of their exports. */
     fun bundle(features: Collection<String>, target: LuaTarget = LuaTarget.Lua54): String {
@@ -31,9 +32,10 @@ object Lualib {
         val code = (target.lualibVariants.map { "$name.$it" } + name).firstNotNullOfOrNull { file ->
             Lualib::class.java.getResourceAsStream("/dev/k2l/lualib/$file.lua")?.use { it.readBytes().toString(Charsets.UTF_8) }
         } ?: error("missing lualib feature $name")
-        val requires = code.lineSequence().first().removePrefix("-- requires:").takeIf { it != code.lineSequence().first() }
-            ?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
-        Feature(name, code.lines().dropWhile { it.startsWith("-- requires:") }.joinToString("\n").trim(), requires)
+        val lines = code.lines()
+        val requires = lines.first().takeIf { it.startsWith(REQUIRES_PREFIX) }
+            ?.removePrefix(REQUIRES_PREFIX)?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
+        Feature(name, lines.dropWhile { it.startsWith(REQUIRES_PREFIX) }.joinToString("\n").trim(), requires)
     }
 
     /** Used features plus their dependencies, dependencies first. */

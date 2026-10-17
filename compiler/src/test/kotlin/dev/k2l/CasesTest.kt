@@ -2,6 +2,7 @@ package dev.k2l
 
 import dev.k2l.frontend.SourceModule
 import dev.k2l.frontend.SourceSession
+import dev.k2l.lua.Lualib
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assumptions.assumeTrue
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
+import org.opentest4j.AssertionFailedError
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -64,7 +66,7 @@ class CasesTest {
 
     /** The generated files except the shared lualib bundle; several files are concatenated with headers. */
     private fun goldenText(outputs: List<LuaOutput>): String {
-        val files = outputs.filter { it.path != "lualib_bundle.lua" }.sortedBy { it.path }
+        val files = outputs.filter { it.path != BUNDLE_FILE }.sortedBy { it.path }
         return files.singleOrNull()?.code ?: files.joinToString("") { "-- ==== ${it.path} ====\n${it.code}" }
     }
 
@@ -75,15 +77,15 @@ class CasesTest {
         val a = actual.lines()
         val i = e.indices.firstOrNull { it >= a.size || e[it] != a[it] } ?: e.size
         val message = "first difference at line ${i + 1}:\n  expected: ${e.getOrNull(i)}\n  actual:   ${a.getOrNull(i)}"
-        throw org.opentest4j.AssertionFailedError(message, expected, actual)
+        throw AssertionFailedError(message, expected, actual)
     }
 
-    /** Runs the generated files plus any hand-written Lua the case calls into (the `lib` directory). */
     /** `targets-skip.txt`: lines of `5.1: reason` for known, documented differences on a target. */
     private fun skippedTargets(dir: File): Map<String, String> =
         File(dir, "targets-skip.txt").takeIf { it.isFile }?.readLines().orEmpty()
             .filter { ':' in it }.associate { it.substringBefore(':').trim() to it.substringAfter(':').trim() }
 
+    /** Runs the generated files plus any hand-written Lua the case calls into (the `lib` directory). */
     private fun runLua(lua: String, outputs: List<LuaOutput>, caseDir: Path): String {
         val dir = Files.createTempDirectory("k2l-case")
         try {
@@ -102,7 +104,7 @@ class CasesTest {
                     }
                 }
             }
-            val entry = outputs.firstOrNull { it.path == "main.lua" }?.path ?: outputs.first { it.path != "lualib_bundle.lua" }.path
+            val entry = outputs.firstOrNull { it.path == "main.lua" }?.path ?: outputs.first { it.path != BUNDLE_FILE }.path
             val process = ProcessBuilder(lua, entry).directory(dir.toFile()).redirectErrorStream(true).start()
             val output = process.inputStream.readBytes().toString(Charsets.UTF_8)
             check(process.waitFor(30, TimeUnit.SECONDS)) { "lua timed out" }
@@ -115,6 +117,7 @@ class CasesTest {
 
     companion object {
         private val casesDir: Path = Paths.get(System.getProperty("k2l.casesDir") ?: "src/test/cases")
+        private const val BUNDLE_FILE = "${Lualib.BUNDLE_MODULE}.lua"
         private val update = System.getProperty("k2l.updateGolden").toBoolean()
         private val lua = System.getProperty("k2l.lua") ?: "lua5.4"
         private val luaAvailable by lazy { versionOf(lua) != null }
