@@ -1,0 +1,45 @@
+[versions]
+kotlin = "2.4.21"
+# Must match the Kotlin compiler version exactly.
+analysis-api = "2.4.21"
+# IntelliJ platform build that Kotlin 2.4.21 was compiled against (see kotlin/gradle/versions.properties).
+intellij-platform = "251.27812.49"
+caffeine = "2.9.3"
+# IntelliJ-patched coroutines fork required by the platform thread-context code.
+coroutines = "1.8.0-intellij-13"
+junit = "5.11.4"
+serialization = "1.11.0"
+
+[libraries]
+kotlin-compiler = { module = "org.jetbrains.kotlin:kotlin-compiler", version.ref = "kotlin" }
+intellij-core = { module = "com.jetbrains.intellij.platform:core", version.ref = "intellij-platform" }
+analysis-api = { module = "org.jetbrains.kotlin:analysis-api-for-ide", version.ref = "analysis-api" }
+analysis-api-k2 = { module = "org.jetbrains.kotlin:analysis-api-k2-for-ide", version.ref = "analysis-api" }
+analysis-api-impl-base = { module = "org.jetbrains.kotlin:analysis-api-impl-base-for-ide", version.ref = "analysis-api" }
+analysis-api-platform-interface = { module = "org.jetbrains.kotlin:analysis-api-platform-interface-for-ide", version.ref = "analysis-api" }
+analysis-api-standalone = { module = "org.jetbrains.kotlin:analysis-api-standalone-for-ide", version.ref = "analysis-api" }
+low-level-api-fir = { module = "org.jetbrains.kotlin:low-level-api-fir-for-ide", version.ref = "analysis-api" }
+symbol-light-classes = { module = "org.jetbrains.kotlin:symbol-light-classes-for-ide", version.ref = "analysis-api" }
+# Also carries the binary-class decompiler the standalone session needs.
+kotlin-compiler-common-for-ide = { module = "org.jetbrains.kotlin:kotlin-compiler-common-for-ide", version.ref = "analysis-api" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+coroutines-core = { module = "com.intellij.platform:kotlinx-coroutines-core-jvm", version.ref = "coroutines" }
+serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+[bundles]
+analysis-api = [
+  "analysis-api",
+  "analysis-api-k2",
+  "analysis-api-impl-base",
+  "analysis-api-platform-interface",
+  "analysis-api-standalone",
+  "low-level-api-fir",
+  "symbol-light-classes",
+  "kotlin-compiler-common-for-ide",
+]
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
