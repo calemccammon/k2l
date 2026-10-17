@@ -8,7 +8,7 @@ import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 
 /** Runtime representation of a Kotlin library type, see `Collections.lua`. */
-enum class CollectionKind { List, Array, Set, Map, Iterable, Range, Entry, Pair, Triple, IndexedValue, StringBuilder }
+enum class CollectionKind { List, Array, Set, Map, Iterable, Range, Entry, Pair, Triple, IndexedValue, StringBuilder, LuaTable }
 
 private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
     for (id in listOf(
@@ -41,6 +41,7 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
     put("kotlin/collections/IndexedValue", CollectionKind.IndexedValue)
     put("java/lang/StringBuilder", CollectionKind.StringBuilder)
     put("kotlin/text/StringBuilder", CollectionKind.StringBuilder)
+    put("dev/k2l/lua/LuaTable", CollectionKind.LuaTable)
 }
 
 /** Java platform types (`T!`) are flexible; their lower bound is the Kotlin type. */
@@ -131,6 +132,20 @@ object CollectionMappings {
                 "component2" -> LuaIndex(site.self, LuaString("value"))
                 else -> null
             }
+            CollectionKind.LuaTable -> when (name) {
+                "get" -> LuaIndex(site.self, site.arg(0))
+                "set" -> {
+                    site.transformer.emit(LuaAssign(listOf(LuaIndex(site.self, site.arg(0))), listOf(site.args.getOrElse(1) { LuaNil })))
+                    LuaNil
+                }
+                "length" -> LuaUnary(LuaUnOp.Len, site.self)
+                "has" -> LuaBinary(LuaBinOp.Ne, LuaIndex(site.self, site.arg(0)), LuaNil)
+                "remove" -> {
+                    site.transformer.emit(LuaAssign(listOf(LuaIndex(site.self, site.arg(0))), listOf(LuaNil)))
+                    LuaNil
+                }
+                else -> null
+            }
             CollectionKind.StringBuilder -> when (name) {
                 "append" -> LuaMethodCall(site.self, "append", listOf(site.str(site.arg(0), site.argTypes.getOrNull(0))))
                 "appendLine" -> LuaMethodCall(site.self, "appendLine", site.args.take(1).map { site.str(it, site.argTypes[0]) })
@@ -196,6 +211,7 @@ object CollectionMappings {
             "java/lang/StringBuilder", "kotlin/text/StringBuilder" ->
                 new("__K2L_StringBuilder", *site.args.take(1).map { site.str(it, first) }.toTypedArray())
             "kotlin/ranges/IntRange" -> new("__K2L_IntRange", site.arg(0), site.arg(1))
+            "dev/k2l/lua/LuaTable" -> LuaTable(emptyList())
             "kotlin/Char" -> LuaCall(LuaIndex(LuaName("string"), LuaString("char")), listOf(site.arg(0)))
             "kotlin/Array" -> LuaCall(site.ref("Collections", "__K2L_ListOfSize"), listOf(site.arg(0), site.arg(1), LuaBool(true)))
             "kotlin/IntArray", "kotlin/LongArray", "kotlin/ShortArray", "kotlin/ByteArray", "kotlin/DoubleArray",

@@ -2,6 +2,8 @@ package dev.k2l.transform
 
 import dev.k2l.lua.*
 import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotated
+import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationValue
 import org.jetbrains.kotlin.analysis.api.base.KaConstantValue
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaExplicitReceiverValue
@@ -14,6 +16,8 @@ import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaBackingFieldSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassLikeSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaConstructorSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaEnumEntrySymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
@@ -133,7 +137,8 @@ class FileTransformer(
     private fun KaSession.transformChunk(): LuaChunk {
         val body = mutableListOf<LuaStmt>()
         val topLevel = file.declarations.filter {
-            it is KtNamedFunction || it is KtProperty || (it is KtClassOrObject && !(it is KtClass && it.isAnnotation()))
+            (it is KtNamedFunction || it is KtProperty || (it is KtClassOrObject && !(it is KtClass && it.isAnnotation()))) &&
+                !isExternalDeclaration(it)
         }
         val forward = forwardReferenced(topLevel.filterNot { tableMode && isExportedVar(it) }.toSet())
         val main = topLevel.filterIsInstance<KtNamedFunction>().firstOrNull(::isMain)
@@ -208,6 +213,7 @@ class FileTransformer(
     }
 
     private fun KaSession.topLevelDeclaration(decl: KtDeclaration, forwardDeclared: Boolean) {
+        if (isExternalDeclaration(decl)) return // implemented in Lua
         when (decl) {
             is KtNamedFunction -> emit(LuaFunctionDecl(LuaName(nameOf(decl)), function(decl), isLocal = !forwardDeclared))
             is KtProperty -> if (tableMode && isExportedVar(decl)) {
@@ -368,7 +374,14 @@ class FileTransformer(
             is KtParenthesizedExpression -> e.expression?.let { statement(it) }
             is KtProperty -> property(e, isLocal = true)
             is KtDestructuringDeclaration -> {
-                val value = cache(expression(e.initializer ?: return), "destructured")
+                val init = e.initializer ?: return
+                val initType = init.expressionType?.expandedSymbol?.classId?.asString()
+                if (initType != null && initType.startsWith("dev/k2l/lua/LuaMultiReturn")) {
+                    // A Lua function returning several values: local ok, err = pcall(f)
+                    emit(LuaLocal(e.entries.map { if (it.name == "_") "_" else nameOf(it) }, listOf(expression(init))))
+                    return
+                }
+                val value = cache(expression(init), "destructured")
                 emit(destructure(e.entries, value))
             }
             is KtClassOrObject -> classDeclaration(e, isLocal = true)
@@ -505,6 +518,10 @@ class FileTransformer(
             }
             type?.collectionKind() == CollectionKind.Map ->
                 Target(LuaMethodCall(receiver, "get", listOf(key))) { LuaCallStmt(LuaMethodCall(receiver, "set", listOf(key, it))) }
+            type?.collectionKind() == CollectionKind.LuaTable -> {
+                val slot = LuaIndex(receiver, key)
+                Target(slot) { LuaAssign(listOf(slot), listOf(it)) }
+            }
             type?.collectionKind() == CollectionKind.List || type?.collectionKind() == CollectionKind.Array -> {
                 val slot = CollectionMappings.index(receiver, key)
                 Target(slot) { LuaAssign(listOf(slot), listOf(it)) }
@@ -1091,6 +1108,7 @@ class FileTransformer(
         val symbol = e.mainReference.resolveToSymbol()
         val psi = symbol?.psi
         return when {
+            isExternal(symbol) && symbol !is KaClassLikeSymbol -> call(e, full)
             symbol is KaValueParameterSymbol && lambdaBindings.isNotEmpty() &&
                 symbol.containingDeclaration?.psi?.let { lambdaBindings[it to symbol.name.asString()] } != null ->
                 lambdaBindings.getValue(symbol.containingDeclaration!!.psi!! to symbol.name.asString())
@@ -1103,6 +1121,7 @@ class FileTransformer(
             symbol is KaBackingFieldSymbol -> backingField(e)
             symbol is KaEnumEntrySymbol && psi is KtEnumEntry && isSource(psi) ->
                 LuaIndex(classRef(psi.containingClassOrObject!!), LuaString(psi.name!!))
+            symbol is KaClassLikeSymbol && isExternal(symbol) -> externalClassRef(symbol as KaClassSymbol) ?: LuaName("_G")
             symbol is KaClassLikeSymbol && psi is KtClassOrObject && isSource(psi) -> classRef(psi)
             else -> call(e, full)
         }
@@ -1264,6 +1283,7 @@ class FileTransformer(
         } else {
             null
         }
+        if (isExternal(symbol)) return externalCall(call, receiverExpr, implicit, full)
         dataClassMember(call, receiverExpr, implicit)?.let { return it }
         scopeFunction(callableId, call, receiverExpr, implicit, full)?.let { return it }
         val args = callArguments(call, full)
@@ -1488,6 +1508,7 @@ class FileTransformer(
     }
 
     private fun KaSession.classDeclaration(c: KtClassOrObject, isLocal: Boolean) {
+        if (isExternalDeclaration(c)) return
         when {
             c is KtEnumEntry || c is KtClass && c.isAnnotation() -> return
             c is KtObjectDeclaration && c.isCompanion() -> return // emitted together with its class
@@ -1688,7 +1709,7 @@ class FileTransformer(
             (psi is KtParameter && psi.hasValOrVar() && psi.ownerFunction is KtPrimaryConstructor)
 
     private fun hasAccessors(p: KtNamedDeclaration) =
-        p is KtProperty && (p.getter?.hasBody() == true || p.setter?.hasBody() == true)
+        p is KtProperty && !isExternalDeclaration(p) && (p.getter?.hasBody() == true || p.setter?.hasBody() == true)
 
     private fun accessorName(prefix: String, p: KtNamedDeclaration) =
         prefix + p.name!!.replaceFirstChar { it.uppercaseChar() }
@@ -2074,6 +2095,11 @@ class FileTransformer(
         }
         val kind = type?.collectionKind()
         when {
+            kind == CollectionKind.LuaTable -> {
+                val k = varName(0, "key")
+                val v = varName(1, "value")
+                emit(LuaGenericFor(listOf(k, v), listOf(luaCall(LuaName("pairs"), collection)), body(k, v)))
+            }
             kind == CollectionKind.Map && params.size == 2 -> {
                 val k = varName(0, "key")
                 val v = varName(1, "value")
@@ -2336,6 +2362,81 @@ class FileTransformer(
         return rw(stmts, false) to found
     }
 
+
+    // ---- Lua interop ----
+
+    /** `@LuaExternal` or `external` on [decl] or an enclosing class (checked on PSI, for declarations being emitted). */
+    private fun isExternalDeclaration(decl: KtDeclaration): Boolean =
+        generateSequence(decl) { it.containingClassOrObject }.any { d ->
+            d.hasModifier(KtTokens.EXTERNAL_KEYWORD) || d.annotationEntries.any { it.shortName?.asString() == "LuaExternal" }
+        }
+
+    private fun KaSession.isExternal(symbol: KaSymbol?): Boolean {
+        if (symbol == null) return false
+        if ((symbol as? KaAnnotated)?.annotations?.contains(LUA_EXTERNAL) == true) return true
+        if (symbol is KaNamedFunctionSymbol && symbol.isExternal) return true
+        val container = if (symbol is KaConstructorSymbol) symbol.containingClassId?.let { findClass(it) } else symbol.containingDeclaration
+        return container is KaClassSymbol && isExternal(container)
+    }
+
+    private fun KaSession.annotationString(symbol: KaSymbol, id: ClassId): String? {
+        val annotation = (symbol as? KaAnnotated)?.annotations?.get(id)?.firstOrNull() ?: return null
+        val value = annotation.arguments.firstOrNull()?.expression as? KaAnnotationValue.ConstantValue
+        return value?.value?.value as? String
+    }
+
+    private fun KaSession.luaName(symbol: KaSymbol): String =
+        annotationString(symbol, LUA_NAME) ?: (symbol as? org.jetbrains.kotlin.analysis.api.symbols.markers.KaNamedSymbol)?.name?.asString() ?: "_"
+
+    /** A Lua module's table: `local ____socket = require("socket")`. */
+    private fun moduleRequire(path: String): LuaExpr =
+        LuaName(ctx.imports.getOrPut(path) { ctx.temp(LuaNames.of(path.substringAfterLast('.'))) })
+
+    /** `@file:LuaRequire("module")` of the file declaring [psi]. */
+    private fun fileRequire(psi: com.intellij.psi.PsiElement?): String? {
+        val ktFile = psi?.containingFile as? KtFile ?: return null
+        val entry = ktFile.fileAnnotationList?.annotationEntries?.firstOrNull { it.shortName?.asString() == "LuaRequire" } ?: return null
+        return (entry.valueArguments.firstOrNull()?.getArgumentExpression() as? KtStringTemplateExpression)
+            ?.entries?.joinToString("") { it.text }
+    }
+
+    /** Where an external class or object lives; null for `_G`, whose members are plain globals. */
+    private fun KaSession.externalClassRef(c: KaClassSymbol): LuaExpr? {
+        annotationString(c, LUA_REQUIRE)?.let { return moduleRequire(it) }
+        val name = luaName(c)
+        if (name == "_G") return null
+        val outer = c.containingDeclaration as? KaClassSymbol
+        if (outer != null && isExternal(outer)) return LuaIndex(externalClassRef(outer) ?: LuaName("_G"), LuaString(name))
+        return fileRequire(c.psi)?.let { LuaIndex(moduleRequire(it), LuaString(name)) } ?: LuaName(name)
+    }
+
+    /**
+     * A call to (or access of) something implemented in Lua. Top-level functions are globals or fields of
+     * a required module; members of external objects are called with `.`, instance members with `:`.
+     */
+    private fun KaSession.externalCall(call: KaCallableMemberCall<*, *>, receiverExpr: KtExpression?, implicit: LuaExpr?, element: KtExpression): LuaExpr {
+        val symbol = call.partiallyAppliedSymbol.symbol
+        val args = callArguments(call, element)
+        val isFunction = call is KaFunctionCall<*>
+        if (symbol is KaConstructorSymbol) {
+            val cls = symbol.containingClassId?.let { findClass(it) } as? KaClassSymbol ?: return unsupported(element, "This external constructor")
+            val ref = externalClassRef(cls) ?: return unsupported(element, "Constructing _G")
+            return LuaCall(LuaIndex(ref, LuaString("new")), arguments(emptyList(), args))
+        }
+        val name = luaName(symbol)
+        val container = symbol.containingDeclaration as? KaClassSymbol
+        if (container == null || container.classKind.isObject) {
+            val base = if (container != null) externalClassRef(container) else fileRequire(symbol.psi)?.let(::moduleRequire)
+            val target = base?.let { LuaIndex(it, LuaString(name)) } ?: LuaName(name)
+            return if (isFunction) LuaCall(target, arguments(emptyList(), args)) else target
+        }
+        val receiver: Any = implicit ?: receiverExpr ?: return unsupported(element, "External member without a receiver")
+        val values = arguments(listOf(receiver), args)
+        if (!isFunction) return LuaIndex(values[0], LuaString(name))
+        val noSelf = (symbol as? KaAnnotated)?.annotations?.contains(NO_SELF) == true || container.annotations.contains(NO_SELF)
+        return if (noSelf) LuaCall(LuaIndex(values[0], LuaString(name)), values.drop(1)) else LuaMethodCall(values[0], name, values.drop(1))
+    }
+
     // ---- equality and casts ----
 
     /** Kotlin `==`: identity for primitives, enums and objects; `equals()` when a class may override it. */
@@ -2399,6 +2500,11 @@ class FileTransformer(
             KtTokens.PLUSEQ to LuaBinOp.Add, KtTokens.MINUSEQ to LuaBinOp.Sub, KtTokens.MULTEQ to LuaBinOp.Mul,
             KtTokens.DIVEQ to LuaBinOp.Div, KtTokens.PERCEQ to LuaBinOp.Mod,
         )
+        private val LUA_EXTERNAL = ClassId.fromString("dev/k2l/lua/LuaExternal")
+        private val LUA_NAME = ClassId.fromString("dev/k2l/lua/LuaName")
+        private val LUA_REQUIRE = ClassId.fromString("dev/k2l/lua/LuaRequire")
+        private val NO_SELF = ClassId.fromString("dev/k2l/lua/NoSelf")
+
         private val SCOPE_FUNCTIONS = setOf(
             "kotlin/let", "kotlin/also", "kotlin/apply", "kotlin/run", "kotlin/with", "kotlin/takeIf", "kotlin/takeUnless",
             "kotlin/repeat", "kotlin/require", "kotlin/check", "kotlin/requireNotNull", "kotlin/checkNotNull",

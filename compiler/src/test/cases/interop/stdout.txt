@@ -1,0 +1,15 @@
+hi lua v1.2
+3 2
+2
+item ann
+item bob
+15
+counter at 15
+5.0
+3.0
+true
+null
+raw	1	true
+table
+true
+false

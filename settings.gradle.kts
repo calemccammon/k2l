@@ -9,4 +9,5 @@ dependencyResolutionManagement {
     }
 }
 
+include("lua-api")
 include("compiler")

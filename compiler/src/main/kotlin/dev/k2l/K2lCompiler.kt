@@ -45,7 +45,8 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
                 val chunk = FileTransformer(this, file, ctx, moduleContext).transformFile()
                 diagnostics += ctx.diagnostics
                 usedFeatures += ctx.lualib
-                outputs += LuaOutput(outputPath(module, file), render(chunk, ctx))
+                // A file of only external declarations (Lua bindings) produces no Lua.
+                if (chunk.body.isNotEmpty()) outputs += LuaOutput(outputPath(module, file), render(chunk, ctx))
             }
         }
         if (options.luaLibImport == LuaLibImport.Require && usedFeatures.isNotEmpty()) {

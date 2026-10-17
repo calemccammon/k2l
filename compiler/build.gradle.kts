@@ -23,6 +23,8 @@ dependencies {
     implementation(libs.caffeine)
     implementation(libs.coroutines.core) { isTransitive = false }
     implementation(libs.serialization.json)
+    // The interop annotations; also put on the classpath of every transpiled program.
+    implementation(project(":lua-api"))
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)

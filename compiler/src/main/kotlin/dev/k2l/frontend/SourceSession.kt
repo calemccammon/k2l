@@ -37,7 +37,7 @@ class SourceSession private constructor(
                         libraryName = "jdk"
                     })
                     val libs = addModule(buildKtLibraryModule {
-                        addBinaryRoots(listOf(kotlinStdlibJar()) + classpath)
+                        addBinaryRoots(listOf(kotlinStdlibJar(), luaApiJar()) + classpath)
                         this.platform = platform
                         libraryName = "classpath"
                     })
@@ -60,5 +60,9 @@ class SourceSession private constructor(
 
         private fun kotlinStdlibJar(): Path =
             Paths.get(KotlinVersion::class.java.protectionDomain.codeSource.location.toURI())
+
+        /** dev.k2l.lua: @LuaExternal, LuaTable and the Lua standard library bindings. */
+        private fun luaApiJar(): Path =
+            Paths.get(dev.k2l.lua.LuaExternal::class.java.protectionDomain.codeSource.location.toURI())
     }
 }
