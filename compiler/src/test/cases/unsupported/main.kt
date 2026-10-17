@@ -2,12 +2,9 @@ class Outer {
     inner class Inner
 }
 
-class Overloads {
-    fun f(x: Int) = x
-    fun f(x: String) = x
-}
+fun sum(vararg xs: Int) = xs.size
 
-class MyError : Exception("boom")
+val String.lastChar: Char get() = this[length - 1]
 
 fun main() {
     val xs = listOf(1, 2, 3)

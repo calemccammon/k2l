@@ -1,0 +1,12 @@
+Hello, world!
+Hello, Kotlin!
+Hello, world?
+Hello, Lua.
+0 1 2 3 4 
+2 5 8 
+0 2 4 
+15
+6
+Config(a, 3, false)
+Config(b, 3, true)
+Config(c, 5, false)

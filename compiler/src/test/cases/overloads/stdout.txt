@@ -1,0 +1,7 @@
+int 1
+string a
+pair 1,2
+Printer.int 3
+LOUD PRINTER.STRING HEY
+LoudPrinter.bool true
+Printer.string plain

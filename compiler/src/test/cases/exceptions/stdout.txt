@@ -1,0 +1,21 @@
+5
+caught: negative: -1
+finally 0
+ok
+finally 1
+state: bad state
+finally 2
+validation failed for email: invalid email
+finally 3
+5
+caught / by zero
+0
+true
+true
+ValidationError: invalid name
+one is not greater
+Check failed.
+npe
+try again
+try again
+succeeded after 3

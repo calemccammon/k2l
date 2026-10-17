@@ -64,6 +64,8 @@ object StdlibMappings {
 
         // Any / Enum
         def("kotlin/Any.equals") { lualib("Equals", self, arg(0)) }
+        def("kotlin/Throwable.message") { LuaIndex(self, LuaString("message")) }
+        def("kotlin/Throwable.cause") { LuaIndex(self, LuaString("cause")) }
         def("kotlin/Enum.name") { LuaIndex(self, LuaString("name")) }
         def("kotlin/Enum.ordinal") { LuaIndex(self, LuaString("ordinal")) }
 

@@ -9,8 +9,91 @@ local function __K2L_DoubleToInt(x)
     return x >= 0 and math.floor(x) or math.ceil(x)
 end
 
+-- Creates a class (or interface) table. Instances use it as their metatable; methods missing from
+-- the class are looked up in the base class, then in interface default methods.
+local function __K2L_Class(name, base, ...)
+    local cls = {____name = name, ____super = base, ____interfaces = {}}
+    cls.__index = cls
+    if base ~= nil then
+        cls.__tostring = rawget(base, "__tostring")
+    end
+    local interfaces = {...}
+    for _, iface in ipairs(interfaces) do
+        cls.____interfaces[iface] = true
+        for super in pairs(iface.____interfaces) do
+            cls.____interfaces[super] = true
+        end
+    end
+    if #interfaces == 0 then
+        if base ~= nil then
+            setmetatable(cls, base)
+        end
+    else
+        setmetatable(cls, {__index = function(_, key)
+            if base ~= nil then
+                local value = base[key]
+                if value ~= nil then
+                    return value
+                end
+            end
+            for _, iface in ipairs(interfaces) do
+                local value = iface[key]
+                if value ~= nil then
+                    return value
+                end
+            end
+        end})
+    end
+    function cls.new(...)
+        local self = setmetatable({}, cls)
+        local init = cls.____init
+        if init ~= nil then
+            init(self, ...)
+        end
+        return self
+    end
+    return cls
+end
+
+-- Kotlin/JVM exception hierarchy. Each class carries its JVM name so toString() matches the JVM.
+local __K2L_Throwable = __K2L_Class("java.lang.Throwable")
+
+function __K2L_Throwable:____init(message, cause)
+    if message == nil and cause ~= nil then
+        message = cause:toString()
+    end
+    self.message = message
+    self.cause = cause
+end
+
+function __K2L_Throwable:toString()
+    local name = getmetatable(self).____name
+    return self.message ~= nil and name .. ": " .. self.message or name
+end
+
+-- Lets uncaught exceptions print readably from the standalone interpreter.
+__K2L_Throwable.__tostring = __K2L_Throwable.toString
+
+local __K2L_Exception = __K2L_Class("java.lang.Exception", __K2L_Throwable)
+local __K2L_Error = __K2L_Class("java.lang.Error", __K2L_Throwable)
+local __K2L_RuntimeException = __K2L_Class("java.lang.RuntimeException", __K2L_Exception)
+local __K2L_IllegalArgumentException = __K2L_Class("java.lang.IllegalArgumentException", __K2L_RuntimeException)
+local __K2L_IllegalStateException = __K2L_Class("java.lang.IllegalStateException", __K2L_RuntimeException)
+local __K2L_NullPointerException = __K2L_Class("java.lang.NullPointerException", __K2L_RuntimeException)
+local __K2L_IndexOutOfBoundsException = __K2L_Class("java.lang.IndexOutOfBoundsException", __K2L_RuntimeException)
+local __K2L_ArithmeticException = __K2L_Class("java.lang.ArithmeticException", __K2L_RuntimeException)
+local __K2L_UnsupportedOperationException = __K2L_Class("java.lang.UnsupportedOperationException", __K2L_RuntimeException)
+local __K2L_ClassCastException = __K2L_Class("java.lang.ClassCastException", __K2L_RuntimeException)
+local __K2L_NumberFormatException = __K2L_Class("java.lang.NumberFormatException", __K2L_IllegalArgumentException)
+local __K2L_NoSuchElementException = __K2L_Class("java.util.NoSuchElementException", __K2L_RuntimeException)
+local __K2L_ConcurrentModificationException = __K2L_Class("java.util.ConcurrentModificationException", __K2L_RuntimeException)
+local __K2L_NotImplementedError = __K2L_Class("kotlin.NotImplementedError", __K2L_Error)
+
 -- Kotlin integer division truncates toward zero; Lua's // floors.
 local function __K2L_IDiv(a, b)
+    if b == 0 then
+        error(__K2L_ArithmeticException.new("/ by zero"))
+    end
     local q = a // b
     if q < 0 and q * b ~= a then
         q = q + 1

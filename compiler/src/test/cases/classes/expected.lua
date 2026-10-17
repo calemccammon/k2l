@@ -3,6 +3,9 @@
 local function __K2L_Class(name, base, ...)
     local cls = {____name = name, ____super = base, ____interfaces = {}}
     cls.__index = cls
+    if base ~= nil then
+        cls.__tostring = rawget(base, "__tostring")
+    end
     local interfaces = {...}
     for _, iface in ipairs(interfaces) do
         cls.____interfaces[iface] = true

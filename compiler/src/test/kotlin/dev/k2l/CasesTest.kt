@@ -41,7 +41,7 @@ class CasesTest {
                         assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
                         val expected = File(dir, "expected.lua")
                         val actual = result.outputs.single().code
-                        if (update) expected.writeText(actual) else assertEquals(expected.readText(), actual)
+                        if (update) expected.writeText(actual) else assertSameText(expected.readText(), actual)
                     },
                     DynamicTest.dynamicTest("runs") {
                         assumeTrue(luaAvailable, "$lua not found")
@@ -51,6 +51,16 @@ class CasesTest {
                 ),
             )
         }
+    }
+
+    /** Like assertEquals, but the message points at the first differing line instead of dumping both files. */
+    private fun assertSameText(expected: String, actual: String) {
+        if (expected == actual) return
+        val e = expected.lines()
+        val a = actual.lines()
+        val i = e.indices.firstOrNull { it >= a.size || e[it] != a[it] } ?: e.size
+        val message = "first difference at line ${i + 1}:\n  expected: ${e.getOrNull(i)}\n  actual:   ${a.getOrNull(i)}"
+        throw org.opentest4j.AssertionFailedError(message, expected, actual)
     }
 
     private fun runLua(code: String): String {
