@@ -1,5 +1,13 @@
 rootProject.name = "k2l"
 
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        // The Kotlin plugin's POM imports kotlin-gradle-plugins-bom, which only Maven Central has.
+        mavenCentral()
+    }
+}
+
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
