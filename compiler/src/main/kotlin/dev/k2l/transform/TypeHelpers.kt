@@ -6,13 +6,17 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.types.Variance
 
 context(s: KaSession)
-val KaType.isIntegral: Boolean get() = with(s) { isIntType || isLongType || isShortType || isByteType }
+val KaType.isIntegral: Boolean get() = with(s) { withoutFlexibility.let { it.isIntType || it.isLongType || it.isShortType || it.isByteType } }
 
 context(s: KaSession)
-val KaType.isNumber: Boolean get() = with(s) { !isMarkedNullable && (isIntegral || isDoubleType || isFloatType) }
+val KaType.isNumber: Boolean get() = with(s) {
+    withoutFlexibility.let { !it.isMarkedNullable && (it.isIntegral || it.isDoubleType || it.isFloatType) }
+}
 
 context(s: KaSession)
-val KaType?.isTextual: Boolean get() = with(s) { this@isTextual != null && !isMarkedNullable && (isStringType || isCharType) }
+val KaType?.isTextual: Boolean get() = with(s) {
+    this@isTextual?.withoutFlexibility.let { it != null && !it.isMarkedNullable && (it.isStringType || it.isCharType) }
+}
 
 @OptIn(KaExperimentalApi::class)
 context(s: KaSession)

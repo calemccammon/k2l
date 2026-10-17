@@ -186,6 +186,12 @@ class LuaPrinter(private val indentUnit: String = "    ") {
     private fun functionExpr(fn: LuaFunction): String {
         val params = paramList(fn)
         if (fn.body.isEmpty()) return "function($params) end"
+        // Short single-expression lambdas stay on one line: function(it) return it * 2 end
+        val single = fn.body.singleOrNull()
+        if (single is LuaReturn && single.values.size <= 1 && single.values.none { it is LuaFunction }) {
+            val text = "function($params) ${returnText(single)} end"
+            if (text.length <= 60 && '\n' !in text) return text
+        }
         val sub = LuaPrinter(indentUnit)
         sub.indent = indent + 1
         sub.printBlock(fn.body, topLevel = false)

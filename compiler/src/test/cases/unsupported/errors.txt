@@ -1,5 +1,6 @@
 2:5: Inner class is not supported yet
-5:9: vararg parameter is not supported yet
-5:27: Kotlin library API 'kotlin/IntArray.size' is not supported yet
-7:1: Extension property is not supported yet
-10:14: Kotlin library API 'kotlin/collections/listOf' is not supported yet
+5:1: Extension property is not supported yet
+7:1: suspend function (coroutines) is not supported yet
+10:15: Kotlin library API 'kotlin/sequences/generateSequence' is not supported yet
+13:13: Expression 'ClassLiteralExpression' is not supported yet
+13:13: Kotlin library API 'kotlin/reflect/KClass.simpleName' is not supported yet

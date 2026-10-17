@@ -25,6 +25,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
     fun compile(session: SourceSession, module: SourceModule): CompileResult {
         val outputs = mutableListOf<LuaOutput>()
         val diagnostics = mutableListOf<Diagnostic>()
+        val usedFeatures = sortedSetOf<String>()
         for (file in session.files(module.name)) {
             analyze(file) {
                 val kotlinErrors = file.collectDiagnostics(KaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS)
@@ -37,17 +38,27 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
                 val ctx = TransformContext(options)
                 val chunk = FileTransformer(this, file, ctx).transformFile()
                 diagnostics += ctx.diagnostics
+                usedFeatures += ctx.lualib
                 outputs += LuaOutput(outputPath(module, file), render(chunk, ctx))
             }
+        }
+        if (options.luaLibImport == LuaLibImport.Require && usedFeatures.isNotEmpty()) {
+            outputs += LuaOutput("${Lualib.BUNDLE_MODULE}.lua", Lualib.bundle(usedFeatures))
         }
         return CompileResult(outputs, diagnostics)
     }
 
     private fun render(chunk: dev.k2l.lua.LuaChunk, ctx: TransformContext): String {
         val code = LuaPrinter().print(chunk)
-        val lualib = Lualib.resolve(ctx.lualib)
-        if (lualib.isEmpty()) return code
-        return lualib.joinToString("\n\n", postfix = "\n\n") { it.code } + code
+        if (ctx.lualib.isEmpty()) return code
+        return when (options.luaLibImport) {
+            LuaLibImport.Inline -> Lualib.resolve(ctx.lualib).joinToString("\n\n", postfix = "\n\n") { it.code } + code
+            LuaLibImport.Require -> buildString {
+                append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")
+                ctx.lualibNames.forEach { append("local $it = ____lualib.$it\n") }
+                append("\n").append(code)
+            }
+        }
     }
 
     private fun outputPath(module: SourceModule, file: KtFile): String {

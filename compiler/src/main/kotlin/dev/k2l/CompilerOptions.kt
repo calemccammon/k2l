@@ -10,6 +10,16 @@ enum class LuaTarget(val id: String) {
     }
 }
 
+/** How generated files get the lualib runtime, as in TSTL's `luaLibImport`. */
+enum class LuaLibImport {
+    /** One shared `lualib_bundle.lua`, loaded with `require`. */
+    Require,
+
+    /** The helpers each file uses are copied into it. */
+    Inline,
+}
+
 data class CompilerOptions(
     val luaTarget: LuaTarget = LuaTarget.Lua54,
+    val luaLibImport: LuaLibImport = LuaLibImport.Require,
 )

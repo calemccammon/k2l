@@ -5,7 +5,21 @@ package dev.k2l.lua
  * `local function __K2L_<Name>` and may declare `-- requires: A, B` on its first line.
  */
 object Lualib {
-    class Feature(val name: String, val code: String, val requires: List<String>)
+    class Feature(val name: String, val code: String, val requires: List<String>) {
+        /** Top-level `__K2L_*` locals the feature defines. */
+        val exports: List<String> = Regex("""^local (?:function )?(__K2L_\w+)""", RegexOption.MULTILINE)
+            .findAll(code).map { it.groupValues[1] }.distinct().toList()
+    }
+
+    const val BUNDLE_MODULE = "lualib_bundle"
+
+    /** The shared runtime: every used feature, returning a table of their exports. */
+    fun bundle(features: Collection<String>): String {
+        val resolved = resolve(features)
+        val exports = resolved.flatMap { it.exports }.distinct()
+        return resolved.joinToString("\n\n") { it.code } +
+            exports.joinToString(",\n", prefix = "\n\nreturn {\n", postfix = ",\n}\n") { "    $it = $it" }
+    }
 
     private val cache = mutableMapOf<String, Feature>()
 

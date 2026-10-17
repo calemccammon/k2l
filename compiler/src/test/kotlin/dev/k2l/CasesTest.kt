@@ -40,13 +40,13 @@ class CasesTest {
                     DynamicTest.dynamicTest("transpiles") {
                         assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
                         val expected = File(dir, "expected.lua")
-                        val actual = result.outputs.single().code
+                        val actual = result.outputs.single { it.path == "main.lua" }.code
                         if (update) expected.writeText(actual) else assertSameText(expected.readText(), actual)
                     },
                     DynamicTest.dynamicTest("runs") {
                         assumeTrue(luaAvailable, "$lua not found")
                         assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
-                        assertEquals(File(dir, "stdout.txt").readText(), runLua(result.outputs.single().code))
+                        assertEquals(File(dir, "stdout.txt").readText(), runLua(result.outputs))
                     },
                 ),
             )
@@ -63,10 +63,10 @@ class CasesTest {
         throw org.opentest4j.AssertionFailedError(message, expected, actual)
     }
 
-    private fun runLua(code: String): String {
+    private fun runLua(outputs: List<LuaOutput>): String {
         val dir = Files.createTempDirectory("k2l-case")
         try {
-            Files.writeString(dir.resolve("main.lua"), code)
+            outputs.forEach { Files.writeString(dir.resolve(it.path), it.code) }
             val process = ProcessBuilder(lua, "main.lua").directory(dir.toFile()).redirectErrorStream(true).start()
             val output = process.inputStream.readBytes().toString(Charsets.UTF_8)
             check(process.waitFor(30, TimeUnit.SECONDS)) { "lua timed out" }

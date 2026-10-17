@@ -1,0 +1,37 @@
+World
+Hello
+o
+true
+false
+true
+4
+8
+HeLLo, WorLd
+[a, b, , c]
+padded|
+007
+ab..|
+racecar
+43
+null
+7.0
+true
+true
+KOTLIN
+3 items at 1.50 each, ok
+[a, b, c]
+107
+c
+25
+true
+true
+14
+K
+a
+abcde
+3
+one2true
+[123]
+[line1, line2]
+a+b+c
+true

@@ -23,6 +23,7 @@ class CallSite(
         with(transformer) { session.str(value, type, forConcat) }
     fun lualib(feature: String, vararg args: LuaExpr) = transformer.lualibCall(feature, *args)
     fun unsupported(what: String) = transformer.unsupported(element, what)
+    fun ref(feature: String, name: String) = transformer.lualibRef(feature, name)
 }
 
 /**
@@ -54,6 +55,7 @@ object StdlibMappings {
         for (t in INTEGRAL) {
             def("kotlin/$t.toDouble", "kotlin/$t.toFloat") { LuaBinary(LuaBinOp.Add, self, LuaNumber("0.0")) }
             def("kotlin/$t.toLong") { self }
+            def("kotlin/$t.toChar") { lua("string.char", self) }
             def("kotlin/$t.toInt") { if (t == "Long") lualib("ToInt32", self) else self }
         }
         for (t in FLOATING) {
@@ -104,7 +106,11 @@ object StdlibMappings {
         if (site.name == "toString" && site.args.isEmpty() && site.receiver != null && callableId?.startsWith("kotlin/") == true) {
             return site.str(site.self, site.receiverType)
         }
-        return mappings[callableId ?: return null]?.invoke(site)
+        if (site.name == "compareTo" && site.args.size == 1 && site.receiver != null && callableId?.startsWith("kotlin/") == true) {
+            return LuaCall(site.ref("Compare", "__K2L_Compare"), listOf(site.self, site.arg(0)))
+        }
+        callableId?.let { mappings[it] }?.invoke(site)?.let { return it }
+        return CollectionMappings.map(callableId, site)
     }
 
     /** Lua's `print` formats integers, strings and booleans the way Kotlin does. */
