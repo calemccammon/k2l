@@ -8,7 +8,12 @@ import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 
 /** Runtime representation of a Kotlin library type, see `Collections.lua`. */
-enum class CollectionKind { List, Array, Set, Map, Iterable, Range, Entry, Pair, Triple, IndexedValue, StringBuilder, LuaTable }
+enum class CollectionKind {
+    List, Array, Set, Map, Iterable, Range, Entry, Pair, Triple, IndexedValue, StringBuilder, LuaTable;
+
+    /** Lists and arrays share one representation: a 1-based table with a `size` field. */
+    val isIndexable: Boolean get() = this == List || this == Array
+}
 
 private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
     for (id in listOf(

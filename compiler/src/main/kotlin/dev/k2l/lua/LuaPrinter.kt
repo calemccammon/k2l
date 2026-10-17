@@ -87,7 +87,7 @@ class LuaPrinter(private val indentUnit: String = "    ") {
                 val prefix = if (stmt.isLocal) "local function " else "function "
                 val name = stmt.name
                 val header = if (stmt.isMethod && name is LuaIndex && name.key is LuaString) {
-                    "${expr(name.target)}:${(name.key as LuaString).value}"
+                    "${expr(name.target)}:${name.key.value}"
                 } else {
                     expr(name)
                 }
