@@ -9,6 +9,9 @@ caffeine = "2.9.3"
 coroutines = "1.8.0-intellij-13"
 junit = "5.11.4"
 serialization = "1.11.0"
+detekt = "2.0.0-alpha.6"
+ktlint = "1.8.0"
+spotless = "8.10.4"
 
 [libraries]
 kotlin-compiler = { module = "org.jetbrains.kotlin:kotlin-compiler", version.ref = "kotlin" }
@@ -43,3 +46,5 @@ analysis-api = [
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

@@ -1,7 +1,7 @@
 package dev.k2l.transform
 
-import org.jetbrains.kotlin.analysis.api.KaSession
 import dev.k2l.lua.*
+import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
@@ -28,11 +28,13 @@ internal fun FileTransformer.safeCallStatement(e: KtSafeQualifiedExpression): Un
     emit(LuaIf(LuaBinary(LuaBinOp.Ne, receiver, LuaNil), body))
 }
 
-internal fun FileTransformer.selector(e: KtQualifiedExpression): LuaExpr = with(session) { when (val selector = e.selectorExpression) {
-    is KtCallExpression -> call(selector, e)
-    is KtNameReferenceExpression -> reference(selector, e)
-    else -> unsupported(e, "This qualified expression")
-} }
+internal fun FileTransformer.selector(e: KtQualifiedExpression): LuaExpr = with(session) {
+    when (val selector = e.selectorExpression) {
+        is KtCallExpression -> call(selector, e)
+        is KtNameReferenceExpression -> reference(selector, e)
+        else -> unsupported(e, "This qualified expression")
+    }
+}
 
 private inline fun <T> FileTransformer.withOverride(e: KtExpression, value: LuaExpr, block: () -> T): T {
     overrides[e] = value

@@ -193,7 +193,12 @@ when their file loads rather than on first access; Lua runtime errors are caught
 ./gradlew test                     # transpile + run every test case on every Lua interpreter found
 ./gradlew test -PupdateGolden      # rewrite expected.lua files after an intended output change
 ./gradlew :compiler:kotlinOracle   # check each stdout.txt against what Kotlin/JVM prints
+./gradlew check                    # tests + ktlint (spotlessCheck) + detekt, as CI runs it
+./gradlew spotlessApply            # reformat Kotlin sources with ktlint
 ```
+
+Kotlin code is formatted with ktlint (settings in `build.gradle.kts`) and analyzed with detekt
+(overrides in `config/detekt.yml`); compiler warnings are errors.
 
 Each directory in `compiler/src/test/cases` is a program: `main.kt` (plus any other `.kt` files),
 `expected.lua` (the exact Lua output for 5.4), and `stdout.txt`. The tests also run each program on

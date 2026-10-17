@@ -8,8 +8,6 @@ import dev.k2l.lua.Lualib
 import dev.k2l.transform.FileTransformer
 import dev.k2l.transform.ModuleContext
 import dev.k2l.transform.TransformContext
-import java.nio.file.Path
-import java.nio.file.Paths
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity
@@ -17,6 +15,8 @@ import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
+import java.nio.file.Path
+import java.nio.file.Paths
 
 /** A generated Lua file; [path] is relative to the output directory. */
 data class LuaOutput(val path: String, val code: String)
@@ -61,6 +61,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         if (ctx.lualib.isEmpty()) return code
         return when (options.luaLibImport) {
             LuaLibImport.Inline -> Lualib.resolve(ctx.lualib, options.luaTarget).joinToString("\n\n", postfix = "\n\n") { it.code } + code
+
             LuaLibImport.Require -> buildString {
                 append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")
                 ctx.lualibNames.forEach { append("local $it = ____lualib.$it\n") }

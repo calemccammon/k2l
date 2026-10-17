@@ -1,6 +1,7 @@
 package dev.k2l.lua
 
 /** A plain Lua table. `t[k]` and `t[k] = v` index it directly; `length` is Lua's `#t`. */
+@Suppress("UnusedParameter") // stub: parameters only describe the Lua API
 class LuaTable<K, V> {
     operator fun get(key: K): V? = definedExternally
 

@@ -81,9 +81,8 @@ class CasesTest {
     }
 
     /** `targets-skip.txt`: lines of `5.1: reason` for known, documented differences on a target. */
-    private fun skippedTargets(dir: File): Map<String, String> =
-        File(dir, "targets-skip.txt").takeIf { it.isFile }?.readLines().orEmpty()
-            .filter { ':' in it }.associate { it.substringBefore(':').trim() to it.substringAfter(':').trim() }
+    private fun skippedTargets(dir: File): Map<String, String> = File(dir, "targets-skip.txt").takeIf { it.isFile }?.readLines().orEmpty()
+        .filter { ':' in it }.associate { it.substringBefore(':').trim() to it.substringAfter(':').trim() }
 
     /** Runs the generated files plus any hand-written Lua the case calls into (the `lib` directory). */
     private fun runLua(lua: String, outputs: List<LuaOutput>, caseDir: Path): String {

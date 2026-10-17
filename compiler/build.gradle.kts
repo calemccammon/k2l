@@ -1,6 +1,6 @@
 import org.gradle.process.ExecOperations
-import javax.inject.Inject
 import java.io.ByteArrayOutputStream
+import javax.inject.Inject
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -63,18 +63,26 @@ dependencies {
 
 abstract class KotlinOracle @Inject constructor(private val exec: ExecOperations) : DefaultTask() {
     @get:Classpath abstract val compilerClasspath: ConfigurableFileCollection
+
     @get:Internal abstract val casesDir: DirectoryProperty
+
     @get:Internal abstract val workDir: DirectoryProperty
+
     @get:Input abstract val update: Property<Boolean>
 
     @TaskAction
     fun run() {
         val stdlib = compilerClasspath.files.first { it.name.matches(Regex("kotlin-stdlib-[0-9.]+\\.jar")) }
-        val cases = casesDir.get().asFile.listFiles().orEmpty().filter { File(it, "main.kt").isFile && !File(it, "errors.txt").isFile }.sortedBy { it.name }
+        val cases = casesDir.get().asFile.listFiles().orEmpty().filter {
+            File(it, "main.kt").isFile && !File(it, "errors.txt").isFile
+        }.sortedBy { it.name }
         val mismatched = mutableListOf<String>()
         for (case in cases) {
             if (File(case, "jvm-skip").isFile) continue // calls into hand-written Lua, so it can't run on the JVM
-            val classes = workDir.get().dir(case.name).asFile.apply { deleteRecursively(); mkdirs() }
+            val classes = workDir.get().dir(case.name).asFile.apply {
+                deleteRecursively()
+                mkdirs()
+            }
             val sources = case.walkTopDown().filter { it.extension == "kt" }.map { it.path }.toList()
             val pkg = Regex("""^package\s+([\w.]+)""", RegexOption.MULTILINE).find(File(case, "main.kt").readText())?.groupValues?.get(1)
             exec.javaexec {
@@ -90,8 +98,11 @@ abstract class KotlinOracle @Inject constructor(private val exec: ExecOperations
             }
             val actual = stdout.toString(Charsets.UTF_8)
             val expected = File(case, "stdout.txt")
-            if (update.get()) expected.writeText(actual)
-            else if (!expected.isFile || expected.readText() != actual) mismatched += case.name
+            if (update.get()) {
+                expected.writeText(actual)
+            } else if (!expected.isFile || expected.readText() != actual) {
+                mismatched += case.name
+            }
         }
         if (mismatched.isNotEmpty()) {
             throw GradleException("Kotlin/JVM output differs from stdout.txt for $mismatched (rerun with -PupdateOracle)")

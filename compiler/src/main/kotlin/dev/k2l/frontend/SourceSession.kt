@@ -31,24 +31,30 @@ class SourceSession private constructor(
             val session = buildStandaloneAnalysisAPISession(disposable) {
                 buildKtModuleProvider {
                     this.platform = platform
-                    val jdk = addModule(buildKtSdkModule {
-                        addBinaryRootsFromJdkHome(Paths.get(System.getProperty("java.home")), isJre = true)
-                        this.platform = platform
-                        libraryName = "jdk"
-                    })
-                    val libs = addModule(buildKtLibraryModule {
-                        addBinaryRoots(listOf(kotlinStdlibJar(), luaApiJar()) + classpath)
-                        this.platform = platform
-                        libraryName = "classpath"
-                    })
-                    for (module in modules) {
-                        addModule(buildKtSourceModule {
-                            addSourceRoots(module.roots)
-                            addRegularDependency(jdk)
-                            addRegularDependency(libs)
+                    val jdk = addModule(
+                        buildKtSdkModule {
+                            addBinaryRootsFromJdkHome(Paths.get(System.getProperty("java.home")), isJre = true)
                             this.platform = platform
-                            moduleName = module.name
-                        })
+                            libraryName = "jdk"
+                        },
+                    )
+                    val libs = addModule(
+                        buildKtLibraryModule {
+                            addBinaryRoots(listOf(kotlinStdlibJar(), luaApiJar()) + classpath)
+                            this.platform = platform
+                            libraryName = "classpath"
+                        },
+                    )
+                    for (module in modules) {
+                        addModule(
+                            buildKtSourceModule {
+                                addSourceRoots(module.roots)
+                                addRegularDependency(jdk)
+                                addRegularDependency(libs)
+                                this.platform = platform
+                                moduleName = module.name
+                            },
+                        )
                     }
                 }
             }
@@ -58,11 +64,9 @@ class SourceSession private constructor(
             return SourceSession(disposable, modules, files)
         }
 
-        private fun kotlinStdlibJar(): Path =
-            Paths.get(KotlinVersion::class.java.protectionDomain.codeSource.location.toURI())
+        private fun kotlinStdlibJar(): Path = Paths.get(KotlinVersion::class.java.protectionDomain.codeSource.location.toURI())
 
         /** dev.k2l.lua: @LuaExternal, LuaTable and the Lua standard library bindings. */
-        private fun luaApiJar(): Path =
-            Paths.get(dev.k2l.lua.LuaExternal::class.java.protectionDomain.codeSource.location.toURI())
+        private fun luaApiJar(): Path = Paths.get(dev.k2l.lua.LuaExternal::class.java.protectionDomain.codeSource.location.toURI())
     }
 }

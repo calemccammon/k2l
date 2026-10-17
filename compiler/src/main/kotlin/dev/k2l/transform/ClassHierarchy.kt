@@ -1,12 +1,12 @@
 package dev.k2l.transform
 
+import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.psi.*
-import com.intellij.psi.PsiElement
 
 internal class SuperInfo(
     val base: KtClassOrObject?,
@@ -18,14 +18,9 @@ internal class SuperInfo(
 )
 
 /** Queries over the classes of the module being compiled: supertypes, initializers and `equals`. */
-internal class ClassHierarchy(
-    private val session: KaSession,
-    private val file: KtFile,
-    private val module: ModuleContext,
-) {
+internal class ClassHierarchy(private val session: KaSession, private val file: KtFile, private val module: ModuleContext) {
     /** Whether [psi] is declared in one of the module's source files (not a library). */
-    fun isSource(psi: PsiElement?): Boolean =
-        (psi?.containingFile as? KtFile)?.let { it in module.files } == true
+    fun isSource(psi: PsiElement?): Boolean = (psi?.containingFile as? KtFile)?.let { it in module.files } == true
 
     /** [c] and its in-file supertypes, supertypes first. */
     fun hierarchy(c: KtClassOrObject): List<KtClassOrObject> {
@@ -67,12 +62,16 @@ internal class ClassHierarchy(
                 val psi = symbol?.psi as? KtClassOrObject
                 when {
                     symbol?.classId?.asString() in MARKER_INTERFACES -> Unit
+
                     symbol?.classId?.asString() in LIBRARY_CLASSES -> {
                         libraryBase = LIBRARY_CLASSES[symbol?.classId?.asString()]
                         baseCall = entry as? KtSuperTypeCallEntry
                     }
+
                     psi == null || !isSource(psi) -> bad = bad ?: entry
+
                     psi is KtClass && psi.isInterface() -> interfaces += psi
+
                     else -> {
                         base = psi
                         baseCall = entry as? KtSuperTypeCallEntry
@@ -87,14 +86,16 @@ internal class ClassHierarchy(
 
     /** Whether the primary constructor does anything, i.e. whether `____init` is generated for it. */
     fun initNeeded(c: KtClassOrObject): Boolean = initCache.getOrPut(c) {
-        if (c is KtClass && c.isInterface() || !hasPrimary(c)) return@getOrPut false
+        if ((c is KtClass && c.isInterface()) || !hasPrimary(c)) return@getOrPut false
         val info = superInfo(c)
-        val baseCall = info.baseCall
-        (c is KtClass && (c.isEnum() || c.primaryConstructorParameters.isNotEmpty())) ||
-            c.declarations.any { (it is KtProperty && it.initializer != null) || it is KtAnonymousInitializer } ||
-            (baseCall != null && baseCall.valueArguments.isNotEmpty()) ||
-            info.libraryBase != null || (info.base != null && (!hasPrimary(info.base) || initNeeded(info.base)))
+        c.hasConstructorState() || c.hasInitializers() || info.baseCall?.valueArguments?.isNotEmpty() == true ||
+            info.libraryBase != null || info.base?.let { !hasPrimary(it) || initNeeded(it) } == true
     }
+
+    private fun KtClassOrObject.hasConstructorState() = this is KtClass && (isEnum() || primaryConstructorParameters.isNotEmpty())
+
+    private fun KtClassOrObject.hasInitializers() =
+        declarations.any { (it is KtProperty && it.initializer != null) || it is KtAnonymousInitializer }
 
     fun mayOverrideEquals(t: KaType?): Boolean = with(session) {
         val symbol = t?.expandedSymbol ?: return true
@@ -111,14 +112,12 @@ internal class ClassHierarchy(
         return isSource(psi) && overridesEquals(psi)
     }
 
-    fun overridesEquals(c: KtClassOrObject): Boolean =
-        (c is KtClass && c.isData()) ||
-            c.declaredFunction("equals")?.hasModifier(KtTokens.OVERRIDE_KEYWORD) == true ||
-            superInfo(c).base?.let { overridesEquals(it) } == true
+    fun overridesEquals(c: KtClassOrObject): Boolean = (c is KtClass && c.isData()) ||
+        c.declaredFunction("equals")?.hasModifier(KtTokens.OVERRIDE_KEYWORD) == true ||
+        superInfo(c).base?.let { overridesEquals(it) } == true
 }
 
 internal fun KtClassOrObject.declaredFunction(name: String) =
     declarations.filterIsInstance<KtNamedFunction>().firstOrNull { it.name == name }
 
-internal fun hasPrimary(c: KtClassOrObject) =
-    c !is KtClass || c.primaryConstructor != null || c.secondaryConstructors.isEmpty()
+internal fun hasPrimary(c: KtClassOrObject) = c !is KtClass || c.primaryConstructor != null || c.secondaryConstructors.isEmpty()

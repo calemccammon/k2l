@@ -9,6 +9,7 @@ import dev.k2l.lua.LuaPrinter
 /** Per-file state shared by the transformer: diagnostics, lualib usage and generated names. */
 class TransformContext(val options: CompilerOptions) {
     val diagnostics = mutableListOf<Diagnostic>()
+
     /** Lualib features this file needs, and the `__K2L_*` names it references. */
     val lualib = sortedSetOf<String>()
     val lualibNames = sortedSetOf<String>()

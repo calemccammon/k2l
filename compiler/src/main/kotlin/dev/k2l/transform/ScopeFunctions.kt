@@ -14,7 +14,6 @@ internal fun FileTransformer.scopeFunction(
     call: KaCallableMemberCall<*, *>,
     receiverExpr: KtExpression?,
     implicit: LuaExpr?,
-    element: KtExpression,
 ): LuaExpr? = with(session) {
     if (callableId == null || call !is KaFunctionCall<*>) return null
     // forEach resolves to Kotlin's inline extension or, for (k, v) lambdas, to java.util.Map.forEach.
@@ -25,25 +24,40 @@ internal fun FileTransformer.scopeFunction(
         callableId
     }
     if (effectiveId !in SCOPE_FUNCTIONS) return null
-    val args = callArguments(call, element)
+    val args = callArguments(call)
     val receiver = (implicit ?: receiverExpr?.let { expression(it) })
     return when (effectiveId) {
         "kotlin/let" -> letCall(receiver!!, args)
+
         "kotlin/also" -> alsoCall(receiver!!, args)
+
         "kotlin/apply" -> applyCall(receiver!!, args)
+
         "kotlin/run" -> runCall(receiver, args)
+
         "kotlin/with" -> withCall(args)
+
         "kotlin/takeIf", "kotlin/takeUnless" -> takeIfCall(receiver!!, receiverExpr, args, negated = callableId != "kotlin/takeIf")
+
         "kotlin/repeat" -> repeatCall(args)
+
         "kotlin/require", "kotlin/check" -> requireCall(effectiveId, args)
+
         "kotlin/requireNotNull", "kotlin/checkNotNull" -> requireNotNullCall(effectiveId, args)
+
         "kotlin/error" -> errorCall(args)
+
         "kotlin/text/buildString" -> buildStringCall(args)
+
         "kotlin/collections/forEach", "kotlin/sequences/forEach", "java/lang/Iterable.forEach", "java/util/Map.forEach",
-        "kotlin/text/forEach" ->
+        "kotlin/text/forEach",
+        ->
             forEachCall(receiver!!, receiverExpr?.expressionType ?: call.dispatchReceiver?.type, args, indexed = false)
+
         "kotlin/collections/forEachIndexed" -> forEachCall(receiver!!, receiverExpr?.expressionType, args, indexed = true)
+
         "kotlin/TODO" -> todoCall(args)
+
         else -> null
     }
 }
@@ -71,7 +85,12 @@ private fun FileTransformer.withCall(args: List<KtExpression?>): LuaExpr = with(
 }
 
 /** `x.takeIf { p }` is `p and x or nil`, except for Boolean receivers where `false` would fall through. */
-private fun FileTransformer.takeIfCall(receiver: LuaExpr, receiverExpr: KtExpression?, args: List<KtExpression?>, negated: Boolean): LuaExpr = with(session) {
+private fun FileTransformer.takeIfCall(
+    receiver: LuaExpr,
+    receiverExpr: KtExpression?,
+    args: List<KtExpression?>,
+    negated: Boolean,
+): LuaExpr = with(session) {
     val value = cache(receiver, "value")
     val cond = inlineValue(args[0]!!, listOf(value), null)
     val test = if (negated) negate(cond) else cond
@@ -123,15 +142,19 @@ private fun FileTransformer.buildStringCall(args: List<KtExpression?>): LuaExpr 
     return LuaMethodCall(builder, "toString", emptyList())
 }
 
-private fun FileTransformer.forEachCall(receiver: LuaExpr, type: KaType?, args: List<KtExpression?>, indexed: Boolean): LuaExpr = with(session) {
-    forEachLoop(receiver, type, args[0]!!, indexed)
-    return LuaNil
-}
+private fun FileTransformer.forEachCall(receiver: LuaExpr, type: KaType?, args: List<KtExpression?>, indexed: Boolean): LuaExpr =
+    with(session) {
+        forEachLoop(receiver, type, args[0]!!, indexed)
+        return LuaNil
+    }
 
 private fun FileTransformer.todoCall(args: List<KtExpression?>): LuaExpr = with(session) {
     val reason = args.getOrNull(0)?.let { expression(it) }
-    val message = if (reason == null) LuaString("An operation is not implemented.")
-    else LuaBinary(LuaBinOp.Concat, LuaString("An operation is not implemented: "), reason)
+    val message = if (reason == null) {
+        LuaString("An operation is not implemented.")
+    } else {
+        LuaBinary(LuaBinOp.Concat, LuaString("An operation is not implemented: "), reason)
+    }
     emit(throwNew(NOT_IMPLEMENTED_ERROR, message))
     return LuaNil
 }
@@ -146,17 +169,20 @@ private fun FileTransformer.runInline(lambda: KtExpression, receiver: LuaExpr?):
 }
 
 /** `if <failed> then error(Exception.new(message)) end`, with the message from an optional lazy lambda. */
-private fun FileTransformer.failUnless(failed: LuaExpr, exception: String, default: String, lazyMessage: KtExpression?): Unit = with(session) {
-    val body = collect {
-        val message = if (lazyMessage == null) LuaString(default) else {
-            val value = inlineValue(lazyMessage, emptyList(), null)
-            val last = (KtPsiUtil.safeDeparenthesize(lazyMessage) as? KtLambdaExpression)?.bodyExpression?.statements?.lastOrNull()
-            str(value, last?.expressionType ?: (lazyMessage.expressionType as? KaFunctionType)?.returnType)
+private fun FileTransformer.failUnless(failed: LuaExpr, exception: String, default: String, lazyMessage: KtExpression?): Unit =
+    with(session) {
+        val body = collect {
+            val message = if (lazyMessage == null) {
+                LuaString(default)
+            } else {
+                val value = inlineValue(lazyMessage, emptyList(), null)
+                val last = (KtPsiUtil.safeDeparenthesize(lazyMessage) as? KtLambdaExpression)?.bodyExpression?.statements?.lastOrNull()
+                str(value, last?.expressionType ?: (lazyMessage.expressionType as? KaFunctionType)?.returnType)
+            }
+            emit(throwNew(exception, message))
         }
-        emit(throwNew(exception, message))
+        emit(LuaIf(failed, body))
     }
-    emit(LuaIf(failed, body))
-}
 
 private fun FileTransformer.throwNew(exception: String, message: LuaExpr): LuaStmt =
     LuaCallStmt(luaCall(LuaName("error"), LuaCall(LuaIndex(lualibRef(EXCEPTIONS_FEATURE, exception), LuaString("new")), listOf(message))))

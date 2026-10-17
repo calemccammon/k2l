@@ -41,8 +41,7 @@ abstract class StatementEmitter {
     /** Lua expressions known not to change if evaluated later (literals, `val`s and parameters). */
     internal val stable: MutableSet<LuaExpr> = Collections.newSetFromMap(IdentityHashMap())
 
-    internal fun isStable(e: LuaExpr) =
-        e is LuaNil || e is LuaBool || e is LuaNumber || e is LuaString || e in stable
+    internal fun isStable(e: LuaExpr) = e is LuaNil || e is LuaBool || e is LuaNumber || e is LuaString || e in stable
 
     /** Stores [value] in a local unless it is stable, so it can be read more than once. */
     internal fun cache(value: LuaExpr, hint: String): LuaExpr {

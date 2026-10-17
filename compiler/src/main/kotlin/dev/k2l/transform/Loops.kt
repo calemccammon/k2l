@@ -9,8 +9,11 @@ import org.jetbrains.kotlin.psi.*
 
 internal fun FileTransformer.labeled(e: KtLabeledExpression): Unit = with(session) {
     val base = e.baseExpression
-    if (base is KtLoopExpression) loop(base, e.getLabelName())
-    else unsupported(e, "Labeled expression")
+    if (base is KtLoopExpression) {
+        loop(base, e.getLabelName())
+    } else {
+        unsupported(e, "Labeled expression")
+    }
 }
 
 internal fun FileTransformer.loop(e: KtLoopExpression, label: String?): Unit = with(session) {
@@ -27,12 +30,15 @@ internal fun FileTransformer.loop(e: KtLoopExpression, label: String?): Unit = w
                 emit(LuaWhile(LuaBool(true), pre + LuaIf(negate(cond), listOf(LuaBreak)) + body))
             }
         }
+
         is KtDoWhileExpression -> {
             val body = loopBody(frame, e.body)
             val (cond, pre) = withPreceding { expression(e.condition ?: return) }
             emit(LuaRepeat(body + pre, negate(cond)))
         }
+
         is KtForExpression -> forLoop(e, frame)
+
         else -> unsupported(e, "Loop")
     }
     frame.breakFlag?.let { buffer.add(flagAt, LuaLocal(listOf(it), listOf(LuaBool(false)))) }
@@ -55,16 +61,20 @@ private fun FileTransformer.loopBody(frame: LoopFrame, body: KtExpression?): Lis
     var usesBreak = false
     val rewritten = stmts.flatMapStatements { s, depth ->
         when (s) {
-            is LuaGoto -> if (s.label == cont && depth == 0) listOf(LuaBreak) else {
+            is LuaGoto -> if (s.label == cont && depth == 0) {
+                listOf(LuaBreak)
+            } else {
                 ctx.error(file, "continue to an outer loop needs goto, which Lua 5.1 lacks")
                 listOf(s)
             }
+
             LuaBreak -> if (depth == 0) {
                 usesBreak = true
                 listOf(assign(broke, LuaBool(true)), LuaBreak)
             } else {
                 listOf(s)
             }
+
             else -> listOf(s)
         }
     }
@@ -82,10 +92,17 @@ private fun FileTransformer.forLoop(e: KtForExpression, frame: LoopFrame): Unit 
 }
 
 /** `for (i in a..b)`, `until`, `downTo` and `step` become a numeric `for`. */
-private fun FileTransformer.rangeLoop(e: KtForExpression, frame: LoopFrame, rangeExpr: KtExpression, param: KtParameter, range: KRange): Unit = with(session) {
+private fun FileTransformer.rangeLoop(
+    e: KtForExpression,
+    frame: LoopFrame,
+    rangeExpr: KtExpression,
+    param: KtParameter,
+    range: KRange,
+): Unit = with(session) {
     val elementType = range.first.expressionType
     val isChar = elementType?.isCharType == true
-    if (param.destructuringDeclaration != null || elementType == null || !(elementType.isIntegral || isChar)) {
+    val rangeable = elementType != null && (elementType.isIntegral || isChar)
+    if (param.destructuringDeclaration != null || !rangeable) {
         unsupported(rangeExpr, "Iterating over '${rangeExpr.expressionType.pretty()}'")
         return
     }
@@ -108,49 +125,66 @@ private fun FileTransformer.rangeLoop(e: KtForExpression, frame: LoopFrame, rang
 }
 
 /** Loops over collections, maps, ranges held in values, and strings. */
-private fun FileTransformer.iterationLoop(e: KtForExpression, frame: LoopFrame, rangeExpr: KtExpression, param: KtParameter): Unit = with(session) {
-    val destructuring = param.destructuringDeclaration
-    val type = rangeExpr.expressionType
-    val qualified = KtPsiUtil.safeDeparenthesize(rangeExpr) as? KtDotQualifiedExpression
-    val selector = qualified?.selectorExpression
-    val selectorName = (selector as? KtNameReferenceExpression)?.getReferencedName()
-        ?: ((selector as? KtCallExpression)?.takeIf { it.valueArguments.isEmpty() }?.calleeExpression as? KtNameReferenceExpression)?.getReferencedName()
-    val receiverKind = qualified?.receiverExpression?.expressionType?.collectionKind()
-    val indexable = receiverKind?.isIndexable == true
-    val kind = type?.collectionKind()
-    when {
-        selectorName == "indices" && indexable && destructuring == null ->
-            indicesLoop(e, frame, param, qualified.receiverExpression)
-        selectorName == "withIndex" && indexable && destructuring?.entries?.size == 2 ->
-            withIndexLoop(e, frame, destructuring, qualified.receiverExpression)
-        kind == CollectionKind.Map -> mapLoop(e, frame, rangeExpr, param)
-        kind == CollectionKind.Range && destructuring == null -> {
-            val r = cache(expression(rangeExpr), "range")
-            emit(
-                LuaNumericFor(
-                    naming.of(param), LuaIndex(r, LuaString("first")), LuaIndex(r, LuaString("last")),
-                    LuaIndex(r, LuaString("step")), loopBody(frame, e.body),
-                ),
-            )
+private fun FileTransformer.iterationLoop(e: KtForExpression, frame: LoopFrame, rangeExpr: KtExpression, param: KtParameter): Unit =
+    with(session) {
+        val destructuring = param.destructuringDeclaration
+        val type = rangeExpr.expressionType
+        val qualified = KtPsiUtil.safeDeparenthesize(rangeExpr) as? KtDotQualifiedExpression
+        val selector = qualified?.selectorExpression
+        val noArgCallee = (selector as? KtCallExpression)?.takeIf { it.valueArguments.isEmpty() }?.calleeExpression
+        val selectorName = ((selector as? KtNameReferenceExpression) ?: (noArgCallee as? KtNameReferenceExpression))?.getReferencedName()
+        val receiverKind = qualified?.receiverExpression?.expressionType?.collectionKind()
+        val indexable = receiverKind?.isIndexable == true
+        val kind = type?.collectionKind()
+        when {
+            selectorName == "indices" && indexable && destructuring == null ->
+                indicesLoop(e, frame, param, qualified.receiverExpression)
+
+            selectorName == "withIndex" && indexable && destructuring?.entries?.size == 2 ->
+                withIndexLoop(e, frame, destructuring, qualified.receiverExpression)
+
+            kind == CollectionKind.Map -> mapLoop(e, frame, rangeExpr, param)
+
+            kind == CollectionKind.Range && destructuring == null -> {
+                val r = cache(expression(rangeExpr), "range")
+                emit(
+                    LuaNumericFor(
+                        naming.of(param),
+                        LuaIndex(r, LuaString("first")),
+                        LuaIndex(r, LuaString("last")),
+                        LuaIndex(r, LuaString("step")),
+                        loopBody(frame, e.body),
+                    ),
+                )
+            }
+
+            kind != null && kind in ITERATED_KINDS -> collectionLoop(e, frame, rangeExpr, param, kind)
+
+            type?.isStringType == true && destructuring == null -> {
+                val text = expression(rangeExpr)
+                val chars = LuaMethodCall(text, "gmatch", listOf(LuaString(".")))
+                emit(LuaGenericFor(listOf(naming.of(param)), listOf(chars), loopBody(frame, e.body)))
+            }
+
+            else -> unsupported(rangeExpr, "Iterating over '${type.pretty()}'")
         }
-        kind != null && kind in ITERATED_KINDS -> collectionLoop(e, frame, rangeExpr, param, kind)
-        type?.isStringType == true && destructuring == null -> {
-            val text = expression(rangeExpr)
-            emit(LuaGenericFor(listOf(naming.of(param)), listOf(LuaMethodCall(text, "gmatch", listOf(LuaString(".")))), loopBody(frame, e.body)))
-        }
-        else -> unsupported(rangeExpr, "Iterating over '${type.pretty()}'")
     }
-}
 
 /** `for (i in xs.indices)` */
-private fun FileTransformer.indicesLoop(e: KtForExpression, frame: LoopFrame, param: KtParameter, receiver: KtExpression): Unit = with(session) {
-    val list = expression(receiver)
-    val last = lastIndex(list)
-    emit(LuaNumericFor(naming.of(param), LuaNumber("0"), last, null, loopBody(frame, e.body)))
-}
+private fun FileTransformer.indicesLoop(e: KtForExpression, frame: LoopFrame, param: KtParameter, receiver: KtExpression): Unit =
+    with(session) {
+        val list = expression(receiver)
+        val last = lastIndex(list)
+        emit(LuaNumericFor(naming.of(param), LuaNumber("0"), last, null, loopBody(frame, e.body)))
+    }
 
 /** `for ((i, x) in xs.withIndex())` */
-private fun FileTransformer.withIndexLoop(e: KtForExpression, frame: LoopFrame, destructuring: KtDestructuringDeclaration, receiver: KtExpression): Unit = with(session) {
+private fun FileTransformer.withIndexLoop(
+    e: KtForExpression,
+    frame: LoopFrame,
+    destructuring: KtDestructuringDeclaration,
+    receiver: KtExpression,
+): Unit = with(session) {
     val list = cache(expression(receiver), "list")
     val (indexEntry, valueEntry) = destructuring.entries
     val index = if (indexEntry.name == "_") ctx.temp("i") else naming.of(indexEntry)
@@ -159,19 +193,26 @@ private fun FileTransformer.withIndexLoop(e: KtForExpression, frame: LoopFrame, 
     emit(LuaNumericFor(index, LuaNumber("0"), last, null, listOf(value) + loopBody(frame, e.body)))
 }
 
-private fun FileTransformer.mapLoop(e: KtForExpression, frame: LoopFrame, rangeExpr: KtExpression, param: KtParameter): Unit = with(session) {
-    val destructuring = param.destructuringDeclaration
-    val map = expression(rangeExpr)
-    if (destructuring != null && destructuring.entries.size == 2) {
-        val names = destructuring.entries.map { naming.entry(it) }
-        emit(LuaGenericFor(names, listOf(LuaMethodCall(map, "iter", emptyList())), loopBody(frame, e.body)))
-    } else {
-        val entries = LuaMethodCall(map, "getEntries", emptyList())
-        emit(LuaGenericFor(listOf("_", naming.of(param)), listOf(luaCall(LuaName("ipairs"), entries)), loopBody(frame, e.body)))
+private fun FileTransformer.mapLoop(e: KtForExpression, frame: LoopFrame, rangeExpr: KtExpression, param: KtParameter): Unit =
+    with(session) {
+        val destructuring = param.destructuringDeclaration
+        val map = expression(rangeExpr)
+        if (destructuring != null && destructuring.entries.size == 2) {
+            val names = destructuring.entries.map { naming.entry(it) }
+            emit(LuaGenericFor(names, listOf(LuaMethodCall(map, "iter", emptyList())), loopBody(frame, e.body)))
+        } else {
+            val entries = LuaMethodCall(map, "getEntries", emptyList())
+            emit(LuaGenericFor(listOf("_", naming.of(param)), listOf(luaCall(LuaName("ipairs"), entries)), loopBody(frame, e.body)))
+        }
     }
-}
 
-private fun FileTransformer.collectionLoop(e: KtForExpression, frame: LoopFrame, rangeExpr: KtExpression, param: KtParameter, kind: CollectionKind): Unit = with(session) {
+private fun FileTransformer.collectionLoop(
+    e: KtForExpression,
+    frame: LoopFrame,
+    rangeExpr: KtExpression,
+    param: KtParameter,
+    kind: CollectionKind,
+): Unit = with(session) {
     val destructuring = param.destructuringDeclaration
     val collection = expression(rangeExpr)
     val list = asList(kind, collection)
@@ -185,7 +226,8 @@ private fun FileTransformer.collectionLoop(e: KtForExpression, frame: LoopFrame,
         val items = cache(list, "list")
         val i = ctx.temp("i")
         val element = LuaLocal(listOf(variable), listOf(LuaIndex(items, LuaName(i))))
-        emit(LuaNumericFor(i, LuaNumber("1"), LuaIndex(items, LuaString("size")), null, listOf(element) + prologue + loopBody(frame, e.body)))
+        val body = listOf(element) + prologue + loopBody(frame, e.body)
+        emit(LuaNumericFor(i, LuaNumber("1"), LuaIndex(items, LuaString("size")), null, body))
     }
 }
 
@@ -280,11 +322,8 @@ internal fun FileTransformer.rangeContains(value: LuaExpr, range: KRange, elemen
 internal fun FileTransformer.forEachLoop(collection: LuaExpr, type: KaType?, lambda: KtExpression, indexed: Boolean): Unit = with(session) {
     val literal = (KtPsiUtil.safeDeparenthesize(lambda) as? KtLambdaExpression)?.functionLiteral
     val params = literal?.valueParameters.orEmpty()
-    fun varName(i: Int, default: String) =
-        params.getOrNull(i)?.takeIf { it.destructuringDeclaration == null && it.name != null }?.let { naming.of(it) } ?: ctx.temp(default)
-    fun body(vararg vars: String) = collect {
-        inlineLambda(lambda, vars.map { LuaName(it).also { v -> stable += v } }, null, null)
-    }
+    fun varName(i: Int, default: String) = forEachVar(params, i, default)
+    fun body(vararg vars: String) = forEachBody(lambda, *vars)
     val kind = type?.collectionKind()
     when {
         kind == CollectionKind.LuaTable -> {
@@ -292,39 +331,64 @@ internal fun FileTransformer.forEachLoop(collection: LuaExpr, type: KaType?, lam
             val v = varName(1, "value")
             emit(LuaGenericFor(listOf(k, v), listOf(luaCall(LuaName("pairs"), collection)), body(k, v)))
         }
+
         kind == CollectionKind.Map && params.size == 2 -> {
             val k = varName(0, "key")
             val v = varName(1, "value")
             emit(LuaGenericFor(listOf(k, v), listOf(LuaMethodCall(collection, "iter", emptyList())), body(k, v)))
         }
+
         kind == CollectionKind.Map -> {
             val entry = varName(0, "entry")
             val entries = LuaMethodCall(collection, "getEntries", emptyList())
             emit(LuaGenericFor(listOf("_", entry), listOf(luaCall(LuaName("ipairs"), entries)), body(entry)))
         }
+
         type?.isStringType == true -> {
             val c = varName(0, "char")
             emit(LuaGenericFor(listOf(c), listOf(LuaMethodCall(collection, "gmatch", listOf(LuaString(".")))), body(c)))
         }
-        indexed -> {
-            val list = cache(asList(kind, collection), "list")
-            val index = varName(0, "index")
-            val value = varName(1, "value")
-            val element = LuaLocal(listOf(value), listOf(CollectionMappings.index(list, LuaName(index))))
-            val last = lastIndex(list)
-            emit(LuaNumericFor(index, LuaNumber("0"), last, null, listOf(element) + body(index, value)))
-        }
-        else -> {
-            val list = asList(kind, collection)
-            val item = varName(0, "it").let { if (params.isEmpty()) "it" else it }
-            if (type?.elementType?.isMarkedNullable == false) {
-                emit(LuaGenericFor(listOf("_", item), listOf(luaCall(LuaName("ipairs"), list)), body(item)))
-            } else {
-                val items = cache(list, "list")
-                val i = ctx.temp("i")
-                val element = LuaLocal(listOf(item), listOf(LuaIndex(items, LuaName(i))))
-                emit(LuaNumericFor(i, LuaNumber("1"), LuaIndex(items, LuaString("size")), null, listOf(element) + body(item)))
-            }
-        }
+
+        else -> forEachList(collection, type, lambda, indexed, params)
+    }
+}
+
+private fun FileTransformer.forEachVar(params: List<KtParameter>, i: Int, default: String): String = with(session) {
+    params.getOrNull(i)?.takeIf { it.destructuringDeclaration == null && it.name != null }?.let { naming.of(it) } ?: ctx.temp(default)
+}
+
+private fun FileTransformer.forEachBody(lambda: KtExpression, vararg vars: String) = collect {
+    inlineLambda(lambda, vars.map { LuaName(it).also { v -> stable += v } }, null, null)
+}
+
+/** `forEach` over a list-like value, with an index when [indexed] (`forEachIndexed`). */
+private fun FileTransformer.forEachList(
+    collection: LuaExpr,
+    type: KaType?,
+    lambda: KtExpression,
+    indexed: Boolean,
+    params: List<KtParameter>,
+): Unit = with(session) {
+    val kind = type?.collectionKind()
+    fun varName(i: Int, default: String) = forEachVar(params, i, default)
+    fun body(vararg vars: String) = forEachBody(lambda, *vars)
+    if (indexed) {
+        val list = cache(asList(kind, collection), "list")
+        val index = varName(0, "index")
+        val value = varName(1, "value")
+        val element = LuaLocal(listOf(value), listOf(CollectionMappings.index(list, LuaName(index))))
+        val last = lastIndex(list)
+        emit(LuaNumericFor(index, LuaNumber("0"), last, null, listOf(element) + body(index, value)))
+        return
+    }
+    val list = asList(kind, collection)
+    val item = varName(0, "it").let { if (params.isEmpty()) "it" else it }
+    if (type?.elementType?.isMarkedNullable == false) {
+        emit(LuaGenericFor(listOf("_", item), listOf(luaCall(LuaName("ipairs"), list)), body(item)))
+    } else {
+        val items = cache(list, "list")
+        val i = ctx.temp("i")
+        val element = LuaLocal(listOf(item), listOf(LuaIndex(items, LuaName(i))))
+        emit(LuaNumericFor(i, LuaNumber("1"), LuaIndex(items, LuaString("size")), null, listOf(element) + body(item)))
     }
 }
