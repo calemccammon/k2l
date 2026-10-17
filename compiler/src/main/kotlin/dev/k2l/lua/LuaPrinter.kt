@@ -215,11 +215,11 @@ class LuaPrinter(private val indentUnit: String = "    ") {
             "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while",
         )
 
-        fun isIdentifier(s: String) =
+        private fun isIdentifier(s: String) =
             s.isNotEmpty() && (s[0].isLetter() || s[0] == '_') && s[0].code < 128 &&
                 s.all { (it.isLetterOrDigit() || it == '_') && it.code < 128 } && s !in KEYWORDS
 
-        fun quote(s: String): String = buildString {
+        private fun quote(s: String): String = buildString {
             append('"')
             val bytes = s.toByteArray(Charsets.UTF_8)
             var i = 0

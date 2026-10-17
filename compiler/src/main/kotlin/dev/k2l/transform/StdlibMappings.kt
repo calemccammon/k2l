@@ -74,20 +74,20 @@ object StdlibMappings {
         // Bitwise operations. Int results stay in 32-bit range; Long uses Lua's 64-bit integers (5.3+ only).
         for (t in listOf("Int", "Long")) {
             val isLong = t == "Long"
-            def("kotlin/$t.and") { bitwise("BAnd", LuaBinOp.BAnd, isLong) }
-            def("kotlin/$t.or") { bitwise("BOr", LuaBinOp.BOr, isLong) }
-            def("kotlin/$t.xor") { bitwise("BXor", LuaBinOp.BXor, isLong) }
+            def("kotlin/$t.and") { bitwise("BAnd", LuaBinOp.BAnd) }
+            def("kotlin/$t.or") { bitwise("BOr", LuaBinOp.BOr) }
+            def("kotlin/$t.xor") { bitwise("BXor", LuaBinOp.BXor) }
             def("kotlin/$t.inv") {
-                if (target.hasIntegers) LuaUnary(LuaUnOp.BNot, self) else bitCall("__K2L_BNot", this)
+                if (target.hasIntegers) LuaUnary(LuaUnOp.BNot, self) else bitCall("__K2L_BNot")
             }
             def("kotlin/$t.shl") {
-                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shl, self, arg(0)) else bitCall("__K2L_Shl", this)
+                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shl, self, arg(0)) else bitCall("__K2L_Shl")
             }
             def("kotlin/$t.shr") {
-                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.IDiv, self, LuaBinary(LuaBinOp.Shl, LuaNumber("1"), arg(0))) else bitCall("__K2L_Shr", this)
+                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.IDiv, self, LuaBinary(LuaBinOp.Shl, LuaNumber("1"), arg(0))) else bitCall("__K2L_Shr")
             }
             def("kotlin/$t.ushr") {
-                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shr, self, arg(0)) else bitCall("__K2L_Ushr", this)
+                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shr, self, arg(0)) else bitCall("__K2L_Ushr")
             }
         }
 
@@ -124,19 +124,18 @@ object StdlibMappings {
     private val CallSite.target get() = transformer.ctx.options.luaTarget
 
     /** and/or/xor: native operators on 5.3+, lualib helpers (bit32, LuaJIT's bit, or plain Lua) elsewhere. */
-    private fun CallSite.bitwise(helper: String, op: LuaBinOp, isLong: Boolean): LuaExpr =
-        if (target.hasIntegers) LuaBinary(op, self, arg(0)) else bitCall("__K2L_$helper", this)
+    private fun CallSite.bitwise(helper: String, op: LuaBinOp): LuaExpr =
+        if (target.hasIntegers) LuaBinary(op, self, arg(0)) else bitCall("__K2L_$helper")
 
-    private fun bitCall(name: String, site: CallSite): LuaExpr =
-        LuaCall(site.ref("Bit", name), listOfNotNull(site.receiver) + site.args)
+    private fun CallSite.bitCall(name: String): LuaExpr = LuaCall(ref("Bit", name), listOfNotNull(receiver) + args)
 
     fun map(callableId: String?, site: CallSite): LuaExpr? {
-        // toString() with no arguments, on anything from the kotlin package.
-        if (site.name == "toString" && site.args.isEmpty() && site.receiver != null && callableId?.startsWith("kotlin/") == true) {
-            return site.str(site.self, site.receiverType)
-        }
-        if (site.name == "compareTo" && site.args.size == 1 && site.receiver != null && callableId?.startsWith("kotlin/") == true) {
-            return LuaCall(site.ref("Compare", "__K2L_Compare"), listOf(site.self, site.arg(0)))
+        // toString() and compareTo(x) on anything from the kotlin package.
+        if (site.receiver != null && callableId?.startsWith("kotlin/") == true) {
+            if (site.name == "toString" && site.args.isEmpty()) return site.str(site.self, site.receiverType)
+            if (site.name == "compareTo" && site.args.size == 1) {
+                return LuaCall(site.ref("Compare", "__K2L_Compare"), listOf(site.self, site.arg(0)))
+            }
         }
         callableId?.let { mappings[it] }?.invoke(site)?.let { return it }
         return CollectionMappings.map(callableId, site)

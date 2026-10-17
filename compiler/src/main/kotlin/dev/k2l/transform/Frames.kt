@@ -1,6 +1,13 @@
 package dev.k2l.transform
 
 import dev.k2l.lua.*
+import org.jetbrains.kotlin.psi.KtExpression
+
+/**
+ * Where the value of an expression goes: given the Lua value, returns the statements that consume it
+ * (assign it, return it, ...). A null `ValueSink?` means statement context: the value is discarded.
+ */
+internal typealias ValueSink = (LuaExpr) -> List<LuaStmt>
 
 internal class LoopFrame(val label: String?) {
     var continueLabel: String? = null
@@ -25,9 +32,18 @@ internal class LoopFrame(val label: String?) {
 internal class FunctionFrame(val kind: Kind, val labels: Set<String>) {
     enum class Kind { Function, Lambda, Inline }
 
-    var sink: ((LuaExpr) -> List<LuaStmt>)? = null
+    var sink: ValueSink? = null
     var endLabel: String? = null
 }
 
 /** Something assignable: a variable, or a property of an object (possibly with accessors). */
 internal class Target(val read: LuaExpr, val write: (LuaExpr) -> LuaStmt)
+
+/** A call operand: source still to be transformed (in evaluation order), or an already-built Lua value. */
+internal sealed interface Operand {
+    class Source(val expr: KtExpression) : Operand
+    class Value(val lua: LuaExpr) : Operand
+}
+
+internal fun KtExpression.asOperand(): Operand = Operand.Source(this)
+internal fun LuaExpr.asOperand(): Operand = Operand.Value(this)

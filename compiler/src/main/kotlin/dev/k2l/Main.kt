@@ -32,8 +32,8 @@ private val USAGE = """
 private data class Settings(
     val sources: List<Path> = emptyList(),
     val out: Path = Paths.get("out"),
-    val target: LuaTarget = LuaTarget.Lua54,
-    val lualib: LuaLibImport = LuaLibImport.Require,
+    val target: LuaTarget = CompilerOptions().luaTarget,
+    val lualib: LuaLibImport = CompilerOptions().luaLibImport,
     val classpath: List<Path> = emptyList(),
 )
 
@@ -67,10 +67,10 @@ private fun parseArgs(args: Array<String>): Settings {
     var project: Path? = null
     val sources = mutableListOf<Path>()
     val overrides = mutableListOf<(Settings) -> Settings>()
-    val it = args.iterator()
-    fun value(option: String) = if (it.hasNext()) it.next() else throw IllegalArgumentException("$option needs a value")
-    while (it.hasNext()) {
-        when (val arg = it.next()) {
+    val remaining = args.iterator()
+    fun value(option: String) = if (remaining.hasNext()) remaining.next() else throw IllegalArgumentException("$option needs a value")
+    while (remaining.hasNext()) {
+        when (val arg = remaining.next()) {
             "-p", "--project" -> project = Paths.get(value(arg))
             "-o", "--out" -> Paths.get(value(arg)).let { out -> overrides += { s -> s.copy(out = out) } }
             "-t", "--target" -> LuaTarget.parse(value(arg)).let { target -> overrides += { s -> s.copy(target = target) } }
