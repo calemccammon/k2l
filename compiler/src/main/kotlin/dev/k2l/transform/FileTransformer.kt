@@ -6,10 +6,16 @@ import org.jetbrains.kotlin.analysis.api.base.KaConstantValue
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaExplicitReceiverValue
 import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
+import org.jetbrains.kotlin.analysis.api.resolution.KaImplicitReceiverValue
 import org.jetbrains.kotlin.analysis.api.resolution.KaReceiverValue
 import org.jetbrains.kotlin.analysis.api.resolution.KaSmartCastedReceiverValue
 import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaBackingFieldSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassLikeSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaConstructorSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaEnumEntrySymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaLocalVariableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaPropertySymbol
@@ -19,6 +25,8 @@ import org.jetbrains.kotlin.idea.references.mainReference
 import com.intellij.psi.tree.IElementType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.isPrivate
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -82,13 +90,22 @@ class FileTransformer(
 
     private fun KaSession.transformChunk(): LuaChunk {
         val body = mutableListOf<LuaStmt>()
-        val topLevel = file.declarations.filter { it is KtNamedFunction || it is KtProperty }
+        val topLevel = file.declarations.filter {
+            it is KtNamedFunction || it is KtProperty || (it is KtClassOrObject && !(it is KtClass && it.isAnnotation()))
+        }
         val forward = forwardReferenced(topLevel.toSet())
         if (forward.isNotEmpty()) body += LuaLocal(forward.map { nameOf(it as KtNamedDeclaration) })
 
-        for (decl in file.declarations) {
+        // A class must be created after the classes and interfaces it extends, wherever they are declared.
+        val emitted = HashSet<KtDeclaration>()
+        fun emitDeclaration(decl: KtDeclaration) {
+            if (!emitted.add(decl)) return
+            if (decl is KtClassOrObject) {
+                superInfo(decl).let { listOfNotNull(it.base) + it.interfaces }.filter { it.isTopLevel() }.forEach { emitDeclaration(it) }
+            }
             body += collect { topLevelDeclaration(decl, decl in forward) }
         }
+        file.declarations.forEach { emitDeclaration(it) }
 
         val main = topLevel.filterIsInstance<KtNamedFunction>().firstOrNull(::isMain)
         if (main != null) {
@@ -115,8 +132,10 @@ class FileTransformer(
             override fun visitReferenceExpression(expression: KtReferenceExpression) {
                 super.visitReferenceExpression(expression)
                 if (expression !is KtNameReferenceExpression) return
-                val target = expression.mainReference.resolve() as? KtDeclaration ?: return
-                if (target in candidates && expression.textRange.startOffset < target.textRange.startOffset) result += target
+                // Members, constructors and enum entries count as references to their top-level class.
+                val resolved = expression.mainReference.resolve() ?: return
+                val target = generateSequence(resolved) { it.parent }.firstOrNull { it in candidates } as? KtDeclaration ?: return
+                if (expression.textRange.startOffset < target.textRange.startOffset) result += target
             }
         })
         return candidates.filter { it in result }.toCollection(LinkedHashSet())
@@ -126,6 +145,8 @@ class FileTransformer(
         when (decl) {
             is KtNamedFunction -> emit(LuaFunctionDecl(LuaName(nameOf(decl)), function(decl), isLocal = !forwardDeclared))
             is KtProperty -> property(decl, isLocal = !forwardDeclared)
+            is KtClassOrObject -> classDeclaration(decl, isLocal = !forwardDeclared)
+            is KtTypeAlias -> Unit
             else -> unsupported(decl, "Declaration '${decl.javaClass.simpleName.removePrefix("Kt")}'")
         }
     }
@@ -163,7 +184,7 @@ class FileTransformer(
             block(body)
             return
         }
-        val returnType = (fn as? KtNamedFunction)?.returnType
+        val returnType = fn.returnType
         if (returnType == null || returnType.isUnitType || returnType.isNothingType) statement(body)
         else emitAll(valueInto(body) { listOf(LuaReturn(listOf(it))) })
     }
@@ -171,17 +192,18 @@ class FileTransformer(
     // ---- statements ----
 
     private fun KaSession.block(e: KtExpression) {
-        if (e is KtBlockExpression) e.statements.forEach{ statement(it) } else statement(e)
+        if (e is KtBlockExpression) e.statements.forEach { statement(it) } else statement(e)
     }
 
     private fun KaSession.statement(e: KtExpression) {
         when (e) {
-            is KtParenthesizedExpression -> e.expression?.let{ statement(it) }
+            is KtParenthesizedExpression -> e.expression?.let { statement(it) }
             is KtProperty -> property(e, isLocal = true)
+            is KtClassOrObject -> classDeclaration(e, isLocal = true)
             is KtNamedFunction -> emit(LuaFunctionDecl(LuaName(nameOf(e)), function(e), isLocal = true))
             is KtBinaryExpression -> if (e.operationToken in ASSIGNMENTS) assignment(e) else expressionStatement(e)
             is KtUnaryExpression -> if (e.operationToken == KtTokens.PLUSPLUS || e.operationToken == KtTokens.MINUSMINUS) {
-                increment(e)
+                e.baseExpression?.let { assignTarget(it) }?.let { increment(e, it) }
             } else {
                 expressionStatement(e)
             }
@@ -229,7 +251,7 @@ class FileTransformer(
         val right = e.right ?: return
         val target = assignTarget(left) ?: return
         if (e.operationToken == KtTokens.EQ) {
-            emitAll(valueInto(right) { listOf(LuaAssign(listOf(target), listOf(it))) })
+            emitAll(valueInto(right) { listOf(target.write(it)) })
             return
         }
         val op = AUGMENTED.getValue(e.operationToken)
@@ -238,25 +260,46 @@ class FileTransformer(
             unsupported(e, "Compound assignment on '${leftType.pretty()}'")
             return
         }
-        val value = operator(op, target, leftType, expression(right), right.expressionType, e)
-        emit(LuaAssign(listOf(target), listOf(value)))
+        val value = operator(op, target.read, leftType, expression(right), right.expressionType, e)
+        emit(target.write(value))
     }
 
-    private fun KaSession.assignTarget(e: KtExpression): LuaExpr? {
-        val ref = KtPsiUtil.safeDeparenthesize(e) as? KtNameReferenceExpression
+    /** Something assignable: a variable, or a property of an object (possibly with accessors). */
+    private class Target(val read: LuaExpr, val write: (LuaExpr) -> LuaStmt)
+
+    private fun KaSession.assignTarget(e: KtExpression): Target? {
+        val ex = KtPsiUtil.safeDeparenthesize(e)
+        val ref = when (ex) {
+            is KtNameReferenceExpression -> ex
+            is KtDotQualifiedExpression -> ex.selectorExpression as? KtNameReferenceExpression
+            else -> null
+        }
+        val receiverExpr = (ex as? KtDotQualifiedExpression)?.receiverExpression
+        if (ref != null && receiverExpr == null && ref.mainReference.resolveToSymbol() is KaBackingFieldSymbol) {
+            val field = backingField(ref)
+            return Target(field) { LuaAssign(listOf(field), listOf(it)) }
+        }
         val decl = ref?.mainReference?.resolve()
-        if (ref == null || decl !is KtProperty || decl.containingFile != file) {
+        if (ref == null || decl == null || decl.containingFile != file) {
             unsupported(e, "Assignment to this target")
             return null
         }
-        return LuaName(nameOf(decl))
+        if (decl is KtProperty && decl.containingClassOrObject == null) {
+            val name = LuaName(nameOf(decl))
+            return Target(name) { LuaAssign(listOf(name), listOf(it)) }
+        }
+        if (!isMemberProperty(decl)) {
+            unsupported(e, "Assignment to this target")
+            return null
+        }
+        val receiver = if (receiverExpr != null) cache(expression(receiverExpr), "object") else implicitReceiverOf(ref) ?: return null
+        val property = decl as KtNamedDeclaration
+        return Target(propertyRead(receiver, property)) { propertyWrite(receiver, property, it) }
     }
 
-    private fun KaSession.increment(e: KtUnaryExpression) {
-        val base = e.baseExpression ?: return
-        val target = assignTarget(base) ?: return
+    private fun KaSession.increment(e: KtUnaryExpression, target: Target) {
         val op = if (e.operationToken == KtTokens.PLUSPLUS) LuaBinOp.Add else LuaBinOp.Sub
-        emit(LuaAssign(listOf(target), listOf(LuaBinary(op, target, LuaNumber("1")))))
+        emit(target.write(LuaBinary(op, target.read, LuaNumber("1"))))
     }
 
     private fun KaSession.returnStatement(e: KtReturnExpression) {
@@ -271,7 +314,7 @@ class FileTransformer(
 
     private fun KaSession.ifStatement(e: KtIfExpression) {
         val cond = expression(e.condition ?: return)
-        val then = collect { e.then?.let{ block(it) } }
+        val then = collect { e.then?.let { block(it) } }
         val orElse = e.`else`?.let { collect { block(it) } }
         emit(LuaIf(cond, then, orElse?.takeIf { it.isNotEmpty() }))
     }
@@ -310,7 +353,7 @@ class FileTransformer(
     private fun KaSession.loopBody(frame: LoopFrame, body: KtExpression?): List<LuaStmt> {
         loops.addLast(frame)
         val stmts = try {
-            collect { body?.let{ block(it) } }
+            collect { body?.let { block(it) } }
         } finally {
             loops.removeLast()
         }
@@ -446,7 +489,7 @@ class FileTransformer(
             ex is KtIfExpression && !canTernary(ex) -> ifInto(ex, sink)
             ex is KtWhenExpression -> whenInto(ex, sink)
             ex is KtBlockExpression -> {
-                ex.statements.dropLast(1).forEach{ statement(it) }
+                ex.statements.dropLast(1).forEach { statement(it) }
                 ex.statements.lastOrNull()?.let { emitAll(valueInto(it, sink)) }
             }
             isJump(ex) -> statement(ex)
@@ -471,8 +514,8 @@ class FileTransformer(
      */
     private fun KaSession.canTernary(e: KtIfExpression): Boolean {
         val cond = e.condition ?: return false
-        val then = e.then?.let{ singleExpression(it) } ?: return false
-        val orElse = e.`else`?.let{ singleExpression(it) } ?: return false
+        val then = e.then?.let { singleExpression(it) } ?: return false
+        val orElse = e.`else`?.let { singleExpression(it) } ?: return false
         val thenType = then.expressionType ?: return false
         if (thenType.isMarkedNullable || thenType.isBooleanType || thenType.isNothingType || thenType.isUnitType) return false
         return !isJump(orElse) && listOf(cond, then, orElse).none{ mayNeedStatements(it) }
@@ -549,10 +592,10 @@ class FileTransformer(
         is KtWhenConditionWithExpression -> {
             val expr = c.expression ?: return LuaNil
             if (subject == null) expression(expr)
-            else operator(LuaBinOp.Eq, subject, subjectType, expression(expr), expr.expressionType, c)
+            else equality(subject, subjectType, expression(expr), expr.expressionType, negated = false)
         }
         is KtWhenConditionInRange -> {
-            val range = c.rangeExpression?.let{ parseRange(it) }
+            val range = c.rangeExpression?.let { parseRange(it) }
             if (subject == null || range == null) {
                 unsupported(c, "This 'in' condition")
             } else {
@@ -573,7 +616,16 @@ class FileTransformer(
             type.isBooleanType -> "boolean"
             type.isIntegral -> return LuaBinary(LuaBinOp.Eq, luaCall(luaPath("math", "type"), value), LuaString("integer"))
             type.isDoubleType || type.isFloatType -> return LuaBinary(LuaBinOp.Eq, luaCall(luaPath("math", "type"), value), LuaString("float"))
-            else -> return unsupported(element, "Type check against '${type.pretty()}'")
+            else -> {
+                val symbol = type.expandedSymbol
+                val psi = symbol?.psi as? KtClassOrObject
+                return when {
+                    symbol?.classId?.asString() == "kotlin/Any" -> LuaBinary(LuaBinOp.Ne, value, LuaNil)
+                    psi == null || psi.containingFile != file -> unsupported(element, "Type check against '${type.pretty()}'")
+                    psi is KtObjectDeclaration -> LuaBinary(LuaBinOp.Eq, value, classRef(psi))
+                    else -> lualibCall("InstanceOf", value, classRef(psi))
+                }
+            }
         }
         return LuaBinary(LuaBinOp.Eq, luaCall(LuaName("type"), value), LuaString(luaType))
     }
@@ -581,7 +633,7 @@ class FileTransformer(
     // ---- expressions ----
 
     fun KaSession.expression(e: KtExpression): LuaExpr = when (e) {
-        is KtParenthesizedExpression -> e.expression?.let{ expression(it) } ?: LuaNil
+        is KtParenthesizedExpression -> e.expression?.let { expression(it) } ?: LuaNil
         is KtConstantExpression -> constant(e)
         is KtStringTemplateExpression -> template(e)
         is KtNameReferenceExpression -> reference(e)
@@ -596,6 +648,13 @@ class FileTransformer(
         }
         is KtIfExpression -> if (canTernary(e)) ternary(e) else branchingValue(e)
         is KtWhenExpression -> branchingValue(e)
+        is KtThisExpression -> thisRef(e)
+        is KtBinaryExpressionWithTypeRHS -> cast(e)
+        is KtIsExpression -> {
+            val type = e.typeReference?.type
+            if (type == null) LuaNil
+            else typeTest(cache(expression(e.leftHandSide), "value"), type, e).let { if (e.isNegated) negate(it) else it }
+        }
         else -> unsupported(e, "Expression '${e.javaClass.simpleName.removePrefix("Kt")}'")
     }
 
@@ -682,6 +741,10 @@ class FileTransformer(
             }
             symbol is KaPropertySymbol && psi is KtProperty && psi.containingFile == file && psi.isTopLevel ->
                 LuaName(nameOf(psi))
+            symbol is KaBackingFieldSymbol -> backingField(e)
+            symbol is KaEnumEntrySymbol && psi is KtEnumEntry && psi.containingFile == file ->
+                LuaIndex(classRef(psi.containingClassOrObject!!), LuaString(psi.name!!))
+            symbol is KaClassLikeSymbol && psi is KtClassOrObject && psi.containingFile == file -> classRef(psi)
             else -> call(e, full)
         }
     }
@@ -699,6 +762,10 @@ class FileTransformer(
                 if (token == KtTokens.NOT_IN) negate(contains) else contains
             }
             KtTokens.IDENTIFIER -> call(e, e)
+            KtTokens.EQEQ, KtTokens.EXCLEQ -> {
+                val (l, r) = ordered(listOf(left, right)).let { it[0] to it[1] }
+                equality(l, left.expressionType, r, right.expressionType, negated = token == KtTokens.EXCLEQ)
+            }
             in BINARY_OPERATORS -> {
                 val (l, r) = ordered(listOf(left, right)).let { it[0] to it[1] }
                 operator(BINARY_OPERATORS.getValue(token), l, left.expressionType, r, right.expressionType, e)
@@ -752,8 +819,9 @@ class FileTransformer(
             KtTokens.PLUS -> expression(base)
             KtTokens.EXCL -> negate(expression(base))
             KtTokens.PLUSPLUS, KtTokens.MINUSMINUS -> {
-                increment(e)
-                assignTarget(base) ?: LuaNil
+                val target = assignTarget(base) ?: return LuaNil
+                increment(e, target)
+                target.read
             }
             else -> unsupported(e, "Prefix operator '${e.operationReference.text}'")
         }
@@ -765,8 +833,8 @@ class FileTransformer(
             KtTokens.PLUSPLUS, KtTokens.MINUSMINUS -> {
                 val target = assignTarget(base) ?: return LuaNil
                 val old = ctx.temp("old")
-                emit(LuaLocal(listOf(old), listOf(target)))
-                increment(e)
+                emit(LuaLocal(listOf(old), listOf(target.read)))
+                increment(e, target)
                 LuaName(old)
             }
             else -> unsupported(e, "Postfix operator '${e.operationReference.text}'")
@@ -811,49 +879,545 @@ class FileTransformer(
         if (call !is KaFunctionCall<*> && !StdlibMappings.has(callableId) && full.evaluate() != null) return constant(full)
 
         val receiverValue = call.partiallyAppliedSymbol.extensionReceiver ?: call.partiallyAppliedSymbol.dispatchReceiver
-        val receiver = receiverValue?.let { explicitReceiver(it) }
-        if (receiverValue != null && receiver == null) return unsupported(full, "Implicit receiver")
-
-        val args = if (call is KaFunctionCall<*>) {
-            val bySignature = call.argumentMapping.entries.groupBy({ it.value.symbol }, { it.key })
-            val params = (symbol as KaFunctionSymbol).valueParameters
-            params.flatMap { p ->
-                val mapped = bySignature[p]
-                if (mapped == null && psi is KtNamedFunction) unsupported(full, "Omitting an argument with a default value")
-                mapped.orEmpty()
-            }
+        val receiverExpr = receiverValue?.let { explicitReceiver(it) }
+        val implicit = if (receiverValue != null && receiverExpr == null) {
+            implicitReceiver(receiverValue, full) ?: return LuaNil
         } else {
-            emptyList()
+            null
+        }
+        dataClassMember(call, receiverExpr, implicit)?.let { return it }
+        val args = callArguments(call, full)
+
+        if (symbol is KaConstructorSymbol) {
+            val cls = symbol.containingClassId?.let(::classInFile)
+                ?: return unsupported(full, "Constructing library class '${symbol.containingClassId?.asString()}'")
+            return LuaCall(LuaIndex(classRef(cls), LuaString("new" + constructorSuffix(psi))), ordered(args))
         }
 
-        if (psi is KtNamedFunction && psi.containingFile == file) {
-            if (receiver != null) return unsupported(full, "Calling an extension function")
-            return LuaCall(LuaName(nameOf(psi)), ordered(args))
+        val inFile = psi != null && psi.containingFile == file
+        if (inFile && psi is KtNamedFunction) {
+            if (psi.containingClassOrObject == null) {
+                if (receiverValue != null) return unsupported(full, "Calling an extension function")
+                return LuaCall(LuaName(nameOf(psi)), ordered(args))
+            }
+            val method = LuaNames.member(psi.name!!)
+            if (receiverExpr is KtSuperExpression) {
+                // The resolved declaration is the implementation `super` reaches, in a class or interface.
+                return LuaCall(LuaIndex(classRef(psi.containingClassOrObject!!), LuaString(method)), listOf(selfRef()) + ordered(args))
+            }
+            val values = ordered(listOfNotNull(receiverExpr) + args)
+            return if (implicit != null) LuaMethodCall(implicit, method, values) else LuaMethodCall(values[0], method, values.drop(1))
+        }
+        if (inFile && isMemberProperty(psi)) {
+            val receiver = when (receiverExpr) {
+                null -> implicit ?: return unsupported(full, "Property without receiver")
+                is KtSuperExpression -> selfRef() // a field overridden in a subclass shares storage with the base
+                else -> expression(receiverExpr)
+            }
+            return propertyRead(receiver, psi as KtNamedDeclaration)
         }
         val declaringFile = psi?.containingFile as? KtFile
         if (declaringFile != null && declaringFile != file && !declaringFile.isCompiled) {
             return unsupported(full, "Referencing declarations from another file")
         }
+        if (receiverExpr is KtSuperExpression) return unsupported(full, "Calling a library member through 'super'")
 
-        val values = ordered(listOfNotNull(receiver) + args)
+        val values = ordered(listOfNotNull(receiverExpr) + args)
+        val hasExplicit = receiverExpr != null
         val site = CallSite(
             session = this,
             transformer = this@FileTransformer,
             element = full,
             name = symbol.callableId?.callableName?.asString(),
-            receiver = if (receiver != null) values[0] else null,
-            receiverType = receiver?.expressionType,
-            args = if (receiver != null) values.drop(1) else values,
+            receiver = implicit ?: if (hasExplicit) values[0] else null,
+            receiverType = receiverExpr?.expressionType ?: receiverValue?.type,
+            args = if (hasExplicit) values.drop(1) else values,
             argTypes = args.map { it.expressionType },
         )
         StdlibMappings.map(callableId, site)?.let { return it }
         return unsupported(full, "Kotlin library API '${callableId ?: full.text}'")
     }
 
+    /** Argument expressions in parameter order (named arguments are reordered). */
+    private fun KaSession.callArguments(call: KaCallableMemberCall<*, *>, element: KtElement): List<KtExpression> {
+        if (call !is KaFunctionCall<*>) return emptyList()
+        val symbol = call.partiallyAppliedSymbol.symbol
+        val bySignature = call.argumentMapping.entries.groupBy({ it.value.symbol }, { it.key })
+        val declaredHere = symbol.psi?.containingFile == file
+        return symbol.valueParameters.flatMap { p ->
+            val mapped = bySignature[p]
+            if (mapped == null && declaredHere) unsupported(element, "Omitting an argument with a default value")
+            mapped.orEmpty()
+        }
+    }
+
     private fun KaSession.explicitReceiver(value: KaReceiverValue): KtExpression? = when (value) {
         is KaExplicitReceiverValue -> value.expression
         is KaSmartCastedReceiverValue -> explicitReceiver(value.original)
         else -> null
+    }
+
+
+    // ---- classes ----
+
+    /** The class or object whose members are being transformed; its instance is `self`. */
+    private var currentClass: KtClassOrObject? = null
+
+    private fun selfRef(): LuaExpr = LuaName("self").also { stable += it }
+
+    private inline fun <T> withClass(c: KtClassOrObject, block: () -> T): T {
+        val savedClass = currentClass
+        val savedLoops = loops
+        currentClass = c
+        loops = ArrayDeque()
+        try {
+            return block()
+        } finally {
+            currentClass = savedClass
+            loops = savedLoops
+        }
+    }
+
+    /** Where a class's table lives: a local, or a field of its enclosing class. Companions live on their class. */
+    private fun classRef(c: KtClassOrObject): LuaExpr {
+        if (c is KtObjectDeclaration && c.isCompanion()) return classRef(c.containingClassOrObject!!)
+        val outer = c.containingClassOrObject
+        return if (outer == null) LuaName(nameOf(c)) else LuaIndex(classRef(outer), LuaString(c.name!!))
+    }
+
+    private fun classInFile(id: ClassId): KtClassOrObject? {
+        var found: KtClassOrObject? = null
+        file.accept(object : KtTreeVisitorVoid() {
+            override fun visitClassOrObject(classOrObject: KtClassOrObject) {
+                if (found == null && classOrObject.getClassId() == id) found = classOrObject
+                if (found == null) super.visitClassOrObject(classOrObject)
+            }
+        })
+        return found
+    }
+
+    private class SuperInfo(
+        val base: KtClassOrObject?,
+        val baseCall: KtSuperTypeCallEntry?,
+        val interfaces: List<KtClassOrObject>,
+        val unsupported: KtSuperTypeListEntry?,
+    )
+
+    private val superInfoCache = HashMap<KtClassOrObject, SuperInfo>()
+
+    private fun KaSession.superInfo(c: KtClassOrObject): SuperInfo = superInfoCache.getOrPut(c) {
+        var base: KtClassOrObject? = null
+        var baseCall: KtSuperTypeCallEntry? = null
+        var bad: KtSuperTypeListEntry? = null
+        val interfaces = mutableListOf<KtClassOrObject>()
+        for (entry in c.superTypeListEntries) {
+            val symbol = entry.typeReference?.type?.expandedSymbol
+            val psi = symbol?.psi as? KtClassOrObject
+            when {
+                symbol?.classId?.asString() == "kotlin/Any" -> Unit
+                psi == null || psi.containingFile != file -> bad = bad ?: entry
+                psi is KtClass && psi.isInterface() -> interfaces += psi
+                else -> {
+                    base = psi
+                    baseCall = entry as? KtSuperTypeCallEntry
+                }
+            }
+        }
+        SuperInfo(base, baseCall, interfaces, bad)
+    }
+
+    private fun KaSession.classDeclaration(c: KtClassOrObject, isLocal: Boolean) {
+        when {
+            c is KtEnumEntry || c is KtClass && c.isAnnotation() -> return
+            c is KtObjectDeclaration && c.isCompanion() -> return // emitted together with its class
+            c is KtClass && c.isInner() -> {
+                unsupported(c, "Inner class")
+                return
+            }
+        }
+        val info = superInfo(c)
+        if (info.unsupported != null) {
+            unsupported(info.unsupported, "Extending '${info.unsupported.text}'")
+            return
+        }
+        val ref = classRef(c)
+        val classArgs = mutableListOf<LuaExpr>(LuaString(c.name ?: "?"))
+        if (info.base != null || info.interfaces.isNotEmpty()) classArgs += info.base?.let(::classRef) ?: LuaNil
+        info.interfaces.mapTo(classArgs) { classRef(it) }
+        val create = lualibCall("Class", *classArgs.toTypedArray())
+        emit(if (isLocal) LuaLocal(listOf(nameOf(c)), listOf(create)) else LuaAssign(listOf(ref), listOf(create)))
+
+        withClass(c) {
+            checkMembers(c)
+            constructors(c, ref, info)
+            members(c, ref)
+            if (c is KtClass && c.isData()) dataClassMembers(c, ref)
+            if (c is KtClass && c.isEnum() && c.declaredFunction("toString") == null) {
+                emitMethod(ref, "toString", emptyList(), listOf(LuaReturn(listOf(LuaIndex(selfRef(), LuaString("name"))))))
+            }
+        }
+        if (c is KtClass && c.isEnum()) enumEntries(c, ref)
+        c.companionObjects.forEach { companion(it, ref) }
+        // Objects are initialized where they are declared (Kotlin initializes them lazily, on first access).
+        if (c is KtObjectDeclaration && initNeeded(c)) emit(LuaCallStmt(LuaMethodCall(ref, "____init", emptyList())))
+    }
+
+    private fun KtClassOrObject.declaredFunction(name: String) =
+        declarations.filterIsInstance<KtNamedFunction>().firstOrNull { it.name == name }
+
+    private fun emitMethod(ref: LuaExpr, name: String, params: List<String>, body: List<LuaStmt>) {
+        emit(LuaFunctionDecl(LuaIndex(ref, LuaString(name)), LuaFunction(params, body), isLocal = false, isMethod = true))
+    }
+
+    /** Lua tables hold methods and fields in one namespace, and Kotlin overloads need mangling (not done yet). */
+    private fun checkMembers(c: KtClassOrObject) {
+        val seen = HashSet<String>()
+        for (decl in c.declarations) {
+            val name = when (decl) {
+                is KtNamedFunction -> decl.name
+                is KtProperty -> decl.name
+                else -> null
+            } ?: continue
+            if (decl is KtNamedFunction && (name == "new" || name.startsWith("____"))) {
+                ctx.error(decl, "A member named '$name' clashes with the generated Lua class table")
+            } else if (!seen.add(name)) {
+                ctx.error(decl, "Overloaded or duplicate member '$name' is not supported yet")
+            }
+        }
+    }
+
+    private fun KaSession.members(c: KtClassOrObject, ref: LuaExpr) {
+        for (decl in c.declarations) {
+            when (decl) {
+                is KtNamedFunction -> if (decl.hasBody()) {
+                    emit(LuaFunctionDecl(LuaIndex(ref, LuaString(LuaNames.member(decl.name!!))), function(decl), isLocal = false, isMethod = true))
+                }
+                is KtProperty -> if (hasAccessors(decl)) accessorMethods(decl, ref)
+                is KtEnumEntry -> Unit // created by enumEntries()
+                is KtClassOrObject -> classDeclaration(decl, isLocal = false)
+                else -> Unit // initializers and constructors are handled by constructors()
+            }
+        }
+    }
+
+    // ---- constructors ----
+
+    private fun hasPrimary(c: KtClassOrObject) =
+        c !is KtClass || c.primaryConstructor != null || c.secondaryConstructors.isEmpty()
+
+    private val initCache = HashMap<KtClassOrObject, Boolean>()
+
+    /** Whether the primary constructor does anything, i.e. whether `____init` is generated for it. */
+    private fun KaSession.initNeeded(c: KtClassOrObject): Boolean = initCache.getOrPut(c) {
+        if (c is KtClass && c.isInterface() || !hasPrimary(c)) return@getOrPut false
+        val info = superInfo(c)
+        val baseCall = info.baseCall
+        (c is KtClass && (c.isEnum() || c.primaryConstructorParameters.isNotEmpty())) ||
+            c.declarations.any { (it is KtProperty && it.initializer != null) || it is KtAnonymousInitializer } ||
+            (baseCall != null && baseCall.valueArguments.isNotEmpty()) ||
+            (info.base != null && (!hasPrimary(info.base) || initNeeded(info.base)))
+    }
+
+    private fun constructorSuffix(psi: com.intellij.psi.PsiElement?): String {
+        if (psi !is KtSecondaryConstructor) return ""
+        return (psi.getContainingClassOrObject().secondaryConstructors.indexOf(psi) + 1).toString()
+    }
+
+    private fun KaSession.constructors(c: KtClassOrObject, ref: LuaExpr, info: SuperInfo) {
+        val isEnum = c is KtClass && c.isEnum()
+        val enumParams = if (isEnum) listOf("name", "ordinal") else emptyList()
+        if (hasPrimary(c) && initNeeded(c)) {
+            val params = (c as? KtClass)?.primaryConstructorParameters.orEmpty()
+            params.filter { it.hasDefaultValue() }.forEach { unsupported(it, "Default parameter value") }
+            val body = collect {
+                if (isEnum) enumParams.forEach { emit(LuaAssign(listOf(LuaIndex(selfRef(), LuaString(it))), listOf(LuaName(it)))) }
+                superInit(info.baseCall, info.base)
+                for (p in params) {
+                    if (p.hasValOrVar()) emit(LuaAssign(listOf(LuaIndex(selfRef(), LuaString(p.name!!))), listOf(LuaName(nameOf(p)))))
+                }
+                initializers(c)
+            }
+            emitMethod(ref, "____init", enumParams + params.map { nameOf(it) }, body)
+        }
+        (c as? KtClass)?.secondaryConstructors?.forEachIndexed { i, ctor ->
+            val suffix = (i + 1).toString()
+            ctor.valueParameters.filter { it.hasDefaultValue() }.forEach { unsupported(it, "Default parameter value") }
+            val params = enumParams + ctor.valueParameters.map { nameOf(it) }
+            val body = collect {
+                val delegation = ctor.getDelegationCallOrNull()
+                if (delegation != null && delegation.isCallToThis) {
+                    delegatingInit(delegation, c, enumParams)
+                } else {
+                    superInit(delegation?.takeIf { it.valueArgumentList != null }, info.base)
+                    if (!hasPrimary(c)) initializers(c)
+                }
+                ctor.bodyExpression?.let { block(it) }
+            }
+            emitMethod(ref, "____init$suffix", params, body)
+            val self = LuaName("self")
+            emit(
+                LuaFunctionDecl(
+                    LuaIndex(ref, LuaString("new$suffix")),
+                    LuaFunction(
+                        params,
+                        listOf(
+                            LuaLocal(listOf("self"), listOf(luaCall(LuaName("setmetatable"), LuaTable(emptyList()), ref))),
+                            LuaCallStmt(LuaMethodCall(self, "____init$suffix", params.map { LuaName(it) })),
+                            LuaReturn(listOf(self)),
+                        ),
+                    ),
+                    isLocal = false,
+                ),
+            )
+        }
+    }
+
+    /** Property initializers and `init` blocks, in declaration order. */
+    private fun KaSession.initializers(c: KtClassOrObject) {
+        for (decl in c.declarations) {
+            when (decl) {
+                is KtProperty -> decl.initializer?.let { init ->
+                    val field = LuaIndex(selfRef(), LuaString(decl.name!!))
+                    emitAll(valueInto(init) { listOf(LuaAssign(listOf(field), listOf(it))) })
+                }
+                is KtAnonymousInitializer -> decl.body?.let { block(it) }
+                else -> Unit
+            }
+        }
+    }
+
+    /** Calls the base class constructor that [call] (a super-type entry or `super(...)`) resolves to. */
+    private fun KaSession.superInit(call: KtCallElement?, base: KtClassOrObject?) {
+        if (base == null) return
+        if (call == null) {
+            if (initNeeded(base)) emit(LuaCallStmt(LuaCall(LuaIndex(classRef(base), LuaString("____init")), listOf(selfRef()))))
+            return
+        }
+        val resolved = call.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>() ?: return
+        val suffix = constructorSuffix(resolved.partiallyAppliedSymbol.symbol.psi)
+        if (suffix.isEmpty() && !initNeeded(base)) return
+        val args = ordered(callArguments(resolved, call))
+        emit(LuaCallStmt(LuaCall(LuaIndex(classRef(base), LuaString("____init$suffix")), listOf(selfRef()) + args)))
+    }
+
+    /** `constructor(...) : this(...)`. */
+    private fun KaSession.delegatingInit(call: KtConstructorDelegationCall, c: KtClassOrObject, enumParams: List<String>) {
+        val resolved = call.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>() ?: return
+        val suffix = constructorSuffix(resolved.partiallyAppliedSymbol.symbol.psi)
+        if (suffix.isEmpty() && !initNeeded(c)) return
+        val args = enumParams.map { LuaName(it) } + ordered(callArguments(resolved, call))
+        emit(LuaCallStmt(LuaMethodCall(selfRef(), "____init$suffix", args)))
+    }
+
+    // ---- properties ----
+
+    private fun isMemberProperty(psi: com.intellij.psi.PsiElement?): Boolean =
+        (psi is KtProperty && psi.containingClassOrObject != null) ||
+            (psi is KtParameter && psi.hasValOrVar() && psi.ownerFunction is KtPrimaryConstructor)
+
+    private fun hasAccessors(p: KtNamedDeclaration) =
+        p is KtProperty && (p.getter?.hasBody() == true || p.setter?.hasBody() == true)
+
+    private fun accessorName(prefix: String, p: KtNamedDeclaration) =
+        prefix + p.name!!.replaceFirstChar { it.uppercaseChar() }
+
+    private fun propertyRead(receiver: LuaExpr, p: KtNamedDeclaration): LuaExpr =
+        if (hasAccessors(p)) LuaMethodCall(receiver, accessorName("get", p), emptyList())
+        else LuaIndex(receiver, LuaString(p.name!!))
+
+    private fun propertyWrite(receiver: LuaExpr, p: KtNamedDeclaration, value: LuaExpr): LuaStmt =
+        if (hasAccessors(p)) LuaCallStmt(LuaMethodCall(receiver, accessorName("set", p), listOf(value)))
+        else LuaAssign(listOf(LuaIndex(receiver, LuaString(p.name!!))), listOf(value))
+
+    /** `field` inside an accessor: the property's storage on `self`. */
+    private fun KaSession.backingField(e: KtNameReferenceExpression): LuaExpr {
+        val symbol = e.mainReference.resolveToSymbol() as KaBackingFieldSymbol
+        return LuaIndex(selfRef(), LuaString(symbol.owningProperty.name.asString()))
+    }
+
+    private fun KaSession.accessorMethods(p: KtProperty, ref: LuaExpr) {
+        val owner = p.containingClassOrObject
+        if (p.hasModifier(KtTokens.OPEN_KEYWORD) || p.hasModifier(KtTokens.OVERRIDE_KEYWORD) ||
+            p.hasModifier(KtTokens.ABSTRACT_KEYWORD) || (owner is KtClass && owner.isInterface())
+        ) {
+            unsupported(p, "Custom accessors on an open or overriding property")
+            return
+        }
+        val field = LuaIndex(selfRef(), LuaString(p.name!!))
+        val getter = p.getter?.takeIf { it.hasBody() }
+        emitMethod(ref, accessorName("get", p), emptyList(), getter?.let { accessorBody(it) } ?: listOf(LuaReturn(listOf(field))))
+        if (p.isVar) {
+            val setter = p.setter?.takeIf { it.hasBody() }
+            val param = LuaNames.of(setter?.parameter?.name ?: "value")
+            emitMethod(
+                ref, accessorName("set", p), listOf(param),
+                setter?.let { accessorBody(it) } ?: listOf(LuaAssign(listOf(field), listOf(LuaName(param)))),
+            )
+        }
+    }
+
+    private fun KaSession.accessorBody(accessor: KtPropertyAccessor): List<LuaStmt> = collect { functionBody(accessor) }
+
+    // ---- receivers ----
+
+    private fun KaSession.thisRef(e: KtThisExpression): LuaExpr {
+        val label = e.getLabelName()
+        val current = currentClass ?: return unsupported(e, "'this' outside of a class")
+        return if (label == null || label == current.name) selfRef() else unsupported(e, "Labeled 'this'")
+    }
+
+    private fun KaSession.implicitReceiverOf(ref: KtNameReferenceExpression): LuaExpr? {
+        val call = ref.resolveToCall()?.successfulCallOrNull<KaCallableMemberCall<*, *>>() ?: return null
+        val value = call.partiallyAppliedSymbol.dispatchReceiver ?: return null
+        return implicitReceiver(value, ref)
+    }
+
+    /** The Lua value of an implicit `this`: `self`, or the table of an object or companion. */
+    private fun KaSession.implicitReceiver(value: KaReceiverValue, element: KtElement): LuaExpr? {
+        val original = (value as? KaSmartCastedReceiverValue)?.original ?: value
+        val psi = (original as? KaImplicitReceiverValue)?.symbol?.psi
+        return when {
+            psi != null && psi == currentClass -> selfRef()
+            psi is KtObjectDeclaration && psi.containingFile == file -> classRef(psi)
+            else -> {
+                unsupported(element, "This implicit receiver")
+                null
+            }
+        }
+    }
+
+    // ---- data classes, enums, companions ----
+
+    private fun KaSession.dataClassMembers(c: KtClass, ref: LuaExpr) {
+        val props = c.primaryConstructorParameters.filter { it.hasValOrVar() }
+        if (c.declaredFunction("toString") == null) {
+            val parts = mutableListOf<LuaExpr>()
+            props.forEachIndexed { i, p ->
+                parts += LuaString((if (i == 0) "${c.name}(" else ", ") + "${p.name}=")
+                parts += str(LuaIndex(selfRef(), LuaString(p.name!!)), p.returnType, forConcat = true)
+            }
+            parts += LuaString(if (props.isEmpty()) "${c.name}()" else ")")
+            val merged = parts.fold(mutableListOf<LuaExpr>()) { acc, part ->
+                val last = acc.lastOrNull()
+                if (last is LuaString && part is LuaString) acc[acc.lastIndex] = LuaString(last.value + part.value) else acc += part
+                acc
+            }
+            emitMethod(ref, "toString", emptyList(), listOf(LuaReturn(listOf(merged.reduceRight { a, b -> LuaBinary(LuaBinOp.Concat, a, b) }))))
+        }
+        if (c.declaredFunction("equals") == null) {
+            val other = LuaName("other")
+            val checks = listOf<LuaExpr>(LuaBinary(LuaBinOp.Eq, luaCall(LuaName("getmetatable"), other), ref)) +
+                props.map { p ->
+                    val key = LuaString(p.name!!)
+                    equality(LuaIndex(selfRef(), key), p.returnType, LuaIndex(other, key), p.returnType, negated = false)
+                }
+            emitMethod(ref, "equals", listOf("other"), listOf(LuaReturn(listOf(checks.reduce { a, b -> LuaBinary(LuaBinOp.And, a, b) }))))
+        }
+    }
+
+    /** Generated members of data classes declared in this file: copy, componentN, toString, equals. */
+    private fun KaSession.dataClassMember(call: KaCallableMemberCall<*, *>, receiverExpr: KtExpression?, implicit: LuaExpr?): LuaExpr? {
+        val symbol = call.partiallyAppliedSymbol.symbol
+        val name = symbol.callableId?.callableName?.asString() ?: return null
+        val cls = symbol.callableId?.classId?.let(::classInFile) as? KtClass ?: return null
+        if (!cls.isData() || symbol.psi is KtNamedFunction) return null // user-declared members are ordinary methods
+        if (name != "copy" && name != "toString" && name != "equals" && !name.matches(Regex("component[0-9]+"))) return null
+        val props = cls.primaryConstructorParameters
+        val receiver = implicit ?: expression(receiverExpr ?: return null)
+        if (name == "toString" || name == "equals") {
+            val args = (call as KaFunctionCall<*>).argumentMapping.keys.toList()
+            return LuaMethodCall(receiver, name, ordered(args))
+        }
+        if (name != "copy") return propertyRead(receiver, props[name.removePrefix("component").toInt() - 1])
+        val source = cache(receiver, "source")
+        val mapping = (call as KaFunctionCall<*>).argumentMapping.entries.toList()
+        val provided = mapping.map { it.value.symbol.name.asString() }.zip(ordered(mapping.map { it.key })).toMap()
+        val args = props.map { p -> provided[p.name] ?: propertyRead(source, p) }
+        return LuaCall(LuaIndex(classRef(cls), LuaString("new")), args)
+    }
+
+    private fun KaSession.enumEntries(c: KtClass, ref: LuaExpr) {
+        c.declarations.filterIsInstance<KtEnumEntry>().forEachIndexed { ordinal, entry ->
+            if (entry.body != null) unsupported(entry, "Enum entry with a body")
+            val callEntry = entry.initializerList?.initializers?.firstOrNull() as? KtSuperTypeCallEntry
+            val resolved = callEntry?.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>()
+            val suffix = constructorSuffix(resolved?.partiallyAppliedSymbol?.symbol?.psi)
+            val args = if (resolved != null) ordered(callArguments(resolved, callEntry)) else emptyList()
+            val value = LuaCall(LuaIndex(ref, LuaString("new$suffix")), listOf(LuaString(entry.name!!), LuaNumber(ordinal.toString())) + args)
+            emit(LuaAssign(listOf(LuaIndex(ref, LuaString(entry.name!!))), listOf(value)))
+        }
+    }
+
+    /** Companion members live on the class table; their initializers run in `____initCompanion`. */
+    private fun KaSession.companion(companion: KtObjectDeclaration, ref: LuaExpr) {
+        if (companion.superTypeListEntries.isNotEmpty()) {
+            unsupported(companion, "Companion object with supertypes")
+            return
+        }
+        withClass(companion) {
+            checkMembers(companion)
+            val owner = companion.containingClassOrObject!!
+            val instanceNames = owner.declarations.mapNotNull { (it as? KtNamedDeclaration)?.name }.toSet() +
+                (owner as? KtClass)?.primaryConstructorParameters?.mapNotNull { it.name }.orEmpty()
+            companion.declarations.filterIsInstance<KtNamedDeclaration>().filter { it.name in instanceNames }.forEach {
+                ctx.error(it, "Companion member '${it.name}' clashes with an instance member of the same name")
+            }
+            members(companion, ref)
+            val init = collect { initializers(companion) }
+            if (init.isNotEmpty()) {
+                emitMethod(ref, "____initCompanion", emptyList(), init)
+                emit(LuaCallStmt(LuaMethodCall(ref, "____initCompanion", emptyList())))
+            }
+        }
+    }
+
+    // ---- equality and casts ----
+
+    /** Kotlin `==`: identity for primitives, enums and objects; `equals()` when a class may override it. */
+    private fun KaSession.equality(l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?, negated: Boolean): LuaExpr {
+        val result = when {
+            l is LuaNil || r is LuaNil || lt.isNullLiteral || rt.isNullLiteral -> LuaBinary(LuaBinOp.Eq, l, r)
+            !mayOverrideEquals(lt) && !mayOverrideEquals(rt) -> LuaBinary(LuaBinOp.Eq, l, r)
+            lt != null && !lt.isMarkedNullable && knownEquals(lt) -> LuaMethodCall(l, "equals", listOf(r))
+            else -> lualibCall("Equals", l, r)
+        }
+        return if (negated) negate(result) else result
+    }
+
+    private val KaType?.isNullLiteral get() = this != null && with(session) { isNothingType }
+
+    private fun KaSession.mayOverrideEquals(t: KaType?): Boolean {
+        val symbol = t?.expandedSymbol ?: return true
+        if (symbol.classId?.asString() in IDENTITY_TYPES) return false
+        if (symbol.classKind == KaClassKind.ENUM_CLASS || symbol.classKind.isObject) return false
+        val psi = symbol.psi as? KtClassOrObject
+        if (psi == null || psi.containingFile != file) return true
+        return overridesEquals(psi) || psi.hasModifier(KtTokens.OPEN_KEYWORD) || psi.hasModifier(KtTokens.ABSTRACT_KEYWORD) ||
+            psi.hasModifier(KtTokens.SEALED_KEYWORD) || (psi is KtClass && psi.isInterface())
+    }
+
+    private fun KaSession.knownEquals(t: KaType): Boolean {
+        val psi = t.expandedSymbol?.psi as? KtClassOrObject ?: return false
+        return psi.containingFile == file && overridesEquals(psi)
+    }
+
+    private fun KaSession.overridesEquals(c: KtClassOrObject): Boolean =
+        (c is KtClass && c.isData()) ||
+            c.declaredFunction("equals")?.hasModifier(KtTokens.OVERRIDE_KEYWORD) == true ||
+            superInfo(c).base?.let { overridesEquals(it) } == true
+
+    private fun KaSession.cast(e: KtBinaryExpressionWithTypeRHS): LuaExpr {
+        val type = e.right?.type ?: return LuaNil
+        val value = expression(e.left)
+        if (e.operationReference.getReferencedNameElementType() != KtTokens.AS_SAFE) return value // unchecked, as in TSTL
+        val v = cache(value, "cast")
+        if (type.isBooleanType) {
+            val name = ctx.temp("cast")
+            emit(LuaLocal(listOf(name)))
+            emit(LuaIf(typeTest(v, type, e), listOf(LuaAssign(listOf(LuaName(name)), listOf(v)))))
+            return LuaName(name)
+        }
+        return LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.And, typeTest(v, type, e), v), LuaNil)
     }
 
     companion object {
@@ -864,10 +1428,13 @@ class FileTransformer(
             KtTokens.PLUSEQ to LuaBinOp.Add, KtTokens.MINUSEQ to LuaBinOp.Sub, KtTokens.MULTEQ to LuaBinOp.Mul,
             KtTokens.DIVEQ to LuaBinOp.Div, KtTokens.PERCEQ to LuaBinOp.Mod,
         )
+        private val IDENTITY_TYPES = setOf(
+            "kotlin/Int", "kotlin/Long", "kotlin/Short", "kotlin/Byte", "kotlin/Double", "kotlin/Float",
+            "kotlin/Boolean", "kotlin/Char", "kotlin/String", "kotlin/Unit", "kotlin/Nothing",
+        )
         private val BINARY_OPERATORS: Map<IElementType, LuaBinOp> = mapOf(
             KtTokens.PLUS to LuaBinOp.Add, KtTokens.MINUS to LuaBinOp.Sub, KtTokens.MUL to LuaBinOp.Mul,
             KtTokens.DIV to LuaBinOp.Div, KtTokens.PERC to LuaBinOp.Mod,
-            KtTokens.EQEQ to LuaBinOp.Eq, KtTokens.EXCLEQ to LuaBinOp.Ne,
             KtTokens.EQEQEQ to LuaBinOp.Eq, KtTokens.EXCLEQEQEQ to LuaBinOp.Ne,
             KtTokens.LT to LuaBinOp.Lt, KtTokens.GT to LuaBinOp.Gt, KtTokens.LTEQ to LuaBinOp.Le, KtTokens.GTEQ to LuaBinOp.Ge,
         )

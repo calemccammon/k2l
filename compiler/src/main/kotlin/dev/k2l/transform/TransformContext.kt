@@ -28,8 +28,14 @@ object LuaNames {
     private val RESERVED_GLOBALS = setOf(
         "_G", "_ENV", "assert", "coroutine", "debug", "error", "getmetatable", "io", "ipairs", "load", "math",
         "next", "os", "package", "pairs", "pcall", "print", "rawequal", "rawget", "rawlen", "rawset", "require",
-        "select", "setmetatable", "string", "table", "tonumber", "tostring", "type", "unpack", "utf8", "xpcall",
+        "select", "self", "setmetatable", "string", "table", "tonumber", "tostring", "type", "unpack", "utf8", "xpcall",
     )
+
+    /** A method or field name: only Lua keywords need renaming, since it lives in a table. */
+    fun member(kotlinName: String): String {
+        val safe = of(kotlinName)
+        return if (safe.startsWith("____") && kotlinName !in LuaPrinter.KEYWORDS) kotlinName else safe
+    }
 
     fun of(kotlinName: String): String {
         val cleaned = buildString {

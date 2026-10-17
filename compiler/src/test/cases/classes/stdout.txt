@@ -1,0 +1,13 @@
+Counter created with step 3
+6
+12
+0
+68.0
+setting -300.0
+-273.15
+secondary constructor for Ada
+Account(Ada, 120)
+account: Account(Ada, 120)
+Account(Bob, 1)
+false
+true

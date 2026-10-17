@@ -1,2 +1,4 @@
-1:1: Declaration 'Class' is not supported yet
-4:14: Kotlin library API 'kotlin/collections/listOf' is not supported yet
+2:5: Inner class is not supported yet
+7:5: Overloaded or duplicate member 'f' is not supported yet
+10:17: Extending 'Exception("boom")' is not supported yet
+13:14: Kotlin library API 'kotlin/collections/listOf' is not supported yet

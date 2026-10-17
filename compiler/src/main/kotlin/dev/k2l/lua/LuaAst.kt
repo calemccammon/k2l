@@ -59,8 +59,16 @@ data class LuaNumericFor(
 ) : LuaStmt
 data class LuaGenericFor(val names: List<String>, val exprs: List<LuaExpr>, val body: List<LuaStmt>) : LuaStmt
 
-/** `name` is a [LuaName] or [LuaIndex]; `isLocal` emits `local function`. */
-data class LuaFunctionDecl(val name: LuaExpr, val fn: LuaFunction, val isLocal: Boolean) : LuaStmt
+/**
+ * `name` is a [LuaName] or [LuaIndex]; `isLocal` emits `local function`. With `isMethod`, `name` is
+ * `Class.method`, printed as `function Class:method(...)` with an implicit `self`.
+ */
+data class LuaFunctionDecl(
+    val name: LuaExpr,
+    val fn: LuaFunction,
+    val isLocal: Boolean,
+    val isMethod: Boolean = false,
+) : LuaStmt
 data class LuaReturn(val values: List<LuaExpr> = emptyList()) : LuaStmt
 data object LuaBreak : LuaStmt
 data class LuaGoto(val label: String) : LuaStmt

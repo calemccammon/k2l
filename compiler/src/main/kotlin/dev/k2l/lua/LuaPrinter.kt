@@ -85,7 +85,13 @@ class LuaPrinter(private val indentUnit: String = "    ") {
             }
             is LuaFunctionDecl -> {
                 val prefix = if (stmt.isLocal) "local function " else "function "
-                printFunction(prefix + expr(stmt.name), stmt.fn)
+                val name = stmt.name
+                val header = if (stmt.isMethod && name is LuaIndex && name.key is LuaString) {
+                    "${expr(name.target)}:${(name.key as LuaString).value}"
+                } else {
+                    expr(name)
+                }
+                printFunction(prefix + header, stmt.fn)
             }
             is LuaReturn -> line(returnText(stmt))
             LuaBreak -> line("break")

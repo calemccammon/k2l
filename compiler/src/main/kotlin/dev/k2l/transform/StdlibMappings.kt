@@ -62,6 +62,11 @@ object StdlibMappings {
             def("kotlin/$t.toLong") { lualib("DoubleToLong", self) }
         }
 
+        // Any / Enum
+        def("kotlin/Any.equals") { lualib("Equals", self, arg(0)) }
+        def("kotlin/Enum.name") { LuaIndex(self, LuaString("name")) }
+        def("kotlin/Enum.ordinal") { LuaIndex(self, LuaString("ordinal")) }
+
         // Strings
         def("kotlin/String.length") { LuaUnary(LuaUnOp.Len, self) }
         def("kotlin/String.plus") { LuaBinary(LuaBinOp.Concat, self, str(arg(0), argTypes[0], forConcat = true)) }

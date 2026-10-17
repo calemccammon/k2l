@@ -1,0 +1,12 @@
+Person(name=Ada, age=36, email=null)
+Person(name=Ada, age=37, email=null)
+false
+true
+true
+Person(name=Ada L., age=37, email=ada@example.com)
+Ada 36
+Pair2(first=1, second=2.5)
+true
+Wrapper(inner=Person(name=Ada, age=36, email=null))
+false
+false

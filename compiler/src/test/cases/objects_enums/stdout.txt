@@ -1,0 +1,10 @@
+registered alpha as id-1
+registered beta as id-2
+id-
+NORTH(0) EAST(1) SOUTH(2) WEST(3) NORTH(0) 
+WEST
+true
+EARTH true
+3.303E23
+4,6 created=3
+0
