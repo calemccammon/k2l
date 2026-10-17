@@ -1,0 +1,39 @@
+2
+7
+9
+9
+Handle(2) of main uses=2 total=9
+Handle(5) of main uses=1 total=9
+true
+main
+19
+[main: bump by 2, main: bump by 5, main: bump by 2, main: bump by 10]
+1
+19
+unnamed@main
+x@main
+sum5@main
+made@main
+T/leaf 5 in middle 4 depth=1
+T/leaf 5 in middle 4 depth=2
+4 T 8
+10
+T/leaf 3 in middle 10 depth=3
+3
+10 T 20
+square part 1
+square part 2 (x)
+marked square part 99
+square part 103
+square part -1
+square part 7
+square corner 2 of 4
+square part 5 (y)
+true
+true
+1 2 1 2
+6
+20
+4
+[20, 22, 25]
+6

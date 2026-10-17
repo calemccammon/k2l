@@ -1,0 +1,40 @@
+PLUS 0 + 9 op + add
+TIMES 1 * 18 multiply (op *) mul
+MINUS 2 - 3 op - sub
+PLUS
+minus!
+MINUS
+TIMES
+minus!
+[PLUS, TIMES, minus!]
+42
+true
+false
+true
+true
+false
+[+, *, -]
+3
+-- levels
+1
+151
+152
+306
+1000
+2000
+0
+16
+HIGH
+low, medium, high, none
+-- shapes
+DOT 1 shape/1
+SQUARE 4 square/8
+TRIANGLE 3 triangle/3
+LINE 2 line
+-- planets
+home 5
+red 1
+red 1
+1
+2
+no such color

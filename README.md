@@ -86,14 +86,19 @@ construct it doesn't understand.
 | string templates | `..` concatenation; values formatted like Kotlin's `toString()` |
 | `class`, `interface`, `object`, `enum class`, `data class` | metatable-based classes: `Point.new(1, 2)`, `p:distance(q)` |
 | primary/secondary constructors, `init` | `Class:____init(...)`, chained to the superclass |
-| properties | table fields; custom accessors become `getX()`/`setX()` methods |
+| properties | table fields; custom accessors become `getX()`/`setX()` methods (for open, overriding and interface properties, in every member of the override family) |
 | companion objects | members on the class table: `Point:of(1, 2)` |
+| `inner class` | a nested class whose instances keep `self.____outer`; `outer.Inner(x)` is `Outer.Inner.new(outer, x)` and `this@Outer` is `self.____outer` |
+| enum entries with bodies, `values()`, `entries`, `valueOf` | each body is an anonymous subclass of the enum: `Op.PLUS = ____PLUS.new("PLUS", 0, "+")`; `__K2L_EnumValues(Op)` |
 | `==` | `==` for primitives/enums/objects, `equals()` when a class may override it |
 | `is`, `as?` | `__K2L_InstanceOf(x, Class)`, `type(x) == "string"`, ... |
 | `x?.y`, `x ?: y`, `x!!` | `x and x.y`, `x or y` (when safe), `__K2L_NotNull(x)` |
 | lambdas, function references | Lua closures |
 | `let`, `apply`, `also`, `run`, `with`, `forEach`, `buildString`, ... | inlined, so `return` inside them works as in Kotlin |
 | extension functions | plain functions taking the receiver first: `shout("hi")` |
+| extension properties | `getLastChar(s)` / `setLastChar(s, v)`: functions taking the receiver first |
+| delegated properties (`by`) | the delegate lives in `self.____x_delegate` (a local `____x_delegate` outside classes); reads and writes call its `getValue`/`setValue` |
+| `by lazy { }`, `Delegates.observable`/`vetoable`/`notNull`, `by map`, your own `getValue`/`setValue` | lualib objects with the same methods; `by map` reads `map:getValue("x")` |
 | default and named arguments | `if x == nil then x = default end` in the callee; callers pass `nil` for omitted ones |
 | overloads | `describe`, `describe__1`, ... (overrides keep their parent's name) |
 | `vararg`, `*spread` | Lua varargs packed into an array; `table.unpack` |
@@ -178,9 +183,12 @@ that expect arrays; Kotlin lambdas are Lua functions.
 
 ## Not supported yet
 
-Inner classes, extension properties, coroutines (`suspend`), reflection (`::class`), sequences
-other than as eager lists, `break`/`continue` out of a `try` block, and custom accessors on open
-properties. Each is reported as an error rather than miscompiled.
+Inner classes of local classes and `::Inner` references, coroutines (`suspend`), reflection
+(`::class`; delegates see `KProperty` only as `{ name = "x" }`), `provideDelegate` and
+extension-operator delegates, extension properties declared in a class, open or overriding delegated
+properties, sequences other than as eager lists, `break`/`continue` out of a `try` block, and custom
+accessors on properties that override library properties (e.g. `Exception.message`). Each is reported
+as an error rather than miscompiled.
 
 Other semantic differences to be aware of: strings are byte strings, so `length` and indexing count
 UTF-8 bytes; `xs[i]` is not bounds-checked (`get(i)` and `elementAt(i)` are); objects are initialized

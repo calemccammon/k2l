@@ -1,0 +1,8 @@
+1 2 a b
+A sees 2 b
+1 2 a changed
+2
+changed
+1 2 a c | b c
+1 2 a z | b z
+base n

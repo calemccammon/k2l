@@ -1,0 +1,81 @@
+before lazyLocal
+computing lazyLocal
+42
+42
+false
+7
+true
+8
+no sync
+before topLazy
+computing topLazy
+top
+top
+topObservable: 0 -> 3
+topObservable: 3 -> 5
+5
+local counter 10 -> 11
+local counter 11 -> 22
+22
+50
+settings created
+building greeting for test
+hello test
+hello test
+5
+volume changed from 5 to 8
+volume changed from 8 to 9
+read tracked (owned)
+write tracked: 10 -> 11
+9
+veto? 1 -> 5
+veto? 5 -> -3
+5
+veto? 5 -> 15
+15
+caught: Property name should be initialized before get.
+Ada
+read tracked (owned)
+11
+write tracked: 11 -> 20
+read tracked (owned)
+write tracked: 20 -> 25
+read tracked (owned)
+25
+100
+7
+UPPER
+building greeting for other
+hello other
+hello test
+read local (no owner)
+1
+write local: 1 -> 2
+read local (no owner)
+2
+TAG
+localhost:8080
+example.org:9090
+Grace is 36
+Dr
+Prof
+before registry
+loading registry
+2
+[a, b]
+hits=2
+creating instance
+singleton
+singleton
+before shared
+computing shared
+99
+99
+get sharedLogged
+init
+set sharedLogged = changed
+get sharedLogged
+changed
+first: not yet
+ok after 2
+ok after 2

@@ -99,6 +99,7 @@ end
 
 Color.RED = Color.new("RED", 0)
 Color.GREEN = Color.new("GREEN", 1)
+Color.____values = {Color.RED, Color.GREEN}
 local Point = __K2L_Class("Point")
 
 function Point:____init(x, y)

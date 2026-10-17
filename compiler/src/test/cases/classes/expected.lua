@@ -50,7 +50,7 @@ function Account:____init(owner)
 end
 
 function Account:____init1(owner, initial)
-    self:____init(owner)
+    Account.____init(self, owner)
     self.balance = initial
     print("secondary constructor for " .. owner)
 end

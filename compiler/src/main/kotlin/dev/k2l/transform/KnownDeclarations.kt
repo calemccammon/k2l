@@ -31,7 +31,14 @@ internal val LIBRARY_CLASSES = listOf(
 )
 
 /** Library supertypes that need no runtime support (Comparable is honored via compareTo). */
-internal val MARKER_INTERFACES = setOf("kotlin/Any", "kotlin/Comparable", "java/lang/Comparable", "java/io/Serializable")
+internal val MARKER_INTERFACES = setOf(
+    "kotlin/Any",
+    "kotlin/Comparable",
+    "java/lang/Comparable",
+    "java/io/Serializable",
+    "kotlin/properties/ReadWriteProperty",
+    "kotlin/properties/ReadOnlyProperty",
+)
 
 /** Types compared by value, whose `equals` can never be overridden. */
 internal val IDENTITY_TYPES = setOf(

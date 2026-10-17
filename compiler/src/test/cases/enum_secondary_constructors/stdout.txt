@@ -1,0 +1,6 @@
+RED#0 r x1
+GREEN#1 g x2
+BLUE#2 none x1
+1
+BLUE
+true

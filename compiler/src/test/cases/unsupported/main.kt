@@ -1,8 +1,8 @@
-class Outer {
-    inner class Inner
-}
+class Holder { val String.last: Char get() = this[length - 1] }
 
-val String.lastChar: Char get() = this[length - 1]
+fun localInner() {
+    class Local { inner class Inner }
+}
 
 suspend fun later() = 1
 

@@ -1,0 +1,12 @@
+corner sales 0 -> 10
+corner/till1 sold SMALL: costs 10
+computing discount
+corner sales 10 -> 38
+corner/till1 sold LARGE: costs 28
+corner sales 38 -> 66
+corner/till1 sold LARGE: costs 28
+#1
+[costs 10, costs 28]
+plain
+*fancy*
+66
