@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-gradle-plugin`
@@ -53,7 +55,7 @@ val functionalTestTask = tasks.register<Test>("functionalTest") {
     classpath = functionalTest.runtimeClasspath
     useJUnitPlatform()
     // A stuck nested build must fail CI rather than hang it.
-    timeout.set(java.time.Duration.ofMinutes(15))
+    timeout.set(Duration.ofMinutes(15))
     testLogging {
         showStandardStreams = true
         events("started", "passed", "failed")
