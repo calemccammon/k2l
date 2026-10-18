@@ -22,19 +22,6 @@ jobs:
       - name: Install Lua interpreters
         run: sudo apt-get update && sudo apt-get install -y lua5.1 lua5.2 lua5.3 lua5.4 luajit
 
-      # TEMPORARY: diagnose the compiler hanging on CI (remove before merging).
-      - name: Debug compiler hang
-        continue-on-error: true
-        run: |
-          ./gradlew -q :compiler:installDist
-          mkdir -p /tmp/repro/src/greet
-          printf 'import greet.greeting\n\nfun main() {\n    println(greeting())\n}\n' > /tmp/repro/src/main.kt
-          printf 'package greet\n\nfun greeting() = "hello"\n' > /tmp/repro/src/greet/text.kt
-          for flags in "" "--source-map"; do
-            echo "=== k2l $flags"
-            time timeout --signal=QUIT --kill-after=20 90 compiler/build/install/k2l/bin/k2l -o /tmp/repro/out$flags -t 5.3 $flags /tmp/repro/src; echo "exit=$?"
-          done
-
       - name: Test (all Lua targets)
         run: ./gradlew check
 
