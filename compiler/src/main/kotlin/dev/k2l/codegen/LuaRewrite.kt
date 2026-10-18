@@ -1,4 +1,4 @@
-package dev.k2l.lua
+package dev.k2l.codegen
 
 /**
  * Rewrites the leaf statements of this list, recursing into the bodies of `if`, `do` and loops (not into nested

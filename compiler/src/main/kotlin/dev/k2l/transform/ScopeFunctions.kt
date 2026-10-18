@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
@@ -197,5 +197,5 @@ private fun FileTransformer.failUnless(failed: LuaExpr, exception: String, defau
         emit(LuaIf(failed, body))
     }
 
-private fun FileTransformer.throwNew(exception: String, message: LuaExpr): LuaStmt =
+internal fun FileTransformer.throwNew(exception: String, message: LuaExpr): LuaStmt =
     LuaCallStmt(luaCall(LuaName("error"), LuaCall(LuaIndex(lualibRef(EXCEPTIONS_FEATURE, exception), LuaString("new")), listOf(message))))

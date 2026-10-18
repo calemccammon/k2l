@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtSdkModule
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtSourceModule
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.psi.KtFile
+import java.awt.EventQueue
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -22,7 +23,12 @@ class SourceSession private constructor(
 ) : AutoCloseable {
     fun files(module: String): List<KtFile> = filesByModule[module].orEmpty().sortedBy { it.virtualFile.path }
 
-    override fun close() = Disposer.dispose(disposable)
+    override fun close() {
+        // Setting up the session queues work on the AWT event thread (BinaryFileTypeDecompilers' change
+        // notification); run it while the application still exists, or it throws a NullPointerException.
+        EventQueue.invokeAndWait {}
+        Disposer.dispose(disposable)
+    }
 
     companion object {
         fun create(modules: List<SourceModule>, classpath: List<Path> = emptyList()): SourceSession {

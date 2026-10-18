@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
@@ -286,7 +286,7 @@ internal fun FileTransformer.component(entry: KtDestructuringDeclarationEntry, v
 }
 
 /** [collection] itself when it is already a `List`/`Array`, else a list copy of it. */
-private fun FileTransformer.asList(kind: CollectionKind?, collection: LuaExpr): LuaExpr =
+internal fun FileTransformer.asList(kind: CollectionKind?, collection: LuaExpr): LuaExpr =
     if (kind?.isIndexable == true) collection else LuaMethodCall(collection, "toList", emptyList())
 
 private fun FileTransformer.jumpTarget(e: KtExpressionWithLabel): LoopFrame? = with(session) {
@@ -382,7 +382,7 @@ internal fun FileTransformer.forEachLoop(collection: LuaExpr, type: KaType?, lam
     }
 }
 
-private fun FileTransformer.forEachVar(params: List<KtParameter>, i: Int, default: String): String = with(session) {
+internal fun FileTransformer.forEachVar(params: List<KtParameter>, i: Int, default: String): String = with(session) {
     params.getOrNull(i)?.takeIf { it.destructuringDeclaration == null && it.name != null }?.let { naming.of(it) } ?: ctx.temp(default)
 }
 

@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 
 /** The `Throwable` helpers that print or describe an exception. */
 internal object ThrowableMappings {

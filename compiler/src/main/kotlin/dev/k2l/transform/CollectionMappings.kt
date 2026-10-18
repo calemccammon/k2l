@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaFlexibleType
@@ -422,8 +422,11 @@ object CollectionMappings {
             "get" -> when {
                 site.isString(site.argTypes.getOrNull(0)) -> LuaMethodCall(self, "getNamed", site.args)
 
-                // xs[i] is unchecked, xs.get(i) throws IndexOutOfBoundsException
-                site.element is KtArrayAccessExpression || kind == CollectionKind.Iterable -> index(self, site.arg(0))
+                // xs[i] and xs.get(i) throw IndexOutOfBoundsException; a loop index over xs.indices needs no check
+                kind == CollectionKind.Iterable || site.transformer.isProvenIndex(
+                    site.element,
+                    site.receiverType,
+                ) -> index(self, site.arg(0))
 
                 else -> LuaMethodCall(self, "get", site.args)
             }

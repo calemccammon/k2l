@@ -248,7 +248,7 @@ local function errors()
         end
     end
     local ____ok_15, ____result_15 = pcall(function()
-        print(__K2L_IDiv(1, __K2L_ListOf(0)[1]))
+        print(__K2L_IDiv(1, __K2L_ListOf(0):get(0)))
     end)
     if not ____ok_15 then
         local ____error_15 = __K2L_ToThrowable(____result_15)

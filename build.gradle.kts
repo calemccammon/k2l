@@ -14,7 +14,7 @@ val ktlintRules = mapOf(
     "ktlint_code_style" to "intellij_idea",
     "max_line_length" to "140",
     // The Lua and Kotlin PSI syntax trees are used dozens of types at a time.
-    "ij_kotlin_packages_to_use_import_on_demand" to "dev.k2l.lua.*,org.jetbrains.kotlin.psi.*",
+    "ij_kotlin_packages_to_use_import_on_demand" to "dev.k2l.codegen.*,dev.k2l.lua.*,org.jetbrains.kotlin.psi.*",
 )
 
 subprojects {
@@ -42,6 +42,6 @@ subprojects {
     configure<dev.detekt.gradle.extensions.DetektExtension> {
         buildUponDefaultConfig.set(true)
         config.setFrom(rootProject.file("config/detekt.yml"))
-        source.setFrom("src/main/kotlin", "src/test/kotlin")
+        source.setFrom("src/main/kotlin", "src/test/kotlin", "src/functionalTest/kotlin")
     }
 }

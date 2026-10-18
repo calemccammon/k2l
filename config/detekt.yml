@@ -7,6 +7,7 @@ style:
   WildcardImport:
     # The Lua and Kotlin PSI syntax trees are used dozens of types at a time.
     excludeImports:
+      - 'dev.k2l.codegen.*'
       - 'dev.k2l.lua.*'
       - 'org.jetbrains.kotlin.psi.*'
   MagicNumber:

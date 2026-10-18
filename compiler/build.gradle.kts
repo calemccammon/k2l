@@ -119,3 +119,18 @@ tasks.register<KotlinOracle>("kotlinOracle") {
     workDir.set(layout.buildDirectory.dir("oracle"))
     update.set(providers.gradleProperty("updateOracle").isPresent)
 }
+
+// ---- The compiler's runtime classpath as one consumable directory, for the Gradle plugin (`dev.k2l`) ----
+
+// The Analysis API jars are published without usable POMs, so a consumer can't resolve them transitively.
+// This variant is the exact set of jars (the compiler's own jar included) that `k2l` runs with.
+val k2lRuntimeLibs = tasks.register<Sync>("k2lRuntimeLibs") {
+    from(tasks.jar)
+    from(configurations.runtimeClasspath)
+    into(layout.buildDirectory.dir("k2l-runtime"))
+}
+
+configurations.consumable("k2lCompilerRuntime") {
+    attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named("k2l-compiler-runtime"))
+    outgoing.artifact(layout.buildDirectory.dir("k2l-runtime")) { builtBy(k2lRuntimeLibs) }
+}

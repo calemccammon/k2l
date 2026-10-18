@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.types.KaType
 
 /** What a mapping produces for a call, or null when it doesn't handle that overload. */

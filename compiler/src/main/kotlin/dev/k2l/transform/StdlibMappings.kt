@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.KtExpression
@@ -53,6 +53,7 @@ object StdlibMappings {
         RandomMappings.install(table)
         ThrowableMappings.install(table)
         RegexMappings.install(table)
+        ReflectionMappings.install(table)
     }
 
     private fun io() {
@@ -122,7 +123,16 @@ object StdlibMappings {
         def("kotlin/String.plus") { LuaBinary(LuaBinOp.Concat, self, str(arg(0), argTypes[0], forConcat = true)) }
         def("kotlin/text/uppercase") { if (args.isEmpty()) method(self, "upper") else null }
         def("kotlin/text/lowercase") { if (args.isEmpty()) method(self, "lower") else null }
-        def("kotlin/text/repeat") { method(self, "rep", arg(0)) }
+        def("kotlin/text/repeat") {
+            val count = (arg(0) as? LuaNumber)?.text?.toLongOrNull()
+            if (count != null &&
+                count >= 0
+            ) {
+                method(self, "rep", arg(0))
+            } else {
+                libMember("Strings", "__K2L_Text", "repeatCount", self, arg(0))
+            }
+        }
         def("kotlin/CharSequence.length") { LuaUnary(LuaUnOp.Len, self) }
         def("kotlin/text/isEmpty") {
             if (isBuilder(receiverType)) method(self, "isEmpty") else LuaBinary(LuaBinOp.Eq, LuaUnary(LuaUnOp.Len, self), LuaNumber("0"))

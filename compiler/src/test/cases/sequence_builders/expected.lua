@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
+local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -34,7 +35,7 @@ local function primes()
         local found = __K2L_ListOf()
         local n = 2
         while true do
-            if found:none(function(it) return math.fmod(n, it) == 0 end) then
+            if found:none(function(it) return __K2L_IRem(n, it) == 0 end) then
                 found:add(n)
                 ____this:yield(n)
             end

@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 
 /**
  * kotlin.random.Random. `Random(seed)` is Kotlin's XorWow generator (see `Random.lua`), so seeded sequences

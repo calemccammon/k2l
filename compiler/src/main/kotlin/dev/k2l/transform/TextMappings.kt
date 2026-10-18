@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 
@@ -99,15 +99,10 @@ internal object TextMappings {
     }
 
     private fun indexing(name: String, c: StringCall): LuaExpr? = when (name) {
-        "get" -> {
-            val i = c.args[0]
-            val n = (i as? LuaNumber)?.text?.toLongOrNull()
-            val at = if (n != null) LuaNumber("${n + 1}") else LuaBinary(LuaBinOp.Add, i, LuaNumber("1"))
-            LuaMethodCall(c.self, "sub", listOf(at, at))
-        }
+        // s[i] and s.get(i) throw StringIndexOutOfBoundsException, except for the index of a loop over s.indices
+        "get" -> if (c.site.transformer.isProvenIndex(c.site.element, c.site.receiverType)) charAt(c) else c.helper("CharAt", c.args[0])
 
-        // inline `sub`, as Lua does it: the common, in-range case
-        "substring", "subSequence" -> if (c.isRange(0)) c.text("substringOf", c.args[0]) else substring(c)
+        "substring", "subSequence" -> if (c.isRange(0)) c.text("substringOf", c.args[0]) else c.text("substring", *c.args.toTypedArray())
 
         "reversed" -> LuaMethodCall(c.self, "reverse", emptyList())
 
@@ -127,11 +122,12 @@ internal object TextMappings {
         else -> null
     }
 
-    private fun substring(c: StringCall): LuaExpr {
-        val start = c.args[0]
-        val from =
-            (start as? LuaNumber)?.text?.toLongOrNull()?.let { LuaNumber("${it + 1}") } ?: LuaBinary(LuaBinOp.Add, start, LuaNumber("1"))
-        return LuaMethodCall(c.self, "sub", listOfNotNull(from, c.args.getOrNull(1)))
+    /** `s:sub(i + 1, i + 1)` */
+    private fun charAt(c: StringCall): LuaExpr {
+        val i = c.args[0]
+        val n = (i as? LuaNumber)?.text?.toLongOrNull()
+        val at = if (n != null) LuaNumber("${n + 1}") else LuaBinary(LuaBinOp.Add, i, LuaNumber("1"))
+        return LuaMethodCall(c.self, "sub", listOf(at, at))
     }
 
     private fun search(name: String, c: StringCall): LuaExpr? {
@@ -307,8 +303,7 @@ internal object TextMappings {
     /** Everything else is the `Iterable` operation over the string's characters. */
     private fun onChars(name: String, c: StringCall): LuaExpr? {
         if (name == "count" && c.args.isEmpty()) return LuaUnary(LuaUnOp.Len, c.self)
-        if (name == "first" && c.args.isEmpty()) return LuaMethodCall(c.self, "sub", listOf(LuaNumber("1"), LuaNumber("1")))
-        if (name == "last" && c.args.isEmpty()) return LuaMethodCall(c.self, "sub", listOf(LuaNumber("-1")))
+        if ((name == "first" || name == "last") && c.args.isEmpty()) return c.text(name)
         if (name == "single" && c.args.isEmpty()) return c.text("single")
         if (name !in ON_CHAR_LIST) return null
         if (name == "random") return LuaMethodCall(c.listOfChars(), name, listOf(c.args.firstOrNull() ?: defaultRandom(c.site)))

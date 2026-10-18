@@ -1,7 +1,7 @@
 package dev.k2l.transform
 
 import com.intellij.psi.PsiElement
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 

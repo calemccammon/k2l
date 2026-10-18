@@ -1,6 +1,8 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import com.intellij.psi.PsiElement
+import dev.k2l.Origin
+import dev.k2l.codegen.*
 import java.util.Collections
 import java.util.IdentityHashMap
 
@@ -10,11 +12,34 @@ abstract class StatementEmitter {
 
     internal var buffer = mutableListOf<LuaStmt>()
 
+    /** Where the statements emitted now come from, for source maps; null when they are off. */
+    private var origin: Origin? = null
+
+    private fun record(stmt: LuaStmt) {
+        val current = origin ?: return
+        if (stmt !== LuaBreak) ctx.origins.putIfAbsent(stmt, current)
+    }
+
+    /** Runs [block] with the statements it emits attributed to [element], unless a nested element claims them first. */
+    internal inline fun <T> withOrigin(element: PsiElement, block: () -> T): T {
+        val saved = swapOrigin(ctx.originOf(element) ?: return block())
+        try {
+            return block()
+        } finally {
+            swapOrigin(saved)
+        }
+    }
+
+    @PublishedApi
+    internal fun swapOrigin(new: Origin?): Origin? = origin.also { origin = new }
+
     fun emit(stmt: LuaStmt) {
+        record(stmt)
         buffer += stmt
     }
 
     internal fun emitAll(stmts: List<LuaStmt>) {
+        stmts.forEach(::record)
         buffer += stmts
     }
 

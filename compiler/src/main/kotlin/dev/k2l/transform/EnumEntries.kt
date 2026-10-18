@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
 import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
 import org.jetbrains.kotlin.psi.*
@@ -41,6 +41,7 @@ private fun FileTransformer.entryWithBody(entry: KtEnumEntry, enumRef: LuaExpr, 
         val enumClass = entry.containingClassOrObject!!
         val local = LuaName(ctx.temp(entry.name!!))
         emit(LuaLocal(listOf(local.name), listOf(lualibCall("Class", LuaString(enumClass.name ?: "?"), enumRef))))
+        entryClassInfo(entry, local)
         withClass(entry) {
             checkMembers(entry)
             members(entry, local)

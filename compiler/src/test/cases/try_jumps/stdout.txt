@@ -1,0 +1,73 @@
+tryFirst finally
+200
+tryFirst finally
+5
+tryFirst finally
+-100
+body 1
+body 2
+after break
+odd 1
+finally 1
+finally 2
+odd 3
+finally 3
+finally 4
+odd 5
+finally 5
+tick 1
+cleanup 1
+tick 2
+cleanup 2
+cleanup 3
+done 3
+number 1
+end of iteration 1
+skipping x
+number 3
+end of iteration 3
+fine 0
+finally 0
+fine 1
+finally 1
+caught boom 2
+finally 2
+1,1
+f 1,1
+f 1,2
+2,1
+f 2,1
+f 2,2
+f 3,1
+labeled done
+inner 1
+inner finally 1
+between 1
+outer finally 1
+inner finally 2
+outer finally 2
+inner 3
+inner finally 3
+between 3
+outer finally 3
+inner finally 4
+outer finally 4
+outer total 404
+304
+[1][2][3][4][5]returned at 5
+[1][2][3][4][5][6][7]fell out
+body 1
+finally 1
+body 3
+finallyJumps done
+[10, 30, 40]
+do 1
+do finally 1
+do finally 2
+do 3
+do finally 3
+do finally 4
+checked 1
+checked 3
+checked 4
+4

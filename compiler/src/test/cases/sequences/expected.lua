@@ -22,6 +22,7 @@ local __K2L_SequenceFromIterator = ____lualib.__K2L_SequenceFromIterator
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
@@ -173,7 +174,7 @@ local function operations()
     print(__K2L_Str(seq:map(function(it) return it.price end):sortedDescending():toList()))
     print(__K2L_Str(seq:sortedWith(__K2L_CompareBy(function(it) return it.price end, function(it) return it.name end)):map(function(it) return it.name end):toList()))
     print(__K2L_Str(seq:associate(function(it) return __K2L_Pair.new(it.name, it.price) end)))
-    print(__K2L_Str(seq:associateBy(function(it) return it.name:sub(1, 1) end):getKeys()))
+    print(__K2L_Str(seq:associateBy(function(it) return __K2L_Text.first(it.name) end):getKeys()))
     print(__K2L_Str(seq:groupBy(function(it) return it.price end):mapValues(function(____destructured_2)
         local v = ____destructured_2.value
         return v.size

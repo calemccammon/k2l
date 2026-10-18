@@ -1,12 +1,13 @@
 package dev.k2l
 
+import dev.k2l.codegen.LuaChunk
+import dev.k2l.codegen.LuaPrinter
+import dev.k2l.codegen.Lualib
 import dev.k2l.frontend.SourceModule
 import dev.k2l.frontend.SourceSession
-import dev.k2l.lua.LuaChunk
-import dev.k2l.lua.LuaPrinter
-import dev.k2l.lua.Lualib
 import dev.k2l.transform.FileTransformer
 import dev.k2l.transform.ModuleContext
+import dev.k2l.transform.SOURCE_MAP_FEATURE
 import dev.k2l.transform.TransformContext
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter
@@ -19,13 +20,17 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 /** A generated Lua file; [path] is relative to the output directory. */
-data class LuaOutput(val path: String, val code: String)
+data class LuaOutput(val path: String, val code: String, val sourceMap: SourceMap? = null)
 
 data class CompileResult(val outputs: List<LuaOutput>, val diagnostics: List<Diagnostic>) {
     val hasErrors get() = diagnostics.any { it.severity == Severity.Error }
 }
 
 class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
+    private companion object {
+        const val REGISTER_NAME = "__K2L_SourceMapRegister"
+        const val REGISTER_LINES = 1
+    }
 
     fun compile(session: SourceSession, module: SourceModule): CompileResult {
         val outputs = mutableListOf<LuaOutput>()
@@ -45,9 +50,9 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
                 val ctx = TransformContext(options)
                 val chunk = FileTransformer(this, file, ctx, moduleContext).transformFile()
                 diagnostics += ctx.diagnostics
-                usedFeatures += ctx.lualib
                 // A file of only external declarations (Lua bindings) produces no Lua.
-                if (chunk.body.isNotEmpty()) outputs += LuaOutput(outputPath(module, file), render(chunk, ctx))
+                if (chunk.body.isNotEmpty()) outputs += render(chunk, ctx, outputPath(module, file), Paths.get(file.virtualFile.path))
+                usedFeatures += ctx.lualib
             }
         }
         if (options.luaLibImport == LuaLibImport.Require && usedFeatures.isNotEmpty()) {
@@ -56,7 +61,29 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         return CompileResult(outputs, diagnostics)
     }
 
-    private fun render(chunk: LuaChunk, ctx: TransformContext): String {
+    private fun render(chunk: LuaChunk, ctx: TransformContext, luaPath: String, sourcePath: Path): LuaOutput {
+        if (!options.sourceMap) return LuaOutput(luaPath, renderPlain(chunk, ctx))
+        val (code, mappings) = LuaPrinter(origins = ctx.origins).printMapped(chunk)
+        if (mappings.isEmpty()) return LuaOutput(luaPath, renderPlain(chunk, ctx))
+        ctx.lualib += SOURCE_MAP_FEATURE
+        ctx.lualibNames += REGISTER_NAME
+        // The runtime table is one line, so the code starts after the lines of the header plus that line.
+        val top = when (options.luaLibImport) {
+            LuaLibImport.Inline -> Lualib.resolve(ctx.lualib, options.luaTarget).joinToString("\n\n", postfix = "\n") { it.code }
+
+            LuaLibImport.Require -> buildString {
+                append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")
+                ctx.lualibNames.forEach { append("local $it = ____lualib.$it\n") }
+            }
+        }
+        val offset = top.count { it == '\n' } + REGISTER_LINES + 1
+        val map = SourceMap(luaPath, sourcePath, mappings.map { it.copy(luaLine = it.luaLine + offset) })
+        val kotlinPath = luaPath.removeSuffix(".lua") + "." + sourcePath.fileName.toString().substringAfterLast('.')
+        val register = "$REGISTER_NAME(\"$luaPath\", \"$kotlinPath\", \"${map.runtimeTable()}\")\n"
+        return LuaOutput(luaPath, top + register + "\n" + code + "--# sourceMappingURL=${luaPath.substringAfterLast('/')}.map\n", map)
+    }
+
+    private fun renderPlain(chunk: LuaChunk, ctx: TransformContext): String {
         val code = LuaPrinter().print(chunk)
         if (ctx.lualib.isEmpty()) return code
         return when (options.luaLibImport) {

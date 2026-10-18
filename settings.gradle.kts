@@ -19,3 +19,4 @@ dependencyResolutionManagement {
 
 include("lua-api")
 include("compiler")
+include("gradle-plugin")

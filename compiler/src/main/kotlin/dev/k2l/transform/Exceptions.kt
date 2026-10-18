@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.psi.*
 
 internal fun FileTransformer.throwStatement(e: KtThrowExpression): Unit = with(session) {
@@ -10,33 +10,31 @@ internal fun FileTransformer.throwStatement(e: KtThrowExpression): Unit = with(s
 
 /**
  * try/catch/finally via pcall. The try (and, with finally, the catch) blocks become functions, so a
- * Kotlin `return` inside them becomes `return true, value` and is re-issued after the pcall.
+ * Kotlin `return` inside them becomes `return true, value` and is re-issued after the pcall. A `break`, `continue` or
+ * inlined-function exit that leaves the try becomes `return n` (n = 1, 2, ... for each distinct jump) and the
+ * matching jump is re-issued after the pcall; `finally` runs in between.
  */
 internal fun FileTransformer.tryInto(e: KtTryExpression, sink: ValueSink?): Unit = with(session) {
     val ok = ctx.temp("ok")
     val result = ctx.temp("result")
     val returned = ctx.temp("returned")
-    var hasReturn = false
+    val exits = TryExits()
     val pcall = protectedCall(e)
-    fun tryFunction(stmts: List<LuaStmt>, element: KtElement): LuaExpr {
-        val (rewritten, returns) = rewriteReturns(stmts, element)
-        hasReturn = hasReturn || returns
-        return luaCall(pcall, LuaFunction(emptyList(), rewritten))
-    }
+    fun tryFunction(stmts: List<LuaStmt>): LuaExpr = luaCall(pcall, LuaFunction(emptyList(), exits.rewrite(stmts)))
     fun branch(body: KtExpression) = if (sink != null) valueInto(body, sink) else collect { block(body) }
-    fun resultNames() = if (hasReturn) listOf(ok, result, returned) else listOf(ok, result)
+    fun resultNames() = if (exits.hasReturn) listOf(ok, result, returned) else listOf(ok, result)
 
-    val tryBlock = e.tryBlock
-    val tryCall = tryFunction(branch(tryBlock), tryBlock)
+    val tryCall = tryFunction(branch(e.tryBlock))
     val finally = e.finallyBlock?.finalExpression
     val dispatch = catchDispatch(e.catchClauses, result, ::branch)
     if (finally == null) {
         val names = resultNames()
         emit(LuaLocal(names, listOf(tryCall)))
-        val onSuccess = listOf(LuaIf(LuaName(result), listOf(LuaReturn(listOf(LuaName(returned))))))
-        if (hasReturn) emit(LuaIf(LuaName(ok), onSuccess, dispatch)) else emit(LuaIf(LuaUnary(LuaUnOp.Not, LuaName(ok)), dispatch))
+        val onSuccess = exits.reissue(result, returned)
+        val failed = LuaUnary(LuaUnOp.Not, LuaName(ok))
+        if (onSuccess.isNotEmpty()) emit(LuaIf(LuaName(ok), onSuccess, dispatch)) else emit(LuaIf(failed, dispatch))
     } else {
-        val catchCall = if (e.catchClauses.isNotEmpty()) tryFunction(dispatch, e) else null
+        val catchCall = if (e.catchClauses.isNotEmpty()) tryFunction(dispatch) else null
         val names = resultNames()
         emit(LuaLocal(names, listOf(tryCall)))
         if (catchCall != null) {
@@ -44,7 +42,47 @@ internal fun FileTransformer.tryInto(e: KtTryExpression, sink: ValueSink?): Unit
         }
         emitAll(collect { block(finally) })
         emit(LuaIf(LuaUnary(LuaUnOp.Not, LuaName(ok)), listOf(LuaCallStmt(luaCall(LuaName("error"), LuaName(result), LuaNumber("0"))))))
-        if (hasReturn) emit(LuaIf(LuaName(result), listOf(LuaReturn(listOf(LuaName(returned))))))
+        emitAll(exits.reissue(result, returned))
+    }
+}
+
+/** What leaves the pcall'd functions of one `try`: whether they return, and the distinct `break`/`goto` statements. */
+private class TryExits {
+    var hasReturn = false
+    private val jumps = mutableListOf<LuaStmt>()
+
+    private fun codeOf(jump: LuaStmt): LuaExpr {
+        if (jump !in jumps) jumps += jump
+        return LuaNumber((jumps.indexOf(jump) + 1).toString())
+    }
+
+    /** Rewrites `return x` into `return true, x` and jumps leaving [stmts] into `return n`, outside nested functions. */
+    fun rewrite(stmts: List<LuaStmt>): List<LuaStmt> {
+        val labels = mutableSetOf<String>()
+        stmts.forEachLeafStatement { if (it is LuaLabel) labels += it.label }
+        return stmts.mapStatements { s, depth ->
+            when {
+                s is LuaReturn -> {
+                    hasReturn = true
+                    LuaReturn(listOf(LuaBool(true)) + s.values.ifEmpty { listOf(LuaNil) })
+                }
+
+                s === LuaBreak && depth == 0 -> LuaReturn(listOf(codeOf(s)))
+
+                s is LuaGoto && s.label !in labels -> LuaReturn(listOf(codeOf(s)))
+
+                else -> s
+            }
+        }
+    }
+
+    /** The statements after the pcall that perform what the function asked for in its first result. */
+    fun reissue(result: String, returned: String): List<LuaStmt> = buildList {
+        if (hasReturn) {
+            val isReturn = if (jumps.isEmpty()) LuaName(result) else LuaBinary(LuaBinOp.Eq, LuaName(result), LuaBool(true))
+            add(LuaIf(isReturn, listOf(LuaReturn(listOf(LuaName(returned))))))
+        }
+        jumps.forEachIndexed { i, jump -> add(LuaIf(LuaBinary(LuaBinOp.Eq, LuaName(result), codeOf(jumps[i])), listOf(jump))) }
     }
 }
 
@@ -67,32 +105,4 @@ private fun FileTransformer.catchDispatch(
         }
         emitAll(tail)
     }
-}
-
-/** Rewrites `return x` into `return true, x` outside nested functions; reports jumps that would leave the function. */
-private fun FileTransformer.rewriteReturns(stmts: List<LuaStmt>, element: KtElement): Pair<List<LuaStmt>, Boolean> {
-    var found = false
-    val labels = mutableSetOf<String>()
-    stmts.forEachLeafStatement { if (it is LuaLabel) labels += it.label }
-    val rewritten = stmts.mapStatements { s, depth ->
-        when (s) {
-            is LuaReturn -> {
-                found = true
-                LuaReturn(listOf(LuaBool(true)) + s.values.ifEmpty { listOf(LuaNil) })
-            }
-
-            LuaBreak -> {
-                if (depth == 0) ctx.error(element, "break out of a try block is not supported yet")
-                s
-            }
-
-            is LuaGoto -> {
-                if (s.label !in labels) ctx.error(element, "Jumping out of a try block is not supported yet")
-                s
-            }
-
-            else -> s
-        }
-    }
-    return rewritten to found
 }

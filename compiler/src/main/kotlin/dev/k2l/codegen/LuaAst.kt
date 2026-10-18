@@ -1,4 +1,4 @@
-package dev.k2l.lua
+package dev.k2l.codegen
 
 /** Lua syntax tree produced by the transformer and rendered by [LuaPrinter]. */
 sealed interface LuaExpr

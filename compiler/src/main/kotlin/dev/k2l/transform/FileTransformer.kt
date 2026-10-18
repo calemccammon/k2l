@@ -3,7 +3,7 @@ package dev.k2l.transform
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotated
 import org.jetbrains.kotlin.analysis.api.base.KaConstantValue
@@ -46,6 +46,8 @@ class FileTransformer(
     override val ctx: TransformContext,
     private val module: ModuleContext = ModuleContext.single(file),
 ) : StatementEmitter() {
+    internal val usesReflection get() = module.usesReflection
+
     /** `local ____strings = require("util.strings")` for another file of the module. */
     private fun moduleRef(other: KtFile): LuaExpr =
         LuaName(ctx.imports.getOrPut(module.modulePath(other)) { ctx.temp(LuaNames.of(other.name.removeSuffix(".kt"))) })
@@ -127,7 +129,7 @@ class FileTransformer(
             classes.superInfo(decl).let { listOfNotNull(it.base) + it.interfaces }
                 .filter { it.isTopLevel() && it.containingFile == file }.forEach { emitDeclaration(it, emitted, body, forward, exported) }
         }
-        body += collect { topLevelDeclaration(decl, decl in forward) }
+        body += collect { withOrigin(decl) { topLevelDeclaration(decl, decl in forward) } }
         // In an import cycle, other files may run before this one finishes, so export as we go.
         if (file in module.cyclic && decl in exported && !isExportedVar(decl)) body += exportStatements(decl)
     }
@@ -147,10 +149,16 @@ class FileTransformer(
     /** Runs `main`, passing the command-line arguments as a table when it takes them. */
     private fun mainInvocation(main: KtNamedFunction): LuaStmt {
         val args = if (main.valueParameters.isEmpty()) emptyList() else listOf(LuaTable(listOf(LuaField.Positional(LuaName("...")))))
-        if (main.hasModifier(KtTokens.SUSPEND_KEYWORD)) {
-            return LuaCallStmt(LuaCall(lualibRef(COROUTINES_FEATURE, "__K2L_RunSuspend"), listOf(LuaName(naming.of(main))) + args))
+        val name = LuaName(naming.of(main))
+        val suspend = main.hasModifier(KtTokens.SUSPEND_KEYWORD)
+        if (ctx.options.sourceMap) {
+            // Uncaught errors print a traceback with Kotlin positions.
+            val run = lualibRef(SOURCE_MAP_FEATURE, "__K2L_RunMain")
+            val call = if (suspend) listOf(lualibRef(COROUTINES_FEATURE, "__K2L_RunSuspend"), name) else listOf(name)
+            return LuaCallStmt(LuaCall(run, call + args))
         }
-        return LuaCallStmt(LuaCall(LuaName(naming.of(main)), args))
+        if (suspend) return LuaCallStmt(LuaCall(lualibRef(COROUTINES_FEATURE, "__K2L_RunSuspend"), listOf(name) + args))
+        return LuaCallStmt(LuaCall(name, args))
     }
 
     /** The chunk's `return`: the exports table, or a table of the [exported] declarations when not in table mode. */
@@ -292,7 +300,7 @@ class FileTransformer(
         if (returnType.isUnitType || returnType.isNothingType) {
             statement(body)
         } else {
-            emitAll(valueInto(body) { listOf(LuaReturn(listOf(it))) })
+            withOrigin(body) { emitAll(valueInto(body) { listOf(LuaReturn(listOf(it))) }) }
         }
     }
 
@@ -302,7 +310,9 @@ class FileTransformer(
         if (e is KtBlockExpression) e.statements.forEach { statement(it) } else statement(e)
     }
 
-    internal fun KaSession.statement(e: KtExpression) {
+    internal fun KaSession.statement(e: KtExpression) = withOrigin(e) { translateStatement(e) }
+
+    private fun KaSession.translateStatement(e: KtExpression) {
         when (e) {
             is KtParenthesizedExpression -> e.expression?.let { statement(it) }
 
@@ -478,10 +488,14 @@ class FileTransformer(
                 Target(slot) { assign(slot, it) }
             }
 
-            type?.collectionKind()?.isIndexable == true -> {
+            type?.collectionKind()?.isIndexable == true && isProvenIndex(e, type) -> {
                 val slot = CollectionMappings.index(receiver, key)
                 Target(slot) { assign(slot, it) }
             }
+
+            // checked like the JVM: out-of-range reads and writes throw IndexOutOfBoundsException
+            type?.collectionKind()?.isIndexable == true ->
+                Target(LuaMethodCall(receiver, "get", listOf(key))) { LuaCallStmt(LuaMethodCall(receiver, "set", listOf(key, it))) }
 
             else -> unsupported(e, "Index assignment on '${type.pretty()}'").let { null }
         }
@@ -489,7 +503,7 @@ class FileTransformer(
 
     private fun KaSession.increment(e: KtUnaryExpression, target: Target) {
         val op = if (e.operationToken == KtTokens.PLUSPLUS) LuaBinOp.Add else LuaBinOp.Sub
-        emit(target.write(LuaBinary(op, target.read, LuaNumber("1"))))
+        emit(target.write(stepped(op, target.read, e.baseExpression?.expressionType)))
     }
 
     private fun KaSession.returnStatement(e: KtReturnExpression) {
@@ -509,8 +523,10 @@ class FileTransformer(
             emit(LuaGoto(end))
             return
         }
-        if (frames.drop(frames.indexOfLast { it === target } + 1).any { it.isClosure }) {
-            unsupported(e, "Non-local return out of a lambda")
+        frames.drop(frames.indexOfLast { it === target } + 1).firstOrNull { it.isClosure }?.let { closure ->
+            val call = generateSequence(closure.psi) { it.parent }.take(5).filterIsInstance<KtCallExpression>().firstOrNull()
+            val callee = (call?.calleeExpression as? KtNameReferenceExpression)?.getReferencedName()
+            unsupported(e, "Non-local return out of a lambda" + callee?.let { " passed to '$it'" }.orEmpty())
             return
         }
         if (value == null) {
@@ -812,6 +828,8 @@ class FileTransformer(
 
         is KtBinaryExpressionWithTypeRHS -> cast(e)
 
+        is KtClassLiteralExpression -> classLiteral(e)
+
         is KtIsExpression -> {
             val type = e.typeReference?.type
             if (type == null) {
@@ -999,6 +1017,7 @@ class FileTransformer(
             }
 
             in BINARY_OPERATORS -> {
+                foldedInt(e)?.let { return it }
                 // operator fun plus etc., including extensions such as Int.times(String)
                 if (token in ARITHMETIC && (!isPrimitiveOperand(left.expressionType) || isSourceOperator(e))) return call(e, e)
                 val (l, r) = ordered(listOf(left, right)).let { it[0] to it[1] }
@@ -1029,11 +1048,12 @@ class FileTransformer(
         return charArithmetic(op, l, lt, r, rt) ?: when (op) {
             LuaBinOp.Add -> when {
                 lt?.isStringType == true -> LuaBinary(LuaBinOp.Concat, l, str(r, rt, forConcat = true))
-                numeric -> LuaBinary(op, l, r)
+                numeric -> arithmetic(op, l, lt, r, rt)
                 else -> unsupported(element, "'+' on '${lt.pretty()}'")
             }
 
-            LuaBinOp.Sub, LuaBinOp.Mul -> if (numeric) LuaBinary(op, l, r) else unsupported(element, "Arithmetic on '${lt.pretty()}'")
+            LuaBinOp.Sub, LuaBinOp.Mul ->
+                if (numeric) arithmetic(op, l, lt, r, rt) else unsupported(element, "Arithmetic on '${lt.pretty()}'")
 
             LuaBinOp.Div -> when {
                 numeric && both(lt, rt) { it.isIntegral } -> lualibCall("IDiv", l, r)
@@ -1041,7 +1061,7 @@ class FileTransformer(
                 else -> unsupported(element, "'/' on '${lt.pretty()}'")
             }
 
-            LuaBinOp.Mod -> if (numeric) luaCall(luaPath("math", "fmod"), l, r) else unsupported(element, "'%' on '${lt.pretty()}'")
+            LuaBinOp.Mod -> if (numeric) remainder(l, lt, r, rt) else unsupported(element, "'%' on '${lt.pretty()}'")
 
             LuaBinOp.Eq, LuaBinOp.Ne -> LuaBinary(op, l, r)
 
@@ -1092,8 +1112,12 @@ class FileTransformer(
     private fun KaSession.isSourceOperator(e: KtExpression): Boolean =
         e.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>()?.symbol?.psi.let { it is KtNamedFunction && classes.isSource(it) }
 
-    private fun KaSession.primitivePrefix(e: KtPrefixExpression, base: KtExpression): LuaExpr = when (e.operationToken) {
-        KtTokens.MINUS -> LuaUnary(LuaUnOp.Neg, expression(base))
+    /** With `--int-overflow wrap`, a constant `Int` expression is the value the Kotlin compiler computes (it wraps). */
+    private fun KaSession.foldedInt(e: KtExpression): LuaExpr? =
+        if (wrapsInt && e.expressionType?.isIntType == true && e.evaluate() is KaConstantValue.IntValue) constant(e) else null
+
+    private fun KaSession.primitivePrefix(e: KtPrefixExpression, base: KtExpression): LuaExpr = foldedInt(e) ?: when (e.operationToken) {
+        KtTokens.MINUS -> negation(expression(base), base.expressionType)
         KtTokens.PLUS -> expression(base)
         else -> negate(expression(base))
     }
@@ -1149,8 +1173,11 @@ class FileTransformer(
         val args = (element as? KtCallElement)?.valueArguments?.map { it.getArgumentExpression() } ?: return
         val mapped = call.valueArgumentMapping.keys
         val parameters = call.signature.symbol.valueParameters
-        val missing = args.withIndex().filter { (i, arg) -> arg != null && arg !in mapped && i < parameters.size }
-        if (missing.isNotEmpty()) unmappedArguments[call] = missing.associate { (i, arg) -> arg!! to parameters[i] }
+
+        // arguments past the end of the parameter list belong to a trailing vararg
+        fun parameterAt(i: Int) = parameters.getOrNull(i) ?: parameters.lastOrNull()?.takeIf { it.isVararg }
+        val missing = args.withIndex().filter { (i, arg) -> arg != null && arg !in mapped && parameterAt(i) != null }
+        if (missing.isNotEmpty()) unmappedArguments[call] = missing.associate { (i, arg) -> arg!! to parameterAt(i)!! }
     }
 
     private fun KaSession.shortcutCall(call: KaCallableMemberCall<*, *>, full: KtExpression): LuaExpr? {
@@ -1182,6 +1209,7 @@ class FileTransformer(
         userInlineCall(call, full)?.let { return it }
         return delegateFactory(symbol.callableId?.toString(), call)
             ?: dataClassMember(call, receiverExpr, implicit)
+            ?: inlinedCollectionCall(symbol.callableId?.toString(), call, receiverExpr, implicit, full)
             ?: scopeFunction(symbol.callableId?.toString(), call, receiverExpr, implicit)
             ?: declaredCall(call, receiverExpr, implicit, receiverValue?.type, full)
     }
@@ -1249,7 +1277,7 @@ class FileTransformer(
         outer: Operand?,
     ): LuaExpr {
         val classId = symbol.containingClassId
-        classId?.let(classes::classInFile)?.let { cls ->
+        (classId?.let(classes::classInFile) ?: localClassOf(psi, classId))?.let { cls ->
             val outers = if (isInner(
                     cls,
                 )
@@ -1268,6 +1296,10 @@ class FileTransformer(
         return FactoryMappings.construct(classId?.asString(), site)
             ?: unsupported(full, "Constructing library class '${classId?.asString()}'")
     }
+
+    /** The class a constructor of a local class belongs to: local classes have no class id to look up. */
+    private fun localClassOf(constructor: com.intellij.psi.PsiElement?, classId: org.jetbrains.kotlin.name.ClassId?): KtClassOrObject? =
+        if (classId == null) (constructor as? KtClassOrObject) ?: (constructor as? KtConstructor<*>)?.getContainingClassOrObject() else null
 
     /** A top-level or extension function, or a method (including `super.method()`), declared in this program. */
     private fun KaSession.sourceFunctionCall(
@@ -1397,7 +1429,7 @@ class FileTransformer(
         for (p in call.signature.symbol.valueParameters) {
             val mapped = bySignature[p]
             if (p.isVararg) {
-                mapped?.forEach { arg ->
+                mapped?.sortedBy { it.textRange.startOffset }?.forEach { arg ->
                     registerSpread(call, arg)
                     result += arg
                 }
