@@ -6,11 +6,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 
+@Timeout(value = 5, unit = java.util.concurrent.TimeUnit.MINUTES, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 class PluginFunctionalTest {
     @TempDir
     lateinit var project: Path
@@ -26,7 +28,8 @@ class PluginFunctionalTest {
     private fun runner(vararg args: String) = GradleRunner.create()
         .withProjectDir(project.toFile())
         .withPluginClasspath()
-        .withArguments(*args, "--stacktrace")
+        .withArguments(*args, "--stacktrace", "--info")
+        .forwardOutput()
 
     /** A project whose compiler comes from the jars this test was given instead of a published artifact. */
     private fun sampleProject(extension: String = "") {

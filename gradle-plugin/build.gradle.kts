@@ -52,6 +52,12 @@ val functionalTestTask = tasks.register<Test>("functionalTest") {
     testClassesDirs = functionalTest.output.classesDirs
     classpath = functionalTest.runtimeClasspath
     useJUnitPlatform()
+    // A stuck nested build must fail CI rather than hang it.
+    timeout.set(java.time.Duration.ofMinutes(15))
+    testLogging {
+        showStandardStreams = true
+        events("started", "passed", "failed")
+    }
     inputs.files(compilerLibs)
     systemProperty("k2l.compilerLibs", compilerLibs.incoming.files.asPath)
     systemProperty("k2l.repoRoot", rootDir.absolutePath)
