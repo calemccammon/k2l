@@ -116,7 +116,7 @@ function Box:mapFirst(f)
     if self.items:isEmpty() then
         return nil
     end
-    return f(self.items[1])
+    return f(self.items:get(0))
 end
 
 local function sumUntil(self, limit, onSkip)
@@ -157,7 +157,7 @@ local function mapFirst()
         end
         local ____result_5
         do
-            local it = b.items[1]
+            local it = b.items:get(0)
             if it > 1 then
                 return "big"
             else

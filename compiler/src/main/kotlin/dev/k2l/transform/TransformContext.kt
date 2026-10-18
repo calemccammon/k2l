@@ -3,8 +3,11 @@ package dev.k2l.transform
 import com.intellij.psi.PsiElement
 import dev.k2l.CompilerOptions
 import dev.k2l.Diagnostic
+import dev.k2l.Origin
 import dev.k2l.Severity
 import dev.k2l.lua.LuaPrinter
+import dev.k2l.lua.LuaStmt
+import java.util.IdentityHashMap
 
 /** Per-file state shared by the transformer: diagnostics, lualib usage and generated names. */
 class TransformContext(val options: CompilerOptions) {
@@ -16,7 +19,28 @@ class TransformContext(val options: CompilerOptions) {
 
     /** Other files of the module this file requires: Lua module name -> local name. */
     val imports = LinkedHashMap<String, String>()
+
+    /** Expressions wrapped to 32 bits by `--int-overflow wrap`, by identity, mapped to what they wrap (see IntOverflow.kt). */
+    val int32Pending = java.util.IdentityHashMap<dev.k2l.lua.LuaExpr, dev.k2l.lua.LuaExpr>()
     private val generated = mutableMapOf<String, Int>()
+
+    /** Kotlin position of the statements the transformer emitted; only filled with [CompilerOptions.sourceMap]. */
+    val origins = IdentityHashMap<LuaStmt, Origin>()
+    private var lineStarts: IntArray? = null
+
+    /** The position where [element] starts, or null when source maps are off. */
+    fun originOf(element: PsiElement): Origin? {
+        if (!options.sourceMap) return null
+        val starts = lineStarts ?: run {
+            val text = element.containingFile.text
+            val found = mutableListOf(0)
+            text.forEachIndexed { i, c -> if (c == '\n') found += i + 1 }
+            found.toIntArray().also { lineStarts = it }
+        }
+        val offset = element.textRange.startOffset
+        val index = starts.binarySearch(offset).let { if (it >= 0) it else -it - 2 }
+        return Origin(index + 1, offset - starts[index] + 1)
+    }
 
     fun error(element: PsiElement, message: String) {
         diagnostics += Diagnostic.at(element, Severity.Error, message)
@@ -53,3 +77,6 @@ object LuaNames {
         return if (safe in LuaPrinter.KEYWORDS || safe in RESERVED_GLOBALS) "____$safe" else safe
     }
 }
+
+/** Lualib feature with the source-map runtime: traceback rewriting and `__K2L_RunMain`. */
+internal const val SOURCE_MAP_FEATURE = "SourceMap"

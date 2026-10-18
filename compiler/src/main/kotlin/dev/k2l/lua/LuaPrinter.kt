@@ -1,10 +1,16 @@
 package dev.k2l.lua
 
+import dev.k2l.LineMapping
+import dev.k2l.Origin
+
 /** Renders a [LuaChunk] as readable Lua source. */
 @Suppress("TooManyFunctions") // one small method per Lua construct; splitting would scatter the printer
-class LuaPrinter(private val indentUnit: String = "    ") {
+class LuaPrinter(private val indentUnit: String = "    ", private val origins: Map<LuaStmt, Origin>? = null) {
     private val out = StringBuilder()
     private var indent = 0
+
+    /** The origin of the statement whose first line is printed next, see [line]. */
+    private var pendingOrigin: Origin? = null
 
     fun print(chunk: LuaChunk): String {
         out.clear()
@@ -12,8 +18,50 @@ class LuaPrinter(private val indentUnit: String = "    ") {
         return out.toString()
     }
 
+    /**
+     * Prints [chunk] and records which Kotlin position each output line came from. Statements embed a private
+     * marker (`\u0001line:column\u0002`, impossible in Lua output since control characters in strings are escaped) in the
+     * text of their first line; nested function bodies are rendered into expression text first, so the markers are
+     * only resolved to line numbers once the whole output exists.
+     */
+    fun printMapped(chunk: LuaChunk): Pair<String, List<LineMapping>> {
+        val marked = print(chunk)
+        val code = StringBuilder()
+        val mappings = mutableListOf<LineMapping>()
+        var luaLine = 1
+        var lineStart = 0
+        var i = 0
+        while (i < marked.length) {
+            val c = marked[i]
+            when (c) {
+                MARK_START -> {
+                    val end = marked.indexOf(MARK_END, i)
+                    val (line, column) = marked.substring(i + 1, end).split(':').map(String::toInt)
+                    if (mappings.lastOrNull()?.luaLine !=
+                        luaLine
+                    ) {
+                        mappings += LineMapping(luaLine, code.length - lineStart, Origin(line, column))
+                    }
+                    i = end
+                }
+
+                '\n' -> {
+                    code.append(c)
+                    luaLine++
+                    lineStart = code.length
+                }
+
+                else -> code.append(c)
+            }
+            i++
+        }
+        return code.toString() to mappings
+    }
+
     private fun line(text: String) {
         repeat(indent) { out.append(indentUnit) }
+        pendingOrigin?.let { out.append(MARK_START).append(it.line).append(':').append(it.column).append(MARK_END) }
+        pendingOrigin = null
         out.append(text).append('\n')
     }
 
@@ -33,6 +81,7 @@ class LuaPrinter(private val indentUnit: String = "    ") {
             // Top-level functions get breathing room, like hand-written modules.
             val spaced = topLevel && stmt is LuaFunctionDecl
             if (spaced && i > 0) blankLine()
+            pendingOrigin = origins?.get(stmt)
             if (!isLast && (stmt is LuaReturn || stmt is LuaBreak)) {
                 // Lua only allows `return`/`break` as the last statement of a block.
                 line("do ${statementInline(stmt)} end")
@@ -130,7 +179,9 @@ class LuaPrinter(private val indentUnit: String = "    ") {
         while (orElse != null) {
             val single = orElse.singleOrNull()
             if (single is LuaIf) {
-                line("elseif ${expr(single.cond)} then")
+                val cond = expr(single.cond)
+                pendingOrigin = origins?.get(single)
+                line("elseif $cond then")
                 nested(single.then)
                 orElse = single.orElse
             } else {
@@ -223,7 +274,7 @@ class LuaPrinter(private val indentUnit: String = "    ") {
             val text = "function($params) ${returnText(single)} end"
             if (text.length <= MAX_INLINE_FUNCTION_LENGTH && '\n' !in text) return text
         }
-        val sub = LuaPrinter(indentUnit)
+        val sub = LuaPrinter(indentUnit, origins)
         sub.indent = indent + 1
         sub.printBlock(fn.body, topLevel = false)
         return "function($params)\n${sub.out}${indentUnit.repeat(indent)}end"
@@ -241,6 +292,8 @@ class LuaPrinter(private val indentUnit: String = "    ") {
     }
 
     companion object {
+        private const val MARK_START = '\u0001'
+        private const val MARK_END = '\u0002'
         private const val MAX_INLINE_FUNCTION_LENGTH = 60
         private const val ASCII_LIMIT = 0x80
         private const val FIRST_PRINTABLE = 0x20

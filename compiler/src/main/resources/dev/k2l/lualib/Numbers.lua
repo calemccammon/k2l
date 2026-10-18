@@ -321,7 +321,7 @@ end
 function __K2L_Num.digitToInt(c, radix)
     local value = digitValue(c, radix)
     if value == nil then
-        error(__K2L_IllegalArgumentException.new("Char " .. c .. " is not a digit in the radix " .. (radix or 10)))
+        error(__K2L_IllegalArgumentException.new("Char " .. c .. (radix and " is not a digit in the given radix=" .. radix or " is not a decimal digit")))
     end
     return value
 end

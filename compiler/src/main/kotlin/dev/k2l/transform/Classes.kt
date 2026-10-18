@@ -62,6 +62,7 @@ private fun FileTransformer.emitClassTable(c: KtClassOrObject, ref: LuaExpr, inf
     info.interfaces.mapTo(classArgs) { classRef(it) }
     val create = lualibCall("Class", *classArgs.toTypedArray())
     emit(if (isLocal) LuaLocal(listOf(naming.of(c)), listOf(create)) else assign(ref, create))
+    classInfo(c, ref)
 }
 
 /** Annotations, enum entries and companions are emitted with their class. */

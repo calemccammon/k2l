@@ -1,5 +1,42 @@
 -- requires: ToInt32, IdentityHash
 -- Kotlin/JVM hashCode() for primitives and strings; objects use their own hashCode().
+-- a ~ b for unsigned 32-bit values held in doubles
+local function xor32(a, b)
+    local r, bit = 0, 1
+    for _ = 1, 32 do
+        if a % 2 ~= b % 2 then
+            r = r + bit
+        end
+        a, b, bit = math.floor(a / 2), math.floor(b / 2), bit * 2
+    end
+    return r
+end
+
+-- The high and low 32 bits of the IEEE-754 representation of x.
+local function doubleBits(x)
+    local sign = 0
+    if x < 0 or (x == 0 and 1 / x < 0) then
+        sign, x = 0x80000000, -x
+    end
+    if x ~= x then
+        return 0x7FF80000, 0
+    elseif x == math.huge then
+        return sign + 0x7FF00000, 0
+    elseif x == 0 then
+        return sign, 0
+    end
+    local m, e = math.frexp(x)
+    e = e - 1 + 1023
+    local frac
+    if e <= 0 then
+        e, frac = 0, x / 2 ^ -1074
+    else
+        frac = (m * 2 - 1) * 2 ^ 52
+    end
+    local hi = math.floor(frac / 4294967296)
+    return sign + e * 0x100000 + hi, frac - hi * 4294967296
+end
+
 local function __K2L_Hash(value)
     local t = type(value)
     if value == nil then
@@ -10,7 +47,14 @@ local function __K2L_Hash(value)
         if value % 1 == 0 and value >= -2147483648 and value <= 2147483647 then
             return value
         end
-        return __K2L_Hash(string.format("%.17g", value))
+        -- Long.hashCode() for large integral values, Double.hashCode() otherwise
+        local hi, lo
+        if value % 1 == 0 and math.abs(value) < 2 ^ 63 then
+            hi, lo = math.floor(value / 4294967296) % 4294967296, value % 4294967296
+        else
+            hi, lo = doubleBits(value)
+        end
+        return __K2L_ToInt32(xor32(hi, lo))
     elseif t == "string" then
         local h = 0
         for i = 1, #value do

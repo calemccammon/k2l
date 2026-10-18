@@ -38,4 +38,25 @@ enum class LuaLibImport {
     Inline,
 }
 
-data class CompilerOptions(val luaTarget: LuaTarget = LuaTarget.Lua54, val luaLibImport: LuaLibImport = LuaLibImport.Require)
+/** What `Int` arithmetic does when a result leaves the 32-bit range. */
+enum class IntOverflow(val id: String) {
+    /** Lua numbers are not narrowed: `Int.MAX_VALUE + 1` is 2147483648. Fastest, and the default. */
+    Unchecked("unchecked"),
+
+    /** `+ - * ++ --` and unary minus wrap to 32 bits like the JVM. */
+    Wrap("wrap"),
+    ;
+
+    companion object {
+        fun parse(id: String): IntOverflow = entries.firstOrNull { it.id.equals(id, ignoreCase = true) }
+            ?: throw IllegalArgumentException("Unknown int overflow mode '$id' (expected one of ${entries.joinToString { it.id }})")
+    }
+}
+
+data class CompilerOptions(
+    val luaTarget: LuaTarget = LuaTarget.Lua54,
+    val luaLibImport: LuaLibImport = LuaLibImport.Require,
+    val intOverflow: IntOverflow = IntOverflow.Unchecked,
+    /** Emit Source Map v3 files and make Lua errors and tracebacks report Kotlin positions. */
+    val sourceMap: Boolean = false,
+)

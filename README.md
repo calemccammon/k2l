@@ -46,7 +46,10 @@ k2l [options] [SOURCE_DIR...]
   -o, --out DIR           output directory (default: out)
   -t, --target VERSION    Lua version: 5.1, 5.2, 5.3, 5.4 (default) or JIT
       --lualib MODE       require (default: one shared lualib_bundle.lua) or inline
+      --int-overflow MODE unchecked (default) or wrap: make Int arithmetic wrap to 32 bits like the JVM
       --classpath PATHS   extra jars or class directories, e.g. Lua bindings
+      --source-map        write main.lua.map files and make Lua errors and tracebacks show Kotlin positions
+      --watch             rebuild whenever a source file or the project file changes (Ctrl-C to stop)
 ```
 
 With no arguments, k2l reads `./k2l.json`. Paths in it are relative to the file, and command-line
@@ -58,9 +61,20 @@ options override it:
   "outDir": "out",
   "luaTarget": "5.4",
   "luaLibImport": "require",
-  "classpath": []
+  "classpath": [],
+  "intOverflow": "unchecked",
+  "sourceMap": false
 }
 ```
+
+| Key | Meaning | CLI option |
+|---|---|---|
+| `srcDirs` | Kotlin source directories | `SOURCE_DIR...` |
+| `outDir` | output directory | `-o`, `--out` |
+| `luaTarget` | `5.1`, `5.2`, `5.3`, `5.4` or `JIT` | `-t`, `--target` |
+| `luaLibImport` | `require` or `inline` | `--lualib` |
+| `classpath` | extra jars or class directories | `--classpath` |
+| `sourceMap` | source maps and Kotlin positions in errors | `--source-map` |
 
 Each `.kt` file becomes a `.lua` file at the same relative path. The runtime support code (the
 "lualib") is written once as `lualib_bundle.lua`; each file imports only what it uses. With
@@ -69,6 +83,78 @@ Each `.kt` file becomes a `.lua` file at the same relative path. The runtime sup
 Kotlin compile errors are reported and stop the build. Kotlin features k2l can't translate yet are
 reported as `error: ... is not supported yet`, with file and line; k2l never silently miscompiles a
 construct it doesn't understand.
+
+## Source maps and Kotlin tracebacks
+
+With `--source-map` (or `"sourceMap": true`), k2l records the Kotlin position of every statement it
+generates and writes a standard [Source Map v3](https://sourcemaps.info/spec.html) file next to each Lua
+file (`main.lua.map`, `sources` relative to the map, VLQ `mappings`). Statements are mapped with line and
+column; expressions inside a statement share its position. The Lua file ends with a
+`--# sourceMappingURL=main.lua.map` comment. Without the option the generated Lua is unchanged.
+
+The same information is embedded in each Lua file as a compact line table, and a small runtime helper
+rewrites Lua positions to Kotlin ones in error messages and tracebacks (Lua 5.1 to 5.4 and LuaJIT).
+`main()` runs under `xpcall`, so an uncaught exception prints a Kotlin trace and exits with status 1:
+
+```
+Exception in thread "main" java.lang.IllegalStateException: insufficient funds
+stack traceback:
+	[C]: in function 'error'
+	main.kt:4: in method 'withdraw'
+	main.kt:13: in upvalue 'process'
+	main.kt:18: in function <main.kt:16>
+```
+
+instead of `main.lua:15:`, `main.lua:26:` and so on. `debug.traceback` is wrapped as well, so tracebacks
+you print yourself are rewritten. Lines of the lualib itself (and inlined lualib code) keep their Lua
+positions. A Lua line that starts no statement (such as a closing `end`) reports the nearest statement
+before it.
+
+## Watch mode
+
+`k2l --watch` builds once and then rebuilds whenever a `.kt` file under the source directories (or the
+`k2l.json`) is created, changed or deleted, printing the diagnostics each time. Changes within 150 ms
+are batched. It re-reads `k2l.json` on every rebuild, so editing source directories or options takes
+effect without a restart. A new analysis session is created for each build: once the JVM is warm that costs
+about 250 ms for a small project (the first build takes about 2 s), so sessions are not reused. Stop with Ctrl-C.
+
+## Gradle plugin
+
+The `gradle-plugin` project provides the plugin `dev.k2l`. Until it is published, use it from a checkout
+of this repository as an included build, in the `settings.gradle.kts` of your project:
+
+```kotlin
+pluginManagement {
+    includeBuild("/path/to/k2l")     // makes the plugin `dev.k2l` available
+}
+includeBuild("/path/to/k2l")         // resolves the compiler it runs (dev.k2l:compiler)
+```
+
+```kotlin
+plugins {
+    id("dev.k2l")
+}
+
+k2l {
+    // All optional; these are the defaults:
+    sourceDirs.setFrom("src/main/kotlin")
+    outputDir.set(layout.buildDirectory.dir("lua"))
+    luaTarget.set("5.4")              // 5.1, 5.2, 5.3, 5.4 or JIT
+    luaLibImport.set("require")       // or "inline"
+    intOverflow.set("unchecked")      // or "wrap"
+    sourceMap.set(false)
+    classpath.from(files("libs/bindings.jar"))   // extra Lua bindings
+}
+```
+
+`./gradlew compileKotlinToLua` writes the `.lua` files (and `.lua.map` files) to `build/lua`; `assemble` runs it.
+The task is up to date while sources, options and compiler are unchanged, is compatible with the configuration
+cache, and fails the build with the compiler's diagnostics (`file:line:col: error: ...`) on a Kotlin error. The
+compiler runs in a separate JVM (`javaexec`) on its own classpath, which is the `k2lCompiler` configuration (by
+default `dev.k2l:compiler:<plugin version>`), so the Analysis API jars never reach the build classpath. The
+`@LuaExternal` annotations are always on the transpiler's classpath; if the Kotlin JVM plugin is applied too,
+`dev.k2l:lua-api` is also added to `compileOnly`. The plugin needs JDK 21 to run the compiler (Gradle's own JVM if
+it is 21 or newer, otherwise a toolchain).
 
 ## How Kotlin maps to Lua
 
@@ -82,7 +168,7 @@ construct it doesn't understand.
 | `for (x in list)` | `for _, x in ipairs(list)` (a numeric loop if elements can be null) |
 | `for ((k, v) in map)` | `for k, v in map:iter()` |
 | `continue`, labeled `break`/`continue` | `goto` (flags and `repeat ... until true` on Lua 5.1) |
-| `a / b` on `Int`, `a % b` | `__K2L_IDiv(a, b)` (truncating), `math.fmod(a, b)` |
+| `a / b` on `Int`, `a % b` | `__K2L_IDiv(a, b)` (truncating), `math.fmod(a, b)`, or `__K2L_IRem(a, b)` when the divisor is not a nonzero literal; integer division by zero throws `ArithmeticException("/ by zero")` |
 | string templates | `..` concatenation; values formatted like Kotlin's `toString()` |
 | `class`, `interface`, `object`, `enum class`, `data class` | metatable-based classes: `Point.new(1, 2)`, `p:distance(q)` |
 | primary/secondary constructors, `init` | `Class:____init(...)`, chained to the superclass |
@@ -106,9 +192,11 @@ construct it doesn't understand.
 | default and named arguments | `if x == nil then x = default end` in the callee; callers pass `nil` for omitted ones |
 | overloads | `describe`, `describe__1`, ... (overrides keep their parent's name) |
 | `vararg`, `*spread` | Lua varargs packed into an array; `table.unpack` |
-| `throw`, `try`/`catch`/`finally` | `error(exception)`, `pcall`; JVM exception classes and messages |
+| `throw`, `try`/`catch`/`finally` | `error(exception)`, `pcall`; JVM exception classes and messages. A `return`, `break` or `continue` (labeled too) out of the `try` or a `catch` returns a code from the `pcall`ed function (`return true, x` for `return`, `return 1` for the first jump, ...); after the `pcall` and the `finally` code, the matching `return`/`break`/`goto` is re-issued |
+| `x::class`, `Foo::class`, `T::class` (reified), `.simpleName`, `.qualifiedName`, `isInstance`, `javaClass` | `__K2L_KClassOfValue(x)`, `__K2L_KClassOf(Foo)`, `__K2L_KClassNamed("kotlin.String")`: one object per class, so `==` is identity; see [Reflection](#reflection) |
+| `return` inside `map { }`, `filter { }`, `any { }`, `first { }`, `fold`, ... | a lambda with a `return` out of the enclosing function makes the call an inlined loop: `local r = __K2L_ListOf(); for _, it in ipairs(xs) do ... return ... r:add(v) end` (also `mapNotNull`, `filterNot`, `all`, `none`, `firstOrNull`, `find`, `count`, `sumOf`, `onEach`, `takeWhile`, `flatMap`, `associate*`, `groupBy`; `forEach`/`forEachIndexed` always are). Without such a `return` they are ordinary method calls |
 | `List`, `MutableList`, `Array` | a lualib class: elements in the array part, explicit `size` (nil-safe) |
-| `xs[i]`, `xs.size` | `xs[i + 1]`, `xs.size` |
+| `xs[i]`, `xs.size` | `xs:get(i)` (throws `IndexOutOfBoundsException`), `xs.size`; the index of a loop over `xs.indices` is a direct `xs[i + 1]` |
 | `Map`, `Set` | insertion-ordered lualib classes honoring `equals()`/`hashCode()` keys |
 | `xs.filter { }.map { }`, `groupBy`, `joinToString`, ... | methods of the same name: `xs:filter(f):map(g)` |
 | `Pair`, `Triple`, destructuring | lualib classes; `local a, b = p.first, p.second` |
@@ -120,8 +208,14 @@ construct it doesn't understand.
 | `Result`, `runCatching` | a lualib class: `result:getOrThrow()`, `__K2L_RunCatching(f)` |
 | multiple files | `local ____util = require("util")`, `____util.helper(...)` |
 
-`Int` arithmetic is not wrapped to 32 bits (Lua integers are 64-bit, or doubles before 5.3);
-explicit conversions like `Long.toInt()` and bitwise operations do wrap.
+By default `Int` arithmetic is not wrapped to 32 bits (Lua integers are 64-bit, or doubles before 5.3);
+explicit conversions like `Long.toInt()` and bitwise operations do wrap. With `--int-overflow wrap`
+(`"intOverflow": "wrap"` in k2l.json) `Int` `+ - *`, unary minus, `++`/`--` and compound assignments wrap like the
+JVM (`Short`/`Byte` arithmetic is `Int` arithmetic, as in Kotlin; `Short`/`Byte` `++` wraps to 16/8 bits). A chain is
+wrapped once: `31 * h + x` is `(31 * h + x + 0x80000000 & 0xFFFFFFFF) - 0x80000000` on 5.3/5.4 and
+`__K2L_ToInt32(31 * h + x)` on 5.1/5.2/LuaJIT, where a product of two variables goes through `__K2L_IMul`
+(an exact 32-bit multiply, since the plain product can exceed 2^53). Constant `Int` expressions are folded like
+Kotlin does. Not wrapped: `Int.MIN_VALUE / -1`, `sum()`/`sumOf`, and `Long` (64-bit natively on 5.3/5.4).
 
 ## Calling Lua from Kotlin
 
@@ -226,6 +320,27 @@ its own coroutine and passes its yields on to the enclosing coroutine (the "coxp
 `runCatching` does the same. Lua 5.2+ and LuaJIT yield across `pcall` natively and use it as is.
 Yielding through a Lua C function (e.g. a `table.sort` comparator or raw `Lua.pcall`) still fails on 5.1.
 
+## Reflection
+
+`x::class`, `Foo::class` and `T::class` (in an expanded reified inline function) give a `KClass`; `javaClass` and
+`KClass.java` are the same object. Supported members: `simpleName`, `qualifiedName`, `isInstance(x)`, `toString()`
+(`class app.Dog`), `name` of a `Class`, and `==`/`!=`, use as map keys, in `when` and in collections. Classes of the
+program match the JVM: package-qualified names (`app.model.Outer.Nested`, binary `app.model.Outer$Nested` for
+`javaClass.name`), `null` as `qualifiedName` of local classes, and enum entries with bodies are classes named after the
+entry. Everything else (`members`, `primaryConstructor`, `objectInstance`, ...) is reported as unsupported.
+
+Names are only recorded in the generated classes when the module uses `::class` or `javaClass`. Differences from the JVM,
+because Lua values carry less type information:
+
+- `Int` and `Long` are the same Lua number, `Char` and `String` the same string: the class of a value of static type
+  `Any` is `Int` or `String`. `1L::class` and `'c'::class` are right because the static type is used. On Lua 5.1, 5.2
+  and LuaJIT a `Double` with an integral value is an `Int` at runtime (on 5.3+ `math.type` tells them apart).
+- Library collections report the lualib class: `listOf(1)` and `mutableListOf()` are an `ArrayList` (the JVM has
+  `SingletonList`, `EmptyList`, `Arrays.ArrayList`, ...), `setOf` a `LinkedHashSet`, `mapOf` a `LinkedHashMap`;
+  `HashMap`, `TreeMap`, ... match. A lambda is `kotlin.Function`.
+- `Outer.Companion::class` works, but `outer.companionValue::class` is the class of `Outer` (companions have no table of
+  their own).
+
 ## Lua targets
 
 `--target 5.4` (the default) and `5.3` use integers, `//` and native bitwise operators. On `5.2`,
@@ -240,16 +355,16 @@ Yielding through a Lua C function (e.g. a `table.sort` comparator or raw `Lua.pc
 
 ## Not supported yet
 
-Inner classes of local classes and `::Inner` references, reflection (`::class`; delegates see
+Inner classes of local classes and `::Inner` references, reflection beyond the basics below (delegates see
 `KProperty` only as `{ name = "x" }`), `provideDelegate` and extension-operator delegates, extension
 properties of a class that share a name (`val String.x` and `val Int.x` would both be `getX`),
-references to member extension functions, open or overriding delegated properties, `break`/`continue`
-out of a `try` block, and custom accessors on properties that override library properties (e.g.
+references to member extension functions, open or overriding delegated properties, and custom accessors on properties that override library properties (e.g.
 `Exception.message`, or `Continuation.context`: declare it as `override val context =
 EmptyCoroutineContext`). Through `super`, only `Any`'s `toString`/`equals`/`hashCode` and `Throwable`'s
 `message`/`cause`/`toString` are available. Inline functions with a `vararg` parameter cannot be
 expanded; a non-local `return` out of a lambda passed to a library function that is not inlined (such as
-`map`), or out of a `try` in an inline function's own body, is an error, as is an expansion whose locals
+`partition`, `maxByOrNull` or `reduce`; only the collection functions listed in the table are inlined, and `filter`,
+`filterNot` and `onEach` not on a `Map`) is an error, as is an expansion whose locals
 would hide a top-level declaration the inline function uses. For coroutines: kotlinx.coroutines,
 coroutine context elements and interceptors, the `kotlin.coroutines.intrinsics` API, and classes
 implementing `Sequence`. Each is reported as an error rather than miscompiled.
@@ -278,15 +393,21 @@ and checks them against the JVM (see the `stdlib_*` test cases):
 
 Not available: `java.util.Collections`/`Arrays` helpers, `Math.*Exact`, `UInt` and unsigned types,
 `BigInteger`/`BigDecimal`, `Locale`, `String.chars()`/code points, `withDefault`, `listIterator`,
-`rotateLeft`/`takeHighestOneBit`, `withSign`, `Random.nextLong(bound)`, `::class.simpleName`/`javaClass`.
+`rotateLeft`/`takeHighestOneBit`, `withSign`, `Random.nextLong(bound)`.
 
-Known differences: `String.substring`, `s[i]`, `first()` and `last()` are inline `string.sub` calls and do
-not throw for out-of-range indices; `a % 0` raises a Lua error rather than `ArithmeticException`;
-`Float` is a double (`1f / 3` prints 16 digits); `Int` overflow is not wrapped; some exception messages of
-`IndexOutOfBoundsException` differ in wording; `Char.isLetter()` etc. are ASCII only.
+Known differences: `Float` is a double (`1f / 3` prints 16 digits); `Int` overflow is not wrapped unless
+`--int-overflow wrap` is given; `Char.isLetter()` etc. are ASCII only; `as T` casts are unchecked (no
+`ClassCastException`); `removeFirst()`/`removeLast()` on an empty list say "List is empty." (the JDK's own
+message is null); `listOf(x)` and `emptyList()` throw `IndexOutOfBoundsException` messages in the
+`ArrayList` wording ("Index 1 out of bounds for length 1"), where the JVM's singleton list says "Index: 1, Size: 1";
+`Int.MIN_VALUE / -1` is not wrapped; the exception class of `list[i]` is `IndexOutOfBoundsException` (the JVM
+throws its subclass `ArrayIndexOutOfBoundsException` for `listOf(...)` and arrays), so `catch` clauses behave the same.
+Indexing, `substring`, `subSequence`, `first()`/`last()` of an empty string, `repeat`, `padStart`, `/`, `%`,
+`rem`, `mod` and `floorDiv` throw the same exception types and messages as the JVM. Doubles keep IEEE behaviour
+(`x / 0.0` is Infinity, `x % 0.0` is NaN).
 
 Other semantic differences to be aware of: strings are byte strings, so `length` and indexing count
-UTF-8 bytes; `xs[i]` is not bounds-checked (`get(i)` and `elementAt(i)` are); objects are initialized
+UTF-8 bytes; objects are initialized
 when their file loads rather than on first access; Lua runtime errors are caught as
 `RuntimeException`; `Unit` is `nil`, so it prints as `null` (e.g. in `Success(null)`).
 
@@ -296,7 +417,8 @@ when their file loads rather than on first access; Lua runtime errors are caught
 ./gradlew test                     # transpile + run every test case on every Lua interpreter found
 ./gradlew test -PupdateGolden      # rewrite expected.lua files after an intended output change
 ./gradlew :compiler:kotlinOracle   # check each stdout.txt against what Kotlin/JVM prints
-./gradlew check                    # tests + ktlint (spotlessCheck) + detekt, as CI runs it
+./gradlew check                    # tests + Gradle plugin functional tests + ktlint (spotlessCheck) + detekt, as CI runs it
+./gradlew :gradle-plugin:functionalTest   # only the TestKit tests of the Gradle plugin (about 15 s)
 ./gradlew spotlessApply            # reformat Kotlin sources with ktlint
 ```
 
@@ -309,7 +431,8 @@ Lua 5.1, 5.2, 5.3 and LuaJIT when those interpreters are installed (`lua5.1`, `l
 `luajit`; override with `-Dk2l.lua51=...` etc.). Expected output isn't written by hand: the
 `kotlinOracle` task compiles and runs each case with the real Kotlin compiler (`-PupdateOracle`
 rewrites the files). A case with `errors.txt` instead checks the diagnostics; `targets-skip.txt`
-lists documented differences on specific targets; `jvm-skip` marks cases that call hand-written Lua.
+lists documented differences on specific targets; `jvm-skip` marks cases that call hand-written Lua; `options.txt` sets compiler options for a case, one
+`name=value` per line (`intOverflow=wrap`, `luaLibImport=inline`).
 
 Layout:
 
@@ -320,6 +443,7 @@ Layout:
 - `compiler/src/main/resources/dev/k2l/lualib`: the runtime, as plain Lua; `Name.float.lua` and
   similar files are target-specific variants.
 - `lua-api`: the `dev.k2l.lua` interop declarations.
+- `gradle-plugin`: the `dev.k2l` Gradle plugin and its TestKit tests (`src/functionalTest`).
 
 The Analysis API artifacts come from JetBrains' `intellij-dependencies` repository and must match the
 Kotlin version exactly; see the comments in `gradle/libs.versions.toml` before upgrading.

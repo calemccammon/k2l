@@ -8,6 +8,7 @@ local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Key = __K2L_Class("Key")
@@ -98,7 +99,7 @@ local function main()
         sum = sum + x
     end
     print(sum)
-    print(__K2L_Str(__K2L_ListOf("apple", "avocado", "banana"):groupBy(function(it) return it:sub(1, 1) end)))
+    print(__K2L_Str(__K2L_ListOf("apple", "avocado", "banana"):groupBy(function(it) return __K2L_Text.first(it) end)))
     print(__K2L_Str(__K2L_ListOf("a", "bb", "ccc"):associateWith(function(it) return #it end)))
 end
 

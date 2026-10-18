@@ -115,12 +115,14 @@ private fun FileTransformer.lambdaArgument(arg: KtExpression): InlinedLambda? {
 }
 
 /** Whether the lambda has a `return` that leaves the function it is written in. */
-private fun FileTransformer.hasNonLocalReturn(lambda: InlinedLambda): Boolean {
+private fun FileTransformer.hasNonLocalReturn(lambda: InlinedLambda): Boolean = hasNonLocalReturn(lambda.expr)
+
+internal fun FileTransformer.hasNonLocalReturn(lambda: KtLambdaExpression): Boolean {
     var found = false
-    lambda.expr.accept(object : KtTreeVisitorVoid() {
+    lambda.accept(object : KtTreeVisitorVoid() {
         override fun visitReturnExpression(expression: KtReturnExpression) {
             super.visitReturnExpression(expression)
-            if (leavesLambda(expression, lambda.expr)) found = true
+            if (leavesLambda(expression, lambda)) found = true
         }
     })
     return found

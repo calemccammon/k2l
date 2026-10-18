@@ -5,6 +5,5 @@ fun localInner() {
 }
 
 fun main() {
-    val x: Any = 1
-    println(x::class.simpleName)
+    println(Holder())
 }

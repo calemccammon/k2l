@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
+local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringEndsWith = ____lualib.__K2L_StringEndsWith
 local __K2L_StringEqualsIgnoreCase = ____lualib.__K2L_StringEqualsIgnoreCase
@@ -20,12 +21,13 @@ local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_StringTrim = ____lualib.__K2L_StringTrim
+local __K2L_Text = ____lualib.__K2L_Text
 
 local function main()
     local s = "Hello, World"
-    print(s:sub(8))
-    print(s:sub(1, 5))
-    print(s:sub(5, 5))
+    print(__K2L_Text.substring(s, 7))
+    print(__K2L_Text.substring(s, 0, 5))
+    print(__K2L_StringCharAt(s, 4))
     print(__K2L_StringStartsWith(s, "Hell"))
     print(__K2L_StringEndsWith(s, "x"))
     print(__K2L_StringContains(s, "lo, W"))

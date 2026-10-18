@@ -29,7 +29,7 @@ fun captured(): Int {
     return limit
 }
 
-// the body's own `return` would have to leave the pcall of its try block
+// no error: the body's own `return` leaves the pcall of its try block through the pcall's result (see try_jumps)
 fun inTry(): Int {
     tryFirst(listOf(1, 2)) { if (it > 5) return 5 else it > 1 }
     return 0
@@ -37,7 +37,7 @@ fun inTry(): Int {
 
 // the non-local return would have to leave the closure of `map`, which is not inlined
 fun viaMap(xs: List<Int>): List<Int> {
-    capped(1) { xs.map { x -> if (x > it) return emptyList() else x } }
+    capped(1) { xs.partition { x -> if (x > it) return emptyList() else x > 0 } }
     return xs
 }
 

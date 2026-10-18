@@ -5,6 +5,14 @@ local function __K2L_PatternEscape(s)
     return (s:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0"))
 end
 
+-- s[i] and s.get(i): Java's charAt.
+local function __K2L_StringCharAt(s, i)
+    if i < 0 or i >= #s then
+        error(__K2L_StringIndexOutOfBoundsException.new("Index " .. i .. " out of bounds for length " .. #s))
+    end
+    return s:sub(i + 1, i + 1)
+end
+
 local function __K2L_StringStartsWith(s, prefix)
     return s:sub(1, #prefix) == prefix
 end
@@ -56,12 +64,20 @@ local function __K2L_StringIsBlank(s)
     return s:match("^%s*$") ~= nil
 end
 
+local function checkPadLength(length)
+    if length < 0 then
+        error(__K2L_IllegalArgumentException.new("Desired length " .. length .. " is less than zero."))
+    end
+end
+
 local function __K2L_StringPadStart(s, length, pad)
+    checkPadLength(length)
     pad = pad or " "
     return string.rep(pad, length - #s) .. s
 end
 
 local function __K2L_StringPadEnd(s, length, pad)
+    checkPadLength(length)
     pad = pad or " "
     return s .. string.rep(pad, length - #s)
 end
@@ -375,12 +391,12 @@ function __K2L_Text.replaceRangeOf(s, range, replacement)
 end
 
 function __K2L_Text.substringOf(s, range)
-    return s:sub(range.first + 1, range.last + 1)
+    return __K2L_Text.substring(s, range.first, range.last + 1)
 end
 
 function __K2L_Text.slice(s, indices)
     if type(indices.first) == "number" then
-        return __K2L_Text.substringOf(s, indices)
+        return indices.last < indices.first and "" or __K2L_Text.substringOf(s, indices)
     end
     local out = {}
     local arr, n = indices:____array()
@@ -449,10 +465,28 @@ function __K2L_Text.getOrNull(s, index)
 end
 
 function __K2L_Text.get(s, index)
-    if index < 0 or index >= #s then
-        error(__K2L_IndexOutOfBoundsException.new("index: " .. index .. ", length: " .. #s))
+    return __K2L_StringCharAt(s, index)
+end
+
+function __K2L_Text.first(s)
+    if s == "" then
+        error(__K2L_NoSuchElementException.new("Char sequence is empty."))
     end
-    return s:sub(index + 1, index + 1)
+    return s:sub(1, 1)
+end
+
+function __K2L_Text.last(s)
+    if s == "" then
+        error(__K2L_NoSuchElementException.new("Char sequence is empty."))
+    end
+    return s:sub(-1)
+end
+
+function __K2L_Text.repeatCount(s, n)
+    if n < 0 then
+        illegalArgument("Count 'n' must be non-negative, but was " .. n .. ".")
+    end
+    return s:rep(n)
 end
 
 function __K2L_Text.toCharArray(s)
@@ -520,7 +554,8 @@ end
 function __K2L_Text.windowed(s, size, step, partial, transform)
     step = step or 1
     if size <= 0 or step <= 0 then
-        illegalArgument("size " .. size .. " and step " .. step .. " must be greater than zero.")
+        illegalArgument(size ~= step and "Both size " .. size .. " and step " .. step .. " must be greater than zero."
+            or "size " .. size .. " must be greater than zero.")
     end
     local out = __K2L_List.new()
     local i = 1

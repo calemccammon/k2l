@@ -12,19 +12,20 @@ local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
+local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_Throwable = ____lualib.__K2L_Throwable
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local function shape(s)
     local at = __K2L_StringIndexOf(s, "@")
-    local hex = s:sub(at + 1 + 1)
+    local hex = __K2L_Text.substring(s, at + 1)
     local isHex = #hex > 0
     for c in hex:gmatch(".") do
         if not (c >= "0" and c <= "9" or c >= "a" and c <= "f") then
             isHex = false
         end
     end
-    return s:sub(1, at) .. "@" .. (isHex and "<hex>" or hex)
+    return __K2L_Text.substring(s, 0, at) .. "@" .. (isHex and "<hex>" or hex)
 end
 
 local Plain = __K2L_Class("Plain")

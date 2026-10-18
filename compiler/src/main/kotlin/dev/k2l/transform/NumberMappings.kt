@@ -23,6 +23,8 @@ internal object NumberMappings {
 
     private fun CallSite.n(member: String, vararg args: LuaExpr) = libMember("Numbers", "__K2L_Num", member, *args)
 
+    private fun CallSite.arithmetic(op: LuaBinOp) = transformer.arithmetic(op, self, receiverType, arg(0), argTypes[0])
+
     private fun floatPlusZero(e: LuaExpr) = LuaBinary(LuaBinOp.Add, e, num("0.0"))
 
     private fun elementary(t: MappingTable) {
@@ -93,10 +95,10 @@ internal object NumberMappings {
 
     private fun integerMembers(t: MappingTable) {
         for (type in INTEGRAL + FLOATING) {
-            t.def("kotlin/$type.plus") { LuaBinary(LuaBinOp.Add, self, arg(0)) }
-            t.def("kotlin/$type.minus") { LuaBinary(LuaBinOp.Sub, self, arg(0)) }
-            t.def("kotlin/$type.times") { LuaBinary(LuaBinOp.Mul, self, arg(0)) }
-            t.def("kotlin/$type.unaryMinus") { LuaUnary(LuaUnOp.Neg, self) }
+            t.def("kotlin/$type.plus") { arithmetic(LuaBinOp.Add) }
+            t.def("kotlin/$type.minus") { arithmetic(LuaBinOp.Sub) }
+            t.def("kotlin/$type.times") { arithmetic(LuaBinOp.Mul) }
+            t.def("kotlin/$type.unaryMinus") { transformer.negation(self, receiverType) }
             t.def("kotlin/$type.unaryPlus") { self }
             t.def("kotlin/$type.hashCode") { lualib("Hash", self) }
         }
@@ -108,11 +110,11 @@ internal object NumberMappings {
             t.def("kotlin/$type.div") { LuaBinary(LuaBinOp.Div, self, arg(0)) }
         }
         for (type in INTEGRAL) {
-            t.def("kotlin/$type.inc") { LuaBinary(LuaBinOp.Add, self, num("1")) }
-            t.def("kotlin/$type.dec") { LuaBinary(LuaBinOp.Sub, self, num("1")) }
+            t.def("kotlin/$type.inc") { transformer.stepped(LuaBinOp.Add, self, receiverType) }
+            t.def("kotlin/$type.dec") { transformer.stepped(LuaBinOp.Sub, self, receiverType) }
             t.def("kotlin/$type.toByte") { n("toByte", self) }
             t.def("kotlin/$type.toShort") { n("toShort", self) }
-            t.def("kotlin/$type.rem") { lua("math.fmod", self, arg(0)) }
+            t.def("kotlin/$type.rem") { transformer.remainder(self, receiverType, arg(0), argTypes[0]) }
             t.def("kotlin/$type.equals") { LuaBinary(LuaBinOp.Eq, self, arg(0)) }
         }
         t.def("kotlin/mod") {

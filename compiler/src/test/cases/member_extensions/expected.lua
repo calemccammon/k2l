@@ -4,6 +4,7 @@ local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
+local __K2L_Text = ____lualib.__K2L_Text
 
 local Builder = __K2L_Class("Builder")
 
@@ -180,14 +181,14 @@ function Html:____init()
 end
 
 function Html:tag(name, body)
-    self.sb:append(("  "):rep(self.depth)):append("<"):append(name):append(">\n")
+    self.sb:append(__K2L_Text.repeatCount("  ", self.depth)):append("<"):append(name):append(">\n")
     self.depth = self.depth + 1
     body(self)
     self.depth = self.depth - 1
 end
 
 function Html:unaryPlus(____this_18)
-    self.sb:append(("  "):rep(self.depth)):append(____this_18):append("\n")
+    self.sb:append(__K2L_Text.repeatCount("  ", self.depth)):append(____this_18):append("\n")
 end
 
 function Html:bold(____this_19)

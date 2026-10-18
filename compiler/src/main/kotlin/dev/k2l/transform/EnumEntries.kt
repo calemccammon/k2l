@@ -41,6 +41,7 @@ private fun FileTransformer.entryWithBody(entry: KtEnumEntry, enumRef: LuaExpr, 
         val enumClass = entry.containingClassOrObject!!
         val local = LuaName(ctx.temp(entry.name!!))
         emit(LuaLocal(listOf(local.name), listOf(lualibCall("Class", LuaString(enumClass.name ?: "?"), enumRef))))
+        entryClassInfo(entry, local)
         withClass(entry) {
             checkMembers(entry)
             members(entry, local)

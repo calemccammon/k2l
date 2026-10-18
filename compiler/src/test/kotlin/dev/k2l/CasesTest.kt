@@ -22,13 +22,15 @@ import java.util.concurrent.TimeUnit
  * - `main.kt`: the Kotlin input
  * - `expected.lua`: the exact transpiler output (regenerate with `-PupdateGolden`)
  * - `stdout.txt`: what the program prints, produced by the Kotlin/JVM oracle (`kotlinOracle` task)
+ * - `options.txt` (optional): compiler options for the case, one `name=value` per line (`intOverflow=wrap`)
  * - `errors.txt` (instead of the other two): expected diagnostics, one `line:column: message` per line
  */
 class CasesTest {
     @TestFactory
     fun cases(): List<DynamicNode> = modules.map { module ->
         val dir = module.roots.single().toFile()
-        val result by lazy { K2lCompiler().compile(session, module) }
+        val options = caseOptions(dir)
+        val result by lazy { K2lCompiler(options).compile(session, module) }
         val errors = File(dir, "errors.txt")
         if (errors.isFile) {
             DynamicTest.dynamicTest(module.name) {
@@ -55,13 +57,29 @@ class CasesTest {
                     DynamicTest.dynamicTest("runs on ${target.id}") {
                         val skip = skippedTargets(dir)[target.id]
                         assumeTrue(skip == null, "skipped on ${target.id}: $skip")
-                        val targetResult = K2lCompiler(CompilerOptions(luaTarget = target)).compile(session, module)
+                        val targetResult = K2lCompiler(options.copy(luaTarget = target)).compile(session, module)
                         assertEquals("", targetResult.diagnostics.joinToString("\n"), "unexpected diagnostics")
                         assertEquals(File(dir, "stdout.txt").readText(), runLua(interpreter, targetResult.outputs, dir.toPath()))
                     }
                 },
             )
         }
+    }
+
+    /** `options.txt`: `intOverflow=wrap` lines; the Lua target is chosen by the test, not by the case. */
+    private fun caseOptions(dir: File): CompilerOptions {
+        val lines = File(dir, "options.txt").takeIf { it.isFile }?.readLines().orEmpty().filter { '=' in it }
+        val values = lines.associate { it.substringBefore('=').trim() to it.substringAfter('=').trim() }
+        require(
+            values.keys.all {
+                it == "intOverflow" || it == "luaLibImport"
+            },
+        ) { "unknown option in ${dir.name}/options.txt: ${values.keys}" }
+        return CompilerOptions(
+            luaLibImport =
+            values["luaLibImport"]?.let { if (it == "inline") LuaLibImport.Inline else LuaLibImport.Require } ?: LuaLibImport.Require,
+            intOverflow = values["intOverflow"]?.let(IntOverflow::parse) ?: IntOverflow.Unchecked,
+        )
     }
 
     /** The generated files except the shared lualib bundle; several files are concatenated with headers. */

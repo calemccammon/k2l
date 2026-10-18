@@ -422,8 +422,11 @@ object CollectionMappings {
             "get" -> when {
                 site.isString(site.argTypes.getOrNull(0)) -> LuaMethodCall(self, "getNamed", site.args)
 
-                // xs[i] is unchecked, xs.get(i) throws IndexOutOfBoundsException
-                site.element is KtArrayAccessExpression || kind == CollectionKind.Iterable -> index(self, site.arg(0))
+                // xs[i] and xs.get(i) throw IndexOutOfBoundsException; a loop index over xs.indices needs no check
+                kind == CollectionKind.Iterable || site.transformer.isProvenIndex(
+                    site.element,
+                    site.receiverType,
+                ) -> index(self, site.arg(0))
 
                 else -> LuaMethodCall(self, "get", site.args)
             }

@@ -42,11 +42,11 @@ local function getTwice__2(x)
 end
 
 local function getSecond(____this_5)
-    return ____this_5[2]
+    return ____this_5:get(1)
 end
 
 local function getPenultimate(____this_6)
-    return ____this_6.size >= 2 and ____this_6[____this_6.size - 2 + 1] or nil
+    return ____this_6.size >= 2 and ____this_6:get(____this_6.size - 2) or nil
 end
 
 local function getOrDash(____this_7)
@@ -193,17 +193,18 @@ return ____exports
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_IDiv = ____lualib.__K2L_IDiv
+local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 
 local function getLastChar(self)
-    return self:sub(#self - 1 + 1, #self - 1 + 1)
+    return __K2L_StringCharAt(self, #self - 1)
 end
 
 local function getHead(____this)
-    return ____this[1]
+    return ____this:get(0)
 end
 
 local function setHead(____this, value)
-    ____this[1] = value
+    ____this:set(0, value)
 end
 
 local Counter = __K2L_Class("Counter")

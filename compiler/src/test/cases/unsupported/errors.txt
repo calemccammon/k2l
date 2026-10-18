@@ -1,4 +1,2 @@
 1:64: Extension property 'last' would share its Lua method 'getLast' with another member
 4:19: Inner class of a local class is not supported yet
-9:13: Expression 'ClassLiteralExpression' is not supported yet
-9:13: Kotlin library API 'kotlin/reflect/KClass.simpleName' is not supported yet

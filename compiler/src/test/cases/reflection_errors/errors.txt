@@ -1,0 +1,3 @@
+4:13: Kotlin library API 'kotlin/reflect/KClass.members' is not supported yet
+5:13: Kotlin library API 'kotlin/reflect/KClass.isData' is not supported yet
+6:13: Kotlin library API 'kotlin/reflect/KClass.objectInstance' is not supported yet
