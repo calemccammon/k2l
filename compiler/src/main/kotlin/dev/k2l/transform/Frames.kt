@@ -1,7 +1,9 @@
 package dev.k2l.transform
 
+import com.intellij.psi.PsiElement
 import dev.k2l.lua.*
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtLambdaExpression
 
 /**
  * Where the value of an expression goes: given the Lua value, returns the statements that consume it
@@ -27,14 +29,33 @@ internal class LoopFrame(val label: String?) {
 
 /**
  * Functions and lambdas being transformed, innermost last. `return` targets one of these; inlined
- * lambdas (scope functions) don't create a Lua function, so returning from them jumps to [endLabel].
+ * lambdas (scope functions) and inlined functions don't create a Lua function, so returning from them
+ * jumps to [endLabel]. [psi] is the Kotlin function, lambda or accessor the frame stands for, when known.
  */
-internal class FunctionFrame(val kind: Kind, val labels: Set<String>) {
-    enum class Kind { Function, Lambda, Inline }
+internal class FunctionFrame(val kind: Kind, val labels: Set<String>, val psi: PsiElement? = null) {
+    enum class Kind { Function, Lambda, Inline, InlineFunction }
+
+    /** Whether this frame is a Lua function, which a `return` of an enclosing function cannot cross. */
+    val isClosure get() = kind == Kind.Function || kind == Kind.Lambda
+
+    /** Whether a `return` without a label can end here: a Kotlin function, whether called or inlined. */
+    val isFunctionBody get() = kind == Kind.Function || kind == Kind.InlineFunction
 
     var sink: ValueSink? = null
     var endLabel: String? = null
 }
+
+/**
+ * A lambda argument of an inlined user function, expanded wherever the function's body invokes the parameter it is
+ * bound to (see InlineFunctions.kt).
+ */
+internal class InlinedLambda(
+    val expr: KtLambdaExpression,
+    /** Whether the lambda reached this function through a parameter of another inlined function. */
+    val fromParameter: Boolean,
+    /** What `this` meant where the lambda was written: the receiver bindings before any inlined function was entered. */
+    val callerBindings: Map<PsiElement, LuaExpr>,
+)
 
 /** Something assignable: a variable, or a property of an object (possibly with accessors). */
 internal class Target(val read: LuaExpr, val write: (LuaExpr) -> LuaStmt)

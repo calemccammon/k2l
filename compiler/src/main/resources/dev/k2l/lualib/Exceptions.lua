@@ -25,6 +25,7 @@ local __K2L_IllegalArgumentException = __K2L_Class("java.lang.IllegalArgumentExc
 local __K2L_IllegalStateException = __K2L_Class("java.lang.IllegalStateException", __K2L_RuntimeException)
 local __K2L_NullPointerException = __K2L_Class("java.lang.NullPointerException", __K2L_RuntimeException)
 local __K2L_IndexOutOfBoundsException = __K2L_Class("java.lang.IndexOutOfBoundsException", __K2L_RuntimeException)
+local __K2L_StringIndexOutOfBoundsException = __K2L_Class("java.lang.StringIndexOutOfBoundsException", __K2L_IndexOutOfBoundsException)
 local __K2L_ArithmeticException = __K2L_Class("java.lang.ArithmeticException", __K2L_RuntimeException)
 local __K2L_UnsupportedOperationException = __K2L_Class("java.lang.UnsupportedOperationException", __K2L_RuntimeException)
 local __K2L_ClassCastException = __K2L_Class("java.lang.ClassCastException", __K2L_RuntimeException)

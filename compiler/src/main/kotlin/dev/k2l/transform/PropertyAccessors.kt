@@ -8,7 +8,10 @@ import org.jetbrains.kotlin.psi.*
  * field. Abstract and interface members without a body get no method.
  */
 internal fun FileTransformer.accessorMethods(p: KtNamedDeclaration, ref: LuaExpr): Unit = with(session) {
-    if (p is KtProperty && p.receiverTypeReference != null) return // reported by checkMembers
+    if (p is KtProperty && p.receiverTypeReference != null) {
+        memberExtensionPropertyDeclaration(p, ref)
+        return
+    }
     if (p is KtProperty && p.delegate != null) {
         delegatedAccessors(p, ref)
         return

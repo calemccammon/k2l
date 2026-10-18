@@ -4,6 +4,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import dev.k2l.lua.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassLikeSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaConstructorSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
@@ -12,7 +13,7 @@ import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 
 /** Labels a `return@label` can use to leave [e]: an explicit `label@{}` or the name of the call it is passed to. */
-private fun FileTransformer.lambdaLabels(e: KtLambdaExpression): Set<String> {
+internal fun FileTransformer.lambdaLabels(e: KtLambdaExpression): Set<String> {
     val labels = mutableSetOf<String>()
     (e.parent as? KtLabeledExpression)?.getLabelName()?.let { labels += it }
     val call = generateSequence(e.parent) { it.parent }.take(4).filterIsInstance<KtCallExpression>().firstOrNull()
@@ -42,7 +43,7 @@ internal fun FileTransformer.lambda(e: KtLambdaExpression): LuaExpr = with(sessi
     }
     if (literal.valueParameters.isEmpty() && type?.parameterTypes?.size == 1) params += "it"
     val returnsValue = type?.returnType?.let { !it.isUnitType } ?: true
-    val body = inFrame(FunctionFrame(FunctionFrame.Kind.Lambda, lambdaLabels(e))) {
+    val body = inFrame(FunctionFrame(FunctionFrame.Kind.Lambda, lambdaLabels(e), literal)) {
         prologue + collect { lambdaBody(literal, if (returnsValue) ({ listOf(LuaReturn(listOf(it))) }) else null) }
     }
     return LuaFunction(params, body)
@@ -62,6 +63,10 @@ private fun FileTransformer.lambdaBody(literal: KtFunctionLiteral, sink: ValueSi
  */
 internal fun FileTransformer.inlineLambda(lambdaExpr: KtExpression, args: List<LuaExpr>, receiver: LuaExpr?, sink: ValueSink?): Unit =
     with(session) {
+        inlinedLambdaOf(lambdaExpr)?.let { passed ->
+            inCallerContext(passed) { inlineLambda(passed.expr, args, receiver, sink) }
+            return
+        }
         val unwrapped = KtPsiUtil.safeDeparenthesize(lambdaExpr).let { (it as? KtLabeledExpression)?.baseExpression ?: it }
         val lambda = unwrapped as? KtLambdaExpression
         if (lambda == null) {
@@ -71,25 +76,37 @@ internal fun FileTransformer.inlineLambda(lambdaExpr: KtExpression, args: List<L
         }
         val literal = lambda.functionLiteral
         val names = lambdaParameterNames(literal, args)
-        val frame = FunctionFrame(FunctionFrame.Kind.Inline, lambdaLabels(lambda)).also { it.sink = sink }
+        val frame = FunctionFrame(FunctionFrame.Kind.Inline, lambdaLabels(lambda), literal).also { it.sink = sink }
         val body = collect {
             bindLambdaParameters(literal, names, args)
             if (receiver != null) receiverBindings[literal] = receiver
             inFrame(frame) { lambdaBody(literal, sink) }
         }
-        val end = frame.endLabel
-        if (end != null && !target.hasGoto) {
-            // No goto on Lua 5.1: `return@label` breaks out of a one-iteration repeat.
-            emit(LuaRepeat(gotoToBreak(body, end, lambda), LuaBool(true)))
-            return
-        }
-        val needsBlock = end != null || body.any { it is LuaLocal || it is LuaFunctionDecl }
-        if (needsBlock) emit(LuaDo(body + listOfNotNull(end?.let(::LuaLabel)))) else emitAll(body)
+        emitInlinedBody(body, frame, lambda)
     }
+
+/**
+ * Emits the statements of an inlined lambda or function. A `return` out of it was lowered to a jump to the frame's end
+ * label: a `goto`, or on Lua 5.1 a `break` out of a one-iteration `repeat`. Locals get a `do` block of their own.
+ */
+internal fun FileTransformer.emitInlinedBody(body: List<LuaStmt>, frame: FunctionFrame, at: KtElement) {
+    val end = frame.endLabel
+    if (end != null && !target.hasGoto) {
+        val flag = ctx.temp("returning")
+        val (lowered, usesFlag) = jumpsToBreaks(body, end, flag, at)
+        if (usesFlag) emit(LuaLocal(listOf(flag), listOf(LuaBool(false))))
+        emit(LuaRepeat(lowered, LuaBool(true)))
+        return
+    }
+    val needsBlock = end != null || body.any { it is LuaLocal || it is LuaFunctionDecl }
+    if (needsBlock) emit(LuaDo(body + listOfNotNull(end?.let(::LuaLabel)))) else emitAll(body)
+}
 
 private fun FileTransformer.isInlinableExpression(lambdaExpr: KtExpression, single: KtExpression, args: List<LuaExpr>) = with(session) {
     single !is KtDeclaration && !mayNeedStatements(single) && args.all(::isStable) &&
-        PsiTreeUtil.findChildOfType(lambdaExpr, KtReturnExpression::class.java) == null
+        PsiTreeUtil.findChildOfType(lambdaExpr, KtReturnExpression::class.java) == null &&
+        (KtPsiUtil.safeDeparenthesize(lambdaExpr) as? KtLambdaExpression)?.valueParameters?.none { it.destructuringDeclaration != null } !=
+        false
 }
 
 private fun lambdaParameterNames(literal: KtFunctionLiteral, args: List<LuaExpr>) =
@@ -110,12 +127,44 @@ private fun FileTransformer.bindLambdaParameters(literal: KtFunctionLiteral, nam
     }
 }
 
-private fun FileTransformer.gotoToBreak(body: List<LuaStmt>, end: String, lambda: KtLambdaExpression) = body.mapStatements { s, depth ->
-    when {
-        s !is LuaGoto -> s
-        s.label == end && depth == 0 -> LuaBreak
-        else -> s.also { ctx.error(lambda, "return@label from inside a loop in an inlined lambda needs goto (Lua 5.1)") }
+/**
+ * Lua 5.1 has no `goto`, so a jump to the end of an inlined body (wrapped in a one-iteration `repeat`) becomes a `break`.
+ * From inside loops it sets [flag] and breaks, and the loops it leaves test the flag afterwards to break again.
+ */
+private fun FileTransformer.jumpsToBreaks(body: List<LuaStmt>, end: String, flag: String, at: KtElement): Pair<List<LuaStmt>, Boolean> {
+    var usesFlag = false
+    fun lower(stmts: List<LuaStmt>, inLoop: Boolean): List<LuaStmt> = stmts.flatMap { s ->
+        fun loop(rebuild: (List<LuaStmt>) -> LuaStmt, loopBody: List<LuaStmt>): List<LuaStmt> {
+            val before = usesFlag
+            usesFlag = false
+            val lowered = lower(loopBody, inLoop = true)
+            val leaves = usesFlag
+            usesFlag = usesFlag || before
+            return if (leaves) listOf(rebuild(lowered), LuaIf(LuaName(flag), listOf(LuaBreak))) else listOf(s)
+        }
+        when (s) {
+            is LuaGoto -> when {
+                s.label != end -> listOf(s.also { ctx.error(at, "This jump out of an inlined lambda or function needs goto (Lua 5.1)") })
+                !inLoop -> listOf(LuaBreak)
+                else -> listOf(assign(flag, LuaBool(true)), LuaBreak).also { usesFlag = true }
+            }
+
+            is LuaIf -> listOf(LuaIf(s.cond, lower(s.then, inLoop), s.orElse?.let { lower(it, inLoop) }))
+
+            is LuaDo -> listOf(LuaDo(lower(s.body, inLoop)))
+
+            is LuaWhile -> loop({ LuaWhile(s.cond, it) }, s.body)
+
+            is LuaRepeat -> loop({ LuaRepeat(it, s.until) }, s.body)
+
+            is LuaNumericFor -> loop({ s.copy(body = it) }, s.body)
+
+            is LuaGenericFor -> loop({ s.copy(body = it) }, s.body)
+
+            else -> listOf(s)
+        }
     }
+    return lower(body, inLoop = false) to usesFlag
 }
 
 /** Inline-lambda result as a value: a temp assigned inside the inlined body. */
@@ -151,7 +200,11 @@ internal fun FileTransformer.callableReference(e: KtCallableReferenceExpression)
             LuaIndex(classRef(cls), LuaString("new" + constructorSuffix(psi)))
         }
 
+        psi is KtNamedFunction && psi.isMemberExtension() -> unsupported(e, "Reference to a member extension function")
+
         psi is KtNamedFunction && classes.isSource(psi) -> functionReference(e, psi)
+
+        symbol is KaCallableSymbol -> libraryReference(e, symbol) ?: unsupported(e, "This callable reference")
 
         else -> unsupported(e, "This callable reference")
     }
@@ -179,9 +232,16 @@ private fun FileTransformer.functionReference(e: KtCallableReferenceExpression, 
     return LuaFunction(listOf("self"), listOf(LuaReturn(listOf(LuaMethodCall(LuaName("self"), method, rest)))), isVararg = true)
 }
 
+/** `List<Int>` and `Map.Entry<K, V>` in `List<Int>::size` parse as calls with type arguments only. */
+private fun isGenericTypeName(receiver: KtExpression): Boolean {
+    val call = (receiver as? KtDotQualifiedExpression)?.selectorExpression ?: receiver
+    return call is KtCallExpression && call.valueArgumentList == null && call.lambdaArguments.isEmpty()
+}
+
 /** `obj::f` is bound to a value; `Type::f` is not. */
-private fun FileTransformer.isBoundReference(e: KtCallableReferenceExpression): Boolean = with(session) {
+internal fun FileTransformer.isBoundReference(e: KtCallableReferenceExpression): Boolean = with(session) {
     val receiver = e.receiverExpression ?: return false
+    if (isGenericTypeName(receiver)) return false
     val ref = (receiver as? KtNameReferenceExpression)
         ?: (receiver as? KtDotQualifiedExpression)?.selectorExpression as? KtNameReferenceExpression
         ?: return true

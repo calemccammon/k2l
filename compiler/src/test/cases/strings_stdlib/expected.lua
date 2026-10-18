@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringContains = ____lualib.__K2L_StringContains
@@ -50,7 +51,7 @@ local function main()
     print(("z"):byte() - ("a"):byte())
     print(c:match("^%a$") ~= nil)
     print(("7"):match("^%d$") ~= nil)
-    print(tonumber("7") * 2)
+    print(__K2L_Num.digitToInt("7") * 2)
     print(c:upper())
     print(string.char(97))
     for ____code = ("a"):byte(), ("e"):byte() do

@@ -1,0 +1,22 @@
+[0] fast blink 1
+[0] slow blink 1
+[0] guard: waiting inside try
+[0] instant runs without waiting
+[0] instant finished
+[1] fast blink 2
+[1] crasher failed: boom at frame 1
+[2] consumer got hello
+[2] guard: woke inside try
+[2] fast blink 3
+[3] slow blink 2
+[3] fast finished
+[4] consumer got world
+[4] consumer finished
+[4] producer finished
+-- frame 4: cancelling
+[4] guard: caught cancelled
+[4] slow failed: cancelled
+[5] guard: finally
+[5] guard: recovered
+[5] guard finished
+done at frame 5

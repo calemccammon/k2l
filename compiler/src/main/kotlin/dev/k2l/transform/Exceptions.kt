@@ -17,10 +17,11 @@ internal fun FileTransformer.tryInto(e: KtTryExpression, sink: ValueSink?): Unit
     val result = ctx.temp("result")
     val returned = ctx.temp("returned")
     var hasReturn = false
+    val pcall = protectedCall(e)
     fun tryFunction(stmts: List<LuaStmt>, element: KtElement): LuaExpr {
         val (rewritten, returns) = rewriteReturns(stmts, element)
         hasReturn = hasReturn || returns
-        return luaCall(LuaName("pcall"), LuaFunction(emptyList(), rewritten))
+        return luaCall(pcall, LuaFunction(emptyList(), rewritten))
     }
     fun branch(body: KtExpression) = if (sink != null) valueInto(body, sink) else collect { block(body) }
     fun resultNames() = if (hasReturn) listOf(ok, result, returned) else listOf(ok, result)

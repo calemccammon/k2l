@@ -92,12 +92,11 @@ internal fun FileTransformer.emitMethod(ref: LuaExpr, name: String, params: List
 internal fun FileTransformer.checkMembers(c: KtClassOrObject) {
     val fields = (c as? KtClass)?.primaryConstructorParameters?.filter { it.hasValOrVar() }?.mapNotNull { it.name }.orEmpty().toMutableSet()
     c.declarations.filterIsInstance<KtProperty>().mapNotNullTo(fields) { it.name }
-    c.declarations.filterIsInstance<KtProperty>().filter { it.receiverTypeReference != null }
-        .forEach { unsupported(it, "Extension property declared in a class") }
+    checkMemberExtensionProperties(c)
     for (decl in c.declarations.filterIsInstance<KtNamedFunction>()) {
         val name = naming.function(decl)
         when {
-            name == "new" || name.startsWith("____") ->
+            name == "new" || decl.name.orEmpty().startsWith("____") ->
                 ctx.error(decl, "A member named '${decl.name}' clashes with the generated Lua class table")
 
             name in fields -> ctx.error(decl, "A function and a property both named '$name' would share one Lua field")
@@ -118,7 +117,7 @@ internal fun FileTransformer.members(c: KtClassOrObject, ref: LuaExpr): Unit = w
     (c as? KtClass)?.primaryConstructorParameters?.filter { it.hasValOrVar() && hasAccessors(it) }?.forEach { accessorMethods(it, ref) }
     for (decl in c.declarations) {
         when (decl) {
-            is KtNamedFunction -> if (decl.hasBody()) {
+            is KtNamedFunction -> if (decl.hasBody() && !decl.isReifiedInline()) {
                 emit(LuaFunctionDecl(LuaIndex(ref, LuaString(naming.function(decl))), function(decl), isLocal = false, isMethod = true))
             }
 
@@ -259,6 +258,8 @@ internal fun FileTransformer.propertyWrite(receiver: LuaExpr, p: KtNamedDeclarat
 /** `field` inside an accessor: the property's storage on `self`. */
 internal fun FileTransformer.backingField(e: KtNameReferenceExpression): LuaExpr = with(session) {
     val symbol = e.mainReference.resolveToSymbol() as KaBackingFieldSymbol
+    val top = symbol.owningProperty.psi as? KtProperty
+    if (top != null && top.isTopLevel) return LuaName(naming.backingField(top))
     return LuaIndex(selfRef(), LuaString(fieldName(symbol.owningProperty)))
 }
 

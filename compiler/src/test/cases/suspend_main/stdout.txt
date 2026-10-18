@@ -1,0 +1,4 @@
+main runs as a coroutine: 42
+pending 2
+[reply0, reply1]
+caught two is not three

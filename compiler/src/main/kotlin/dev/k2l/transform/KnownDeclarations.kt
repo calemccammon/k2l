@@ -15,6 +15,7 @@ internal val SCOPE_FUNCTIONS = setOf(
     "kotlin/error", "kotlin/TODO", "kotlin/text/buildString",
     "kotlin/collections/forEach", "kotlin/collections/forEachIndexed", "kotlin/sequences/forEach",
     "java/lang/Iterable.forEach", "java/util/Map.forEach", "kotlin/text/forEach",
+    "kotlin/collections/buildList", "kotlin/collections/buildMap", "kotlin/collections/buildSet",
 )
 
 /** Library classes implemented by lualib, by ClassId (JVM typealiases expand to java.lang classes). */
@@ -27,6 +28,7 @@ internal val LIBRARY_CLASSES = listOf(
     "java/util/NoSuchElementException" to "__K2L_NoSuchElementException",
     "kotlin/NoSuchElementException" to "__K2L_NoSuchElementException",
     "java/util/ConcurrentModificationException" to "__K2L_ConcurrentModificationException",
+    "kotlin/ConcurrentModificationException" to "__K2L_ConcurrentModificationException",
     "kotlin/NotImplementedError" to "__K2L_NotImplementedError",
 )
 
@@ -38,6 +40,9 @@ internal val MARKER_INTERFACES = setOf(
     "java/io/Serializable",
     "kotlin/properties/ReadWriteProperty",
     "kotlin/properties/ReadOnlyProperty",
+    // implemented by objects with resumeWith()/hasNext()/next(), as the lualib calls them
+    "kotlin/coroutines/Continuation",
+    "kotlin/collections/Iterator",
 )
 
 /** Types compared by value, whose `equals` can never be overridden. */

@@ -81,7 +81,7 @@ context(s: KaSession)
 private val KaType?.isNullLiteral get() = this != null && with(s) { isNothingType }
 
 internal fun FileTransformer.cast(e: KtBinaryExpressionWithTypeRHS): LuaExpr = with(session) {
-    val type = e.right?.type ?: return LuaNil
+    val type = e.right?.type?.let { reifiedType(it) } ?: return LuaNil
     val value = expression(e.left)
     if (e.operationReference.getReferencedNameElementType() != KtTokens.AS_SAFE) return value // unchecked, as in TSTL
     val v = cache(value, "cast")

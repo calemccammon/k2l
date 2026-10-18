@@ -9,7 +9,16 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 
 /** Lua names of Kotlin declarations. */
 internal class DeclarationNames(private val session: KaSession, private val classes: ClassHierarchy) {
-    fun of(decl: KtNamedDeclaration): String = if (decl is KtNamedFunction) function(decl) else LuaNames.of(decl.name ?: "_")
+    fun of(decl: KtNamedDeclaration): String =
+        renames[decl] ?: if (decl is KtNamedFunction) function(decl) else LuaNames.of(decl.name ?: "_")
+
+    /**
+     * Declarations of an inlined function body whose Lua names were changed to avoid capturing a name used by the
+     * code inlined into it (the call's arguments), see `inlineUserFunction`.
+     */
+    val renames = HashMap<PsiElement, String>()
+
+    fun renamed(decl: PsiElement?): String? = decl?.let { renames[it] }
 
     private val functionNames = HashMap<KtNamedFunction, String>()
 
@@ -45,23 +54,27 @@ internal class DeclarationNames(private val session: KaSession, private val clas
     private val accessorNames = HashMap<Pair<KtProperty, String>, String>()
 
     /**
-     * Lua name of an extension property's accessor function: `getX` or `setX`. Like overloads, accessors sharing a
-     * name with each other or with a function (`val String.x`, `val Int.x`, `fun getX()`) get `__1`, `__2`, ...
+     * Lua name of a property accessor function (extension properties and top-level properties with custom
+     * accessors): `getX` or `setX`. Like overloads, accessors sharing a name with each other or with a function
+     * (`val String.x`, `val Int.x`, `fun getX()`) get `__1`, `__2`, ...
      */
-    fun extensionAccessor(p: KtProperty, prefix: String): String = accessorNames.getOrPut(p to prefix) {
+    fun propertyAccessor(p: KtProperty, prefix: String): String = accessorNames.getOrPut(p to prefix) {
         val raw = accessorRaw(p, prefix)
         val index = topLevelOverloads(p.parent, raw).indexOf(p to prefix)
         val base = LuaNames.of(raw)
         if (index <= 0) base else "${base}__$index"
     }
 
+    /** The name of the hidden Lua local holding the backing field of a top-level property with custom accessors. */
+    fun backingField(p: KtProperty): String = "____${of(p)}_field"
+
     /** The name of the hidden Lua local holding a top-level or local delegated property's delegate. */
     fun delegate(p: KtProperty): String = "____${of(p)}_delegate"
 
-    /** Lua names a top-level declaration defines (an extension property defines up to two functions). */
+    /** Lua names a top-level declaration defines (a property with accessor functions defines up to two). */
     fun topLevel(decl: KtDeclaration): List<String> = when {
-        decl is KtProperty && decl.receiverTypeReference != null ->
-            listOfNotNull(extensionAccessor(decl, "get"), if (decl.isVar) extensionAccessor(decl, "set") else null)
+        decl is KtProperty && decl.hasAccessorFunctions() ->
+            listOfNotNull(propertyAccessor(decl, "get"), if (decl.isVar) propertyAccessor(decl, "set") else null)
 
         decl is KtProperty && decl.delegate != null -> listOf(delegate(decl))
 
@@ -75,7 +88,7 @@ internal class DeclarationNames(private val session: KaSession, private val clas
         when {
             child is KtNamedFunction && child.name == name -> listOf(child)
 
-            child is KtProperty && child.receiverTypeReference != null && child.name != null ->
+            child is KtProperty && child.hasAccessorFunctions() && child.name != null ->
                 listOf("get", "set").filter { (it == "get" || child.isVar) && accessorRaw(child, it) == name }.map { child to it }
 
             else -> emptyList()
@@ -85,3 +98,10 @@ internal class DeclarationNames(private val session: KaSession, private val clas
     /** Lua name of a destructuring entry; `_` stays `_`. */
     fun entry(entry: KtDestructuringDeclarationEntry): String = if (entry.name == "_") "_" else of(entry)
 }
+
+/**
+ * Whether a property is compiled to `getX`/`setX` functions: extension properties, and top-level properties with
+ * a custom getter or setter (their backing field, if any, is a hidden local).
+ */
+internal fun KtProperty.hasAccessorFunctions(): Boolean =
+    receiverTypeReference != null || (isTopLevel && delegate == null && (getter?.hasBody() == true || setter?.hasBody() == true))

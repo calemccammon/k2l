@@ -1,0 +1,3 @@
+5.1: Long values above 2^53 lose precision without 64-bit integers
+5.2: Long values above 2^53 lose precision without 64-bit integers
+JIT: Long values above 2^53 lose precision without 64-bit integers

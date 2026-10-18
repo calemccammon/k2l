@@ -1,0 +1,28 @@
+Plain:Plain@<hex>
+Derived>Plain:Derived@<hex>
+true
+false
+false
+true
+false
+2
+a
+null
+true
+true
+false
+2
+Hashed@<hex>
+true
+MyException[MyException: boom] message=boom cause=null
+boom
+7
+caught MyException[MyException: boom] message=boom cause=null
+wrapped <- inner
+Wrapping: wrapped
+Leaf!Leaf: leaf
+leaf
+RED
+green(GREEN)
+GREEN
+Singleton:Singleton@<hex>

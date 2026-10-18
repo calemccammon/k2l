@@ -23,35 +23,48 @@ class CallSite(
     fun lualib(feature: String, vararg args: LuaExpr) = transformer.lualibCall(feature, *args)
     fun unsupported(what: String) = transformer.unsupported(element, what)
     fun ref(feature: String, name: String) = transformer.lualibRef(feature, name)
+
+    /** The same call on another receiver, e.g. a map's entries. */
+    fun withReceiver(newReceiver: LuaExpr, type: KaType? = null) =
+        CallSite(session, transformer, element, name, newReceiver, type, args, argTypes)
 }
 
 /**
  * Maps Kotlin stdlib callables (by `CallableId`, e.g. `kotlin/io/println` or `kotlin/String.length`)
  * to Lua. A mapping returns null when it doesn't handle that overload.
  */
+@Suppress("TooManyFunctions") // one small installer per group of mappings
 object StdlibMappings {
-    private val VARARG_MIN_MAX_ARITY = 2..3
-    private val mappings = mutableMapOf<String, CallSite.() -> LuaExpr?>()
+    private val table = MappingTable()
+    private val mappings get() = table.entries
 
-    private fun def(vararg ids: String, mapping: CallSite.() -> LuaExpr?) = ids.forEach { mappings[it] = mapping }
-
-    private fun method(target: LuaExpr, name: String, vararg args: LuaExpr) = LuaMethodCall(target, name, args.toList())
-    private fun lua(path: String, vararg args: LuaExpr): LuaExpr {
-        val parts = path.split('.')
-        return LuaCall(luaPath(parts[0], *parts.drop(1).toTypedArray()), args.toList())
-    }
+    private fun def(vararg ids: String, mapping: Mapping) = table.def(*ids, mapping = mapping)
 
     private val INTEGRAL = listOf("Int", "Long", "Short", "Byte")
     private val FLOATING = listOf("Double", "Float")
 
     init {
-        // kotlin.io
+        io()
+        conversions()
+        anyAndEnum()
+        bitwise()
+        basicStrings()
+        NumberMappings.install(table)
+        RandomMappings.install(table)
+        ThrowableMappings.install(table)
+        RegexMappings.install(table)
+    }
+
+    private fun io() {
         def("kotlin/io/println") {
             if (args.isEmpty()) lua("print") else lua("print", printable(arg(0), argTypes[0]))
         }
         def("kotlin/io/print") { lua("io.write", str(arg(0), argTypes[0])) }
+        def("kotlin/io/readLine", "kotlin/io/readlnOrNull", "kotlin/io/readln") { lua("io.read") }
+    }
 
-        // Conversions. Int arithmetic is not wrapped to 32 bits; explicit narrowing is.
+    /** Int arithmetic is not wrapped to 32 bits; explicit narrowing is. */
+    private fun conversions() {
         for (t in INTEGRAL) {
             def("kotlin/$t.toDouble", "kotlin/$t.toFloat") { LuaBinary(LuaBinOp.Add, self, LuaNumber("0.0")) }
             def("kotlin/$t.toLong") { self }
@@ -63,8 +76,9 @@ object StdlibMappings {
             def("kotlin/$t.toInt") { lualib("DoubleToInt", self) }
             def("kotlin/$t.toLong") { lualib("DoubleToLong", self) }
         }
+    }
 
-        // Any / Enum
+    private fun anyAndEnum() {
         def("kotlin/Any.equals") { lualib("Equals", self, arg(0)) }
         def("kotlin/Throwable.message") { LuaIndex(self, LuaString("message")) }
         def("kotlin/Throwable.cause") { LuaIndex(self, LuaString("cause")) }
@@ -75,8 +89,10 @@ object StdlibMappings {
         def("kotlin/reflect/KCallable.name", "kotlin/reflect/KProperty.name") { LuaIndex(self, LuaString("name")) }
         def("kotlin/Enum.name") { LuaIndex(self, LuaString("name")) }
         def("kotlin/Enum.ordinal") { LuaIndex(self, LuaString("ordinal")) }
+    }
 
-        // Bitwise operations. Int results stay in 32-bit range; Long uses Lua's 64-bit integers (5.3+ only).
+    /** Bitwise operations. Int results stay in 32-bit range; Long uses Lua's 64-bit integers (5.3+ only). */
+    private fun bitwise() {
         for (t in listOf("Int", "Long")) {
             val isLong = t == "Long"
             def("kotlin/$t.and") { bitwise("BAnd", LuaBinOp.BAnd) }
@@ -89,9 +105,7 @@ object StdlibMappings {
                 if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shl, self, arg(0)) else bitCall("__K2L_Shl")
             }
             def("kotlin/$t.shr") {
-                if (target.hasIntegers &&
-                    isLong
-                ) {
+                if (target.hasIntegers && isLong) {
                     LuaBinary(LuaBinOp.IDiv, self, LuaBinary(LuaBinOp.Shl, LuaNumber("1"), arg(0)))
                 } else {
                     bitCall("__K2L_Shr")
@@ -101,50 +115,24 @@ object StdlibMappings {
                 if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shr, self, arg(0)) else bitCall("__K2L_Ushr")
             }
         }
+    }
 
-        // Strings
+    private fun basicStrings() {
         def("kotlin/String.length") { LuaUnary(LuaUnOp.Len, self) }
         def("kotlin/String.plus") { LuaBinary(LuaBinOp.Concat, self, str(arg(0), argTypes[0], forConcat = true)) }
         def("kotlin/text/uppercase") { if (args.isEmpty()) method(self, "upper") else null }
         def("kotlin/text/lowercase") { if (args.isEmpty()) method(self, "lower") else null }
         def("kotlin/text/repeat") { method(self, "rep", arg(0)) }
-        def("kotlin/text/isEmpty") { LuaBinary(LuaBinOp.Eq, LuaUnary(LuaUnOp.Len, self), LuaNumber("0")) }
-        def("kotlin/text/isNotEmpty") { LuaBinary(LuaBinOp.Gt, LuaUnary(LuaUnOp.Len, self), LuaNumber("0")) }
-
-        // kotlin.comparisons / kotlin.math
-        def("kotlin/comparisons/maxOf", "kotlin/math/max") {
-            if (args.size in
-                VARARG_MIN_MAX_ARITY
-            ) {
-                lua("math.max", *args.toTypedArray())
-            } else {
-                null
-            }
+        def("kotlin/CharSequence.length") { LuaUnary(LuaUnOp.Len, self) }
+        def("kotlin/text/isEmpty") {
+            if (isBuilder(receiverType)) method(self, "isEmpty") else LuaBinary(LuaBinOp.Eq, LuaUnary(LuaUnOp.Len, self), LuaNumber("0"))
         }
-        def("kotlin/comparisons/minOf", "kotlin/math/min") {
-            if (args.size in
-                VARARG_MIN_MAX_ARITY
-            ) {
-                lua("math.min", *args.toTypedArray())
-            } else {
-                null
-            }
+        def("kotlin/text/isNotEmpty") {
+            if (isBuilder(receiverType)) method(self, "isNotEmpty") else LuaBinary(LuaBinOp.Gt, LuaUnary(LuaUnOp.Len, self), LuaNumber("0"))
         }
-        def("kotlin/math/abs") { lua("math.abs", arg(0)) }
-        def("kotlin/math/sqrt") { lua("math.sqrt", arg(0)) }
-        def("kotlin/math/sin") { lua("math.sin", arg(0)) }
-        def("kotlin/math/cos") { lua("math.cos", arg(0)) }
-        def("kotlin/math/tan") { lua("math.tan", arg(0)) }
-        def("kotlin/math/exp") { lua("math.exp", arg(0)) }
-        def("kotlin/math/ln") { lua("math.log", arg(0)) }
-        def("kotlin/math/log10") { lua("math.log", arg(0), LuaNumber("10")) }
-        // Lua's floor/ceil return integers; Kotlin's return Double.
-        def("kotlin/math/floor") { LuaBinary(LuaBinOp.Add, lua("math.floor", arg(0)), LuaNumber("0.0")) }
-        def("kotlin/math/ceil") { LuaBinary(LuaBinOp.Add, lua("math.ceil", arg(0)), LuaNumber("0.0")) }
-        def("kotlin/math/pow") { LuaBinary(LuaBinOp.Pow, self, arg(0)) }
-        def("kotlin/math/PI") { luaPath("math", "pi") }
-        def("kotlin/math/E") { lua("math.exp", LuaNumber("1")) }
     }
+
+    private fun CallSite.isBuilder(type: KaType?) = type != null && with(session) { type.collectionKind() } == CollectionKind.StringBuilder
 
     fun has(callableId: String?) = callableId in mappings
 
@@ -160,12 +148,19 @@ object StdlibMappings {
         val special = if (site.receiver != null && callableId?.startsWith("kotlin/") == true) universalMethod(site) else null
         return special
             ?: callableId?.let { mappings[it] }?.invoke(site)
+            ?: TypeTestMappings.map(callableId, site)
+            ?: SequenceMappings.map(callableId, site)
+            ?: CoroutineMappings.map(callableId, site)
             ?: CollectionMappings.map(callableId, site)
     }
 
     /** toString() and compareTo(x) on anything from the kotlin package. */
     private fun universalMethod(site: CallSite): LuaExpr? = when {
         site.name == "toString" && site.args.isEmpty() -> site.str(site.self, site.receiverType)
+
+        // String.compareTo is the difference of the first differing chars (or of the lengths)
+        site.name == "compareTo" && site.args.size == 1 && site.isString(site.receiverType) ->
+            LuaCall(LuaIndex(site.ref("Strings", "__K2L_Text"), LuaString("compare")), listOf(site.self, site.arg(0)))
 
         site.name == "compareTo" && site.args.size == 1 ->
             LuaCall(site.ref("Compare", "__K2L_Compare"), listOf(site.self, site.arg(0)))

@@ -158,6 +158,8 @@ private fun FileTransformer.iterationLoop(e: KtForExpression, frame: LoopFrame, 
                 )
             }
 
+            kind == CollectionKind.Sequence || kind == CollectionKind.Iterator -> sequenceLoop(e, frame, rangeExpr, param, kind)
+
             kind != null && kind in ITERATED_KINDS -> collectionLoop(e, frame, rangeExpr, param, kind)
 
             type?.isStringType == true && destructuring == null -> {
@@ -229,6 +231,28 @@ private fun FileTransformer.collectionLoop(
         val body = listOf(element) + prologue + loopBody(frame, e.body)
         emit(LuaNumericFor(i, LuaNumber("1"), LuaIndex(items, LuaString("size")), null, body))
     }
+}
+
+/** `for (x in sequence)` and `for (x in iterator)`: a generic `for` over the lazy generator, see `Sequence.lua`. */
+private fun FileTransformer.sequenceLoop(
+    e: KtForExpression,
+    frame: LoopFrame,
+    rangeExpr: KtExpression,
+    param: KtParameter,
+    kind: CollectionKind,
+): Unit = with(session) {
+    val destructuring = param.destructuringDeclaration
+    val source = expression(rangeExpr)
+    val variable = if (destructuring != null) ctx.temp("item") else naming.of(param)
+    val prologue = destructuring?.let { listOf(destructure(it.entries, LuaName(variable).also { v -> stable += v })) }.orEmpty()
+    emit(LuaGenericFor(listOf("_", variable), listOf(generator(kind, source)), prologue + loopBody(frame, e.body)))
+}
+
+/** A Lua generator (`true, element` per call) for a sequence, or for any iterator via its hasNext()/next(). */
+private fun FileTransformer.generator(kind: CollectionKind, source: LuaExpr): LuaExpr = if (kind == CollectionKind.Sequence) {
+    LuaMethodCall(source, "iter", emptyList())
+} else {
+    LuaCall(LuaIndex(lualibRef(SEQUENCE_FEATURE, "__K2L_Iterator"), LuaString("iter")), listOf(source))
 }
 
 /** `local a, b = <component1>, <component2>`; `_` entries are skipped. */
@@ -342,6 +366,11 @@ internal fun FileTransformer.forEachLoop(collection: LuaExpr, type: KaType?, lam
             val entry = varName(0, "entry")
             val entries = LuaMethodCall(collection, "getEntries", emptyList())
             emit(LuaGenericFor(listOf("_", entry), listOf(luaCall(LuaName("ipairs"), entries)), body(entry)))
+        }
+
+        (kind == CollectionKind.Sequence || kind == CollectionKind.Iterator) && !indexed -> {
+            val item = if (params.isEmpty()) "it" else varName(0, "it")
+            emit(LuaGenericFor(listOf("_", item), listOf(generator(kind, collection)), body(item)))
         }
 
         type?.isStringType == true -> {

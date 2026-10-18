@@ -14,6 +14,12 @@ local function __K2L_CompareBy(...)
     end
 end
 
+local function __K2L_CompareByWith(comparator, selector)
+    return function(a, b)
+        return comparator(selector(a), selector(b))
+    end
+end
+
 local function __K2L_CompareByDescending(selector)
     return function(a, b)
         return __K2L_Compare(selector(b), selector(a))
@@ -52,4 +58,38 @@ end
 
 local function __K2L_ReverseOrder(a, b)
     return __K2L_Compare(b, a)
+end
+
+local function __K2L_Then(first, second)
+    return function(a, b)
+        local c = first(a, b)
+        if c ~= 0 then
+            return c
+        end
+        return second(a, b)
+    end
+end
+
+-- nulls sort before everything else
+local function __K2L_NullsFirst(comparator)
+    return function(a, b)
+        if a == nil then
+            return b == nil and 0 or -1
+        elseif b == nil then
+            return 1
+        end
+        return comparator(a, b)
+    end
+end
+
+-- nulls sort after everything else
+local function __K2L_NullsLast(comparator)
+    return function(a, b)
+        if a == nil then
+            return b == nil and 0 or 1
+        elseif b == nil then
+            return -1
+        end
+        return comparator(a, b)
+    end
 end

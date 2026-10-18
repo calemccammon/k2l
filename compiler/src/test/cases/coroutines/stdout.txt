@@ -1,0 +1,55 @@
+-- start and resume
+  a: suspending
+main: coroutine is parked
+  a: resumed with 5
+sum completed: Success(15)
+main: after resume
+-- resume twice
+caught: Already resumed
+-- exceptions
+failLater -> failure async failure
+  finally in recovering
+recovering -> success recovered from async failure
+  thrower: suspending
+  thrower: resumed with 1
+thrower -> failure thrown after resume
+  rejected: suspending
+rejected -> failure rejected by main
+-- createCoroutine
+not started yet
+  created coroutine runs
+created -> success 42
+caught: Already resumed
+-- receivers, members and loops
+receiver -> success 3
+count = 2
+loops -> success [other:2, four:4, other:6, each:20, each:40]
+context -> success EmptyCoroutineContext
+reference -> success 6
+-- nested coroutines
+  outer: starting inner
+  inner: waiting
+  outer: inner is parked, resuming it from here
+  inner: got 6
+inner -> success 600
+  outer: back
+outer -> success outer done
+twice -> success 8
+extension -> success 6!
+coroutineContext -> success EmptyCoroutineContext
+  runCatching: waiting
+  runCatching: Failure(java.lang.IllegalArgumentException: late failure)
+runCatching -> failure late failure
+-- Result
+Success(3) Failure(java.lang.IllegalStateException: nope)
+true false false true
+3 null nope
+3 0 -1
+Success(30)
+7
+onSuccess 3
+onFailure nope
+Success(4)
+java.lang.IllegalStateException: broken
+true
+getOrThrow threw nope

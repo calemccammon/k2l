@@ -1,0 +1,41 @@
+true
+true
+false
+12
+1..2
+345
+[12, 345, 6]
+3
+a#b#c#
+a<1>b<2>c<3>
+aNb22
+[a, b, c]
+a_b__
+true
+true
+[one, two, three]
+a1b2
+2024-03-15
+[2024-03-15, 2024, 03, 15]
+2024
+4
+15/03/2024
+3
+null
+a
+1
+[(a, 1), (b, 2)]
+1:a, 2:b
+[a, a, ]
+null
+true
+2
+a|b
+\Qa.b*c\E
+[color, colour]
+ll
+[h, ll, w, rld]
+true
+[, a, , b, ]
+a
+$12.50

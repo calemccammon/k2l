@@ -1,0 +1,41 @@
+found 5 100
+found -1 100
+early 60
+22
+start abc
+end abc
+10
+start q
+bail
+start q
+end q
+v=2
+stopped at 7 calls=1
+big
+skip 3
+outer>
+ inner>
+outer>
+ inner>
+ret ab
+1,2;2,1;20-10;
+67
+0100 1100 2100 stop
+pkwkw
+HI! xy x
+r=ok
+early
+r=caught two
+7 true [a, bb, c, c, ddd]
+7 true [a, bb, ddd]
+2,3,1,1,1,c,4,true,yes,no,z,null,3/1
+0:other:L;1:other:L;early
+0other;1other;
+r=3
+stopped
+r=null
+55
+zero
+v=3
+stopped 0a1b2c
+n=2 tools:none given two 0a1b2c3d {x=2, y=1}
