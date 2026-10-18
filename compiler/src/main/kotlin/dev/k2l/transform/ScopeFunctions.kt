@@ -49,6 +49,12 @@ internal fun FileTransformer.scopeFunction(
 
         "kotlin/text/buildString" -> buildStringCall(args)
 
+        "kotlin/collections/buildList" -> buildCollectionCall("__K2L_ListOf", args)
+
+        "kotlin/collections/buildMap" -> buildCollectionCall("__K2L_MapOf", args)
+
+        "kotlin/collections/buildSet" -> buildCollectionCall("__K2L_SetOf", args)
+
         "kotlin/collections/forEach", "kotlin/sequences/forEach", "java/lang/Iterable.forEach", "java/util/Map.forEach",
         "kotlin/text/forEach",
         ->
@@ -140,6 +146,13 @@ private fun FileTransformer.buildStringCall(args: List<KtExpression?>): LuaExpr 
     val builder = cache(LuaCall(LuaIndex(lualibRef("Strings", "__K2L_StringBuilder"), LuaString("new")), emptyList()), "builder")
     inlineLambda(args[0]!!, emptyList(), builder, null)
     return LuaMethodCall(builder, "toString", emptyList())
+}
+
+/** `buildList { add(1) }`: a new collection that the lambda fills through its receiver. */
+private fun FileTransformer.buildCollectionCall(factory: String, args: List<KtExpression?>): LuaExpr = with(session) {
+    val target = cache(LuaCall(lualibRef("Collections", factory), emptyList()), "builder")
+    inlineLambda(args.last()!!, emptyList(), target, null)
+    return target
 }
 
 private fun FileTransformer.forEachCall(receiver: LuaExpr, type: KaType?, args: List<KtExpression?>, indexed: Boolean): LuaExpr =

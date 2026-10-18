@@ -1,0 +1,31 @@
+6
+8
+10 9
+[total 0 -> 5, total 5 -> 8, total 8 -> 9, total 9 -> 10, total 10 -> 9]
+10
+0
+10
+42
+fake4 4
+99
+318
+none
+set
+false
+false
+[4, 5]
+fun getNow
+42
+SMALL
+3
+default
+renamed
+100
+1
+0
+renamed/100/0
+1
+2
+[name: default -> renamed, volume=100, volume=100]
+112
+9

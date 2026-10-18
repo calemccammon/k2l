@@ -1,0 +1,117 @@
+14
+14
+8
+0
+true
+true
+true
+2
+Hel
+ Hello
+true
+true
+[a, b, , c, ]
+[a, b, c]
+[a, b,c]
+[a, b, c]
+[a, b, , c]
+[, a, b, c, ]
+[a, b, c]
+[l1, l2]
+[ab, c]
+[ab, bc, cd]
+a+b-c
+xxbB
+-a-b-c-
+Hello
+World
+Hello, W
+rld
+none
+Helrld
+WorldHello
+Hello
+, World
+, WorldHello, 
+x
+World
+Bye, World
+Hello
+World
+Hello
+ll
+H
+d
+W
+[x]
+[a]
+[axx]
+[xxa]
+[ab]
+a
+  b
+a
+b
+>a
+>b
+0077..
+empty
+blank
+false
+true
+0
+Hello world
+Hello World
+hll wrld
+heo word
+[H, E, L, L, O,  , W, O, R, L, D]
+2
+8
+{l=3, o=2}
+(eoo, hll wrld)
+dlrow olleh
+true
+false
+8
+[ , d, e, h, l, o, r, w]
+[(h, a), (e, b), (l, c)]
+hel
+w
+0..10
+10
+6
+-1
+true
+true
+49
+255
+-12
+null
+12
+3.5
+null
+1000.0
+true
+true
+false
+true
+null
+3
+hi
+003.1|ab   |   cd|ff|z
+1,234,567
+-002.500
+1.234568e+04
+true null       trun|
++5  5
+For input string: "abc"
+empty String
+abc1xyz2.5
+<<abc1xyz2.5
+<abc
+Qabc
+4
+2
+cbaQ
+3
+1,2,3

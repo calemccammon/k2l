@@ -1,8 +1,5 @@
--- requires: ToInt32
+-- requires: ToInt32, IdentityHash
 -- Kotlin/JVM hashCode() for primitives and strings; objects use their own hashCode().
-local __K2L_HashIds = setmetatable({}, {__mode = "k"})
-local __K2L_HashNext = 0
-
 local function __K2L_Hash(value)
     local t = type(value)
     if value == nil then
@@ -23,11 +20,5 @@ local function __K2L_Hash(value)
     elseif t == "table" and value.hashCode ~= nil then
         return value:hashCode()
     end
-    local id = __K2L_HashIds[value]
-    if id == nil then
-        __K2L_HashNext = __K2L_HashNext + 1
-        id = __K2L_HashNext
-        __K2L_HashIds[value] = id
-    end
-    return id
+    return __K2L_IdentityHash(value)
 end

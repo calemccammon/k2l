@@ -102,7 +102,8 @@ internal class PropertyFamilies(
     private fun hasCustomAccessor(d: KtNamedDeclaration) =
         d is KtProperty && !isExternal(d) && (d.getter?.hasBody() == true || d.setter?.hasBody() == true)
 
-    private fun declaresField(d: KtNamedDeclaration): Boolean {
+    /** Whether [d] has a backing field: an initializer, a default accessor or a `field` reference. */
+    fun declaresField(d: KtNamedDeclaration): Boolean {
         if (d is KtParameter) return true
         val p = d as KtProperty
         val owner = p.containingClassOrObject

@@ -1,0 +1,4 @@
+21:5: Inlining a function with a vararg parameter is not supported yet
+28:5: Inlining 'capped' here would hide 'limit', which the function uses, behind a local of the same name
+12:9: Jumping out of a try block is not supported yet
+40:43: Non-local return out of a lambda is not supported yet

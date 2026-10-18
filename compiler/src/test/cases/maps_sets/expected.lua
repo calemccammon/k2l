@@ -2,8 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_SetOf = ____lualib.__K2L_SetOf
@@ -66,7 +66,7 @@ local function main()
         counts:set(c, (counts:get(c) or 0) + 1)
     end
     print(__K2L_Str(counts))
-    local m = __K2L_Map.new()
+    local m = __K2L_HashMap.new()
     m:set("a", 1)
     m:put("b", 2)
     m:remove("a")

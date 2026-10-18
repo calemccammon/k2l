@@ -18,18 +18,18 @@ internal fun FileTransformer.extensionPropertyDeclaration(p: KtProperty, forward
     listOfNotNull(p.getter, p.setter).forEach { receiverBindings[it] = binding }
     p.getter?.takeIf { it.hasBody() }?.let { getter ->
         val body = accessorFunction(getter, listOf(receiver))
-        emit(LuaFunctionDecl(LuaName(naming.extensionAccessor(p, "get")), body, isLocal = !forwardDeclared))
+        emit(LuaFunctionDecl(LuaName(naming.propertyAccessor(p, "get")), body, isLocal = !forwardDeclared))
     }
     val setter = p.setter?.takeIf { it.hasBody() }
     if (p.isVar && setter != null) {
         val param = LuaNames.of(setter.parameter?.name ?: "value")
         val body = accessorFunction(setter, listOf(receiver, param))
-        emit(LuaFunctionDecl(LuaName(naming.extensionAccessor(p, "set")), body, isLocal = !forwardDeclared))
+        emit(LuaFunctionDecl(LuaName(naming.propertyAccessor(p, "set")), body, isLocal = !forwardDeclared))
     }
 }
 
-private fun FileTransformer.accessorFunction(accessor: KtPropertyAccessor, params: List<String>): LuaFunction = with(session) {
-    inFrame(FunctionFrame(FunctionFrame.Kind.Function, emptySet())) {
+internal fun FileTransformer.accessorFunction(accessor: KtPropertyAccessor, params: List<String>): LuaFunction = with(session) {
+    inFrame(FunctionFrame(FunctionFrame.Kind.Function, emptySet(), accessor)) {
         LuaFunction(params, collect { functionBody(accessor) })
     }
 }
@@ -38,12 +38,14 @@ private fun FileTransformer.accessorFunction(accessor: KtPropertyAccessor, param
 internal fun FileTransformer.extensionPropertyRead(p: KtProperty, receiverExpr: KtExpression?, implicit: LuaExpr?): LuaExpr =
     with(session) {
         val receiver = receiverOperand(implicit, receiverExpr) ?: return unsupported(p, "Extension property without a receiver")
-        LuaCall(topLevelRef(p, naming.extensionAccessor(p, "get")), arguments(listOf(receiver), emptyList()))
+        LuaCall(topLevelRef(p, naming.propertyAccessor(p, "get")), arguments(listOf(receiver), emptyList()))
     }
 
 /** Assignment to a top-level or local property (not a member): a variable, a delegated variable or an extension property. */
 internal fun FileTransformer.variableTarget(p: KtProperty, ref: KtNameReferenceExpression, receiverExpr: KtExpression?): Target? = when {
     p.receiverTypeReference != null -> extensionPropertyTarget(p, ref, receiverExpr)
+
+    p.hasAccessorFunctions() -> accessorPropertyTarget(p)
 
     p.delegate != null -> delegatedVariableTarget(p)
 
@@ -63,7 +65,7 @@ internal fun FileTransformer.extensionPropertyTarget(p: KtProperty, ref: KtNameR
             value?.let { implicitReceiver(it, ref) } ?: return null
         }
         if (!p.isVar) return null
-        val get = topLevelRef(p, naming.extensionAccessor(p, "get"))
-        val set = topLevelRef(p, naming.extensionAccessor(p, "set"))
+        val get = topLevelRef(p, naming.propertyAccessor(p, "get"))
+        val set = topLevelRef(p, naming.propertyAccessor(p, "set"))
         Target(LuaCall(get, listOf(receiver))) { LuaCallStmt(LuaCall(set, listOf(receiver, it))) }
     }

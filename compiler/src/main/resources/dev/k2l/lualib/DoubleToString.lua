@@ -23,6 +23,9 @@ local function __K2L_DoubleToString(x)
         digits = "0"
     end
     local ax = math.abs(x)
+    if ax == 5e-324 then
+        return sign .. "4.9E-324"
+    end
     if ax >= 1e-3 and ax < 1e7 then
         local point = exp + 1
         local whole, fraction

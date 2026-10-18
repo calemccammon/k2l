@@ -1,0 +1,2 @@
+4:5: Extension property 'x' would share its Lua method 'getX' with another member
+8:5: Extension property 'y' would share its Lua method 'getY' with another member

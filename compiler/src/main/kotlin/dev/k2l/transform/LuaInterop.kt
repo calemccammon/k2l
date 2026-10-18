@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaConstructorSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaNamedFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaSymbolOrigin
 import org.jetbrains.kotlin.analysis.api.symbols.markers.KaNamedSymbol
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.ClassId
@@ -25,7 +26,7 @@ internal class LuaInterop(private val session: KaSession, private val ctx: Trans
     fun isExternal(symbol: KaSymbol?): Boolean = with(session) {
         if (symbol == null) return false
         if ((symbol as? KaAnnotated)?.annotations?.contains(LUA_EXTERNAL) == true) return true
-        if (symbol is KaNamedFunctionSymbol && symbol.isExternal) return true
+        if (symbol is KaNamedFunctionSymbol && symbol.isExternal && symbol.origin != KaSymbolOrigin.JAVA_LIBRARY) return true
         val container = if (symbol is KaConstructorSymbol) symbol.containingClassId?.let { findClass(it) } else symbol.containingDeclaration
         return container is KaClassSymbol && isExternal(container)
     }
