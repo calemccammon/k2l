@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.psi.*
 
 internal fun FileTransformer.throwStatement(e: KtThrowExpression): Unit = with(session) {

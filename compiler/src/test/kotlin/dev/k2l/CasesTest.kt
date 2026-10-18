@@ -1,8 +1,8 @@
 package dev.k2l
 
+import dev.k2l.codegen.Lualib
 import dev.k2l.frontend.SourceModule
 import dev.k2l.frontend.SourceSession
-import dev.k2l.lua.Lualib
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assumptions.assumeTrue

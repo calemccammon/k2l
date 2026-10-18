@@ -89,7 +89,9 @@ abstract class K2lCompileTask @Inject constructor(private val exec: ExecOperatio
         val diagnostics = ByteArrayOutputStream()
         val result = exec.javaexec { spec ->
             if (javaLauncher.isPresent) spec.executable = javaLauncher.get().executablePath.asFile.absolutePath
-            spec.classpath(compilerClasspath.files.sortedBy { if (it.name.startsWith("core-")) 0 else 1 })
+            // The unshrunk IntelliJ core must precede kotlin-compiler's copy of it; the rest is sorted so the
+            // order (which files.order does not guarantee) is the same on every machine.
+            spec.classpath(compilerClasspath.files.sortedWith(compareBy({ !it.name.startsWith("core-") }, { it.name })))
             spec.mainClass.set("dev.k2l.MainKt")
             // The same flags as the `k2l` start script: deep recursion in the analysis, throughput GC.
             spec.jvmArgs("-Xss8m", "-XX:+UseParallelGC")

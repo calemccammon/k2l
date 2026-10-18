@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 
 /** kotlin.text.Regex, MatchResult and RegexOption (see `Regex.lua`). */
 internal object RegexMappings {

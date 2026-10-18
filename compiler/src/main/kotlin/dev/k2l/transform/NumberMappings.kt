@@ -1,6 +1,6 @@
 package dev.k2l.transform
 
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 
 /** kotlin.math, numeric members, `Char` members and the `java.lang` statics Kotlin code reaches for. */
 @Suppress("TooManyFunctions") // one small installer per group of numeric members

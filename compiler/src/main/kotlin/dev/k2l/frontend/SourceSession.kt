@@ -24,9 +24,8 @@ class SourceSession private constructor(
     fun files(module: String): List<KtFile> = filesByModule[module].orEmpty().sortedBy { it.virtualFile.path }
 
     override fun close() {
-        // Setting up the session queues work on the AWT event thread (e.g. BinaryFileTypeDecompilers'
-        // change notification). Run it while the application still exists: if it runs after disposal it
-        // throws, and the JVM can then hang on exit.
+        // Setting up the session queues work on the AWT event thread (BinaryFileTypeDecompilers' change
+        // notification); run it while the application still exists, or it throws a NullPointerException.
         EventQueue.invokeAndWait {}
         Disposer.dispose(disposable)
     }

@@ -1,4 +1,4 @@
-package dev.k2l.lua
+package dev.k2l.codegen
 
 import dev.k2l.LineMapping
 import dev.k2l.Origin

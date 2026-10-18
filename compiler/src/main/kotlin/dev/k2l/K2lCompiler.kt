@@ -1,10 +1,10 @@
 package dev.k2l
 
+import dev.k2l.codegen.LuaChunk
+import dev.k2l.codegen.LuaPrinter
+import dev.k2l.codegen.Lualib
 import dev.k2l.frontend.SourceModule
 import dev.k2l.frontend.SourceSession
-import dev.k2l.lua.LuaChunk
-import dev.k2l.lua.LuaPrinter
-import dev.k2l.lua.Lualib
 import dev.k2l.transform.FileTransformer
 import dev.k2l.transform.ModuleContext
 import dev.k2l.transform.SOURCE_MAP_FEATURE

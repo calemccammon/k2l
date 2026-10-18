@@ -1,7 +1,7 @@
 package dev.k2l.transform
 
 import dev.k2l.IntOverflow
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.types.KaType
 

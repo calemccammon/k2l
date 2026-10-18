@@ -5,8 +5,8 @@ import dev.k2l.CompilerOptions
 import dev.k2l.Diagnostic
 import dev.k2l.Origin
 import dev.k2l.Severity
-import dev.k2l.lua.LuaPrinter
-import dev.k2l.lua.LuaStmt
+import dev.k2l.codegen.LuaPrinter
+import dev.k2l.codegen.LuaStmt
 import java.util.IdentityHashMap
 
 /** Per-file state shared by the transformer: diagnostics, lualib usage and generated names. */
@@ -21,7 +21,7 @@ class TransformContext(val options: CompilerOptions) {
     val imports = LinkedHashMap<String, String>()
 
     /** Expressions wrapped to 32 bits by `--int-overflow wrap`, by identity, mapped to what they wrap (see IntOverflow.kt). */
-    val int32Pending = java.util.IdentityHashMap<dev.k2l.lua.LuaExpr, dev.k2l.lua.LuaExpr>()
+    val int32Pending = java.util.IdentityHashMap<dev.k2l.codegen.LuaExpr, dev.k2l.codegen.LuaExpr>()
     private val generated = mutableMapOf<String, Int>()
 
     /** Kotlin position of the statements the transformer emitted; only filled with [CompilerOptions.sourceMap]. */

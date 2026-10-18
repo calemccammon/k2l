@@ -2,7 +2,7 @@ package dev.k2l.transform
 
 import com.intellij.psi.PsiElement
 import dev.k2l.Origin
-import dev.k2l.lua.*
+import dev.k2l.codegen.*
 import java.util.Collections
 import java.util.IdentityHashMap
 

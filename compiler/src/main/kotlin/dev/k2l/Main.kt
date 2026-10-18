@@ -55,10 +55,20 @@ fun main(args: Array<String>) {
     if (settings.sources.isEmpty()) exit(2, USAGE)
     if (settings.watch) watch(args, settings)
 
-    val result = build(settings)
-    // The IntelliJ core leaves non-daemon pool threads behind, so exit explicitly.
+    // The IntelliJ core leaves non-daemon pool threads behind, so exit explicitly, also when the compiler crashes.
+    val result = try {
+        build(settings)
+    } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+        // A crash in k2l itself: the stack trace is the bug report.
+        @Suppress("PrintStackTrace")
+        e.printStackTrace()
+        exit(INTERNAL_ERROR, "k2l: internal compiler error")
+    }
     exitProcess(if (result.hasErrors) 1 else 0)
 }
+
+/** Exit status for a crash in k2l itself (`EX_SOFTWARE`), as opposed to errors in the Kotlin sources. */
+private const val INTERNAL_ERROR = 70
 
 /** Compiles the project once, printing diagnostics and writing the output unless there were errors. */
 private fun build(settings: Settings): CompileResult {

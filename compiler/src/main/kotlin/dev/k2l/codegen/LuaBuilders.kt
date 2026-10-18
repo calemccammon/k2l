@@ -1,4 +1,4 @@
-package dev.k2l.lua
+package dev.k2l.codegen
 
 /** `name = value` */
 fun assign(name: String, value: LuaExpr): LuaStmt = assign(LuaName(name), value)
