@@ -129,8 +129,13 @@ local function main()
     print(getTag(till))
     print(__K2L_Str(__K2L_EnumValues(Size):map(function(it) return getLabel(it) end)))
     local items = __K2L_ReadOnlyListOf(Item.new("plain"), Special.new("fancy"))
-    for _, item in ipairs(items) do
+    local ____mod = items.____modCount
+    for ____i = 1, items.size do
+        local item = items[____i]
         print(item:getShown())
+        if items.____modCount ~= ____mod and items:____comodified(____i) then
+            break
+        end
     end
     print(shop:getSales())
 end

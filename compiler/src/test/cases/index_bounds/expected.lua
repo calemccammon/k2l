@@ -1,6 +1,5 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArithmeticException = ____lualib.__K2L_ArithmeticException
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_FloorDiv = ____lualib.__K2L_FloorDiv
 local __K2L_IDiv = ____lualib.__K2L_IDiv
@@ -20,6 +19,7 @@ local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unit = ____lualib.__K2L_Unit
 
 local function id(x)
@@ -102,8 +102,8 @@ local function main()
     t("digitToInt", function() return __K2L_Num.digitToInt("x") end)
     local list = __K2L_ReadOnlyListOf(1, 2, 3)
     local mlist = __K2L_ListOf(1, 2, 3)
-    local arr = __K2L_ArrayOf(1, 2, 3)
-    local ia = __K2L_ArrayOf(1, 2, 3)
+    local arr = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2, 3)
+    local ia = __K2L_TypedArrayOf("[I", 1, 2, 3)
     t("list[3]", function() return list:get(id(3)) end)
     t("list[-1]", function() return list:get(id(-1)) end)
     t("list.get(3)", function() return list:get(id(3)) end)
@@ -180,7 +180,7 @@ local function main()
     t("ifloor", function() return __K2L_FloorDiv(-7, id(2)) end)
     t("irem", function() return __K2L_IRem(-7, id(3)) end)
     t("irem2", function() return __K2L_IRem(7, id(-3)) end)
-    local data = __K2L_ArrayOf(5, 6, 7)
+    local data = __K2L_TypedArrayOf("[I", 5, 6, 7)
     local text = "abc"
     local numbers = __K2L_ReadOnlyListOf(1, 2, 3)
     local total = 0

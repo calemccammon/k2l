@@ -10,8 +10,13 @@ local longValueExactOrNull
 
 local function main()
     local longs = __K2L_ReadOnlyListOf("9223372036854775807", "-9223372036854775808", "9223372036854775808", "12345678901234567890", "-9007199254740993")
-    for _, a in ipairs(longs) do
+    local ____mod = longs.____modCount
+    for ____i = 1, longs.size do
+        local a = longs[____i]
         print(a .. ": long=" .. __K2L_BigInteger.parse(a):toLong() .. " hash=" .. __K2L_BigInteger.parse(a):hashCode())
+        if longs.____modCount ~= ____mod and longs:____comodified(____i) then
+            break
+        end
     end
     print(__K2L_Str(__K2L_BigInteger.valueOf(-9007199254740993)))
     print(__K2L_Str(__K2L_BigInteger.valueOf(9223372036854775807)))

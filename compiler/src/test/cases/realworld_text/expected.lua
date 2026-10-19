@@ -124,7 +124,10 @@ end
 local function wrap(text, width)
     local lines = __K2L_ListOf()
     local line = __K2L_StringBuilder.new()
-    for _, word in ipairs(__K2L_Regex.new("\\s+"):split(text)) do
+    local ____list = __K2L_Regex.new("\\s+"):split(text)
+    local ____mod = ____list.____modCount
+    for ____i = 1, ____list.size do
+        local word = ____list[____i]
         if line:isNotEmpty() and line:getLength() + 1 + #word > width then
             lines:add(line:toString())
             line:clear()
@@ -133,6 +136,9 @@ local function wrap(text, width)
             line:append(" ")
         end
         line:append(word)
+        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            break
+        end
     end
     if line:isNotEmpty() then
         lines:add(line:toString())
@@ -251,7 +257,9 @@ local function main()
     local v = vigenere("Attack at dawn!", "Lemon")
     print("vigenere: " .. v .. " -> " .. vigenere(v, "Lemon", true))
     print("rot13 twice: " .. caesar(caesar("Why did the chicken cross the road?", 13), 13))
-    for _, s in ipairs(__K2L_ReadOnlyListOf("WWWWWWWWWWWWBWWWWWWWWWWWWBBBWWWWWWWWWWWWWWWWWWWWWWWWBWWWWWWWWWWWWWW", "abc", "aabcccccaaa", "")) do
+    local ____list_1 = __K2L_ReadOnlyListOf("WWWWWWWWWWWWBWWWWWWWWWWWWBBBWWWWWWWWWWWWWWWWWWWWWWWWBWWWWWWWWWWWWWW", "abc", "aabcccccaaa", "")
+    for ____i_1 = 1, ____list_1.size do
+        local s = ____list_1[____i_1]
         local enc = runLength(s)
         if unRunLength(enc) ~= s then
             error(__K2L_IllegalStateException.new("round trip failed for " .. s))
@@ -259,14 +267,24 @@ local function main()
         print("rle: '" .. __K2L_Text.take(s, 12) .. (#s > 12 and "…" or "") .. "' -> '" .. enc .. "'")
     end
     local phrases = __K2L_ReadOnlyListOf("A man, a plan, a canal: Panama", "race a car", "No 'x' in Nixon", "Was it a car or a cat I saw?")
-    for _, it in ipairs(phrases) do
+    local ____mod_1 = phrases.____modCount
+    for ____i_2 = 1, phrases.size do
+        local it = phrases[____i_2]
         print("palindrome? " .. __K2L_StringPadEnd(tostring(isPalindrome(it)), 5) .. " " .. it)
+        if phrases.____modCount ~= ____mod_1 and phrases:____comodified(____i_2) then
+            break
+        end
     end
     print("longest palindromes: " .. __K2L_Str(__K2L_ReadOnlyListOf("babad", "cbbd", "forgeeksskeegfor", "abacdfgdcaba"):map(longestPalindrome)))
     local lines = wrap(__K2L_StringReplace(TEXT, "\n", " "), 36)
-    for i = 0, lines.size - 1 do
-        local l = lines[i + 1]
+    local ____mod_2 = lines.____modCount
+    for ____i_3 = 1, lines.size do
+        local l = lines[____i_3]
+        local i = ____i_3 - 1
         print("|" .. (i == lines.size - 1 and __K2L_StringPadEnd(l, 36) or justify(l, 36)) .. "|")
+        if lines.____modCount ~= ____mod_2 and lines:____comodified(____i_3) then
+            break
+        end
     end
     local tpl = "Dear {{ name|title }}, your order #{{id}} of {{ count }} {{item|upper}} ships {{when}}. ({{name|len}})"
     print(render(tpl, __K2L_ReadOnlyMapOf(__K2L_Pair.new("name", "ada lovelace"), __K2L_Pair.new("id", 1042), __K2L_Pair.new("count", 3), __K2L_Pair.new("item", "widgets"), __K2L_Pair.new("when", nil))))
@@ -285,10 +303,16 @@ local function main()
         return ____receiver_6 and __K2L_StringToInt(____receiver_6)
     end)
     print("durations: " .. __K2L_Str(durations) .. " avg=" .. __K2L_StringFormat("%.1f", durations:average()))
-    for _, ____it_1 in ipairs(entries:filter(function(it) return it.level == "ERROR" end)) do
+    local ____list_2 = entries:filter(function(it) return it.level == "ERROR" end)
+    local ____mod_3 = ____list_2.____modCount
+    for ____i_4 = 1, ____list_2.size do
+        local ____it_1 = ____list_2[____i_4]
         do
             local time, comp, msg = ____it_1.time, ____it_1.component, ____it_1.message
             print("  " .. __K2L_Text.substringAfter(time, "T") .. " " .. comp .. ": " .. __K2L_Text.substringBefore(msg, ":"))
+        end
+        if ____list_2.____modCount ~= ____mod_3 and ____list_2:____comodified(____i_4) then
+            break
         end
     end
     local paths = entries:flatMap(function(it)

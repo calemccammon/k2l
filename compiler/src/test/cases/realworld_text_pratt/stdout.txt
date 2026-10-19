@@ -1,0 +1,46 @@
+[IDENT('max')@0, LPAREN('(')@3, NUM('1')@4, COMMA(',')@5, NUM('2.5e3')@7, RPAREN(')')@12, OP('**')@14, OP('-')@17, IDENT('x')@18, EOF@19]
+1 + 2 * 3                            => (1 + (2 * 3))                            = 7
+(1 + 2) * 3                          => ((1 + 2) * 3)                            = 9
+2 ** 3 ** 2                          => (2 ** (3 ** 2))                          = 512
+-x ** 2                              => (-(x ** 2))                              = -9
+10 - 4 - 3                           => ((10 - 4) - 3)                           = 3
+1_000_000 / 8                        => (1000000 / 8)                            = 125000
+x > 2 && y < 0 ? hypot(x, y) : 0     => (((x > 2) && (y < 0)) ? hypot(x, y) : 0) = 5.408327
+n % 3 == 1 || !(x == 3)              => (((n % 3) == 1) || (!(x == 3)))          = 1
+max(x, y, n, 7) - min(1, 2)          => (max(x, y, n, 7) - min(1, 2))            = 9
+avg(1, 2, 3, 4) * sqrt(16)           => (avg(1, 2, 3, 4) * sqrt(16))             = 10
+pi * x ^ 2                           => (pi * (x ^ 2))                           = 28.274334
+1 / 0                                => (1 / 0)                                  = Infinity
+0 / 0 == 0 / 0                       => ((0 / 0) == (0 / 0))                     = 0
+.5 + 1.25e-1                         => (0.5 + 0.125)                            = 0.625000
+x ? y ? 1 : 2 : 3                    => (x ? (y ? 1 : 2) : 3)                    = 1
+parse error: unexpected end of input at 3
+  | 1 +
+  |    ^
+parse error: expected ')' but got end of input at 6
+  | (1 + 2
+  |       ^
+parse error: expected ')' after arguments of max but got end of input at 8
+  | max(1, 2
+  |         ^
+parse error: unexpected character '$' (U+0024) at 2
+  | 3 $ 4
+  |   ^
+parse error: operator '*' needs a left operand at 0
+  | * 5
+  | ^
+parse error: unexpected 2 at 2
+  | 1 2
+  |   ^
+parse error: expected ':' but got end of input at 5
+  | a ? b
+  |      ^
+parse error: malformed number '1.2.3' at 0
+  | 1.2.3
+  | ^
+eval error: List has more than one element.
+eval error: unknown function foo/1
+eval error: unknown variable 'z'
+parse error: unexpected é at 2
+  | x é 2
+  |   ^

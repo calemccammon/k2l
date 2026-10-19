@@ -17,8 +17,11 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 internal fun KtNamedFunction.isReifiedInline() =
     hasModifier(KtTokens.INLINE_KEYWORD) && typeParameters.any { it.hasModifier(KtTokens.REIFIED_KEYWORD) }
 
-/** The actual type a reified type parameter stands for in the inlined function being expanded. */
-internal fun FileTransformer.reifiedType(type: KaType): KaType = (type as? KaTypeParameterType)?.let { reifiedTypes[it.symbol.psi] } ?: type
+/** The actual type a reified type parameter stands for in the inlined function being expanded; `T?` makes it nullable. */
+internal fun FileTransformer.reifiedType(type: KaType): KaType = with(session) {
+    val actual = (type as? KaTypeParameterType)?.let { reifiedTypes[it.symbol.psi] } ?: return type
+    if (type.isMarkedNullable && !actual.isMarkedNullable) actual.withNullability(true) else actual
+}
 
 /** Runs [block] with the receivers of the code that passed [lambda], which is where the lambda's `this` is resolved. */
 internal inline fun <T> FileTransformer.inCallerContext(lambda: InlinedLambda, block: () -> T): T {
@@ -107,16 +110,12 @@ internal fun FileTransformer.userInlineCall(call: KaCallableMemberCall<*, *>, fu
     return inlineUserFunction(InlineSite(fn, call, full, lambdas, provided, varargArguments(fn, call)))
 }
 
-/** The arguments of the function's `vararg` parameter in source order; only the last may be a spread (`*array`). */
+/** The arguments of the function's `vararg` parameter in source order, spreads (`*array`) among them. */
 private fun FileTransformer.varargArguments(fn: KtNamedFunction, call: KaFunctionCall<*>): List<KtExpression> = with(session) {
     val vararg = fn.valueParameters.firstOrNull { it.isVarArg } ?: return emptyList()
     val args = call.valueArgumentMapping.entries.filter { it.value.symbol.psi == vararg }.map { it.key }
         .sortedBy { it.textRange.startOffset }
-    for (arg in args) {
-        if ((arg.parent as? KtValueArgument)?.getSpreadElement() == null) continue
-        if (arg != args.last()) unsupported(arg, "A spread argument that is not last")
-        spreads += arg
-    }
+    args.filterTo(spreads) { (it.parent as? KtValueArgument)?.getSpreadElement() != null }
     return args
 }
 
@@ -196,7 +195,16 @@ private fun FileTransformer.inlineUserFunction(site: InlineSite): LuaExpr = with
     val pas = site.call.partiallyAppliedSymbol
     val receivers = listOfNotNull(pas.dispatchReceiver, pas.extensionReceiver).map { receiverOperand(it, site.full) ?: return LuaNil }
     val valueArgs = fn.valueParameters.filter { !it.isVarArg }.map { p -> site.provided[p]?.takeIf { p !in site.lambdas } } + site.varargs
-    val values = arguments(receivers, valueArgs).let { it + List(receivers.size + valueArgs.size - it.size) { LuaNil } }
+    // a spread that is not last makes the rest of the vararg's arguments one `__K2L_Spread(...)`, the last element of the Array
+    val collapsed = site.varargs.dropLast(1).any { it in spreads }
+    val values = arguments(receivers, valueArgs).let {
+        if (collapsed) {
+            it
+        } else {
+            it +
+                List(receivers.size + valueArgs.size - it.size) { LuaNil }
+        }
+    }
 
     val scope = Scope()
     avoidCaptures(site, values, scope)

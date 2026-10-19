@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -12,6 +11,7 @@ local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function describe(p, s)
     return p.name .. "(\"" .. s .. "\") = " .. p:get(s)
@@ -42,9 +42,9 @@ local function main()
     print(read(__K2L_PropertyRef.new("length", "kotlin/String.length", function() return #"lua" end, nil, "lua")))
     print(read(__K2L_PropertyRef.new("PI", "kotlin/math/PI", function() return math.pi end)))
     local il = __K2L_PropertyRef.new("size", "kotlin/IntArray.size", function(____p1) return ____p1.size end)
-    print(il:get(__K2L_ArrayOf(1, 2, 3)))
+    print(il:get(__K2L_TypedArrayOf("[I", 1, 2, 3)))
     print(il.name)
-    print(__K2L_Str(__K2L_ReadOnlyListOf(__K2L_ArrayOf(1), __K2L_ArrayOf()):map(function(____p1) return ____p1.size end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(__K2L_TypedArrayOf("[I", 1), __K2L_TypedArrayOf("[I")):map(function(____p1) return ____p1.size end)))
     local first = __K2L_PropertyRef.new("first", "kotlin/Pair.first", function(____p1) return ____p1.first end)
     print(first:get(__K2L_Pair.new(1, "a")))
     print(first.name)
@@ -98,8 +98,14 @@ local function main()
     print(__K2L_Str(____arg:filter(function(____p1) return ____receiver_1:contains(____p1) end)))
     local pr = function(____p1) return print(__K2L_Str(____p1)) end
     pr("printed")
-    for _, it in ipairs(__K2L_ReadOnlyListOf("p", "q")) do
+    local ____list = __K2L_ReadOnlyListOf("p", "q")
+    local ____mod = ____list.____modCount
+    for ____i = 1, ____list.size do
+        local it = ____list[____i];
         (function(____p1) return print(__K2L_Str(____p1)) end)(it)
+        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            break
+        end
     end
     local a = function(____p1) return math.abs(____p1) end
     print(a(-3))

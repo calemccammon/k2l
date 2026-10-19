@@ -1,0 +1,17 @@
+Version: comparable
+Level: comparable
+Card: comparable
+Ace: comparable
+Joker: comparable
+Money: not comparable
+Point: comparable
+Int: comparable
+String: comparable
+Double: comparable
+Boolean: comparable
+null: not comparable
+SingletonList: not comparable
+10
+true
+[not comparable, comparable]
+[2, 14, 99]

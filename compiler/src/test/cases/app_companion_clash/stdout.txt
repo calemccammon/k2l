@@ -1,0 +1,3 @@
+Response(status=200, body=hi, note=null) true null companion note Response(status=200, body=hi!, note=null) Response.Companion
+1 6 100 101 102
+Response.Companion

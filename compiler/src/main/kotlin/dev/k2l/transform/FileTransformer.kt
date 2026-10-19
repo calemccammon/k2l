@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.analysis.api.symbols.KaReceiverParameterSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaSamConstructorSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaValueParameterSymbol
+import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaFlexibleType
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
@@ -195,7 +196,7 @@ class FileTransformer(
 
     private fun isMain(fn: KtNamedFunction) = fn.name == "main" && fn.receiverTypeReference == null && fn.valueParameters.size <= 1
 
-    /** Top-level declarations referenced textually before they are declared need a forward `local`. */
+    /** Top-level declarations referenced textually before they are declared (or inside their own initializer) need a forward `local`. */
     private fun KaSession.forwardReferenced(candidates: Set<KtDeclaration>): Set<KtDeclaration> {
         val result = LinkedHashSet<KtDeclaration>()
         file.accept(object : KtTreeVisitorVoid() {
@@ -205,7 +206,11 @@ class FileTransformer(
                 // Members, constructors and enum entries count as references to their top-level class.
                 val resolved = expression.mainReference.resolve() ?: return
                 val target = generateSequence(resolved) { it.parent }.firstOrNull { it in candidates } as? KtDeclaration ?: return
-                if (expression.textRange.startOffset < target.textRange.startOffset) result += target
+                if (target is KtProperty && resolved != target) return // a local declared inside the property's initializer
+                // a property's own initializer (`val json = lazyParser { ... json ... }`) runs before its `local` is in scope
+                val own = (target as? KtProperty)?.let { it.initializer ?: it.delegateExpression }
+                val inOwnInitializer = own != null && own.textRange.contains(expression.textRange)
+                if (expression.textRange.startOffset < target.textRange.startOffset || inOwnInitializer) result += target
             }
         })
         return candidates.filter { it in result }.toCollection(LinkedHashSet())
@@ -291,7 +296,7 @@ class FileTransformer(
                 params,
                 collect {
                     packVararg(vararg)
-                    defaultArguments(fn.valueParameters)
+                    defaultArguments(fn.valueParameters, fn)
                     functionBody(fn)
                 },
                 isVararg = vararg != null,
@@ -299,12 +304,11 @@ class FileTransformer(
         }
     }
 
-    /** The `vararg` parameter of a function or constructor, which has to be the last one (it arrives as Lua varargs). */
-    internal fun varargParameter(params: List<KtParameter>): KtParameter? {
-        val vararg = params.firstOrNull { it.isVarArg }
-        if (vararg != null && vararg != params.last()) unsupported(vararg, "A vararg parameter that is not last")
-        return vararg
-    }
+    /**
+     * The `vararg` parameter of a function or constructor: it arrives as the Lua varargs, after the other parameters also when
+     * it is not the last one (see [callArguments]).
+     */
+    internal fun varargParameter(params: List<KtParameter>): KtParameter? = params.firstOrNull { it.isVarArg }
 
     /** `vararg xs: Int` arrives as Lua varargs and is packed into an Array. */
     internal fun packVararg(vararg: KtParameter?) {
@@ -312,12 +316,22 @@ class FileTransformer(
         emit(LuaLocal(listOf(naming.of(vararg)), listOf(LuaCall(lualibRef("Collections", "__K2L_ArrayOf"), listOf(LuaName("..."))))))
     }
 
-    /** Callee-side defaults: `if x == nil then x = <default> end`. Callers pass nil for omitted arguments. */
-    internal fun KaSession.defaultArguments(params: List<KtParameter>) {
+    /**
+     * Callee-side defaults: `if x == nil then x = <default> end`. Callers pass nil for omitted arguments. An override of [fn]
+     * applies the defaults it inherits.
+     */
+    internal fun KaSession.defaultArguments(params: List<KtParameter>, fn: KtNamedFunction? = null) {
+        val inherited = fn?.let { inheritedDefaults(it) }.orEmpty()
         for (p in params) {
-            val default = p.defaultValue ?: continue
+            val base = inherited[p]
+            val default = p.defaultValue ?: base?.defaultValue ?: continue
             val name = LuaName(naming.of(p))
-            emit(LuaIf(LuaBinary(LuaBinOp.Eq, name, LuaNil), valueInto(default) { listOf(assign(name, it)) }))
+            val assignment = if (base == null) {
+                valueInto(default) { listOf(assign(name, it)) }
+            } else {
+                withParametersOf(fn!!, base) { valueInto(default) { listOf(assign(name, it)) } }
+            }
+            emit(LuaIf(LuaBinary(LuaBinOp.Eq, name, LuaNil), assignment))
         }
     }
 
@@ -784,8 +798,22 @@ class FileTransformer(
 
     private fun KaSession.inRangeCondition(c: KtWhenConditionInRange, subject: LuaExpr?): LuaExpr {
         val range = c.rangeExpression?.let { parseRange(it) }
+        if (subject != null && range == null) containsCondition(c, subject)?.let { return it }
         if (subject == null || range == null) return unsupported(c, "This 'in' condition")
         return rangeContains(subject, range).let { if (c.isNegated) negate(it) else it }
+    }
+
+    /**
+     * `in collection ->`, `in "aeiou" ->`: the `contains` call the condition resolves to, with the cached subject as its
+     * argument, like `x in collection`.
+     */
+    private fun KaSession.containsCondition(c: KtWhenConditionInRange, subject: LuaExpr): LuaExpr? {
+        val op = c.operationReference
+        val call = op.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>() ?: return null
+        val argument = call.valueArgumentMapping.keys.singleOrNull() ?: return null
+        overrides[argument] = subject
+        val contains = call(op, c.rangeExpression ?: return null)
+        return if (c.isNegated) negate(contains) else contains
     }
 
     private fun KaSession.isPatternCondition(c: KtWhenConditionIsPattern, subject: LuaExpr?): LuaExpr {
@@ -812,14 +840,21 @@ class FileTransformer(
             (psi != null && classes.isSource(psi))
     }
 
+    /** `value is declaredType`; a nullable type (`is String?`, `is T` with `T` reified as `Int?`) also holds for null. */
     internal fun KaSession.typeTest(value: LuaExpr, declaredType: KaType, element: KtElement): LuaExpr {
         val type = reifiedType(declaredType)
+        if (!type.isMarkedNullable) return nonNullTypeTest(value, type, element)
+        val v = cache(value, "value")
+        return LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.Eq, v, LuaNil), nonNullTypeTest(v, type.withNullability(false), element))
+    }
+
+    private fun KaSession.nonNullTypeTest(value: LuaExpr, type: KaType, element: KtElement): LuaExpr {
         val luaType = when {
             type.isStringType || type.isCharType -> "string"
 
             type.isBooleanType -> "boolean"
 
-            emulatesLong && type.isLongType && !type.isMarkedNullable -> return l64Member("isLong", value)
+            emulatesLong && type.isLongType -> return l64Member("isLong", value)
 
             type.isIntegral || type.isDoubleType || type.isFloatType -> {
                 val wantInteger = type.isIntegral
@@ -853,7 +888,7 @@ class FileTransformer(
         val symbol = type.expandedSymbol
         val id = symbol?.classId?.asString()
         val psi = (symbol?.psi as? KtClassOrObject)?.takeIf { classes.isSource(it) }
-        val collection = type.collectionKind()?.let(LIBRARY_COLLECTION_CLASSES::get)
+        val collection = SPECIFIC_COLLECTION_CLASSES[id] ?: type.collectionKind()?.let(LIBRARY_COLLECTION_CLASSES::get)
         return when {
             id == "kotlin/Any" -> LuaBinary(LuaBinOp.Ne, value, LuaNil)
 
@@ -863,6 +898,8 @@ class FileTransformer(
             psi is KtObjectDeclaration -> LuaBinary(LuaBinOp.Eq, value, classRef(psi))
 
             psi != null -> lualibCall("InstanceOf", value, classRef(psi))
+
+            type.collectionKind() == CollectionKind.Array -> arrayTypeTest(value, type)
 
             collection != null -> {
                 val test = lualibCall("InstanceOf", value, lualibRef(featureOf(collection), collection))
@@ -1045,6 +1082,9 @@ class FileTransformer(
             if (pending.isNotEmpty()) parts += LuaString(pending.toString())
             pending.clear()
         }
+        // A later entry that needs statements (an expanded inline call) must not run before the earlier entries.
+        val values = ordered(e.entries.mapNotNull { (it as? KtStringTemplateEntryWithExpression)?.expression }, unlessReads = true)
+            .iterator()
         for (entry in e.entries) {
             when (entry) {
                 is KtLiteralStringTemplateEntry -> pending.append(entry.text)
@@ -1054,7 +1094,7 @@ class FileTransformer(
                 is KtStringTemplateEntryWithExpression -> {
                     val expr = entry.expression ?: continue
                     flush()
-                    val value = expression(expr)
+                    val value = values.next()
                     lone = expr to value
                     if (expr.expressionType?.isCharType == true && expr.evaluate() == null) hasChar = true
                     parts += str(value, templateType(expr), forConcat = true)
@@ -1092,7 +1132,13 @@ class FileTransformer(
      */
     fun KaSession.str(value: LuaExpr, type: KaType?, forConcat: Boolean = false): LuaExpr {
         val t = type?.takeUnless { it.isMarkedNullable || isPlatformNullable(it) }
+        // a `Double?` or `Float?` prints by its static type too (the lualib functions print nil as "null")
+        val floating = (type?.withoutFlexibility as? KaClassType)?.classId?.asString()
         return when {
+            t == null && floating == "kotlin/Float" -> lualibCall("FloatToString", value)
+
+            t == null && floating == "kotlin/Double" && (!target.hasIntegers || usesFloat) -> lualibCall("DoubleToString", value)
+
             t == null -> lualibCall("Str", value)
 
             t.withoutFlexibility.isFloatType -> lualibCall("FloatToString", value)
@@ -1179,9 +1225,8 @@ class FileTransformer(
 
     /** An object with observable initialization used as a value (not as the qualifier of a member): that initializes it. */
     private fun initializesOnUse(e: KtNameReferenceExpression, psi: PsiElement?): Boolean {
+        // (a companion without a table of its own is its class's table, which is armed for the companion's initialization)
         if (psi !is KtObjectDeclaration || !lazyInit.isObservable(psi)) return false
-        // a companion without a table of its own is initialized with its class
-        if (psi.isCompanion() && !hasOwnTable(psi)) return false
         val parent = e.parent
         val qualified = if (parent is KtDotQualifiedExpression && parent.selectorExpression == e) parent else e
         val outer = qualified.parent
@@ -1360,10 +1405,24 @@ class FileTransformer(
         else -> null
     }
 
-    private fun KaSession.primitivePrefix(e: KtPrefixExpression, base: KtExpression): LuaExpr = foldedInt(e) ?: when (e.operationToken) {
-        KtTokens.MINUS -> negation(expression(base), base.expressionType)
-        KtTokens.PLUS -> expression(base)
-        else -> negate(expression(base))
+    private fun KaSession.primitivePrefix(e: KtPrefixExpression, base: KtExpression): LuaExpr = foldedInt(e) ?: negativeLiteral(e, base)
+        ?: when (e.operationToken) {
+            KtTokens.MINUS -> negation(expression(base), base.expressionType)
+            KtTokens.PLUS -> expression(base)
+            else -> negate(expression(base))
+        }
+
+    /**
+     * `-2147483648` and `-9223372036854775808`: the literal after the minus does not fit its type and evaluates to the
+     * negative value already, so the whole expression is the literal (negating it again would give +2147483648).
+     */
+    private fun KaSession.negativeLiteral(e: KtPrefixExpression, base: KtExpression): LuaExpr? {
+        if (e.operationToken != KtTokens.MINUS || base !is KtConstantExpression) return null
+        return when (val v = e.evaluate()) {
+            is KaConstantValue.IntValue -> v.value.takeIf { it == Int.MIN_VALUE }?.let { constantValue(v, e) }
+            is KaConstantValue.LongValue -> v.value.takeIf { it == Long.MIN_VALUE }?.let { constantValue(v, e) }
+            else -> null
+        }
     }
 
     private fun KaSession.postfix(e: KtPostfixExpression): LuaExpr {
@@ -1385,15 +1444,43 @@ class FileTransformer(
 
     /**
      * Transforms [exprs] left to right. If a later expression needs preceding statements, earlier
-     * results are cached in locals first so evaluation order is preserved.
+     * results are cached in locals first so evaluation order is preserved; with [unlessReads], statements that only compute
+     * values without calls into locals (`local ____receiver = a.b` of `a.b?.c`) do not count.
      */
-    internal fun KaSession.ordered(exprs: List<KtExpression>): List<LuaExpr> {
+    internal fun KaSession.ordered(exprs: List<KtExpression>, unlessReads: Boolean = false): List<LuaExpr> {
         val results = exprs.map { withPreceding { expression(it) } }
-        val last = results.indexOfLast { it.second.isNotEmpty() }
+        val last = results.indexOfLast { (_, pre) -> if (unlessReads) pre.any { !isLocalRead(it) } else pre.isNotEmpty() }
         return results.mapIndexed { i, (value, pre) ->
             emitAll(pre)
-            if (i < last) cache(value, "arg") else value
+            if (i < last) cache(touchedIfCached(exprs[i], value), "arg") else value
         }
+    }
+
+    private fun isLocalRead(stmt: LuaStmt): Boolean = stmt is LuaLocal && stmt.values.all(::isRead)
+
+    /** Reads and operators, no calls: a local holding one can be computed before or after the expressions around it. */
+    private fun isRead(e: LuaExpr): Boolean = when (e) {
+        is LuaIndex -> isRead(e.target) && isRead(e.key)
+        is LuaBinary -> isRead(e.left) && isRead(e.right)
+        is LuaUnary -> isRead(e.operand)
+        else -> isStable(e) || e is LuaName
+    }
+
+    /**
+     * An object (or companion) with observable initialization named as a qualifier (`Registry.register(...)`) is initialized when
+     * the member is reached; when the qualifier is cached in a local because a later argument needs statements, the JVM has
+     * already initialized it by then, so the cached value touches it.
+     */
+    private fun KaSession.touchedIfCached(expr: KtExpression, value: LuaExpr): LuaExpr {
+        if ((expr.parent as? KtQualifiedExpression)?.receiverExpression != expr) return value // a value is touched already
+        val name = when (val e = KtPsiUtil.safeDeparenthesize(expr)) {
+            is KtNameReferenceExpression -> e
+            is KtDotQualifiedExpression -> e.selectorExpression as? KtNameReferenceExpression
+            else -> null
+        } ?: return value
+        if (name.mainReference.resolveToSymbol() !is KaClassLikeSymbol) return value
+        val target = name.expressionType?.expandedSymbol?.psi as? KtObjectDeclaration ?: return value
+        return if (lazyInit.isObservable(target)) lualibCall("TouchObject", value) else value
     }
 
     // ---- calls ----
@@ -1547,7 +1634,7 @@ class FileTransformer(
             }
             return LuaCall(LuaIndex(classRef(cls), LuaString("new" + constructorSuffix(psi))), arguments(outers, args))
         }
-        LIBRARY_CLASSES[classId?.asString()]?.let { lua ->
+        LIBRARY_CLASSES[classId?.asString()]?.takeIf { classId?.relativeClassName?.asString() !in FORMATTER_EXCEPTIONS }?.let { lua ->
             return LuaCall(LuaIndex(lualibRef(EXCEPTIONS_FEATURE, lua), LuaString("new")), throwableArguments(args, symbol.valueParameters))
         }
         val site =
@@ -1717,7 +1804,9 @@ class FileTransformer(
 
     /**
      * Argument expressions in parameter order (named arguments are reordered); null where an argument is
-     * omitted and the parameter's default applies.
+     * omitted and the parameter's default applies. The arguments of a `vararg` parameter of the program that is not
+     * the last one come last, as the Lua function takes them as its varargs (`fun f(vararg xs: Int, block: () -> Unit)` is
+     * `function f(block, ...)`).
      */
     internal fun KaSession.callArguments(call: KaCallableMemberCall<*, *>): List<KtExpression?> {
         if (call !is KaFunctionCall<*>) return emptyList()
@@ -1725,12 +1814,15 @@ class FileTransformer(
             unmappedArguments[call].orEmpty().map { (arg, parameter) -> parameter to arg }
         val bySignature = mappedArguments.groupBy({ it.first }, { it.second })
         val result = mutableListOf<KtExpression?>()
-        for (p in call.signature.symbol.valueParameters) {
+        val parameters = call.signature.symbol.valueParameters
+        val varargLast = parameters.lastOrNull()?.isVararg != false || !classes.isSource(call.signature.symbol.psi)
+        val trailingVarargs = mutableListOf<KtExpression>()
+        for (p in parameters) {
             val mapped = bySignature[p]
             if (p.isVararg) {
                 mapped?.sortedBy { it.textRange.startOffset }?.forEach { arg ->
                     registerSpread(arg)
-                    result += arg
+                    if (varargLast) result += arg else trailingVarargs += arg
                 }
             } else {
                 val arg = mapped?.singleOrNull()
@@ -1742,6 +1834,7 @@ class FileTransformer(
                 }
             }
         }
+        if (trailingVarargs.isNotEmpty()) return result + trailingVarargs
         return result.dropLastWhile { it == null }
     }
 

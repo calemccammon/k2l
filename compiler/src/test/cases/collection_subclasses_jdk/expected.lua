@@ -6,6 +6,7 @@ local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Deque = ____lualib.__K2L_Deque
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
+local __K2L_HonorOverrides = ____lualib.__K2L_HonorOverrides
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
@@ -103,6 +104,7 @@ function PQ:removeAll(elements)
     return __K2L_PriorityQueue.removeAll(self, elements)
 end
 
+__K2L_HonorOverrides(PQ, __K2L_PriorityQueue)
 local AD = __K2L_Class("AD", __K2L_Deque)
 __K2L_ClassInfo(AD, "AD", "AD", "class")
 
@@ -262,6 +264,7 @@ function LL:getFirst()
     return __K2L_LinkedList.getFirst(self)
 end
 
+__K2L_HonorOverrides(LL, __K2L_LinkedList)
 local TM = __K2L_Class("TM", __K2L_SortedMap)
 __K2L_ClassInfo(TM, "TM", "TM", "class")
 
@@ -299,6 +302,7 @@ function TM:firstKey()
     return __K2L_SortedMap.firstKey(self)
 end
 
+__K2L_HonorOverrides(TM, __K2L_SortedMap)
 local TS = __K2L_Class("TS", __K2L_SortedSet)
 __K2L_ClassInfo(TS, "TS", "TS", "class")
 
@@ -335,6 +339,8 @@ function TS:pollFirst()
     l("pollFirst")
     return __K2L_SortedSet.pollFirst(self)
 end
+
+__K2L_HonorOverrides(TS, __K2L_SortedSet)
 
 local function main()
     local pq = PQ.new()
@@ -464,12 +470,16 @@ local function main()
     show("tm.firstEntry", function() return tm:firstEntry().key end)
     show("tm.remove", function() return tm:remove("g") end)
     show("tm.for", function()
-        for k, v in tm:iter() do
+        local ____keys, ____values, ____n = tm:____arrays()
+        for ____i = 1, ____n do
+            local k, v = ____keys[____i], ____values[____i]
         end
         return __K2L_Unit
     end)
     show("tm.forEach", function()
-        for _, ____entry in ipairs(tm:getEntries()) do
+        local ____items, ____n_1 = tm:____entryArray()
+        for ____i_1 = 1, ____n_1 do
+            local ____entry = ____items[____i_1]
             do
                 local k, v = ____entry.key, ____entry.value
             end

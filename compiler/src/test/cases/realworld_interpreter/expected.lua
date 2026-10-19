@@ -12,6 +12,7 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
+local __K2L_ListBuilderOf = ____lualib.__K2L_ListBuilderOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -122,7 +123,7 @@ function Lexer:____init(src)
 end
 
 function Lexer:tokens()
-    local ____builder = __K2L_ListOf()
+    local ____builder = __K2L_ListBuilderOf()
     while true do
         local t = self:next()
         ____builder:add(t)
@@ -130,7 +131,7 @@ function Lexer:tokens()
             break
         end
     end
-    return ____builder
+    return ____builder:____build()
 end
 
 function Lexer:peekChar(offset)
@@ -911,8 +912,13 @@ function Interpreter:run(program)
 end
 
 function Interpreter:execBlock(stmts, env)
-    for _, it in ipairs(stmts) do
+    local ____mod = stmts.____modCount
+    for ____i = 1, stmts.size do
+        local it = stmts[____i]
         self:exec(it, env)
+        if stmts.____modCount ~= ____mod and stmts:____comodified(____i) then
+            break
+        end
     end
 end
 
@@ -1061,10 +1067,16 @@ function Interpreter:call(e, env)
             error(RuntimeError.new("stack overflow in " .. callee.decl.name, e.line))
         end
         local ____local = Env.new(callee.closure)
-        for _, ____it_1 in ipairs(params:zip(args)) do
+        local ____list = params:zip(args)
+        local ____mod_1 = ____list.____modCount
+        for ____i_1 = 1, ____list.size do
+            local ____it_1 = ____list[____i_1]
             do
                 local p, a = ____it_1.first, ____it_1.second
                 ____local:define(p, a)
+            end
+            if ____list.____modCount ~= ____mod_1 and ____list:____comodified(____i_1) then
+                break
             end
         end
         local ____ok, ____result_2, ____returned = pcall(function()
@@ -1120,8 +1132,9 @@ local function runSource(name, src)
             end
         end)
     end
-    for i = 0, output.size - 1 do
-        local s = output[i + 1]
+    for ____i_2 = 1, output.size do
+        local s = output[____i_2]
+        local i = ____i_2 - 1
         print("  " .. i + 1 .. ": " .. s)
     end
     print("  steps=" .. interp.steps)

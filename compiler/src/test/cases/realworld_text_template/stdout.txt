@@ -1,0 +1,31 @@
+
+INVOICE #000417  ADA LOVELACE
+*** VIP customer: 10.0% off ***
+ 1. keyboard..............   2 x     $49.99  <- first
+ 2. ultra-wide monitor stand   1 x  $1,299.50
+ 3. usb cable.............  10 x      $3.25
+
+Notes: leave at door; fragile
+Total: $1,288.78 (3 lines)
+Tags: hardware, office, q1.
+Escaped: &lt;b&gt;&quot;Tom&quot; &amp; &#39;Jerry&#39;&lt;/b&gt; / raw: <b>"Tom" & 'Jerry'</b> / missing: [n/a]
+----
+
+INVOICE #000417  BOB
+Regular customer
+ 1. keyboard..............   2 x     $49.99  <- first
+ 2. ultra-wide monitor stand   1 x  $1,299.50
+ 3. usb cable.............  10 x      $3.25
+
+No notes.
+Total: $1,288.78 (3 lines)
+Tags: hardware, office, q1.
+Escaped: &lt;b&gt;&quot;Tom&quot; &amp; &#39;Jerry&#39;&lt;/b&gt; / raw: <b>"Tom" & 'Jerry'</b> / missing: [n/a]
+----
+[1,2][3][]
+Hello, Wilhe…! animlehliw 10
+3.5|q|2||SPACED
+template error: unclosed {{#each}}
+template error: unexpected {{/each}}, open block is 'if'
+template error: unknown filter 'shout'
+template error: no partial 'nope'

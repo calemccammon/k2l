@@ -1,0 +1,54 @@
+list add in for -> java.util.ConcurrentModificationException: null
+list remove second-to-last -> [1, 2] [1, 3]
+list remove last -> java.util.ConcurrentModificationException: null
+list remove first -> java.util.ConcurrentModificationException: null
+list add at last -> java.util.ConcurrentModificationException: null
+list remove two at second -> [1, 2] [1, 2]
+list add+remove -> java.util.ConcurrentModificationException: null
+list sort in loop -> java.util.ConcurrentModificationException: null
+list set in loop -> [2, 4, 2]
+list forEach add -> java.util.ConcurrentModificationException: null
+list forEachIndexed add -> java.util.ConcurrentModificationException: null
+list break after add -> [1, 2, 1]
+list continue after add -> java.util.ConcurrentModificationException: null
+iterator add -> java.util.ConcurrentModificationException: null
+iterator hasNext after remove -> false
+iterator remove ok -> [1, 3]
+iterator remove twice -> java.lang.IllegalStateException: null
+removeIf in loop? -> [1, 2, 3]
+clear in loop -> java.util.ConcurrentModificationException: null
+addAll empty -> java.util.ConcurrentModificationException: null
+sublist stale -> java.util.ConcurrentModificationException: null
+sublist stale print -> java.util.ConcurrentModificationException: null
+sublist stale get -> java.util.ConcurrentModificationException: null
+sublist set ok -> [2, 3] 2
+sublist via sublist ok -> [2, 3, 9] [1, 2, 3, 9, 4]
+sibling stale -> java.util.ConcurrentModificationException: null
+parent of sub ok -> [1, 2, 7, 3] [1, 2, 7, 3, 4]
+sub loop root change -> java.util.ConcurrentModificationException: null
+hashmap put in loop -> java.util.ConcurrentModificationException: null
+hashmap put at last -> {1=1, 2=2, 10=10, 3=3}
+hashmap remove at last -> {2=2, 3=3}
+hashmap remove current second -> java.util.ConcurrentModificationException: null
+linked put in keys loop -> java.util.ConcurrentModificationException: null
+linked values loop remove -> java.util.ConcurrentModificationException: null
+linked entries setValue ok -> {1=7, 2=7}
+map forEach kv put -> java.util.ConcurrentModificationException: null
+map forEach kv put last -> java.util.ConcurrentModificationException: null
+map forEach entry put -> java.util.ConcurrentModificationException: null
+map iterator remove -> {1=1, 3=3}
+map keys iterator then put -> java.util.ConcurrentModificationException: null
+set add in loop -> java.util.ConcurrentModificationException: null
+hashset remove in loop at last -> [2, 3]
+set clear in loop -> java.util.ConcurrentModificationException: null
+treemap put in loop -> java.util.ConcurrentModificationException: null
+treeset in loop -> java.util.ConcurrentModificationException: null
+linkedlist add -> java.util.ConcurrentModificationException: null
+linkedlist remove last -> [2, 3]
+arraydeque kotlin add -> java.util.ConcurrentModificationException: null
+pq add -> java.util.ConcurrentModificationException: null
+pq add at last -> java.util.ConcurrentModificationException: null
+map entries loop remove via entries -> java.util.ConcurrentModificationException: null
+removeAll during keys loop -> java.util.ConcurrentModificationException: null
+getOrPut in loop existing -> {1=1, 2=2}
+array no cme -> [3, 2, 3]

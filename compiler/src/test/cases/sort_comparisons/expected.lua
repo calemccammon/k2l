@@ -29,6 +29,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Log
 local Item = __K2L_Class("Item")
+Item.____comparable = true
 
 function Item:____init(key, id)
     self.key = key
@@ -119,7 +120,9 @@ end
 
 local function counts()
     local sizes = __K2L_ReadOnlyListOf(0, 1, 2, 3, 7, 31, 32, 33, 64, 65, 100, 257, 1000, 3000)
-    for _, n in ipairs(sizes) do
+    local ____mod = sizes.____modCount
+    for ____i = 1, sizes.size do
+        local n = sizes[____i]
         local line = __K2L_StringBuilder.new("n=" .. n)
         local ____list = shapes(n, n + 11)
         for i = 0, ____list.size - 1 do
@@ -132,6 +135,9 @@ local function counts()
             line:append(" [" .. i .. " " .. Log:summary() .. "]")
         end
         print(__K2L_Str(line))
+        if sizes.____modCount ~= ____mod and sizes:____comodified(____i) then
+            break
+        end
     end
 end
 
@@ -211,7 +217,7 @@ local function comparables()
     mutable:sortDescending()
     print("sortDescending() " .. Log:summary() .. " " .. tostring(__K2L_Equals(mutable, desc)))
     Log:reset()
-    local array = items:toTypedArray()
+    local array = items:toTypedArray("[LItem;")
     array:sort()
     print("Array.sort() " .. Log:summary() .. " " .. tostring(__K2L_Equals(array:toList(), sorted)))
     Log:reset()
@@ -232,19 +238,19 @@ local function javaSorts()
     __K2L_JdkCollections.sort(list, byValue)
     print("Collections.sort " .. Log:summary())
     Log:reset()
-    local array = values:toTypedArray()
+    local array = values:toTypedArray("[Ljava.lang.Integer;")
     __K2L_JdkCollections.sort_array(array, byValue)
     print("Arrays.sort " .. Log:summary() .. " " .. tostring(__K2L_Equals(array:toList(), list)))
     Log:reset()
-    local part = values:toTypedArray()
+    local part = values:toTypedArray("[Ljava.lang.Integer;")
     __K2L_JdkCollections.sort_array(part, 10, 120, byValue)
     print("Arrays.sort range " .. Log:summary() .. " " .. __K2L_Str(part:take(12)))
     Log:reset()
-    local other = values:toTypedArray()
+    local other = values:toTypedArray("[Ljava.lang.Integer;")
     other:sortWith(byValue)
     print("Array.sortWith " .. Log:summary())
     Log:reset()
-    print("sortedArrayWith " .. __K2L_Str(values:toTypedArray():sortedArrayWith(byValue):take(5)) .. " " .. Log:summary())
+    print("sortedArrayWith " .. __K2L_Str(values:toTypedArray("[Ljava.lang.Integer;"):sortedArrayWith(byValue):take(5)) .. " " .. Log:summary())
     Log:reset()
     list:shuffle(__K2L_JavaRandom.new(5))
     list:sortWith(byValue)

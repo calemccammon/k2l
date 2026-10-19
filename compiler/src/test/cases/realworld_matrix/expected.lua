@@ -23,6 +23,7 @@ local __K2L_StringReplace = ____lualib.__K2L_StringReplace
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local fmt
 local Matrix = __K2L_Class("Matrix")
@@ -34,8 +35,8 @@ function Matrix:____init(rows, cols, init)
     self.rows = rows
     self.cols = cols
     self.data = __K2L_ListOfSize(self.rows, function(r)
-        return __K2L_ListOfSize(self.cols, function(c) return init(r, c) end, true)
-    end, true)
+        return __K2L_ListOfSize(self.cols, function(c) return init(r, c) end, "[D")
+    end, "[[D")
 end
 
 function Matrix:get(r, c)
@@ -122,7 +123,7 @@ function Matrix:solve(b)
             ::____continue::
         end
     end
-    return __K2L_ListOfSize(n, function(it) return aug:get(it, n) / aug:get(it, it) end, true)
+    return __K2L_ListOfSize(n, function(it) return aug:get(it, n) / aug:get(it, it) end, "[D")
 end
 
 function Matrix:swapRows(a, b)
@@ -163,6 +164,7 @@ function Matrix:of(...)
 end
 
 local Meters = __K2L_Class("Meters")
+Meters.____comparable = true
 
 function Meters:____init(value)
     self.value = value
@@ -273,11 +275,16 @@ local function convexHull(points)
     local sorted = points:sortedWith(__K2L_CompareBy(function(it) return it.x end, function(it) return it.y end))
     local function half(list)
         local hull = __K2L_List.new()
-        for _, p in ipairs(list) do
+        local ____mod = list.____modCount
+        for ____i = 1, list.size do
+            local p = list[____i]
             while hull.size >= 2 and hull:get(hull.size - 1):minus(hull:get(hull.size - 2)):cross(p:minus(hull:get(hull.size - 2))) <= 0 do
                 hull:removeAt(hull.size - 1)
             end
             hull:add(p)
+            if list.____modCount ~= ____mod and list:____comodified(____i) then
+                break
+            end
         end
         return hull:dropLast(1)
     end
@@ -305,7 +312,7 @@ function Poly:plus(o)
 end
 
 function Poly:times(o)
-    local out = __K2L_ListOfSize(self.coef.size + o.coef.size - 1, 0, true)
+    local out = __K2L_ListOfSize(self.coef.size + o.coef.size - 1, 0, "[J")
     local ____list = self.coef
     for i = 0, ____list.size - 1 do
         local a = ____list[i + 1]
@@ -341,10 +348,10 @@ function Poly:toString()
 end
 
 local function main()
-    local a = Matrix:of(__K2L_ArrayOf(2.0, 1.0, -1.0), __K2L_ArrayOf(-3.0, -1.0, 2.0), __K2L_ArrayOf(-2.0, 1.0, 2.0))
+    local a = Matrix:of(__K2L_TypedArrayOf("[D", 2.0, 1.0, -1.0), __K2L_TypedArrayOf("[D", -3.0, -1.0, 2.0), __K2L_TypedArrayOf("[D", -2.0, 1.0, 2.0))
     print("A =\n" .. __K2L_Str(a))
     print("det(A) = " .. fmt(a:determinant()))
-    local x = a:solve(__K2L_ArrayOf(8.0, -11.0, -3.0))
+    local x = a:solve(__K2L_TypedArrayOf("[D", 8.0, -11.0, -3.0))
     print("solve: " .. x:joinToString(nil, nil, nil, nil, nil, function(it) return fmt(it) end))
     print("A * I == A: " .. tostring(a:times(Matrix:identity(3)):equals(a)) .. ", A^T^T == A: " .. tostring(a:transpose():transpose():equals(a)))
     local b = Matrix.new(2, 3, function(r, c) return r * 3 + c + 1 + 0.0 end)
@@ -363,7 +370,7 @@ local function main()
         end
     end
     print(__K2L_Str(__K2L_RunCatching(function()
-        return Matrix:of(__K2L_ArrayOf(1.0, 2.0), __K2L_ArrayOf(2.0, 4.0)):solve(__K2L_ArrayOf(1.0, 2.0))
+        return Matrix:of(__K2L_TypedArrayOf("[D", 1.0, 2.0), __K2L_TypedArrayOf("[D", 2.0, 4.0)):solve(__K2L_TypedArrayOf("[D", 1.0, 2.0))
     end):exceptionOrNull()))
     local hilbert = Matrix.new(4, 4, function(r, c) return 1.0 / (r + c + 1) end)
     print("det(H4) = " .. __K2L_StringFormat("%.6e", hilbert:determinant()))

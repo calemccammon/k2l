@@ -63,23 +63,7 @@ internal class PropertyFamilies(
     fun uninitializedValue(p: KtNamedDeclaration): LuaExpr? {
         val family = families[p] ?: return null
         if (!family.readInConstructor || p !in family.fields.drop(1)) return null
-        return with(session) {
-            val type = (if (p is KtProperty) p.symbol else (p as KtParameter).symbol).returnType
-            when {
-                type.isMarkedNullable -> null
-
-                type.isBooleanType -> LuaBool(false)
-
-                type.isIntegral -> LuaNumber("0")
-
-                type.isDoubleType || type.isFloatType -> LuaNumber("0.0")
-
-                // a non-null String that is null on the JVM prints as "null" (and a Lua concatenation of nil would fail)
-                type.isStringType -> LuaString("null")
-
-                else -> null
-            }
-        }
+        return with(session) { jvmFieldDefault((if (p is KtProperty) p.symbol else (p as KtParameter).symbol).returnType) }
     }
 
     /** The Lua table key holding [p]'s backing field. Members of one family that each have a field get distinct keys, like the JVM. */

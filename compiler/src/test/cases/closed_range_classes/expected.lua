@@ -3,6 +3,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClosedRange = ____lualib.__K2L_ClosedRange
 local __K2L_ClosedRangeMixin = ____lualib.__K2L_ClosedRangeMixin
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -14,6 +15,7 @@ local __K2L_Str = ____lualib.__K2L_Str
 
 local Week
 local Day = __K2L_Class("Day")
+Day.____comparable = true
 
 function Day:____init(n)
     self.n = n
@@ -92,10 +94,10 @@ local function main()
     print(describe(span))
     print(describe(week))
     print(describe(grades))
-    print(describe(__K2L_ClosedRange.new(0.5, 2.5)))
+    print(describe(__K2L_ClosedRange.new(0.5, 2.5, __K2L_DoubleToString)))
     print(describe(__K2L_IntRange.new(3, 1)))
     print(describe(__K2L_ClosedRange.new("a", "f")))
-    local ranges = __K2L_ReadOnlyListOf(span, __K2L_ClosedRange.new(0.25, 1.5))
+    local ranges = __K2L_ReadOnlyListOf(span, __K2L_ClosedRange.new(0.25, 1.5, __K2L_DoubleToString))
     print(__K2L_Str(ranges:map(function(it)
         return __K2L_RangeEnd(it) - __K2L_RangeStart(it)
     end)))

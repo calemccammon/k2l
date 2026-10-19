@@ -60,6 +60,12 @@ local function siteOf(cls)
 end
 
 local function __K2L_KClassOf(cls)
+    -- an array's class (see __K2L_ArrayClassOf) is the one its static type gives
+    local array = cls.____arrayBinary
+    if array ~= nil then
+        return __K2L_KClassOfArray(array, cls.____simpleName or "Array", cls.____javaSimpleName or "Object[]",
+            cls.____qualifiedName or "kotlin.Array")
+    end
     local site = siteOf(cls)
     local known = __K2L_KClassCache[site or cls]
     if known ~= nil then

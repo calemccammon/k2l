@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -12,6 +11,7 @@ local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
 
 local function results(r, which)
@@ -260,7 +260,7 @@ local function emptyFolds(which)
             end
         end
         if which == 1 then
-            local ____list_1 = __K2L_ArrayOf()
+            local ____list_1 = __K2L_TypedArrayOf("[I")
             local ____acc_5
             local ____started_3 = false
             for ____i_6 = ____list_1.size, 1, -1 do
@@ -313,7 +313,7 @@ local function emptyFolds(which)
             end
         end
         if which == 3 then
-            local ____list_3 = __K2L_ArrayOf()
+            local ____list_3 = __K2L_TypedArrayOf("[I")
             local ____acc_7
             local ____started_5 = false
             for ____i_8 = 1, ____list_3.size do
@@ -404,7 +404,7 @@ end
 
 local function maps(m, which)
     local values = __K2L_MapOf()
-    for _, it in ipairs(m:getEntries()) do
+    for _, it in ipairs(m:____entryArray()) do
         local ____result_23
         if which == 0 and it.value == 2 then
             return "mapValuesTo returned, kept " .. __K2L_Str(values)
@@ -414,7 +414,7 @@ local function maps(m, which)
         values:put(it.key, ____result_23)
     end
     local keys = __K2L_MapOf()
-    for _, it in ipairs(m:getEntries()) do
+    for _, it in ipairs(m:____entryArray()) do
         local ____result_24
         if which == 1 and it.value == 2 then
             return "mapKeysTo returned, kept " .. __K2L_Str(keys)
@@ -424,7 +424,7 @@ local function maps(m, which)
         keys:put(____result_24, it.value)
     end
     local kept = __K2L_MapOf()
-    for _, it in ipairs(m:getEntries()) do
+    for _, it in ipairs(m:____entryArray()) do
         local ____result_25
         if which == 2 and it.value == 2 then
             return "filterTo returned, kept " .. __K2L_Str(kept)
@@ -436,7 +436,7 @@ local function maps(m, which)
         end
     end
     local list = __K2L_ListOf()
-    for _, it in ipairs(m:getEntries()) do
+    for _, it in ipairs(m:____entryArray()) do
         local ____result_26
         if which == 3 and it.value == 2 then
             return "mapTo returned, kept " .. __K2L_Str(list)
@@ -462,9 +462,9 @@ local function main()
     print(notNull(xs, 0))
     print(notNull(xs, 1))
     for which = 0, 4 do
-        print(folds(xs, __K2L_ArrayOf(1, 2, 3), which))
+        print(folds(xs, __K2L_TypedArrayOf("[I", 1, 2, 3), which))
     end
-    print(folds(xs, __K2L_ArrayOf(1, 2, 3), 99))
+    print(folds(xs, __K2L_TypedArrayOf("[I", 1, 2, 3), 99))
     for which = 0, 4 do
         print(emptyFolds(which))
     end

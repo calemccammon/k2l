@@ -6,6 +6,7 @@ local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntStream = ____lualib.__K2L_IntStream
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Optional = ____lualib.__K2L_Optional
 local __K2L_OptionalInt = ____lualib.__K2L_OptionalInt
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -92,7 +93,7 @@ local function main()
     print(once:count())
     local ____ok, ____result = pcall(function()
         once:forEach(function(it)
-            print(it)
+            print(__K2L_NotNull(it))
         end)
     end)
     if not ____ok then

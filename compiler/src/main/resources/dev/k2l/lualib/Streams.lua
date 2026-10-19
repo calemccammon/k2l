@@ -458,6 +458,13 @@ function Stream:toArray()
     return setmetatable(items, __K2L_Array)
 end
 
+-- an IntStream's toArray() is an IntArray, and so on
+for stream, binary in pairs({[IntStream] = "[I", [DoubleStream] = "[D", [LongStream] = "[J"}) do
+    stream.toArray = function(self)
+        return setmetatable(Stream.toArray(self), __K2L_ArrayClassOf(binary))
+    end
+end
+
 function Stream:anyMatch(predicate)
     local nextElement = use(self)
     while true do

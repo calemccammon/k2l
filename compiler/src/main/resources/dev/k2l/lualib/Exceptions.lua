@@ -33,6 +33,15 @@ local __K2L_ClassCastException = __K2L_Class("java.lang.ClassCastException", __K
 local __K2L_NumberFormatException = __K2L_Class("java.lang.NumberFormatException", __K2L_IllegalArgumentException)
 local __K2L_NoSuchElementException = __K2L_Class("java.util.NoSuchElementException", __K2L_RuntimeException)
 local __K2L_ConcurrentModificationException = __K2L_Class("java.util.ConcurrentModificationException", __K2L_RuntimeException)
+-- java.util.Formatter's exceptions (String.format), with the JDK's messages
+local __K2L_IllegalFormatException = __K2L_Class("java.util.IllegalFormatException", __K2L_IllegalArgumentException)
+local __K2L_MissingFormatArgumentException = __K2L_Class("java.util.MissingFormatArgumentException", __K2L_IllegalFormatException)
+local __K2L_UnknownFormatConversionException = __K2L_Class("java.util.UnknownFormatConversionException", __K2L_IllegalFormatException)
+local __K2L_MissingFormatWidthException = __K2L_Class("java.util.MissingFormatWidthException", __K2L_IllegalFormatException)
+local __K2L_IllegalFormatConversionException = __K2L_Class("java.util.IllegalFormatConversionException", __K2L_IllegalFormatException)
+local __K2L_IllegalFormatPrecisionException = __K2L_Class("java.util.IllegalFormatPrecisionException", __K2L_IllegalFormatException)
+local __K2L_FormatFlagsConversionMismatchException =
+    __K2L_Class("java.util.FormatFlagsConversionMismatchException", __K2L_IllegalFormatException)
 local __K2L_NotImplementedError = __K2L_Class("kotlin.NotImplementedError", __K2L_Error)
 local __K2L_UninitializedPropertyAccessException = __K2L_Class("kotlin.UninitializedPropertyAccessException", __K2L_RuntimeException)
 local __K2L_KotlinReflectionNotSupportedError = __K2L_Class("kotlin.jvm.KotlinReflectionNotSupportedError", __K2L_Error)

@@ -304,8 +304,14 @@ local function main()
     print(outer.depth)
     print(leaf2:outers())
     local sq = Square.new()
-    for _, p in ipairs(sq:parts()) do
+    local ____list = sq:parts()
+    local ____mod = ____list.____modCount
+    for ____i = 1, ____list.size do
+        local p = ____list[____i]
         print(p:label())
+        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            break
+        end
     end
     print(sq:squarePart():label())
     print(Square.Corner.new(sq, 2):report())

@@ -254,8 +254,13 @@ local function main()
     local n = __K2L_TouchObject(Baz.Companion)
     print(n:getLabel())
     local shapes = __K2L_ReadOnlyListOf(Foo.Companion, Shape.Companion, Outer.Inner.Companion, Box.Companion)
-    for _, s in ipairs(shapes) do
+    local ____mod = shapes.____modCount
+    for ____i = 1, shapes.size do
+        local s = shapes[____i]
         print(s:getKind() .. " " .. __K2L_Str(s:create()))
+        if shapes.____modCount ~= ____mod and shapes:____comodified(____i) then
+            break
+        end
     end
     local x = Shape.Companion
     if __K2L_InstanceOf(x, ____factory.Factory) then

@@ -46,7 +46,9 @@ local function main()
     local s = __K2L_SequenceOf(1, 2, 3, 4)
     local it = s:asIterable()
     print(__K2L_Str(it:map(function(it) return it * 2 end)))
-    for _, x in ipairs(it:toList()) do
+    local ____items, ____n = it:____array()
+    for ____i = 1, ____n do
+        local x = ____items[____i]
         io.write(tostring(x))
     end
     print()

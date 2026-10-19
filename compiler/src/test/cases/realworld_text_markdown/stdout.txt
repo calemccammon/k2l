@@ -1,0 +1,41 @@
+<h1 id="k2l-guide">k2l <em>Guide</em></h1>
+<p>Welcome to <strong>k2l</strong>, a <em>Kotlin</em> to Lua transpiler. See <a href="https://example.org/k2l">https://example.org/k2l</a> or <a href="https://example.org/docs">the docs</a>.
+Use <code>x &lt; y &amp;&amp; y &gt; z</code> freely; it's <del>not</del> escaped.
+Second line after a hard break.</p>
+<h2 id="installing">Installing</h2>
+<ol>
+  <li>Download the archive</li>
+  <li>Unpack it to <code>~/opt</code></li>
+  <li>Add <strong>bin</strong> to <code>PATH</code></li>
+</ol>
+<h2 id="features-limits">Features &amp; Limits</h2>
+<ul>
+  <li><input type="checkbox" checked disabled> classes and <em>objects</em></li>
+  <li><input type="checkbox" disabled> reflection beyond the <strong>basics</strong></li>
+  <li>plain item with an ![logo](img/logo.png &quot;The Logo&quot;) inside</li>
+</ul>
+<blockquote>
+<p>Note: quotes can contain <strong>markup</strong>
+and span lines.</p>
+<h1 id="even-headings">Even headings</h1>
+</blockquote>
+<table>
+<tr><th>Feature</th><th style="text-align:center">Status</th><th style="text-align:right">Since</th></tr>
+<tr><td>Regex</td><td style="text-align:center">done</td><td style="text-align:right">0.1</td></tr>
+<tr><td>Streams</td><td style="text-align:center"><code>partial</code></td><td style="text-align:right">0.2</td></tr>
+</table>
+<pre><code class="language-kotlin">fun main() = println(&quot;&lt;hello&gt;&quot;)</code></pre>
+<hr>
+<h2 id="installing-1">Installing</h2>
+<ol start="5">
+  <li>fifth</li>
+  <li>sixth</li>
+</ol>
+<p>Snake_case_words and 2*3*4 should stay as they are, but <em>this</em> is emphasis.</p>
+---- toc ----
+- [k2l *Guide*](#k2l-guide)
+  - [Installing](#installing)
+  - [Features & Limits](#features-limits)
+  - [Installing](#installing-1)
+words: 119, distinct: 94
+tags: {a=2, blockquote=1, code=5, del=1, em=4, h1=2, h2=3, hr=1, input=2, li=8, ol=2, p=3, pre=1, strong=4, table=1, td=6, th=3, tr=3, ul=1}

@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
 local limit = 3
@@ -56,7 +57,7 @@ local function varargs()
 end
 
 local function spreads()
-    local extra = __K2L_ArrayOf(10, 20, 30)
+    local extra = __K2L_TypedArrayOf("[I", 10, 20, 30)
     local ____result
     do
         local xs = __K2L_ArrayOf(4, __K2L_Unpack(extra))
@@ -85,7 +86,7 @@ end
 local function named()
     local ____result_2
     do
-        local ____xs = __K2L_ArrayOf(__K2L_Unpack(__K2L_ArrayOf(1, 2)))
+        local ____xs = __K2L_ArrayOf(__K2L_Unpack(__K2L_TypedArrayOf("[I", 1, 2)))
         local total = 5
         for ____i_4 = 1, ____xs.size do
             local x = ____xs[____i_4]

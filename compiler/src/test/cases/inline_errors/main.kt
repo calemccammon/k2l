@@ -19,7 +19,7 @@ inline fun total(vararg xs: Int, f: (Int) -> Int): Int {
     return sum
 }
 
-// an expanded call takes a spread `vararg` argument only as the last one
+// a spread that is not the last `vararg` argument of an expanded call, and a `vararg` parameter that is not last
 fun spreadFirst(xs: IntArray): Int = total(*xs, 1) { if (it < 0) return -1 else it }
 
 fun main() {

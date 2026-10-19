@@ -13,7 +13,9 @@ local function main()
     local min = -9223372036854775807 - 1
     local max = 9223372036854775807
     local big = 5000000000000000000
-    for _, n in ipairs(__K2L_ReadOnlyListOf(0, 1, 31, 32, 33, 62, 63, 64, 65, 127, 128, -1, -63)) do
+    local ____list = __K2L_ReadOnlyListOf(0, 1, 31, 32, 33, 62, 63, 64, 65, 127, 128, -1, -63)
+    for ____i = 1, ____list.size do
+        local n = ____list[____i]
         print(n .. ": " .. (1 << n) .. " " .. min // (1 << n) .. " " .. (min >> n) .. " " .. -big // (1 << n) .. " " .. (big >> n) .. " " .. (max << n))
     end
     print(1 << 64)

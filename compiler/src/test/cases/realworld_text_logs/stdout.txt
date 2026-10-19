@@ -1,0 +1,50 @@
+parsed 8 access lines, 4 app lines, rejected lines [8]
+named groups of line 1: ip=192.168.1.10, user=alice, mon=Mar, tz=+0000, method=GET, path=/api/users, query=id=42&token=abc123, ver=1.1, ms=12
+group 0 range 0..106, path range 55..64
+-- by status --
+2xx: 3
+3xx: 2
+4xx: 2
+5xx: 1
+-- by endpoint (ids collapsed) --
+DELETE /api/users/{id}       n=1 avg=2012.0ms max=2012
+GET /api/users               n=2 avg=18.5ms max=25
+GET /static/app.css          n=0 avg=n/a max=-
+GET /static/app.js           n=1 avg=3.0ms max=3
+POST /api/login              n=3 avg=123.7ms max=140
+-- per hour --
+09:00 #### 1710 bytes
+10:00 ### 0 bytes
+11:00 # 2048 bytes
+-- query params --
+id: 2
+api_key: 1
+page: 1
+token: 1
+-- brute force suspects --
+10.0.0.7 failed 2 times, then succeeded
+-- application log --
+09:16:41 INFO  c.e.a.LoginService user bob logged in from 10.0.0.7 password=******
+10:02:00 WARN  Worker slow query took 2350ms: SELECT * FROM t WHERE email='d***@example.com'
+10:31:00 ERROR c.e.a.UserController failed to delete user 42: java.sql.SQLException: lock timeout (card ****-****-****-1111)
+11:05:01 DEBUG c.e.Cache hit ratio 0.875 for key users:7
+all durations: [12, 140, 133, 98, 3, 2350, 2012, 25], slow (>1s): [2350, 2012]
+-- redaction --
+192.168.1.10 - alice [12/Mar/2024:09:15:02 +0000] "GET /api/users?id=42&token=****** HTTP/1.1" 200 512 12ms
+2024-03-12T09:16:41.123Z INFO  [http-nio-8080-exec-3] com.example.auth.LoginService - user bob logged in from 
+2024-03-12T10:02:00Z WARN  [scheduler-1] com.example.jobs.Cleanup$Worker - slow query took 2350ms: SELECT * FR
+2024-03-12T10:31:00Z ERROR [http-nio-8080-exec-1] com.example.api.UserController - failed to delete user 42: j
+192.168.1.11 - alice [12/Mar/2024:11:05:00 +0000] "GET /api/users?id=7&api_key=******&page=2 HTTP/1.1" 200 204
+-- misc regex --
+[alpha, beta, gamma, delta, epsilon]
+[a, b, c333]
+[foo, bar]
+known|made|easy
+[oo@1, kk@3, ee@5, aa@11]
+12/03/2024 a.b.c
+[one, three]
+1
+12ABC DE 9XYZ
+[1@1..1, 22@4..5, 333@9..11]
+-a-b-c- [a, b, , c, ] 5
+pr_gramming language .e..o .o...

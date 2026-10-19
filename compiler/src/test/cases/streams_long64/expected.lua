@@ -4,6 +4,7 @@ local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_LongStream = ____lualib.__K2L_LongStream
 local __K2L_LongSummaryStatistics = ____lualib.__K2L_LongSummaryStatistics
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_OptionalDouble = ____lualib.__K2L_OptionalDouble
 local __K2L_OptionalLong = ____lualib.__K2L_OptionalLong
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -23,7 +24,7 @@ local function main()
     print(__K2L_Str(__K2L_SummaryStatistics.of("Long", __K2L_Streams.of(__K2L_LongStream, __K2L_ListOf(big, 2)))))
     print(__K2L_Str(__K2L_LongSummaryStatistics.new()))
     local values = __K2L_ReadOnlyListOf(big, big, 7)
-    print(__K2L_Streams.ofCollection(values):collect(__K2L_Collectors.summingLong(function(it) return it end)))
+    print(__K2L_NotNull(__K2L_Streams.ofCollection(values):collect(__K2L_Collectors.summingLong(function(it) return it end))))
     print(__K2L_Streams.ofCollection(values):collect(__K2L_SummaryStatistics.collector("Long", function(it) return it end)):getSum())
     print(__K2L_Streams.ofCollection(values):mapToLong(function(it) return __K2L_IDiv(it, 1000) end):sum())
     print(__K2L_Streams.ofCollection(values, true):mapToLong(function(it) return it end):max():getAsLong())

@@ -1,0 +1,4 @@
+[leaf, loop]
+true
+[4, 3, 2, 1, 0]
+hello from lazy

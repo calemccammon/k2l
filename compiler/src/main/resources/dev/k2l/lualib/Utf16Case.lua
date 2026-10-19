@@ -272,6 +272,9 @@ do
         __K2L_Regex.____fold = foldUnit
         __K2L_Regex.____upper = Uni.upper
         __K2L_Regex.____lower = Uni.lower
+        -- \p{L}, \p{Lu}, \p{Nd}, \p{Z} ... of non-ASCII characters
+        __K2L_Regex.____unicode = {letter = Uni.isLetter, upper = Uni.isUpper, lower = Uni.isLower, title = Uni.isTitle,
+            digit = Uni.isDigit, space = Uni.isSpace, mark = Uni.isMark}
     end
 
     function Text.caseInsensitiveOrder(a, b)

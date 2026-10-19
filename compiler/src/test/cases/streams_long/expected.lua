@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Collectors = ____lualib.__K2L_Collectors
 local __K2L_DoubleStream = ____lualib.__K2L_DoubleStream
 local __K2L_DoubleSummaryStatistics = ____lualib.__K2L_DoubleSummaryStatistics
@@ -15,6 +14,7 @@ local __K2L_LongStream = ____lualib.__K2L_LongStream
 local __K2L_LongSummaryStatistics = ____lualib.__K2L_LongSummaryStatistics
 local __K2L_NaturalOrder = ____lualib.__K2L_NaturalOrder
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Optional = ____lualib.__K2L_Optional
 local __K2L_OptionalDouble = ____lualib.__K2L_OptionalDouble
 local __K2L_OptionalLong = ____lualib.__K2L_OptionalLong
@@ -25,6 +25,7 @@ local __K2L_Streams = ____lualib.__K2L_Streams
 local __K2L_SummaryStatistics = ____lualib.__K2L_SummaryStatistics
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function longStreams()
     print(__K2L_Streams.rangeLong(1, 6, false):sum())
@@ -36,7 +37,7 @@ local function longStreams()
     print(__K2L_Streams.range(0, 4):asLongStream():map(function(it) return it * 1000000000 end):sum())
     print(__K2L_Str(__K2L_Streams.range(0, 4):mapToLong(function(it) return it * 10 end):boxed():toList()))
     print(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf("a", "bb", "ccc")):mapToLong(function(it) return #it end):sum())
-    local ____value = __K2L_ArrayOf(4, 5, 6)
+    local ____value = __K2L_TypedArrayOf("[J", 4, 5, 6)
     local ____result
     ____result = __K2L_Streams.ofArray(__K2L_LongStream, ____value):filter(function(x) return math.fmod(x, 2) == 0 end):count()
     print(____result)
@@ -44,8 +45,8 @@ local function longStreams()
     print(__K2L_Str(__K2L_Streams.of(__K2L_LongStream, __K2L_ListOf(1, 2, 3)):mapToObj(function(it) return "n" .. it end):collect(__K2L_Collectors.joining(","))))
     print(__K2L_Str(__K2L_Streams.of(__K2L_LongStream, __K2L_ListOf(1, 2, 3)):asDoubleStream():sum()))
     print(__K2L_Streams.of(__K2L_LongStream, __K2L_ListOf(10, 20)):mapToInt(function(it) return __K2L_ToInt32(__K2L_IDiv(it, 10)) end):sum())
-    print(__K2L_Streams.ofCollection(__K2L_ReadOnlyListOf(1, 2, 3)):collect(__K2L_Collectors.summingLong(function(it) return it end)))
-    print(__K2L_Str(__K2L_Streams.ofCollection(__K2L_ReadOnlyListOf("a", "bb")):collect(__K2L_Collectors.averagingLong(function(it) return #it end))))
+    print(__K2L_NotNull(__K2L_Streams.ofCollection(__K2L_ReadOnlyListOf(1, 2, 3)):collect(__K2L_Collectors.summingLong(function(it) return it end))))
+    print(__K2L_Str(__K2L_NotNull(__K2L_Streams.ofCollection(__K2L_ReadOnlyListOf("a", "bb")):collect(__K2L_Collectors.averagingLong(function(it) return #it end)))))
     print(__K2L_Str(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2)):flatMapToInt(function(it)
         return __K2L_Streams.of(__K2L_IntStream, __K2L_ListOf(it, it * 10))
     end):boxed():toList()))
@@ -59,7 +60,7 @@ local function parallel()
     print(__K2L_Streams.ofCollection(numbers, true):mapToInt(function(it) return it end):sum())
     print(__K2L_Streams.ofCollection(numbers, true):filter(function(it) return math.fmod(it, 7) == 0 end):count())
     print(__K2L_Str(__K2L_Streams.ofCollection(numbers, true):map(function(it) return it * 2 end):toList():take(5)))
-    print(__K2L_Streams.ofCollection(numbers, true):reduce(0, function(a, b) return a + b end))
+    print(__K2L_NotNull(__K2L_Streams.ofCollection(numbers, true):reduce(0, function(a, b) return a + b end)))
     print(__K2L_Streams.ofCollection(numbers, true):collect(__K2L_Collectors.toSet()).size)
     local ordered = __K2L_ListOf()
     __K2L_Streams.ofCollection(numbers, true):filter(function(it) return it > 95 end):forEachOrdered(function(it)

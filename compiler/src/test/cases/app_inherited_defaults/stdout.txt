@@ -1,0 +1,10 @@
+root/10
+  a/12
+  b/12
+    c/14
+>root/11
+>  a/13
+>  b/13
+>    c/15
+x/10 x/3
+leaf: hello Y | leaf: hi Y | branch: hello ROOT | branch: hello you

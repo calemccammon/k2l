@@ -121,6 +121,7 @@ end
 Size.SMALL = Size.new("SMALL", 0, "s")
 Size.LARGE = Size.new("LARGE", 1, "l")
 Size.____values = {Size.SMALL, Size.LARGE}
+Size.____companion = true
 
 function Size:parse(c)
     return __K2L_EnumValues(Size):firstOrNull(function(it) return it.letter == c end)

@@ -29,7 +29,9 @@ local function __K2L_CastFail(value, target, kotlinName)
         error(__K2L_ClassCastException.new(actual .. " cannot be cast to " .. kotlinName))
     end
     local function describe(name)
-        if name:find("^java%.") or name:find("^kotlin%.") then
+        -- arrays of primitives and of the JDK's classes (`[I`, `[Ljava.lang.String;`) are java.base's too
+        local element = name:match("^%[+L?(.*)") or name
+        if element:find("^java%.") or element:find("^kotlin%.") or name:find("^%[+[A-Z]$") then
             return "module java.base of loader 'bootstrap'"
         end
         return "unnamed module of loader 'app'"

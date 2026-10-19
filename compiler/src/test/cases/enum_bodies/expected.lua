@@ -228,7 +228,9 @@ local function classify(op)
 end
 
 local function main()
-    for _, op in ipairs(__K2L_EnumValues(Op)) do
+    local ____list = __K2L_EnumValues(Op)
+    for ____i = 1, ____list.size do
+        local op = ____list[____i]
         print(op.name .. " " .. op.ordinal .. " " .. op.symbol .. " " .. op:apply(6, 3) .. " " .. op:describe() .. " " .. classify(op))
     end
     print(__K2L_Str(Op.PLUS))
@@ -261,11 +263,15 @@ local function main()
     print(__K2L_Str(best))
     print(__K2L_EnumValues(Level):joinToString(nil, nil, nil, nil, nil, function(it) return it.name:lower() end))
     print("-- shapes")
-    for _, s in ipairs(__K2L_EnumValues(Shape)) do
+    local ____list_1 = __K2L_EnumValues(Shape)
+    for ____i_1 = 1, ____list_1.size do
+        local s = ____list_1[____i_1]
         print(s.name .. " " .. s.sides .. " " .. s:name2())
     end
     print("-- planets")
-    for _, p in ipairs(__K2L_EnumValues(Planet)) do
+    local ____list_2 = __K2L_EnumValues(Planet)
+    for ____i_2 = 1, ____list_2.size do
+        local p = ____list_2[____i_2]
         print(p:describe())
     end
     local d = Planet.MARS

@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CharRange = ____lualib.__K2L_CharRange
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_Iterable = ____lualib.__K2L_Iterable
@@ -16,6 +15,7 @@ local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function nestedLists()
     local rows = __K2L_ListOf()
@@ -64,7 +64,7 @@ local function maps()
     print(__K2L_Str(m))
     local n = __K2L_MapOf(__K2L_Pair.new(0, "z"))
     n:putAll(__K2L_SequenceOf(__K2L_Pair.new(8, "h"), __K2L_Pair.new(9, "i")))
-    n:putAll(__K2L_ArrayOf(__K2L_Pair.new(10, "j")))
+    n:putAll(__K2L_TypedArrayOf("[Lkotlin.Pair;", __K2L_Pair.new(10, "j")))
     print(__K2L_Str(n))
     print(__K2L_Str(n:plus(__K2L_SequenceOf(__K2L_Pair.new(11, "k")))))
     print(__K2L_Str(n:minusAll(__K2L_SequenceOf(8, 9))))

@@ -1,0 +1,78 @@
+1=I, 4=IV, 9=IX, 14=XIV, 40=XL, 90=XC, 400=CD, 1666=MDCLXVI, 1990=MCMXC, 2008=MMVIII, 2024=MMXXIV, 3999=MMMCMXCIX
+true
+[1990, 2024, 4, 1666]
+bad numeral 'Q' in MXQ
+out of range: 0
+0: zero
+7: seven
+13: thirteen
+42: forty-two
+100: one hundred
+101: one hundred and one
+999: nine hundred and ninety-nine
+1,000: one thousand
+1,001: one thousand and one
+12,345: twelve thousand, three hundred and forty-five
+1,000,000: one million
+7,654,321: seven million, six hundred and fifty-four thousand, three hundred and twenty-one
+-15: minus fifteen
+2,147,483,648: two billion, one hundred and forty-seven million, four hundred and eighty-three thousand, six hundred and forty-eight
+1,000,000,000,001: one trillion and one
+[1, 11, 21, 1211, 111221, 312211, 13112221, 1113213211, 31131211131221, 13211311123113112211]
+1 2 2 4 6 6 8 10 14 20 26 34 46 62 78 102 134 176 226 302
+'([]{<>})' -> ok
+'([)]' -> mismatch '['@1 vs ')'@2
+'((' -> unclosed '(' at 1
+'())' -> unexpected ')' at 2
+'' -> ok
+'{[()()]<>}x' -> ok
+'a(b[c]d)e}' -> unexpected '}' at 9
+luhn(4539 3195 0343 6467) = true
+luhn(8273 1232 7352 0569) = false
+luhn(79927398713) = true
+luhn(0) = false
+luhn(4111-1111-1111-1111) = true
+isbn13(978-0596520687) = true
+isbn13(978 1734314502) = true
+isbn13(978-1734314509) = false
+isbn13(9781788399081) = true
+isbn13(978-17883-9908) = false
+          0 bin=0 oct=0 hex=0 b36=0
+          1 bin=1 oct=1 hex=1 b36=1
+        255 bin=11111111 oct=377 hex=ff b36=73
+       4096 bin=1000000000000 oct=10000 hex=1000 b36=35s
+      65535 bin=1111111111111111 oct=177777 hex=ffff b36=1ekf
+         -1 bin=-1 oct=-1 hex=-1 b36=-1
+ 2147483647 bin=1111111111111111111111111111111 oct=17777777777 hex=7fffffff b36=zik0zj
+-2147483648 bin=-10000000000000000000000000000000 oct=-20000000000 hex=-80000000 b36=-zik0zk
+[255, -10, 1295, 511, 42, null, null]
+(2147483648, -4611686018427387904)
+[3.14, -0.0, 1000.0, 0.5, 5.0, NaN, -Infinity, null, null, 7.0, 1.5, 2.0]
+[42, 0, 7, 42, null, null, null, -2147483648]
+[2147483647, -9223372036854775808, 1099511627776, FF, fffffff0, 1010]
+12W1B12W3B24W1B14W true 2a1b5c3a xxxyyz
+   February 2024    
+Mo Tu We Th Fr Sa Su
+          1  2  3  4
+ 5  6  7  8  9 10 11
+12 13 14 15 16 17 18
+19 20 21 22 23 24 25
+26 27 28 29
+     July 1969      
+Mo Tu We Th Fr Sa Su
+    1  2  3  4  5  6
+ 7  8  9 10 11 12 13
+14 15 16 17 18 19 20
+21 22 23 24 25 26 27
+28 29 30 31
+    October 2023    
+Mo Tu We Th Fr Sa Su
+                   1
+ 2  3  4  5  6  7  8
+ 9 10 11 12 13 14 15
+16 17 18 19 20 21 22
+23 24 25 26 27 28 29
+30 31
+2000-01-01T23:59 (Sat), 1970-01-01T23:59 (Thu), 2024-02-29T23:59 (Thu), 1999-12-31T23:59 (Fri)
+[1900:-, 1950:-, 2000:leap, 2050:-, 2100:-]
+1 2 Fizz 4 Buzz Fizz Baxx 8 Fizz Buzz 11 Fizz 13 Baxx FizzBuzz 16 17 Fizz 19 Buzz FizzBaxx 22 23 Fizz Buzz 26 Fizz Baxx 29 FizzBuzz

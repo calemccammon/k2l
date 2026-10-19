@@ -1,0 +1,51 @@
+-- start (rev 0, 2 lines)
+ 1| hello world
+ 2| second line
+-- typed (rev 7, 2 lines)
+ 1| hello, world!
+ 2| second lineabc x
+undo: [insert ' x' at 1:14, insert 'abc' at 1:11, insert '!' at 0:12, insert ',' at 0:5]
+  ! forgot insert ',' at 0:5
+-- joined (rev 8, 1 lines)
+ 1| hello, world! lineabc x
+cursor 0:13, undo: [delete 0:13..1:6 ('
+second'), insert ' x' at 1:14, insert 'abc' at 1:11, insert '!' at 0:12]
+  undo -> hello, world!|second lineabc x @1:6
+  undo -> hello, world!|second lineabc @1:14
+  undo -> hello, world!|second line @1:11
+  undo -> hello, world|second line @0:12
+redo: [insert '!' at 0:12, insert 'abc' at 1:11, insert ' x' at 1:14, delete 0:13..1:6 ('
+second')]
+-- redone twice (rev 14, 2 lines)
+ 1| hello, world!
+ 2| second lineabc
+-- multi-line insert (rev 15, 4 lines)
+ 1| hello, world!
+ 2| 
+ 3| third
+ 4| fourthsecond lineabc
+  ! forgot insert '!' at 0:12
+-- macro (rev 19, 4 lines)
+ 1| hello, world!
+ 2| 
+ 3| third
+ 4| * * fourth;;second lineabc
+-- macro undone once (rev 21, 4 lines)
+ 1| hello, world!
+ 2| 
+ 3| third
+ 4| * fourth;second lineabc
+after noop redo: [], undo: [noop, macro bullet, insert '\nthird\nfourth' at 2:0, insert 'abc' at 1:11]
+events: 21
+  did macro bullet
+  forgot insert '!' at 0:12
+  did macro bullet
+  undid macro bullet
+  did noop
+selection 1:2..3:4 empty=false true
+extract: '|third|* fo'
+clamp: 3:23 0:2
+[Insert(1 chars), Delete, Batch, Noop]
+true
+error: not applied: delete 1:2..3:4
+[0:9, 2:0, 2:1]

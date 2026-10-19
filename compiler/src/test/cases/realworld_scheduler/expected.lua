@@ -198,8 +198,14 @@ end
 function Scheduler:step(t)
     if not (t.iterator or __K2L_Uninitialized("iterator")):hasNext() then
         t.finished = true
-        for _, it in ipairs(self.listeners) do
+        local ____list = self.listeners
+        local ____mod = ____list.____modCount
+        for ____i = 1, ____list.size do
+            local it = ____list[____i]
             it(t)
+            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+                break
+            end
         end
         return
     end
@@ -218,8 +224,13 @@ end
 function Scheduler:run()
     while self.clock < self.maxTicks and self.tasks:any(function(it) return not it.finished end) do
         local ready = self.tasks:filter(function(...) return self:runnable(...) end)
-        for _, it in ipairs(ready) do
+        local ____mod_1 = ready.____modCount
+        for ____i_1 = 1, ready.size do
+            local it = ready[____i_1];
             (function(...) return self:step(...) end)(it)
+            if ready.____modCount ~= ____mod_1 and ready:____comodified(____i_1) then
+                break
+            end
         end
         if ready:isEmpty() then
             local ____next = self.tasks:filter(function(it)
@@ -350,8 +361,14 @@ local function main()
         ____this_8:yield(Effect.Receive.new("never"))
         ctx:log("unreachable")
     end)
-    for _, it in ipairs(scheduler:run()) do
+    local ____list_1 = scheduler:run()
+    local ____mod_2 = ____list_1.____modCount
+    for ____i_2 = 1, ____list_1.size do
+        local it = ____list_1[____i_2];
         (function(____p1) return print(__K2L_Str(____p1)) end)(it)
+        if ____list_1.____modCount ~= ____mod_2 and ____list_1:____comodified(____i_2) then
+            break
+        end
     end
     print("finished: " .. __K2L_Str(finished))
     print(scheduler:getSummary())

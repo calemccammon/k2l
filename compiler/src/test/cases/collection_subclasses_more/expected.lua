@@ -11,6 +11,7 @@ local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_HashSet = ____lualib.__K2L_HashSet
+local __K2L_HonorOverrides = ____lualib.__K2L_HonorOverrides
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -288,6 +289,7 @@ function DefaultMap:get(key)
     return __K2L_HashMap.get(self, key) or 0
 end
 
+__K2L_HonorOverrides(DefaultMap, __K2L_HashMap)
 local Lru = __K2L_Class("Lru", __K2L_Map)
 __K2L_ClassInfo(Lru, "Lru", "Lru", "class")
 
@@ -318,9 +320,9 @@ local function sets()
     print(__K2L_Str(e) .. " " .. e:getSize() .. " " .. tostring(e:contains(4)) .. " " .. tostring(e:contains(5)) .. " " .. tostring(e:equals(__K2L_ReadOnlySetOf(0, 2, 4, 6, 8))) .. " " .. tostring(__K2L_Equals(__K2L_ReadOnlySetOf(8, 6, 4, 2, 0), e)) .. " " .. tostring(e:hashCode() == __K2L_Hash(__K2L_ReadOnlySetOf(0, 2, 4, 6, 8))))
     print(__K2L_Str(e:map(function(it) return __K2L_IDiv(it, 2) end)) .. " " .. __K2L_Str(e:filter(function(it) return it > 3 end)) .. " " .. e:sum() .. " " .. __K2L_Str(e:sortedDescending()) .. " " .. tostring(e:containsAll(__K2L_ReadOnlyListOf(2, 4))) .. " " .. tostring(__K2L_InstanceOf(e, __K2L_Set)))
     local total = 0
-    local ____list = e:toList()
-    for ____i = 1, ____list.size do
-        local x = ____list[____i]
+    local ____items, ____n = e:____array()
+    for ____i = 1, ____n do
+        local x = ____items[____i]
         total = total + x
     end
     print("loop " .. total .. " " .. e:first() .. " " .. e:last() .. " " .. __K2L_Str(e:toList()) .. " " .. e:joinToString("|"))
@@ -348,9 +350,14 @@ local function maps()
     local sq = Squares.new(3)
     print(__K2L_Str(sq) .. " " .. sq.size .. " " .. __K2L_Str(sq:get("k2")) .. " " .. __K2L_Str(sq:get("x")) .. " " .. tostring(sq:containsKey("k3")) .. " " .. tostring(sq:containsValue(9)) .. " " .. __K2L_Str(sq:getKeys()) .. " " .. __K2L_Str(sq:getValues()))
     print(tostring(sq:equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("k1", 1), __K2L_Pair.new("k2", 4), __K2L_Pair.new("k3", 9)))) .. " " .. tostring(__K2L_Equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("k1", 1), __K2L_Pair.new("k2", 4), __K2L_Pair.new("k3", 9)), sq)) .. " " .. tostring(sq:isEmpty()))
+    local ____arg = sq:map(function(it) return it.key .. it.value end)
+    local ____arg_1 = sq:filter(function(it) return it.value > 1 end)
+    local ____arg_2 = sq:mapValues(function(it) return it.value + 1 end)
     local ____receiver = sq:maxByOrNull(function(it) return it.value end)
-    print(__K2L_Str(sq:map(function(it) return it.key .. it.value end)) .. " " .. __K2L_Str(sq:filter(function(it) return it.value > 1 end)) .. " " .. __K2L_Str(sq:mapValues(function(it) return it.value + 1 end)) .. " " .. __K2L_Str(____receiver and ____receiver.key))
-    for k, v in sq:iter() do
+    print(__K2L_Str(____arg) .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(____arg_2) .. " " .. __K2L_Str(____receiver and ____receiver.key))
+    local ____keys, ____values, ____n_1 = sq:____arrays()
+    for ____i_1 = 1, ____n_1 do
+        local k, v = ____keys[____i_1], ____values[____i_1]
         io.write(k .. ":" .. v .. " ")
     end
     print(sq:getOrDefault("zz", -1))
@@ -404,9 +411,9 @@ local function iterators()
     end
     local w = Words.new("the quick brown fox")
     print(__K2L_Str(w:map(function(it) return #it end)) .. " " .. w:count() .. " " .. w:first() .. " " .. __K2L_Str(w:sortedBy(function(it) return it end, true)) .. " " .. w:joinToString("+"))
-    local ____list_1 = w:toList()
-    for ____i_1 = 1, ____list_1.size do
-        local x = ____list_1[____i_1]
+    local ____items_1, ____n_2 = w:____array()
+    for ____i_2 = 1, ____n_2 do
+        local x = ____items_1[____i_2]
         io.write(x .. ".")
     end
     print()

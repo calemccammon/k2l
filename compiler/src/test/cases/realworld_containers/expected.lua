@@ -25,6 +25,7 @@ local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_ReverseOrder = ____lualib.__K2L_ReverseOrder
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
 local __K2L_SetOf = ____lualib.__K2L_SetOf
@@ -133,8 +134,14 @@ end
 
 function Vec:mapTo(transform)
     local out = Vec.new(math.max(self.size, 1))
-    for _, x in ipairs(self:toList()) do
+    local ____items, ____n = self:____array()
+    local ____mod = self.____modCount
+    for ____i = 1, ____n do
+        local x = ____items[____i]
         out:put(transform(x))
+        if self.____modCount ~= ____mod and self:____comodified(____i, ____n) then
+            break
+        end
     end
     return out
 end
@@ -146,31 +153,50 @@ end
 function Vec:of(...)
     local xs = __K2L_ArrayOf(...)
     local ____value = Vec.new(math.max(xs.size, 1))
-    for _, it in ipairs(xs) do
+    for ____i_1 = 1, xs.size do
+        local it = xs[____i_1]
         ____value:put(it)
     end
     return ____value
 end
 
 local function putAll(self, items)
-    for _, it in ipairs(items:toList()) do
+    local ____items_1, ____n_1 = items:____array()
+    local ____mod_1 = items.____modCount
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
         self:put(it)
+        if items.____modCount ~= ____mod_1 and items:____comodified(____i_2, ____n_1) then
+            break
+        end
     end
 end
 
 local function maxOrNull(____this_1)
     local best = nil
-    for _, x in ipairs(____this_1:toList()) do
+    local ____items_2, ____n_2 = ____this_1:____array()
+    local ____mod_2 = ____this_1.____modCount
+    for ____i_3 = 1, ____n_2 do
+        local x = ____items_2[____i_3]
         if best == nil or __K2L_Compare(x, best) > 0 then
             best = x
+        end
+        if ____this_1.____modCount ~= ____mod_2 and ____this_1:____comodified(____i_3, ____n_2) then
+            break
         end
     end
     return best
 end
 
 local function copy(from, to)
-    for _, x in ipairs(from:toList()) do
+    local ____items_3, ____n_3 = from:____array()
+    local ____mod_3 = from.____modCount
+    for ____i_4 = 1, ____n_3 do
+        local x = ____items_3[____i_4]
         to:put(x)
+        if from.____modCount ~= ____mod_3 and from:____comodified(____i_4, ____n_3) then
+            break
+        end
     end
 end
 
@@ -184,7 +210,7 @@ function Matrix:____init(rows, cols, init)
     self.cols = cols
     self.data = __K2L_ListOfSize(self.rows * self.cols, function(it)
         return init(__K2L_IDiv(it, self.cols), __K2L_IRem(it, self.cols))
-    end, true)
+    end, "[D")
 end
 
 function Matrix:get(r, c)
@@ -281,9 +307,16 @@ function Graph:bfs(start)
     local queue = __K2L_ArrayDeque.new(__K2L_SingletonListOf(start))
     while queue:isNotEmpty() do
         local n = queue:removeFirst()
-        for _, m in ipairs((self.edges:get(n) or __K2L_ListOf()):toList()) do
+        local ____collection = self.edges:get(n) or __K2L_ReadOnlySetOf()
+        local ____items_4, ____n_4 = ____collection:____array()
+        local ____mod_4 = ____collection.____modCount
+        for ____i_5 = 1, ____n_4 do
+            local m = ____items_4[____i_5]
             if seen:add(m) then
                 queue:addLast(m)
+            end
+            if ____collection.____modCount ~= ____mod_4 and ____collection:____comodified(____i_5, ____n_4) then
+                break
             end
         end
     end
@@ -292,18 +325,31 @@ end
 
 function Graph:topo()
     local inDegree = self.edges:getKeys():associateWith(function(it) return 0 end):toMutableMap()
-    for _, it in ipairs(self.edges:getValues():flatten()) do
+    local ____list = self.edges:getValues():flatten()
+    local ____mod_5 = ____list.____modCount
+    for ____i_6 = 1, ____list.size do
+        local it = ____list[____i_6]
         inDegree:set(it, inDegree:getValue(it) + 1)
+        if ____list.____modCount ~= ____mod_5 and ____list:____comodified(____i_6) then
+            break
+        end
     end
     local ready = inDegree:filterValues(function(it) return it == 0 end):getKeys():toMutableList()
     local out = __K2L_ListOf()
     while ready:isNotEmpty() do
         local n = ready:removeAt(0)
         out:add(n)
-        for _, m in ipairs(self.edges:getValue(n):toList()) do
+        local ____collection_1 = self.edges:getValue(n)
+        local ____items_5, ____n_5 = ____collection_1:____array()
+        local ____mod_6 = ____collection_1.____modCount
+        for ____i_7 = 1, ____n_5 do
+            local m = ____items_5[____i_7]
             inDegree:set(m, inDegree:getValue(m) - 1)
             if inDegree:get(m) == 0 then
                 ready:add(m)
+            end
+            if ____collection_1.____modCount ~= ____mod_6 and ____collection_1:____comodified(____i_7, ____n_5) then
+                break
             end
         end
     end
@@ -314,6 +360,7 @@ function Graph:topo()
 end
 
 local Version = __K2L_Class("containers.Version")
+Version.____comparable = true
 
 function Version:____init(major, minor)
     self.major = major
@@ -363,13 +410,16 @@ local function main()
     copy(numbers, anything)
     anything:put("text")
     local src = anything
+    local ____arg_2 = src.size
     local ____result_2
     ____result_2 = anything:filter(function(x) return math.type(x) == "integer" end)
+    local ____arg_3 = ____result_2
     local ____result_3
     ____result_3 = anything:filter(function(x) return __K2L_IsCharSequence(x) end)
+    local ____arg_4 = ____result_3
     local ____result_4
     ____result_4 = src:count(function(it) return type(it) == "string" end)
-    print(src.size .. " ints=" .. __K2L_Str(____result_2) .. " texts=" .. __K2L_Str(____result_3) .. " strings=" .. ____result_4)
+    print(____arg_2 .. " ints=" .. __K2L_Str(____arg_3) .. " texts=" .. __K2L_Str(____arg_4) .. " strings=" .. ____result_4)
     print(__K2L_Str(maxOrNull(Vec:of(Version.new(1, 2), Version.new(1, 10), Version.new(0, 9)))))
     print(Vec.new():isEmpty() and maxOrNull(Vec.new()) == nil)
     local m = Matrix.new(2, 3, function(r, c) return r * 3 + c + 0.0 end)
@@ -387,10 +437,16 @@ local function main()
     print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2, 1, 3, 2, 1):map(function(it) return cache:get(it) end)))
     print("hits=" .. cache.hits .. " misses=" .. cache.misses .. " loads=" .. loads .. " keys=" .. __K2L_Str(cache:getKeys()))
     local g = Graph.new()
-    for _, ____it_3 in ipairs(__K2L_ReadOnlyListOf(__K2L_Pair.new("shirt", "tie"), __K2L_Pair.new("tie", "jacket"), __K2L_Pair.new("pants", "shoes"), __K2L_Pair.new("pants", "belt"), __K2L_Pair.new("belt", "jacket"), __K2L_Pair.new("shirt", "belt"))) do
+    local ____list_1 = __K2L_ReadOnlyListOf(__K2L_Pair.new("shirt", "tie"), __K2L_Pair.new("tie", "jacket"), __K2L_Pair.new("pants", "shoes"), __K2L_Pair.new("pants", "belt"), __K2L_Pair.new("belt", "jacket"), __K2L_Pair.new("shirt", "belt"))
+    local ____mod_7 = ____list_1.____modCount
+    for ____i_8 = 1, ____list_1.size do
+        local ____it_3 = ____list_1[____i_8]
         do
             local a, b = ____it_3.first, ____it_3.second
             g:edge(a, b)
+        end
+        if ____list_1.____modCount ~= ____mod_7 and ____list_1:____comodified(____i_8) then
+            break
         end
     end
     print(__K2L_Str(g:bfs("shirt")))
@@ -400,8 +456,13 @@ local function main()
     print(__K2L_Str(____receiver_2 and ____receiver_2.message))
     local comparators = __K2L_ReadOnlyListOf(__K2L_NaturalOrder, __K2L_ReverseOrder, __K2L_CompareBy(function(it) return it.minor end))
     local versions = __K2L_ReadOnlyListOf(Version.new(2, 0), Version.new(1, 5), Version.new(1, 12))
-    for _, it in ipairs(comparators) do
+    local ____mod_8 = comparators.____modCount
+    for ____i_9 = 1, comparators.size do
+        local it = comparators[____i_9]
         print(__K2L_Str(versions:sortedWith(it)))
+        if comparators.____modCount ~= ____mod_8 and comparators:____comodified(____i_9) then
+            break
+        end
     end
 end
 

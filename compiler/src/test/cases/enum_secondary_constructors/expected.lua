@@ -61,7 +61,9 @@ Color.BLUE = Color.new1("BLUE", 2)
 Color.____values = {Color.RED, Color.GREEN, Color.BLUE}
 
 local function main()
-    for _, c in ipairs(__K2L_EnumValues(Color)) do
+    local ____list = __K2L_EnumValues(Color)
+    for ____i = 1, ____list.size do
+        local c = ____list[____i]
         print(c:describe())
     end
     print(__K2L_EnumValueOf(Color, "GREEN").ordinal)

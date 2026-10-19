@@ -3,6 +3,7 @@ package dev.k2l.transform
 import dev.k2l.LuaTarget
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.types.KaFlexibleType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.KtExpression
 
@@ -72,12 +73,12 @@ object StdlibMappings {
     private fun io() {
         def("kotlin/io/println") {
             if (args.isEmpty()) return@def lua("print")
-            val text = printable(arg(0), argTypes[0])
+            val text = printable(unboxed(arg(0), 0), argTypes[0])
             // Lua 5.1's print stops at a NUL character; io.write writes whole strings
             val isText = text != arg(0) || isTextual(argTypes[0])
             if (target == LuaTarget.Lua51 && isText) lua("io.write", output(text), LuaString("\n")) else lua("print", output(text))
         }
-        def("kotlin/io/print") { lua("io.write", output(str(arg(0), argTypes[0]))) }
+        def("kotlin/io/print") { lua("io.write", output(str(unboxed(arg(0), 0), argTypes[0]))) }
         def("kotlin/io/readLine", "kotlin/io/readlnOrNull", "kotlin/io/readln") { lua("io.read") }
     }
 
@@ -112,7 +113,9 @@ object StdlibMappings {
 
     private fun anyAndEnum() {
         def("kotlin/Any.equals") { lualib("Equals", self, arg(0)) }
-        def("kotlin/Throwable.message") { LuaIndex(self, LuaString("message")) }
+        def("kotlin/Throwable.message", *FORMATTER_EXCEPTIONS.map { "java/util/$it.message" }.toTypedArray()) {
+            LuaIndex(self, LuaString("message"))
+        }
         def("kotlin/Throwable.cause") { LuaIndex(self, LuaString("cause")) }
 
         def("kotlin/isInitialized") { transformer.lateinitIsInitialized(element) }
@@ -134,6 +137,9 @@ object StdlibMappings {
             def("kotlin/$t.xor") { if (isLong && !target.hasIntegers) longBits("LBXor") else bitwise("BXor", LuaBinOp.BXor) }
             def("kotlin/$t.inv") { if (target.hasIntegers) LuaUnary(LuaUnOp.BNot, self) else floatBits(isLong, "BNot") }
         }
+        // Boolean's infix xor (both operands are evaluated, as `~=` does) and not()
+        def("kotlin/Boolean.xor") { LuaBinary(LuaBinOp.Ne, self, arg(0)) }
+        def("kotlin/Boolean.not") { LuaUnary(LuaUnOp.Not, self) }
         shifts()
     }
 
@@ -262,6 +268,17 @@ object StdlibMappings {
             UnsignedMappings.compareTo(site) ?: LuaCall(site.ref("Compare", "__K2L_Compare"), listOf(site.self, site.arg(0)))
 
         else -> null
+    }
+
+    /**
+     * Argument [i] passed to a primitive parameter (`println(message: Int)`): a platform-typed value (`treeMap.higherKey(k)` is
+     * `Int!`) is unboxed there, so null throws `NullPointerException` as on the JVM.
+     */
+    private fun CallSite.unboxed(value: LuaExpr, i: Int): LuaExpr = with(session) {
+        val type = argTypes.getOrNull(i) as? KaFlexibleType ?: return value
+        val parameter = parameterTypes.getOrNull(i) ?: return value
+        val primitive = parameter.isPrimitive && !parameter.isMarkedNullable
+        if (primitive && type.upperBound.isMarkedNullable) lualib("NotNull", value) else value
     }
 
     /** Lua's `print` formats integers, strings and booleans the way Kotlin does. */

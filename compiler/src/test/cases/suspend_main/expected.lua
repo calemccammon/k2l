@@ -29,14 +29,21 @@ end
 local function main()
     print("main runs as a coroutine: " .. double(21))
     local results = __K2L_ListOf()
-    for _, name in ipairs(__K2L_ReadOnlyListOf("a", "b")) do
+    local ____list = __K2L_ReadOnlyListOf("a", "b")
+    for ____i = 1, ____list.size do
+        local name = ____list[____i]
         __K2L_StartCoroutine(function() return results:add(request(name)) end, __K2L_Continuation.new(__K2L_EmptyCoroutineContext, function(it) end))
     end
     print("pending " .. pending.size)
-    local ____list = pending
-    for i = 0, ____list.size - 1 do
-        local cont = ____list[i + 1]
+    local ____list_1 = pending
+    local ____mod = ____list_1.____modCount
+    for ____i_1 = 1, ____list_1.size do
+        local cont = ____list_1[____i_1]
+        local i = ____i_1 - 1
         cont:resumeWith(__K2L_Result.success("reply" .. i))
+        if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_1) then
+            break
+        end
     end
     print(__K2L_Str(results))
     local ____ok, ____result = pcall(function()

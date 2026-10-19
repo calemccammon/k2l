@@ -1,0 +1,42 @@
+product repository (5 items, 5 saves)
+rejected: invalid product SKU:XX0000: price must be positive
+conflict on SKU:KB0001: stale product SKU:KB0001: v1 <= v1
+bad sku: SKU must have 6 characters: bad
+all products (5):
+  SKU:CB0003 Cable $4.99 v1
+  SKU:HD0001 Headset $74.50 v1
+  SKU:KB0001 Keyboard $54.99 v2
+  SKU:MN0002 Monitor $189.00 v1
+  SKU:MS0001 Mouse $19.99 v1
+range HD..MS (3):
+  headset
+  keyboard
+  monitor
+[insert eu-7, insert us-2, insert eu-3, evict eu-7, insert ap-1]
+customers (3):
+  ap-1 Kenji
+  eu-3 Olga
+  us-2 *Bob*
+cheap or m*: [cable, monitor, mouse]
+not cheap: [headset, keyboard, monitor]
+cheap and m*, by price desc: [Product(id=SKU:MS0001, name=mouse, priceCents=1999, version=1)]
+priciest: monitor
+top 2: [SKU:MN0002, SKU:HD0001]
+orders (3):
+  #1 us-2 qty=2 total=$378.00
+  #2 eu-3 qty=3 total=$99.48
+  #3 eu-7 qty=4 total=$69.96
+pricing failed: no entity SKU:ZZ9999
+totals: {1=$378.00, 2=$99.48, 3=$69.96}, max $378.00, sum $547.44
+first by key: (1, $378.00)
+max name: mouse, max price: $189.00
+buckets: {0=[cable, mouse], 1=[headset, keyboard], 3=[monitor]}
+pages: [[cable, headset], [keyboard, monitor], [mouse]]
+copied 5 products, 3 customers
+[Product(SKU:CB0003), Product(SKU:HD0001), Product(SKU:KB0001), Product(SKU:MN0002), Product(SKU:MS0001), Customer(us-2), Customer(eu-3), Customer(ap-1)]
+named: 5, repo with 5 entities, repo with 3 entities
+product repository (5 items, 6 saves): [insert SKU:HD0001, update SKU:KB0001]
+customer repository (3 items, 4 saves): [evict eu-7, insert ap-1]
+order repository (3 items, 3 saves): [insert 1, insert 2]
+{7=[product], 8=[customer], 5=[order]}
+found cable true false

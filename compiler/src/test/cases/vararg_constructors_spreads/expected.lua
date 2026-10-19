@@ -7,6 +7,7 @@ local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Spread = ____lualib.__K2L_Spread
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
 local spreads
@@ -78,11 +79,11 @@ local function main()
     print(__K2L_Str(Tags.new()))
     print(__K2L_Str(Tags.new("a")))
     print(Tags.new("a", "b", "c").names.size)
-    local more = __K2L_ArrayOf("y", "z")
+    local more = __K2L_TypedArrayOf("[Ljava.lang.String;", "y", "z")
     print(__K2L_Str(Tags.new("x", __K2L_Unpack(more))))
     print(__K2L_Str(Batch.new(1)))
     print(__K2L_Str(Batch.new(2, 5, 6)))
-    local xs = __K2L_ArrayOf(7, 8)
+    local xs = __K2L_TypedArrayOf("[I", 7, 8)
     print(__K2L_Str(Batch.new(3, __K2L_Spread("s.", xs, 9))))
     print(__K2L_Str(Batch.new1("four", 1, 2)))
     print(__K2L_Str(Labeled.new("ab", 4, 4)))
@@ -98,18 +99,18 @@ local function total(label, ...)
 end
 
 function spreads()
-    local a = __K2L_ArrayOf("a", "b")
-    local n = __K2L_ArrayOf(1, 2, 3)
-    local none = __K2L_ArrayOf()
+    local a = __K2L_TypedArrayOf("[Ljava.lang.String;", "a", "b")
+    local n = __K2L_TypedArrayOf("[I", 1, 2, 3)
+    local none = __K2L_TypedArrayOf("[Ljava.lang.String;")
     print(__K2L_Str(__K2L_ReadOnlyListOf(__K2L_Spread("s.", a, "c"))))
     print(__K2L_Str(__K2L_ListOf("0", __K2L_Spread("ss.", a, a, "z"))))
-    print(__K2L_Str(__K2L_ArrayOf(__K2L_Spread("s..", a, nil, "q")):toList()))
+    print(__K2L_Str(__K2L_TypedArrayOf("[Ljava.lang.String;", __K2L_Spread("s..", a, nil, "q")):toList()))
     print(__K2L_ReadOnlyListOf(__K2L_Spread("s.s", none, nil, a)).size)
     print(total("t", __K2L_Spread("s.", n, 10)))
     print(total("u", __K2L_Spread("ss", n, n)))
     print(total("v", 5, __K2L_Spread("s.", n, 6)))
     print(__K2L_Str(__K2L_ReadOnlySetOf(__K2L_Spread("s.", a, "a"))))
-    print(__K2L_Str(Tags.new(__K2L_Spread("s.s", a, "!", __K2L_ArrayOf("?")))))
+    print(__K2L_Str(Tags.new(__K2L_Spread("s.s", a, "!", __K2L_TypedArrayOf("[Ljava.lang.String;", "?")))))
 end
 
 main()

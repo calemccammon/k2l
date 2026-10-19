@@ -1,6 +1,5 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Bits = ____lualib.__K2L_Bits
 local __K2L_CheckStep = ____lualib.__K2L_CheckStep
 local __K2L_Class = ____lualib.__K2L_Class
@@ -20,15 +19,16 @@ local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_Text = ____lualib.__K2L_Text
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Ushr = ____lualib.__K2L_Ushr
 
 local Sudoku = __K2L_Class("Sudoku")
 
 function Sudoku:____init(puzzle)
-    self.grid = __K2L_ListOfSize(81, 0, true)
-    self.rows = __K2L_ListOfSize(9, 0, true)
-    self.cols = __K2L_ListOfSize(9, 0, true)
-    self.boxes = __K2L_ListOfSize(9, 0, true)
+    self.grid = __K2L_ListOfSize(81, 0, "[I")
+    self.rows = __K2L_ListOfSize(9, 0, "[I")
+    self.cols = __K2L_ListOfSize(9, 0, "[I")
+    self.boxes = __K2L_ListOfSize(9, 0, "[I")
     self.guesses = 0
     local digits = __K2L_Text.filter(puzzle, function(it) return it:match("^%d$") ~= nil or it == "." end)
     if #digits ~= 81 then
@@ -131,11 +131,11 @@ local function tsp(dist)
     local full = __K2L_Shl(1, n)
     local inf = __K2L_IDiv(2147483647, 2)
     local dp = __K2L_ListOfSize(full, function(it)
-        return __K2L_ListOfSize(n, function(it) return inf end, true)
-    end, true)
+        return __K2L_ListOfSize(n, function(it) return inf end, "[I")
+    end, "[[I")
     local parent = __K2L_ListOfSize(full, function(it)
-        return __K2L_ListOfSize(n, function(it) return -1 end, true)
-    end, true)
+        return __K2L_ListOfSize(n, function(it) return -1 end, "[I")
+    end, "[[I")
     local ____object_8 = dp:get(1)
     ____object_8:set(0, 0)
     for mask = 1, full - 1 do
@@ -214,7 +214,7 @@ local BitSieve = __K2L_Class("BitSieve")
 
 function BitSieve:____init(limit)
     self.limit = limit
-    self.bits = __K2L_ListOfSize(__K2L_IDiv(self.limit, 32) + 1, 0, true)
+    self.bits = __K2L_ListOfSize(__K2L_IDiv(self.limit, 32) + 1, 0, "[I")
     self:set(0)
     self:set(1)
     local p = 2
@@ -259,7 +259,7 @@ local function main()
     local ____receiver_1 = __K2L_RunCatching(function() return Sudoku.new("11" .. ("."):rep(79)) end):exceptionOrNull()
     print(__K2L_Str(____receiver_1 and ____receiver_1.message))
     local cities = __K2L_ReadOnlyListOf("A", "B", "C", "D", "E", "F")
-    local dist = __K2L_ArrayOf(__K2L_ArrayOf(0, 12, 10, 19, 8, 14), __K2L_ArrayOf(12, 0, 3, 7, 2, 11), __K2L_ArrayOf(10, 3, 0, 6, 20, 4), __K2L_ArrayOf(19, 7, 6, 0, 4, 9), __K2L_ArrayOf(8, 2, 20, 4, 0, 13), __K2L_ArrayOf(14, 11, 4, 9, 13, 0))
+    local dist = __K2L_TypedArrayOf("[[I", __K2L_TypedArrayOf("[I", 0, 12, 10, 19, 8, 14), __K2L_TypedArrayOf("[I", 12, 0, 3, 7, 2, 11), __K2L_TypedArrayOf("[I", 10, 3, 0, 6, 20, 4), __K2L_TypedArrayOf("[I", 19, 7, 6, 0, 4, 9), __K2L_TypedArrayOf("[I", 8, 2, 20, 4, 0, 13), __K2L_TypedArrayOf("[I", 14, 11, 4, 9, 13, 0))
     local ____destructured_1 = tsp(dist)
     local cost, tour = ____destructured_1.first, ____destructured_1.second
     print("tsp cost=" .. cost .. " tour=" .. tour:joinToString("->", nil, nil, nil, nil, function(it) return cities:get(it) end))
@@ -269,7 +269,7 @@ local function main()
         return __K2L_StringPadStart(__K2L_Num.toRadix(it, 2), 3, "0")
     end)) .. " back=" .. __K2L_Str(codes:map(fromGray)))
     print("one bit apart: " .. tostring(codes:zipWithNext(function(a, b) return __K2L_Num.countOneBits(a ~ b) end):all(function(it) return it == 1 end)))
-    print("subsets of [3,34,4,12,5,2] summing to 9: " .. __K2L_Str(subsetsWithSum(__K2L_ArrayOf(3, 34, 4, 12, 5, 2), 9)))
+    print("subsets of [3,34,4,12,5,2] summing to 9: " .. __K2L_Str(subsetsWithSum(__K2L_TypedArrayOf("[I", 3, 34, 4, 12, 5, 2), 9)))
     local x = 182
     print("bits of " .. x .. ": count=" .. __K2L_Num.countOneBits(x) .. " lowest=" .. __K2L_Bits.lowest32(x) .. " highest=" .. __K2L_Bits.highest32(x) .. " tz=" .. __K2L_Num.countTrailingZeroBits(x) .. " lz=" .. __K2L_Num.countLeadingZeroBits(x))
     print("swap nibbles: " .. __K2L_Num.toRadix(__K2L_Shl(x & 15, 4) | __K2L_Shr(x & 240, 4), 2) .. " reversed bits: " .. __K2L_Ushr(__K2L_Num.reverseInt(x), 24))

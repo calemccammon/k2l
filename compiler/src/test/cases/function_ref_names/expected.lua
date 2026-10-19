@@ -78,8 +78,14 @@ local function main()
     print(make.name)
     print(make("Hi"):greet("there"))
     local ____table = __K2L_ReadOnlyMapOf(__K2L_Pair.new("a", __K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice)), __K2L_Pair.new("b", __K2L_FunctionRef.new("negate", "/negate(kotlin.Int)", negate)))
-    for key, fn in ____table:iter() do
+    local ____keys, ____values, ____n = ____table:____arrays()
+    local ____mod = ____table.____modCount
+    for ____i = 1, ____n do
+        local key, fn = ____keys[____i], ____values[____i]
         print(key .. ": " .. fn.name .. " " .. fn(10))
+        if ____table.____modCount ~= ____mod and ____table:____comodified(____i, ____n) then
+            break
+        end
     end
     print(__K2L_Str(sortedNames(__K2L_ReadOnlyListOf(__K2L_FunctionRef.new("shout", "/shout(kotlin.String)", shout), __K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice)))))
     print("twice")

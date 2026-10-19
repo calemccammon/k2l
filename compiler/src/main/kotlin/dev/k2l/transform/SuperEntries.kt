@@ -206,3 +206,28 @@ internal fun FileTransformer.closedRangeMembers(c: KtClassOrObject, ref: LuaExpr
         emit(assign(LuaIndex(ref, LuaString(name)), LuaIndex(lualibRef("Collections", CLOSED_RANGE_MIXIN), LuaString(name))))
     }
 }
+
+/**
+ * `C.____comparable = true` for a class, object or interface listing `Comparable` among its supertypes: `__K2L_IsComparable`
+ * reads it, and subclasses and implementing classes inherit it through their metatables (a `compareTo` alone is not enough).
+ */
+internal fun FileTransformer.comparableFlag(c: KtClassOrObject, ref: LuaExpr) {
+    if (listsComparable(c)) emit(assign(LuaIndex(ref, LuaString(COMPARABLE_FLAG)), LuaBool(true)))
+}
+
+private fun FileTransformer.listsComparable(c: KtClassOrObject): Boolean = with(session) {
+    c.superTypeListEntries.any { it.typeReference?.type?.expandedSymbol?.classId?.asString() in COMPARABLE_CLASSES }
+}
+
+/**
+ * A companion without a table of its own is its class's table, which holds what makes the instances Comparable (the flag above,
+ * an enum's `____values`); as a value it is not Comparable, which `C.____companion = true` (read raw) tells.
+ */
+internal fun FileTransformer.sharedCompanionFlag(owner: KtClassOrObject, ref: LuaExpr) {
+    val comparable = (owner is KtClass && owner.isEnum()) || classes.hierarchy(owner).any { listsComparable(it) }
+    if (comparable) emit(assign(LuaIndex(ref, LuaString("____companion")), LuaBool(true)))
+}
+
+private const val COMPARABLE_FLAG = "____comparable"
+
+private val COMPARABLE_CLASSES = setOf("kotlin/Comparable", "java/lang/Comparable")

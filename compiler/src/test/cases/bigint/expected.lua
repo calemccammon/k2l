@@ -81,12 +81,22 @@ local function divisions()
     print("-- division")
     local values = __K2L_ReadOnlyListOf("7", "-7", "1000000000000000000000", "-1000000000000000000001")
     local divisors = __K2L_ReadOnlyListOf("2", "-2", "3", "123456789123456789", "-99999999999999999999")
-    for _, a in ipairs(values) do
-        for _, b in ipairs(divisors) do
+    local ____mod_1 = values.____modCount
+    for ____i_1 = 1, values.size do
+        local a = values[____i_1]
+        local ____mod = divisors.____modCount
+        for ____i = 1, divisors.size do
+            local b = divisors[____i]
             local x = __K2L_BigInteger.parse(a)
             local y = __K2L_BigInteger.parse(b)
             local qr = x:divideAndRemainder(y)
             print(a .. " / " .. b .. " = " .. __K2L_Str(x:divide(y)) .. " rem " .. __K2L_Str(x:remainder(y)) .. " mod " .. __K2L_Str(x:mod(y:abs())) .. " qr=" .. __K2L_Str(qr:get(0)) .. "," .. __K2L_Str(qr:get(1)) .. " " .. tostring(__K2L_Equals(x:divide(y):multiply(y):add(x:remainder(y)), x)))
+            if divisors.____modCount ~= ____mod and divisors:____comodified(____i) then
+                break
+            end
+        end
+        if values.____modCount ~= ____mod_1 and values:____comodified(____i_1) then
+            break
         end
     end
     local huge = __K2L_BigInteger.parse("98765432109876543210987654321098765432109876543210")
@@ -102,17 +112,27 @@ end
 local function bits()
     print("-- bits")
     local values = __K2L_ReadOnlyListOf("0", "1", "-1", "255", "-256", "123456789012345678901234567890", "-123456789012345678901234567890")
-    for _, a in ipairs(values) do
+    local ____mod_2 = values.____modCount
+    for ____i_2 = 1, values.size do
+        local a = values[____i_2]
         local x = __K2L_BigInteger.parse(a)
         print(a .. ": bitLength=" .. x:bitLength() .. " bitCount=" .. x:bitCount() .. " lowest=" .. x:getLowestSetBit() .. " not=" .. __K2L_Str(x:bnot()) .. " signum=" .. x:signum())
         print("  shl 5=" .. __K2L_Str(x:shiftLeft(5)) .. " shr 5=" .. __K2L_Str(x:shiftRight(5)) .. " shl 100=" .. __K2L_Str(x:shiftLeft(100)) .. " shr 100=" .. __K2L_Str(x:shiftRight(100)) .. " shr -3=" .. __K2L_Str(x:shiftRight(-3)))
+        if values.____modCount ~= ____mod_2 and values:____comodified(____i_2) then
+            break
+        end
     end
     local ____pairs = __K2L_ReadOnlyListOf(__K2L_Pair.new("12345678901234567890", "-987654321"), __K2L_Pair.new("-5", "3"), __K2L_Pair.new("-123456789012345678901234567890", "-7"), __K2L_Pair.new("0", "-1"))
-    for _, ____item in ipairs(____pairs) do
+    local ____mod_3 = ____pairs.____modCount
+    for ____i_3 = 1, ____pairs.size do
+        local ____item = ____pairs[____i_3]
         local a, b = ____item.first, ____item.second
         local x = __K2L_BigInteger.parse(a)
         local y = __K2L_BigInteger.parse(b)
         print(a .. ", " .. b .. ": and=" .. __K2L_Str(x:band(y)) .. " or=" .. __K2L_Str(x:bor(y)) .. " xor=" .. __K2L_Str(x:bxor(y)) .. " andNot=" .. __K2L_Str(x:andNot(y)))
+        if ____pairs.____modCount ~= ____mod_3 and ____pairs:____comodified(____i_3) then
+            break
+        end
     end
     local m = __K2L_BigInteger.parse("-1000000000000000000000")
     print(m:testBit(0))
@@ -129,13 +149,23 @@ end
 local function conversions()
     print("-- conversions")
     local values = __K2L_ReadOnlyListOf("0", "1", "-1", "2147483647", "2147483648", "-2147483649", "4294967296", "123456789012345678901234567890", "-123456789012345678901234567890")
-    for _, a in ipairs(values) do
+    local ____mod_4 = values.____modCount
+    for ____i_4 = 1, values.size do
+        local a = values[____i_4]
         local x = __K2L_BigInteger.parse(a)
         print(a .. ": int=" .. x:toInt() .. " hash=" .. x:hashCode() .. " double=" .. __K2L_Str(x:toDouble()))
+        if values.____modCount ~= ____mod_4 and values:____comodified(____i_4) then
+            break
+        end
     end
     local longs = __K2L_ReadOnlyListOf("4503599627370496", "-4503599627370497", "123456789012", "9007199254740992", "4294967295")
-    for _, a in ipairs(longs) do
+    local ____mod_5 = longs.____modCount
+    for ____i_5 = 1, longs.size do
+        local a = longs[____i_5]
         print(a .. ": long=" .. __K2L_BigInteger.parse(a):toLong() .. " hash=" .. __K2L_BigInteger.parse(a):hashCode())
+        if longs.____modCount ~= ____mod_5 and longs:____comodified(____i_5) then
+            break
+        end
     end
     print(__K2L_BigInteger.parse("18446744073709551616"):toLong())
     print(__K2L_BigInteger.parse("18446744073709551617"):toLong())
@@ -195,7 +225,9 @@ local function comparisons()
     print(__K2L_ReadOnlyListOf(a, b, c):distinct().size)
     print(__K2L_ReadOnlySetOf(a, c, b).size)
     local counts = __K2L_MapOf()
-    for _, x in ipairs(__K2L_ReadOnlyListOf(a, b, c, a)) do
+    local ____list = __K2L_ReadOnlyListOf(a, b, c, a)
+    for ____i_6 = 1, ____list.size do
+        local x = ____list[____i_6]
         counts:set(x, (counts:get(x) or 0) + 1)
     end
     print(__K2L_Str(counts))

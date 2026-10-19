@@ -62,6 +62,7 @@ do
 end
 Shape.SQUARE = Shape.new("SQUARE", 2, 4)
 Shape.____values = {Shape.CIRCLE, Shape.TRIANGLE, Shape.SQUARE}
+Shape.____companion = true
 
 function Shape:byCorners(n)
     return __K2L_EnumValues(Shape):firstOrNull(function(it) return it.corners == n end)
@@ -96,6 +97,7 @@ function Task:equals(other)
 end
 
 local Version = __K2L_Class("Version")
+Version.____comparable = true
 
 function Version:____init(major, minor)
     self.major = major
@@ -139,7 +141,9 @@ local function main()
     print(tostring(__K2L_Compare(c, Level.LOW) > 0) .. " " .. __K2L_Compare(c, Level.CRITICAL))
     print(__K2L_Str(__K2L_SortedSet.new(__K2L_ReadOnlyListOf(Shape.SQUARE, Shape.TRIANGLE, Shape.CIRCLE))))
     print(__K2L_Str(__K2L_SortedMapOf(__K2L_Pair.new(Level.HIGH, 1), __K2L_Pair.new(Level.LOW, 2))))
-    for _, level in ipairs(__K2L_EnumValues(Level)) do
+    local ____list = __K2L_EnumValues(Level)
+    for ____i = 1, ____list.size do
+        local level = ____list[____i]
         local band
         if __K2L_Compare(level, Level.LOW) >= 0 and __K2L_Compare(level, Level.MEDIUM) <= 0 then
             band = "routine"
@@ -153,12 +157,14 @@ local function main()
     local v = Version.new(1, 4)
     local ____bound = Version.new(1, 0)
     local ____bound_1 = Version.new(2, 0)
+    local ____arg = __K2L_Compare(v, ____bound) >= 0 and __K2L_Compare(v, ____bound_1) <= 0
     local ____bound_2 = Version.new(1, 5)
     local ____bound_3 = Version.new(2, 0)
+    local ____arg_1 = __K2L_Compare(v, ____bound_2) >= 0 and __K2L_Compare(v, ____bound_3) <= 0
     local ____bound_4 = Version.new(1, 0)
     local ____bound_5 = Version.new(2, 0)
     local ____value = Version.new(2, 0)
-    print(tostring(__K2L_Compare(v, ____bound) >= 0 and __K2L_Compare(v, ____bound_1) <= 0) .. " " .. tostring(__K2L_Compare(v, ____bound_2) >= 0 and __K2L_Compare(v, ____bound_3) <= 0) .. " " .. tostring(__K2L_Compare(____value, ____bound_4) >= 0 and __K2L_Compare(____value, ____bound_5) <= 0))
+    print(tostring(____arg) .. " " .. tostring(____arg_1) .. " " .. tostring(__K2L_Compare(____value, ____bound_4) >= 0 and __K2L_Compare(____value, ____bound_5) <= 0))
     print(tostring("b" >= "a" and "b" <= "c") .. " " .. tostring("d" >= "a" and "d" <= "c") .. " " .. tostring(2.5 >= 1.0 and 2.5 <= 3.0))
     print(__K2L_Str(Shape:byCorners(3)) .. " " .. __K2L_Str(Shape:byCorners(5)) .. " " .. __K2L_Str(Shape:all()) .. " " .. __K2L_Str(Shape:named("square")))
     print(__K2L_Str(__K2L_RunCatching(function() return Shape:named("hexagon") end):exceptionOrNull()))

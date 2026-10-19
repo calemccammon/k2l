@@ -24,8 +24,13 @@ local function main()
     ____strings.counted()
     print(____strings.calls)
     local shapes = __K2L_ReadOnlyListOf(____shapes.Square.new(2.0), Circle.new(1.0))
-    for _, s in ipairs(shapes) do
+    local ____mod = shapes.____modCount
+    for ____i = 1, shapes.size do
+        local s = shapes[____i]
         print(s.name .. ": " .. __K2L_Str(s:area()) .. " " .. s:describe())
+        if shapes.____modCount ~= ____mod and shapes:____comodified(____i) then
+            break
+        end
     end
     ____shapes.Registry:add(____shapes.Square.new(3.0))
     print(____shapes.Registry:count())

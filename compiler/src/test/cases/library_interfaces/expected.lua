@@ -43,6 +43,7 @@ function ByLength:compare(a, b)
 end
 
 local Version = __K2L_Class("Version")
+Version.____comparable = true
 
 function Version:____init(major, minor)
     self.major = major
@@ -158,7 +159,7 @@ local function comparators()
     print(__K2L_Str(tree))
     local sam = function(a, b) return __K2L_Text.compare(b, a) end
     print(__K2L_Str(words:sortedWith(sam)) .. " " .. sam("a", "b") .. " " .. __K2L_Str(words:sortedWith(__K2L_ReverseComparator(sam))))
-    local arr = words:toTypedArray()
+    local arr = words:toTypedArray("[Ljava.lang.String;")
     __K2L_JdkCollections.sort_array(arr, byLength)
     print(__K2L_Str(arr:toList()))
 end
@@ -181,14 +182,14 @@ local function iterators()
     local u = Upto.new(5)
     print(__K2L_Str(u:map(function(it) return it * it end)) .. " " .. __K2L_Str(u:filter(function(it) return math.fmod(it, 2) == 0 end)) .. " " .. __K2L_Str(u:toList()) .. " " .. u:joinToString("-") .. " " .. u:sum() .. " " .. u:count())
     local total = 0
-    local ____list = u:toList()
-    for ____i = 1, ____list.size do
-        local x = ____list[____i]
+    local ____items, ____n = u:____array()
+    for ____i = 1, ____n do
+        local x = ____items[____i]
         total = total + x
     end
-    local ____list_1 = u:toList()
-    for ____i_1 = 1, ____list_1.size do
-        local it = ____list_1[____i_1]
+    local ____items_1, ____n_1 = u:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
         total = total + it
     end
     print("total " .. total .. " " .. u:first() .. " " .. u:last() .. " " .. tostring(u:contains(3)) .. " " .. __K2L_Str(u:sortedDescending()) .. " " .. __K2L_Str(u:toSet()) .. " " .. __K2L_Str(u:zip(u:drop(1))))
@@ -201,8 +202,13 @@ local function others()
     local tasks = __K2L_ReadOnlyListOf(Task.new("t2"), function()
         print("lambda runnable")
     end)
-    for _, it in ipairs(tasks) do
+    local ____mod = tasks.____modCount
+    for ____i_2 = 1, tasks.size do
+        local it = tasks[____i_2]
         it()
+        if tasks.____modCount ~= ____mod and tasks:____comodified(____i_2) then
+            break
+        end
     end
     print(Answer.new():call())
     local d = Doubler.new()

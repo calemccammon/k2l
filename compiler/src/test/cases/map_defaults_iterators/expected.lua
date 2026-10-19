@@ -6,6 +6,7 @@ local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
@@ -45,14 +46,22 @@ local function defaults()
     print(m:containsKey("missing"))
     print(__K2L_Str(m:getKeys()))
     print(__K2L_Equals(m, base))
-    for k, v in m:iter() do
+    local ____keys, ____values, ____n = m:____arrays()
+    for ____i = 1, ____n do
+        local k, v = ____keys[____i], ____values[____i]
         print(k .. "=" .. v)
     end
     print(base:getValue("a"))
     attempt("noDefault", function() return base:getValue("zz") end)
     local counts = __K2L_JdkCollections.withDefault(__K2L_MapOf(), function(it) return 0 end)
-    for _, w in ipairs(__K2L_StringSplit("a b a c b a", " ")) do
+    local ____list = __K2L_StringSplit("a b a c b a", " ")
+    local ____mod = ____list.____modCount
+    for ____i_1 = 1, ____list.size do
+        local w = ____list[____i_1]
         counts:set(w, counts:getValue(w) + 1)
+        if ____list.____modCount ~= ____mod and ____list:____comodified(____i_1) then
+            break
+        end
     end
     print(__K2L_Str(counts))
     print(counts:getValue("nothing"))
@@ -63,7 +72,7 @@ local function defaults()
     print(__K2L_Str(lists:getValue(2)))
     print(__K2L_Str(lists:map(function(it) return it.key end):sorted()))
     local sorted = __K2L_JdkCollections.withDefault(__K2L_SortedMapOf(__K2L_Pair.new("z", 1), __K2L_Pair.new("y", 2)), function(it) return 99 end)
-    print(sorted:getValue("q"))
+    print(__K2L_NotNull(sorted:getValue("q")))
     print(__K2L_Str(sorted:getKeys()))
 end
 

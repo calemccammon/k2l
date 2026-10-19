@@ -34,25 +34,41 @@ end
 local function main()
     local values = __K2L_ReadOnlyListOf("2", "3", "4", "5", "7", "10", "16", "99", "0.5", "0.1", "0.01", "0.25", "0.0016", "100", "1E+4", "1E-4", "1E+3", "1E+2", "2.000", "2.25000000", "6.25", "25.00", "1.00", "9.999999", "123456789", "0.000123", "1.5E-7", "1234.5678", "4E+2", "12345678901234567890123.456", "1E+100", "1E-99", "0", "0.00", "0E+4", "15241578750190521", "1.4142135623730950488", "0.0000000001", "1000000", "999999999999999999999999")
     local precisions = __K2L_ReadOnlyListOf(1, 2, 3, 7, 15, 16, 20, 34)
-    for _, mode in ipairs(__K2L_ReadOnlyListOf(__K2L_RoundingMode.HALF_UP, __K2L_RoundingMode.HALF_EVEN, __K2L_RoundingMode.DOWN, __K2L_RoundingMode.UP)) do
+    local ____list = __K2L_ReadOnlyListOf(__K2L_RoundingMode.HALF_UP, __K2L_RoundingMode.HALF_EVEN, __K2L_RoundingMode.DOWN, __K2L_RoundingMode.UP)
+    for ____i_1 = 1, ____list.size do
+        local mode = ____list[____i_1]
         print("== " .. __K2L_Str(mode))
-        for _, value in ipairs(values) do
+        local ____mod = values.____modCount
+        for ____i = 1, values.size do
+            local value = values[____i]
             print(value .. ": " .. precisions:joinToString(" | ", nil, nil, nil, nil, function(it)
                 return root(value, __K2L_MathContext.new(it, mode))
             end))
+            if values.____modCount ~= ____mod and values:____comodified(____i) then
+                break
+            end
         end
     end
     print("== other modes")
-    for _, value in ipairs(__K2L_ReadOnlyListOf("2", "3", "0.5", "1E+3", "25.00", "10")) do
-        for _, mode in ipairs(__K2L_ReadOnlyListOf(__K2L_RoundingMode.HALF_DOWN, __K2L_RoundingMode.FLOOR, __K2L_RoundingMode.CEILING)) do
+    local ____list_1 = __K2L_ReadOnlyListOf("2", "3", "0.5", "1E+3", "25.00", "10")
+    for ____i_3 = 1, ____list_1.size do
+        local value = ____list_1[____i_3]
+        local ____list_2 = __K2L_ReadOnlyListOf(__K2L_RoundingMode.HALF_DOWN, __K2L_RoundingMode.FLOOR, __K2L_RoundingMode.CEILING)
+        for ____i_2 = 1, ____list_2.size do
+            local mode = ____list_2[____i_2]
             print(value .. " " .. __K2L_Str(mode) .. ": " .. __K2L_ReadOnlyListOf(1, 5, 12):joinToString(" | ", nil, nil, nil, nil, function(it)
                 return root(value, __K2L_MathContext.new(it, mode))
             end))
         end
     end
     print("== exact")
-    for _, value in ipairs(values) do
+    local ____mod_1 = values.____modCount
+    for ____i_4 = 1, values.size do
+        local value = values[____i_4]
         print(value .. ": " .. root(value, __K2L_MathContext.UNLIMITED) .. " | " .. root(value, __K2L_MathContext.new(40, __K2L_RoundingMode.UNNECESSARY)) .. " | " .. root(value, __K2L_MathContext.new(2, __K2L_RoundingMode.UNNECESSARY)))
+        if values.____modCount ~= ____mod_1 and values:____comodified(____i_4) then
+            break
+        end
     end
     print("== defaults")
     print(__K2L_Str(__K2L_BigDecimal.parse("2"):sqrt(__K2L_MathContext.DECIMAL128)))

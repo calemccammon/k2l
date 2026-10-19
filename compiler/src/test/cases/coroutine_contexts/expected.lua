@@ -88,8 +88,9 @@ end
 
 local function worker(label, steps)
     for i = 1, steps do
+        local ____arg = nameNow()
         local ____receiver_1 = __K2L_ContextGet(__K2L_CoroutineContext(), UserId)
-        print(label .. " step " .. i .. " in " .. nameNow() .. " user=" .. __K2L_Str(____receiver_1 and ____receiver_1.id))
+        print(label .. " step " .. i .. " in " .. ____arg .. " user=" .. __K2L_Str(____receiver_1 and ____receiver_1.id))
         park()
     end
     print(label .. " done")
@@ -121,8 +122,13 @@ local function main()
     while waiting:isNotEmpty() do
         local ____next = waiting:toList()
         waiting:clear()
-        for _, it in ipairs(____next) do
+        local ____mod = ____next.____modCount
+        for ____i = 1, ____next.size do
+            local it = ____next[____i]
             it:resumeWith(__K2L_Result.success(__K2L_Unit))
+            if ____next.____modCount ~= ____mod and ____next:____comodified(____i) then
+                break
+            end
         end
         dispatcher:runAll()
     end

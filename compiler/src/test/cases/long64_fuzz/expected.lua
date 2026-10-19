@@ -13,6 +13,7 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
+local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 
@@ -32,7 +33,7 @@ local function f(a, b, n)
     sb:append(tostring(math.max(a, b))):append(" "):append(tostring(math.min(a, b))):append(" "):append(tostring(__K2L_Num.coerceIn(a, math.min(b, 0), math.max(b, 0)))):append(" | ")
     sb:append(__K2L_Unsigned.toString(a)):append(" "):append(tostring(__K2L_DoubleToLong(a + b + 0.0))):append(" "):append(__K2L_Str(__K2L_BigInteger.valueOf(a):multiply(__K2L_BigInteger.valueOf(b))))
     sb:append(" | "):append(tostring(__K2L_BigInteger.valueOf(a):toLong())):append(" "):append(tostring(__K2L_Bits.doubleBits(a + 0.0)))
-    sb:append(" | "):append(tostring(__K2L_StringToInt(tostring(a), nil, true) == a)):append(" "):append(__K2L_StringFormat("%d %x", a, a))
+    sb:append(" | "):append(tostring(__K2L_StringToInt(tostring(a), nil, true) == a)):append(" "):append(__K2L_StringFormat("%d %x", a, __K2L_Text.sized(a, 64)))
     print(__K2L_Str(sb))
 end
 

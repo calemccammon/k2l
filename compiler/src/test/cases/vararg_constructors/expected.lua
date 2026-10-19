@@ -4,6 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
 local Polygon = __K2L_Class("Polygon")
@@ -16,7 +17,7 @@ end
 
 function Polygon:____init1(...)
     local coords = __K2L_ArrayOf(...)
-    Polygon.____init(self, "poly", __K2L_Unpack(coords:toList():chunked(2):map(function(it) return __K2L_Pair.new(it:get(0), it:get(1)) end):toTypedArray()))
+    Polygon.____init(self, "poly", __K2L_Unpack(coords:toList():chunked(2):map(function(it) return __K2L_Pair.new(it:get(0), it:get(1)) end):toTypedArray("[Lkotlin.Pair;")))
 end
 
 function Polygon.new1(...)
@@ -114,7 +115,7 @@ local function main()
         return it.name .. ":" .. it.notes.size .. ":" .. it.notes:joinToString("")
     end)))
     print(__K2L_Str(Outer.Tagged.new(Outer.new("#"), 1, 2, 3)))
-    local arr = __K2L_ArrayOf("x", "y")
+    local arr = __K2L_TypedArrayOf("[Ljava.lang.String;", "x", "y")
     print(__K2L_Str(Bag.new(__K2L_Unpack(arr)):add("z", __K2L_Unpack(arr))))
     print(__K2L_Str(Bag.new():add()))
 end

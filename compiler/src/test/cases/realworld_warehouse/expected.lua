@@ -151,9 +151,9 @@ function Grid:____init(rows, cols)
     self.rows = rows
     self.cols = cols
     self.cells = __K2L_ListOfSize(self.rows, function(it)
-        return __K2L_ListOfSize(self.cols, nil, true)
-    end, true)
-    self.counts = __K2L_ListOfSize(self.rows, function(it) return __K2L_ListOfSize(self.cols, 0, true) end, true)
+        return __K2L_ListOfSize(self.cols, nil, "[Lwarehouse.Product;")
+    end, "[[Lwarehouse.Product;")
+    self.counts = __K2L_ListOfSize(self.rows, function(it) return __K2L_ListOfSize(self.cols, 0, "[I") end, "[[I")
 end
 
 function Grid:get(slot)
@@ -209,10 +209,12 @@ end
 
 function Grid:find(product)
     local ____list = self.cells
-    for r = 0, ____list.size - 1 do
-        local row = ____list[r + 1]
-        for c = 0, row.size - 1 do
-            local p = row[c + 1]
+    for ____i_1 = 1, ____list.size do
+        local row = ____list[____i_1]
+        local r = ____i_1 - 1
+        for ____i = 1, row.size do
+            local p = row[____i]
+            local c = ____i - 1
             if __K2L_Equals(p, product) then
                 return Slot.new(r, c)
             end
@@ -277,8 +279,13 @@ local function main()
     local products = __K2L_ReadOnlyListOf(hammer, wrench, drill, vase, glasses)
     local ____receiver_2 = __K2L_RunCatching(function() return Tool.new1("bad", 1) end):exceptionOrNull()
     print(__K2L_Str(____receiver_2 and ____receiver_2.message))
-    for _, p in ipairs(products) do
+    local ____mod = products.____modCount
+    for ____i_2 = 1, products.size do
+        local p = products[____i_2]
         print(__K2L_StringPadEnd(p:getLabel(), 24) .. " 1=" .. p:price(1) .. " 10=" .. p:price(10))
+        if products.____modCount ~= ____mod and products:____comodified(____i_2) then
+            break
+        end
     end
     local grid = Grid.new(3, 4)
     local stock = __K2L_ReadOnlyListOf(__K2L_Pair.new(hammer, 10), __K2L_Pair.new(drill, 2), __K2L_Pair.new(vase, 4), __K2L_Pair.new(glasses, 30), __K2L_Pair.new(wrench, 15), __K2L_Pair.new(hammer, 5))
@@ -294,7 +301,9 @@ local function main()
     print(grid:render())
     print("units=" .. grid:getTotalUnits())
     local orders = __K2L_ReadOnlyListOf(Order:invoke(__K2L_Pair.new(hammer, 3), __K2L_Pair.new(vase, 1)), Order:invoke(__K2L_Pair.new(glasses, 12), __K2L_Pair.new(drill, 1), __K2L_Pair.new(wrench, 2)), Order:invoke(__K2L_Pair.new(vase, 10)))
-    for _, order in ipairs(orders) do
+    local ____mod_1 = orders.____modCount
+    for ____i_3 = 1, orders.size do
+        local order = orders[____i_3]
         local stops = order.lines:mapNotNull(function(____destructured_1)
             local p = ____destructured_1.first
             return grid:find(p)
@@ -313,6 +322,9 @@ local function main()
             return p.sku .. ": " .. got .. "/" .. q
         end)
         print("order " .. order.id .. " route=" .. path:joinToString(">", nil, nil, nil, nil, function(it) return it.row .. it.col end) .. " " .. __K2L_Str(picked) .. " total=" .. total)
+        if orders.____modCount ~= ____mod_1 and orders:____comodified(____i_3) then
+            break
+        end
     end
     print(grid:render())
     print(__K2L_Str(grid:get(Slot.new(0, 0))))

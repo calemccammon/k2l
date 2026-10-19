@@ -4,6 +4,8 @@
 -- collections, nCopies and the like are read-only collections of their own, with the JVM's classes.
 local __K2L_JdkCollections = {}
 local __K2L_ListIterator = __K2L_Class("java.util.ArrayList$ListItr")
+-- a ListBuilder's listIterator() is its Itr
+__K2L_ListBuilder.____listIteratorClass = __K2L_Class("kotlin.collections.builders.ListBuilder$Itr", __K2L_ListIterator)
 local __K2L_JdkEmptyList = __K2L_MakeReadOnly(__K2L_Class("java.util.Collections$EmptyList", __K2L_List), "list")
 local __K2L_JdkEmptySet = __K2L_MakeReadOnly(__K2L_Class("java.util.Collections$EmptySet", __K2L_Set), "set")
 local __K2L_JdkEmptyMap = __K2L_MakeReadOnly(__K2L_Class("java.util.Collections$EmptyMap", __K2L_Map), "map")
@@ -93,7 +95,7 @@ function J.listIterator(list, index)
     if index < 0 or index > list.size then
         error(__K2L_IndexOutOfBoundsException.new("Index: " .. index .. ", Size: " .. list.size))
     end
-    return __K2L_ListIterator.new(list, index)
+    return (list.____listIteratorClass or __K2L_ListIterator).new(list, index)
 end
 
 ------------------------------------------------------------------ withDefault
@@ -144,8 +146,8 @@ local MAP_MUTATORS = {
 -- own class, e.g. a HashMap's iteration order) see later changes to it; the mutating methods throw. The index and the
 -- methods work the same on all Lua versions, but `ipairs` does not follow __index before 5.3: the compiler uses numeric
 -- loops over lists when the program calls an unmodifiable* function.
-local function makeView(class, mutators)
-    local blocked = {}
+local function makeView(class, mutators, own)
+    local blocked = own or {}
     for _, name in ipairs(mutators) do
         blocked[name] = unsupported
     end
@@ -166,19 +168,17 @@ local function makeView(class, mutators)
         end
     end
 end
-makeView(__K2L_ListView, LIST_MUTATORS)
-makeView(__K2L_SetView, SET_MUTATORS)
-makeView(__K2L_MapView, MAP_MUTATORS)
+local CollectionView = __K2L_Class("java.util.Collections$UnmodifiableCollection", __K2L_Iterable)
 
 local function viewOf(class, source)
     return setmetatable({____target = source}, class)
 end
 
--- Whether `source` is a set (an instance of a subclass of Set).
+-- Whether `source` is a set (an instance of a subclass of Set, or of a class implementing it such as a map's keys).
 local function isSet(source)
     local c = getmetatable(source)
     while c do
-        if c == __K2L_Set then
+        if c == __K2L_Set or rawget(c, "____interfaces")[__K2L_Set] then
             return true
         end
         c = rawget(c, "____super")
@@ -186,12 +186,33 @@ local function isSet(source)
     return false
 end
 
+local function isList(source)
+    local c = getmetatable(source)
+    while c do
+        if c == __K2L_List then
+            return true
+        end
+        c = rawget(c, "____super")
+    end
+    return false
+end
+
+makeView(__K2L_ListView, LIST_MUTATORS)
+makeView(__K2L_SetView, SET_MUTATORS)
+makeView(CollectionView, SET_MUTATORS)
+-- the keys, values and entries of an unmodifiable map are unmodifiable views of the map's
+makeView(__K2L_MapView, MAP_MUTATORS, {
+    getKeys = function(self) return viewOf(__K2L_SetView, rawget(self, "____target"):getKeys()) end,
+    getValues = function(self) return viewOf(CollectionView, rawget(self, "____target"):getValues()) end,
+    getEntries = function(self) return viewOf(__K2L_SetView, rawget(self, "____target"):getEntries()) end,
+})
+
 function J.unmodifiableList(source)
     return viewOf(__K2L_ListView, source)
 end
 
 function J.unmodifiableCollection(source)
-    return viewOf(isSet(source) and __K2L_SetView or __K2L_ListView, source)
+    return viewOf(isSet(source) and __K2L_SetView or isList(source) and __K2L_ListView or CollectionView, source)
 end
 
 function J.unmodifiableSet(source)

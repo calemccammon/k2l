@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -9,6 +8,7 @@ local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Item = __K2L_Class("Item")
 
@@ -89,7 +89,8 @@ local function main()
     m:clear()
     print(m:isEmpty())
     local total = 0
-    for _, x in ipairs(xs) do
+    for ____i = 1, xs.size do
+        local x = xs[____i]
         total = total + x
     end
     print(total)
@@ -106,14 +107,16 @@ local function main()
         end
     end
     print()
-    for _, it in ipairs(xs) do
+    for ____i_1 = 1, xs.size do
+        local it = xs[____i_1]
         if it > 4 then
             io.write(it .. " ")
         end
     end
     print()
-    for i = 0, xs.size - 1 do
-        local x = xs[i + 1]
+    for ____i_2 = 1, xs.size do
+        local x = xs[____i_2]
+        local i = ____i_2 - 1
         if i == 0 then
             print("first is " .. x)
         end
@@ -125,11 +128,11 @@ local function main()
     end)))
     print(__K2L_Equals(__K2L_ReadOnlyListOf(1, 2), __K2L_ReadOnlyListOf(1, 2)))
     print(__K2L_Str(__K2L_ListOfSize(4, function(it) return it * it end)))
-    local arr = __K2L_ArrayOf(3, 1, 2)
+    local arr = __K2L_TypedArrayOf("[I", 3, 1, 2)
     arr:set(1, 7)
     print(arr.size)
     print(__K2L_Str(arr:toList()))
-    local words = __K2L_ArrayOf("x", "y")
+    local words = __K2L_TypedArrayOf("[Ljava.lang.String;", "x", "y")
     print(words:joinToString(""))
     print(__K2L_Str(__K2L_ReadOnlyListOf("a", nil, "b"):filterNotNull()))
     local ____destructured_1 = __K2L_ReadOnlyListOf(10, 20)

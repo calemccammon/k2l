@@ -6,8 +6,10 @@ import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
 import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtCallElement
 import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtExpression
 
 /** lualib feature with the abstract collection bases, see `AbstractCollections.lua`. */
@@ -108,7 +110,7 @@ internal fun FileTransformer.collectionSuperCall(
     val name = symbol.callableId?.callableName?.asString() ?: return null
     if (symbol.callableId?.classId?.asString() == "kotlin/Any") return null
     val self = selfRef()
-    if (name in OBJECT_METHODS) return LuaCall(LuaIndex(superRef, LuaString(name)), listOf(self) + arguments(emptyList(), args))
+    if (name in STATIC_SUPER_METHODS) return LuaCall(LuaIndex(superRef, LuaString(name)), listOf(self) + arguments(emptyList(), args))
     val mapped = libraryCall(name, symbol.callableId?.toString(), null, self, superType, args, full)
     if (mapped is LuaMethodCall && mapped.target == self) {
         return LuaCall(LuaIndex(superRef, LuaString(mapped.method)), listOf(self) + mapped.args)
@@ -120,7 +122,11 @@ internal fun FileTransformer.collectionSuperCall(
     mapped
 }
 
-private val OBJECT_METHODS = setOf("toString", "equals", "hashCode")
+/**
+ * Called on the superclass as they are: Any's members, and `iterator()` (that of a value is __K2L_IteratorOf, which would
+ * call the override).
+ */
+private val STATIC_SUPER_METHODS = setOf("toString", "equals", "hashCode", "iterator")
 
 /** Kotlin's read-only collection interfaces. */
 private val READ_ONLY_INTERFACES = setOf(
@@ -140,6 +146,35 @@ private fun FileTransformer.isReadOnlyCollection(c: KtClassOrObject): Boolean = 
     val ids = symbol.defaultType.allSupertypes.mapNotNull { it.expandedSymbol?.classId?.asString() }.toSet()
     ids.any { it in READ_ONLY_INTERFACES } && ids.none { it in MUTABLE_INTERFACES }
 }
+
+/** Members of a library collection that the JDK's and the stdlib's operations call, see `CollectionOverrides.lua`. */
+private val HOOK_MEMBERS = setOf(
+    "size", "iterator", "get", "contains", "isEmpty", "indexOf", "listIterator", "entries", "keys", "values", "containsKey",
+)
+
+private fun overriddenName(d: KtDeclaration): String? = if (d.hasModifier(KtTokens.OVERRIDE_KEYWORD)) d.name else null
+
+/** The names of the members [c] (or a superclass of the program) overrides, of those the library's operations call. */
+private fun FileTransformer.overriddenHooks(c: KtClassOrObject): Set<String> {
+    val own: List<String> = c.declarations.mapNotNull { overriddenName(it) }
+        .filter { it in HOOK_MEMBERS }
+    return own.toSet() + (classes.superInfo(c).base?.let { overriddenHooks(it) }.orEmpty())
+}
+
+/**
+ * `__K2L_HonorOverrides(C, base)` for a class extending a library collection that overrides a member the library's
+ * operations call (size, iterator(), get, entries, ...): the class gets versions of those operations that call it where the
+ * JVM does. Only such classes do, so plain collections keep their fast paths.
+ */
+internal fun FileTransformer.collectionOverrides(c: KtClassOrObject, ref: LuaExpr) {
+    val base = classes.collectionBaseOf(c)?.takeIf { it in CONCRETE_COLLECTION_BASES } ?: return
+    if (c.declarations.none { overriddenName(it) in HOOK_MEMBERS }) return
+    emit(LuaCallStmt(LuaCall(lualibRef("CollectionOverrides", "__K2L_HonorOverrides"), listOf(ref, collectionBaseRef(base)))))
+}
+
+/** Whether values of [c] are walked with their own iterator(): it extends a library collection and overrides iterator(). */
+internal fun FileTransformer.iteratesItself(c: KtClassOrObject): Boolean =
+    classes.collectionBaseOf(c) in CONCRETE_COLLECTION_BASES && "iterator" in overriddenHooks(c)
 
 /** `C.____readOnly = true` for a read-only collection class (false again in a mutable subclass of one), see MUTABLE_INTERFACES. */
 internal fun FileTransformer.readOnlyFlag(c: KtClassOrObject, ref: LuaExpr) {

@@ -1,2 +1,0 @@
-16:18: A vararg parameter that is not last is not supported yet
-23:45: A spread argument that is not last is not supported yet

@@ -7,9 +7,10 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_Lazy = ____lualib.__K2L_Lazy
+local __K2L_ListBuilderOf = ____lualib.__K2L_ListBuilderOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
-local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_MapBuilderOf = ____lualib.__K2L_MapBuilderOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotImplementedError = ____lualib.__K2L_NotImplementedError
 local __K2L_NumberFormatException = ____lualib.__K2L_NumberFormatException
@@ -20,6 +21,7 @@ local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
+local __K2L_SetBuilderOf = ____lualib.__K2L_SetBuilderOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
@@ -313,20 +315,20 @@ local function scope()
     print(s:upper())
     print(__K2L_Str(#s > 5 and s or nil))
     print(__K2L_Str(not (#s > 5) and s or nil))
-    local ____builder = __K2L_ListOf()
+    local ____builder = __K2L_ListBuilderOf()
     ____builder:add(1)
     ____builder:add(2)
-    print(__K2L_Str(____builder))
-    local ____builder_1 = __K2L_MapOf()
+    print(__K2L_Str(____builder:____build()))
+    local ____builder_1 = __K2L_MapBuilderOf()
     ____builder_1:put("a", 1)
-    print(__K2L_Str(____builder_1))
-    local ____builder_2 = __K2L_SetOf()
+    print(__K2L_Str(____builder_1:____build()))
+    local ____builder_2 = __K2L_SetBuilderOf()
     ____builder_2:add(1)
     ____builder_2:add(1)
-    print(__K2L_Str(____builder_2))
+    print(__K2L_Str(____builder_2:____build()))
     print(__K2L_Str(__K2L_ListOfSize(3, function(it) return it * it end)))
     print(__K2L_Str(__K2L_ListOfSize(2, function(it) return "x" .. it end)))
-    print(__K2L_Str(__K2L_ListOfSize(3, function(it) return it + 1 end, true):toList()))
+    print(__K2L_Str(__K2L_ListOfSize(3, function(it) return it + 1 end, "[I"):toList()))
     print(__K2L_Str(__K2L_ListOf(1, nil, 2):filterNotNull()))
     print(__K2L_Str(__K2L_ReadOnlyMapOf()))
     print(__K2L_Str(__K2L_ReadOnlySetOf(3, 1, 2):sorted()))

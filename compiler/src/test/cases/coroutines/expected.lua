@@ -122,8 +122,14 @@ local function loopAndWhen(n)
         end
         out:add(____temp)
     end
-    for _, it in ipairs(__K2L_ReadOnlyListOf(10, 20)) do
+    local ____list = __K2L_ReadOnlyListOf(10, 20)
+    local ____mod = ____list.____modCount
+    for ____i = 1, ____list.size do
+        local it = ____list[____i]
         out:add("each:" .. immediate(it))
+        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            break
+        end
     end
     return out
 end
@@ -193,8 +199,10 @@ local function main()
     local bad = __K2L_Result.failure(__K2L_IllegalStateException.new("nope"))
     print(__K2L_Str(ok) .. " " .. __K2L_Str(bad))
     print(tostring(ok:isSuccess()) .. " " .. tostring(ok:isFailure()) .. " " .. tostring(bad:isSuccess()) .. " " .. tostring(bad:isFailure()))
+    local ____arg = ok:getOrNull()
+    local ____arg_1 = bad:getOrNull()
     local ____receiver = bad:exceptionOrNull()
-    print(__K2L_Str(ok:getOrNull()) .. " " .. __K2L_Str(bad:getOrNull()) .. " " .. __K2L_Str(____receiver and ____receiver.message))
+    print(__K2L_Str(____arg) .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(____receiver and ____receiver.message))
     print(ok:getOrDefault(0) .. " " .. bad:getOrDefault(0) .. " " .. bad:getOrElse(function(it) return -1 end))
     print(__K2L_Str(ok:map(function(it) return it * 10 end)))
     print(bad:recover(function(it) return 7 end):getOrThrow())

@@ -54,6 +54,7 @@ Direction.SOUTH = Direction.new("SOUTH", 1, "s")
 Direction.EAST = Direction.new("EAST", 2, "e")
 Direction.WEST = Direction.new("WEST", 3, "w")
 Direction.____values = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST}
+Direction.____companion = true
 
 function Direction:parse(word)
     return __K2L_EnumValues(Direction):firstOrNull(function(it)
@@ -349,12 +350,17 @@ end
 
 function Game:run(script)
     self:say(self.player.room:toString())
-    for _, line in ipairs(script) do
+    local ____mod = script.____modCount
+    for ____i = 1, script.size do
+        local line = script[____i]
         if self.over then
             break
         end
         self:say("> " .. line)
         self:step(parseCommand(line))
+        if script.____modCount ~= ____mod and script:____comodified(____i) then
+            break
+        end
     end
     self:say("Final: hp=" .. self.player.hp .. " score=" .. self.player.score .. " moves=" .. self.player.moves .. " carried=" .. self.player:getCarried())
     return self.out
@@ -492,8 +498,14 @@ end
 local function main()
     local script = __K2L_ReadOnlyListOf("look", "take potion", "go east", "take sword", "take dagger", "i", "w", "s", "e", "attack", "attack", "attack", "attack", "attack", "drink potion", "attack", "take the key", "e", "take crown", "take coins", "drop dagger", "take coins", "dance", "go up", "n")
     local game = Game.new(42)
-    for _, it in ipairs(game:run(script)) do
+    local ____list = game:run(script)
+    local ____mod_1 = ____list.____modCount
+    for ____i_1 = 1, ____list.size do
+        local it = ____list[____i_1];
         (function(____p1) return print(__K2L_Str(____p1)) end)(it)
+        if ____list.____modCount ~= ____mod_1 and ____list:____comodified(____i_1) then
+            break
+        end
     end
     print("rooms=" .. game:roomCount() .. " alive=" .. tostring(game.player.hp > 0))
     local r1 = __K2L_Random.seeded(7)

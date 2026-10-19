@@ -16,9 +16,14 @@ local ____tools = require("tools.tools")
 local inner
 
 local function firstOr(xs, default, test)
-    for _, x in ipairs(xs) do
+    local ____mod = xs.____modCount
+    for ____i = 1, xs.size do
+        local x = xs[____i]
         if test(x) then
             return x
+        end
+        if xs.____modCount ~= ____mod and xs:____comodified(____i) then
+            break
         end
     end
     return default
@@ -41,7 +46,9 @@ local function findBig(xs)
     local ____result
     do
         local default = -1
-        for _, x in ipairs(xs) do
+        local ____mod_1 = xs.____modCount
+        for ____i_1 = 1, xs.size do
+            local x = xs[____i_1]
             local ____result_1
             if x > 50 then
                 return "early " .. x
@@ -50,6 +57,9 @@ local function findBig(xs)
             if ____result_1 then
                 ____result = x
                 goto ____inline_end
+            end
+            if xs.____modCount ~= ____mod_1 and xs:____comodified(____i_1) then
+                break
             end
         end
         ____result = default
@@ -109,8 +119,14 @@ end
 
 function Box:each(action)
     self.calls = self.calls + 1
-    for _, i in ipairs(self.items) do
+    local ____list = self.items
+    local ____mod_2 = ____list.____modCount
+    for ____i_2 = 1, ____list.size do
+        local i = ____list[____i_2]
         action(i)
+        if ____list.____modCount ~= ____mod_2 and ____list:____comodified(____i_2) then
+            break
+        end
     end
 end
 
@@ -126,12 +142,17 @@ local function sumUntil(self, limit, onSkip)
         onSkip = function(it) end
     end
     local total = 0
-    for _, v in ipairs(self) do
+    local ____mod_3 = self.____modCount
+    for ____i_3 = 1, self.size do
+        local v = self[____i_3]
         if total + v > limit then
             onSkip(v)
             return total
         end
         total = total + v
+        if self.____modCount ~= ____mod_3 and self:____comodified(____i_3) then
+            break
+        end
     end
     return total
 end
@@ -139,12 +160,20 @@ end
 local function boxes()
     local b = Box.new(__K2L_ListOf(3, 4, 5))
     local s = 0
-    b.calls = b.calls + 1
-    for _, i in ipairs(b.items) do
-        if i == 5 then
-            return "stopped at " .. s .. " calls=" .. b.calls
+    do
+        b.calls = b.calls + 1
+        local ____list_1 = b.items
+        local ____mod_4 = ____list_1.____modCount
+        for ____i_4 = 1, ____list_1.size do
+            local i = ____list_1[____i_4]
+            if i == 5 then
+                return "stopped at " .. s .. " calls=" .. b.calls
+            end
+            s = s + i
+            if ____list_1.____modCount ~= ____mod_4 and ____list_1:____comodified(____i_4) then
+                break
+            end
         end
-        s = s + i
     end
     return "done"
 end
@@ -182,13 +211,18 @@ local function sumTest()
     local ____result_6
     do
         local total = 0
-        for _, v in ipairs(xs) do
+        local ____mod_5 = xs.____modCount
+        for ____i_5 = 1, xs.size do
+            local v = xs[____i_5]
             if total + v > 100 then
                 do return "never" end
                 ____result_6 = total
                 goto ____inline_end_2
             end
             total = total + v
+            if xs.____modCount ~= ____mod_5 and xs:____comodified(____i_5) then
+                break
+            end
         end
         ____result_6 = total
         ::____inline_end_2::
@@ -197,13 +231,18 @@ local function sumTest()
     local ____result_7
     do
         local total = 0
-        for _, v in ipairs(xs) do
+        local ____mod_6 = xs.____modCount
+        for ____i_6 = 1, xs.size do
+            local v = xs[____i_6]
             if total + v > 3 then
                 do return "skip " .. v end
                 ____result_7 = total
                 goto ____inline_end_3
             end
             total = total + v
+            if xs.____modCount ~= ____mod_6 and xs:____comodified(____i_6) then
+                break
+            end
         end
         ____result_7 = total
         ::____inline_end_3::
@@ -303,16 +342,16 @@ local function loops()
     local i = 100
     local out = ""
     do
-        local ____i = 0
-        while ____i < 4 do
+        local ____i_7 = 0
+        while ____i_7 < 4 do
             do
-                local k = ____i
+                local k = ____i_7
                 out = out .. k .. i .. " "
                 if k == 2 then
                     return out .. "stop"
                 end
             end
-            ____i = ____i + 1
+            ____i_7 = ____i_7 + 1
         end
     end
     return out
@@ -460,9 +499,14 @@ local function reified()
     local ____result_14
     do
         local n = 0
-        for _, i in ipairs(items) do
+        local ____mod_7 = items.____modCount
+        for ____i_8 = 1, items.size do
+            local i = items[____i_8]
             if __K2L_InstanceOf(i, Dog) then
                 n = n + 1
+            end
+            if items.____modCount ~= ____mod_7 and items:____comodified(____i_8) then
+                break
             end
         end
         ____result_14 = n
@@ -471,9 +515,14 @@ local function reified()
     local ____result_15
     do
         local n = 0
-        for _, i in ipairs(items) do
+        local ____mod_8 = items.____modCount
+        for ____i_9 = 1, items.size do
+            local i = items[____i_9]
             if __K2L_InstanceOf(i, Animal) then
                 n = n + 1
+            end
+            if items.____modCount ~= ____mod_8 and items:____comodified(____i_9) then
+                break
             end
         end
         ____result_15 = n
@@ -482,9 +531,14 @@ local function reified()
     local ____result_16
     do
         local n = 0
-        for _, i in ipairs(items) do
+        local ____mod_9 = items.____modCount
+        for ____i_10 = 1, items.size do
+            local i = items[____i_10]
             if type(i) == "string" then
                 n = n + 1
+            end
+            if items.____modCount ~= ____mod_9 and items:____comodified(____i_10) then
+                break
             end
         end
         ____result_16 = n
@@ -493,9 +547,14 @@ local function reified()
     local ____result_17
     do
         local n = 0
-        for _, i in ipairs(items) do
+        local ____mod_10 = items.____modCount
+        for ____i_11 = 1, items.size do
+            local i = items[____i_11]
             if math.type(i) == "integer" then
                 n = n + 1
+            end
+            if items.____modCount ~= ____mod_10 and items:____comodified(____i_11) then
+                break
             end
         end
         ____result_17 = n
@@ -504,9 +563,14 @@ local function reified()
     local ____result_18
     do
         local n = 0
-        for _, i in ipairs(items) do
+        local ____mod_11 = items.____modCount
+        for ____i_12 = 1, items.size do
+            local i = items[____i_12]
             if type(i) == "boolean" then
                 n = n + 1
+            end
+            if items.____modCount ~= ____mod_11 and items:____comodified(____i_12) then
+                break
             end
         end
         ____result_18 = n
@@ -514,10 +578,15 @@ local function reified()
     out:add(tostring(____result_18))
     local ____result_19
     do
-        for _, i in ipairs(items) do
+        local ____mod_12 = items.____modCount
+        for ____i_13 = 1, items.size do
+            local i = items[____i_13]
             if __K2L_InstanceOf(i, Cat) then
                 ____result_19 = i
                 goto ____inline_end_5
+            end
+            if items.____modCount ~= ____mod_12 and items:____comodified(____i_13) then
+                break
             end
         end
         ____result_19 = nil
@@ -527,10 +596,15 @@ local function reified()
     out:add(__K2L_Str(____receiver and ____receiver.name))
     local ____result_20
     do
-        for _, i in ipairs(items) do
+        local ____mod_13 = items.____modCount
+        for ____i_14 = 1, items.size do
+            local i = items[____i_14]
             if math.type(i) == "integer" then
                 ____result_20 = i
                 goto ____inline_end_6
+            end
+            if items.____modCount ~= ____mod_13 and items:____comodified(____i_14) then
+                break
             end
         end
         ____result_20 = nil
@@ -539,10 +613,15 @@ local function reified()
     out:add(__K2L_Str(____result_20))
     local ____result_21
     do
-        for _, i in ipairs(items) do
+        local ____mod_14 = items.____modCount
+        for ____i_15 = 1, items.size do
+            local i = items[____i_15]
             if type(i) == "boolean" then
                 ____result_21 = i
                 goto ____inline_end_7
+            end
+            if items.____modCount ~= ____mod_14 and items:____comodified(____i_15) then
+                break
             end
         end
         ____result_21 = nil
@@ -579,24 +658,35 @@ local function reified()
         local ____result_27
         do
             local n = 0
-            for _, i in ipairs(items) do
+            local ____mod_15 = items.____modCount
+            for ____i_16 = 1, items.size do
+                local i = items[____i_16]
                 if __K2L_InstanceOf(i, Animal) then
                     n = n + 1
+                end
+                if items.____modCount ~= ____mod_15 and items:____comodified(____i_16) then
+                    break
                 end
             end
             ____result_27 = n
         end
+        local ____arg = ____result_27
         local ____result_28
         do
             local n = 0
-            for _, i in ipairs(items) do
+            local ____mod_16 = items.____modCount
+            for ____i_17 = 1, items.size do
+                local i = items[____i_17]
                 if type(i) == "string" then
                     n = n + 1
+                end
+                if items.____modCount ~= ____mod_16 and items:____comodified(____i_17) then
+                    break
                 end
             end
             ____result_28 = n
         end
-        ____result_26 = ____result_27 .. "/" .. ____result_28
+        ____result_26 = ____arg .. "/" .. ____result_28
     end
     out:add(____result_26)
     return out:joinToString(",")
@@ -649,11 +739,13 @@ local function elsewhere(stopAt)
     local seen = ""
     do
         local items = __K2L_ReadOnlyListOf("a", "b", "c", "d")
-        local ____i_1 = 0
-        for _, item in ipairs(items) do
+        local ____i_18 = 0
+        local ____mod_17 = items.____modCount
+        for ____i_19 = 1, items.size do
+            local item = items[____i_19]
             local ____result_33
             do
-                local i = ____i_1
+                local i = ____i_18
                 seen = seen .. i .. item
                 if item == stopAt then
                     return "stopped " .. seen
@@ -663,14 +755,19 @@ local function elsewhere(stopAt)
             if not ____result_33 then
                 break
             end
-            ____i_1 = ____i_1 + 1
+            ____i_18 = ____i_18 + 1
+            if items.____modCount ~= ____mod_17 and items:____comodified(____i_19) then
+                break
+            end
         end
     end
     local ____result_34
     do
         local keys = __K2L_ReadOnlyListOf("x", "y", "x")
         local counts = __K2L_MapOf()
-        for _, k in ipairs(keys) do
+        local ____mod_18 = keys.____modCount
+        for ____i_20 = 1, keys.size do
+            local k = keys[____i_20]
             local ____result_35
             if k == "z" then
                 return "z!"
@@ -679,6 +776,9 @@ local function elsewhere(stopAt)
             end
             local mapped = ____result_35
             counts:set(mapped, (counts:get(mapped) or 0) + 1)
+            if keys.____modCount ~= ____mod_18 and keys:____comodified(____i_20) then
+                break
+            end
         end
         ____result_34 = counts
     end
@@ -728,10 +828,10 @@ function Client:run()
     local out = ""
     do
         local ____this_4 = self.other
-        for ____i_2 = 0, 2 do
+        for ____i_21 = 0, 2 do
             ____this_4.count = ____this_4.count + 1
-            out = out .. ____i_2 .. ":" .. ____this_4.name .. ":" .. self.label .. ";"
-            if ____i_2 == 1 then
+            out = out .. ____i_21 .. ":" .. ____this_4.name .. ":" .. self.label .. ";"
+            if ____i_21 == 1 then
                 return out .. "early"
             end
         end
@@ -757,10 +857,15 @@ local function tap(____this_6, f)
 end
 
 local function mapNotNullFirst(xs, f)
-    for _, x in ipairs(xs) do
+    local ____mod_19 = xs.____modCount
+    for ____i_22 = 1, xs.size do
+        local x = xs[____i_22]
         local r = f(x)
         if r ~= nil then
             return r
+        end
+        if xs.____modCount ~= ____mod_19 and xs:____comodified(____i_22) then
+            break
         end
     end
     return nil
@@ -769,7 +874,9 @@ end
 local function labeled(xs)
     local ____result_38
     do
-        for _, x in ipairs(xs) do
+        local ____mod_20 = xs.____modCount
+        for ____i_23 = 1, xs.size do
+            local x = xs[____i_23]
             local ____result_39
             do
                 if x == "skip" then
@@ -786,6 +893,9 @@ local function labeled(xs)
             if r ~= nil then
                 ____result_38 = r
                 goto ____inline_end_11
+            end
+            if xs.____modCount ~= ____mod_20 and xs:____comodified(____i_23) then
+                break
             end
         end
         ____result_38 = nil
@@ -811,7 +921,9 @@ local function whenUse(n)
         local ____result_40
         do
             local xs = __K2L_SingletonListOf("a")
-            for _, x in ipairs(xs) do
+            local ____mod_21 = xs.____modCount
+            for ____i_24 = 1, xs.size do
+                local x = xs[____i_24]
                 local ____result_41
                 if n == 0 then
                     return "zero"
@@ -822,6 +934,9 @@ local function whenUse(n)
                 if r ~= nil then
                     ____result_40 = r
                     goto ____inline_end_12
+                end
+                if xs.____modCount ~= ____mod_21 and xs:____comodified(____i_24) then
+                    break
                 end
             end
             ____result_40 = nil
@@ -901,19 +1016,29 @@ end
 
 local function eachIndexedWhile(items, step)
     local i = 0
-    for _, item in ipairs(items) do
+    local ____mod = items.____modCount
+    for ____i = 1, items.size do
+        local item = items[____i]
         if not step(i, item) then
             break
         end
         i = i + 1
+        if items.____modCount ~= ____mod and items:____comodified(____i) then
+            break
+        end
     end
 end
 
 local function tally(keys, key)
     local counts = __K2L_MapOf()
-    for _, k in ipairs(keys) do
+    local ____mod_1 = keys.____modCount
+    for ____i_1 = 1, keys.size do
+        local k = keys[____i_1]
         local mapped = key(k)
         counts:set(mapped, (counts:get(mapped) or 0) + 1)
+        if keys.____modCount ~= ____mod_1 and keys:____comodified(____i_1) then
+            break
+        end
     end
     return counts
 end

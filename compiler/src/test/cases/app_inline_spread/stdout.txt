@@ -1,0 +1,7 @@
+4
+3
+6
+a, five, z!
+4+6+10.
+found 20
+none in 6

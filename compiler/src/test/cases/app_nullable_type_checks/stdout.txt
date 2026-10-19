@@ -1,0 +1,7 @@
+true false true false false
+string or null string or null int other
+true false true false true
+Person(name=p) null 2
+3 0
+null null 4
+ClassCastException

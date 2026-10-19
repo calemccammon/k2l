@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_IDiv = ____lualib.__K2L_IDiv
@@ -7,6 +6,7 @@ local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Shl = ____lualib.__K2L_Shl
 local __K2L_Shr = ____lualib.__K2L_Shr
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Counter = __K2L_Class("Counter")
 
@@ -86,7 +86,7 @@ local function main()
     print(c.value)
     c.value = (c.value + 5 + 0x80000000 & 0xFFFFFFFF) - 0x80000000
     print(c.value)
-    local arr = __K2L_ArrayOf(2147483647, 1)
+    local arr = __K2L_TypedArrayOf("[I", 2147483647, 1)
     arr:set(0, (arr:get(0) + arr:get(1) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print(arr:get(0))
     local l = 5000000000 + id(1)

@@ -56,6 +56,7 @@ Region.SOUTH = Region.new("SOUTH", 1, "South", 0.05)
 Region.EAST = Region.new("EAST", 2, "East", 0.0825)
 Region.WEST = Region.new("WEST", 3, "West", 0.06)
 Region.____values = {Region.NORTH, Region.SOUTH, Region.EAST, Region.WEST}
+Region.____companion = true
 
 function Region:parse(s)
     local ____value = self.byLabel:get(__K2L_StringTrim(s):lower())
@@ -265,7 +266,9 @@ local function main()
         return it.sale
     end)
     print("parsed " .. sales.size .. " sales, " .. bad.size .. " rejected")
-    for _, it in ipairs(bad:filter(function(x) return __K2L_InstanceOf(x, RowResult.Bad) end)) do
+    local ____list = bad:filter(function(x) return __K2L_InstanceOf(x, RowResult.Bad) end)
+    for ____i = 1, ____list.size do
+        local it = ____list[____i]
         print("  line " .. it.line .. ": " .. it.reason)
     end
     print("\nBy rep:")
@@ -291,13 +294,19 @@ local function main()
     end)
     print(____table(__K2L_SingletonListOf("Region"):plusAll(months), pivotRows, __K2L_IntRange.new(1, months.size):toSet()))
     print("\nTax owed:")
-    for _, ____it_1 in ipairs(sales:groupBy(__K2L_PropertyRef.new("region", "region@702", function(receiver) return receiver.region end)):mapValues(function(____destructured_3)
+    local ____list_1 = sales:groupBy(__K2L_PropertyRef.new("region", "region@702", function(receiver) return receiver.region end)):mapValues(function(____destructured_3)
         local region, list = ____destructured_3.key, ____destructured_3.value
         return list:sumOf(function(it) return it:getRevenue() end, 0.0) * region.taxRate
-    end):getEntries():sortedByDescending(function(it) return it.value end, true)) do
+    end):getEntries():sortedByDescending(function(it) return it.value end, true)
+    local ____mod = ____list_1.____modCount
+    for ____i_1 = 1, ____list_1.size do
+        local ____it_1 = ____list_1[____i_1]
         do
             local region, tax = ____it_1.key, ____it_1.value
             print("  " .. __K2L_StringPadEnd(region.name, 6, ".") .. __K2L_StringPadStart(money(tax), 9) .. " (" .. __K2L_StringFormat("%.2f", region.taxRate * 100) .. "%)")
+        end
+        if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_1) then
+            break
         end
     end
     local prices = sales:map(function(it) return it.unitPrice end)
@@ -314,12 +323,18 @@ local function main()
         return v:sumOf(function(it) return it:getRevenue() end, 0.0)
     end)
     local totalRevenue = productShare:getValues():sum(0.0)
-    for _, ____it_2 in ipairs(productShare:toList():sortedBy(function(it) return it.first end, true)) do
+    local ____list_2 = productShare:toList():sortedBy(function(it) return it.first end, true)
+    local ____mod_1 = ____list_2.____modCount
+    for ____i_2 = 1, ____list_2.size do
+        local ____it_2 = ____list_2[____i_2]
         do
             local product, rev = ____it_2.first, ____it_2.second
             local pct = rev / totalRevenue * 100
             local bar = __K2L_Text.repeatCount("#", __K2L_Num.roundToInt(pct / 4))
             print(__K2L_StringFormat("  %-7s %6.1f%% %s", product, pct, bar))
+        end
+        if ____list_2.____modCount ~= ____mod_1 and ____list_2:____comodified(____i_2) then
+            break
         end
     end
     local repsByRegion = sales:associate(function(it) return __K2L_Pair.new(it.rep, it.region) end):getEntries():groupBy(function(it) return it.value end, function(it) return it.key end)

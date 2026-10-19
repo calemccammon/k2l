@@ -505,7 +505,7 @@ do
     function Text.toCharArray(s)
         local out, n = chars(s)
         out.size = n
-        return setmetatable(out, __K2L_Array)
+        return setmetatable(out, __K2L_ArrayClassOf("[C"))
     end
 
     function Text.toList(s)
@@ -1166,7 +1166,7 @@ do
             local v = cp - 0x10000
             out = {unitChar(0xD800 + floor(v / 1024)), unitChar(0xDC00 + v % 1024), size = 2}
         end
-        return setmetatable(out, __K2L_Array)
+        return setmetatable(out, __K2L_ArrayClassOf("[C"))
     end
 
     function U.charCount(cp) return cp >= 0x10000 and 2 or 1 end

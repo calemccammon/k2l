@@ -36,10 +36,9 @@ internal object FactoryMappings {
             "kotlin/arrayOf", "kotlin/intArrayOf", "kotlin/longArrayOf", "kotlin/doubleArrayOf", "kotlin/floatArrayOf",
             "kotlin/booleanArrayOf", "kotlin/charArrayOf", "kotlin/shortArrayOf", "kotlin/byteArrayOf", "kotlin/emptyArray",
             "kotlin/uintArrayOf", "kotlin/ulongArrayOf", "kotlin/ubyteArrayOf", "kotlin/ushortArrayOf",
-            ->
-                call("__K2L_ArrayOf", *args)
+            -> arrayBinary(site)?.let { call("__K2L_TypedArrayOf", LuaString(it), *args) } ?: call("__K2L_ArrayOf", *args)
 
-            "kotlin/arrayOfNulls" -> call("__K2L_ListOfSize", site.arg(0), LuaNil, LuaBool(true))
+            "kotlin/arrayOfNulls" -> call("__K2L_ListOfSize", site.arg(0), LuaNil, arrayClass(site))
 
             "kotlin/collections/setOf", "kotlin/collections/emptySet" -> call("__K2L_ReadOnlySetOf", *args)
 
@@ -154,7 +153,7 @@ internal object FactoryMappings {
 
             "kotlin/ranges/rangeTo" -> LuaCall(
                 LuaIndex(site.ref("Collections", "__K2L_ClosedRange"), LuaString("new")),
-                listOf(site.self, site.arg(0)),
+                listOfNotNull(site.self, site.arg(0), boundsFormat(site)),
             )
 
             "kotlin/Int.rangeUntil", "kotlin/ranges/until" ->
@@ -182,6 +181,19 @@ internal object FactoryMappings {
         }
     }
 
+    /**
+     * How a range of Doubles or Floats prints its bounds (`30.0..50.0`): an integral Double is an integer on Lua 5.1, 5.2 and
+     * LuaJIT, so the range is given the formatter of its static type.
+     */
+    private fun boundsFormat(site: CallSite): LuaExpr? = with(site.session) {
+        val type = site.receiverType ?: return null
+        when {
+            type.isDoubleType -> site.ref("DoubleToString", "__K2L_DoubleToString")
+            type.isFloatType -> site.ref("FloatToString", "__K2L_FloatToString")
+            else -> null
+        }
+    }
+
     private fun charCodeMinusOne(site: CallSite, c: LuaExpr): LuaExpr =
         LuaBinary(LuaBinOp.Sub, if (site.utf16) site.u16("code", c) else LuaMethodCall(c, "byte", emptyList()), LuaNumber("1"))
 
@@ -195,6 +207,21 @@ internal object FactoryMappings {
 
         "java/util/Objects.hash" ->
             LuaMethodCall(LuaCall(site.ref("Collections", "__K2L_ListOf"), site.args), "hashCode", emptyList())
+
+        // the stdlib's empty ranges are 1..0 (and '\u0001'..'\u0000')
+        "kotlin/ranges/IntRange.Companion.EMPTY" -> newRange(site, LuaNumber("1"), LuaNumber("0"))
+
+        "kotlin/ranges/LongRange.Companion.EMPTY" -> if (site.transformer.emulatesLong) {
+            LuaCall(
+                LuaIndex(site.ref("Long64Range", "__K2L_LongRange"), LuaString("new")),
+                listOf(LuaNumber("1"), LuaNumber("0"), LuaNil, LuaBool(false)),
+            )
+        } else {
+            newRange(site, LuaNumber("1"), LuaNumber("0"))
+        }
+
+        "kotlin/ranges/CharRange.Companion.EMPTY" ->
+            newCharRange(site, charFromCode(site, LuaNumber("1")), charFromCode(site, LuaNumber("0")))
 
         else -> null
     }
@@ -263,7 +290,10 @@ internal object FactoryMappings {
             "java/lang/StringBuilder", "kotlin/text/StringBuilder", "java/lang/StringBuffer" ->
                 new("__K2L_StringBuilder", *site.args.take(1).map { site.str(it, first) }.toTypedArray())
 
-            "kotlin/text/Regex" -> new("__K2L_Regex", *site.args.toTypedArray())
+            "kotlin/text/Regex" -> {
+                site.requireRegexProperties(site.arg(0))
+                new("__K2L_Regex", *site.args.toTypedArray())
+            }
 
             "kotlin/ranges/IntRange" -> new("__K2L_IntRange", site.arg(0), site.arg(1))
 
@@ -271,7 +301,7 @@ internal object FactoryMappings {
 
             "kotlin/Char" -> charFromCode(site, site.arg(0))
 
-            "kotlin/Array" -> LuaCall(site.ref("Collections", "__K2L_ListOfSize"), listOf(site.arg(0), site.arg(1), LuaBool(true)))
+            "kotlin/Array" -> LuaCall(site.ref("Collections", "__K2L_ListOfSize"), listOf(site.arg(0), site.arg(1), arrayClass(site)))
 
             "kotlin/IntArray", "kotlin/LongArray", "kotlin/ShortArray", "kotlin/ByteArray", "kotlin/DoubleArray",
             "kotlin/FloatArray", "kotlin/BooleanArray", "kotlin/CharArray", "kotlin/UIntArray", "kotlin/ULongArray", "kotlin/UByteArray",
@@ -297,8 +327,14 @@ internal object FactoryMappings {
             "kotlin/CharArray" -> LuaString("\u0000")
             else -> LuaNumber("0")
         }
-        return LuaCall(site.ref("Collections", "__K2L_ListOfSize"), listOf(site.arg(0), site.args.getOrNull(1) ?: zero, LuaBool(true)))
+        return LuaCall(site.ref("Collections", "__K2L_ListOfSize"), listOf(site.arg(0), site.args.getOrNull(1) ?: zero, arrayClass(site)))
     }
+
+    /** The JVM name of the array type the call makes (see `__K2L_ArrayClassOf`), null for an `Object[]`. */
+    fun arrayBinary(site: CallSite): String? = with(site.session) { site.transformer.arrayBinary(site.element.expressionType) }
+
+    /** The array class argument of `__K2L_ListOfSize`: the array type's JVM name, or true for an `Object[]`. */
+    private fun arrayClass(site: CallSite): LuaExpr = arrayBinary(site)?.let { LuaString(it) } ?: LuaBool(true)
 }
 
 /** `kotlin.Function0.invoke` ... `kotlin.Function22.invoke`. */

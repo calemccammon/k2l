@@ -40,8 +40,13 @@ end
 
 local function classification()
     local samples = __K2L_ReadOnlyListOf("a", "Z", "5", " ", "\t", "_", "é", "É", "ß", "ÿ", "Σ", "ς", "σ", "Ω", "ж", "Ж", "日", "テ", "ｱ", "한", "١", "٣", "²", "½", "٫", " ", " ", "​", "　", "", "\031", "ǅ", "ǆ", "Ⅷ", "ⅷ", "ⓐ", "Ⓐ", "ª", "º", "ʰ", "́", "€")
-    for _, c in ipairs(samples) do
+    local ____mod = samples.____modCount
+    for ____i = 1, samples.size do
+        local c = samples[____i]
         print(__K2L_Utf16.out("U+" .. __K2L_Text.padStart(__K2L_Num.toRadix(__K2L_Utf16.code(c), 16), 4, "0") .. " " .. flags(c)))
+        if samples.____modCount ~= ____mod and samples:____comodified(____i) then
+            break
+        end
     end
 end
 
@@ -75,8 +80,13 @@ end
 
 local function stringCase()
     local words = __K2L_ReadOnlyListOf("straße", "Straße", "ǆ", "ﬃ", "άέή ώ", "ΐ", "ŉ", "İSTANBUL", "ÀÉÎÕÜ", "àéîõü", "日本語 abc", "Привет Мир", "ÿ", "µ", "a😀b", "𐐨𐐀", "ǅungla")
-    for _, w in ipairs(words) do
+    local ____mod_1 = words.____modCount
+    for ____i_1 = 1, words.size do
+        local w = words[____i_1]
         print(__K2L_Utf16.out(w .. " -> " .. __K2L_Utf16Case.uppercase(w) .. " " .. __K2L_Utf16Case.lowercase(w) .. " " .. __K2L_Utf16.len(__K2L_Utf16Case.uppercase(w)) .. " " .. __K2L_Utf16.len(__K2L_Utf16Case.lowercase(w))))
+        if words.____modCount ~= ____mod_1 and words:____comodified(____i_1) then
+            break
+        end
     end
     print(__K2L_Utf16.out(__K2L_Utf16Case.uppercase("ÀÉÎ")))
     print(__K2L_Utf16.out(__K2L_Utf16Case.lowercase("ÀÉÎ")))

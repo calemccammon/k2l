@@ -10,8 +10,29 @@ function __K2L_Iterable:__tostring()
     return self:toString()
 end
 
+-- Structural changes (adding or removing elements, clear, sort) count up ____modCount, as the JDK's modCount, so that
+-- iterators and `for` loops notice a change of the collection made while they run. A loop over a collection reads
+-- `____modCount` before it starts and after each pass of its body; when it changed, ____comodified(i, n) (i elements
+-- seen of n) decides like the JVM's iterator: a HashMap's (and a set's, a TreeMap's) knew at the i-th element whether
+-- there was another one, an ArrayList's compares its position with the current size. It throws
+-- ConcurrentModificationException, or returns true for a loop that ends normally.
+__K2L_Iterable.____modCount = 0
+
+local function __K2L_Comodification()
+    error(__K2L_ConcurrentModificationException.new())
+end
+
+function __K2L_Iterable:____comodified(i, n)
+    if i < n then
+        __K2L_Comodification()
+    end
+    return true
+end
+
 local __K2L_List
 local __K2L_Array
+local __K2L_ArrayClassOf
+local arrayClass
 local __K2L_Set
 local __K2L_Map
 local __K2L_IntRange
@@ -45,7 +66,7 @@ local function isComparator(value)
 end
 
 local function newList(arr, n)
-    arr.size = n
+    arr.size, arr.____modCount = n, 0
     return setmetatable(arr, __K2L_List)
 end
 
@@ -986,20 +1007,25 @@ function __K2L_Iterable:subtract(other)
     return self:toMutableSet():filter(function(it) return not other:contains(it) end):toMutableSet()
 end
 
-function __K2L_Iterable:toTypedArray()
+-- toTypedArray() and toIntArray() and the like; `binary` is the array type's (Object[] when not known)
+function __K2L_Iterable:toTypedArray(binary)
     local arr, n = self:____array()
     local out = {}
     for i = 1, n do
         out[i] = arr[i]
     end
     out.size = n
-    return setmetatable(out, __K2L_Array)
+    return setmetatable(out, binary and __K2L_ArrayClassOf(binary) or __K2L_Array)
 end
 
-__K2L_Iterable.toIntArray = __K2L_Iterable.toTypedArray
-__K2L_Iterable.toLongArray = __K2L_Iterable.toTypedArray
-__K2L_Iterable.toDoubleArray = __K2L_Iterable.toTypedArray
-__K2L_Iterable.toBooleanArray = __K2L_Iterable.toTypedArray
+for name, binary in pairs({
+    toIntArray = "[I", toLongArray = "[J", toDoubleArray = "[D", toBooleanArray = "[Z", toFloatArray = "[F", toCharArray = "[C",
+    toShortArray = "[S", toByteArray = "[B",
+}) do
+    __K2L_Iterable[name] = function(self)
+        return __K2L_Iterable.toTypedArray(self, binary)
+    end
+end
 
 function __K2L_Iterable:hashCode()
     local arr, n = self:____array()
@@ -1506,27 +1532,28 @@ function __K2L_Iterable:sortedArray()
     local arr, n = self:____array()
     local out = sortNatural(arr, n, false)
     out.size = n
-    return setmetatable(out, __K2L_Array)
+    return setmetatable(out, arrayClass(self))
 end
 
 function __K2L_Iterable:sortedArrayDescending()
     local arr, n = self:____array()
     local out = sortNatural(arr, n, true)
     out.size = n
-    return setmetatable(out, __K2L_Array)
+    return setmetatable(out, arrayClass(self))
 end
 
 function __K2L_Iterable:sortedArrayWith(comparator)
     local arr, n = self:____array()
     local out = timSorted(arr, n, comparator)
     out.size = n
-    return setmetatable(out, __K2L_Array)
+    return setmetatable(out, arrayClass(self))
 end
 
 function __K2L_Iterable:reversedArray()
     local out = self:toMutableList()
     out:reverse()
-    return setmetatable(out, __K2L_Array)
+    out.____modCount = nil
+    return setmetatable(out, arrayClass(self))
 end
 
 function __K2L_Iterable:copyOfRange(from, to)
@@ -1541,7 +1568,7 @@ function __K2L_Iterable:copyOfRange(from, to)
         out[i - from] = arr[i]
     end
     out.size = to - from
-    return setmetatable(out, __K2L_Array)
+    return setmetatable(out, arrayClass(self))
 end
 
 -- Array.copyOf(newSize): `pad` is the element type's zero value (null for object arrays).
@@ -1556,7 +1583,7 @@ function __K2L_Iterable:copyOfSize(newSize, pad)
         end
     end
     out.size = newSize
-    return setmetatable(out, __K2L_Array)
+    return setmetatable(out, arrayClass(self))
 end
 
 function __K2L_Iterable:copyInto(destination, destinationOffset, startIndex, endIndex)
@@ -1651,17 +1678,23 @@ end
 ------------------------------------------------------------------ Iterator
 local __K2L_CollectionIterator = __K2L_Class("java.util.Iterator")
 
--- Iterates over a snapshot, so remove() can change the source while iterating.
-function __K2L_CollectionIterator:____init(source)
+-- Iterates over a snapshot, so remove() can change the source while iterating; like the JDK's HashMap and TreeMap
+-- iterators, it knows at each element whether there is another one, and next() throws ConcurrentModificationException
+-- when the source changed other than through this iterator. `keys` (the map's keys of a view's elements) makes remove()
+-- remove the key of the current element from the view's map.
+function __K2L_CollectionIterator:____init(source, items, count, keys)
     self.____source = source
-    local items, count = source:____array()
+    if items == nil then
+        items, count = source:____array()
+    end
     local copy = {}
     for i = 1, count do
         copy[i] = items[i]
     end
-    self.____items, self.____count = copy, count
+    self.____items, self.____count, self.____keys = copy, count, keys
     self.____position = 0
     self.____removed = 0
+    self.____expected = source.____modCount
 end
 
 function __K2L_CollectionIterator:hasNext()
@@ -1669,6 +1702,9 @@ function __K2L_CollectionIterator:hasNext()
 end
 
 function __K2L_CollectionIterator:next()
+    if self.____source.____modCount ~= self.____expected then
+        __K2L_Comodification()
+    end
     if self.____position >= self.____count then
         noSuchElement()
     end
@@ -1678,22 +1714,76 @@ end
 
 -- Removes the element last returned by next() from the source.
 function __K2L_CollectionIterator:remove()
-    local source = self.____source
-    if self.____position == 0 then
+    local source, position = self.____source, self.____position
+    if position == 0 or self.____lastRemoved == position then
         error(__K2L_IllegalStateException.new())
     end
-    if source.removeAt ~= nil then
-        source:removeAt(self.____position - 1 - self.____removed)
+    if source.____modCount ~= self.____expected then
+        __K2L_Comodification()
+    end
+    if self.____keys ~= nil then
+        source.____map:____removeKey(self.____keys[position])
+    elseif source.removeAt ~= nil then
+        source:removeAt(position - 1 - self.____removed)
     else
-        source:remove(self.____items[self.____position])
+        source:remove(self.____items[position])
     end
     self.____removed = self.____removed + 1
+    self.____lastRemoved = position
+    self.____expected = source.____modCount
+end
+
+-- An ArrayList's iterator (ArrayList$Itr and the like) reads the list as it is: hasNext() compares the position with the
+-- current size, and next() throws ConcurrentModificationException once the list changed other than through remove().
+local __K2L_ListItr = __K2L_Class("java.util.ArrayList$Itr")
+
+function __K2L_ListItr:____init(list)
+    self.____list, self.____cursor, self.____last, self.____expected = list, 0, -1, list.____modCount
+end
+
+function __K2L_ListItr:hasNext()
+    return self.____cursor ~= self.____list.size
+end
+
+function __K2L_ListItr:next()
+    local list = self.____list
+    if list.____modCount ~= self.____expected then
+        __K2L_Comodification()
+    end
+    local i = self.____cursor
+    if i >= list.size then
+        noSuchElement()
+    end
+    self.____cursor, self.____last = i + 1, i
+    return list[i + 1]
+end
+
+-- removes with the list's removeAt, which a subclass may override, as ArrayList.Itr.remove calls remove(index)
+function __K2L_ListItr:remove()
+    local list = self.____list
+    if self.____last < 0 then
+        error(__K2L_IllegalStateException.new())
+    end
+    if list.____modCount ~= self.____expected then
+        __K2L_Comodification()
+    end
+    list:removeAt(self.____last)
+    self.____cursor, self.____last = self.____last, -1
+    self.____expected = list.____modCount
 end
 
 -- of the JVM's class for the collection (its ____iteratorClass, see "view and iterator classes" below)
 function __K2L_Iterable:iterator()
-    return (self.____iteratorClass or __K2L_CollectionIterator).new(self)
+    return (self.____iteratorClass or __K2L_CollectionIterator).new(self, self:____ownArray())
 end
+
+-- The collection's own elements: ____array(), unless a subclass's ____array() walks its overriding iterator(); and those
+-- toArray() reads (AbstractCollection's iterates). See CollectionOverrides.
+function __K2L_Iterable:____ownArray()
+    return self:____array()
+end
+
+__K2L_Iterable.____toArray = __K2L_Iterable.____ownArray
 
 ------------------------------------------------------------------ List
 __K2L_List = __K2L_Class("java.util.ArrayList", __K2L_Iterable)
@@ -1701,6 +1791,7 @@ __K2L_List = __K2L_Class("java.util.ArrayList", __K2L_Iterable)
 -- ArrayList(), ArrayList(capacity) and ArrayList(elements), as the constructor of a class extending ArrayList calls it
 function __K2L_List:____init(elements)
     self.size = 0
+    self.____modCount = 0
     if type(elements) == "table" then
         __K2L_List.addAll(self, elements)
     end
@@ -1708,6 +1799,43 @@ end
 
 function __K2L_List:____array()
     return self, self.size
+end
+
+__K2L_List.____modCount = 0
+
+-- ArrayList's isEmpty and indexOf read the elements; contains calls indexOf (a subclass may override it)
+function __K2L_List:isEmpty()
+    return self.size == 0
+end
+
+function __K2L_List:indexOf(value)
+    for i = 1, self.size do
+        if __K2L_Equals(self[i], value) then
+            return i - 1
+        end
+    end
+    return -1
+end
+
+function __K2L_List:lastIndexOf(value)
+    for i = self.size, 1, -1 do
+        if __K2L_Equals(self[i], value) then
+            return i - 1
+        end
+    end
+    return -1
+end
+
+function __K2L_List:contains(value)
+    return self:indexOf(value) >= 0
+end
+
+-- ArrayList.Itr.hasNext(): the loop goes on (and next() throws) unless its position is the list's size
+function __K2L_List:____comodified(i)
+    if i ~= self.size then
+        __K2L_Comodification()
+    end
+    return true
 end
 
 function __K2L_List:toString()
@@ -1719,10 +1847,21 @@ function __K2L_List:toString()
 end
 
 function __K2L_List:equals(other)
-    if not (type(other) == "table" and other.____array ~= nil and other.get ~= nil) then
+    if not (type(other) == "table" and other.____array ~= nil and other.get ~= nil) or other.____notList then
         return false
     end
-    local arr, n = other:____array()
+    local arr, n
+    if other.____honorOverrides and getmetatable(self) ~= __K2L_List and other.listIterator ~= nil then
+        -- AbstractList.equals walks the other list's listIterator() (ArrayList's, its iterator(): ____array)
+        local it = other:listIterator()
+        arr, n = {}, 0
+        while it:hasNext() do
+            n = n + 1
+            arr[n] = it:next()
+        end
+    else
+        arr, n = other:____array()
+    end
     if n ~= self.size then
         return false
     end
@@ -1748,8 +1887,10 @@ function __K2L_List:set(index, value)
 end
 
 function __K2L_List:add(value)
-    self.size = self.size + 1
-    self[self.size] = value
+    local n = self.size + 1
+    self.size = n
+    self[n] = value
+    self.____modCount = self.____modCount + 1
     return true
 end
 
@@ -1762,22 +1903,29 @@ function __K2L_List:addAt(index, value)
     end
     self[index + 1] = value
     self.size = self.size + 1
+    self.____modCount = self.____modCount + 1
 end
 
 -- Like java.util.ArrayList, the bulk and convenience operations do not call add, addAt or removeAt, which a subclass may
 -- override.
+-- the argument's toArray(): its storage, not its iterator (see CollectionOverrides)
+local function toArray(elements)
+    return (elements.____toArray or elements.____array)(elements)
+end
+
 function __K2L_List:addAll(elements)
-    local arr, n = elements:____array()
+    local arr, n = toArray(elements)
     local size = self.size
     for i = 1, n do
         self[size + i] = arr[i]
     end
     self.size = size + n
+    self.____modCount = self.____modCount + 1
     return n > 0
 end
 
 function __K2L_List:addAllAt(index, elements)
-    local arr, n = elements:____array()
+    local arr, n = toArray(elements)
     if index < 0 or index > self.size then
         error(__K2L_IndexOutOfBoundsException.new("Index: " .. index .. ", Size: " .. self.size))
     end
@@ -1788,6 +1936,7 @@ function __K2L_List:addAllAt(index, elements)
     for i = 1, n do
         __K2L_List.addAt(self, index + i - 1, copy[i])
     end
+    self.____modCount = self.____modCount + 1
     return n > 0
 end
 
@@ -1801,11 +1950,12 @@ function __K2L_List:removeAt(index)
     end
     self[self.size] = nil
     self.size = self.size - 1
+    self.____modCount = self.____modCount + 1
     return value
 end
 
 function __K2L_List:remove(value)
-    local index = __K2L_Iterable.indexOf(self, value)
+    local index = __K2L_List.indexOf(self, value)
     if index < 0 then
         return false
     end
@@ -1848,6 +1998,9 @@ function __K2L_List:removeAll(predicate)
         self[i] = nil
     end
     self.size = k
+    if k ~= n then
+        self.____modCount = self.____modCount + 1
+    end
     return k ~= n
 end
 
@@ -1871,6 +2024,7 @@ function __K2L_List:clear()
         self[i] = nil
     end
     self.size = 0
+    self.____modCount = self.____modCount + 1
 end
 
 local function sortInPlace(self, sorted)
@@ -1879,30 +2033,43 @@ local function sortInPlace(self, sorted)
     end
 end
 
+-- ArrayList.sort and replaceAll count as a change (not those of a view, which set its elements); Collections.reverse
+-- (set by index) does not.
+local function changedInPlace(self)
+    if rawget(self, "____root") == nil then
+        self.____modCount = self.____modCount + 1
+    end
+end
+
+local function sortedInPlace(self, sorted)
+    sortInPlace(self, sorted)
+    changedInPlace(self)
+end
+
 -- In place, as MutableList.sort*() do: Collections.sort, so the same comparisons as sorted*() (none for one element).
 function __K2L_List:sort()
     local arr, n = self:____array()
-    sortInPlace(self, sortNatural(arr, n, false))
+    sortedInPlace(self, sortNatural(arr, n, false))
 end
 
 function __K2L_List:sortDescending()
     local arr, n = self:____array()
-    sortInPlace(self, sortNatural(arr, n, true))
+    sortedInPlace(self, sortNatural(arr, n, true))
 end
 
 function __K2L_List:sortBy(selector, pure)
     local arr, n = self:____array()
-    sortInPlace(self, sortSelected(arr, n, selector, false, pure))
+    sortedInPlace(self, sortSelected(arr, n, selector, false, pure))
 end
 
 function __K2L_List:sortByDescending(selector, pure)
     local arr, n = self:____array()
-    sortInPlace(self, sortSelected(arr, n, selector, true, pure))
+    sortedInPlace(self, sortSelected(arr, n, selector, true, pure))
 end
 
 function __K2L_List:sortWith(comparator)
     local arr, n = self:____array()
-    sortInPlace(self, timSorted(arr, n, comparator))
+    sortedInPlace(self, timSorted(arr, n, comparator))
 end
 
 function __K2L_List:reverse() sortInPlace(self, self:reversed()) end
@@ -1975,6 +2142,7 @@ function __K2L_List:replaceAll(operator)
     for i = 1, self.size do
         self[i] = operator(self[i])
     end
+    changedInPlace(self)
 end
 
 -- Fisher-Yates from the end, as kotlin.collections.shuffle(random) does.
@@ -1998,11 +2166,84 @@ __K2L_List.peekLast = function(self) return self[self.size] end
 __K2L_List.push = __K2L_List.addFirst
 __K2L_List.pop = __K2L_List.removeFirst
 
--- Arrays share the list representation but compare by identity, as on the JVM.
+-- Arrays share the list representation but compare by identity, as on the JVM. Each array type has a class of its own
+-- (__K2L_ArrayClassOf), named by the JVM's binary name (`[I` for an IntArray, `[Ljava.lang.String;` for an Array<String>),
+-- given where the array is made, so that `is IntArray`, `x::class` and `javaClass` of an array held in an `Any` and its
+-- toString() (`[I@1b`) are the JVM's. __K2L_Array itself is an Object[] (an array whose element type is not known).
 __K2L_Array = __K2L_Class("Array", __K2L_List)
+__K2L_Array.____arrayBinary, __K2L_Array.____binaryName = "[Ljava.lang.Object;", "[Ljava.lang.Object;"
+
+local arrayClasses = {["[Ljava.lang.Object;"] = __K2L_Array}
+
+local PRIMITIVE_ARRAYS = {
+    I = {"IntArray", "int"}, J = {"LongArray", "long"}, D = {"DoubleArray", "double"}, F = {"FloatArray", "float"},
+    Z = {"BooleanArray", "boolean"}, C = {"CharArray", "char"}, S = {"ShortArray", "short"}, B = {"ByteArray", "byte"},
+}
+
+-- The Java simple name of an array type: `int[]`, `String[]`, `int[][]`.
+local function javaSimpleName(binary)
+    local element = binary:sub(2)
+    local primitive = PRIMITIVE_ARRAYS[element]
+    if primitive ~= nil then
+        return primitive[2] .. "[]"
+    elseif element:sub(1, 1) == "[" then
+        return javaSimpleName(element) .. "[]"
+    end
+    return element:sub(2, -2):match("[^.$]+$") .. "[]"
+end
+
+function __K2L_ArrayClassOf(binary)
+    local cls = arrayClasses[binary]
+    if cls == nil then
+        cls = __K2L_Class(binary, __K2L_Array)
+        if binary:sub(1, 1) ~= "[" then
+            -- kotlin.UIntArray and the like: value classes over a primitive array
+            local simple = binary:match("[^.]+$")
+            cls.____arrayBinary, cls.____binaryName, cls.____simpleName = binary, binary, simple
+            cls.____qualifiedName, cls.____javaSimpleName = binary, simple
+            cls.toString = function(self)
+                return simple .. "(storage=[" .. (simple == "ULongArray" and "J" or simple:sub(2, 2)) .. "@"
+                    .. string.format("%x", __K2L_IdentityHash(self)) .. ")"
+            end
+        else
+            local primitive = PRIMITIVE_ARRAYS[binary:sub(2)]
+            local simple = primitive and primitive[1] or "Array"
+            cls.____arrayBinary, cls.____binaryName, cls.____simpleName = binary, binary, simple
+            cls.____qualifiedName = "kotlin." .. simple
+            cls.____javaSimpleName = javaSimpleName(binary)
+        end
+        arrayClasses[binary] = cls
+    end
+    return cls
+end
+
+-- `is IntArray` (`binary` "[I") and `is Array<*>` (no `binary`: an array of objects)
+local function __K2L_IsArray(value, binary)
+    if not inherits(value, __K2L_Array) then
+        return false
+    end
+    local actual = value.____arrayBinary
+    if binary ~= nil then
+        return actual == binary
+    end
+    return actual:sub(1, 1) == "[" and PRIMITIVE_ARRAYS[actual:sub(2)] == nil
+end
+
+-- the class for a copy of `self`: an array's own, else an Object[]
+function arrayClass(self)
+    if inherits(self, __K2L_Array) then
+        return getmetatable(self)
+    end
+    return __K2L_Array
+end
 
 function __K2L_Array:equals(other)
     return rawequal(self, other)
+end
+
+-- Any.toString(): `[I@1b`, the class and the identity hash in hex
+function __K2L_Array:toString()
+    return self.____arrayBinary .. "@" .. string.format("%x", __K2L_IdentityHash(self))
 end
 
 __K2L_Array.contentEquals = __K2L_List.equals
@@ -2149,7 +2390,15 @@ local function __K2L_ArrayOf(...)
     return setmetatable(arr, __K2L_Array)
 end
 
--- List(n) { init(it) } and Array(n) { ... }; also IntArray(n) with a constant initial value.
+-- arrayOf(...), intArrayOf(...) and the like, of the array type `binary` (see __K2L_ArrayClassOf)
+local function __K2L_TypedArrayOf(binary, ...)
+    local arr = {...}
+    arr.size = select("#", ...)
+    return setmetatable(arr, arrayClasses[binary] or __K2L_ArrayClassOf(binary))
+end
+
+-- List(n) { init(it) } and Array(n) { ... }; also IntArray(n) with a constant initial value. `array` is the binary name of
+-- the array type (or true for an Object[]), nil for a list.
 local function __K2L_ListOfSize(size, init, array)
     local out = {}
     for i = 1, size do
@@ -2160,7 +2409,11 @@ local function __K2L_ListOfSize(size, init, array)
         end
     end
     out.size = size
-    return setmetatable(out, array and __K2L_Array or __K2L_List)
+    if not array then
+        out.____modCount = 0
+        return setmetatable(out, __K2L_List)
+    end
+    return setmetatable(out, array == true and __K2L_Array or arrayClasses[array] or __K2L_ArrayClassOf(array))
 end
 
 ------------------------------------------------------------------ subList views
@@ -2168,26 +2421,42 @@ end
 -- and writes go to it; adding and removing through the view change the list (with its addAt, addAllAt and removeAt, as the
 -- JDK's views call them) and the sizes of the view and of the views it was made from. ArrayList's views are
 -- ArrayList$SubList, which write elements directly; the read-only lists' are AbstractList$RandomAccessSubList and other
--- lists' AbstractList$SubList, whose set() calls the list's. Changing the list's size directly makes an older view stale
--- (the JVM throws ConcurrentModificationException then; here it shows the elements at its old positions).
+-- lists' AbstractList$SubList, whose set() calls the list's. A structural change of the list made other than through the
+-- view (its ____modCount moved on) makes the view stale: reading its size or elements throws
+-- ConcurrentModificationException, as the JDK's checkForComodification() does. A view's ____modCount is the list's, so
+-- loops over the view notice changes of the list.
 local __K2L_SubList = __K2L_Class("java.util.ArrayList$SubList", __K2L_List)
 local __K2L_AbstractSubList = __K2L_Class("java.util.AbstractList$SubList", __K2L_SubList)
 local __K2L_RandomAccessSubList = __K2L_Class("java.util.AbstractList$RandomAccessSubList", __K2L_AbstractSubList)
 
 do
+local function checkView(self)
+    local root = rawget(self, "____root")
+    if root.____modCount ~= rawget(self, "____expected") then
+        __K2L_Comodification()
+    end
+    return root
+end
+
 local function viewIndex(self, key)
     if type(key) == "number" then
-        if key >= 1 and key <= rawget(self, "size") then
-            return rawget(self, "____root")[rawget(self, "____offset") + key]
+        local root = checkView(self)
+        if key >= 1 and key <= rawget(self, "____size") then
+            return root[rawget(self, "____offset") + key]
         end
         return nil
+    elseif key == "size" then
+        checkView(self)
+        return rawget(self, "____size")
+    elseif key == "____modCount" then
+        return rawget(self, "____root").____modCount
     end
     return getmetatable(self)[key]
 end
 
 local function viewNewIndex(self, key, value)
     if type(key) == "number" then
-        rawget(self, "____root")[rawget(self, "____offset") + key] = value
+        checkView(self)[rawget(self, "____offset") + key] = value
     else
         rawset(self, key, value)
     end
@@ -2198,7 +2467,9 @@ for _, cls in ipairs({__K2L_SubList, __K2L_AbstractSubList, __K2L_RandomAccessSu
 end
 
 local function newView(cls, root, offset, size, parent)
-    return setmetatable({____root = root, ____offset = offset, size = size, ____parentView = parent}, cls)
+    return setmetatable({
+        ____root = root, ____offset = offset, ____size = size, ____parentView = parent, ____expected = root.____modCount,
+    }, cls)
 end
 
 -- a list's views are of the class in its ____subListClass
@@ -2211,9 +2482,12 @@ function __K2L_SubList:____subList(from, to)
     return newView(getmetatable(self), self.____root, self.____offset + from, to - from, self)
 end
 
+-- after a change made through `view`: it and the views it was made from see the list's new size and ____modCount
 local function resize(view, delta)
+    local modCount = rawget(view, "____root").____modCount
     while view ~= nil do
-        rawset(view, "size", rawget(view, "size") + delta)
+        rawset(view, "____size", rawget(view, "____size") + delta)
+        rawset(view, "____expected", modCount)
         view = rawget(view, "____parentView")
     end
 end
@@ -2392,9 +2666,12 @@ local function findSlot(self, key)
     return self.____index[key == nil and NIL_KEY or key]
 end
 
+-- Adding and removing keys are the structural changes of maps and sets (____modCount); rebuilding the lookup tables
+-- (reindex, a TreeMap's rebuild) is not one.
 local function addSlot(self, key)
     local slot = self.size + 1
     self.size = slot
+    self.____modCount = self.____modCount + 1
     self.____keys[slot] = key
     local kind = type(key)
     if (kind == "table" and key.hashCode ~= nil) or kind == "cdata" then
@@ -2413,13 +2690,13 @@ end
 
 local function reindex(self)
     self.____index, self.____buckets = {}, {}
-    local keys, values, n = self.____keys, self.____values, self.size
+    local keys, values, n, modCount = self.____keys, self.____values, self.size, self.____modCount
     self.size = 0
     self.____keys = {}
     for i = 1, n do
         addSlot(self, keys[i])
     end
-    self.____values = values
+    self.____values, self.____modCount = values, modCount
 end
 
 -- Removes the entry at `slot`, keeping the insertion order. The entries after it move down one slot, and their
@@ -2427,6 +2704,7 @@ end
 -- added falls back to rebuilding the lookup tables.
 local function removeSlot(self, slot)
     local n = self.size
+    self.____modCount = self.____modCount + 1
     local keys, values, index, buckets = self.____keys, self.____values, self.____index, self.____buckets
     local removed = keys[slot]
     local stale = false
@@ -2519,6 +2797,10 @@ function __K2L_Set:____array()
     return self.____keys, self.size
 end
 
+function __K2L_Set:isEmpty()
+    return self.size == 0
+end
+
 function __K2L_Set:contains(value)
     return findSlot(self, value) ~= nil
 end
@@ -2606,6 +2888,7 @@ function __K2L_Set:clear()
         end
     end
     __K2L_Set.____init(self)
+    self.____modCount = self.____modCount + 1
 end
 
 function __K2L_Set:toString()
@@ -2614,7 +2897,7 @@ end
 
 -- AbstractSet.equals: the same size, and containsAll(other)
 function __K2L_Set:equals(other)
-    if not inherits(other, __K2L_Set) or other.size ~= self.size then
+    if not inherits(other, __K2L_Set) or (other.getSize and other:getSize() or other.size) ~= self.size then
         return false
     end
     local arr, n = other:____array()
@@ -2707,7 +2990,7 @@ function __K2L_Entry:setValue(value)
     local old = self.value
     self.value = value
     if self.____map ~= nil then
-        self.____map:put(self.key, value)
+        self.____map:____setValue(self.key, value)
     end
     return old
 end
@@ -2722,6 +3005,8 @@ end
 
 __K2L_Map = __K2L_Class("java.util.LinkedHashMap")
 __K2L_Map.__tostring = __K2L_Iterable.__tostring
+__K2L_Map.____modCount = 0
+__K2L_Map.____comodified = __K2L_Iterable.____comodified
 
 -- LinkedHashMap(), (capacity), (map) and (nil, accessOrder) for LinkedHashMap(capacity, loadFactor, accessOrder); copying a
 -- map does not call put, as on the JVM.
@@ -2747,14 +3032,92 @@ local function accessed(self, slot)
     return slot
 end
 
--- for k, v in map:iter() do ... end
-function __K2L_Map:iter()
-    local i = 0
+-- for k, v in map:iter() do ... end, over the entries in order. Like the JDK's entry iterators it knew at each entry
+-- whether there was another one: when the map changed meanwhile, the next step throws ConcurrentModificationException
+-- (after the last entry the loop ends). With `whole` (Map.forEach { k, v -> }, which the JDK runs over the whole map) it
+-- goes on over the map as it is and throws at the end instead.
+function __K2L_Map:iter(whole)
+    local i, modCount = 0, self.____modCount
+    if whole then
+        return function()
+            i = i + 1
+            if i <= self.size then
+                return self.____keys[i], self.____values[i]
+            end
+            if self.____modCount ~= modCount then
+                __K2L_Comodification()
+            end
+        end
+    end
+    local n = self.size
     return function()
+        if self.____modCount ~= modCount then
+            if i < n then
+                __K2L_Comodification()
+            end
+            return nil
+        end
         i = i + 1
-        if i <= self.size then
+        if i <= n then
             return self.____keys[i], self.____values[i]
         end
+    end
+end
+
+-- The keys, values and entries in iteration order, as an array and its length: what the views and loops read. The keys
+-- and values are the map's own arrays; the entries are made for each call, and write back to the map (setValue).
+function __K2L_Map:____keyArray()
+    return self.____keys, self.size
+end
+
+function __K2L_Map:____valueArray()
+    return self.____values, self.size
+end
+
+-- for `for ((k, v) in map)`
+function __K2L_Map:____arrays()
+    return self.____keys, self.____values, self.size
+end
+
+function __K2L_Map:____entryArray()
+    local out, n = {}, self.size
+    local keys, values = self.____keys, self.____values
+    local cls = self.____views.entry
+    for i = 1, n do
+        out[i] = setmetatable({key = keys[i], value = values[i], ____map = self}, cls)
+    end
+    return out, n
+end
+
+-- what the views read: the map's own arrays, which a subclass overriding `entries` and the like does not change (the
+-- arrays the loops read do, see CollectionOverrides)
+__K2L_Map.____viewKeys, __K2L_Map.____viewValues = __K2L_Map.____keyArray, __K2L_Map.____valueArray
+__K2L_Map.____viewEntries = __K2L_Map.____entryArray
+
+-- Removes `key` without calling the map's (overridable) remove, as the JDK's views do; whether it was there.
+function __K2L_Map:____removeKey(key)
+    local slot = findSlot(self, key)
+    if slot == nil then
+        return false
+    end
+    removeSlot(self, slot)
+    return true
+end
+
+-- Whether the map has `key`, and its value, without calling get (EntrySet.contains)
+function __K2L_Map:____lookup(key)
+    local slot = findSlot(self, key)
+    if slot == nil then
+        return false
+    end
+    return true, self.____values[slot]
+end
+
+-- Entry.setValue: the value of the key in place, without calling put
+function __K2L_Map:____setValue(key, value)
+    local slot = findSlot(self, key)
+    if slot ~= nil then
+        self.____values[slot] = value
     end
 end
 
@@ -2881,59 +3244,61 @@ function __K2L_Map:remove(key, value)
     return old
 end
 
+-- HashMap's putIfAbsent, merge, compute, computeIfAbsent and computeIfPresent work on the table: they call neither get,
+-- put nor remove, which a subclass may override.
 function __K2L_Map:putIfAbsent(key, value)
-    local old = self:get(key)
+    local old = __K2L_Map.get(self, key)
     if old == nil then
-        self:put(key, value)
+        self:____put(key, value)
     end
     return old
 end
 
 function __K2L_Map:merge(key, value, remapping)
-    local old = self:get(key)
+    local old = __K2L_Map.get(self, key)
     local result = value
     if old ~= nil then
         result = remapping(old, value)
     end
     if result == nil then
-        self:remove(key)
+        __K2L_Map.remove(self, key)
     else
-        self:put(key, result)
+        self:____put(key, result)
     end
     return result
 end
 
 function __K2L_Map:compute(key, remapping)
-    local result = remapping(key, self:get(key))
+    local result = remapping(key, __K2L_Map.get(self, key))
     if result == nil then
-        self:remove(key)
+        __K2L_Map.remove(self, key)
     else
-        self:put(key, result)
+        self:____put(key, result)
     end
     return result
 end
 
 function __K2L_Map:computeIfAbsent(key, mapping)
-    local old = self:get(key)
+    local old = __K2L_Map.get(self, key)
     if old == nil then
         old = mapping(key)
         if old ~= nil then
-            self:put(key, old)
+            self:____put(key, old)
         end
     end
     return old
 end
 
 function __K2L_Map:computeIfPresent(key, remapping)
-    local old = self:get(key)
+    local old = __K2L_Map.get(self, key)
     if old == nil then
         return nil
     end
     local result = remapping(key, old)
     if result == nil then
-        self:remove(key)
+        __K2L_Map.remove(self, key)
     else
-        self:put(key, result)
+        self:____put(key, result)
     end
     return result
 end
@@ -2973,6 +3338,7 @@ end
 
 function __K2L_Map:clear()
     __K2L_Map.____init(self)
+    self.____modCount = self.____modCount + 1
 end
 
 function __K2L_Map:isEmpty()
@@ -2983,58 +3349,36 @@ function __K2L_Map:isNotEmpty()
     return self.size > 0
 end
 
--- keys, values and entries are copies that remove from the map when elements are removed from them.
-local function removeKey(map, key)
-    map:remove(key)
-end
-
-local function removeValue(map, value)
-    for i = 1, map.size do
-        if __K2L_Equals(map.____values[i], value) then
-            map:remove(map.____keys[i])
-            return
-        end
-    end
-end
-
-local function removeEntry(map, entry)
-    map:remove(entry.key)
-end
-
--- The views have the JVM's classes for the map's class (its ____views, see "view and iterator classes" below).
+-- keys, values and entries are live views of the map (see "map views" below), made once per map as on the JVM, of the
+-- JVM's classes for the map's class (its ____views).
 function __K2L_Map:getKeys()
-    local set = __K2L_Set.new()
-    for i = 1, self.size do
-        set:add(self.____keys[i])
+    local view = self.____keySet
+    if view == nil then
+        view = setmetatable({____map = self}, self.____views.keys)
+        self.____keySet = view
     end
-    set.____owner, set.____ownerRemove = self, removeKey
-    local views = self.____views
-    return views and setmetatable(set, views.keys) or set
+    return view
 end
 
 function __K2L_Map:getValues()
-    local out = {}
-    for i = 1, self.size do
-        out[i] = self.____values[i]
+    local view = self.____valueCollection
+    if view == nil then
+        view = setmetatable({____map = self}, self.____views.values)
+        self.____valueCollection = view
     end
-    local list = newList(out, self.size)
-    list.____owner, list.____ownerRemove = self, removeValue
-    local views = self.____views
-    return views and setmetatable(list, views.values) or list
+    return view
 end
 
 function __K2L_Map:getEntries()
-    local out = {}
-    local views = self.____views
-    for i = 1, self.size do
-        local entry = __K2L_Entry.new(self.____keys[i], self.____values[i])
-        entry.____map = self
-        out[i] = views and setmetatable(entry, views.entry) or entry
+    local view = self.____entrySet
+    if view == nil then
+        view = setmetatable({____map = self}, self.____views.entries)
+        self.____entrySet = view
     end
-    local list = newList(out, self.size)
-    list.____owner, list.____ownerRemove = self, removeEntry
-    return views and setmetatable(list, views.entries) or list
+    return view
 end
+
+__K2L_Map.navigableKeySet = __K2L_Map.getKeys
 
 function __K2L_Map:iterator()
     return self:getEntries():iterator()
@@ -3052,13 +3396,18 @@ function __K2L_Map:toString()
     return "{" .. table.concat(parts, ", ") .. "}"
 end
 
+-- AbstractMap.equals: the other map's size(), then its get for each key (and containsKey for a null value)
 function __K2L_Map:equals(other)
-    if not inherits(other, __K2L_Map) or other.size ~= self.size then
+    if not inherits(other, __K2L_Map) or (other.getSize and other:getSize() or other.size) ~= self.size then
         return false
     end
     for i = 1, self.size do
-        local key = self.____keys[i]
-        if not other:containsKey(key) or not __K2L_Equals(other:get(key), self.____values[i]) then
+        local key, value = self.____keys[i], self.____values[i]
+        if value == nil then
+            if other:get(key) ~= nil or not other:containsKey(key) then
+                return false
+            end
+        elseif not __K2L_Equals(value, other:get(key)) then
             return false
         end
     end
@@ -3075,14 +3424,21 @@ end
 
 -- Operations taking an entry lambda receive the entry; `forEach { k, v -> }` gets both.
 function __K2L_Map:forEach(action)
-    for i = 1, self.size do
-        action(__K2L_Entry.new(self.____keys[i], self.____values[i]))
+    local entries, n = self:____entryArray()
+    for i = 1, n do
+        action(entries[i])
     end
 end
 
+-- Map.forEach(BiConsumer) runs over the whole map, then throws if it changed
 function __K2L_Map:forEachKeyValue(action)
-    for i = 1, self.size do
+    local modCount, i = self.____modCount, 1
+    while i <= self.size do
         action(self.____keys[i], self.____values[i])
+        i = i + 1
+    end
+    if self.____modCount ~= modCount then
+        __K2L_Comodification()
     end
 end
 
@@ -3404,9 +3760,11 @@ end
 -- A range of Doubles or other Comparables: not iterable, only a pair of bounds.
 local __K2L_ClosedRange = __K2L_Class("kotlin.ranges.ClosedRange")
 
-function __K2L_ClosedRange:____init(first, last)
+-- `format` prints the bounds of a range of Doubles or Floats (an integral Double is an integer before Lua 5.3)
+function __K2L_ClosedRange:____init(first, last, format)
     self.first = first
     self.last = last
+    self.____format = format
 end
 
 function __K2L_ClosedRange:contains(value)
@@ -3418,7 +3776,8 @@ function __K2L_ClosedRange:isEmpty()
 end
 
 function __K2L_ClosedRange:toString()
-    return __K2L_Str(self.first) .. ".." .. __K2L_Str(self.last)
+    local format = self.____format or __K2L_Str
+    return format(self.first) .. ".." .. format(self.last)
 end
 
 function __K2L_ClosedRange:equals(other)
@@ -3490,6 +3849,26 @@ function __K2L_PriorityQueue:____array()
     return self.____heap, self.size
 end
 
+-- contains reads the heap; equals and hashCode are Object's
+function __K2L_PriorityQueue:contains(value)
+    for i = 1, self.size do
+        if __K2L_Equals(self.____heap[i], value) then
+            return true
+        end
+    end
+    return false
+end
+
+__K2L_PriorityQueue.equals, __K2L_PriorityQueue.hashCode = rawequal, __K2L_IdentityHash
+
+-- PriorityQueue.Itr.hasNext() is cursor < size
+function __K2L_PriorityQueue:____comodified(i)
+    if i < self.size then
+        __K2L_Comodification()
+    end
+    return true
+end
+
 local function siftUp(self, k, x)
     local heap, compare = self.____heap, self.____compare
     while k > 0 do
@@ -3530,6 +3909,7 @@ function __K2L_PriorityQueue:offer(element)
     end
     local k = self.size
     self.size = k + 1
+    self.____modCount = self.____modCount + 1
     siftUp(self, k, element)
     return true
 end
@@ -3568,6 +3948,7 @@ function __K2L_PriorityQueue:poll()
     local result = heap[1]
     n = n - 1
     self.size = n
+    self.____modCount = self.____modCount + 1
     local x = heap[n + 1]
     heap[n + 1] = nil
     if n > 0 then
@@ -3580,6 +3961,7 @@ local function removeIndex(self, i)
     local heap = self.____heap
     local s = self.size - 1
     self.size = s
+    self.____modCount = self.____modCount + 1
     if s == i then
         heap[i + 1] = nil
     else
@@ -3626,6 +4008,9 @@ function __K2L_PriorityQueue:removeAll(predicate)
     end
     local changed = n ~= self.size
     self.____heap, self.size = kept, n
+    if changed then
+        self.____modCount = self.____modCount + 1
+    end
     for i = math.floor(n / 2) - 1, 0, -1 do
         siftDown(self, i, kept[i + 1])
     end
@@ -3637,6 +4022,7 @@ __K2L_PriorityQueue.removeIf = __K2L_PriorityQueue.removeAll
 function __K2L_PriorityQueue:clear()
     self.____heap = {}
     self.size = 0
+    self.____modCount = self.____modCount + 1
 end
 
 function __K2L_PriorityQueue:toString()
@@ -3831,6 +4217,7 @@ function __K2L_SortedMap:clear()
     local compare = self.____compare
     __K2L_Map.____init(self)
     self.____compare = compare
+    self.____modCount = self.____modCount + 1
 end
 
 local function sortedCopy(self, keepFrom, keepTo)
@@ -3919,12 +4306,81 @@ function __K2L_SortedMap:subMap(from, to)
         lowerBound(self.____keys, self.size, to, self.____compare) - 1)
 end
 
-function __K2L_SortedMap:descendingMap()
-    local out = __K2L_Map.new()
-    for i = self.size, 1, -1 do
-        out:put(self.____keys[i], self.____values[i])
+-- descendingMap() is a live view of the map in reverse order (TreeMap$DescendingSubMap): its methods run on a reversed
+-- copy (a TreeMap ordered the other way, rebuilt from the map for each call), whose writes go to the map. Its size and
+-- ____modCount are the map's, and its keys, values and entries are views of the view.
+local DescendingMap = __K2L_Class("java.util.TreeMap$DescendingSubMap", __K2L_SortedMap)
+local ReversedCopy = __K2L_Class("java.util.TreeMap", __K2L_SortedMap)
+local DESCENDING_OWN = {
+    getKeys = true, getValues = true, getEntries = true, navigableKeySet = true, descendingKeySet = true, descendingMap = true,
+}
+
+local function reversedCopy(view)
+    local root = rawget(view, "____root")
+    local copy = rawget(view, "____copy")
+    if copy == nil then
+        local compare = root.____compare
+        copy = setmetatable({____root = root}, ReversedCopy)
+        copy.____compare = function(a, b) return compare(b, a) end
+        rawset(view, "____copy", copy)
     end
-    return out
+    __K2L_Map.____init(copy)
+    local keys, values, n = root.____keys, root.____values, root.size
+    for i = n, 1, -1 do
+        copy.____values[addSlot(copy, keys[i])] = values[i]
+    end
+    return copy
+end
+
+local wrapped = {}
+
+DescendingMap.__index = function(self, key)
+    if key == "size" then
+        return rawget(self, "____root").size
+    elseif key == "____modCount" then
+        return rawget(self, "____root").____modCount
+    end
+    local member = DescendingMap[key]
+    if type(member) ~= "function" or DESCENDING_OWN[key] then
+        return member
+    end
+    local forward = wrapped[key]
+    if forward == nil then
+        forward = function(view, ...)
+            local copy = reversedCopy(view)
+            return copy[key](copy, ...)
+        end
+        wrapped[key] = forward
+    end
+    return forward
+end
+
+-- the copy's writes go to the map (pollFirstEntry of the reversed order is the map's pollLastEntry)
+for _, name in ipairs({
+    "put", "set", "remove", "clear", "putAll", "putIfAbsent", "merge", "compute", "computeIfAbsent", "computeIfPresent",
+    "replaceAll", "____removeKey", "____setValue",
+}) do
+    ReversedCopy[name] = function(copy, ...)
+        local root = copy.____root
+        return root[name](root, ...)
+    end
+end
+
+function ReversedCopy:pollFirstEntry()
+    return self.____root:pollLastEntry()
+end
+
+function ReversedCopy:pollLastEntry()
+    return self.____root:pollFirstEntry()
+end
+
+function __K2L_SortedMap:descendingMap()
+    return setmetatable({____root = self}, DescendingMap)
+end
+
+-- the reverse of the reverse order is the map's
+function DescendingMap:descendingMap()
+    return self.____root
 end
 
 function __K2L_SortedMap:descendingKeySet()
@@ -3995,6 +4451,7 @@ function __K2L_SortedSet:clear()
     local compare = self.____compare
     __K2L_Set.____init(self)
     self.____compare = compare
+    self.____modCount = self.____modCount + 1
 end
 
 local function sortedSetCopy(self, keepFrom, keepTo)
@@ -4055,10 +4512,12 @@ function __K2L_SortedSet:subSet(from, to)
         lowerBound(self.____keys, self.size, to, self.____compare) - 1)
 end
 
+-- a TreeSet in the reverse order (a copy; the JVM's is a view of the set)
 function __K2L_SortedSet:descendingSet()
-    local out = __K2L_Set.new()
+    local compare = self.____compare
+    local out = __K2L_SortedSet.new(function(a, b) return compare(b, a) end)
     for i = self.size, 1, -1 do
-        out:add(self.____keys[i])
+        addSlot(out, self.____keys[i])
     end
     return out
 end
@@ -4080,15 +4539,15 @@ end
 end
 
 function __K2L_Array:plus(element)
-    return setmetatable(__K2L_Iterable.plus(self, element), __K2L_Array)
+    return setmetatable(__K2L_Iterable.plus(self, element), getmetatable(self))
 end
 
 function __K2L_Array:plusAll(elements)
-    return setmetatable(__K2L_Iterable.plusAll(self, elements), __K2L_Array)
+    return setmetatable(__K2L_Iterable.plusAll(self, elements), getmetatable(self))
 end
 
 function __K2L_Array:sliceArray(indices)
-    return setmetatable(self:slice(indices), __K2L_Array)
+    return setmetatable(self:slice(indices), getmetatable(self))
 end
 
 -- Arrays.deepHashCode / deepEquals: nested arrays by content, other elements by hashCode()/equals()
@@ -4096,18 +4555,18 @@ function __K2L_Array:contentDeepHashCode()
     local h = 1
     for i = 1, self.size do
         local v = self[i]
-        h = __K2L_ToInt32(31 * h + (getmetatable(v) == __K2L_Array and v:contentDeepHashCode() or __K2L_Hash(v)))
+        h = __K2L_ToInt32(31 * h + (inherits(v, __K2L_Array) and v:contentDeepHashCode() or __K2L_Hash(v)))
     end
     return h
 end
 
 function __K2L_Array:contentDeepEquals(other)
-    if getmetatable(other) ~= __K2L_Array or other.size ~= self.size then
+    if not inherits(other, __K2L_Array) or other.size ~= self.size then
         return false
     end
     for i = 1, self.size do
         local a, b = self[i], other[i]
-        if getmetatable(a) == __K2L_Array and getmetatable(b) == __K2L_Array then
+        if inherits(a, __K2L_Array) and inherits(b, __K2L_Array) then
             if not a:contentDeepEquals(b) then
                 return false
             end
@@ -4122,7 +4581,7 @@ function __K2L_Array:contentDeepToString()
     local parts = {}
     for i = 1, self.size do
         local v = self[i]
-        if getmetatable(v) == __K2L_Array then
+        if inherits(v, __K2L_Array) then
             parts[i] = v:contentDeepToString()
         else
             parts[i] = __K2L_Str(v)
@@ -4240,10 +4699,12 @@ function __K2L_HashMap:clear()
     local capacity = self.____capacity
     __K2L_Map.____init(self)
     self.____capacity, self.____dirty = capacity, false
+    self.____modCount = self.____modCount + 1
 end
 
 ordered(__K2L_HashMap, __K2L_Map, {
-    "iter", "getKeys", "getValues", "getEntries", "toString", "forEach", "forEachKeyValue", "filter", "mapValues",
+    "iter", "____keyArray", "____valueArray", "____entryArray", "____arrays", "____viewKeys", "____viewValues", "____viewEntries",
+    "toString", "forEach", "forEachKeyValue", "filter", "mapValues",
     "mapKeys", "toList", "replaceAll", "mapValuesTo", "mapKeysTo", "containsValue",
 })
 
@@ -4275,6 +4736,7 @@ function __K2L_HashSet:clear()
     local capacity = self.____capacity
     __K2L_Set.____init(self)
     self.____capacity, self.____dirty = capacity, false
+    self.____modCount = self.____modCount + 1
 end
 
 ordered(__K2L_HashSet, __K2L_Set, {"____array", "toString"})
@@ -4304,23 +4766,26 @@ function __K2L_Iterable:toHashSet()
 end
 end
 
+local __K2L_ListBuilder
+local __K2L_ListBuilderOf
+local __K2L_SetBuilderOf
+local __K2L_MapBuilderOf
+
 ------------------------------------------------------------------ view and iterator classes
 -- The JVM's classes of iterators (`iterator()` makes an instance of the collection's ____iteratorClass) and of a map's
--- keys, values and entries (each map class's ____views). The keys, values and entries are copies that write removals back
--- to the map (see getKeys); like the JDK's views they cannot be added to. Values compare by identity (a plain Collection) and
--- entries like a set.
+-- keys, values and entries (each map class's ____views).
 do
-local function iterators(cls, name)
-    cls.____iteratorClass = __K2L_Class(name, __K2L_CollectionIterator)
+local function iterators(cls, name, base)
+    cls.____iteratorClass = __K2L_Class(name, base or __K2L_CollectionIterator)
 end
 
-iterators(__K2L_List, "java.util.ArrayList$Itr")
+iterators(__K2L_List, "java.util.ArrayList$Itr", __K2L_ListItr)
 iterators(__K2L_FixedSizeList, "java.util.Arrays$ArrayItr")
 iterators(__K2L_SingletonList, "java.util.Collections$1")
 iterators(__K2L_EmptyList, "kotlin.collections.EmptyIterator")
 iterators(__K2L_Array, "kotlin.jvm.internal.ArrayIterator")
-iterators(__K2L_SubList, "java.util.ArrayList$SubList$1")
-iterators(__K2L_AbstractSubList, "java.util.AbstractList$Itr")
+iterators(__K2L_SubList, "java.util.ArrayList$SubList$1", __K2L_ListItr)
+iterators(__K2L_AbstractSubList, "java.util.AbstractList$Itr", __K2L_ListItr)
 iterators(__K2L_Set, "java.util.LinkedHashMap$LinkedKeyIterator")
 iterators(__K2L_HashSet, "java.util.HashMap$KeyIterator")
 iterators(__K2L_SortedSet, "java.util.TreeMap$KeyIterator")
@@ -4329,16 +4794,116 @@ iterators(__K2L_SingletonSet, "java.util.Collections$1")
 iterators(__K2L_PriorityQueue, "java.util.PriorityQueue$Itr")
 iterators(__K2L_IntRange, "kotlin.ranges.IntProgressionIterator")
 
-local function blocked(cls, names)
-    for _, name in ipairs(names) do
-        cls[name] = unsupported
+------------------------------------------------------------------ map views
+-- A map's keys, values and entries are live views: they hold only the map (____map) and read it on every use through its
+-- ____keyArray, ____valueArray and ____entryArray, so they see later changes of the map, and their size and ____modCount
+-- are the map's. As in the JDK, removing from them (remove, removeAll, retainAll, removeIf, clear, their iterators'
+-- remove()) removes the entries from the map without calling its remove, and adding throws UnsupportedOperationException.
+-- The keys and the entries are sets; the values are a plain Collection (not a List), equal to itself only.
+local KeysView = __K2L_Class("java.util.AbstractSet", __K2L_Iterable)
+local ValuesView = __K2L_Class("java.util.AbstractCollection", __K2L_Iterable)
+local EntriesView = __K2L_Class("java.util.AbstractSet", __K2L_Iterable)
+KeysView.____interfaces[__K2L_Set] = true
+EntriesView.____interfaces[__K2L_Set] = true
+
+-- `size` and `____modCount` of a view are the map's.
+local function viewIndex(cls)
+    cls.__index = function(self, key)
+        if key == "size" then
+            return rawget(self, "____map").size
+        elseif key == "____modCount" then
+            return rawget(self, "____map").____modCount
+        end
+        return cls[key]
     end
 end
 
-local LIST_ADDERS = {"add", "addAt", "addAll", "addAllAt", "set", "addFirst", "addLast"}
+function KeysView:____array()
+    return self.____map:____viewKeys()
+end
 
-local function entriesEqual(self, other)
-    if not (type(other) == "table" and other.____array ~= nil) or other.size ~= self.size then
+function ValuesView:____array()
+    return self.____map:____viewValues()
+end
+
+function EntriesView:____array()
+    return self.____map:____viewEntries()
+end
+
+local function copyOf(arr, n)
+    local out = {}
+    for i = 1, n do
+        out[i] = arr[i]
+    end
+    return out
+end
+
+-- The view's elements and the map's keys they belong to, as copies.
+local function snapshot(self)
+    local items, n = self:____array()
+    local keys = self.____map:____viewKeys()
+    return copyOf(items, n), n, copyOf(keys, n)
+end
+
+-- an iterator over a snapshot whose remove() removes the current key from the map
+local function viewIterator(self)
+    local items, n, keys = snapshot(self)
+    return self.____iteratorClass.new(self, items, n, keys)
+end
+
+KeysView.iterator, ValuesView.iterator, EntriesView.iterator = viewIterator, viewIterator, viewIterator
+
+-- Removes the entries whose element `matches` (or does not, when `keep`); whether any was removed.
+local function removeMatching(self, matches, keep)
+    local items, n, keys = snapshot(self)
+    local map, changed = self.____map, false
+    for i = 1, n do
+        if (matches(items[i]) and true or false) ~= keep then
+            map:____removeKey(keys[i])
+            changed = true
+        end
+    end
+    return changed
+end
+
+local function matcher(elements)
+    if type(elements) == "function" then
+        return elements
+    end
+    return function(it) return elements:contains(it) end
+end
+
+local function viewRemoveAll(self, elements)
+    return removeMatching(self, matcher(elements), false)
+end
+
+local function viewRetainAll(self, elements)
+    return removeMatching(self, matcher(elements), true)
+end
+
+local function viewClear(self)
+    self.____map:clear()
+end
+
+local function viewIsEmpty(self)
+    return self.____map.size == 0
+end
+
+local function viewToString(self)
+    local items, n = self:____array()
+    local parts = {}
+    for i = 1, n do
+        parts[i] = __K2L_Str(items[i])
+    end
+    return "[" .. table.concat(parts, ", ") .. "]"
+end
+
+-- AbstractSet.equals: another set of the same size whose elements this one contains
+local function setEquals(self, other)
+    if rawequal(self, other) then
+        return true
+    end
+    if not inherits(other, __K2L_Set) or other.size ~= self.size then
         return false
     end
     local arr, n = other:____array()
@@ -4350,29 +4915,77 @@ local function entriesEqual(self, other)
     return true
 end
 
-local function entriesHash(self)
+local function setHash(self)
+    local items, n = self:____array()
     local h = 0
-    for i = 1, self.size do
-        h = __K2L_ToInt32(h + __K2L_Hash(self[i]))
+    for i = 1, n do
+        h = __K2L_ToInt32(h + __K2L_Hash(items[i]))
     end
     return h
 end
 
+for _, view in ipairs({KeysView, ValuesView, EntriesView}) do
+    view.removeAll, view.removeIf, view.retainAll, view.clear = viewRemoveAll, viewRemoveAll, viewRetainAll, viewClear
+    view.isEmpty, view.toString = viewIsEmpty, viewToString
+    view.add, view.addAll = unsupported, unsupported
+end
+for _, view in ipairs({KeysView, EntriesView}) do
+    view.equals, view.hashCode = setEquals, setHash
+    view.plus, view.plusAll, view.minus, view.minusAll = __K2L_Set.plus, __K2L_Set.plusAll, __K2L_Set.minus, __K2L_Set.minusAll
+end
+ValuesView.equals, ValuesView.hashCode = rawequal, __K2L_IdentityHash
+
+function KeysView:contains(key)
+    return self.____map:containsKey(key)
+end
+
+function KeysView:remove(key)
+    return self.____map:____removeKey(key)
+end
+
+-- AbstractCollection.contains/remove of HashMap$Values and the like: containsValue, and the first entry with the value
+function ValuesView:contains(value)
+    return self.____map:containsValue(value)
+end
+
+function ValuesView:remove(value)
+    local items, n, keys = snapshot(self)
+    for i = 1, n do
+        if __K2L_Equals(items[i], value) then
+            return self.____map:____removeKey(keys[i])
+        end
+    end
+    return false
+end
+
+-- an entry whose key the map has, with an equal value
+function EntriesView:contains(entry)
+    if not inherits(entry, __K2L_Entry) then
+        return false
+    end
+    local found, value = self.____map:____lookup(entry.key)
+    return found and __K2L_Equals(value, entry.value)
+end
+
+function EntriesView:remove(entry)
+    if self:contains(entry) then
+        return self.____map:____removeKey(entry.key)
+    end
+    return false
+end
+
 -- `prefix` is the map's binary class name; `keys`, `values` and `entries` are the names of its view classes (nested classes
--- of the map's class unless they contain a dot), `entry` that of its entries, and the iterator names those of the views.
+-- of the map's class), `entry` that of its entries, and the iterator names those of the views.
 local function views(map, prefix, names)
     local function nested(name)
         return name:find(".", 1, true) and name or prefix .. "$" .. name
     end
-    local keys = __K2L_Class(nested(names.keys), __K2L_Set)
-    blocked(keys, {"add", "addAll"})
-    local values = __K2L_Class(nested(names.values), __K2L_List)
-    blocked(values, LIST_ADDERS)
-    values.equals = rawequal
-    values.hashCode = __K2L_IdentityHash
-    local entries = __K2L_Class(nested(names.entries), __K2L_List)
-    blocked(entries, LIST_ADDERS)
-    entries.equals, entries.hashCode = entriesEqual, entriesHash
+    local keys = __K2L_Class(nested(names.keys), KeysView)
+    local values = __K2L_Class(nested(names.values), ValuesView)
+    local entries = __K2L_Class(nested(names.entries), EntriesView)
+    for _, cls in ipairs({keys, values, entries}) do
+        viewIndex(cls)
+    end
     iterators(keys, nested(names.keyIterator))
     iterators(values, nested(names.valueIterator))
     iterators(entries, nested(names.entryIterator))
@@ -4391,16 +5004,130 @@ views(__K2L_SortedMap, "java.util.TreeMap", {
     keys = "KeySet", values = "Values", entries = "EntrySet", entry = "Entry",
     keyIterator = "KeyIterator", valueIterator = "ValueIterator", entryIterator = "EntryIterator",
 })
-views(__K2L_SingletonMap, "java.util.Collections", {
-    keys = "SingletonSet", values = "SingletonSet", entries = "SingletonSet", entry = "java.util.AbstractMap$SimpleImmutableEntry",
-    keyIterator = "1", valueIterator = "1", entryIterator = "1",
+
+-- A TreeMap's keys are a NavigableSet over the map (navigableKeySet(), descendingKeySet()).
+local treeKeys = __K2L_SortedMap.____views.keys
+treeKeys.____interfaces[__K2L_SortedSet] = true
+
+function treeKeys:descendingSet()
+    return self.____map:descendingMap():getKeys()
+end
+
+for set, map in pairs({floor = "floorKey", lower = "lowerKey", ceiling = "ceilingKey", higher = "higherKey"}) do
+    treeKeys[set] = function(self, key)
+        return self.____map[map](self.____map, key)
+    end
+end
+
+for set, map in pairs({pollFirst = "pollFirstEntry", pollLast = "pollLastEntry"}) do
+    treeKeys[set] = function(self)
+        local entry = self.____map[map](self.____map)
+        return entry and entry.key
+    end
+end
+
+-- The views of a Collections$SingletonMap are singleton sets, Collections.singleton(key) and the like (its entry an
+-- AbstractMap$SimpleImmutableEntry); those of Kotlin's EmptyMap are EmptySet and EmptyList.
+local SimpleImmutableEntry = __K2L_Class("java.util.AbstractMap$SimpleImmutableEntry", __K2L_Entry)
+SimpleImmutableEntry.setValue = unsupported
+__K2L_SingletonMap.____views = {entry = SimpleImmutableEntry}
+
+function __K2L_SingletonMap:getKeys()
+    return optimizedSet(__K2L_SetOf(self.____keys[1]))
+end
+
+function __K2L_SingletonMap:getValues()
+    return optimizedSet(__K2L_SetOf(self.____values[1]))
+end
+
+function __K2L_SingletonMap:getEntries()
+    local entries = self:____entryArray()
+    return optimizedSet(__K2L_SetOf(entries[1]))
+end
+
+function __K2L_EmptyMap:getKeys()
+    return EMPTY_SET
+end
+
+__K2L_EmptyMap.getEntries = __K2L_EmptyMap.getKeys
+
+function __K2L_EmptyMap:getValues()
+    return EMPTY_LIST
+end
+
+------------------------------------------------------------------ builders
+-- buildList { }, buildSet { } and buildMap { } fill a ListBuilder, SetBuilder or MapBuilder (kotlin.collections.builders),
+-- which ____build() makes read-only after the block, as Kotlin's build() does: the object keeps its class name and stays
+-- a MutableList (`is` is true), but every mutator throws UnsupportedOperationException, also through its views and
+-- iterators, and also when it would change nothing (the in-place operations that set elements one by one throw once
+-- they would set one).
+local NAMESPACE = "kotlin.collections.builders."
+
+__K2L_ListBuilder = __K2L_Class(NAMESPACE .. "ListBuilder", __K2L_List)
+local SetBuilder = __K2L_Class(NAMESPACE .. "SetBuilder", __K2L_Set)
+local MapBuilder = __K2L_Class(NAMESPACE .. "MapBuilder", __K2L_Map)
+iterators(__K2L_ListBuilder, NAMESPACE .. "ListBuilder$Itr", __K2L_ListItr)
+local BuilderSubList = __K2L_Class(NAMESPACE .. "ListBuilder$BuilderSubList", __K2L_SubList)
+BuilderSubList.__index, BuilderSubList.__newindex = __K2L_SubList.__index, __K2L_SubList.__newindex
+__K2L_ListBuilder.____subListClass = BuilderSubList
+iterators(BuilderSubList, NAMESPACE .. "ListBuilder$Itr", __K2L_ListItr)
+iterators(SetBuilder, NAMESPACE .. "MapBuilder$KeysItr")
+views(MapBuilder, NAMESPACE .. "MapBuilder", {
+    keys = NAMESPACE .. "MapBuilderKeys", values = NAMESPACE .. "MapBuilderValues", entries = NAMESPACE .. "MapBuilderEntries",
+    entry = "EntryRef", keyIterator = "KeysItr", valueIterator = "ValuesItr", entryIterator = "EntriesItr",
 })
-views(__K2L_EmptyMap, "kotlin.collections", {
-    keys = "kotlin.collections.EmptySet", values = "kotlin.collections.EmptyList", entries = "kotlin.collections.EmptySet",
-    entry = "java.util.Map.Entry", keyIterator = "kotlin.collections.EmptyIterator",
-    valueIterator = "kotlin.collections.EmptyIterator", entryIterator = "kotlin.collections.EmptyIterator",
+
+-- the read-only class of a builder after build(): the builder's class with its mutators blocked
+local function built(builder, always, bySize)
+    local cls = __K2L_Class(rawget(builder, "____name"), builder)
+    for _, name in ipairs(always) do
+        cls[name] = unsupported
+    end
+    for name, size in pairs(bySize or {}) do
+        cls[name] = function(self, ...)
+            if self.size > size then
+                unsupported()
+            end
+            return builder[name](self, ...)
+        end
+    end
+    function builder:____build()
+        return setmetatable(self, cls)
+    end
+    return cls
+end
+
+local BuiltList = built(__K2L_ListBuilder, {
+    "add", "addAt", "addAll", "addAllAt", "removeAt", "remove", "removeAll", "retainAll", "clear", "set", "addFirst", "addLast",
+    "removeFirst", "removeLast", "removeFirstOrNull", "removeLastOrNull",
+}, {
+    sort = 1, sortDescending = 1, sortBy = 1, sortByDescending = 1, sortWith = 1, reverse = 1, shuffle = 1, fill = 0,
+    replaceAll = 0,
 })
-for _, view in ipairs({"keys", "values", "entries"}) do
-    __K2L_EmptyMap.____views[view].____readOnly = true
+
+-- removeIf removes through the iterator, which fails once it finds an element to remove
+function BuiltList:removeIf(predicate)
+    if self:any(predicate) then
+        unsupported()
+    end
+    return false
+end
+
+built(SetBuilder, {"add", "addAll", "remove", "removeAll", "retainAll", "clear"})
+built(MapBuilder, {
+    "put", "set", "putAll", "remove", "clear", "putIfAbsent", "merge", "compute", "computeIfAbsent", "computeIfPresent",
+    "replaceAll", "getOrPut", "____removeKey", "____setValue",
+})
+
+function __K2L_ListBuilderOf()
+    return __K2L_ListBuilder.new()
+end
+
+function __K2L_SetBuilderOf()
+    return SetBuilder.new()
+end
+
+function __K2L_MapBuilderOf()
+    return MapBuilder.new()
 end
 end

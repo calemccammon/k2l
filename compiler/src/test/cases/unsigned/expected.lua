@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_Equals = ____lualib.__K2L_Equals
@@ -11,6 +10,7 @@ local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 
 local sumOfSquares
@@ -103,8 +103,8 @@ local function main()
     print(math.max(5, 9))
     print(tostring(a))
     print(__K2L_Num.toRadix(a, 16))
-    print(__K2L_ArrayOf(1, 2, 3):sum() & 0xFFFFFFFF)
-    local arr = __K2L_ListOfSize(3, 0, true)
+    print(__K2L_TypedArrayOf("kotlin.UIntArray", 1, 2, 3):sum() & 0xFFFFFFFF)
+    local arr = __K2L_ListOfSize(3, 0, "kotlin.UIntArray")
     arr:set(1, 7)
     print(__K2L_Str(arr:toList()))
     print(arr:get(1) + arr:get(0) & 0xFFFFFFFF)
