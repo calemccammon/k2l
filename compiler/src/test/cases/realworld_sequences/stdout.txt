@@ -1,0 +1,28 @@
+collatz(27) has 112 terms, peak 9232
+longest under 30: 27 (112 terms)
+collatz(6) = 6 -> 3 -> 10 -> 5 -> 16 -> 8 -> 4 -> 2 -> 1
+first primes: [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47]
+100th prime: 541; sieve agrees: 541
+primes below 100 by last digit: {1=[11, 31, 41, 61, 71], 2=[2], 3=[3, 13, 23, 43, 53, 73, 83], 5=[5], 7=[7, 17, 37, 47, 67, 97], 9=[19, 29, 59, 79, 89]}
+twin primes: [(3, 5), (5, 7), (11, 13), (17, 19), (29, 31), (41, 43)]
+max prime gap below 1000: 20 after 887
+fibonacci: 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181
+first 15-digit fibonacci: F(69) = 117669030460994
+even fib sum below 4M: 4613732
+digit sum of F(75): 65
+happy numbers: [1, 7, 10, 13, 19, 23, 28, 31, 32, 44, 49]
+median-of-3: 21.7, 22.4, 23.9, 24.1, 24.6, 24.6, 24.2, 23.0, 22.1, 21.4, 20.9, 20.5, 20.5, 20.8
+outliers: [Reading(minute=4, celsius=24.1), Reading(minute=5, celsius=99.9), Reading(minute=6, celsius=24.6), Reading(minute=11, celsius=20.9), Reading(minute=12, celsius=-40.0), Reading(minute=13, celsius=20.5)]
+moving average (4, step 2): [22.38, 23.38, 22.68, 21.48, 21.20]
+  0-7: max 24.2
+  8-15: max 23.0
+trend: =++=----+
+runs: =1 +2 =1 -4 +1
+warm spell minutes: [3, 7, 8]
+first triangular number with >20 divisors: 630 (n=35)
+evens: [0, 2, 4, 6, 8] squares of odds: [1, 9, 25, 49, 81, 121, 169, 225, 289, 361]
+countdown [10, 7, 4, 1], sum 22, reversed [1, 4, 7, 10]
+letters: afkpuz [AB, CD, EF]
+pythagorean triples: [(3, 4, 5), (6, 8, 10), (5, 12, 13), (9, 12, 15), (8, 15, 17), (12, 16, 20)]
+lazy evaluation:
+  result=THREE after [see one, see two, see three]

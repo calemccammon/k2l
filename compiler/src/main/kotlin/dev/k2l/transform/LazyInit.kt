@@ -51,6 +51,7 @@ internal class LazyInit(private val session: KaSession, private val classes: Cla
         return c.declarations.any { memberObservable(it, c) } ||
             info.baseCall?.valueArguments?.any { !pure(it.getArgumentExpression(), c) } == true ||
             info.delegations.any { !pure(it.entry.delegateExpression, c) } ||
+            info.libraryDelegations.any { !pure(it.entry.delegateExpression, c) } ||
             info.base?.let(::isObservable) == true ||
             (c is KtClass && c.secondaryConstructors.any { !pureBody(it, c) })
     }

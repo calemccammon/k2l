@@ -309,6 +309,10 @@ function Suit:toString()
     return self.name
 end
 
+function Suit:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 Suit.CLUBS = Suit.new("CLUBS", 0)
 Suit.HEARTS = Suit.new("HEARTS", 1)
 Suit.SPADES = Suit.new("SPADES", 2)

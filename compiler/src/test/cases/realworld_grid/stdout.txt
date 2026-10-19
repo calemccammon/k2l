@@ -1,0 +1,28 @@
+maze 17x11
+start=(1,1) end=(7,15) distance=20
+shortest path: 44 steps
+first steps: (1,1) -> (1,2) -> (1,3) -> (2,3) -> (3,3)
+#################
+#S>>#^>>>>#^>>>>#
+#.#v#^###v#^###v#
+#.#v>>#<<v#<<^#v#
+#.#####v#####^#v#
+#.....#v>>>>#^#v#
+#####.#####v#^#v#
+#...#.....#v>>#E#
+#.#.#####.#####.#
+#.#.......#.....#
+#################
+cheapest route: 15044
+walled-in: null
+  D: area=7 perimeter=14 price=98
+  B: area=6 perimeter=14 price=84
+  A: area=6 perimeter=12 price=72
+  C: area=5 perimeter=10 price=50
+  E: area=5 perimeter=10 price=50
+  F: area=4 perimeter=10 price=40
+  G: area=2 perimeter=6 price=12
+total price: 406
+areas by plant: {A=[6], B=[6], C=[5], D=[7], E=[5], F=[4], G=[2]}
+guard visits 41 cells, loop=false
+obstacles creating loops (near start): 5

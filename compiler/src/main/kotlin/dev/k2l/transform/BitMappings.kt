@@ -56,6 +56,12 @@ internal object BitMappings {
         }
     }
 
+    private val CallSite.hasIntegers get() = transformer.ctx.options.luaTarget.hasIntegers
+
+    /** `countOneBits` of a Long where it is a double: the 53-bit helper `__K2L_LCountOneBits` of `LongBits.lua`. */
+    private fun CallSite.longBits(name: String, vararg args: LuaExpr): LuaExpr =
+        LuaCall(ref("LongBits", "__K2L_L" + name.replaceFirstChar(Char::uppercaseChar)), args.toList())
+
     private fun CallSite.isIntLike(type: KaType?) = type != null && with(session) { type.withoutFlexibility.isIntType }
 
     private fun bitCounts(t: MappingTable) {
@@ -63,6 +69,7 @@ internal object BitMappings {
         for ((name, member) in long) {
             t.def("kotlin/$name") {
                 when {
+                    isLong(receiverType) && !hasIntegers -> longBits(name, self)
                     isLong(receiverType) -> bits(member + "64", self)
                     isIntLike(receiverType) -> bits(member + "32", self)
                     else -> null
@@ -72,10 +79,10 @@ internal object BitMappings {
         val counts = mapOf("countOneBits" to "ones64", "countTrailingZeroBits" to "ctz64", "countLeadingZeroBits" to "clz64")
         for ((name, member) in counts) {
             t.def("kotlin/$name") {
-                if (isLong(receiverType) && transformer.ctx.options.luaTarget.hasIntegers) {
-                    bits(member, self)
-                } else {
-                    libMember("Numbers", "__K2L_Num", name, self)
+                when {
+                    isLong(receiverType) && hasIntegers -> bits(member, self)
+                    isLong(receiverType) -> longBits(name, self)
+                    else -> libMember("Numbers", "__K2L_Num", name, self)
                 }
             }
         }

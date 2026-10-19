@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
+import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassLikeSymbol
@@ -290,9 +291,11 @@ private fun FileTransformer.functionReference(e: KtCallableReferenceExpression, 
         )
     }
     val method = naming.function(psi)
-    if (boundReceiver != null) {
+    // `::method` inside the class (or object, companion, `with` block) is bound to the implicit `this`
+    val implicit = if (receiverExpr == null) implicitReferenceReceiver(e) else null
+    if (boundReceiver != null || implicit != null) {
         // obj::method
-        val target = cache(expression(boundReceiver), "receiver")
+        val target = cache(implicit ?: expression(boundReceiver!!), "receiver")
         return ReferenceValue(
             LuaFunction(emptyList(), listOf(LuaReturn(listOf(LuaMethodCall(target, method, rest)))), isVararg = true),
             target,
@@ -311,12 +314,20 @@ private fun isGenericTypeName(receiver: KtExpression): Boolean {
     return call is KtCallExpression && call.valueArgumentList == null && call.lambdaArguments.isEmpty()
 }
 
-/** `obj::f` is bound to a value; `Type::f` is not. */
+/** `obj::f` is bound to a value, and so is `Obj::f` of an `object`; `Type::f` is not. */
 internal fun FileTransformer.isBoundReference(e: KtCallableReferenceExpression): Boolean = with(session) {
     val receiver = e.receiverExpression ?: return false
     if (isGenericTypeName(receiver)) return false
     val ref = (receiver as? KtNameReferenceExpression)
         ?: (receiver as? KtDotQualifiedExpression)?.selectorExpression as? KtNameReferenceExpression
         ?: return true
-    return ref.mainReference.resolveToSymbol() !is KaClassLikeSymbol
+    val symbol = ref.mainReference.resolveToSymbol()
+    return symbol !is KaClassLikeSymbol || (symbol.psi is KtObjectDeclaration && classes.isSource(symbol.psi))
+}
+
+/** The implicit `this` a member reference without a receiver (`::scale`, `::prop`) is bound to, or null for other references. */
+internal fun FileTransformer.implicitReferenceReceiver(e: KtCallableReferenceExpression): LuaExpr? = with(session) {
+    val call = e.callableReference.resolveToCall()?.successfulCallOrNull<KaCallableMemberCall<*, *>>() ?: return null
+    val value = call.partiallyAppliedSymbol.dispatchReceiver ?: return null
+    implicitReceiver(value, e)
 }

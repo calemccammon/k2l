@@ -123,6 +123,7 @@ end
 -- the JVM). Operations that stop early pull only the elements they need, so they also work on infinite sequences; the others,
 -- and a `for` loop, read all of it.
 local __K2L_SequenceIterable = __K2L_Class("kotlin.sequences.SequencesKt$asIterable", __K2L_Iterable)
+__K2L_SequenceIterable.____readOnly = true
 
 function __K2L_SequenceIterable:____init(sequence)
     self.____sequence = sequence

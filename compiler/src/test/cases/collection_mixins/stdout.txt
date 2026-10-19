@@ -1,0 +1,10 @@
+mixed named mixed [3, 1, 2] [1, 2, 3] 6 [30, 10, 20] 3 3
+loop 6 true true
+wrapped 2 true [4, 5] 4+5 true true
+caught wrapped 2
+row r1 of 3 b 2 [c, b, a] abc r1 true
+a b c 
+3 9 9 [5, 7] [7, 9] named scores 2 null
+sum 21 true
+2 dark [theme, font] [dark, mono] named settings
+theme=dark font=mono 

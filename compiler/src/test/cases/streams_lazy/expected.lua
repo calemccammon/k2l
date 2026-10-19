@@ -16,13 +16,13 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local function main()
     local result = __K2L_Streams.of(__K2L_Stream, __K2L_ListOf("a", "bb", "ccc", "dddd")):filter(function(it)
-        print("filter " .. __K2L_Str(it))
+        print("filter " .. it)
         return #it > 1
     end):map(function(it)
-        print("map " .. __K2L_Str(it))
+        print("map " .. it)
         return it:upper()
     end):peek(function(it)
-        print("peek " .. __K2L_Str(it))
+        print("peek " .. it)
     end):toList()
     print(__K2L_Str(result))
     __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(3, 1, 2)):peek(function(it)

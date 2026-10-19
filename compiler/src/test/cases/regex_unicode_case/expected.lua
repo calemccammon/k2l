@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Regex = ____lualib.__K2L_Regex
+local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Utf16 = ____lualib.__K2L_Utf16
 
@@ -8,7 +9,7 @@ local function show(pattern, input, ...)
     local options = __K2L_ArrayOf(...)
     local regex = __K2L_Regex.new(pattern, options:toSet())
     local found = regex:find(input)
-    return pattern .. " ~ " .. input .. ": " .. __K2L_Str(found and found.value) .. " at " .. __K2L_Str(found and found.range) .. " matches=" .. tostring(regex:matches(input)) .. " all=" .. __K2L_Str(regex:findAll(input):map(function(it) return it.value end):toList())
+    return pattern .. " ~ " .. input .. ": " .. __K2L_Str(found and found.value) .. " at " .. __K2L_Str(found and found.range) .. " matches=" .. tostring(regex:matches(input)) .. " all=" .. __K2L_Str(__K2L_Sequence.new(regex:findAllFactory(input)):map(function(it) return it.value end):toList())
 end
 
 local function main()

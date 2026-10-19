@@ -4,8 +4,10 @@ import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
 import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
 import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.KtCallElement
+import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtExpression
 
 /** lualib feature with the abstract collection bases, see `AbstractCollections.lua`. */
@@ -44,12 +46,24 @@ internal val COLLECTION_BASES: Map<String, String> = buildMap {
     base("__K2L_HashSet", "java/util/HashSet")
     base("__K2L_Map", "java/util/LinkedHashMap")
     base("__K2L_HashMap", "java/util/HashMap")
+    base("__K2L_SortedMap", "java/util/TreeMap")
+    base("__K2L_SortedSet", "java/util/TreeSet")
+    base("__K2L_PriorityQueue", "java/util/PriorityQueue")
+    base("__K2L_Deque", "java/util/ArrayDeque")
+    base("__K2L_LinkedList", "java/util/LinkedList")
 }
 
 /** Bases with state of their own: a subclass's constructor has to run theirs. */
-internal val CONCRETE_COLLECTION_BASES = setOf("__K2L_List", "__K2L_Set", "__K2L_HashSet", "__K2L_Map", "__K2L_HashMap")
+internal val CONCRETE_COLLECTION_BASES = setOf(
+    "__K2L_List", "__K2L_Set", "__K2L_HashSet", "__K2L_Map", "__K2L_HashMap", "__K2L_SortedMap", "__K2L_SortedSet",
+    "__K2L_PriorityQueue", "__K2L_Deque", "__K2L_LinkedList",
+)
 
-internal fun collectionBaseFeature(lua: String) = if (lua in CONCRETE_COLLECTION_BASES) "Collections" else ABSTRACT_COLLECTIONS_FEATURE
+internal fun collectionBaseFeature(lua: String) = when (lua) {
+    in DEQUE_CLASSES -> DEQUES_FEATURE
+    in CONCRETE_COLLECTION_BASES -> "Collections"
+    else -> ABSTRACT_COLLECTIONS_FEATURE
+}
 
 internal fun FileTransformer.collectionBaseRef(lua: String): LuaExpr = lualibRef(collectionBaseFeature(lua), lua)
 
@@ -61,8 +75,17 @@ internal fun FileTransformer.collectionSuperInit(call: KtCallElement?, lua: Stri
     if (lua !in CONCRETE_COLLECTION_BASES) return
     val resolved = call?.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>()
     val values = resolved?.let { arguments(emptyList(), callArguments(it)) }.orEmpty()
-    // LinkedHashMap(initialCapacity, loadFactor, accessOrder) keeps the access order
-    val args = if (lua == "__K2L_Map" && values.size == LINKED_MAP_ACCESS_ORDER_ARITY) listOf(LuaNil, values[2]) else values.take(1)
+    val types = resolved?.let { callArguments(it) }.orEmpty().map { it?.expressionType }
+    val args = when {
+        // LinkedHashMap(initialCapacity, loadFactor, accessOrder) keeps the access order
+        lua == "__K2L_Map" && values.size == LINKED_MAP_ACCESS_ORDER_ARITY -> listOf(LuaNil, values[2])
+
+        // PriorityQueue(initialCapacity, comparator), ArrayDeque(numElements): the capacity is not passed on
+        lua == "__K2L_PriorityQueue" || lua == "__K2L_Deque" ->
+            values.zip(types).filter { (_, type) -> type?.isIntegral != true }.map { it.first }.take(1)
+
+        else -> values.take(1)
+    }
     emit(LuaCallStmt(LuaCall(LuaIndex(collectionBaseRef(lua), LuaString(INIT)), listOf(selfRef()) + args)))
 }
 
@@ -90,7 +113,37 @@ internal fun FileTransformer.collectionSuperCall(
     if (mapped is LuaMethodCall && mapped.target == self) {
         return LuaCall(LuaIndex(superRef, LuaString(mapped.method)), listOf(self) + mapped.args)
     }
+    // `super.size` in a class overriding `size`: the library's field is stored as `____size` then (see __K2L_PropertyOverride)
+    if (mapped is LuaIndex && mapped.target == self && (mapped.key as? LuaString)?.value == "size") {
+        return LuaBinary(LuaBinOp.Or, luaCall(LuaName("rawget"), self, LuaString("____size")), mapped)
+    }
     mapped
 }
 
 private val OBJECT_METHODS = setOf("toString", "equals", "hashCode")
+
+/** Kotlin's read-only collection interfaces. */
+private val READ_ONLY_INTERFACES = setOf(
+    "kotlin/collections/Iterable",
+    "kotlin/collections/Collection",
+    "kotlin/collections/List",
+    "kotlin/collections/Set",
+    "kotlin/collections/Map",
+)
+
+/**
+ * Whether [c] is a read-only Kotlin collection: it implements `List` (or another read-only collection interface) and no
+ * mutable one, so on the JVM `is MutableList` is false for its objects and `as MutableList` fails.
+ */
+private fun FileTransformer.isReadOnlyCollection(c: KtClassOrObject): Boolean = with(session) {
+    val symbol = c.symbol as? KaClassSymbol ?: return false
+    val ids = symbol.defaultType.allSupertypes.mapNotNull { it.expandedSymbol?.classId?.asString() }.toSet()
+    ids.any { it in READ_ONLY_INTERFACES } && ids.none { it in MUTABLE_INTERFACES }
+}
+
+/** `C.____readOnly = true` for a read-only collection class (false again in a mutable subclass of one), see MUTABLE_INTERFACES. */
+internal fun FileTransformer.readOnlyFlag(c: KtClassOrObject, ref: LuaExpr) {
+    val readOnly = isReadOnlyCollection(c)
+    val inherited = classes.superInfo(c).base?.let { isReadOnlyCollection(it) } ?: false
+    if (readOnly != inherited) emit(assign(LuaIndex(ref, LuaString("____readOnly")), LuaBool(readOnly)))
+}

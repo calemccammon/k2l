@@ -45,6 +45,10 @@ private fun FileTransformer.compare(op: LuaBinOp, l: LuaExpr, r: LuaExpr, range:
     val wide = if (emulatesLong) wideRangeType(range) else null
     if (wide != null) return long64Comparison(op, l, wide, r, wide)!!
     val type = with(session) { range.first.expressionType }
+    // a range of Comparable objects (`e in Level.LOW..Level.HIGH`, `"b" in "a".."c"` with `--strings utf16`) calls compareTo
+    if (type != null && with(session) { !type.isNumber && !comparesNatively(type, type) }) {
+        return LuaBinary(op, lualibCall("Compare", l, r), LuaNumber("0"))
+    }
     return unsignedLongComparison(op, l, type, r, type) ?: LuaBinary(op, l, r)
 }
 

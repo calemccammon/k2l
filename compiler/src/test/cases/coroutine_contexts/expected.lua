@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AbstractCoroutineContextElement = ____lualib.__K2L_AbstractCoroutineContextElement
+local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ContextFold = ____lualib.__K2L_ContextFold
 local __K2L_ContextGet = ____lualib.__K2L_ContextGet
@@ -12,7 +13,6 @@ local __K2L_CreateCoroutine = ____lualib.__K2L_CreateCoroutine
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
@@ -43,7 +43,7 @@ local QueueDispatcher = __K2L_Class("QueueDispatcher", __K2L_AbstractCoroutineCo
 
 function QueueDispatcher:____init()
     __K2L_AbstractCoroutineContextElement.____init(self, __K2L_ContinuationInterceptor)
-    self.queue = __K2L_List.new()
+    self.queue = __K2L_ArrayDeque.new()
     self.dispatched = 0
 end
 

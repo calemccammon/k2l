@@ -1,0 +1,19 @@
+UserId(raw=7)
+true
+true
+2
+x
+UserId(raw=8) user#7 b.org
+true
+Account(id=UserId(raw=1), email=Email(address=x@y.z))
+negative id -1
+[UserId(raw=1), UserId(raw=3)]
+anonymous
+UninitializedPropertyAccessException: lateinit property user has not been initialized
+logged in as me@k2l.dev
+lateinit property tags has not been initialized
+[a, b]
+lateinit property config has not been initialized
+ready
+true
+set

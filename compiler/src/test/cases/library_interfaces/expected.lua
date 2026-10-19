@@ -83,6 +83,7 @@ function Count:next()
 end
 
 local Upto = __K2L_Class("Upto", __K2L_IterableBase)
+Upto.____readOnly = true
 
 function Upto:____init(n)
     self.n = n

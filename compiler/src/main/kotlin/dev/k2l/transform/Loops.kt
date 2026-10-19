@@ -150,7 +150,7 @@ private fun FileTransformer.iterationLoop(e: KtForExpression, frame: LoopFrame, 
         val selectorName = ((selector as? KtNameReferenceExpression) ?: (noArgCallee as? KtNameReferenceExpression))?.getReferencedName()
         val receiverKind = qualified?.receiverExpression?.expressionType?.collectionKind()
         val indexable = receiverKind?.isIndexable == true
-        val kind = type?.collectionKind()
+        val kind = type?.let { loopKind(it) }
         when {
             selectorName == "indices" && indexable && destructuring == null ->
                 indicesLoop(e, frame, param, qualified.receiverExpression)
@@ -305,6 +305,17 @@ internal fun FileTransformer.component(entry: KtDestructuringDeclarationEntry, v
         CollectionKind.List, CollectionKind.Array -> LuaIndex(value, LuaNumber(n.toString()))
         else -> unsupported(entry, "Destructuring '${receiverType.pretty()}'")
     }
+}
+
+/**
+ * The collection kind a loop over a value of [type] walks: a class of the program implementing `List` itself (or by
+ * delegation) is walked with its iterator(), as on the JVM, rather than read by index.
+ */
+internal fun FileTransformer.loopKind(type: KaType): CollectionKind? = with(session) {
+    val kind = type.collectionKind()
+    val psi = type.expandedSymbol?.psi as? KtClassOrObject
+    val implementsList = psi != null && classes.isSource(psi) && classes.collectionBaseOf(psi) == "__K2L_ListBase"
+    if (kind == CollectionKind.List && implementsList) CollectionKind.Iterable else kind
 }
 
 /** [collection] itself when it is already a `List`/`Array`, else a list copy of it. */

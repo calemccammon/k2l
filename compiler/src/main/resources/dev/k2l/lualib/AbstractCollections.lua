@@ -103,6 +103,14 @@ function __K2L_AbstractCollection:isEmpty()
     return self.size == 0
 end
 
+-- Collection.count() is its size
+function __K2L_AbstractCollection:count(predicate)
+    if predicate == nil then
+        return self.size
+    end
+    return __K2L_Iterable.count(self, predicate)
+end
+
 function __K2L_AbstractCollection:contains(element)
     return each(self, function(it) return __K2L_Equals(it, element) end)
 end
@@ -345,6 +353,8 @@ function __K2L_AbstractList:slice(indices)
 end
 
 __K2L_AbstractList.subList = __K2L_List.subList
+__K2L_AbstractList.____subList = __K2L_List.____subList
+__K2L_AbstractList.____subListClass = __K2L_AbstractSubList
 __K2L_AbstractList.getLastIndex = __K2L_List.getLastIndex
 
 -- The mutators of java.util.AbstractList (Kotlin's AbstractMutableList): set, addAt and removeAt are the subclass's.
@@ -724,6 +734,8 @@ for _, base in ipairs({__K2L_CollectionBase, __K2L_ListBase, __K2L_SetBase, __K2
     base.equals = __K2L_IterableBase.equals
     base.hashCode = __K2L_IterableBase.hashCode
 end
+-- A class implementing List has its own iterator(), which the stdlib functions use (an AbstractList's reads get()).
+__K2L_ListBase.____array = __K2L_IterableBase.____array
 
 ------------------------------------------------------------------ AbstractIterator
 -- kotlin.collections.AbstractIterator: hasNext() runs computeNext(), which calls setNext(value) or done().

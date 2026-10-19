@@ -1,0 +1,32 @@
+rejected A100: duplicate sku A100
+rejected Z1: price must be positive
+SKU    Name           Category       Qty      Value
+A100   Apples (kg)    PRODUCE[PRD]    46    $160.54
+M200   Milk 1L        DAIRY[DRY]      24     $32.40
+H301   Nails x100     HARDWARE[HWR]    40    $162.00
+H300   Hammer         HARDWARE[HWR]     7    $126.00
+B400   Kotlin Book    BOOKS[BKS]       3    $119.97
+Total value: $600.91
+ORD-1 for Ada: charged $96.75 (2xH300, 15xH301)
+ORD-2 failed: Cannot take 4 of B400: only 3 left [short by 1]
+ORD-3 for anonymous: charged $71.19 (12xM200, 1xB400)
+java.lang.IllegalStateException: order ORD-4 has no lines
+java.util.NoSuchElementException: unknown sku NOPE
+received quantity must be positive
+
+SKU    Name           Category       Qty      Value
+A100   Apples (kg)    PRODUCE[PRD]    46    $160.54
+M200   Milk 1L        DAIRY[DRY]      12     $16.20
+H300   Hammer         HARDWARE[HWR]     5     $90.00
+H301   Nails x100     HARDWARE[HWR]     0      $0.00
+B400   Kotlin Book    BOOKS[BKS]       2     $79.98
+Total value: $346.72
+
+shipped by order: {ORD-1=[H300x2, H301x15], ORD-3=[M200x12, B400x1]}
+event counts: {Adjusted=2, PriceChanged=1, Received=6, Shipped=4}
+perishable value: {PRODUCE[PRD]=$160.54, DAIRY[DRY]=$16.20}
+price changes: [$1.35], max product price $39.99
+money math: $3.33 -$2.50 $1.50 $10.00
+destructured: B400 / Kotlin Book / BOOKS[BKS] / 3 / DRY
+with: Kotlin Book costs $3.49, perishable=false
+in stock: Hammer

@@ -56,7 +56,7 @@ internal object JdkCollectionsMappings {
                 name in RANDOM_METHODS && site.receiver != null ->
                 method(site.self, name, *site.args.toTypedArray())
 
-            callableId.startsWith("kotlin/collections/") -> kotlinCollections(site, name)
+            callableId.startsWith("kotlin/collections/") || callableId.startsWith("java/util/") -> kotlinCollections(site, name)
 
             else -> null
         }

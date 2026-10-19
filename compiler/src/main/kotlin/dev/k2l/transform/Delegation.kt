@@ -183,7 +183,7 @@ internal fun FileTransformer.propertyInitializer(p: KtProperty): Unit = with(ses
         return
     }
     p.initializer?.let { init ->
-        val field = LuaIndex(selfRef(), LuaString(props.fieldName(p)))
+        val field = LuaIndex(selfRef(), LuaString(fieldKey(p)))
         emitAll(valueInto(init) { listOf(assign(field, it)) })
     }
 }

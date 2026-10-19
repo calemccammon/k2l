@@ -1,0 +1,11 @@
+[1, 2, 3, 4] [2, 3, 4, ] [1, 2, 3, 4,] [1, 2, 3, 4]
+true true true 4 false true
+[10, 20, 30, 40]
+[alpha, beta, gamma] 20 6 lph
+bet
+gmm
+a a alpha ammag
+ateb
+ahpla ALPHA
+BETA
+GAMMA

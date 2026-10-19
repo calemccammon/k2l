@@ -1,0 +1,26 @@
+  (computing initials of Alice  van Dyke)
+initials: AVD AVD
+rejected: invalid email 'not-an-email'
+email: alice@example.com
+UnsupportedOperationException: credit accounts are not offered
+transfer C-003 -> C-001 failed: account C-003: requested $100.00 but only $25.25 available [requested $100.00]
+error IllegalStateException: savings S-002: withdrawal limit reached
+error IllegalArgumentException: deposit must be positive, was $0.00
+error NoSuchElementException: unknown account X-1
+bob frozen after unfreeze attempt: true
+bob frozen after verification: false
+savings S-002 (Alice  van Dyke): $806.99
+checking C-001 (Alice  van Dyke): $120.50
+checking C-003 (bob): -$29.75
+holdings: $897.74
+owners: {Alice  van Dyke=[C-001, S-002], bob=[C-003]}
+transfers: [S-002>C-003:$200.00]
+b1 audit:
+  [1] balance $0.00 -> $15.25
+  [2] balance $15.25 -> $215.25
+  [3] balance $215.25 -> -$24.75
+  [4] overdraft fee
+  [5] balance -$24.75 -> -$29.75
+a2 audit size: 4, savings withdrawals: 0
+distinct accounts: 2, max money: $3.01
+true

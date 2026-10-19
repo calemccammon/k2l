@@ -40,7 +40,8 @@ internal class DeclarationNames(private val session: KaSession, private val clas
                 }
                 if (overridden != null) return@getOrPut function(overridden)
                 if (with(session) { (fn.symbol as? KaNamedFunctionSymbol)?.directlyOverriddenSymbols?.any() } == true) {
-                    return@getOrPut LuaNames.member(libraryMember(fn, name)) // overrides a library member such as toString
+                    // overrides a library member such as toString
+                    return@getOrPut LuaNames.member(libraryMember(fn, name, classes.collectionBaseOf(owner) != null))
                 }
             }
             classes.hierarchy(owner).flatMap { c ->
@@ -48,8 +49,10 @@ internal class DeclarationNames(private val session: KaSession, private val clas
             }
         }
         val base = if (owner == null) LuaNames.of(name) else LuaNames.member(name)
-        val index = overloads.indexOf(fn)
-        if (index <= 0) base else "${base}__$index"
+        // a method named like a property (`private val items` and `fun items()`) would be hidden by the instance's field
+        val shift = if (owner != null && name in classes.fieldNames(owner)) 1 else 0
+        val index = overloads.indexOf(fn).coerceAtLeast(0) + shift
+        if (index == 0) base else "${base}__$index"
     }
 
     private val accessorNames = HashMap<Pair<KtProperty, String>, String>()
@@ -136,11 +139,12 @@ internal class DeclarationNames(private val session: KaSession, private val clas
 
 /**
  * The lualib name of an overridden collection member: `add(index, element)` is `addAt`, `addAll(index, elements)`
- * `addAllAt`, `listIterator(index)` `listIteratorAt`.
+ * `addAllAt`, `listIterator(index)` `listIteratorAt`, a queue's `remove()` (in a collection, not an iterator) `removeHead`.
  */
-private fun libraryMember(fn: KtNamedFunction, name: String): String = when {
+private fun libraryMember(fn: KtNamedFunction, name: String, inCollection: Boolean): String = when {
     (name == "add" || name == "addAll") && fn.valueParameters.size == 2 -> name + "At"
     name == "listIterator" && fn.valueParameters.size == 1 -> "listIteratorAt"
+    name == "remove" && fn.valueParameters.isEmpty() && inCollection -> "removeHead"
     else -> name
 }
 

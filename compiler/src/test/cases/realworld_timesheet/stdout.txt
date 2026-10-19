@@ -1,0 +1,29 @@
+2024-02-29 is a THURSDAY, epoch day 19782, +1 = 2024-03-01, +366 = 2025-03-01
+1970-01-01 is THURSDAY; 2000-01-01 is SATURDAY; 1969-12-31 is 1969-12-31
+days between: 359 28
+leap years 1896..1912: [1896, 1904, 1908, 1912]
+bad day 2023-2-29
+bad month 13
+week: [Fri 1, Sat 2, Sun 3, Mon 4, Tue 5, Wed 6, Thu 7]
+weekend days in March 2024: 10
+contains: true false empty: false
+round trip ok: true, first Mondays: [1, 5, 4, 1, 6, 3]
+8 shifts
+  2024-02-26 Mon 9h00-17h30 worked 8h00 (8.00h)
+  2024-02-27 Tue 8h30-18h00 worked 8h45 (8.75h)
+  2024-02-28 Wed 9h00-17h00 worked 8h00 (8.00h)
+  2024-02-29 Thu 7h00-19h30 worked 11h30 (11.50h)
+  2024-03-01 Fri 9h00-16h00 worked 6h30 (6.50h)
+  2024-03-02 Sat 10h00-14h00 worked 4h00 (4.00h)
+  2024-03-04 Mon 9h00-17h00 worked 7h30 (7.50h)
+  2024-03-05 Tue 9h15-12h45 worked 3h30 (3.50h)
+total 57h45, longest 2024-02-29, shortest 3h30
+by weekday: {MONDAY=15h30, TUESDAY=12h15, WEDNESDAY=8h00, THURSDAY=11h30, FRIDAY=6h30, SATURDAY=4h00}
+pay: {regularMin=51h00, overtimeMin=2h45, weekendMin=4h00, gross=1799.06, tax=219.86}
+net: 1579.20
+  tax on     50.00:     5.00
+  tax on   1000.00:   100.00
+  tax on   3000.00:   450.00
+  tax on  10000.00:  2480.00
+java.lang.IllegalArgumentException: bad time 25:00
+rate 2850 cents/h, sorted durations [3h30, 4h00, 6h30]

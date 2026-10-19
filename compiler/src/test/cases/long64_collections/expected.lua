@@ -1,11 +1,11 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_HashSet = ____lualib.__K2L_HashSet
 local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
-local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_Num = ____lualib.__K2L_Num
@@ -53,7 +53,7 @@ local function main()
         out:add(pq:poll())
     end
     print(__K2L_Str(out))
-    local dq = __K2L_List.new()
+    local dq = __K2L_ArrayDeque.new()
     dq:addLast(big)
     dq:addFirst(max)
     print(dq:removeFirst() - dq:removeLast())

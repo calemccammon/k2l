@@ -74,7 +74,7 @@ private fun FileTransformer.forEachList(
     indexed: Boolean,
     params: List<KtParameter>,
 ): Unit = with(session) {
-    val kind = type?.collectionKind()
+    val kind = type?.let { loopKind(it) }
     fun varName(i: Int, default: String) = forEachVar(params, i, default)
     fun body(vararg vars: String) = forEachBody(lambda, *vars)
     if (indexed) {

@@ -9,9 +9,11 @@ import org.jetbrains.kotlin.psi.psiUtil.isPrivate
  * its expression once, after the superclass constructor and before the property initializers and `init` blocks.
  */
 internal fun FileTransformer.delegateFields(c: KtClassOrObject): Unit = with(session) {
-    for (d in classes.superInfo(c).delegations) {
-        val expr = d.entry.delegateExpression ?: continue
-        emitAll(valueInto(expr) { listOf(assign(LuaIndex(selfRef(), LuaString(d.field)), it)) })
+    val info = classes.superInfo(c)
+    val entries = info.delegations.map { it.entry to it.field } + info.libraryDelegations.map { it.entry to it.field }
+    for ((entry, field) in entries.sortedBy { it.first.textRange.startOffset }) {
+        val expr = entry.delegateExpression ?: continue
+        emitAll(valueInto(expr) { listOf(assign(LuaIndex(selfRef(), LuaString(field)), it)) })
     }
 }
 

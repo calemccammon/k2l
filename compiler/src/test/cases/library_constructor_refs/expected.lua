@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_HashSet = ____lualib.__K2L_HashSet
@@ -58,7 +59,7 @@ local function main()
     ____value_2:put("b", 1)
     ____value_2:put("a", 2)
     print(__K2L_Str(____value_2))
-    local deque = function() return __K2L_List.new() end
+    local deque = function() return __K2L_ArrayDeque.new() end
     local ____value_3 = deque()
     ____value_3:addFirst(1)
     ____value_3:addFirst(2)

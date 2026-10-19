@@ -38,6 +38,6 @@ private fun FileTransformer.elementSuperInit(call: KtCallElement?): Unit = with(
 /** A lualib exception class such as `__K2L_Exception`. */
 private fun FileTransformer.librarySuperInit(call: KtCallElement?, libraryBase: String): Unit = with(session) {
     val resolved = call?.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>()
-    val args = resolved?.let { throwableArguments(callArguments(it)) }.orEmpty()
+    val args = resolved?.let { throwableArguments(callArguments(it), it.signature.symbol.valueParameters) }.orEmpty()
     emit(LuaCallStmt(LuaCall(LuaIndex(lualibRef(EXCEPTIONS_FEATURE, libraryBase), LuaString(INIT)), listOf(selfRef()) + args)))
 }

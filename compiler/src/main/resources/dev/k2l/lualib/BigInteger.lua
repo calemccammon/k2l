@@ -3,6 +3,7 @@
 -- A limb product plus carries stays below 2^53, so every step is exact in doubles (Lua 5.1, LuaJIT) as well as integers.
 -- Bit operations convert to base 2^24 words (two's complement) and back.
 local __K2L_BigInteger = __K2L_Class("java.math.BigInteger")
+__K2L_BigInteger.____isNumber = true -- for `is Number`
 
 do
 

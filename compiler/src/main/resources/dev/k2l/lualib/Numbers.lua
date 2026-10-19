@@ -222,6 +222,51 @@ function __K2L_Num.toRadixUnsigned(n, radix)
     return __K2L_Num.toRadix(n % 4294967296, radix)
 end
 
+-- Long.toBinaryString/toOctalString/toHexString where a Long is a double: the digits of the 64-bit two's complement
+-- pattern, [shift] bits each (exact while |n| < 2^53).
+function __K2L_Num.longToUnsignedRadix(n, shift)
+    local hi = math.floor(n / 4294967296)
+    local words = {n - hi * 4294967296, hi % 4294967296}
+    local out = {}
+    for first = 0, 63, shift do
+        local d = 0
+        for b = 0, shift - 1 do
+            local i = first + b
+            if i < 64 and math.floor(words[math.floor(i / 32) + 1] / 2 ^ (i % 32)) % 2 == 1 then
+                d = d + 2 ^ b
+            end
+        end
+        out[#out + 1] = ("0123456789abcdef"):sub(d + 1, d + 1)
+    end
+    local digits = string.reverse(table.concat(out)):gsub("^0+", "")
+    return digits == "" and "0" or digits
+end
+
+-- Integer.reverse: the 32 bits in reverse order
+function __K2L_Num.reverseInt(x)
+    x = x % 4294967296
+    local r = 0
+    for _ = 1, 32 do
+        local b = x % 2
+        r = r * 2 + b
+        x = math.floor((x - b) / 2)
+    end
+    return r >= 2147483648 and r - 4294967296 or r
+end
+
+-- Character.getNumericValue: digits and the Latin letters (a and A are 10, up to 35), -1 for other characters.
+function __K2L_Num.numericValue(c)
+    local b = string.byte(c)
+    if b >= 48 and b <= 57 then
+        return b - 48
+    elseif b >= 97 and b <= 122 then
+        return b - 87
+    elseif b >= 65 and b <= 90 then
+        return b - 55
+    end
+    return -1
+end
+
 local POW2 = {[0] = 1}
 for i = 1, 16 do
     POW2[i] = POW2[i - 1] * 2

@@ -22,6 +22,7 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Unit = ____lualib.__K2L_Unit
 
 local ____exports = {}
+local convertedReferences
 ____exports.calls = 0
 
 local function u()
@@ -256,6 +257,54 @@ local function main()
     print(expanded(5))
     print(expanded(0))
     print("calls: " .. ____exports.calls)
+    convertedReferences()
+end
+
+local Hooks = __K2L_Class("Hooks")
+__K2L_ClassInfo(Hooks, "Hooks", "Hooks", "class")
+
+function Hooks:____init(onStart)
+    self.onStart = onStart
+end
+
+local function pick()
+    return function(...)
+        u(...)
+        return __K2L_Unit
+    end
+end
+
+function convertedReferences()
+    local h = function(...)
+        u(...)
+        return __K2L_Unit
+    end
+    print(__K2L_Str(h()))
+    print(__K2L_Str(pick()()))
+    local plain = u
+    local widened = function(...)
+        plain(...)
+        return __K2L_Unit
+    end
+    print(__K2L_Str(widened()))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(function(...)
+        u(...)
+        return __K2L_Unit
+    end, function() return "lambda" end):map(function(it) return it() end)))
+    local hooks = Hooks.new(u)
+    local ____fn = hooks.onStart
+    local started = function(...)
+        ____fn(...)
+        return __K2L_Unit
+    end
+    print(__K2L_Str(started()))
+    local late = function() return 1 end
+    late = function(...)
+        plain(...)
+        return __K2L_Unit
+    end
+    late()
+    print("kotlin.Unit")
 end
 
 ____exports.u = u
@@ -269,5 +318,8 @@ ____exports.expanded = expanded
 ____exports.maybe = maybe
 ____exports.Holder = Holder
 ____exports.Box = Box
+____exports.Hooks = Hooks
+____exports.pick = pick
+____exports.convertedReferences = convertedReferences
 main()
 return ____exports

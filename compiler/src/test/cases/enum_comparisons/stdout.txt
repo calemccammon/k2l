@@ -1,0 +1,14 @@
+true
+2
+[A, B, C]
+C
+[A=2, C=1]
+1
+C
+C
+[A, B, C]
+[low, high]
+true
+[Task(name=x, level=HIGH), Task(name=z, level=HIGH), Task(name=y, level=LOW)]
+x
+LARGE null 2 SMALL

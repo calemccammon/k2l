@@ -46,3 +46,9 @@ kotlin.Unit
 [kotlin.Unit, kotlin.Unit] Success(kotlin.Unit)
 stopped
 calls: 34
+kotlin.Unit
+kotlin.Unit
+kotlin.Unit
+[kotlin.Unit, lambda]
+kotlin.Unit
+kotlin.Unit

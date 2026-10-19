@@ -3,6 +3,7 @@
 local __K2L_RoundingMode = __K2L_Class("java.math.RoundingMode")
 local __K2L_MathContext = __K2L_Class("java.math.MathContext")
 local __K2L_BigDecimal = __K2L_Class("java.math.BigDecimal")
+__K2L_BigDecimal.____isNumber = true -- for `is Number`
 
 do
 

@@ -40,6 +40,10 @@ function Direction:toString()
     return self.name
 end
 
+function Direction:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 Direction.NORTH = Direction.new("NORTH", 0)
 Direction.EAST = Direction.new("EAST", 1)
 Direction.SOUTH = Direction.new("SOUTH", 2)
@@ -60,6 +64,10 @@ end
 
 function Planet:toString()
     return self.name
+end
+
+function Planet:compareTo(other)
+    return self.ordinal - other.ordinal
 end
 
 Planet.MERCURY = Planet.new("MERCURY", 0, 3.303E23, 2439700.0)

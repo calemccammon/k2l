@@ -1,5 +1,6 @@
--- requires: Class, Collections, Exceptions, Compare, Equals, Str, ToInt32, DoubleToString
--- java.util.stream: Stream, IntStream and DoubleStream, Optional, OptionalInt and OptionalDouble, and Collectors.
+-- requires: Class, Collections, Exceptions, Compare, Equals, Str, ToInt32, DoubleToString, LongArith
+-- java.util.stream: Stream, IntStream, LongStream and DoubleStream, Optional, OptionalInt, OptionalLong and OptionalDouble,
+-- and Collectors. Long values are added with __K2L_LongArith, so they are exact with --long64 emulate.
 -- A stream is lazy like the JDK's: `____next()` returns `true, element` or `false`, and each stage pulls from the one
 -- before it, so side effects in lambdas happen in the JDK's order (element by element, `sorted` waits for all), and
 -- `limit`, `findFirst` and `anyMatch` stop early. `____size` is the exact element count while the JDK also knows it
@@ -7,20 +8,24 @@
 local __K2L_Stream = __K2L_Class("java.util.stream.Stream")
 local __K2L_IntStream = __K2L_Class("java.util.stream.IntStream", __K2L_Stream)
 local __K2L_DoubleStream = __K2L_Class("java.util.stream.DoubleStream", __K2L_Stream)
+local __K2L_LongStream = __K2L_Class("java.util.stream.LongStream", __K2L_Stream)
 local __K2L_Optional = __K2L_Class("java.util.Optional")
 local __K2L_OptionalInt = __K2L_Class("java.util.OptionalInt")
+local __K2L_OptionalLong = __K2L_Class("java.util.OptionalLong")
 local __K2L_OptionalDouble = __K2L_Class("java.util.OptionalDouble")
 local __K2L_Collectors = {}
 local __K2L_Streams = {}
 
 do
 
-local Stream, IntStream, DoubleStream = __K2L_Stream, __K2L_IntStream, __K2L_DoubleStream
-local Optional, OptionalInt, OptionalDouble = __K2L_Optional, __K2L_OptionalInt, __K2L_OptionalDouble
+local Stream, IntStream, DoubleStream, LongStream = __K2L_Stream, __K2L_IntStream, __K2L_DoubleStream, __K2L_LongStream
+local Optional, OptionalInt, OptionalDouble, OptionalLong = __K2L_Optional, __K2L_OptionalInt, __K2L_OptionalDouble, __K2L_OptionalLong
 local Collectors, Streams = __K2L_Collectors, __K2L_Streams
+local LongArith = __K2L_LongArith
 local floor, min, max = math.floor, math.min, math.max
 
 Stream.____optional, IntStream.____optional, DoubleStream.____optional = Optional, OptionalInt, OptionalDouble
+LongStream.____optional = OptionalLong
 
 local function noSuchElement(message)
     error(__K2L_NoSuchElementException.new(message))
@@ -64,9 +69,11 @@ local function ofRange(class, source, from, to)
 end
 
 ---------------------------------------------------------------- sources
-function Streams.ofCollection(collection)
+-- collection.stream(), and parallelStream(), which runs sequentially too
+function Streams.ofCollection(collection, parallel)
     local stream = ofRange(Stream, collection, 0, nil)
     stream.____size = collection.size
+    stream.____parallel = parallel
     return stream
 end
 
@@ -104,6 +111,28 @@ end
 
 function Streams.rangeClosed(first, last)
     return Streams.range(first, last + 1)
+end
+
+-- LongStream.range and rangeClosed: Long bounds, counted with __K2L_LongArith (rangeClosed up to Long.MAX_VALUE stops there)
+function Streams.rangeLong(first, last, closed)
+    local nextValue, done = first, false
+    local size
+    if type(first) == "number" and type(last) == "number" then
+        size = max(0, last - first + (closed and 1 or 0))
+    end
+    return make(LongStream, function()
+        local v = nextValue
+        if done or not (LongArith.lt(v, last) or (closed and not LongArith.lt(last, v))) then
+            done = true
+            return false
+        end
+        if LongArith.lt(v, last) then
+            nextValue = LongArith.add(v, 1)
+        else
+            done = true
+        end
+        return true, v
+    end, size)
 end
 
 -- iterate(seed, next) is infinite, iterate(seed, hasNext, next) ends when hasNext fails
@@ -185,8 +214,11 @@ function Stream:map(transform) return mapped(self, classOf(self), transform) end
 function Stream:mapToObj(transform) return mapped(self, Stream, transform) end
 function Stream:mapToInt(transform) return mapped(self, IntStream, transform) end
 function Stream:mapToDouble(transform) return mapped(self, DoubleStream, transform) end
+function Stream:mapToLong(transform) return mapped(self, LongStream, transform) end
 function Stream:boxed() return mapped(self, Stream, function(v) return v end) end
 function Stream:asDoubleStream() return mapped(self, DoubleStream, function(v) return v + 0.0 end) end
+function Stream:asLongStream() return mapped(self, LongStream, function(v) return v end) end
+function LongStream:asDoubleStream() return mapped(self, DoubleStream, LongArith.toDouble) end
 
 function Stream:peek(action)
     return mapped(self, classOf(self), function(v)
@@ -195,10 +227,10 @@ function Stream:peek(action)
     end)
 end
 
-function Stream:flatMap(transform)
+local function flatMapped(self, class, transform)
     local nextElement = use(self)
     local inner
-    return make(classOf(self), function()
+    return make(class, function()
         while true do
             if inner ~= nil then
                 local ok, v = inner()
@@ -218,6 +250,11 @@ function Stream:flatMap(transform)
         end
     end)
 end
+
+function Stream:flatMap(transform) return flatMapped(self, classOf(self), transform) end
+function Stream:flatMapToInt(transform) return flatMapped(self, IntStream, transform) end
+function Stream:flatMapToLong(transform) return flatMapped(self, LongStream, transform) end
+function Stream:flatMapToDouble(transform) return flatMapped(self, DoubleStream, transform) end
 
 function Stream:distinct()
     local nextElement = use(self)
@@ -329,10 +366,49 @@ function Stream:dropWhile(predicate)
     end)
 end
 
--- parallel() and friends run sequentially
-function Stream:parallel() return self end
-Stream.sequential, Stream.unordered, Stream.onClose = Stream.parallel, Stream.parallel, Stream.parallel
+-- parallel() and parallelStream() run sequentially; isParallel() still tells which was asked for
+function Stream:parallel()
+    self.____parallel = true
+    return self
+end
+
+function Stream:sequential()
+    self.____parallel = false
+    return self
+end
+
+function Stream:isParallel()
+    return self.____parallel == true
+end
+
+function Stream:unordered() return self end
+Stream.onClose = Stream.unordered
 function Stream:close() end
+
+-- iterator(): pulls the elements one by one as hasNext() asks for them, like the JDK's adapter
+local StreamIterator = __K2L_Class("java.util.Spliterators$1Adapter")
+
+function Stream:iterator()
+    return setmetatable({____next = use(self)}, StreamIterator)
+end
+
+function StreamIterator:hasNext()
+    if self.____ready == nil then
+        local ok, v = self.____next()
+        self.____ready, self.____value = ok, v
+    end
+    return self.____ready
+end
+
+function StreamIterator:next()
+    if not self:hasNext() then
+        noSuchElement()
+    end
+    self.____ready = nil
+    return self.____value
+end
+
+StreamIterator.nextInt, StreamIterator.nextLong, StreamIterator.nextDouble = StreamIterator.next, StreamIterator.next, StreamIterator.next
 
 ---------------------------------------------------------------- terminal operations
 local function pull(nextElement, action)
@@ -546,6 +622,31 @@ function DoubleStream:sum()
     return (compensatedSum(self))
 end
 
+-- LongStream: a wrapping Long sum, and its average as the JDK computes it (the Long sum, then divided)
+local function longSum(self)
+    local total, count = 0, 0
+    drain(self, function(v)
+        total = LongArith.add(total, v)
+        count = count + 1
+    end)
+    return total, count
+end
+
+function LongStream:sum()
+    return (longSum(self))
+end
+
+function LongStream:average()
+    local total, count = longSum(self)
+    if count == 0 then
+        return OptionalDouble.empty()
+    end
+    return OptionalDouble.of(LongArith.toDouble(total) / count)
+end
+
+function LongStream:min() return reduceWith(self, function(a, b) return __K2L_Compare(a, b) <= 0 and a or b end) end
+function LongStream:max() return reduceWith(self, function(a, b) return __K2L_Compare(a, b) >= 0 and a or b end) end
+
 function DoubleStream:average()
     local sum, count = compensatedSum(self)
     if count == 0 then
@@ -636,6 +737,7 @@ end
 defineOptional(Optional, "Optional", "get", __K2L_Str)
 defineOptional(OptionalInt, "OptionalInt", "getAsInt", tostring)
 defineOptional(OptionalDouble, "OptionalDouble", "getAsDouble", __K2L_DoubleToString)
+defineOptional(OptionalLong, "OptionalLong", "getAsLong", __K2L_Str)
 
 function Optional.ofNullable(value)
     if value == nil then
@@ -714,6 +816,24 @@ local function averaging(transform)
 end
 
 function Collectors.averagingInt(transform) return averaging(transform) end
+
+function Collectors.summingLong(transform)
+    return collector(function() return {0} end, function(box, v)
+        box[1] = LongArith.add(box[1], transform(v))
+    end, function(box) return box[1] end)
+end
+
+function Collectors.averagingLong(transform)
+    return collector(function() return {0, 0} end, function(box, v)
+        box[1] = LongArith.add(box[1], transform(v))
+        box[2] = box[2] + 1
+    end, function(box)
+        if box[2] == 0 then
+            return 0.0
+        end
+        return LongArith.toDouble(box[1]) / box[2]
+    end)
+end
 
 -- the JDK sums doubles with compensation (see compensatedSum)
 local function compensated(transform, divide)

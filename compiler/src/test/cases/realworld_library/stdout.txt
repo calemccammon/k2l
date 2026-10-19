@@ -1,0 +1,39 @@
+[Book(B1), Book(B2), Book(B3), Dvd(D1), Dvd(d2)]
+[A Brief History of Time, Alien, Dune, Gruffalo, Up]
+d2: [title too short, id must be upper case]
+IdRule
+Ann borrows Dune, due d22
+Ann borrows Alien, due d8
+refused: Book(B1) is already on loan
+refused: no such item X9
+Ann borrows Gruffalo, due d8
+refused: Ann cannot borrow (loans=3/3, fines=0)
+Ben borrows Up, due d8
+overdue at d11: [D1, B3, d2]
+fees: [300, 300]
+fee B3: 575
+mail to Ann: late by 3 days, fee 300
+mail to Ben: late by 3 days, fee 300
+mail to Ann: late by 23 days, fee 575
+outbox closed: true
+after close: outbox closed
+fines: {Ann=875, Ben=300}
+== inventory (day 31)
+#B1 "Dune" by Frank Herbert -> Ann due d22
+#B2 "A Brief History of Time" by Stephen Hawking -> available
+#B3 "Gruffalo" by anonymous -> available
+#D1 "Alien" -> available
+#d2 "Up" -> available
+B2, B3, D1, d2
+[out B1 Ann d1, out D1 Ann d1, out B3 Ann d1, out d2 Ben d1, in D1 late=3, in d2 late=3, in B3 late=23]
+{FICTION=1, SCIENCE=1, HISTORY=0, KIDS=1}
+#D1 "Alien"
+10 11 20 same class: true
+lib.MainKt$counter$1
+  [announcement] library opens
+result: kotlin.Unit
+  [announcement] library opens
+[kotlin.Unit, lambda]
+desks opened: 1
+B1 B2 B3 
+Book=3;Dvd=2;

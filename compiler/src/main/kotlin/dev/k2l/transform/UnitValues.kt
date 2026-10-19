@@ -91,6 +91,20 @@ internal fun FileTransformer.noteUnitResult(parameter: KaValueParameterSymbol, a
     if (actual.isUnitType && !actual.isMarkedNullable) unitResults += arg
 }
 
+/**
+ * Whether [e], a function reference or a function value returning Unit (`::work`, a `() -> Unit` variable), is used where a
+ * function type with a result is expected other than as an argument for such a parameter (see [noteUnitResult]):
+ * `val h: () -> Any = ::work`, `return ::work`, `listOf<() -> Any>(::work)`. Its value is then wrapped by [returningUnit].
+ */
+internal fun FileTransformer.convertsUnitFunction(e: KtExpression): Boolean = with(session) {
+    if (e !is KtCallableReferenceExpression && e !is KtNameReferenceExpression && e !is KtDotQualifiedExpression) return false
+    if (e in unitResults) return false
+    val actual = (e.expressionType as? KaFunctionType)?.returnType ?: return false
+    if (!actual.isUnitType || actual.isMarkedNullable) return false
+    val expected = (e.expectedType as? KaFunctionType)?.returnType ?: return false
+    !expected.isUnitType
+}
+
 /** [fn], a function returning nothing, as one returning the Unit object. */
 internal fun FileTransformer.returningUnit(fn: LuaExpr): LuaExpr {
     val target = if (fn is LuaName) fn else cache(fn, "fn")

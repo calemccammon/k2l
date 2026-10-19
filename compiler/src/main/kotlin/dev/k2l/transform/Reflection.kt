@@ -86,6 +86,10 @@ private fun FileTransformer.classOfType(declared: KaType, element: KtElement): L
 /** `x::class`: the class of the value, found at run time unless the static type says it. */
 private fun FileTransformer.valueClass(receiver: KtExpression): LuaExpr = with(session) {
     val value = expression(receiver)
+    staticArrayClass(receiver.expressionType)?.let { array ->
+        if (!value.isSimple()) emit(LuaLocal(listOf(ctx.temp("unused")), listOf(value)))
+        return array
+    }
     val classId = receiver.expressionType?.expandedSymbol?.classId?.asString()
     if (classId !in STATIC_CLASSES) return kclass("OfValue", value)
     if (!value.isSimple()) emit(LuaLocal(listOf(ctx.temp("unused")), listOf(value)))
@@ -149,7 +153,10 @@ internal object ReflectionMappings {
         table.def(*needsReflect.toTypedArray()) { LuaCall(ref("NeedsReflect", "__K2L_NeedsReflect"), listOf(self) + args) }
         // A Class is an object of its own (it prints without the KClass suffix), one per KClass
         table.def("kotlin/jvm/javaClass") {
-            LuaCall(ref(KCLASS_FEATURE, "__K2L_JavaClass"), listOf(LuaCall(ref(KCLASS_FEATURE, "__K2L_KClassOfValue"), listOf(self))))
+            val array = transformer.staticArrayClass(receiverType)
+            if (array != null && !self.isSimple()) transformer.emit(LuaLocal(listOf(transformer.ctx.temp("unused")), listOf(self)))
+            val kclass = array ?: LuaCall(ref(KCLASS_FEATURE, "__K2L_KClassOfValue"), listOf(self))
+            LuaCall(ref(KCLASS_FEATURE, "__K2L_JavaClass"), listOf(kclass))
         }
         table.def("kotlin/jvm/java") { LuaCall(ref(KCLASS_FEATURE, "__K2L_JavaClass"), listOf(self)) }
         table.def("kotlin/jvm/kotlin") { LuaIndex(self, LuaString("____kotlin")) }

@@ -85,11 +85,22 @@ class LuaPrinter(private val indentUnit: String = "    ", private val origins: M
             if (!isLast && (stmt is LuaReturn || stmt is LuaBreak)) {
                 // Lua only allows `return`/`break` as the last statement of a block.
                 line("do ${statementInline(stmt)} end")
+            } else if (i > 0 && stmt is LuaCallStmt) {
+                val text = expr(stmt.call)
+                // `f()` followed by `(x or y):g()` would call f's result: end the previous statement first
+                if (text.startsWith("(")) endPreviousStatement()
+                line(text)
             } else {
                 printStatement(stmt)
             }
             if (spaced && !isLast) blankLine()
         }
+    }
+
+    private fun endPreviousStatement() {
+        var end = out.length
+        while (end > 0 && out[end - 1] == '\n') end--
+        out.insert(end, ';')
     }
 
     private fun statementInline(stmt: LuaStmt): String = when (stmt) {

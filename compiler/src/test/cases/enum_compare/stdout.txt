@@ -1,0 +1,20 @@
+true false 2 0
+[LOW, MEDIUM, HIGH, CRITICAL]
+[HIGH, LOW]
+CRITICAL HIGH tri
+SQUARE
+[a, d, b, c]
+[c, b, d, a]
+[c, a, d, b]
+b LOW
+true -2
+[CIRCLE, tri, SQUARE]
+{LOW=2, HIGH=1}
+LOW routine false false
+MEDIUM routine true true
+HIGH urgent true true
+CRITICAL urgent false true
+true false true
+true false true
+tri null [CIRCLE, tri, SQUARE] SQUARE
+java.lang.IllegalArgumentException: No enum constant Shape.HEXAGON

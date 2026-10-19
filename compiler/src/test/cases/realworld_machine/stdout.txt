@@ -1,0 +1,16 @@
+12 instructions; first: Set(reg=a, value=Lit(v=10)), last: Out(value=Lit(v=999))
+{Set=3, Mul=1, Mod=1, Add=2, Out=3, Jnz=1, Halt=1}
+output=[3, 9, 27, 81, 243, 729, 187, 561, 683, 49, 2572]
+registers={a=0, b=49, f=2572} steps=65
+a=0 z=0
+looping steps: 50
+error: java.util.NoSuchElementException: Char sequence is empty.
+error: bad line: 'foo bar baz qux'
+error: unknown op xyz
+memory sum=215 mem={7=101, 8=64, 42=50}
+floating: [26, 27, 58, 59]
+mask bits: 36 1100
+bit counts: [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1] highest=64 trailing=5
+d=72 e=507 f=492 g=114 h=65412 i=65079 x=123 y=456 a=488 
+evaluations=10
+java.util.NoSuchElementException: no wire zz

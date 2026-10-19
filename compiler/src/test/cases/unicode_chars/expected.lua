@@ -3,6 +3,7 @@ local __K2L_CompareByWith = ____lualib.__K2L_CompareByWith
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
+local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringContains = ____lualib.__K2L_StringContains
@@ -165,10 +166,10 @@ end
 
 local function regexClasses()
     local word = __K2L_Regex.new("\\w+")
-    print(__K2L_Utf16.out(__K2L_Str(word:findAll("héllo wörld 日本語 abc"):map(function(it) return it.value end):toList())))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_Regex.new("\\d+"):findAll("a١٢٣b123"):map(function(it) return it.value end):toList())))
-    print(__K2L_Utf16.out(__K2L_Regex.new("\\s"):findAll("a b c"):count()))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_Regex.new("[a-z]+"):findAll("héllo"):map(function(it) return it.value end):toList())))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(word:findAllFactory("héllo wörld 日本語 abc")):map(function(it) return it.value end):toList())))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("\\d+"):findAllFactory("a١٢٣b123")):map(function(it) return it.value end):toList())))
+    print(__K2L_Utf16.out(__K2L_Sequence.new(__K2L_Regex.new("\\s"):findAllFactory("a b c")):count()))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[a-z]+"):findAllFactory("héllo")):map(function(it) return it.value end):toList())))
     local ____receiver = __K2L_Regex.new("é"):find("héllo")
     print(__K2L_Utf16.out(__K2L_Str(____receiver and ____receiver.range)))
     local ____receiver_1 = __K2L_Regex.new("(.)(.)"):find("日本語")
