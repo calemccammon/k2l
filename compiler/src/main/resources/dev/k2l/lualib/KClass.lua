@@ -26,15 +26,42 @@ local function __K2L_NewKClass(key, simple, qualified, binary, cls, kind)
 end
 
 -- `qualified` may be a JVM binary name such as java.util.Collections$SingletonList: Kotlin separates nested classes with dots.
+-- An anonymous class (java.util.Collections$1) has neither a simple nor a qualified name.
 local function __K2L_KClassNamed(qualified, simple, binary)
     if qualified:find("$", 1, true) then
         binary, qualified = binary or qualified, (qualified:gsub("%$", "."))
+        if binary:find("%$%d+$") then
+            return __K2L_KClassCache[binary] or __K2L_NewKClass(binary, nil, nil, binary, nil, "class")
+        end
     end
     return __K2L_KClassCache[qualified] or __K2L_NewKClass(qualified, simple or qualified:match("[^.]+$"), qualified, binary, nil, "class")
 end
 
+-- The class of an array, from its static type: `kotlin.IntArray` with the JVM name `[I` and the Java simple name `int[]`.
+local function __K2L_KClassOfArray(binary, simple, javaSimple, qualified)
+    local k = __K2L_KClassCache[binary]
+    if k == nil then
+        k = __K2L_NewKClass(binary, simple, qualified, binary, nil, "class")
+        k.____javaSimpleName = javaSimple
+    end
+    return k
+end
+
+-- A local class or object expression gets a class table each time its declaration runs: its KClass is one per declaration
+-- site, found by its binary name (unique, `app.MainKt$main$1`), so objects made by one expression share it as on the JVM.
+local function siteOf(cls)
+    if rawget(cls, "____qualifiedName") == nil then
+        local binary = rawget(cls, "____binaryName")
+        if binary ~= nil then
+            return "site:" .. binary
+        end
+    end
+    return nil
+end
+
 local function __K2L_KClassOf(cls)
-    local known = __K2L_KClassCache[cls]
+    local site = siteOf(cls)
+    local known = __K2L_KClassCache[site or cls]
     if known ~= nil then
         return known
     end
@@ -53,7 +80,9 @@ local function __K2L_KClassOf(cls)
     if simple == nil then
         simple = name:match("[^.$]+$")
     end
-    return __K2L_NewKClass(cls, simple or nil, qualified, rawget(cls, "____binaryName"), cls, kind)
+    local k = __K2L_NewKClass(site or cls, simple or nil, qualified, rawget(cls, "____binaryName"), cls, kind)
+    k.____site = site ~= nil
+    return k
 end
 
 -- The class of a runtime value, `x::class`. Chars are strings and Long is Int at runtime.
@@ -91,6 +120,17 @@ function __K2L_KClassImpl:isInstance(value)
         return false
     end
     local cls = self.____cls
+    if self.____site then
+        -- the value's class (or a superclass) was declared at this site, maybe in another run of the declaration
+        local c = type(value) == "table" and (rawget(value, "____name") ~= nil and value or getmetatable(value)) or nil
+        while c ~= nil do
+            if __K2L_KClassOf(c) == self then
+                return true
+            end
+            c = rawget(c, "____super")
+        end
+        return false
+    end
     if cls ~= nil and (type(value) ~= "table" or rawget(value, "____companionNames") == nil) then
         return __K2L_InstanceOf(value, cls)
     end
@@ -136,7 +176,8 @@ end
 local function __K2L_JavaClass(k)
     local java = k.____java
     if java == nil then
-        java = setmetatable({simpleName = k.simpleName, qualifiedName = k.qualifiedName, name = k.name, ____kotlin = k}, __K2L_JavaClassImpl)
+        local simple = k.____javaSimpleName or k.simpleName
+        java = setmetatable({simpleName = simple, qualifiedName = k.qualifiedName, name = k.name, ____kotlin = k}, __K2L_JavaClassImpl)
         k.____java = java
     end
     return java

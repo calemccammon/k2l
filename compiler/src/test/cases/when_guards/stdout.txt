@@ -1,0 +1,5 @@
+[negative, zero, digit, int, big, empty, capitalized, text, list of 2, other, null]
+guard calls: 4
+[diagonal click at 3, click (1, 2), key A, key 1, key b, tick]
+tick (debug)
+FizzBuzz

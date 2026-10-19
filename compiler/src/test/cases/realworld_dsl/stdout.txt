@@ -1,0 +1,41 @@
+<html>
+  <head>
+    <title>
+      Report &lt;draft&gt;
+    </title>
+  </head>
+  <body class="main">
+    <h1>
+      Sales &amp; Revenue
+    </h1>
+    <p data-id="p1">
+      Totals for
+      <b>
+        Q3
+      </b>
+    </p>
+    <ul>
+      <li class="even">
+        1. apples
+      </li>
+      <li>
+        2. pears
+      </li>
+      <li class="even">
+        3. plums
+      </li>
+    </ul>
+    <a href="https://example.com/?q=1&amp;r=2">
+      link
+    </a>
+  </body>
+</html>
+body class=main depth=4 p=p1
+after: null {}
+https://example.com/?q=1&r=2
+{"name":"k2l","version":1,"ratio":0.75,"stable":false,"notes":null,"quote":"say \"hi\"\n","owner":{"login":"cale","tags":["lua","kotlin"]},"targets":["5.1",true,{"jit":true}],"extra":{"a":1,"b":[1,2]}}
+{"login":"cale","tags":["lua","kotlin"]}
+3
+absent
+true
+null JBool(value=true) JNumber(value=3)

@@ -20,6 +20,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Tens = __K2L_Class("Tens", __K2L_AbstractList)
 __K2L_ClassInfo(Tens, "Tens", "Tens", "class")
+Tens.____readOnly = true
 
 function Tens:____init(n)
     self.n = n
@@ -41,6 +42,7 @@ end
 __K2L_PropertyOverride(Tens, "size", "getSize")
 local Fixed = __K2L_Class("Fixed", __K2L_AbstractList)
 __K2L_ClassInfo(Fixed, "Fixed", "Fixed", "class")
+Fixed.____readOnly = true
 
 function Fixed:____init(size)
     self.size = size

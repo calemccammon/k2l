@@ -1,0 +1,19 @@
+paid 100
+shipped 100 via UPS
+paid 101
+cancelled #1: changed mind
+cancelled #2: out of stock
+! transition: cannot apply Delivered in state NEW (from New)
+! state: order 102 is closed (Cancelled)
+! lookup: no order 999
+cancelled=2, delivered=1, paid=2, placed=3, shipped=1
+Order#100[DELIVERED, 25.00] Delivered: NEW->PAID PAID->SHIPPED SHIPPED->DELIVERED
+Order#101[REFUNDED, 99.50] refunded (money back): NEW->PAID PAID->REFUNDED
+Order#102[CANCELLED, 7.25] Cancelled: NEW->CANCELLED
+{DELIVERED=[100], CANCELLED=[102], REFUNDED=[101]}
+issued=3 registry=3 dispatched=12
+[Delivered, Cancelled, Paid, Paid]
+Delivered, Cancelled, refunded (money back)
+SHIPPED
+2
+[money, carrier UPS]

@@ -117,4 +117,26 @@ fun main() {
     println(expanded(5))
     println(expanded(0))
     println("calls: $calls")
+    convertedReferences()
+}
+
+class Hooks(val onStart: () -> Unit)
+
+fun pick(): () -> Any = ::u
+
+/** Function values returning Unit converted to a function type with a result other than by passing them as an argument. */
+fun convertedReferences() {
+    val h: () -> Any = ::u
+    println(h())
+    println(pick()())
+    val plain: () -> Unit = ::u
+    val widened: () -> Any? = plain
+    println(widened())
+    println(listOf<() -> Any>(::u, { "lambda" }).map { it() })
+    val hooks = Hooks(::u)
+    val started: () -> Any = hooks.onStart
+    println(started())
+    var late: () -> Any = { 1 }
+    late = plain
+    println(late())
 }

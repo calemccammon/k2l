@@ -142,6 +142,10 @@ function Level:toString()
     return self.name
 end
 
+function Level:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 function Level:____initEnum()
     Level.LOW = Level.new("LOW", 0, 1)
     Level.HIGH = Level.new("HIGH", 1, 2)
@@ -170,6 +174,10 @@ function Color:toString()
     return self.name
 end
 
+function Color:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 Color.RED = Color.new("RED", 0, 16711680)
 Color.GREEN = Color.new("GREEN", 1, 65280)
 Color.____values = {Color.RED, Color.GREEN}
@@ -186,6 +194,10 @@ end
 
 function Mode:toString()
     return self.name
+end
+
+function Mode:compareTo(other)
+    return self.ordinal - other.ordinal
 end
 
 function Mode:____initEnum()

@@ -136,6 +136,10 @@ function Color:toString()
     return self.name
 end
 
+function Color:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 Color.RED = Color.new("RED", 0)
 do
     local ____GREEN = __K2L_Class("Color", Color)

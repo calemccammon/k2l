@@ -28,13 +28,20 @@ internal class SuperInfo(
     val samMixins: List<String> = emptyList(),
     /** `: I by expr` entries, in declaration order. */
     val delegations: List<InterfaceDelegation> = emptyList(),
+    /** `: List<T> by expr` and the like: library interfaces whose members are forwarded to the delegate (see LibraryDelegation). */
+    val libraryDelegations: List<LibraryDelegation> = emptyList(),
+    /** The lualib base of a collection interface implemented next to a base that is not a collection, as an interface. */
+    val collectionMixin: String? = null,
 )
 
 /** `: I by expr`: the delegate is stored in [field] of the instance when it is constructed. */
 internal class InterfaceDelegation(val entry: KtDelegatedSuperTypeEntry, val iface: KtClassOrObject, val field: String)
 
+/** `: Comparator<T> by cmp`: a library interface; the delegate is stored in [field] like that of an [InterfaceDelegation]. */
+internal class LibraryDelegation(val entry: KtDelegatedSuperTypeEntry, val field: String)
+
 /** Queries over the classes of the module being compiled: supertypes, initializers and `equals`. */
-internal class ClassHierarchy(private val session: KaSession, private val file: KtFile, private val module: ModuleContext) {
+internal class ClassHierarchy(private val session: KaSession, private val file: KtFile, val module: ModuleContext) {
     /** Whether [psi] is declared in one of the module's source files (not a library). */
     fun isSource(psi: PsiElement?): Boolean = (psi?.containingFile as? KtFile)?.let { it in module.files } == true
 
@@ -76,7 +83,7 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
         val info = superInfo(c)
         c.hasConstructorState() || c.hasInitializers() || info.baseCall?.valueArguments?.isNotEmpty() == true ||
             info.libraryBase != null || info.elementBase || info.collectionBase in CONCRETE_COLLECTION_BASES ||
-            info.delegations.isNotEmpty() ||
+            info.delegations.isNotEmpty() || info.libraryDelegations.isNotEmpty() ||
             info.base?.let { !hasPrimary(it) || initNeeded(it) } == true
     }
 
@@ -102,7 +109,7 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
     }
 
     /** Whether [c] has an `equals` other than identity: its own, a data class's, or a library collection's it extends. */
-    fun overridesEquals(c: KtClassOrObject): Boolean = (c is KtClass && c.isData()) ||
+    fun overridesEquals(c: KtClassOrObject): Boolean = (c is KtClass && c.hasDataMembers()) ||
         c.declaredFunction("equals")?.hasModifier(KtTokens.OVERRIDE_KEYWORD) == true ||
         superInfo(c).collectionBase != null ||
         superInfo(c).base?.let { overridesEquals(it) } == true
@@ -121,5 +128,29 @@ internal fun ClassHierarchy.isSequenceClass(c: KtClassOrObject): Boolean = super
 
 /** The lualib collection class [c] (or a source superclass) extends or implements, if any. */
 internal fun ClassHierarchy.collectionBaseOf(c: KtClassOrObject): String? = superInfo(c).let {
-    it.collectionBase ?: it.base?.let(::collectionBaseOf)
+    it.collectionBase ?: it.collectionMixin ?: it.base?.let(::collectionBaseOf)
+}
+
+/** Names of the properties [c] declares (in its body or as `val`/`var` constructor parameters). */
+internal fun declaredFieldNames(c: KtClassOrObject): Set<String> {
+    val fields = (c as? KtClass)?.primaryConstructorParameters?.filter { it.hasValOrVar() }?.mapNotNull { it.name }.orEmpty().toMutableSet()
+    c.declarations.filterIsInstance<KtProperty>().filter { it.receiverTypeReference == null }.mapNotNullTo(fields) { it.name }
+    return fields
+}
+
+/**
+ * Names of the properties stored as fields of the instances of [c]: those of [c], its supertypes and its subclasses in the
+ * module. A method sharing one of these names would be hidden by the field (see `DeclarationNames.function`).
+ */
+internal fun ClassHierarchy.fieldNames(c: KtClassOrObject): Set<String> {
+    val below = module.shared.getOrPut("fieldNamesBelow") {
+        val result = HashMap<KtClassOrObject, MutableSet<String>>()
+        for (k in module.allClasses) {
+            val names = declaredFieldNames(k)
+            if (names.isNotEmpty()) hierarchy(k).forEach { result.getOrPut(it) { HashSet() } += names }
+        }
+        result
+    }
+    @Suppress("UNCHECKED_CAST") // only this function writes the entry
+    return (below as Map<KtClassOrObject, Set<String>>)[c].orEmpty() + hierarchy(c).flatMap(::declaredFieldNames)
 }

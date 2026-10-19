@@ -97,6 +97,10 @@ function Color:toString()
     return self.name
 end
 
+function Color:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 Color.RED = Color.new("RED", 0)
 Color.GREEN = Color.new("GREEN", 1)
 Color.____values = {Color.RED, Color.GREEN}

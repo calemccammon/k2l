@@ -1,0 +1,24 @@
+[0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
+2 3 5 7 11 13 17 19 23 29 31 37
+[9, 49, 169, 289]
+[[1, 2, 3, 4], [5, 6, 7, 8], [9, 10]]
+[r, rL, rLL, rLR, rR, rRL, rRR]
+26 after 4 steps
+[t=0] producer: send 2
+[t=0] consumer: got 2, total 2
+[t=2] producer: send 3
+[t=2] consumer: got 3, total 5
+[t=3] ticker: tick 1
+[t=4] producer: send 5
+[t=4] consumer: got 5, total 10
+[t=6] producer: send 8
+[t=6] ticker: tick 2
+[t=6] consumer: got 8, total 18
+[t=8] producer: done producing
+[t=8] consumer: consumer finished with 18
+[t=9] ticker: tick 3
+deadlock at t=9: [waiter waits on never]
+pending messages: {report=[10, 18]}
+finished: [producer, consumer, ticker]
+producer(done), consumer(done), ticker(done), waiter(steps=2)
+caught: broken has received nothing

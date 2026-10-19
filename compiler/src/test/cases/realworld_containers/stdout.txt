@@ -1,0 +1,19 @@
+Vec[5, 3, 8, 1, 9] size=5 growths=3 max=9 has8=true has4=false
+removed 5 -> Vec[30, 8, 1, 9], doubled Vec[60, 16, 2, 18]
+Index 10 out of bounds for length 4
+java.util.NoSuchElementException: index 1 of 1
+4 ints=[1, 3] texts=[text] strings=1
+1.10
+true
+(0.0 1.0 2.0)
+(3.0 4.0 11.0)
+12.0
+shape mismatch 2x3 * 2x3
+[v1, v2, v1, v3, v2, v1]
+hits=1 misses=5 loads=5 keys=[2, 1]
+[shirt, tie, belt, jacket]
+[shirt, pants, tie, shoes, belt, jacket]
+cycle detected
+[1.5, 1.12, 2.0]
+[2.0, 1.12, 1.5]
+[2.0, 1.5, 1.12]

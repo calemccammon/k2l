@@ -1,0 +1,59 @@
+[hall] A dusty hall. Items: potion. Exits: south, east.
+> look
+[hall] A dusty hall. Items: potion. Exits: south, east.
+> take potion
+Taken: potion.
+> go east
+[armory] Racks of old weapons. Items: sword, dagger. Exits: west.
+> take sword
+Taken: sword.
+> take dagger
+The dagger is too heavy.
+> i
+You carry: potion, sword
+> w
+[hall] A dusty hall. Exits: south, east.
+> s
+[cellar] Damp and dark. Items: key. A rat king blocks the way (hp 12). Exits: north, east.
+> e
+The rat king won't let you pass.
+> attack
+You hit the rat king with sword for 3.
+The rat king bites you for 2 (hp 18).
+> attack
+You hit the rat king with sword for 6.
+The rat king bites you for 4 (hp 14).
+> attack
+You hit the rat king with sword for 4.
+The rat king dies!
+> attack
+There is nothing to attack.
+> attack
+There is nothing to attack.
+> drink potion
+You feel better (14 -> 20).
+> attack
+There is nothing to attack.
+> take the key
+Taken: key.
+> e
+You unlock the door with the key.
+[vault] Gold glitters everywhere. Items: crown, coins. Exits: west.
+> take crown
+Taken: crown.
+> take coins
+The coins is too heavy.
+> drop dagger
+You have no dagger.
+> take coins
+The coins is too heavy.
+> dance
+I don't understand 'dance'.
+> go up
+I don't understand 'go up'.
+> n
+You can't go north.
+Final: hp=20 score=60 moves=25 carried=6
+rooms=4 alive=true
+true
+[Go(dir=NORTH), Go(dir=WEST), Take(item=), Attack, Unknown(text=   ), Go(dir=EAST)]

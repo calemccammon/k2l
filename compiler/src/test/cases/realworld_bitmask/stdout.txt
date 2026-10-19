@@ -1,0 +1,23 @@
+solved=true guesses=51
+5 3 4 | 6 7 8 | 9 1 2
+6 7 2 | 1 9 5 | 3 4 8
+1 9 8 | 3 4 2 | 5 6 7
+8 5 9 | 7 6 1 | 4 2 3
+4 2 6 | 8 5 3 | 7 9 1
+7 1 3 | 9 2 4 | 8 5 6
+9 6 1 | 5 3 7 | 2 8 4
+2 8 7 | 4 1 9 | 6 3 5
+3 4 5 | 2 8 6 | 1 7 9
+hard solved=true guesses=13810
+8 1 2 | 7 5 3 | 6 4 9
+expected 81 cells, got 3
+conflict at 1
+tsp cost=40 tour=A->E->D->F->C->B->A
+check: true
+gray: [000, 001, 011, 010, 110, 111, 101, 100] back=[0, 1, 2, 3, 4, 5, 6, 7]
+one bit apart: true
+subsets of [3,34,4,12,5,2] summing to 9: [[4, 5], [3, 4, 2]]
+bits of 182: count=5 lowest=2 highest=128 tz=1 lz=24
+swap nibbles: 1101011 reversed bits: 109
+masks: 15 -2147483648 1 -4 15 2147483647
+primes ≤ 200: 46, count()=46, last [193, 197, 199], 97 prime? true

@@ -65,6 +65,11 @@ local function hashUtf8(s)
     return __K2L_ToInt32(h)
 end
 
+-- Double.hashCode() of a value statically typed Double: an integral value is still a Double (3.0 is not 3).
+local function __K2L_DoubleHash(value)
+    return __K2L_ToInt32(xor32(doubleBits(value)))
+end
+
 local function __K2L_Hash(value)
     local t = type(value)
     if value == nil then

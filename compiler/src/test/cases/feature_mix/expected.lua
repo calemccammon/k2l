@@ -24,6 +24,10 @@ function Size:toString()
     return self.name
 end
 
+function Size:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 do
     local ____SMALL = __K2L_Class("Size", Size)
     function ____SMALL:getPrice()

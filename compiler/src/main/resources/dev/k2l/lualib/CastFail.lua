@@ -1,6 +1,7 @@
 -- requires: Exceptions
--- Failed `x as T`: NullPointerException for null, otherwise ClassCastException worded like the JVM's.
-local function __K2L_CastFail(value, target)
+-- Failed `x as T`: NullPointerException for null, otherwise ClassCastException worded like the JVM's. `kotlinName` is the
+-- Kotlin name of T: a read-only collection cast to a mutable one fails with the message of Kotlin's TypeIntrinsics.
+local function __K2L_CastFail(value, target, kotlinName)
     if value == nil then
         error(__K2L_NullPointerException.new("null cannot be cast to non-null type " .. target))
     end
@@ -23,6 +24,9 @@ local function __K2L_CastFail(value, target)
         actual = cls and (rawget(cls, "____binaryName") or rawget(cls, "____qualifiedName") or rawget(cls, "____name")) or "java.lang.Object"
     else
         actual = "java.lang.Object"
+    end
+    if kind == "table" and value.____readOnly and kotlinName ~= nil and kotlinName:find("^kotlin%.collections%.Mutable") then
+        error(__K2L_ClassCastException.new(actual .. " cannot be cast to " .. kotlinName))
     end
     local function describe(name)
         if name:find("^java%.") or name:find("^kotlin%.") then

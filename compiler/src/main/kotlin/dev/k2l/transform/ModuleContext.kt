@@ -40,6 +40,20 @@ class ModuleContext(
         result
     }
 
+    /** Every class, object and object expression of the module, local ones included. */
+    val allClasses: List<KtClassOrObject> by lazy {
+        val result = ArrayList<KtClassOrObject>()
+        files.forEach { f ->
+            f.accept(object : KtTreeVisitorVoid() {
+                override fun visitClassOrObject(classOrObject: KtClassOrObject) {
+                    result += classOrObject
+                    super.visitClassOrObject(classOrObject)
+                }
+            })
+        }
+        result
+    }
+
     /** The source class with [id], looked up in [preferred] first; indexes are built once per module, not per query. */
     fun classInFile(id: ClassId, preferred: KtFile): KtClassOrObject? = classesOf(preferred)[id] ?: classIndex[id]
 
@@ -56,11 +70,14 @@ class ModuleContext(
     val usesFloat: Boolean by lazy { files.any(::mentionsFloat) }
 
     /**
-     * Whether some file calls `Collections.unmodifiableList` or `unmodifiableCollection`, or declares a class extending
-     * `AbstractList` (or implementing `List`): such lists have no array part, so loops over lists have to index them rather
-     * than use `ipairs`, which does not follow `__index` before Lua 5.3.
+     * Whether some file calls `Collections.unmodifiableList`, `unmodifiableCollection`, `subList` or `asList`, or declares a
+     * class extending `AbstractList` (or implementing `List`): such lists (views) have no array part, so loops over lists have
+     * to index them rather than use `ipairs`, which does not follow `__index` before Lua 5.3.
      */
     val usesListViews: Boolean by lazy { files.any(::mentionsListViews) }
+
+    /** Whether some class implements `ClosedRange`: then `start` of a ClosedRange value may be its own property. */
+    val implementsClosedRange: Boolean by lazy { files.any { mentionsSuperType(it, "ClosedRange") } }
 
     /** Whether some class implements `CharSequence`: then CharSequence values may be objects (see CharSequences.kt). */
     val implementsCharSequence: Boolean by lazy { files.any { mentionsSuperType(it, "CharSequence") } }
@@ -126,7 +143,7 @@ class ModuleContext(
     }
 
     companion object {
-        private val VIEW_NAMES = setOf("unmodifiableList", "unmodifiableCollection")
+        private val VIEW_NAMES = setOf("unmodifiableList", "unmodifiableCollection", "subList", "asList")
         private val LIST_BASES = setOf("AbstractList", "AbstractMutableList", "List", "MutableList")
         private val FLOAT_NAMES = setOf("Float", "FloatArray", "floatArrayOf", "toFloat", "toFloatOrNull", "toFloatArray")
 

@@ -30,6 +30,7 @@ internal val LIBRARY_CLASSES = listOf(
     "java/util/ConcurrentModificationException" to "__K2L_ConcurrentModificationException",
     "kotlin/ConcurrentModificationException" to "__K2L_ConcurrentModificationException",
     "kotlin/NotImplementedError" to "__K2L_NotImplementedError",
+    "kotlin/UninitializedPropertyAccessException" to "__K2L_UninitializedPropertyAccessException",
     "java/lang/ArrayIndexOutOfBoundsException" to "__K2L_ArrayIndexOutOfBoundsException",
 )
 
@@ -61,6 +62,18 @@ internal val MARKER_INTERFACES = setOf(
     "kotlin/coroutines/CoroutineContext.Element",
     "kotlin/coroutines/CoroutineContext.Key",
     "kotlin/coroutines/ContinuationInterceptor",
+)
+
+/**
+ * Kotlin's mutable collection interfaces: on the JVM `is MutableList` is false for the read-only collections of the
+ * Kotlin stdlib (EmptyList, ...) and classes implementing only `List`; their lualib classes have `____readOnly` set.
+ */
+internal val MUTABLE_INTERFACES = setOf(
+    "kotlin/collections/MutableList",
+    "kotlin/collections/MutableSet",
+    "kotlin/collections/MutableMap",
+    "kotlin/collections/MutableCollection",
+    "kotlin/collections/MutableIterable",
 )
 
 /** `Collection` types, which an `is` check tells apart from other Iterables by their `size`. */
@@ -101,4 +114,11 @@ internal val PRECONDITION_FAILURES = mapOf(
     "kotlin/check" to (ILLEGAL_STATE_EXCEPTION to "Check failed."),
     "kotlin/requireNotNull" to (ILLEGAL_ARGUMENT_EXCEPTION to "Required value was null."),
     "kotlin/checkNotNull" to (ILLEGAL_STATE_EXCEPTION to "Required value was null."),
+)
+
+/** Library types whose `is` test is a lualib function of `TypeChecks.lua` (they have no lualib class to test against). */
+internal val TYPE_CHECKS = mapOf(
+    "kotlin/Number" to "__K2L_IsNumber",
+    "kotlin/Comparable" to "__K2L_IsComparable",
+    "kotlin/CharSequence" to "__K2L_IsCharSequence",
 )

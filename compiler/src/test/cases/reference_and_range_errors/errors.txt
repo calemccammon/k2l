@@ -1,3 +1,3 @@
-6:43: Delegating the library interface in 'Comparator<String> by cmp' is not supported yet
-8:36: Delegating the library interface in 'Iterator<Int> by it' is not supported yet
-12:40: Reference to the library constructor 'java/util/concurrent/atomic/AtomicInteger' is not supported yet
+7:38: Delegating the library interface in 'CoroutineContext by c' is not supported yet
+9:52: Delegating the library interface in 'java.util.concurrent.Executor by e' is not supported yet
+13:40: Reference to the library constructor 'java/util/concurrent/atomic/AtomicInteger' is not supported yet

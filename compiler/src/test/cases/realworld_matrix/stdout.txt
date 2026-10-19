@@ -1,0 +1,24 @@
+A =
+   2.00    1.00   -1.00
+  -3.00   -1.00    2.00
+  -2.00    1.00    2.00
+det(A) = -1.000
+solve: 2.000, 3.000, -1.000
+A * I == A: true, A^T^T == A: true
+B * B^T =
+  14.00   32.00
+  32.00   77.00
+-B + B is zero: true
+error: dimension mismatch: 2x3 * 2x3
+java.lang.IllegalStateException: singular matrix
+det(H4) = 1.653439e-07
+edited: 5.0 2.0 hash equal: true
+distance 1650.00m, speed 5.500 m/s, longest 12.50m
+legs sorted: [cooldown, warmup, main] total 6200.00m
+hull: [(0, 0), (4, 0), (4, 3), (2, 5), (0, 3)] area=16
+|v|=5 v·(1,0)=3 v×(0,1)=3 v*0.5=(1.500, 2)
+destructured: 2.0 3.0
+p = x^2 - 1, q = x + 1, p*q = x^3 + x^2 - 1x - 1, p+q = x^2 + x, p' = 2x
+p(3) = 8, (p*q)(2) = 9, degree 4
+(x+1)^5 = x^5 + 5x^4 + 10x^3 + 10x^2 + 5x + 1, at 10: 161051
+zero: 0 0

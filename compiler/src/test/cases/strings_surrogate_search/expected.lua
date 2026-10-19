@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Regex = ____lualib.__K2L_Regex
+local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
 local __K2L_StringLastIndexOf = ____lualib.__K2L_StringLastIndexOf
@@ -66,7 +67,7 @@ local function main()
     print(__K2L_Utf16.out(__K2L_Text.toList(s):count(function(it) return it == __K2L_Text.get(high, 0) end)))
     print(__K2L_Utf16.out(__K2L_Text.toList(s):indexOfFirst(function(it) return it == __K2L_Text.get(low, 0) end)))
     print(__K2L_Utf16.out(__K2L_Utf16.len(__K2L_Regex.new("b"):replace(s, "!"))))
-    print(__K2L_Utf16.out(__K2L_Regex.new(high .. low):findAll(s):count()))
+    print(__K2L_Utf16.out(__K2L_Sequence.new(__K2L_Regex.new(high .. low):findAllFactory(s)):count()))
     print(__K2L_Utf16.out(mark(__K2L_StringReplace("x" .. high, high, "y"))))
     print(__K2L_Utf16.out(mark(__K2L_StringReplace("x" .. high, high .. "z", "y"))))
     print(__K2L_Utf16.out(mark(__K2L_StringReplace(__K2L_StringReplace(high .. low, high, "["), low, "]"))))

@@ -1,0 +1,10 @@
+false -1
+caught: lateinit property name has not been initialized
+kotlin.UninitializedPropertyAccessException: lateinit property name has not been initialized
+true api 2
+lateinit property config has not been initialized
+false
+true 1
+lateinit property local has not been initialized
+SET
+true kotlin.UninitializedPropertyAccessException: custom

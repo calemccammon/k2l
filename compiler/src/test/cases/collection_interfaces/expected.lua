@@ -28,6 +28,7 @@ local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 
 local Window = __K2L_Class("Window", __K2L_ListBase)
 __K2L_ClassInfo(Window, "Window", "Window", "class")
+Window.____readOnly = true
 
 function Window:____init(data, from, to)
     self.data = data
@@ -82,6 +83,7 @@ end
 __K2L_PropertyOverride(Window, "size", "getSize")
 local Numbers = __K2L_Class("Numbers", __K2L_CollectionBase)
 __K2L_ClassInfo(Numbers, "Numbers", "Numbers", "class")
+Numbers.____readOnly = true
 
 function Numbers:____init(count)
     self.count = count
@@ -110,6 +112,7 @@ end
 __K2L_PropertyOverride(Numbers, "size", "getSize")
 local Constants = __K2L_Class("Constants", __K2L_MapBase)
 __K2L_ClassInfo(Constants, "Constants", "Constants", "class")
+Constants.____readOnly = true
 
 function Constants:____init()
     self.backing = __K2L_MapOf(__K2L_Pair.new("pi", 3.14), __K2L_Pair.new("e", 2.72))
@@ -153,6 +156,7 @@ __K2L_PropertyOverride(Constants, "values", "getValues")
 __K2L_PropertyOverride(Constants, "size", "getSize")
 local Matrix = __K2L_Class("Matrix", __K2L_AbstractList)
 __K2L_ClassInfo(Matrix, "Matrix", "Matrix", "class")
+Matrix.____readOnly = true
 
 function Matrix:____init(rows, cols)
     self.rows = rows
@@ -276,8 +280,9 @@ local function interfaces()
     print(tostring(__K2L_StringStartsWith(__K2L_Str(w), "Window@")) .. " " .. w:getSize() .. " " .. w:get(1) .. " " .. w:indexOf(8) .. " " .. tostring(w:contains(7)) .. " " .. __K2L_Str(w:subList(1, 3):toList()) .. " " .. __K2L_Str(w:map(function(it) return it * 2 end)) .. " " .. tostring(w:equals(__K2L_ReadOnlyListOf(6, 7, 8))))
     print(w:sum() .. " " .. __K2L_Str(w:reversed()) .. " " .. w:last() .. " " .. tostring(w:containsAll(__K2L_ReadOnlyListOf(6, 8))) .. " " .. w:listIteratorAt(1):next() .. " " .. w:joinToString())
     local t = 0
-    for ____i = 1, w.size do
-        local x = w[____i]
+    local ____list = w:toList()
+    for ____i = 1, ____list.size do
+        local x = ____list[____i]
         t = t + x
     end
     print("loop " .. t .. " " .. tostring(__K2L_Str(w) == "[6, 7, 8]") .. " " .. tostring(__K2L_Hash(w) == __K2L_Hash(__K2L_ReadOnlyListOf(6, 7, 8))))
@@ -309,9 +314,9 @@ local function subclasses()
     print("snapshot " .. __K2L_Str(s) .. " " .. s.size)
     local sized = Sized.new()
     local unsized = Unsized.new()
-    local ____list = __K2L_ReadOnlyListOf(40, 3, 17, 64, 1)
-    for ____i_1 = 1, ____list.size do
-        local k = ____list[____i_1]
+    local ____list_1 = __K2L_ReadOnlyListOf(40, 3, 17, 64, 1)
+    for ____i_1 = 1, ____list_1.size do
+        local k = ____list_1[____i_1]
         sized:set(k, "v" .. k)
         unsized:set(k, "v" .. k)
     end

@@ -7,7 +7,7 @@ internal object RegexMappings {
     private val OPTIONS = listOf("IGNORE_CASE", "MULTILINE", "DOT_MATCHES_ALL", "LITERAL", "COMMENTS", "UNIX_LINES", "CANON_EQ")
 
     private val REGEX_METHODS =
-        setOf("find", "findAll", "matchEntire", "matches", "containsMatchIn", "replace", "replaceFirst", "split")
+        setOf("find", "matchEntire", "matches", "containsMatchIn", "replace", "replaceFirst", "split")
 
     fun install(t: MappingTable) {
         for (option in OPTIONS) {
@@ -32,7 +32,15 @@ internal object RegexMappings {
 
     fun regexMember(name: String, site: CallSite): LuaExpr? = when {
         name == "pattern" -> LuaIndex(site.self, LuaString("pattern"))
+
+        // a lazy Sequence, as in Kotlin: matches are searched for as they are pulled
+        name == "findAll" -> LuaCall(
+            LuaIndex(site.ref(SEQUENCE_FEATURE, "__K2L_Sequence"), LuaString("new")),
+            listOf(LuaMethodCall(site.self, "findAllFactory", site.args)),
+        )
+
         name in REGEX_METHODS -> LuaMethodCall(site.self, name, site.args)
+
         else -> null
     }
 

@@ -1,0 +1,25 @@
+bad sku 'bad'
+[tool] hammer            1=1200 10=12000
+[tool] tl-002            1=900 10=9000
+[power] drill            1=8640 10=86400
+[glass] vase (fragile)   1=2650 10=26950
+[glass] glasses (fragile) 1=382 10=4270
+[0,0, 0,1, 0,2, 0,3, 1,0, 0,0]
+no room for [glass] bowl (fragile)
+TL-001 x15 | PT-100 x2  | GL-007 x4  | GL-008 x30
+TL-002 x15 | -          | -          | -         
+-          | -          | -          | -         
+units=66
+order 1 route=00>02 [TL-001: 3/3, GL-007: 1/1] total=6250
+order 2 route=10>01>03 [GL-008: 12/12, PT-100: 1/1, TL-002: 2/2] total=15574
+order 3 route=02 [GL-007: 3/10] total=8050
+TL-001 x12 | PT-100 x1  | -          | GL-008 x18
+TL-002 x13 | -          | -          | -         
+-          | -          | -          | -         
+(TL-001, 12)
+null
+true
+false
+fragile=[GL-007, GL-008] sturdy=[TL-001, TL-002, PT-100]
+[drill, vase, hammer, tl-002, glasses]
+[300, -7740, 5990, 2268]

@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Regex = ____lualib.__K2L_Regex
+local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
 local __K2L_StringLastIndexOf = ____lualib.__K2L_StringLastIndexOf
@@ -22,7 +23,7 @@ end
 
 local function show(pattern, s)
     local regex = __K2L_Regex.new(pattern)
-    local ranges = regex:findAll(s):map(function(it)
+    local ranges = __K2L_Sequence.new(regex:findAllFactory(s)):map(function(it)
         return "[" .. it.range.first .. "," .. it.range.last + 1 .. "]"
     end):joinToString("")
     print(__K2L_Utf16.out("'" .. pattern .. "' on " .. mark(s) .. " (" .. __K2L_Utf16.len(s) .. "): " .. ranges .. " replace=" .. mark(regex:replace(s, "-")) .. " split=" .. __K2L_Str(regex:split(s):map(function(it) return mark(it) end))))

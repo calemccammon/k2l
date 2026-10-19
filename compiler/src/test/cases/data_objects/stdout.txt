@@ -1,0 +1,9 @@
+[Look, Say(text=hi), Quit, Look]
+[look, say hi, quit, look]
+Settings false custom!
+true
+-1757490805
+3
+2
+true
+4

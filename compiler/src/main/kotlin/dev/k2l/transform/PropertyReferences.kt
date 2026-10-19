@@ -32,7 +32,7 @@ internal fun FileTransformer.propertyReference(e: KtCallableReferenceExpression,
     val receiver = e.receiverExpression
     val accessors = when {
         property is KtProperty && property.receiverTypeReference != null -> extensionAccessors(e, property)
-        isMemberProperty(property) -> memberAccessors(e, receiver ?: return null, property)
+        isMemberProperty(property) -> memberAccessors(e, receiver, property) ?: return null
         property is KtProperty && property.isTopLevel -> topLevelAccessors(property)
         else -> null
     } ?: return null
@@ -64,17 +64,19 @@ private fun FileTransformer.libraryConstant(e: KtCallableReferenceExpression, sy
 
 private fun FileTransformer.memberAccessors(
     e: KtCallableReferenceExpression,
-    receiver: KtExpression,
+    receiver: KtExpression?,
     property: KtNamedDeclaration,
-): Accessors = with(session) {
-    val owner = receiver.let { r ->
+): Accessors? = with(session) {
+    // `::count` inside the class is bound to the implicit `this`
+    val implicit = if (receiver == null) implicitReferenceReceiver(e) ?: return null else null
+    val owner = receiver?.let { r ->
         (
             r as? KtNameReferenceExpression
                 ?: (r as? KtDotQualifiedExpression)?.selectorExpression as? KtNameReferenceExpression
             )
     }
         ?.mainReference?.resolve()
-    val bound = isBoundReference(e) || owner is KtObjectDeclaration
+    val bound = implicit != null || isBoundReference(e) || owner is KtObjectDeclaration
     val value = LuaName("value")
     if (!bound) {
         val self = LuaName("receiver")
@@ -83,7 +85,7 @@ private fun FileTransformer.memberAccessors(
             LuaFunction(listOf("receiver", "value"), listOf(propertyWrite(self, property, value))),
         )
     }
-    val target = cache(expression(receiver), "receiver")
+    val target = cache(implicit ?: expression(receiver!!), "receiver")
     Accessors(
         LuaFunction(emptyList(), listOf(LuaReturn(listOf(propertyRead(target, property))))),
         LuaFunction(listOf("value"), listOf(propertyWrite(target, property, value))),

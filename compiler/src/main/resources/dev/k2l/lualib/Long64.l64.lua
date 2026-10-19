@@ -7,6 +7,7 @@ local __K2L_Long64 = {}
 
 local B = {}
 B.__index = B
+B.____isNumber = true -- for `is Number`
 
 local type, setmetatable, tostring = type, setmetatable, tostring
 local floor, fmod = math.floor, math.fmod
@@ -585,6 +586,13 @@ end
 function B.compareTo(self, other)
     return cmp(self, other)
 end
+
+-- Number.toLong()/toInt()/toDouble() of a box whose static type is Number (see NumberTo.lua)
+function B.toLong(self)
+    return self
+end
+
+B.toInt, B.toDouble = toInt, toDouble
 
 B.__tostring = str
 B.__concat = function(a, b)

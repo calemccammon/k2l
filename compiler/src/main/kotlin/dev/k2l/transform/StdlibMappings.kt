@@ -1,5 +1,6 @@
 package dev.k2l.transform
 
+import dev.k2l.LuaTarget
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.types.KaType
@@ -59,6 +60,7 @@ object StdlibMappings {
         basicStrings()
         NumberMappings.install(table)
         BitMappings.install(table)
+        JavaStaticMappings.install(table)
         UnsignedMappings.install(table)
         RandomMappings.install(table)
         ThrowableMappings.install(table)
@@ -69,7 +71,11 @@ object StdlibMappings {
 
     private fun io() {
         def("kotlin/io/println") {
-            if (args.isEmpty()) lua("print") else lua("print", output(printable(arg(0), argTypes[0])))
+            if (args.isEmpty()) return@def lua("print")
+            val text = printable(arg(0), argTypes[0])
+            // Lua 5.1's print stops at a NUL character; io.write writes whole strings
+            val isText = text != arg(0) || isTextual(argTypes[0])
+            if (target == LuaTarget.Lua51 && isText) lua("io.write", output(text), LuaString("\n")) else lua("print", output(text))
         }
         def("kotlin/io/print") { lua("io.write", output(str(arg(0), argTypes[0]))) }
         def("kotlin/io/readLine", "kotlin/io/readlnOrNull", "kotlin/io/readln") { lua("io.read") }
@@ -98,6 +104,10 @@ object StdlibMappings {
             def("kotlin/$t.toInt") { lualib("DoubleToInt", self) }
             def("kotlin/$t.toLong") { lualib("DoubleToLong", self) }
         }
+        // a value typed `Number` may be an Int, a Double or a BigInteger: the conversion is chosen at run time
+        for (conversion in listOf("toDouble", "toFloat", "toLong", "toInt", "toShort", "toByte")) {
+            def("kotlin/Number.$conversion") { lualib("NumberTo", self, LuaString(conversion)) }
+        }
     }
 
     private fun anyAndEnum() {
@@ -105,37 +115,48 @@ object StdlibMappings {
         def("kotlin/Throwable.message") { LuaIndex(self, LuaString("message")) }
         def("kotlin/Throwable.cause") { LuaIndex(self, LuaString("cause")) }
 
+        def("kotlin/isInitialized") { transformer.lateinitIsInitialized(element) }
         def("kotlin/Lazy.value") { method(self, "getValue") }
         def("kotlin/Lazy.isInitialized") { method(self, "isInitialized") }
         def("kotlin/Enum.name") { LuaIndex(self, LuaString("name")) }
         def("kotlin/Enum.ordinal") { LuaIndex(self, LuaString("ordinal")) }
     }
 
-    /** Bitwise operations. Int results stay in 32-bit range; Long uses Lua's 64-bit integers (5.3+ only). */
+    /**
+     * Bitwise operations. Int results stay in 32-bit range; Long uses Lua's 64-bit integers on 5.3+, and the exact 53-bit
+     * helpers of `LongBits.lua` where a Long is a double.
+     */
     private fun bitwise() {
         for (t in listOf("Int", "Long")) {
             val isLong = t == "Long"
-            def("kotlin/$t.and") { bitwise("BAnd", LuaBinOp.BAnd) }
-            def("kotlin/$t.or") { bitwise("BOr", LuaBinOp.BOr) }
-            def("kotlin/$t.xor") { bitwise("BXor", LuaBinOp.BXor) }
-            def("kotlin/$t.inv") {
-                if (target.hasIntegers) LuaUnary(LuaUnOp.BNot, self) else bitCall("__K2L_BNot")
-            }
-            def("kotlin/$t.shl") {
-                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shl, self, arg(0)) else bitCall("__K2L_Shl")
-            }
-            def("kotlin/$t.shr") {
-                if (target.hasIntegers && isLong) {
-                    LuaBinary(LuaBinOp.IDiv, self, LuaBinary(LuaBinOp.Shl, LuaNumber("1"), arg(0)))
-                } else {
-                    bitCall("__K2L_Shr")
-                }
-            }
-            def("kotlin/$t.ushr") {
-                if (target.hasIntegers && isLong) LuaBinary(LuaBinOp.Shr, self, arg(0)) else bitCall("__K2L_Ushr")
+            def("kotlin/$t.and") { if (isLong && !target.hasIntegers) longBits("LBAnd") else bitwise("BAnd", LuaBinOp.BAnd) }
+            def("kotlin/$t.or") { if (isLong && !target.hasIntegers) longBits("LBOr") else bitwise("BOr", LuaBinOp.BOr) }
+            def("kotlin/$t.xor") { if (isLong && !target.hasIntegers) longBits("LBXor") else bitwise("BXor", LuaBinOp.BXor) }
+            def("kotlin/$t.inv") { if (target.hasIntegers) LuaUnary(LuaUnOp.BNot, self) else floatBits(isLong, "BNot") }
+        }
+        shifts()
+    }
+
+    private fun shifts() {
+        def("kotlin/Int.shl") { if (target.hasIntegers) bitCall("__K2L_Shl") else floatBits(false, "Shl") }
+        def("kotlin/Int.shr") { if (target.hasIntegers) bitCall("__K2L_Shr") else floatBits(false, "Shr") }
+        def("kotlin/Int.ushr") { if (target.hasIntegers) bitCall("__K2L_Ushr") else floatBits(false, "Ushr") }
+        def("kotlin/Long.shl") { if (target.hasIntegers) LuaBinary(LuaBinOp.Shl, self, arg(0)) else floatBits(true, "Shl") }
+        def("kotlin/Long.shr") {
+            if (target.hasIntegers) {
+                LuaBinary(LuaBinOp.IDiv, self, LuaBinary(LuaBinOp.Shl, LuaNumber("1"), arg(0)))
+            } else {
+                floatBits(true, "Shr")
             }
         }
+        def("kotlin/Long.ushr") { if (target.hasIntegers) LuaBinary(LuaBinOp.Shr, self, arg(0)) else floatBits(true, "Ushr") }
     }
+
+    /** An operation where numbers are doubles: the 32-bit helper of `Bit.lua`, or for a Long the 53-bit one of `LongBits.lua`. */
+    private fun CallSite.floatBits(isLong: Boolean, name: String): LuaExpr =
+        if (isLong) longBits(if (name == "BNot") "LBNot" else "L$name") else bitCall("__K2L_$name")
+
+    private fun CallSite.longBits(helper: String): LuaExpr = LuaCall(ref("LongBits", "__K2L_$helper"), listOfNotNull(receiver) + args)
 
     private fun basicStrings() {
         def("kotlin/String.length") { if (utf16) u16("len", self) else LuaUnary(LuaUnOp.Len, self) }
@@ -206,18 +227,27 @@ object StdlibMappings {
         )
     }
 
-    private fun mapUnrounded(callableId: String?, site: CallSite): LuaExpr? {
-        val special = if (site.receiver != null && callableId?.startsWith("kotlin/") == true) universalMethod(site) else null
-        return special
-            ?: Long64Mappings.map(callableId, site)
-            ?: callableId?.let { mappings[it] }?.invoke(site)
-            ?: TypeTestMappings.map(callableId, site)
-            ?: BigNumberMappings.map(callableId, site)
-            ?: JdkCollectionsMappings.map(callableId, site)
-            ?: StreamMappings.map(callableId, site)
-            ?: SequenceMappings.map(callableId, site)
-            ?: CoroutineMappings.map(callableId, site)
-            ?: CollectionMappings.map(callableId, site)
+    private fun mapUnrounded(callableId: String?, site: CallSite): LuaExpr? = special(callableId, site)
+        ?: Long64Mappings.map(callableId, site)
+        ?: callableId?.let { mappings[it] }?.invoke(site)
+        ?: TypeTestMappings.map(callableId, site)
+        ?: BigNumberMappings.map(callableId, site)
+        ?: JdkCollectionsMappings.map(callableId, site)
+        ?: StreamMappings.map(callableId, site)
+        ?: SequenceMappings.map(callableId, site)
+        ?: CoroutineMappings.map(callableId, site)
+        ?: CollectionMappings.map(callableId, site)
+
+    private fun special(callableId: String?, site: CallSite): LuaExpr? = when {
+        site.receiver == null -> null
+
+        callableId?.startsWith("kotlin/") == true -> universalMethod(site)
+
+        // toString() of the JDK's collections (`java.util.ArrayDeque.toString`)
+        callableId?.startsWith("java/util/") == true && site.name == "toString" && site.args.isEmpty() &&
+            site.receiverType?.let { with(site.session) { it.collectionKind() } } != null -> universalMethod(site)
+
+        else -> null
     }
 
     /** toString() and compareTo(x) on anything from the kotlin package. */

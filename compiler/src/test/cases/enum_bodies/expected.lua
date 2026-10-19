@@ -23,6 +23,10 @@ function Op:toString()
     return self.name
 end
 
+function Op:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 do
     local ____PLUS = __K2L_Class("Op", Op)
     function ____PLUS:apply(a, b)
@@ -69,6 +73,10 @@ end
 
 function Level:toString()
     return self.name
+end
+
+function Level:compareTo(other)
+    return self.ordinal - other.ordinal
 end
 
 Level.LOW = Level.new("LOW", 0, 1)
@@ -121,6 +129,10 @@ function Shape:toString()
     return self.name
 end
 
+function Shape:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 Shape.DOT = Shape.new("DOT", 0, 1)
 do
     local ____SQUARE = __K2L_Class("Shape", Shape)
@@ -167,6 +179,10 @@ function Planet:toString()
     return self.name
 end
 
+function Planet:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 do
     local ____EARTH = __K2L_Class("Planet", Planet)
     function ____EARTH:describe()
@@ -191,6 +207,10 @@ end
 
 function Color:toString()
     return self.name
+end
+
+function Color:compareTo(other)
+    return self.ordinal - other.ordinal
 end
 
 Color.RED = Color.new("RED", 0)

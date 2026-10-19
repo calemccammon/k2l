@@ -37,7 +37,8 @@ local function installIndex(cls)
     cls.__newindex = instanceNewIndex
 end
 
-local function __K2L_PropertyOverride(cls, key, getter)
+-- `isObject`: the table of an object is its only instance, so reading the field on the table itself calls the getter too.
+local function __K2L_PropertyOverride(cls, key, getter, isObject)
     local accessors = {}
     for k, v in pairs(cls.____accessors or {}) do
         accessors[k] = v
@@ -45,6 +46,27 @@ local function __K2L_PropertyOverride(cls, key, getter)
     accessors[key] = getter
     cls.____accessors = accessors
     installIndex(cls)
+    if isObject then
+        local original = getmetatable(cls)
+        local lookup = {}
+        for k, v in pairs(original or {}) do
+            if type(k) == "string" and k:sub(1, 2) == "__" and k:sub(1, 3) ~= "___" then
+                lookup[k] = v
+            end
+        end
+        local inherited = original and original.__index
+        lookup.__index = function(self, name)
+            local get = rawget(cls, "____accessors")[name]
+            if get ~= nil then
+                return cls[get](self)
+            elseif type(inherited) == "function" then
+                return inherited(self, name)
+            elseif inherited ~= nil then
+                return inherited[name]
+            end
+        end
+        setmetatable(cls, lookup)
+    end
 end
 
 -- Makes `cls` read and write its elements by index with `at(self, i)` and `atPut(self, i, value)` (1-based `i`).
@@ -63,13 +85,20 @@ local function __K2L_Class(name, base, ...)
         cls.__call = rawget(base, "__call")
     end
     local interfaces = {...}
+    local indexed = base ~= nil and (base.____accessors ~= nil or base.____at ~= nil)
     for _, iface in ipairs(interfaces) do
         -- objects of a class implementing Comparator, Runnable or a function type are callable (see SamInterfaces)
         cls.__call = cls.__call or rawget(iface, "__call")
-        cls.____interfaces[iface] = true
-        for super in pairs(iface.____interfaces) do
-            cls.____interfaces[super] = true
+        -- a lualib collection base used as an interface (`class C : Base(), List<Int>`) brings its superclasses along
+        local c = iface
+        while c ~= nil do
+            cls.____interfaces[c] = true
+            for super in pairs(rawget(c, "____interfaces")) do
+                cls.____interfaces[super] = true
+            end
+            c = rawget(c, "____super")
         end
+        indexed = indexed or iface.____accessors ~= nil or iface.____at ~= nil
     end
     if #interfaces == 0 then
         if base ~= nil then
@@ -91,7 +120,7 @@ local function __K2L_Class(name, base, ...)
             end
         end})
     end
-    if base ~= nil and (base.____accessors ~= nil or base.____at ~= nil) then
+    if indexed then
         installIndex(cls)
     end
     function cls.new(...)

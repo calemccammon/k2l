@@ -66,6 +66,10 @@ function E:toString()
     return self.name
 end
 
+function E:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 E.A = E.new("A", 0)
 E.B = E.new("B", 1)
 E.____values = {E.A, E.B}

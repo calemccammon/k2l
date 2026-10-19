@@ -251,28 +251,28 @@ local function mutation()
     tryIt("first", function() return __K2L_ListOf():first() end)
     tryIt("add listOf(1,2)", function()
         local ____cast = __K2L_ReadOnlyListOf(1, 2)
-        if not __K2L_InstanceOf(____cast, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast, __K2L_List) and not ____cast.____readOnly) then
             __K2L_CastFail(____cast, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast:add(3)
     end)
     tryIt("set listOf(1,2)", function()
         local ____cast_1 = __K2L_ReadOnlyListOf(1, 2)
-        if not __K2L_InstanceOf(____cast_1, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_1, __K2L_List) and not ____cast_1.____readOnly) then
             __K2L_CastFail(____cast_1, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_1:set(0, 5)
     end)
     tryIt("set listOf(1,2) bad", function()
         local ____cast_2 = __K2L_ReadOnlyListOf(1, 2)
-        if not __K2L_InstanceOf(____cast_2, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_2, __K2L_List) and not ____cast_2.____readOnly) then
             __K2L_CastFail(____cast_2, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_2:set(5, 1)
     end)
     tryIt("sort listOf(3,1,2)", function()
         local l = __K2L_ReadOnlyListOf(3, 1, 2)
-        if not __K2L_InstanceOf(l, __K2L_List) then
+        if not (__K2L_InstanceOf(l, __K2L_List) and not l.____readOnly) then
             __K2L_CastFail(l, "java.util.List", "kotlin.collections.MutableList")
         end
         l:sort()
@@ -280,28 +280,28 @@ local function mutation()
     end)
     tryIt("remove listOf(1,2)", function()
         local ____cast_3 = __K2L_ReadOnlyListOf(1, 2)
-        if not __K2L_InstanceOf(____cast_3, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_3, __K2L_List) and not ____cast_3.____readOnly) then
             __K2L_CastFail(____cast_3, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_3:remove(1)
     end)
     tryIt("remove absent listOf(1,2)", function()
         local ____cast_4 = __K2L_ReadOnlyListOf(1, 2)
-        if not __K2L_InstanceOf(____cast_4, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_4, __K2L_List) and not ____cast_4.____readOnly) then
             __K2L_CastFail(____cast_4, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_4:remove(5)
     end)
     tryIt("removeAt listOf(1,2)", function()
         local ____cast_5 = __K2L_ReadOnlyListOf(1, 2)
-        if not __K2L_InstanceOf(____cast_5, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_5, __K2L_List) and not ____cast_5.____readOnly) then
             __K2L_CastFail(____cast_5, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_5:removeAt(0)
     end)
     tryIt("clear listOf(1,2)", function()
         local ____cast_6 = __K2L_ReadOnlyListOf(1, 2)
-        if not __K2L_InstanceOf(____cast_6, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_6, __K2L_List) and not ____cast_6.____readOnly) then
             __K2L_CastFail(____cast_6, "java.util.List", "kotlin.collections.MutableList")
         end
         ____cast_6:clear()
@@ -309,49 +309,49 @@ local function mutation()
     end)
     tryIt("addAll empty listOf(1,2)", function()
         local ____cast_7 = __K2L_ReadOnlyListOf(1, 2)
-        if not __K2L_InstanceOf(____cast_7, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_7, __K2L_List) and not ____cast_7.____readOnly) then
             __K2L_CastFail(____cast_7, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_7:addAll(__K2L_ReadOnlyListOf())
     end)
     tryIt("removeFirst listOf(1,2)", function()
         local ____cast_8 = __K2L_ReadOnlyListOf(1, 2)
-        if not __K2L_InstanceOf(____cast_8, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_8, __K2L_List) and not ____cast_8.____readOnly) then
             __K2L_CastFail(____cast_8, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_8:removeFirst()
     end)
     tryIt("add listOf(1)", function()
         local ____cast_9 = __K2L_SingletonListOf(1)
-        if not __K2L_InstanceOf(____cast_9, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_9, __K2L_List) and not ____cast_9.____readOnly) then
             __K2L_CastFail(____cast_9, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_9:add(3)
     end)
     tryIt("set listOf(1)", function()
         local ____cast_10 = __K2L_SingletonListOf(1)
-        if not __K2L_InstanceOf(____cast_10, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_10, __K2L_List) and not ____cast_10.____readOnly) then
             __K2L_CastFail(____cast_10, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_10:set(0, 3)
     end)
     tryIt("remove listOf(1)", function()
         local ____cast_11 = __K2L_SingletonListOf(1)
-        if not __K2L_InstanceOf(____cast_11, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_11, __K2L_List) and not ____cast_11.____readOnly) then
             __K2L_CastFail(____cast_11, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_11:remove(1)
     end)
     tryIt("remove absent listOf(1)", function()
         local ____cast_12 = __K2L_SingletonListOf(1)
-        if not __K2L_InstanceOf(____cast_12, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_12, __K2L_List) and not ____cast_12.____readOnly) then
             __K2L_CastFail(____cast_12, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_12:remove(2)
     end)
     tryIt("clear listOf(1)", function()
         local ____cast_13 = __K2L_SingletonListOf(1)
-        if not __K2L_InstanceOf(____cast_13, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_13, __K2L_List) and not ____cast_13.____readOnly) then
             __K2L_CastFail(____cast_13, "java.util.List", "kotlin.collections.MutableList")
         end
         ____cast_13:clear()
@@ -359,14 +359,14 @@ local function mutation()
     end)
     tryIt("removeAt listOf(1)", function()
         local ____cast_14 = __K2L_SingletonListOf(1)
-        if not __K2L_InstanceOf(____cast_14, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_14, __K2L_List) and not ____cast_14.____readOnly) then
             __K2L_CastFail(____cast_14, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_14:removeAt(0)
     end)
     tryIt("sort listOf(1)", function()
         local ____cast_15 = __K2L_SingletonListOf(1)
-        if not __K2L_InstanceOf(____cast_15, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_15, __K2L_List) and not ____cast_15.____readOnly) then
             __K2L_CastFail(____cast_15, "java.util.List", "kotlin.collections.MutableList")
         end
         ____cast_15:sort()
@@ -374,28 +374,28 @@ local function mutation()
     end)
     tryIt("add sorted", function()
         local ____cast_16 = __K2L_ReadOnlyListOf(2, 1):sorted()
-        if not __K2L_InstanceOf(____cast_16, __K2L_List) then
+        if not (__K2L_InstanceOf(____cast_16, __K2L_List) and not ____cast_16.____readOnly) then
             __K2L_CastFail(____cast_16, "java.util.List", "kotlin.collections.MutableList")
         end
         return ____cast_16:add(3)
     end)
     tryIt("add setOf(1)", function()
         local ____cast_17 = __K2L_ReadOnlySetOf(1)
-        if not __K2L_InstanceOf(____cast_17, __K2L_Set) then
+        if not (__K2L_InstanceOf(____cast_17, __K2L_Set) and not ____cast_17.____readOnly) then
             __K2L_CastFail(____cast_17, "java.util.Set", "kotlin.collections.MutableSet")
         end
         return ____cast_17:add(3)
     end)
     tryIt("remove setOf(1)", function()
         local ____cast_18 = __K2L_ReadOnlySetOf(1)
-        if not __K2L_InstanceOf(____cast_18, __K2L_Set) then
+        if not (__K2L_InstanceOf(____cast_18, __K2L_Set) and not ____cast_18.____readOnly) then
             __K2L_CastFail(____cast_18, "java.util.Set", "kotlin.collections.MutableSet")
         end
         return ____cast_18:remove(1)
     end)
     tryIt("clear setOf(1)", function()
         local ____cast_19 = __K2L_ReadOnlySetOf(1)
-        if not __K2L_InstanceOf(____cast_19, __K2L_Set) then
+        if not (__K2L_InstanceOf(____cast_19, __K2L_Set) and not ____cast_19.____readOnly) then
             __K2L_CastFail(____cast_19, "java.util.Set", "kotlin.collections.MutableSet")
         end
         ____cast_19:clear()
@@ -403,28 +403,28 @@ local function mutation()
     end)
     tryIt("add setOf(1,2)", function()
         local ____cast_20 = __K2L_ReadOnlySetOf(1, 2)
-        if not __K2L_InstanceOf(____cast_20, __K2L_Set) then
+        if not (__K2L_InstanceOf(____cast_20, __K2L_Set) and not ____cast_20.____readOnly) then
             __K2L_CastFail(____cast_20, "java.util.Set", "kotlin.collections.MutableSet")
         end
         return ____cast_20:add(3)
     end)
     tryIt("put mapOf(1)", function()
         local ____cast_21 = __K2L_SingletonMapOf(__K2L_Pair.new(1, 2))
-        if not __K2L_InstanceOf(____cast_21, __K2L_Map) then
+        if not (__K2L_InstanceOf(____cast_21, __K2L_Map) and not ____cast_21.____readOnly) then
             __K2L_CastFail(____cast_21, "java.util.Map", "kotlin.collections.MutableMap")
         end
         return ____cast_21:put(3, 3)
     end)
     tryIt("remove mapOf(1)", function()
         local ____cast_22 = __K2L_SingletonMapOf(__K2L_Pair.new(1, 2))
-        if not __K2L_InstanceOf(____cast_22, __K2L_Map) then
+        if not (__K2L_InstanceOf(____cast_22, __K2L_Map) and not ____cast_22.____readOnly) then
             __K2L_CastFail(____cast_22, "java.util.Map", "kotlin.collections.MutableMap")
         end
         return ____cast_22:remove(1)
     end)
     tryIt("clear mapOf(1)", function()
         local ____cast_23 = __K2L_SingletonMapOf(__K2L_Pair.new(1, 2))
-        if not __K2L_InstanceOf(____cast_23, __K2L_Map) then
+        if not (__K2L_InstanceOf(____cast_23, __K2L_Map) and not ____cast_23.____readOnly) then
             __K2L_CastFail(____cast_23, "java.util.Map", "kotlin.collections.MutableMap")
         end
         ____cast_23:clear()
@@ -484,13 +484,18 @@ local function equality()
     end)
     local single = __K2L_SingletonListOf(5)
     local total = 0
-    for _, x in ipairs(single) do
+    for ____i = 1, single.size do
+        local x = single[____i]
         total = total + x
     end
-    for _, x in ipairs(__K2L_ReadOnlyListOf()) do
+    local ____list = __K2L_ReadOnlyListOf()
+    for ____i_1 = 1, ____list.size do
+        local x = ____list[____i_1]
         total = total + x
     end
-    for _, x in ipairs(__K2L_ReadOnlySetOf(7):toList()) do
+    local ____list_1 = __K2L_ReadOnlySetOf(7):toList()
+    for ____i_2 = 1, ____list_1.size do
+        local x = ____list_1[____i_2]
         total = total + x
     end
     for k, v in __K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):iter() do

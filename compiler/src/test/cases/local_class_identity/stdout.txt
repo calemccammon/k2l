@@ -1,0 +1,13 @@
+1
+true
+false
+app.MainKt$square$1 app.MainKt$circle$1
+true
+false
+14.0, 3.0
+1
+[app.MainKt$makeLocal$Derived, app.MainKt$makeLocal$Base, app.MainKt$makeLocal$Derived, app.MainKt$makeLocal$Base]
+true
+true
+false
+true

@@ -34,4 +34,10 @@ local __K2L_NumberFormatException = __K2L_Class("java.lang.NumberFormatException
 local __K2L_NoSuchElementException = __K2L_Class("java.util.NoSuchElementException", __K2L_RuntimeException)
 local __K2L_ConcurrentModificationException = __K2L_Class("java.util.ConcurrentModificationException", __K2L_RuntimeException)
 local __K2L_NotImplementedError = __K2L_Class("kotlin.NotImplementedError", __K2L_Error)
+local __K2L_UninitializedPropertyAccessException = __K2L_Class("kotlin.UninitializedPropertyAccessException", __K2L_RuntimeException)
 local __K2L_KotlinReflectionNotSupportedError = __K2L_Class("kotlin.jvm.KotlinReflectionNotSupportedError", __K2L_Error)
+
+-- A read of an unset lateinit property or variable.
+local function __K2L_Uninitialized(name)
+    error(__K2L_UninitializedPropertyAccessException.new("lateinit property " .. name .. " has not been initialized"))
+end

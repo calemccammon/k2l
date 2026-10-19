@@ -42,10 +42,10 @@ end
 local function main()
     local backing = __K2L_ListOf(1, 2, 3)
     local view = __K2L_JdkCollections.unmodifiableList(backing)
-    print(__K2L_Str(view) .. " " .. view.size .. " " .. view:get(0) .. " " .. tostring(view:isEmpty()))
+    print(__K2L_Str(view) .. " " .. view.size .. " " .. __K2L_Str(view:get(0)) .. " " .. tostring(view:isEmpty()))
     backing:add(4)
     backing:set(0, 10)
-    print(__K2L_Str(view) .. " " .. view.size .. " " .. view:get(0) .. " " .. view:last() .. " " .. tostring(view:contains(4)))
+    print(__K2L_Str(view) .. " " .. view.size .. " " .. __K2L_Str(view:get(0)) .. " " .. __K2L_Str(view:last()) .. " " .. tostring(view:contains(4)))
     backing:removeAt(1)
     print(__K2L_Str(view) .. " " .. view.size)
     local seen = __K2L_ListOf()
@@ -79,11 +79,11 @@ local function main()
     print(firstBig)
     for i = 0, view.size - 1 do
         local x = view[i + 1]
-        io.write(i .. "=" .. x .. " ")
+        io.write(i .. "=" .. __K2L_Str(x) .. " ")
     end
     print()
     for i = 0, view.size - 1 do
-        io.write(tostring(view:get(i)))
+        io.write(__K2L_Str(view:get(i)))
     end
     print()
     print(__K2L_Equals(view, backing))
@@ -138,7 +138,7 @@ local function main()
     local ____list = sv:toList()
     for ____i_4 = 1, ____list.size do
         local x = ____list[____i_4]
-        io.write(tostring(x))
+        io.write(__K2L_Str(x))
     end
     print()
     attempt("setAdd", function()
@@ -157,10 +157,10 @@ local function main()
     m:remove("a")
     print(__K2L_Str(mv) .. " " .. mv.size .. " " .. __K2L_Str(mv:get("c")) .. " " .. tostring(mv:containsKey("a")) .. " " .. __K2L_Str(mv:getKeys()) .. " " .. __K2L_Str(mv:getValues()))
     for k, v in mv:iter() do
-        io.write(__K2L_Str(k) .. v .. " ")
+        io.write(__K2L_Str(k) .. __K2L_Str(v) .. " ")
     end
     print()
-    print(__K2L_Str(mv:getEntries():map(function(it) return it.key .. it.value end)))
+    print(__K2L_Str(mv:getEntries():map(function(it) return it.key .. __K2L_Str(it.value) end)))
     attempt("put", function()
         mv:set("z", 0)
     end)
@@ -179,10 +179,10 @@ local function main()
     print(__K2L_Str(hv:getKeys():toList()))
     local c = __K2L_JdkCollections.unmodifiableCollection(backing)
     backing:add(1)
-    print(c:count() .. " " .. __K2L_Str(c))
+    print(c.size .. " " .. __K2L_Str(c))
     local cs = __K2L_JdkCollections.unmodifiableCollection(s)
     s:add(77)
-    print(cs:count() .. " " .. tostring(cs:contains(77)))
+    print(cs.size .. " " .. tostring(cs:contains(77)))
 end
 
 main()

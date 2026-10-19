@@ -57,3 +57,8 @@ local function __K2L_Hash(value)
     end
     return __K2L_IdentityHash(value)
 end
+
+-- Double.hashCode() of a value statically typed Double (floats are told apart from integers here, see Hash.float.lua).
+local function __K2L_DoubleHash(value)
+    return __K2L_Hash(value + 0.0)
+end

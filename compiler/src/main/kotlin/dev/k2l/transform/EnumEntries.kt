@@ -9,6 +9,16 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 /** Field of an enum class table holding its entries in order. */
 internal const val ENUM_VALUES = "____values"
 
+/** `toString()` (unless declared) and `Enum.compareTo`, which is final: the difference of the ordinals, as on the JVM. */
+internal fun FileTransformer.enumMembers(c: KtClass, ref: LuaExpr) {
+    if (c.declaredFunction("toString") == null) {
+        emitMethod(ref, "toString", emptyList(), listOf(LuaReturn(listOf(LuaIndex(selfRef(), LuaString("name"))))))
+    }
+    val ordinal = { e: LuaExpr -> LuaIndex(e, LuaString("ordinal")) }
+    val difference = LuaBinary(LuaBinOp.Sub, ordinal(selfRef()), ordinal(LuaName("other")))
+    emitMethod(ref, "compareTo", listOf("other"), listOf(LuaReturn(listOf(difference))))
+}
+
 internal fun FileTransformer.enumEntries(c: KtClass, ref: LuaExpr): Unit = with(session) {
     val entries = c.declarations.filterIsInstance<KtEnumEntry>()
     entries.forEachIndexed { ordinal, entry ->

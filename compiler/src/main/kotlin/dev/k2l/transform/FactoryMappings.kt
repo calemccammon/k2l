@@ -124,6 +124,9 @@ internal object FactoryMappings {
 
             "java/util/Comparator.compare", "java/lang/Runnable.run", "java/util/concurrent/Callable.call" -> LuaCall(site.self, site.args)
 
+            // `f(x)` on an object of a class implementing a function type by delegation: the object is callable
+            in FUNCTION_INVOKES -> LuaCall(site.self, site.args)
+
             "kotlin/comparisons/compareValues" -> LuaCall(site.ref("Compare", "__K2L_CompareValues"), listOf(site.arg(0), site.arg(1)))
 
             "kotlin/comparisons/compareValuesBy" ->
@@ -217,15 +220,21 @@ internal object FactoryMappings {
             LuaCall(LuaIndex(site.ref(featureOf(luaClass), luaClass), LuaString("new")), args.toList())
         val first = site.argTypes.firstOrNull()
         val firstIsCollection = first != null && with(site.session) { first.collectionKind() } != null
+        val elements = (if (firstIsCollection) site.args.take(1) else emptyList()).toTypedArray()
         return when (classId) {
             "kotlin/Pair" -> new("__K2L_Pair", *site.args.toTypedArray())
 
             "kotlin/Triple" -> new("__K2L_Triple", *site.args.toTypedArray())
 
-            "java/util/ArrayList", "kotlin/collections/ArrayList", "java/util/LinkedList", "kotlin/collections/ArrayDeque",
-            "java/util/ArrayDeque",
-            ->
+            "java/util/ArrayList", "kotlin/collections/ArrayList" ->
                 if (firstIsCollection) LuaMethodCall(site.arg(0), "toMutableList", emptyList()) else new("__K2L_List")
+
+            // ArrayDeque(elements), LinkedList(elements); a capacity is not passed on
+            "kotlin/collections/ArrayDeque" -> new("__K2L_ArrayDeque", *elements)
+
+            "java/util/ArrayDeque" -> new("__K2L_Deque", *elements)
+
+            "java/util/LinkedList" -> new("__K2L_LinkedList", *site.args.take(1).toTypedArray())
 
             "java/util/HashSet", "kotlin/collections/HashSet" -> new("__K2L_HashSet", *site.args.take(1).toTypedArray())
 
@@ -270,7 +279,7 @@ internal object FactoryMappings {
             -> primitiveArray(classId, site)
 
             else -> BigNumberMappings.construct(classId, site) ?: JdkCollectionsMappings.construct(classId, site)
-                ?: Utf16Mappings.construct(classId, site)
+                ?: Utf16Mappings.construct(classId, site) ?: StreamMappings.construct(classId, site)
         }
     }
 
@@ -291,3 +300,6 @@ internal object FactoryMappings {
         return LuaCall(site.ref("Collections", "__K2L_ListOfSize"), listOf(site.arg(0), site.args.getOrNull(1) ?: zero, LuaBool(true)))
     }
 }
+
+/** `kotlin.Function0.invoke` ... `kotlin.Function22.invoke`. */
+private val FUNCTION_INVOKES = (0..22).map { "kotlin/Function$it.invoke" }.toSet()

@@ -4,7 +4,20 @@ import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
+import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
+
+/**
+ * Whether [this] gets a data class's generated `toString`/`equals`/`hashCode`: a data class, or a value class, which is a
+ * table holding its one property in Lua (equal when the values are, printed as `Name(value=...)`).
+ */
+internal fun KtClass.hasDataMembers(): Boolean = isData() || hasModifier(KtTokens.VALUE_KEYWORD) || hasModifier(KtTokens.INLINE_KEYWORD)
+
+/** `field.hashCode()`: a `Double` that holds an integral value hashes like the JVM's Double where numbers are doubles too. */
+private fun FileTransformer.fieldHash(p: KtParameter, value: LuaExpr): LuaExpr = with(session) {
+    val isDouble = p.returnType.withoutFlexibility.let { it.isDoubleType && !it.isMarkedNullable }
+    if (isDouble && !target.hasIntegers) LuaCall(lualibRef("Hash", "__K2L_DoubleHash"), listOf(value)) else lualibCall("Hash", value)
+}
 
 internal fun FileTransformer.dataClassMembers(c: KtClass, ref: LuaExpr): Unit = with(session) {
     val props = c.primaryConstructorParameters.filter { it.hasValOrVar() }
@@ -24,7 +37,7 @@ internal fun FileTransformer.dataClassMembers(c: KtClass, ref: LuaExpr): Unit = 
     }
     if (c.declaredFunction("hashCode") == null) {
         // result = 31 * result + field.hashCode(), as the Kotlin compiler generates.
-        val hash = props.map { p -> lualibCall("Hash", LuaIndex(selfRef(), LuaString(p.name!!))) }
+        val hash = props.map { p -> fieldHash(p, LuaIndex(selfRef(), LuaString(p.name!!))) }
             .reduceOrNull { acc, h -> lualibCall("ToInt32", LuaBinary(LuaBinOp.Add, LuaBinary(LuaBinOp.Mul, LuaNumber("31"), acc), h)) }
             ?: LuaNumber("0")
         emitMethod(ref, "hashCode", emptyList(), listOf(LuaReturn(listOf(hash))))
@@ -40,13 +53,26 @@ internal fun FileTransformer.dataClassMembers(c: KtClass, ref: LuaExpr): Unit = 
     }
 }
 
+/** `data object`: `toString()` is the object's name and `hashCode()` the hash of its qualified name, as the Kotlin compiler generates. */
+internal fun FileTransformer.dataObjectMembers(c: KtObjectDeclaration, ref: LuaExpr) {
+    val name = c.name ?: return
+    if (c.declaredFunction("toString") == null) emitMethod(ref, "toString", emptyList(), listOf(LuaReturn(listOf(LuaString(name)))))
+    if (c.declaredFunction("hashCode") == null) {
+        // the hash of the qualified name, a constant the Kotlin compiler computes
+        val hash = c.fqName?.asString().orEmpty().fold(0) { h, ch -> 31 * h + ch.code }
+        emitMethod(ref, "hashCode", emptyList(), listOf(LuaReturn(listOf(LuaNumber(hash.toString())))))
+    }
+}
+
 /** Generated members of data classes declared in this file: copy, componentN, toString, equals. */
 internal fun FileTransformer.dataClassMember(call: KaCallableMemberCall<*, *>, receiverExpr: KtExpression?, implicit: LuaExpr?): LuaExpr? =
     with(session) {
         val symbol = call.partiallyAppliedSymbol.symbol
         val name = symbol.callableId?.callableName?.asString() ?: return null
-        val cls = symbol.callableId?.classId?.let(classes::classInFile) as? KtClass ?: return null
-        if (!cls.isData() || symbol.psi is KtNamedFunction) return null // user-declared members are ordinary methods
+        val declaration = symbol.callableId?.classId?.let(classes::classInFile)
+        if (declaration is KtObjectDeclaration) return dataObjectMember(call, declaration, name, receiverExpr, implicit)
+        val cls = declaration as? KtClass ?: return null
+        if (!cls.hasDataMembers() || symbol.psi is KtNamedFunction) return null // user-declared members are ordinary methods
         if (!isGeneratedDataMember(name)) return null
         val props = cls.primaryConstructorParameters
         val receiver = implicit ?: expression(receiverExpr ?: return null)
@@ -57,6 +83,21 @@ internal fun FileTransformer.dataClassMember(call: KaCallableMemberCall<*, *>, r
         if (name != "copy") return propertyRead(receiver, props[name.removePrefix("component").toInt() - 1])
         return dataClassCopy(call, cls, receiver)
     }
+
+/** `toString()` and `hashCode()` of a `data object` are its generated methods; its `equals` is identity, as there is one instance. */
+private fun FileTransformer.dataObjectMember(
+    call: KaCallableMemberCall<*, *>,
+    obj: KtObjectDeclaration,
+    name: String,
+    receiverExpr: KtExpression?,
+    implicit: LuaExpr?,
+): LuaExpr? = with(session) {
+    if (!obj.hasModifier(KtTokens.DATA_KEYWORD) || call.partiallyAppliedSymbol.symbol.psi is KtNamedFunction) return null
+    if (name != "toString" && name != "hashCode" && name != "equals") return null
+    val receiver = implicit ?: expression(receiverExpr ?: return null)
+    val args = ordered((call as KaFunctionCall<*>).valueArgumentMapping.keys.toList())
+    if (name == "equals") LuaBinary(LuaBinOp.Eq, receiver, args.single()) else LuaMethodCall(receiver, name, emptyList())
+}
 
 private fun isGeneratedDataMember(name: String) = name in DATA_MEMBER_NAMES || name.matches(COMPONENT_N)
 

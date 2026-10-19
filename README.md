@@ -208,10 +208,11 @@ it is 21 or newer, otherwise a toolchain).
 | `fun f(x: Int) = x + 1` | `local function f(x) return x + 1 end` |
 | top-level declarations | locals; public ones are exported in the module table |
 | `val`/`var` | `local` |
-| `if`/`when` as values | `if` chains assigning to the target, or `c and a or b` when that's safe |
+| `if`/`when` as values | `if` chains assigning to the target, or `c and a or b` when that's safe; a `when` guard (`is Int if x > 0 ->`) joins its branch's condition with `and` |
 | `for (i in 0 until n)`, `downTo`, `step` | numeric `for`; a step that is not a positive constant goes through `__K2L_CheckStep` (`IllegalArgumentException`, as `step` throws) |
 | `x in a..b`, `x !in a until b`, `in a..b ->` | `x >= a and x <= b`; with a step (`x in a..b step s`, also `downTo`) `and (x - a) % s == 0`, so only the progression's elements match (a
-`ULong` compares with `math.ult` and an unsigned remainder on 5.3/5.4). The range's operands are evaluated before `x`, as in Kotlin |
+`ULong` compares with `math.ult` and an unsigned remainder on 5.3/5.4; a range of other Comparables, such as enum entries or
+classes of the program, compares with `compareTo`). The range's operands are evaluated before `x`, as in Kotlin |
 | `for (x in list)` | `for _, x in ipairs(list)` (a numeric loop if elements can be null) |
 | `for ((k, v) in map)` | `for k, v in map:iter()` |
 | `continue`, labeled `break`/`continue` | `goto` (flags and `repeat ... until true` on Lua 5.1); a label on anything but a loop only names a lambda for `return@label` and is otherwise ignored |
@@ -222,18 +223,21 @@ it is 21 or newer, otherwise a toolchain).
 | `p.toString()`, `"$p"`, `println(p)` for a class without `toString()` | `__K2L_Str(p)`, which gives `Any.toString()`: the binary class name and `hashCode()` in hex (`app.P@1f`). The hash of an object is a counter, not the JVM's address-like number |
 | primary/secondary constructors, `init` | `Class:____init(...)`, chained to the superclass |
 | properties | table fields; custom accessors become `getX()`/`setX()` methods (for open, overriding and interface properties, in every member of the override family; `override val message` on an exception is also what lualib code reading `e.message` sees) |
+| `lateinit var name: String` | a plain field or local; a read is `self.name or __K2L_Uninitialized("name")` (a lateinit value is never nil or false), which throws `UninitializedPropertyAccessException`; `::name.isInitialized` is `self.name ~= nil` |
 | top-level properties with custom accessors | functions `getNow()` / `setTotal(v)`, exported like any function; a backing field is a hidden local `____total_field`; reads, writes, `+=` and `++` call them |
 | companion objects | members on the class table: `Point:of(1, 2)` (when the companion has no supertypes) |
 | `companion object : Factory<Point>` (interfaces, classes of the program) | an object of its own, a field of the class named like the companion: `Point.Companion = __K2L_Class("Companion", nil, Factory)`, `Point.Companion:create()`. `Point` used as a value (`val f: Factory<Point> = Point`, `make(Point)`, `is`, `as`) is `Point.Companion`; constructing a `Point` initializes it like the JVM does |
 | `inner class` | a nested class whose instances keep `self.____outer`; `outer.Inner(x)` is `Outer.Inner.new(outer, x)` and `this@Outer` is `self.____outer` |
-| enum entries with bodies, `values()`, `entries`, `valueOf` | each body is an anonymous subclass of the enum: `Op.PLUS = ____PLUS.new("PLUS", 0, "+")`; `__K2L_EnumValues(Op)` |
+| enum entries with bodies, `values()`, `entries`, `valueOf` | each body is an anonymous subclass of the enum: `Op.PLUS = ____PLUS.new("PLUS", 0, "+")`; `__K2L_EnumValues(Op)` (also through the companion's implicit receiver). Enums are `Comparable` by ordinal: every enum class has `compareTo`, so `<`, `sorted()`, `maxOf`, `TreeSet` and `compareBy { it.level }` work |
+| `data object Quit`, `value class Id(val raw: Int)` | a `data object` gets `toString()` (its name) and `hashCode()` (the hash of its qualified name, as Kotlin generates). A value class is not unboxed: it is a table holding the value, with a data class's `equals`, `hashCode` and `toString` (`Id(raw=7)`), so it works as a map key and in sets |
 | `==` | `==` for primitives/enums/objects, `equals()` when a class may override it |
-| `is`, `as?` | `__K2L_InstanceOf(x, Class)`, `type(x) == "string"`, ... |
+| `is`, `as?` | `__K2L_InstanceOf(x, Class)`, `type(x) == "string"`, ...; `is Number`, `is Comparable<*>` and `is CharSequence` are `__K2L_IsNumber(x)` (a Lua number, `BigInteger`, `BigDecimal`), `__K2L_IsComparable(x)` (numbers, strings, booleans and objects with a `compareTo` method) and `__K2L_IsCharSequence(x)` (strings, `StringBuilder` and objects with `subSequence`): a class of the program implementing `Comparable` or `CharSequence` is told by its methods, as nothing records the interface at run time. `Number.toInt()`, `toDouble()`, ... pick the conversion at run time |
 | `x as T`, `x as T?` | a check unless the static type already guarantees it (upcasts, smart casts, type parameters): `__K2L_CastFail` throws `ClassCastException` (`class A cannot be cast to class B (...)`, JVM wording) or `NullPointerException` for null. Only the erased class is checked (`as List<String>` accepts any list) |
 | `object`, companion objects, enums | initialized where they are declared when that is unobservable (constants, literals, collection factories, plain constructors); otherwise on first access, see [Lazy initialization](#lazy-initialization) |
 | `x?.y`, `x ?: y`, `x!!` | `x and x.y`, `x or y` (when safe), `__K2L_NotNull(x)` |
 | lambdas, function references | Lua closures |
 | `class C(impl: I) : I by impl`, `: I by Impl()`, also on objects and companions | the constructor stores the delegate in `self.____delegate_I` (after the superclass constructor, before the initializers); every member of `I` and its superinterfaces that `C` does not declare, default methods and property accessors included, is a forwarding method `function C:greet(...) return self.____delegate_I:greet(...) end`. `toString`/`equals`/`hashCode` are forwarded only when `I` declares them. Properties of a delegated interface use `getX()`/`setX()` in their whole override family |
+| `class Logged(inner: MutableList<Int>) : MutableList<Int> by inner`, `: Comparator<T> by cmp`, `: Map<K, V> by m`, `: CharSequence by s`, `: (Int) -> Int by f` | the class implements the library interface as if it declared it (the lualib base or SAM mixin below), and each member Kotlin delegates (the abstract ones the class does not override, not Java's default methods such as `removeIf`) is a method calling it on `self.____delegate_MutableList` as a call on a value of the interface type compiles (`self.____delegate_Comparator(a, b)`, `__K2L_StringCharAt(self.____delegate_CharSequence, i)`). The library's functions, `for` loops and the default methods run on the class's members, so they see its overrides; `toString`/`equals`/`hashCode` are `Any`'s, as on the JVM. Delegatable: the collection interfaces, `Iterator`/`ListIterator`, `Map.Entry`, `Comparable`, `CharSequence` (the String functions read the delegate's text), `Sequence`, `Comparator`, `Runnable`, `Callable` and function types |
 | `::ArrayList`, `::Pair`, `::StringBuilder`, `::IllegalStateException`, `::Regex`, ... | a function making the call of the constructor the reference resolves to (the expected type picks the overload): `function(____p1) return __K2L_Regex.new(____p1) end` |
 | `let`, `apply`, `also`, `run`, `with`, `forEach`, `buildString`, ... | inlined, so `return`, `break` and `continue` inside them work as in Kotlin (a `break` or `continue` out of a lambda expanded into a loop is a `goto` to the label of the loop around the call; on Lua 5.1 it sets a flag and breaks out of each loop in between) |
 | your own `inline fun` | an ordinary function, unless a lambda argument has a `return` out of the caller (or a `break`/`continue` of a loop around the call) or a type parameter is `reified`: then the body is expanded at the call site (arguments evaluated once, lambdas inlined where the body invokes them, the body's `return` is a `goto`), so a non-local `return` leaves the caller and `is T` checks the actual type. A lambda parameter the body passes on to a function that is not expanded (`s.trim(predicate)`) is the lambda as a closure. `noinline`/`crossinline` lambdas stay closures. A `vararg` parameter is bound to an `Array` built from the arguments (a trailing spread `*xs` included). Locals of the caller that have the name of a top-level declaration the body uses get a fresh Lua name (`____limit`), so the expansion still sees the declaration |
@@ -244,8 +248,10 @@ it is 21 or newer, otherwise a toolchain).
 | delegated properties (`by`) | `provideDelegate` is called once when the delegate is stored, `getValue`/`setValue` may be extensions, open and overriding ones are accessor families with a delegate slot per class; the delegate lives in `self.____x_delegate` (a local `____x_delegate` outside classes); reads and writes call its `getValue`/`setValue` |
 | `by lazy { }`, `Delegates.observable`/`vetoable`/`notNull`, `by map`, your own `getValue`/`setValue` | lualib objects with the same methods; `by map` reads `map:getValue("x")` |
 | default and named arguments | `if x == nil then x = default end` in the callee; callers pass `nil` for omitted ones |
-| overloads | `describe`, `describe__1`, ... (overrides keep their parent's name) |
-| `vararg`, `*spread` | Lua varargs packed into an array; `table.unpack` |
+| overloads | `describe`, `describe__1`, ... (overrides keep their parent's name); a method named like a property of its class, a superclass or a subclass (`private val items` and `fun items()`) is `items__1`, as Lua tables hold fields and methods in one namespace |
+| `vararg`, `*spread` | Lua varargs packed into an array (also for constructors); `table.unpack`. A spread that is not last (`listOf(*xs, y)`, `f(*a, *b)`) makes the rest of the arguments one `__K2L_Spread("s.", xs, y)`, which returns all the elements |
+| `::method`, `::property` inside a class or object | bound to `this` (or the object), as in Kotlin |
+| `var (a, b) = pair` | two locals, which can be reassigned |
 | `throw`, `try`/`catch`/`finally` | `error(exception)`, `pcall`; JVM exception classes and messages. A `return`, `break` or `continue` (labeled too) out of the `try` or a `catch` returns a code from the `pcall`ed function (`return true, x` for `return`, `return 1` for the first jump, ...); after the `pcall` and the `finally` code, the matching `return`/`break`/`goto` is re-issued |
 | `x::class`, `Foo::class`, `T::class` (reified), `.simpleName`, `.qualifiedName`, `isInstance`, `javaClass` | `__K2L_KClassOfValue(x)`, `__K2L_KClassOf(Foo)`, `__K2L_KClassNamed("kotlin.String")`: one object per class, so `==` is identity; `javaClass` is `__K2L_JavaClass(...)` of it; see [Reflection](#reflection) |
 | `return` inside `map { }`, `filter { }`, `any { }`, `first { }`, `fold`, ... | a lambda with a `return` out of the enclosing function (or a `break`/`continue` of a loop around the call) makes the call an inlined loop: `local r = __K2L_ListOf(); for _, it in ipairs(xs) do ... return ... r:add(v) end`. Without such a `return` they are ordinary method calls (byte-identical output). Expanded this way: `map`, `mapNotNull`, `filter`, `filterNot`, `takeWhile`, `flatMap`, `any`, `all`, `none`, `count`, `first`, `firstOrNull`, `find`, `sumOf`, `onEach`, `fold`, `associate*`, `groupBy`, `partition`, `maxBy`/`minBy`(`OrNull`), `maxOf`/`minOf`(`OrNull`), `reduce`/`reduceOrNull`, `distinctBy`, `filterIndexed`, `mapIndexed`, `indexOfFirst`/`indexOfLast`, `last`/`lastOrNull`/`findLast`, `single`/`singleOrNull`, `takeLastWhile`/`dropLastWhile`/`dropWhile`, `zip(other) { }`, the collecting forms `mapTo`, `filterTo`, `filterNotTo`, `mapNotNullTo`, `flatMapTo`, `associateTo`, `associateByTo`, `associateWithTo`, `groupByTo`, `filterIndexedTo`, `mapIndexedTo`, `mapIndexedNotNull`, `flatMapIndexed`, `foldIndexed`, `reduceIndexed`, `foldRight`, `reduceRight`, `runningFold`/`scan`/`runningReduce`, `sumBy`, `onEachIndexed`, `firstNotNullOf`/`firstNotNullOfOrNull`, `getOrPut`/`getOrElse` (maps, lists, arrays), `ifEmpty`/`ifBlank`, on a `Map` `filter`, `filterNot`, `onEach`, `mapValues`, `mapKeys`, `filterKeys`, `filterValues`, `mapTo`/`mapValuesTo`/`mapKeysTo`/`filterTo`, `maxBy`/`minBy`; on a `String` (walked as its chars; `filter`, `takeWhile` and `dropWhile` give a String again) `map`, `filter`, `count`, `any`, `all`, `indexOfFirst`, `takeWhile`, `dropWhile`, `sumOf`, `fold`, `forEachIndexed`, ...; on a `Result` `getOrElse`, `onSuccess`, `onFailure`, `fold`, `map`, `recover`; and `runCatching`, `measureTimeMillis`/`measureNanoTime`. `forEach`/`forEachIndexed`, `repeat`, `buildList`/`buildString`/`buildMap`, `use` and `synchronized` always are expanded. `sortedBy`'s selector is `crossinline` in Kotlin, so it cannot contain a `return`. Lists and arrays are walked from the end where the JVM does so (`last { }`, `indexOfLast { }`, `takeLastWhile { }`, `foldRight`) |
@@ -255,12 +261,14 @@ it is 21 or newer, otherwise a toolchain).
 | `xs[i]`, `xs.size` | `xs:get(i)` (throws `IndexOutOfBoundsException`), `xs.size`; the index of a loop over `xs.indices` is a direct `xs[i + 1]` |
 | your own `operator fun get(i, j)`/`set(i, j, v)` | `m:get(i, j)`, `m:set(i, j, v)`; `m[i, j] += v` and `m[i, j]++` evaluate the receiver and indices once: `m:set(i, j, m:get(i, j) + v)`. Extension operators (also on library types) are called as functions: `set(table, i, j, v)` |
 | `Map`, `Set` | insertion-ordered lualib classes honoring `equals()`/`hashCode()` keys |
-| `listOf(x)`, `emptyList()`, `listOf(a, b)`, `setOf(x)`, `mapOf(k to v)`, ... | the JVM's classes: `Collections$SingletonList`, `EmptyList`, `Arrays$ArrayList` (also what `sorted*()` and `asList()` return), `Collections$SingletonSet`, `EmptySet`, `Collections$SingletonMap`, `EmptyMap`, with their index messages, `ArrayIndexOutOfBoundsException` for `Arrays$ArrayList` and arrays, and `UnsupportedOperationException` from their mutators (`toList()`, `toSet()`, `toMap()`, `take`, `drop`, ... give the same classes for zero and one element, as in Kotlin) |
-| `class Bag : AbstractList<Int>()`, `AbstractMutableList`, `AbstractSet`, `AbstractMap`, `AbstractCollection` (and their mutable variants), `AbstractIterator`; classes implementing `List`, `Set`, `Map`, `Collection`, `Iterable` | the class extends a lualib base that implements every inherited operation (`contains`, `indexOf`, `toString`, `equals`/`hashCode`, `iterator`, `map`/`filter`/`joinToString`, `for` loops, `subList`, the mutators of the mutable variants) in terms of what the class overrides (`size` and `get` for a list; `iterator()` for a collection; `entries` for a map; `set`/`add(index, e)`/`removeAt`, `add` or `put` to make it mutable; `computeNext()`), calling them as often and in the order the JDK and Kotlin's stdlib do. An `AbstractList`'s `list[i]` is `get(i - 1)`, so loops over lists index them on all Lua versions (see `unmodifiableList` in [Standard library coverage](#standard-library-coverage)). A class implementing an interface keeps `Any`'s `toString`/`equals`/`hashCode` |
+| `listOf(x)`, `emptyList()`, `listOf(a, b)`, `setOf(x)`, `mapOf(k to v)`, ... | the JVM's classes: `Collections$SingletonList`, `EmptyList`, `Arrays$ArrayList` (also what `sorted*()` returns), `Collections$SingletonSet`, `EmptySet`, `Collections$SingletonMap`, `EmptyMap`, with their index messages, `ArrayIndexOutOfBoundsException` for `Arrays$ArrayList` and arrays, and `UnsupportedOperationException` from their mutators (`toList()`, `toSet()`, `toMap()`, `take`, `drop`, ... give the same classes for zero and one element, as in Kotlin). As on the JVM, `listOf(1, 2) as MutableList` succeeds (and can be written by index), while Kotlin's own read-only collections (`emptyList()`, `emptySet()`, `emptyMap()`, a primitive array's `asList()`, objects of classes implementing only `List`, `Set`, `Map`, ...) are not `MutableList`/`MutableSet`/`MutableMap` (their lualib class has `____readOnly`): `is` is false and `as` throws `ClassCastException` (`kotlin.collections.EmptyList cannot be cast to kotlin.collections.MutableList`) |
+| `list.subList(a, b)`, `array.asList()` | live views: a table whose `view[i]` reads and writes `list[a + i]` through `__index`/`__newindex`, so the view sees the list's changes and writes go to the list; adding to or removing from a `subList` changes the list (through its `addAt`/`addAllAt`/`removeAt`, as the JDK's views call them; `list.subList(a, b).clear()` removes a range) and the sizes of the views it was made from. `asList()` of an `Array` is a fixed-size `Arrays$ArrayList` writing through both ways, of a primitive array a read-only view. Like `unmodifiableList`, a program mentioning `subList` or `asList` iterates lists by index (see [Standard library coverage](#standard-library-coverage)). Changing the list's size directly leaves older views stale (the JVM throws `ConcurrentModificationException` on their next use) |
+| `class Bag : AbstractList<Int>()`, `AbstractMutableList`, `AbstractSet`, `AbstractMap`, `AbstractCollection` (and their mutable variants), `AbstractIterator`; classes implementing `List`, `Set`, `Map`, `Collection`, `Iterable` | the class extends a lualib base that implements every inherited operation (`contains`, `indexOf`, `toString`, `equals`/`hashCode`, `iterator`, `map`/`filter`/`joinToString`, `for` loops, `subList`, the mutators of the mutable variants) in terms of what the class overrides (`size` and `get` for a list; `iterator()` for a collection; `entries` for a map; `set`/`add(index, e)`/`removeAt`, `add` or `put` to make it mutable; `computeNext()`), calling them as often and in the order the JDK and Kotlin's stdlib do. An `AbstractList`'s `list[i]` is `get(i - 1)`, so loops over lists index them on all Lua versions (see `unmodifiableList` in [Standard library coverage](#standard-library-coverage)); a `for` loop over a class implementing `List` itself uses its `iterator()`. A class implementing an interface keeps `Any`'s `toString`/`equals`/`hashCode`. Next to a base class that is not a collection (`class Row : Named("r"), List<String>`), the lualib base is a mixin, one of the class's interfaces, so the base class's members win |
 | `class ByLength : Comparator<String>`, `Runnable`, `Callable`, `(Int) -> Int` | values of these library interfaces are Lua callables: a lambda (and `Comparator { a, b -> }`, `Runnable { }`) is a function, and an object of a class implementing one is callable through `__call`, so it works with `sortedWith`, `TreeSet(comparator)`, `reversed()`, `thenBy`, `map(f)`, ...; `c.compare(a, b)` and `r.run()` on an interface type call the value |
 | `fun interface Check`, `Check { it > 0 }`, a lambda passed for a `Check` parameter | an object of the interface whose method calls the lambda: `__K2L_FunInterface(Check, "test", f)` |
 | `class Letters : CharSequence`, `class Count : Iterator<Int>`, `MutableIterator`, `ListIterator`, `Map.Entry`, `Comparable` | the class's own members; `for` loops and the library functions use them (a CharSequence object is passed to the String functions as its `toString()`, when the program declares such a class) |
-| `class Stack : ArrayList<Int>()`, `HashMap`, `LinkedHashMap`, `HashSet`, `LinkedHashSet` | the class extends the lualib collection; `super.add(x)` calls the library member (`__K2L_List.add(self, x)`); like the JDK's, `ArrayList.addAll` does not call an overridden `add` while `HashSet.addAll` and `HashSet(elements)` do, and `LinkedHashMap(capacity, loadFactor, true)` with `removeEldestEntry` makes an LRU cache |
+| `class DateRange(...) : ClosedRange<Date>, Iterable<Date>` | `contains` and `isEmpty` come from the interface (a mixin comparing `start` and `endInclusive`), also next to a collection base; `start`/`endInclusive` of a value typed as `ClosedRange` read the class's properties or a library range's bounds |
+| `class Stack : ArrayList<Int>()`, `HashMap`, `LinkedHashMap`, `HashSet`, `LinkedHashSet`, `TreeMap`, `TreeSet`, `PriorityQueue`, `java.util.ArrayDeque`, `LinkedList` | the class extends the lualib collection; `super.add(x)` calls the library member (`__K2L_List.add(self, x)`). The library's methods call the overridable ones exactly where the JDK's do: `ArrayList.addAll` does not call an overridden `add` while `HashSet.addAll` and `HashSet(elements)` do; `PriorityQueue.add` calls `offer`, `addAll` calls `add`, `remove()` calls `poll` and `element()` `peek`; `ArrayDeque.add`, `offer`, `addAll` and `ArrayDeque(elements)` call `addLast`, `push` calls `addFirst`, `pop`/`remove()`/`removeFirst` call `pollFirst`; `LinkedList.offer` calls `add`, `LinkedList(c)` calls `addAll(c)`, which calls `addAll(size, c)`, `push` calls `addFirst`; `TreeMap.putAll` and `TreeMap(map)` call `put` (TreeMap's `putIfAbsent`, `merge` and `compute*` do not), `TreeSet.addAll` and `TreeSet(elements)` call `add`, `getOrPut` and `getValue` call `get`, `AbstractSet.equals`/`removeAll` call `contains`/`remove`. `LinkedHashMap(capacity, loadFactor, true)` with `removeEldestEntry` makes an LRU cache. The collection keeps its elements and `size` in fields, which its own code reads: an override of `size`, `iterator()` or `entries` is seen by Kotlin calls on the class, not by the library's operations (`toString`, `map`, ...), which on the JVM sometimes call them |
 | `xs.filter { }.map { }`, `groupBy`, `joinToString`, ... | methods of the same name: `xs:filter(f):map(g)` |
 | `Pair`, `Triple`, destructuring | lualib classes; `local a, b = p.first, p.second` |
 | `Sequence`, `asSequence()`, `generateSequence`, `sequenceOf` | a lazy lualib class: `__K2L_AsSequence(xs):map(f):take(3):toList()` |
@@ -478,20 +486,27 @@ because Lua values carry less type information:
   `Any` is `Int` or `String`. `1L::class` and `'c'::class` are right because the static type is used. On Lua 5.1, 5.2
   and LuaJIT a `Double` with an integral value is an `Int` at runtime (on 5.3+ `math.type` tells them apart).
 - Library collections report the JVM's classes for the factories and the functions listed in the table above
-  (`listOf(1)` is a `java.util.Collections.SingletonList`, `javaClass.name` `java.util.Collections$SingletonList`); the
-  views a map returns (`keys`, `values`, `entries`), iterators and `subList` report the lualib class (`LinkedHashSet`,
-  `ArrayList`, ...), and arrays are `Array` whatever their element type. A lambda is `kotlin.Function`.
+  (`listOf(1)` is a `java.util.Collections.SingletonList`, `javaClass.name` `java.util.Collections$SingletonList`), and so do
+  the views a map returns (`keys` of a `LinkedHashMap` are a `LinkedHashMap$LinkedKeySet`, `values` of a `HashMap` a
+  `HashMap$Values`, the entries of a `TreeMap` `TreeMap$Entry`), the iterators of the lists, sets, ranges, arrays and queues
+  (`ArrayList$Itr`, `Arrays$ArrayItr`, `HashMap$KeyIterator`, ...), `subList` (`ArrayList$SubList`,
+  `AbstractList$RandomAccessSubList`), `ArrayDeque` and `LinkedList`. Other iterators and views (of strings, sequences,
+  `asReversed()`, `withIndex()`) report a lualib class. An array's class comes from its static type: `IntArray` is
+  `kotlin.IntArray` (JVM name `[I`, Java simple name `int[]`), `Array<String>` is `kotlin.Array` (`[Ljava.lang.String;`,
+  `String[]`); an array held in an `Any` (or a type parameter) is just `Array`. A lambda is `kotlin.Function`.
 - Library classes have their Kotlin names (`String::class.java.name` is `kotlin.String`); `toString()` uses the JVM's for the
   builtin types and collection interfaces (`class java.lang.String`, `int`, `interface java.util.List`) and the Kotlin name for the
   others (`class kotlin.collections.ArrayList`).
 - A function reference that goes straight to a parameter of a function type is a plain function there: printing or comparing that
   parameter does not see the reference (`fun show(f: (Int) -> Int) = println(f)` does not print `function twice ...`).
-- An object expression creates its class each time it is evaluated, so two objects made by the same expression (in a loop)
-  have different classes (`a.javaClass == b.javaClass` is false; on the JVM it is true).
+- An object expression (or local class) creates its class table each time it is evaluated, as its methods are closures over the
+  locals around it. Its `KClass` and `Class` are still one per declaration site, found by the binary name, so two objects made by
+  the same expression have `==` classes and `isInstance` holds for both, as on the JVM.
 
 ## Strings
 
-By default Lua strings are byte strings: `length` and indexing count UTF-8 bytes, `Char` is a one-byte string, and
+By default Lua strings are byte strings: `length` and indexing count UTF-8 bytes, `Char` is a one-byte string (so a `Char`
+held as `Any` passes `is String`, and a one-character `String` passes `is Char`), and
 `isLetter()`, `uppercase()` and so on are ASCII only. With `--strings utf16` (`"strings": "utf16"` in k2l.json,
 `strings.set("utf16")` in Gradle) strings behave like the JVM's UTF-16 strings, while still being UTF-8 Lua strings
 that print and concatenate normally (`"😀".length == 2`, `s[i]` is a UTF-16 code unit):
@@ -548,28 +563,43 @@ the two halves of a pair (so `"😀".split("")` and `replace(Regex(""), "-")` sp
 
 ### Streams
 
-`java.util.stream` is available for `Stream<T>`, `IntStream` and `DoubleStream`, with `Optional`, `OptionalInt`, `OptionalDouble` and
-`Collectors` (`StreamMappings.kt`, `Streams.lua`, loaded only by programs that use them):
+`java.util.stream` is available for `Stream<T>`, `IntStream`, `LongStream` and `DoubleStream`, with `Optional`, `OptionalInt`,
+`OptionalLong`, `OptionalDouble`, `Collectors` and the summary statistics (`StreamMappings.kt`, `Streams.lua`, `SummaryStatistics.lua`,
+loaded only by programs that use them):
 
-- Sources: `Arrays.stream(array)` and `Arrays.stream(array, from, to)` (of an `IntArray`, `DoubleArray` or object array),
-  `collection.stream()`, `String.chars()` and `codePoints()` (with `--strings utf16`), `Stream.of`, `empty`, `concat`, `iterate`
-  (with or without `hasNext`) and `generate`, `IntStream.range`, `rangeClosed`, `of`, `iterate` ..., `DoubleStream.of`.
-- Stages and terminal operations: `filter`, `map`, `mapToInt`, `mapToDouble`, `mapToObj`, `boxed`, `asDoubleStream`, `flatMap`,
-  `distinct`, `sorted` (with or without a comparator), `limit`, `skip`, `peek`, `takeWhile`, `dropWhile`, `forEach`, `count`, `sum`,
-  `average`, `min`, `max`, `reduce` (one or two arguments), `anyMatch`, `allMatch`, `noneMatch`, `findFirst`, `findAny`, `toArray`,
-  `toList`, `collect(collector)` and `collect(supplier, accumulator, combiner)`. `OptionalInt.asInt` (`getAsInt`), `isPresent`,
-  `orElse`, `ifPresent`, `Optional.map`/`filter`/`flatMap`/`orElseThrow` and so on.
-- Collectors: `toList`, `toSet`, `toCollection`, `joining` (0, 1 or 3 arguments), `counting`, `summingInt`, `summingDouble`,
-  `averagingInt`, `averagingDouble`, `mapping`, `collectingAndThen`, `minBy`, `maxBy`, `groupingBy` (with or without a downstream
-  collector), `partitioningBy` and `toMap` (with or without a merge function). Maps are `HashMap`s with the JVM's iteration order.
+- Sources: `Arrays.stream(array)` and `Arrays.stream(array, from, to)` (of an `IntArray`, `LongArray`, `DoubleArray` or object
+  array), `collection.stream()` and `parallelStream()`, `String.chars()` and `codePoints()` (with `--strings utf16`), `Stream.of`,
+  `empty`, `concat`, `iterate` (with or without `hasNext`) and `generate`, `IntStream.range`, `rangeClosed`, `of`, `iterate` ...,
+  `LongStream.range`, `rangeClosed`, `of` ..., `DoubleStream.of`.
+- Stages and terminal operations: `filter`, `map`, `mapToInt`, `mapToLong`, `mapToDouble`, `mapToObj`, `boxed`, `asLongStream`,
+  `asDoubleStream`, `flatMap`, `flatMapToInt`/`Long`/`Double`, `distinct`, `sorted` (with or without a comparator), `limit`,
+  `skip`, `peek`, `takeWhile`, `dropWhile`, `forEach`, `forEachOrdered`, `count`, `sum`, `average`, `min`, `max`, `reduce` (one or
+  two arguments), `anyMatch`, `allMatch`, `noneMatch`, `findFirst`, `findAny`, `toArray`, `toList`, `iterator()` (a
+  `PrimitiveIterator` with `nextInt()` and so on for the primitive streams; it pulls the elements one at a time as `hasNext()` asks
+  for them), `summaryStatistics()`, `isParallel()`, `collect(collector)` and `collect(supplier, accumulator, combiner)`.
+  `OptionalInt.asInt` (`getAsInt`), `isPresent`, `orElse`, `ifPresent`, `Optional.map`/`filter`/`flatMap`/`orElseThrow` and so on.
+- Collectors: `toList`, `toSet`, `toCollection`, `joining` (0, 1 or 3 arguments), `counting`, `summingInt`, `summingLong`,
+  `summingDouble`, `averagingInt`, `averagingLong`, `averagingDouble`, `summarizingInt`, `summarizingLong`, `summarizingDouble`,
+  `mapping`, `collectingAndThen`, `minBy`, `maxBy`, `groupingBy` (with or without a downstream collector), `partitioningBy` and
+  `toMap` (with or without a merge function). Maps are `HashMap`s with the JVM's iteration order.
+- `IntSummaryStatistics`, `LongSummaryStatistics` and `DoubleSummaryStatistics` (also constructed directly): `count`, `sum` (a
+  `Long` for `Int` values, compensated like the JDK's for doubles), `min`, `max` (`Int.MAX_VALUE`/`MIN_VALUE`, `Infinity` ...
+  when empty), `average`, `accept`, `combine`, and `toString()` like the JDK's
+  (`IntSummaryStatistics{count=3, sum=6, min=1, average=2.000000, max=3}`).
 
 Streams are lazy like the JDK's: the stages run element by element in the JDK's order (the side effects of `peek` and of lambdas
 interleave the same way), `sorted` waits for all the elements before it, `limit`, `findFirst` and `anyMatch` stop early, and
 `count()` of a stream whose size is known (an array, a collection, a range, through `map`, `sorted`, `skip`, `limit`) does not run
-the stages, as on JDK 9 and later. `DoubleStream.sum()` and `average()` use the JDK's compensated summation, and `IntStream.sum()`
-wraps to 32 bits. Streams are sequential (`parallel()` returns the same stream), and, as in the JDK, a second operation on a stream
-throws `IllegalStateException`. `LongStream`, `parallelStream()`, `iterator()`, `summaryStatistics()` and the `Long` collectors are
-reported as unsupported.
+the stages, as on JDK 9 and later. `DoubleStream.sum()` and `average()` use the JDK's compensated summation, `IntStream.sum()`
+wraps to 32 bits and `LongStream.sum()` to 64 (exactly on Lua 5.3/5.4 and with `--long64 emulate`; on Lua 5.1, 5.2 and LuaJIT
+without it, `Long` values above 2^53 lose precision as everywhere else). As in the JDK, a second operation on a stream throws
+`IllegalStateException`.
+
+Streams are sequential: `parallel()` and `parallelStream()` only mark the stream (`isParallel()` is true) and run it like a
+sequential one. A deterministic pipeline (`map`, `filter`, `sum`, `reduce` with an associative operation, `collect`, `count`,
+`forEachOrdered`, `findFirst`, ...) gives the JVM's result; operations whose order is unspecified on a parallel stream
+(`forEach`, `findAny`, `peek` side effects, a non-associative `reduce`) see the elements in order here, which the JVM does not
+promise.
 
 ## Lua targets
 
@@ -577,9 +607,11 @@ reported as unsupported.
 `5.1` and `JIT`, which have only floating-point numbers:
 
 - `Double` values are printed from their static type (`2.0`, not `2`); an integral `Double` inside a
-  collection prints like an `Int`, since the two are the same Lua number at runtime.
-- `Long` values above 2^53 lose precision, and `Long` bitwise operations are 32-bit, unless you ask for exact 64-bit
-  arithmetic with `--long64 emulate` (see below).
+  collection prints (and hashes, which can change the iteration order of a `HashSet<Double>`) like an `Int`, since the two
+  are the same Lua number at runtime. A `Double` property of a data class hashes as a `Double`.
+- `Long` values above 2^53 lose precision, unless you ask for exact 64-bit arithmetic with `--long64 emulate` (see below).
+  `Long` bitwise operations and bit counts work on the two 32-bit halves, so they are exact below 2^53
+  (`x.toLong() and 0xFFFFFFFFL`, 40-bit masks).
 - Bitwise operations use `bit32` (5.2), LuaJIT's `bit` library, or plain Lua (5.1).
 - Lua 5.1 has no `goto`: `continue` breaks out of a one-iteration `repeat ... until true`, and
   labeled jumps use flags.
@@ -669,18 +701,22 @@ range literal are). Collections of `ULong` order and compare as signed numbers (
 ## Not supported yet
 
 Reflection beyond the basics above: type checks against the reflection interfaces (`p is KProperty1<*, *>`), references to
-library constructors (`::StringBuilder`), to library functions with a `vararg` parameter and to library properties k2l does not map
+library functions with a `vararg` parameter (`::listOf`), to library constructors whose call is not mapped (`::AtomicInteger`;
+references to mapped ones such as `::StringBuilder`, `::ArrayList` and `::Regex` work) and to library properties k2l does not map
 (each an error; the members that need kotlin-reflect throw, see [Reflection](#reflection)), and Kotlin itself forbids references to
 member extension functions. Library properties that are overridden with a custom accessor
 (`Throwable.message`/`cause`, `Continuation.context`, `CoroutineContext.Element.key`) work: library code that reads the field reaches
 the getter. Through `super`, only `Any`'s `toString`/`equals`/`hashCode`, `Throwable`'s `message`/`cause`/`toString`/
 `printStackTrace`/`fillInStackTrace` and the members of an extended library collection are available. Of the library's collection
-classes, only the abstract ones, `ArrayList`, `HashMap`, `LinkedHashMap`, `HashSet` and `LinkedHashSet` can be extended (not `TreeMap`,
-`ArrayDeque`, `PriorityQueue`, ...), and a collection interface cannot be implemented next to a base class that is not a collection. A class that extends `AbstractCoroutineContextElement` and another
-class cannot exist in Kotlin (two superclasses); `Sequence` next to a base class is supported (the lualib `Sequence` is one of the
-class's interfaces). Delegating a library interface (`: Comparator<T> by cmp`, `: List<T> by list`: classes of the program cannot implement
-those either), index operators declared as member extensions and references to library constructors whose call is not
-mapped either (`::AtomicInteger`) are not supported. kotlinx.coroutines is out of scope. Each of these is reported as an error rather than miscompiled.
+classes, the abstract ones, `ArrayList`, `HashMap`, `LinkedHashMap`, `HashSet`, `LinkedHashSet`, `TreeMap`, `TreeSet`,
+`PriorityQueue`, `java.util.ArrayDeque` and `LinkedList` can be extended, not the others (`Vector`, `WeakHashMap`, `EnumMap`,
+`ConcurrentHashMap`, ...; `kotlin.collections.ArrayDeque` is final). Classes of the program can implement and delegate the
+collection interfaces, `Comparator`, `Runnable`, `Callable`, function types, `Iterator`, `CharSequence`, `Comparable` and
+`Sequence`, also next to a base class; delegating other library interfaces (`: CoroutineContext by context`,
+`: Executor by e`) is not supported. A class that extends `AbstractCoroutineContextElement` and another class cannot exist in
+Kotlin (two superclasses). Index assignments through operators declared as member extensions (`x[i] = v`, `x[i] += v` with an
+`operator fun Int.set(...)` in a class; reading with such a `get` works) are not supported. kotlinx.coroutines is out of scope.
+Each of these is reported as an error rather than miscompiled.
 
 ### Standard library coverage
 
@@ -714,7 +750,8 @@ and checks them against the JVM (see the `stdlib_*` test cases):
   clock. The test case only asserts seed-independent properties (ranges, same seed gives the same sequence).
 - `Regex`: an own backtracking engine implementing the common `java.util.regex` syntax (classes, groups,
   named groups, back-references, lazy and possessive quantifiers, lookahead, `IGNORE_CASE`/`MULTILINE`/
-  `DOT_MATCHES_ALL`); `find`, `findAll`, `matches`, `replace` (with `$1` and lambdas), `split`, `destructured`.
+  `DOT_MATCHES_ALL`); `find`, `findAll` (a lazy `Sequence`, as in Kotlin), `matches`, `replace` (with `$1` and lambdas), `split`,
+  `destructured`.
   Match indices are bytes (UTF-16 units with `--strings utf16`); classes such as `\w` are ASCII only, as in Java.
 
 - Numbers: `Float` (single precision), `UByte`/`UShort`/`UInt`/`ULong` with literals, arithmetic, comparison, shifts, bit
@@ -733,11 +770,18 @@ and checks them against the JVM (see the `stdlib_*` test cases):
   `rotate`, `binarySearch`, `fill`, `copyOf`, `toString`, `deepToString`, `asList` ...) and `java.util.Random` (the JVM's
   48-bit generator: seeded sequences, `shuffle(list, Random(seed))` and `nextGaussian` match the JVM).
   `Map.withDefault { }` (`getValue` uses the default, `get` does not) and `listIterator()` with `hasPrevious`/`set`/`add`/`remove`.
+  Arrays have `contentHashCode`, `contentDeepHashCode` and `contentDeepEquals`.
+- `java.lang` statics: `Integer`/`Long` `bitCount`, `numberOfLeadingZeros`/`numberOfTrailingZeros`, `highestOneBit`/`lowestOneBit`,
+  `rotateLeft`/`rotateRight`, `signum`, `max`/`min`, `Integer.reverse`, `toUnsignedString`, `toBinaryString`/`toHexString`/
+  `toOctalString`, `Double.isNaN`/`isInfinite`/`valueOf`/`toString`, `Boolean.parseBoolean`, `Character.getNumericValue` (ASCII
+  digits and letters), `String.valueOf` and `String.join`.
+- `Number`: `is Number` (Lua numbers, emulated Longs, `BigInteger`, `BigDecimal`) and `toInt()`/`toLong()`/`toDouble()`/... of a
+  `Number`-typed value; an integral number converts like a `Long`, a fractional one like a `Double`.
 
 `Collections.unmodifiableList/Set/Map/Collection` are live read-only views: a table that forwards every read to the collection
 (so later changes show through, a `HashMap` keeps its order) and throws `UnsupportedOperationException` for the mutating methods and
-for writes by index. Lua before 5.3 does not follow `__index` in `ipairs`, so when a program mentions `unmodifiableList` or
-`unmodifiableCollection`, or declares a class extending `AbstractList` or implementing `List`, the generated loops over lists index
+for writes by index. Lua before 5.3 does not follow `__index` in `ipairs`, so when a program mentions `unmodifiableList`,
+`unmodifiableCollection`, `subList` or `asList`, or declares a class extending `AbstractList` or implementing `List`, the generated loops over lists index
 them (`for i = 1, xs.size do`) instead of using `ipairs`; spreading a view (`*view`) into `vararg` arguments is not supported on those
 versions.
 
@@ -745,7 +789,7 @@ Big numbers and JDK helpers differ from the JVM in: `BigInteger.toLong()` and `R
 as a double.
 
 Not available: locale rules other than Turkish, Azeri and Lithuanian case mapping, display names in a language other than English,
-code points without `--strings utf16`, `LongStream`, `parallelStream()`, `Stream.iterator()` and the `*SummaryStatistics` classes.
+code points without `--strings utf16`, `Stream.spliterator()`, `mapMulti` and the concurrent and `teeing` collectors.
 
 Known differences: `Int` overflow is not wrapped unless `--int-overflow wrap` is given (`UInt` always wraps);
 a `Float` or `ULong` among untyped values (a collection, `Any`, nullable) loses its static type: a number that is exactly a float
@@ -755,8 +799,9 @@ from 2^63 prints as a negative number; on Lua 5.1, 5.2 and LuaJIT `ULong` and `L
 `Double.toBits()` keeps 53 bits (`Float.toBits()` is exact); `Math.*Exact` of `Long` checks ±2^63 on doubles;
 `x in a..b step s` over a `Long` range wider than `Long.MAX_VALUE` can be wrong, as `x - a` wraps;
 `nextLong(bound)` there is JVM-exact only below 2^52; `Char.isLetter()` etc. are ASCII only unless `--strings utf16` (see [Strings](#strings));
-casting `emptyList()` (or `emptySet()`, `emptyMap()`) to a mutable collection succeeds (the JVM throws `ClassCastException`), and
-`asList()` copies the array instead of being a view of it.
+a map's `keys`, `values` and `entries` are copies that write removals back to the map (later changes of the map do not show in them),
+`values` and `entries` are lists at run time (`is List` is true), and `java.util.ArrayDeque` is a list as well; `buildList { }`
+returns an `ArrayList` (on the JVM a read-only `ListBuilder` after the block).
 Indexing of lists and arrays, `substring`, `subSequence`, `first()`/`last()` of an empty string, `repeat`, `padStart`, `/`, `%`,
 `rem`, `mod` and `floorDiv` throw the same exception types and messages as the JVM. Doubles keep IEEE behaviour
 (`x / 0.0` is Infinity, `x % 0.0` is NaN).
@@ -765,9 +810,10 @@ Other semantic differences to be aware of: strings are byte strings (unless `--s
 UTF-8 bytes; top-level properties of a file are
 initialized when the file loads (the JVM does it when the file's facade class is first used), so a side effect in the
 initializer of a top-level property of another file of a multi-file program happens at startup; Lua runtime errors are caught as
-`RuntimeException`; a function value returning Unit (a function reference or a `() -> Unit` variable, not a lambda) that is
-converted to a function type with a result other than by passing it as an argument (`val h: () -> Any = ::work`, or returned
-as one) still returns `nil`, so its result prints as `null`; so does a Unit returned by Lua code called through `@LuaExternal`.
+`RuntimeException`; a Unit returned by Lua code called through `@LuaExternal` is `nil`, so it prints as `null`. Each `try`
+(and `use`, `runCatching`, ...) runs its block in a `pcall`, and Lua 5.1 to 5.4 allow only about 200 nested C calls: a
+recursion that goes through a `try` block at every level fails with "C stack overflow" after roughly 190 levels (LuaJIT and the
+JVM go much deeper), so deep recursive evaluators should keep the `try` outside the recursion.
 
 ## Development
 

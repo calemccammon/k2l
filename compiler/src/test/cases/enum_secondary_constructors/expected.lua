@@ -51,6 +51,10 @@ function Color:toString()
     return self.name
 end
 
+function Color:compareTo(other)
+    return self.ordinal - other.ordinal
+end
+
 Color.RED = Color.new2("RED", 0, "r")
 Color.GREEN = Color.new3("GREEN", 1, "g", 2)
 Color.BLUE = Color.new1("BLUE", 2)

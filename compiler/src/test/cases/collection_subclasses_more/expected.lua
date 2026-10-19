@@ -42,6 +42,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local CountingIterator
 local Evens = __K2L_Class("Evens", __K2L_AbstractSet)
 __K2L_ClassInfo(Evens, "Evens", "Evens", "class")
+Evens.____readOnly = true
 
 function Evens:____init(limit)
     self.limit = limit
@@ -141,6 +142,7 @@ end
 
 local Squares = __K2L_Class("Squares", __K2L_AbstractMap)
 __K2L_ClassInfo(Squares, "Squares", "Squares", "class")
+Squares.____readOnly = true
 
 function Squares:____init(n)
     self.n = n
@@ -203,6 +205,7 @@ end
 
 local Words = __K2L_Class("Words", __K2L_IterableBase)
 __K2L_ClassInfo(Words, "Words", "Words", "class")
+Words.____readOnly = true
 
 function Words:____init(text)
     self.text = text
@@ -259,7 +262,7 @@ function InstrumentedSet:add(element)
 end
 
 function InstrumentedSet:addAll(elements)
-    self.attempts = self.attempts + elements:count()
+    self.attempts = self.attempts + elements.size
     return __K2L_HashSet.addAll(self, elements)
 end
 

@@ -67,6 +67,49 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
 - `Unit` is a value: `println(u())`, `"${u()}"`, `listOf(Unit)`, `val a: Any = Unit`, `runCatching { u() }`,
   `runCatching(::u)` and `map { u() }` print `kotlin.Unit` like the JVM, and `is Unit` works (the runtime object
   `__K2L_Unit`). Calls of Unit functions as statements generate the same code as before.
+- Delegating library interfaces: `: Comparator<T> by cmp`, `: List<T> by list`, `: MutableList<T> by inner`, `Set`, `Map`,
+  `MutableMap`, `Collection`, `Iterable`, `Iterator`, `ListIterator`, `Map.Entry`, `Comparable`, `CharSequence`, `Sequence`,
+  `Runnable`, `Callable` and function types (`: (Int) -> Int by f`), also on objects and object expressions. The members Kotlin
+  delegates are forwarded (the class's overrides win), and the library's functions, `for` loops, `toString`/`equals` (Any's,
+  as on the JVM) and Java's default methods (`removeIf`, `sort`, `getOrDefault`, ...) work on instances through them.
+- Classes can extend `TreeMap`, `TreeSet`, `PriorityQueue`, `java.util.ArrayDeque` and `LinkedList`, with `super` calls; the
+  library's own methods call the overridable ones as the JDK does (`PriorityQueue.add` calls `offer` and `addAll` calls `add`,
+  `ArrayDeque.add`/`offer`/`addAll` and its constructor call `addLast`, `LinkedList.addAll(c)` calls `addAll(index, c)`,
+  `TreeMap.putAll` and `TreeMap(map)` call `put`, `TreeSet.addAll` and `TreeSet(c)` call `add`, TreeMap's `putIfAbsent`/`merge`/
+  `compute*` do not). A collection interface can be implemented (or delegated) next to a base class that is not a collection.
+- `kotlin.collections.ArrayDeque`, `java.util.ArrayDeque` and `java.util.LinkedList` are classes of their own, with the JVM's
+  class names, messages ("ArrayDeque is empty.", "Index: 0, Size: 0"), `element()`, `getFirst()`/`getLast()`,
+  `descendingIterator()` and, for `java.util.ArrayDeque`, identity `equals` and `NullPointerException` for null elements.
+- `subList` is a live view (writes, additions and removals go through to the list, `list.subList(a, b).clear()` removes a
+  range), and `Array.asList()` a fixed-size view of the array that writes through both ways; a primitive array's `asList()`
+  is a read-only view.
+- The JVM's classes for map views (`LinkedHashMap$LinkedKeySet`, `HashMap$Values`, `TreeMap$EntrySet`, their entries),
+  iterators (`ArrayList$Itr`, `Arrays$ArrayItr`, `HashMap$KeyIterator`, ...), `subList` views (`ArrayList$SubList`,
+  `AbstractList$RandomAccessSubList`) and, from the static type, arrays (`IntArray` is `[I`/`int[]`, `Array<String>`
+  `[Ljava.lang.String;`/`String[]`). The keys, values and entries of a map cannot be added to, and values compare by identity.
+- `LongStream` (`range`, `rangeClosed`, `of`, `iterate`, `sum`, `average`, `min`, `max`, `mapToLong`, `asLongStream`, `Arrays.stream`
+  of a `LongArray`, `OptionalLong`; exact with `--long64 emulate`), `flatMapToInt`/`Long`/`Double`, `parallelStream()` (sequential),
+  `isParallel()`, `Stream.iterator()` (lazy), `IntSummaryStatistics`/`LongSummaryStatistics`/`DoubleSummaryStatistics`
+  (`summaryStatistics()`, `Collectors.summarizingInt`/`Long`/`Double`, `accept`, `combine`, printed like the JDK's) and
+  `Collectors.summingLong`/`averagingLong`.
+- `is Number`, `is Comparable<*>` and `is CharSequence` (also `filterIsInstance` and `as`), and `Number.toInt()`, `toLong()`,
+  `toDouble()`, `toFloat()`, `toShort()`, `toByte()` on a value typed `Number`.
+- `lateinit` properties throw `UninitializedPropertyAccessException` when read before their first assignment, and
+  `this::x.isInitialized` works.
+- A spread argument that is not the last one (`listOf(*xs, y)`, `f(*a, *b)`).
+- Classes implementing `ClosedRange<T>` (`class DateRange(...) : ClosedRange<Date>, Iterable<Date>`): `contains`/`isEmpty` come
+  from the interface (and win over the Iterable operations), and `start`/`endInclusive` read through a `ClosedRange` value reach
+  the class's properties as well as the library ranges' bounds.
+- The `java.lang` statics ported code uses: `Integer`/`Long` `bitCount`, `numberOfLeadingZeros`/`TrailingZeros`,
+  `highestOneBit`/`lowestOneBit`, `rotateLeft`/`Right`, `signum`, `max`/`min`, `Integer.reverse`, `Integer.toUnsignedString`,
+  `Long.toBinaryString`/`toHexString`/`toOctalString`, `Double.isNaN`/`isInfinite`/`isFinite`/`valueOf`/`toString`,
+  `Boolean.parseBoolean`, `Character.getNumericValue`, `String.valueOf` and `String.join`.
+- `contentHashCode()`, `contentDeepHashCode()` and `contentDeepEquals()` of arrays.
+- Realistic programs as test cases, checked on every Lua target (`realworld_*`): an interpreter, builder DSLs, a state
+  machine, a bank, generic containers, a text adventure, a generator-based scheduler, a multi-package lending library, a
+  spreadsheet, a warehouse, grid puzzles with BFS/Dijkstra, a register machine, dynamic programming, CSV reports, sequences,
+  big numbers, an inventory, graph algorithms, text tools, a simulation, linear algebra, a library catalogue, a dependency
+  resolver, timesheets, compression and bit puzzles.
 
 ### Changed
 - Collections have the JVM's classes: `listOf()`/`emptyList()` are Kotlin's `EmptyList`, `listOf(x)` a
@@ -87,6 +130,18 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
 - `Double` natural order (`sorted()`, `compareTo`, `compareValues`) puts `-0.0` before `0.0` and `NaN` last.
 - `TreeSet`/`TreeMap` with a comparator treat elements it calls equal as the same, as the JDK does.
 - `ArrayList.addAll`/`remove`, `HashMap.putAll` and the copy constructors no longer call methods a subclass overrides.
+- Casting `emptyList()`, `emptySet()`, `emptyMap()`, a primitive array's `asList()` or an object of a class implementing only
+  read-only collection interfaces to `MutableList` (`MutableSet`, ...) throws `ClassCastException` with the JVM's message, and
+  `is MutableList` is false for them, as on the JVM.
+- `getOrPut` and `getValue` of a map read it with `get` (and `containsKey`), `AbstractSet`'s `equals` and `removeAll` call
+  `contains`/`remove`, and `PriorityQueue.removeIf`/`removeAll` heapify without calling `add`, as the JDK and Kotlin's stdlib do.
+- A `for` loop over an object of a class implementing `List` (or delegating it) uses its `iterator()`, as on the JVM.
+- `first()`, `last()` and `single()` of an empty collection that is not a list say "Collection is empty.".
+- `size` of a `Collection` is its field (it was `count()`).
+- `Long` bitwise operations (`and`, `or`, `xor`, `inv`, shifts, bit counts, `takeHighestOneBit`/`takeLowestOneBit`) are exact
+  for values below 2^53 on Lua 5.1, 5.2 and LuaJIT without `--long64 emulate` (they were 32-bit), so
+  `x.toLong() and 0xFFFFFFFFL` and masks over 32 bits work.
+- `Regex.findAll` returns a lazy `Sequence`, as in Kotlin: matches are searched for as they are pulled.
 
 ### Fixed
 - References to library properties compiled but failed at run time ("attempt to index a function value").
@@ -95,8 +150,8 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   called on a platform-typed `String!` (the elements of a Java stream) are mapped.
 - `for (c in 'a'..'z' step 2)` (the step was converted like a `Char`); a non-constant `step` that is not positive throws
   `IllegalArgumentException` instead of looping forever on Lua 5.1; `x in a..f()` always evaluates `f()`, and before `x`.
-- Interface delegation compiled to a class without the delegated members; delegating a library interface is now
-  reported. `x in a..b` on `ULong`s above 2^63 compares unsigned on Lua 5.3/5.4.
+- Interface delegation compiled to a class without the delegated members; delegating a library interface k2l has no
+  implementation for (`CoroutineContext`, `Executor`, ...) is now reported. `x in a..b` on `ULong`s above 2^63 compares unsigned on Lua 5.3/5.4.
 - `toString()` of a class without its own prints `app.P@1f` like `Any.toString()` instead of Lua's `table: 0x...`; Lua class
   names are JVM binary names (`app.Outer$Inner`), so exceptions of the program print `app.MyError: message` like the JVM;
   `nullableString + x` prints `null` for a null left side.
@@ -120,6 +175,34 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   `runningReduceIndexed`, `sumBy`, `sumByDouble`, `maxWith`/`minWith`, `groupingBy`, `joinTo`, `shuffled`, `requireNoNulls`,
   `orEmpty`, `toSortedSet`, a `HashSet` from `toHashSet`), plus `filterIsInstanceTo`, `filterNotNullTo`,
   `mapIndexedNotNullTo`, `flatMapIndexedTo`, `reduceIndexedOrNull`, `runningFoldIndexed` and `joinTo` on collections.
+- Comparing enums (`<`, `compareTo`, `sorted()`, `max()`, `sortedBy { it.level }`, `TreeSet`) failed at run time: enum classes
+  now have `compareTo` (the difference of the ordinals).
+- A function sharing its name with a property of its class hierarchy (`private val items` and `fun items()`) was rejected;
+  it now gets its own Lua name. Before, a subclass's property could also hide a superclass's method of the same name.
+- `::method` and `::property` without a receiver inside a class were compiled as unbound references (a crash when called).
+- `data object`s printed like plain objects (`app.Cmd$Look@1`) and failed on `hashCode()`/`toString()` calls; value classes
+  compared and hashed by identity (`Ref(Col(0), 1) != Ref(Col(0), 1)`, map lookups missed) and printed as `Col@1`.
+- `vararg` parameters of constructors received only their first element.
+- `RuntimeException(message, cause, false, false)` passed a Boolean as the cause.
+- `entries`, `values()` and `valueOf` called from an enum's companion object were rejected ("This receiver").
+- Reassigning a variable declared with `var (a, b) = ...` was rejected.
+- A function reference or `() -> Unit` value converted to a function type with a result other than as an argument
+  (`val h: () -> Any = ::work`, `return ::work`, `listOf<() -> Any>(::work)`) returned `nil` instead of `kotlin.Unit`.
+- Two objects made by the same object expression (or local class) in different runs had different `KClass`es and `javaClass`es.
+- `x in a..b` over Comparable objects (enums, classes of the program) compared the tables with Lua's `<` and failed.
+- Members of arrays read from an `out`-projected container (`rows[0].size` with `vararg rows: DoubleArray`, an
+  `Array<out IntArray>`) were rejected.
+- `Regex.findAll(...).forEach { }` and `for (m in regex.findAll(...))` failed at run time.
+- A private property named like a method of its class (`private var next` next to `fun next()` in an iterator) was rejected.
+- `println` of a string containing a NUL character stopped at it on Lua 5.1.
+- Guard conditions in `when` (`is Int if x < 0 ->`, `else if ready ->`) were ignored: the branch was taken whenever its
+  condition matched.
+- On Lua 5.1, 5.2 and LuaJIT, a data class with a `Double` property holding an integral value (`3.0`) hashed it like an `Int`,
+  so `HashMap`/`HashSet` of such keys iterated in another order than on the JVM.
+- `kotlin.text` functions of `CharSequence` called on a `StringBuilder` (`sb.removeSuffix(", ")`, `sb.lines()`, `sb.split(...)`,
+  `sb.trim()`) were rejected; they work on its text.
+- A null platform-typed value (`"${treeMap.higherKey(k)}"`, an `Int!` from a Java method) in a string template or
+  concatenation failed with "attempt to concatenate a nil value" instead of printing `null`.
 
 ## Work before the first release
 

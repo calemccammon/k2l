@@ -11,7 +11,7 @@ internal fun FileTransformer.accessorMethods(p: KtNamedDeclaration, ref: LuaExpr
     if (specialAccessors(p, ref)) return
     val property = p as? KtProperty
     val bodiless = property != null && !props.hasOwnField(p)
-    val field = LuaIndex(selfRef(), LuaString(props.fieldName(p)))
+    val field = LuaIndex(selfRef(), LuaString(fieldKey(p)))
     // A constructor can read an overridden property before the subclass initialized its field
     val fieldRead = props.uninitializedValue(p)?.let { zero -> LuaBinary(LuaBinOp.Or, field, zero) } ?: field
     val getter = property?.getter?.takeIf { it.hasBody() }

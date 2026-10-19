@@ -1,0 +1,110 @@
+error: duplicate isbn 978-6
+authors: {E. H. Gombrich=2, H. G. Wells=2, Julia Donaldson=1, Stephen Hawking=1, Walt Whitman=1}
+genres: {FICTION=2, SCIENCE=2, HISTORY=2, KIDS=2, POETRY=2}
+search 'history': [A Brief History of Time, A Little History of the World]
+search 'the time': [The Time Machine]
+search 'nothing here': []
+day 1: lent 978-0 to 1, due day 15
+day 1: lent 978-2 to 1, due day 15
+day 2: refused (978-3 to 1): Ana has reached 2 loans
+day 2: lent 978-0 to 2, due day 30
+day 3: refused (978-0 to 3): 'The Time Machine' is not available
+day 3: refused (978-2 to 2): 'A Brief History of Time' is not available
+day 4: lent 978-5 to 4, due day 32
+day 5: refused (978-0 to 4): 'The Time Machine' is not available
+day 5: refused (978-9 to 2): no book 978-9
+day 5: refused (978-1 to 7): no member 7
+available: {978-0=0, 978-2=0, 978-5=2}
+fine Ana: 125 cents
+fine Ben: 0 cents
+no open loan of 978-0 by 2
+overdue on day 40: {Ana=[(A Brief History of Time, 25)], Di=[(The Gruffalo, 8)]}
+Ana has overdue books
+fine Ana again: 650
+lend after return: 55
+recommend for 978-0: [(A Brief History of Time, 1), (Leaves of Grass, 1)]
+{
+  "books": [
+    {
+      "isbn": "978-0",
+      "title": "The Time Machine",
+      "year": 1895,
+      "genres": ["fiction", "science"],
+      "available": 2
+    },
+    {
+      "isbn": "978-1",
+      "title": "The War of the Worlds",
+      "year": 1898,
+      "genres": ["fiction"],
+      "available": 1
+    },
+    {
+      "isbn": "978-2",
+      "title": "A Brief History of Time",
+      "year": 1988,
+      "genres": ["science"],
+      "available": 1
+    },
+    {
+      "isbn": "978-3",
+      "title": "The Story of Art",
+      "year": 1950,
+      "genres": ["history"],
+      "available": 1
+    },
+    {
+      "isbn": "978-4",
+      "title": "A Little History of the World",
+      "year": 1936,
+      "genres": ["history", "kids"],
+      "available": 1
+    },
+    {
+      "isbn": "978-5",
+      "title": "The Gruffalo",
+      "year": 1999,
+      "genres": ["kids", "poetry"],
+      "available": 2
+    },
+    {
+      "isbn": "978-6",
+      "title": "Leaves of Grass",
+      "year": 1855,
+      "genres": ["poetry"],
+      "available": 0
+    }
+  ],
+  "members": [
+    {
+      "id": 1,
+      "name": "Ana",
+      "tier": "BASIC"
+    },
+    {
+      "id": 2,
+      "name": "Ben",
+      "tier": "PLUS"
+    },
+    {
+      "id": 3,
+      "name": "Cy",
+      "tier": "STAFF"
+    },
+    {
+      "id": 4,
+      "name": "Di",
+      "tier": "PLUS"
+    }
+  ],
+  "openLoans": 2,
+  "note": null
+}
+{
+  "escaped": "quote \" backslash \\ newline \n tab\u0009",
+  "empty": {},
+  "nested": [
+    [1, 2],
+    []
+  ]
+}

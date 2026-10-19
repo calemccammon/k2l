@@ -1130,18 +1130,32 @@ function __K2L_Regex:find(input, startIndex)
     return self:____find(input, (units and units.toByte(input, startIndex) or startIndex) + 1)
 end
 
--- All matches as a list; after an empty match the search resumes one character later.
-function __K2L_Regex:findAll(input, startIndex)
-    local out = __K2L_List.new()
-    local match = self:find(input, startIndex)
-    while match ~= nil do
-        out:add(match)
-        match = match:next()
-        if match ~= nil and match.____first - 1 > #match.____input then
-            break
+-- findAll's sequence: the factory of a generator that searches for each match when the previous one has been consumed
+-- (after an empty match the search resumes one character later). The start index is checked right away, as in Kotlin.
+function __K2L_Regex:findAllFactory(input, startIndex)
+    startIndex = startIndex or 0
+    local units = __K2L_Regex.____units
+    local length = units and units.len(input) or #input
+    if startIndex < 0 or startIndex > length then
+        error(__K2L_IndexOutOfBoundsException.new("Start index out of bounds: " .. startIndex .. ", input length: " .. length))
+    end
+    return function()
+        local match, started = nil, false
+        return function()
+            if not started then
+                started = true
+                match = self:find(input, startIndex)
+            elseif match ~= nil then
+                match = match:next()
+                if match ~= nil and match.____first - 1 > #match.____input then
+                    match = nil
+                end
+            end
+            if match ~= nil then
+                return true, match
+            end
         end
     end
-    return out
 end
 
 function __K2L_Regex:matchEntire(input)

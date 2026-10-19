@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Regex = ____lualib.__K2L_Regex
+local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
@@ -84,7 +85,7 @@ local function regexIndices()
     local emoji = __K2L_Regex.new("😀")
     local ____receiver = emoji:find(s)
     print(__K2L_Utf16.out(__K2L_Str(____receiver and ____receiver.range)))
-    print(__K2L_Utf16.out(__K2L_Str(emoji:findAll(s):map(function(it) return it.range end):toList())))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(emoji:findAllFactory(s)):map(function(it) return it.range end):toList())))
     local ____receiver_1 = emoji:find(s, 2)
     print(__K2L_Utf16.out(__K2L_Str(____receiver_1 and ____receiver_1.range)))
     local ____receiver_2 = __K2L_Regex.new("b."):find(s)
@@ -93,8 +94,8 @@ local function regexIndices()
     local ____receiver_4 = ____receiver_3 and ____receiver_3.groups
     local ____receiver_5 = ____receiver_4 and ____receiver_4:get(2)
     print(__K2L_Utf16.out(__K2L_Str(____receiver_5 and ____receiver_5.range)))
-    print(__K2L_Utf16.out(__K2L_Regex.new("."):findAll(s):count()))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_Regex.new("[a-c]"):findAll(s):map(function(it) return it.range.first end):toList())))
+    print(__K2L_Utf16.out(__K2L_Sequence.new(__K2L_Regex.new("."):findAllFactory(s)):count()))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[a-c]"):findAllFactory(s)):map(function(it) return it.range.first end):toList())))
     print(__K2L_Utf16.out(emoji:replace(s, "<>")))
     print(__K2L_Utf16.out(__K2L_Str(emoji:split(s))))
     print(__K2L_Utf16.out(__K2L_Regex.new("[^a-z]"):replace(s, "?")))

@@ -1,0 +1,39 @@
+words=60 distinct=20 chars=286 lines=4
+top: it=10, of=10, the=10, was=10, age=2
+longest words: [foolishness, incredulity, darkness]
+by length: {2=2, 3=3, 4=2, 5=4, 6=5, 7=1, 8=1, 11=2}
+letters: [t:27, e:27, s:26, i:21]
+capitalized: [It, Light, Darkness]
+sentence case: [It was the best of times, It was the worst of times, It was the age of wisdom,]
+anagrams: [[listen, silent, enlist], [google, gooegl], [cat, act, tac]]
+caesar: Khoor, Zruog! abc -> Hello, World! xyz
+vigenere: Lxfopv ef rnhr! -> Attack at dawn!
+rot13 twice: Why did the chicken cross the road?
+rle: 'WWWWWWWWWWWW…' -> '12WB12W3B24WB14W'
+rle: 'abc' -> 'abc'
+rle: 'aabcccccaaa' -> '2ab5c3a'
+rle: '' -> ''
+palindrome? true  A man, a plan, a canal: Panama
+palindrome? false race a car
+palindrome? true  No 'x' in Nixon
+palindrome? true  Was it a car or a cat I saw?
+longest palindromes: [bab, bb, geeksskeeg, aba]
+|It was the best of times, it was the|
+|worst  of  times,  it was the age of|
+|wisdom,    it   was   the   age   of|
+|foolishness,  it  was  the  epoch of|
+|belief,   it   was   the   epoch  of|
+|incredulity,  it  was  the season of|
+|Light,   it   was   the   season  of|
+|Darkness, it was the spring of hope,|
+|it was the winter of despair.       |
+Dear Ada Lovelace, your order #1042 of 3 WIDGETS ships <when?>. (12)
+unknown filter 'bogus'
+log: 6 entries, 1 malformed
+levels: {INFO=3, WARN=1, ERROR=2}
+durations: [1532, 3000, 87, 143] avg=1190.5
+  10:00:05 db: query failed
+  10:00:09 auth: invalid token for user=alice
+paths: [/api/items, /api/orders] kv: {size=10, user=alice}
+snake: parse_http_response_code camel: maxRetryCount
+chars: [72, 101, 108, 108, 111] [K, t, i] [a, b-c]
