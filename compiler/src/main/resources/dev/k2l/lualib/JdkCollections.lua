@@ -1,12 +1,16 @@
 -- requires: Class, Exceptions, Collections, Comparators, Compare, Equals, Random
 -- java.util.Collections and java.util.Arrays helpers, Map.withDefault and List.listIterator.
--- The unmodifiable* wrappers are read-only copies (a later change to the original is not visible through them).
+-- The unmodifiable* wrappers are live read-only views of their argument (see "views" below). The empty and singleton
+-- collections, nCopies and the like are read-only collections of their own.
 local __K2L_JdkCollections = {}
 local __K2L_ListIterator = __K2L_Class("java.util.ArrayList$ListItr")
 local __K2L_ReadOnlyList = __K2L_Class("java.util.Collections$UnmodifiableRandomAccessList", __K2L_List)
 local __K2L_ReadOnlySet = __K2L_Class("java.util.Collections$UnmodifiableSet", __K2L_Set)
 local __K2L_ReadOnlyMap = __K2L_Class("java.util.Collections$UnmodifiableMap", __K2L_Map)
 local __K2L_FixedSizeList = __K2L_Class("java.util.Arrays$ArrayList", __K2L_List)
+local __K2L_ListView = __K2L_Class("java.util.Collections$UnmodifiableRandomAccessList", __K2L_List)
+local __K2L_SetView = __K2L_Class("java.util.Collections$UnmodifiableSet", __K2L_Set)
+local __K2L_MapView = __K2L_Class("java.util.Collections$UnmodifiableMap", __K2L_Map)
 
 do
 
@@ -144,31 +148,52 @@ for _, name in ipairs(MAP_MUTATORS) do
     __K2L_ReadOnlyMap[name] = unsupported
 end
 
-local function readOnlyList(source)
-    local arr, n = source:____array()
-    local out = __K2L_ReadOnlyList.new()
-    for i = 1, n do
-        out[i] = arr[i]
+------------------------------------------------------------------ views
+-- unmodifiableList(list) and friends: a table holding only the argument. Every key the view does not define is read from
+-- the argument, so reads (the `size` field, `view[i]`, the internal tables the methods use, and the methods of the argument's
+-- own class, e.g. a HashMap's iteration order) see later changes to it; the mutating methods throw. The index and the
+-- methods work the same on all Lua versions, but `ipairs` does not follow __index before 5.3: the compiler uses numeric
+-- loops over lists when the program calls an unmodifiable* function.
+local function makeView(class, mutators)
+    local blocked = {}
+    for _, name in ipairs(mutators) do
+        blocked[name] = unsupported
     end
-    out.size = n
-    return out
+    class.__index = function(self, key)
+        local method = blocked[key]
+        if method ~= nil then
+            return method
+        end
+        return rawget(self, "____target")[key]
+    end
+    -- The methods of the argument's class rebuild their tables lazily (a HashMap puts its entries in order when it is read),
+    -- which writes fields such as ____keys and size: those belong to the argument. Elements, by index, are not written.
+    class.__newindex = function(self, key, value)
+        if type(key) == "string" then
+            rawget(self, "____target")[key] = value
+        else
+            unsupported()
+        end
+    end
+end
+makeView(__K2L_ListView, LIST_MUTATORS)
+makeView(__K2L_SetView, SET_MUTATORS)
+makeView(__K2L_MapView, MAP_MUTATORS)
+
+local function viewOf(class, source)
+    return setmetatable({____target = source}, class)
 end
 
-local function readOnlySet(source)
-    local arr, n = source:____array()
-    local out = __K2L_ReadOnlySet.new()
-    for i = 1, n do
-        __K2L_Set.add(out, arr[i])
+-- Whether `source` is a set (an instance of a subclass of Set).
+local function isSet(source)
+    local c = getmetatable(source)
+    while c do
+        if c == __K2L_Set then
+            return true
+        end
+        c = rawget(c, "____super")
     end
-    return out
-end
-
-local function readOnlyMap(source)
-    local out = __K2L_ReadOnlyMap.new()
-    for key, value in source:iter() do
-        __K2L_Map.put(out, key, value)
-    end
-    return out
+    return false
 end
 
 -- Arrays.asList: elements can be replaced, but the size is fixed
@@ -198,17 +223,19 @@ function __K2L_FixedSizeList:clear()
 end
 
 function J.unmodifiableList(source)
-    return readOnlyList(source)
+    return viewOf(__K2L_ListView, source)
 end
 
-J.unmodifiableCollection = J.unmodifiableList
+function J.unmodifiableCollection(source)
+    return viewOf(isSet(source) and __K2L_SetView or __K2L_ListView, source)
+end
 
 function J.unmodifiableSet(source)
-    return readOnlySet(source)
+    return viewOf(__K2L_SetView, source)
 end
 
 function J.unmodifiableMap(source)
-    return readOnlyMap(source)
+    return viewOf(__K2L_MapView, source)
 end
 
 function J.emptyList()

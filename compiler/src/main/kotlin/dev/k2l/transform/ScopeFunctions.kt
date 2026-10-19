@@ -23,6 +23,8 @@ internal fun FileTransformer.scopeFunction(
     } else {
         callableId
     }
+    inlinedResultCall(callableId, call, receiverExpr, implicit)?.let { return it }
+    protectedBlock(callableId, call, receiverExpr, implicit)?.let { return it }
     if (effectiveId !in SCOPE_FUNCTIONS) return null
     val args = callArguments(call)
     val receiver = (implicit ?: receiverExpr?.let { expression(it) })
@@ -60,7 +62,12 @@ internal fun FileTransformer.scopeFunction(
         ->
             forEachCall(receiver!!, receiverExpr?.expressionType ?: call.dispatchReceiver?.type, args, indexed = false)
 
-        "kotlin/collections/forEachIndexed" -> forEachCall(receiver!!, receiverExpr?.expressionType, args, indexed = true)
+        "kotlin/collections/forEachIndexed", "kotlin/text/forEachIndexed" -> forEachCall(
+            receiver!!,
+            receiverExpr?.expressionType,
+            args,
+            indexed = true,
+        )
 
         "kotlin/TODO" -> todoCall(args)
 

@@ -355,8 +355,10 @@ internal object TextMappings {
             "code" -> site.u16("code", c)
 
             "isDigit", "isLetter", "isLetterOrDigit", "isWhitespace", "isUpperCase", "isLowerCase", "isTitleCase",
-            "uppercaseChar", "lowercaseChar", "titlecaseChar", "uppercase", "lowercase", "titlecase",
+            "uppercaseChar", "lowercaseChar", "titlecaseChar",
             -> site.u16Case(name, c)
+
+            "uppercase", "lowercase", "titlecase" -> site.u16CaseOf(name)
 
             "isSurrogate", "isHighSurrogate", "isLowSurrogate" -> site.u16(name, c)
 

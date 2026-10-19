@@ -3,6 +3,7 @@ package dev.k2l.transform
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
+import dev.k2l.LuaTarget
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotated
@@ -48,6 +49,8 @@ class FileTransformer(
 ) : StatementEmitter() {
     internal val usesReflection get() = module.usesReflection
     internal val usesFloat get() = module.usesFloat
+    internal val usesListViews get() = module.usesListViews
+    internal fun usesFunctionNames(scan: (Set<KtFile>) -> Boolean) = module.usesFunctionNames(scan)
 
     /** `local ____strings = require("util.strings")` for another file of the module. */
     private fun moduleRef(other: KtFile): LuaExpr =
@@ -122,6 +125,7 @@ class FileTransformer(
 
         val requires = ctx.imports.map { (path, name) -> LuaLocal(listOf(name), listOf(luaCall(LuaName("require"), LuaString(path)))) }
         body.addAll(requiresAt, requires)
+        body.addAll(requiresAt + requires.size, hoistedLongs())
         exportsReturn(exported)?.let { body += it }
         return LuaChunk(body)
     }
@@ -760,6 +764,8 @@ class FileTransformer(
 
             type.isBooleanType -> "boolean"
 
+            emulatesLong && type.isLongType && !type.isMarkedNullable -> return l64Member("isLong", value)
+
             type.isIntegral || type.isDoubleType || type.isFloatType -> {
                 val wantInteger = type.isIntegral
                 if (target.hasIntegers) {
@@ -889,7 +895,9 @@ class FileTransformer(
 
         // 9223372036854775808 does not fit a Lua integer, so Long.MIN_VALUE is spelled as a subtraction
         is KaConstantValue.LongValue ->
-            if (c.value == Long.MIN_VALUE) {
+            if (emulatesLong) {
+                long64Literal(c.value)
+            } else if (c.value == Long.MIN_VALUE) {
                 LuaBinary(LuaBinOp.Sub, LuaNumber("-9223372036854775807"), LuaNumber("1"))
             } else {
                 LuaNumber(c.value.toString())
@@ -899,9 +907,9 @@ class FileTransformer(
 
         is KaConstantValue.ByteValue -> LuaNumber(c.value.toString())
 
-        is KaConstantValue.DoubleValue -> doubleLiteral(c.value)
+        is KaConstantValue.DoubleValue -> floatingLiteral(c.value)
 
-        is KaConstantValue.FloatValue -> doubleLiteral(c.value.toDouble())
+        is KaConstantValue.FloatValue -> floatingLiteral(c.value.toDouble())
 
         is KaConstantValue.UIntValue -> unsignedLiteral(c.value.toULong())
 
@@ -922,6 +930,13 @@ class FileTransformer(
         null -> unsupported(e, "Non-constant literal")
 
         else -> unsupported(e, "Constant of type ${c.javaClass.simpleName}")
+    }
+
+    /** Lua 5.1 merges the constants 0.0 and -0.0 of a function, so a negative zero is computed there. */
+    internal fun floatingLiteral(d: Double): LuaExpr = if (target == LuaTarget.Lua51 && d == 0.0 && 1 / d < 0) {
+        LuaBinary(LuaBinOp.Div, LuaNumber("1"), LuaUnary(LuaUnOp.Neg, luaPath("math", "huge")))
+    } else {
+        doubleLiteral(d)
     }
 
     private fun KaSession.template(e: KtStringTemplateExpression): LuaExpr {
@@ -1139,7 +1154,7 @@ class FileTransformer(
             LuaBinOp.Lt, LuaBinOp.Gt, LuaBinOp.Le, LuaBinOp.Ge ->
                 // strings compare by UTF-16 unit, which differs from the byte order for supplementary characters
                 if (numeric || comparesNatively(lt, rt)) {
-                    unsignedLongComparison(op, l, lt, r, rt) ?: LuaBinary(op, l, r)
+                    long64Comparison(op, l, lt, r, rt) ?: unsignedLongComparison(op, l, lt, r, rt) ?: LuaBinary(op, l, r)
                 } else {
                     LuaBinary(op, lualibCall("Compare", l, r), LuaNumber("0"))
                 }
@@ -1196,8 +1211,17 @@ class FileTransformer(
         e.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>()?.symbol?.psi.let { it is KtNamedFunction && classes.isSource(it) }
 
     /** With `--int-overflow wrap`, a constant `Int` expression is the value the Kotlin compiler computes (it wraps). */
-    private fun KaSession.foldedInt(e: KtExpression): LuaExpr? =
-        if (wrapsInt && e.expressionType?.isIntType == true && e.evaluate() is KaConstantValue.IntValue) constant(e) else null
+    private fun KaSession.foldedInt(e: KtExpression): LuaExpr? = when {
+        wrapsInt && e.expressionType?.isIntType == true && e.evaluate() is KaConstantValue.IntValue -> constant(e)
+
+        // a constant Long expression such as -5000000000000000000L or 60L * 60 * 24 * 365 * 1000000000 is one literal
+        emulatesLong && isWide(e.expressionType) && e.evaluate().let {
+            it is KaConstantValue.LongValue || it is KaConstantValue.ULongValue
+        } ->
+            constant(e)
+
+        else -> null
+    }
 
     private fun KaSession.primitivePrefix(e: KtPrefixExpression, base: KtExpression): LuaExpr = foldedInt(e) ?: when (e.operationToken) {
         KtTokens.MINUS -> negation(expression(base), base.expressionType)

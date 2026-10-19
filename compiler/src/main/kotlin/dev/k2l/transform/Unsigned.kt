@@ -48,8 +48,11 @@ private fun FileTransformer.unsignedResult(lt: KaType?, rt: KaType?): Unsigned? 
 
 /** [e] reduced to the range of [kind]. */
 internal fun FileTransformer.wrapUnsigned(kind: Unsigned, e: LuaExpr): LuaExpr = when {
-    kind == Unsigned.ULong -> if (target.hasIntegers) e else LuaBinary(LuaBinOp.Mod, e, LuaNumber(TWO_64))
+    // with --long64 emulate the Long operations already wrap
+    kind == Unsigned.ULong -> if (target.hasIntegers || emulatesLong) e else LuaBinary(LuaBinOp.Mod, e, LuaNumber(TWO_64))
+
     target.hasIntegers -> LuaBinary(LuaBinOp.BAnd, e, LuaNumber("0x" + "F".repeat(kind.bits / BITS_PER_HEX_DIGIT)))
+
     else -> LuaBinary(LuaBinOp.Mod, e, LuaNumber((1L shl kind.bits).toString()))
 }
 
@@ -92,5 +95,10 @@ internal fun FileTransformer.unsignedLongComparison(op: LuaBinOp, l: LuaExpr, lt
 }
 
 /** The Lua literal for an unsigned constant; 64-bit values from 2^63 are hexadecimal so that Lua 5.3+ wraps them. */
-internal fun FileTransformer.unsignedLiteral(value: ULong): LuaExpr =
-    if (target.hasIntegers && value >= (1uL shl HIGH_BIT)) LuaNumber("0x" + value.toString(HEX)) else LuaNumber(value.toString())
+internal fun FileTransformer.unsignedLiteral(value: ULong): LuaExpr = if (emulatesLong) {
+    long64Literal(value.toLong())
+} else if (target.hasIntegers && value >= (1uL shl HIGH_BIT)) {
+    LuaNumber("0x" + value.toString(HEX))
+} else {
+    LuaNumber(value.toString())
+}

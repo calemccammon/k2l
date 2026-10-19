@@ -19,12 +19,12 @@ fun inTry(): Int {
     return 0
 }
 
-// the non-local return would have to leave the closure of `mapTo`, which is not inlined
-fun viaMapTo(xs: List<Int>): List<Int> {
-    capped(1) { xs.mapTo(mutableListOf()) { x -> if (x > it) return emptyList() else x } }
-    return xs
+// the non-local return would have to leave the closure of `trim`, which is not inlined
+fun viaTrim(s: String): List<Int> {
+    capped(1) { s.trim { c -> if (c.code > it) return emptyList() else true } }
+    return listOf(s.length)
 }
 
 fun main() {
-    println(inTry() + viaMapTo(listOf(1)).size)
+    println(inTry() + viaTrim("a").size)
 }

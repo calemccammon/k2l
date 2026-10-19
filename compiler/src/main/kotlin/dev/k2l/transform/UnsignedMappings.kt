@@ -32,7 +32,11 @@ internal object UnsignedMappings {
     /** `a.compareTo(b)`: a `ULong` on 5.3/5.4 compares with `math.ult`; everything else is the generic comparison (null). */
     fun compareTo(site: CallSite): LuaExpr? = with(site) {
         val ulong = with(session) { unsignedOf(receiverType) == Unsigned.ULong || unsignedOf(argTypes.getOrNull(0)) == Unsigned.ULong }
-        if (ulong && transformer.ctx.options.luaTarget.hasIntegers) unsignedTable("compare", self, arg(0)) else null
+        if (ulong && (transformer.ctx.options.luaTarget.hasIntegers || transformer.emulatesLong)) {
+            unsignedTable("compare", self, arg(0))
+        } else {
+            null
+        }
     }
 
     private fun arithmetic(t: MappingTable, name: String) {
@@ -118,6 +122,10 @@ internal object UnsignedMappings {
     private fun CallSite.toUnsigned(to: Unsigned): LuaExpr {
         val from = with(session) { unsignedOf(receiverType) }
         val floating = isFloating(receiverType)
+        // a wide value is a box beyond 2^53: narrow it through toInt() first (the low bits are the same)
+        if (transformer.emulatesLong && to != Unsigned.ULong && with(session) { isWide(receiverType) }) {
+            return transformer.wrapUnsigned(to, transformer.l64("Int", self))
+        }
         return when {
             from != null -> if (to.bits >= from.bits) self else transformer.wrapUnsigned(to, self)
             floating && to == Unsigned.UInt -> unsignedTable("fromDouble32", self)

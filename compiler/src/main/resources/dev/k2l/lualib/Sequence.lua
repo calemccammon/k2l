@@ -118,10 +118,63 @@ local function __K2L_SequenceOf(...)
     end)
 end
 
+------------------------------------------------------------------ Sequence.asIterable()
+-- An Iterable that reads its sequence again for each operation (so a constrainOnce sequence fails the second time, as on
+-- the JVM). Operations that stop early pull only the elements they need, so they also work on infinite sequences; the others,
+-- and a `for` loop, read all of it.
+local __K2L_SequenceIterable = __K2L_Class("kotlin.sequences.SequencesKt$asIterable", __K2L_Iterable)
+
+function __K2L_SequenceIterable:____init(sequence)
+    self.____sequence = sequence
+end
+
+function __K2L_SequenceIterable:____array()
+    local list = self.____sequence:toList()
+    return list, list.size
+end
+
+function __K2L_SequenceIterable:iterator()
+    return self.____sequence:iterator()
+end
+
+function __K2L_SequenceIterable:take(count)
+    return self.____sequence:take(count):toList()
+end
+
+function __K2L_SequenceIterable:first(predicate)
+    for _, value in self.____sequence:iter() do
+        if predicate == nil or predicate(value) then
+            return value
+        end
+    end
+    error(__K2L_NoSuchElementException.new(predicate and "Collection contains no element matching the predicate."
+        or "Collection is empty."))
+end
+
+for _, name in ipairs({"firstOrNull", "find", "any", "all", "none", "contains", "indexOf", "elementAtOrNull"}) do
+    __K2L_SequenceIterable[name] = function(self, ...)
+        return self.____sequence[name](self.____sequence, ...)
+    end
+end
+
+function __K2L_Sequence:asIterable()
+    return __K2L_SequenceIterable.new(self)
+end
+
+-- sequence.toCollection(destination)
+function __K2L_Sequence:toCollection(destination)
+    for _, value in self:iter() do
+        destination:add(value)
+    end
+    return destination
+end
+
 -- collection.asSequence(), string.asSequence(), map.asSequence(): iterates the live source.
 local function __K2L_AsSequence(source)
     if type(source) == "table" and source.____isSequence then
         return source
+    elseif type(source) == "table" and getmetatable(source) == __K2L_SequenceIterable then
+        return source.____sequence
     elseif type(source) == "table" and source.hasNext ~= nil then
         return __K2L_Sequence.new(function() return __K2L_Iterator.iter(source) end):constrainOnce()
     end

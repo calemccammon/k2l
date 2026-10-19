@@ -14,7 +14,7 @@ internal val SCOPE_FUNCTIONS = setOf(
     "kotlin/repeat", "kotlin/require", "kotlin/check", "kotlin/requireNotNull", "kotlin/checkNotNull",
     "kotlin/error", "kotlin/TODO", "kotlin/text/buildString",
     "kotlin/collections/forEach", "kotlin/collections/forEachIndexed", "kotlin/sequences/forEach",
-    "java/lang/Iterable.forEach", "java/util/Map.forEach", "kotlin/text/forEach",
+    "java/lang/Iterable.forEach", "java/util/Map.forEach", "kotlin/text/forEach", "kotlin/text/forEachIndexed",
     "kotlin/collections/buildList", "kotlin/collections/buildMap", "kotlin/collections/buildSet",
 )
 
@@ -38,6 +38,8 @@ internal val MARKER_INTERFACES = setOf(
     "kotlin/Comparable",
     "java/lang/Comparable",
     "java/io/Serializable",
+    "java/io/Closeable",
+    "java/lang/AutoCloseable",
     "kotlin/properties/ReadWriteProperty",
     "kotlin/properties/ReadOnlyProperty",
     // implemented by objects with resumeWith()/hasNext()/next(), as the lualib calls them

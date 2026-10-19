@@ -3,6 +3,7 @@ package dev.k2l.gradle
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE
 import org.gradle.api.attributes.Usage
 import org.gradle.api.plugins.BasePlugin
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -28,8 +29,17 @@ class K2lPlugin : Plugin<Project> {
         extension.luaLibImport.convention("require")
         extension.intOverflow.convention("unchecked")
         extension.strings.convention("bytes")
+        extension.long64.convention("double")
         extension.sourceMap.convention(false)
 
+        project.dependencies.registerTransform(UnzipTransform::class.java) {
+            it.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, "zip")
+            it.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, "directory")
+        }
+        project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE) {
+            it.compatibilityRules.add(ZipUsageCompatibility::class.java)
+            it.disambiguationRules.add(PreferDirectoryUsage::class.java)
+        }
         val compiler = project.configurations.create(COMPILER_CONFIGURATION) { cfg ->
             cfg.description = "The k2l compiler and its runtime classpath."
             cfg.isCanBeConsumed = false
@@ -43,11 +53,15 @@ class K2lPlugin : Plugin<Project> {
             task.group = "build"
             task.sourceDirs.from(extension.sourceDirs)
             task.classpath.from(extension.classpath)
-            task.compilerClasspath.from(compiler.incoming.files.asFileTree.matching { it.include("**/*.jar") })
+            // A published compiler is a zip of jars (unpacked by UnzipTransform); in a composite build it is a directory;
+            // a hand-made dependency (files(...)) is used as it is.
+            val unpacked = compiler.incoming.artifactView { it.attributes.attribute(ARTIFACT_TYPE_ATTRIBUTE, "directory") }.files
+            task.compilerClasspath.from((unpacked + compiler.incoming.files).asFileTree.matching { it.include("**/*.jar") })
             task.luaTarget.set(extension.luaTarget)
             task.luaLibImport.set(extension.luaLibImport)
             task.intOverflow.set(extension.intOverflow)
             task.strings.set(extension.strings)
+            task.long64.set(extension.long64)
             task.sourceMap.set(extension.sourceMap)
             task.outputDir.set(extension.outputDir)
             // The Analysis API needs JDK 21+; fall back to a toolchain when Gradle itself runs on something older.
@@ -75,6 +89,7 @@ class K2lPlugin : Plugin<Project> {
     companion object {
         const val COMPILER_CONFIGURATION = "k2lCompiler"
         const val COMPILER_USAGE = "k2l-compiler-runtime"
+        const val COMPILER_ZIP_USAGE = "k2l-compiler-runtime-zip"
         private const val MIN_JAVA = 21
     }
 }

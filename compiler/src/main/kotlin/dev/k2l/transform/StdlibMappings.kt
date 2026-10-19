@@ -136,14 +136,14 @@ object StdlibMappings {
     private fun basicStrings() {
         def("kotlin/String.length") { if (utf16) u16("len", self) else LuaUnary(LuaUnOp.Len, self) }
         def("kotlin/String.plus") { LuaBinary(LuaBinOp.Concat, self, str(arg(0), argTypes[0], forConcat = true)) }
-        // uppercase(Locale) and lowercase(Locale): every locale behaves like Locale.ROOT
+        // uppercase(Locale) and lowercase(Locale): the locale only matters with --strings utf16 (Turkish, Azeri, Lithuanian)
         def("kotlin/text/uppercase") {
             if (args.isNotEmpty() &&
                 !isLocale(argTypes.firstOrNull())
             ) {
                 null
             } else if (utf16) {
-                u16Case("uppercase", self)
+                u16CaseOf("uppercase")
             } else {
                 method(self, "upper")
             }
@@ -154,7 +154,7 @@ object StdlibMappings {
             ) {
                 null
             } else if (utf16) {
-                u16Case("lowercase", self)
+                u16CaseOf("lowercase")
             } else {
                 method(self, "lower")
             }
@@ -193,15 +193,19 @@ object StdlibMappings {
 
     private fun CallSite.bitCall(name: String): LuaExpr = LuaCall(ref("Bit", name), listOfNotNull(receiver) + args)
 
-    fun map(callableId: String?, site: CallSite): LuaExpr? = UnsignedMappings.post(
-        callableId,
-        site,
-        IntOverflowMappings.post(callableId, site, FloatMappings.post(callableId, site, mapUnrounded(callableId, site))),
-    )
+    fun map(callableId: String?, call: CallSite): LuaExpr? {
+        val site = Long64Mappings.prepare(callableId, call)
+        return UnsignedMappings.post(
+            callableId,
+            site,
+            IntOverflowMappings.post(callableId, site, FloatMappings.post(callableId, site, mapUnrounded(callableId, site))),
+        )
+    }
 
     private fun mapUnrounded(callableId: String?, site: CallSite): LuaExpr? {
         val special = if (site.receiver != null && callableId?.startsWith("kotlin/") == true) universalMethod(site) else null
         return special
+            ?: Long64Mappings.map(callableId, site)
             ?: callableId?.let { mappings[it] }?.invoke(site)
             ?: TypeTestMappings.map(callableId, site)
             ?: BigNumberMappings.map(callableId, site)

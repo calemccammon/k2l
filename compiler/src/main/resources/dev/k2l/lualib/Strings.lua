@@ -971,7 +971,63 @@ local function formatFloat(conv, value, flags, width, precision)
     return finishNumber(body, negative, flags, width)
 end
 
+-- The decimal text of a Long that is not a Lua number (--long64 emulate: a {hi, lo} table or an int64_t cdata).
+local function longText(value)
+    if type(value) == "table" then
+        return value:toString()
+    end
+    return (tostring(value):gsub("LL$", ""))
+end
+
+-- The digits of a non-negative decimal text in another radix (repeated short division of the digit string).
+local function decimalToRadix(text, radix)
+    local digits = {}
+    for i = 1, #text do
+        digits[i] = text:byte(i) - 48
+    end
+    local out = {}
+    while #digits > 0 do
+        local rest, remainder, started = {}, 0, false
+        for _, d in ipairs(digits) do
+            local cur = remainder * 10 + d
+            local q = math.floor(cur / radix)
+            remainder = cur - q * radix
+            if q > 0 or started then
+                started = true
+                rest[#rest + 1] = q
+            end
+        end
+        out[#out + 1] = ("0123456789abcdef"):sub(remainder + 1, remainder + 1)
+        digits = rest
+    end
+    return #out == 0 and "0" or string.reverse(table.concat(out))
+end
+
+-- 2^64 - n for the decimal text of 0 < n <= 2^63
+local function twosComplement(text)
+    local borrow, out = 0, {}
+    local top = "18446744073709551616"
+    for i = 1, #top do
+        local a = top:byte(#top - i + 1) - 48
+        local b = (i <= #text and text:byte(#text - i + 1) or 48) - 48
+        local d = a - b - borrow
+        borrow = d < 0 and 1 or 0
+        out[i] = (d + 10 * borrow)
+    end
+    return (string.reverse(table.concat(out)):gsub("^0+", ""))
+end
+
 local function formatInteger(conv, value, flags, width)
+    local digits
+    if type(value) ~= "number" then
+        local text = longText(value)
+        local negative = text:sub(1, 1) == "-"
+        local magnitude = negative and text:sub(2) or text
+        if conv == "d" then
+            return finishNumber(flags.comma and groupThousands(magnitude) or magnitude, negative, flags, width)
+        end
+        digits = decimalToRadix(negative and twosComplement(magnitude) or magnitude, conv == "o" and 8 or 16)
+    end
     if conv == "d" then
         local negative = value < 0
         local body
@@ -987,7 +1043,9 @@ local function formatInteger(conv, value, flags, width)
     end
     local radix = conv == "o" and 8 or 16
     local body
-    if value >= 0 then
+    if digits ~= nil then
+        body = digits
+    elseif value >= 0 then
         body = __K2L_Num.toRadix(value, radix)
     elseif value >= -2147483648 then
         body = __K2L_Num.toRadix(value % 4294967296, radix)

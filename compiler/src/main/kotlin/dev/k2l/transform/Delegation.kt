@@ -100,21 +100,34 @@ private fun FileTransformer.provide(p: KtProperty, provider: LuaExpr, thisRef: L
     return operatorCall(operator, provider, listOf(thisRef, propertyInfo(p.name!!)))
 }
 
-private fun FileTransformer.delegateGet(kind: DelegateKind, delegate: LuaExpr, thisRef: LuaExpr, name: String): LuaExpr = when (kind) {
+/** [info] is the `KProperty` stand-in passed to the delegate; accessors of a class pass a constant, locals a fresh table. */
+private fun FileTransformer.delegateGet(
+    kind: DelegateKind,
+    delegate: LuaExpr,
+    thisRef: LuaExpr,
+    name: String,
+    info: LuaExpr = propertyInfo(name),
+): LuaExpr = when (kind) {
     DelegateKind.Lazy -> LuaMethodCall(delegate, GET_VALUE, emptyList())
     DelegateKind.MapKey -> LuaMethodCall(delegate, GET_VALUE, listOf(LuaString(name)))
-    DelegateKind.Library -> LuaMethodCall(delegate, GET_VALUE, listOf(thisRef, propertyInfo(name)))
-    is DelegateKind.User -> operatorCall(kind.get, delegate, listOf(thisRef, propertyInfo(name)))
+    DelegateKind.Library -> LuaMethodCall(delegate, GET_VALUE, listOf(thisRef, info))
+    is DelegateKind.User -> operatorCall(kind.get, delegate, listOf(thisRef, info))
 }
 
-private fun FileTransformer.delegateSet(kind: DelegateKind, delegate: LuaExpr, thisRef: LuaExpr, name: String, value: LuaExpr): LuaStmt =
-    LuaCallStmt(
-        when (kind) {
-            DelegateKind.MapKey -> LuaMethodCall(delegate, "set", listOf(LuaString(name), value))
-            is DelegateKind.User -> operatorCall(kind.set!!, delegate, listOf(thisRef, propertyInfo(name), value))
-            else -> LuaMethodCall(delegate, SET_VALUE, listOf(thisRef, propertyInfo(name), value))
-        },
-    )
+private fun FileTransformer.delegateSet(
+    kind: DelegateKind,
+    delegate: LuaExpr,
+    thisRef: LuaExpr,
+    name: String,
+    value: LuaExpr,
+    info: LuaExpr = propertyInfo(name),
+): LuaStmt = LuaCallStmt(
+    when (kind) {
+        DelegateKind.MapKey -> LuaMethodCall(delegate, "set", listOf(LuaString(name), value))
+        is DelegateKind.User -> operatorCall(kind.set!!, delegate, listOf(thisRef, info, value))
+        else -> LuaMethodCall(delegate, SET_VALUE, listOf(thisRef, info, value))
+    },
+)
 
 // ---- local and top-level ----
 
@@ -147,9 +160,11 @@ internal fun FileTransformer.delegatedVariableTarget(p: KtProperty): Target? {
 // ---- members ----
 
 /** Each class of an override family that delegates has a delegate slot of its own, like the JVM's `x$delegate` fields. */
-private fun delegateField(p: KtProperty, self: LuaExpr): LuaExpr {
+private fun delegateField(p: KtProperty, self: LuaExpr): LuaExpr = LuaIndex(self, LuaString(delegateSlot(p, "delegate")))
+
+private fun delegateSlot(p: KtProperty, kind: String): String {
     val owner = if (p.hasModifier(KtTokens.OVERRIDE_KEYWORD)) "__${p.containingClassOrObject?.name ?: "object"}" else ""
-    return LuaIndex(self, LuaString("____${p.name}_delegate$owner"))
+    return "____${p.name}_$kind$owner"
 }
 
 /** A member property's initializer: its field, or its delegate's slot. */
@@ -176,9 +191,22 @@ internal fun FileTransformer.delegatedAccessors(p: KtProperty, ref: LuaExpr) {
     val kind = delegateKind(p) ?: return
     val delegate = delegateField(p, selfRef())
     val name = p.name!!
-    emitMethod(ref, accessorName("get", p), emptyList(), listOf(LuaReturn(listOf(delegateGet(kind, delegate, selfRef(), name)))))
+    // The property stand-in is built once per property, not on every access: `Holder.____x_property = {name = "x"}`
+    val info = if (kind == DelegateKind.Lazy || kind == DelegateKind.MapKey) {
+        propertyInfo(name)
+    } else {
+        LuaIndex(ref, LuaString(delegateSlot(p, "property"))).also {
+            emit(assign(it, propertyInfo(name)))
+        }
+    }
+    emitMethod(ref, accessorName("get", p), emptyList(), listOf(LuaReturn(listOf(delegateGet(kind, delegate, selfRef(), name, info)))))
     if (p.isVar) {
-        emitMethod(ref, accessorName("set", p), listOf("value"), listOf(delegateSet(kind, delegate, selfRef(), name, LuaName("value"))))
+        emitMethod(
+            ref,
+            accessorName("set", p),
+            listOf("value"),
+            listOf(delegateSet(kind, delegate, selfRef(), name, LuaName("value"), info)),
+        )
     }
 }
 

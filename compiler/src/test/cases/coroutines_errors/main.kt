@@ -11,5 +11,5 @@ class GetterContinuation : Continuation<Unit> {
 fun main() {
     val items: Sequence<Any> = sequenceOf(1, "two")
     println(items.filterIsInstance<String>().toList())
-    println(items.asIterable())
+    println(items.lastIndexOf(1))
 }

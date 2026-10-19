@@ -12,7 +12,12 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
-const val VERSION = "0.1.0"
+/** The build version, generated into `k2l-version.properties` from `gradle.properties`. */
+val VERSION: String by lazy {
+    val properties = java.util.Properties()
+    object {}.javaClass.getResourceAsStream("/k2l-version.properties")?.use(properties::load)
+    properties.getProperty("version") ?: "unknown"
+}
 
 private val USAGE = """
     |usage: k2l [options] [SOURCE_DIR...]
@@ -25,6 +30,7 @@ private val USAGE = """
     |  -t, --target VERSION    Lua version: 5.1, 5.2, 5.3, 5.4 (default) or JIT
     |      --lualib MODE       require (default: one shared lualib_bundle.lua) or inline
     |      --int-overflow MODE unchecked (default) or wrap: make Int arithmetic wrap to 32 bits like the JVM
+    |      --long64 MODE       double (default) or emulate: exact 64-bit Long and ULong on Lua 5.1, 5.2 and LuaJIT (slower)
     |      --strings MODE      bytes (default) or utf16: make String and Char behave like the JVM's UTF-16 strings
     |      --classpath PATHS   extra jars or class directories, e.g. Lua bindings (':'-separated)
     |      --source-map        write main.lua.map files and make Lua errors and tracebacks show Kotlin positions
@@ -42,6 +48,7 @@ private data class Settings(
     val classpath: List<Path> = emptyList(),
     val intOverflow: IntOverflow = CompilerOptions().intOverflow,
     val strings: StringSemantics = CompilerOptions().strings,
+    val long64: Long64 = CompilerOptions().long64,
     val sourceMap: Boolean = false,
     val watch: Boolean = false,
     /** The k2l.json the settings came from, if any. */
@@ -80,6 +87,7 @@ private fun build(settings: Settings): CompileResult {
         luaLibImport = settings.lualib,
         intOverflow = settings.intOverflow,
         strings = settings.strings,
+        long64 = settings.long64,
         sourceMap = settings.sourceMap,
     )
     val result = SourceSession.create(listOf(module), settings.classpath).use { session ->
@@ -134,6 +142,8 @@ private fun parseArgs(args: Array<String>): Settings {
 
             "--int-overflow" -> IntOverflow.parse(value(arg)).let { mode -> overrides += { s -> s.copy(intOverflow = mode) } }
 
+            "--long64" -> Long64.parse(value(arg)).let { mode -> overrides += { s -> s.copy(long64 = mode) } }
+
             "--strings" -> StringSemantics.parse(value(arg)).let { mode -> overrides += { s -> s.copy(strings = mode) } }
 
             "--classpath" -> value(arg).split(java.io.File.pathSeparatorChar).filter { p -> p.isNotEmpty() }.map { p -> Paths.get(p) }
@@ -169,7 +179,7 @@ private fun parseLualib(mode: String) = when (mode.lowercase()) {
 /**
  * k2l.json, with paths relative to its directory:
  * `{"srcDirs": ["src"], "outDir": "out", "luaTarget": "5.4", "luaLibImport": "require", "classpath": [], "intOverflow": "unchecked",
- * "strings": "bytes", "sourceMap": false}`
+ * "strings": "bytes", "long64": "double", "sourceMap": false}`
  */
 private fun readProject(file: Path): Settings {
     require(Files.isRegularFile(file)) { "project file $file not found" }
@@ -177,7 +187,8 @@ private fun readProject(file: Path): Settings {
     val dir = file.toAbsolutePath().parent
     fun string(key: String) = (json[key] as? JsonPrimitive)?.takeIf { it.isString }?.content
     fun paths(key: String) = (json[key] as? JsonArray).orEmpty().map { dir.resolve((it as JsonPrimitive).content) }
-    val unknown = json.keys - setOf("srcDirs", "outDir", "luaTarget", "luaLibImport", "classpath", "intOverflow", "strings", "sourceMap")
+    val unknown =
+        json.keys - setOf("srcDirs", "outDir", "luaTarget", "luaLibImport", "classpath", "intOverflow", "strings", "long64", "sourceMap")
     require(unknown.isEmpty()) { "unknown key(s) in $file: ${unknown.joinToString()}" }
     return Settings(
         sources = paths("srcDirs"),
@@ -187,6 +198,7 @@ private fun readProject(file: Path): Settings {
         classpath = paths("classpath"),
         intOverflow = string("intOverflow")?.let(IntOverflow::parse) ?: IntOverflow.Unchecked,
         strings = string("strings")?.let(StringSemantics::parse) ?: StringSemantics.Bytes,
+        long64 = string("long64")?.let(Long64::parse) ?: Long64.AsDouble,
         sourceMap = (json["sourceMap"] as? JsonPrimitive)?.booleanOrNull ?: false,
     )
 }

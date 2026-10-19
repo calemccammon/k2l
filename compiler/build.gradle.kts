@@ -38,6 +38,16 @@ application {
     applicationDefaultJvmArgs = listOf("-Xss8m", "-XX:+UseParallelGC")
 }
 
+// AppCDS (see k2l-cds.sh): loading the ~10k compiler classes dominates startup, and an archive halves it.
+tasks.startScripts {
+    val cds = layout.projectDirectory.file("k2l-cds.sh")
+    inputs.file(cds)
+    doLast {
+        val snippet = cds.asFile.readText()
+        unixScript.writeText(unixScript.readText().replace(Regex("(?m)^DEFAULT_JVM_OPTS=.*$")) { it.value + "\n" + snippet })
+    }
+}
+
 tasks.named<JavaExec>("run") {
     workingDir = rootDir
 }
@@ -142,3 +152,42 @@ configurations.consumable("k2lCompilerRuntime") {
     attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named("k2l-compiler-runtime"))
     outgoing.artifact(layout.buildDirectory.dir("k2l-runtime")) { builtBy(k2lRuntimeLibs) }
 }
+
+// ---- Version: `k2l --version` reads it from a resource generated from gradle.properties ----
+
+tasks.processResources {
+    val k2lVersion = project.version.toString()
+    inputs.property("version", k2lVersion)
+    filesMatching("k2l-version.properties") { expand("version" to k2lVersion) }
+}
+
+// ---- Distribution: k2l-<version>.zip/.tar with bin/k2l, bin/k2l.bat, lib/*.jar, README and LICENSE ----
+
+distributions.main {
+    contents {
+        from(rootProject.file("README.md"))
+        // LICENSE is added as soon as the repository has one.
+        from(rootProject.fileTree(rootProject.projectDir) { include("LICENSE*") }.files)
+    }
+}
+
+// ---- Publishing: the runtime classpath as one zip, for the Gradle plugin ----
+
+// The compiler's POM lists the Analysis API jars, which are not on Maven Central, so a consumer can't resolve
+// the compiler transitively. The Gradle plugin therefore resolves this variant instead: one zip holding the
+// complete set of jars `k2l` runs with. (In this build the plugin's tests use the directory variant above.)
+val k2lRuntimeLibsZip = tasks.register<Zip>("k2lRuntimeLibsZip") {
+    from(k2lRuntimeLibs)
+    archiveClassifier.set("runtime-libs")
+    archiveExtension.set("zip")
+    destinationDirectory.set(layout.buildDirectory.dir("runtime-libs"))
+}
+
+val k2lCompilerRuntimeZip = configurations.consumable("k2lCompilerRuntimeZip") {
+    // A usage of its own keeps it apart from the directory variant above; the Gradle plugin accepts it (UsageRules.kt).
+    attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named("k2l-compiler-runtime-zip"))
+    outgoing.artifact(k2lRuntimeLibsZip)
+}
+
+// Publish only the zip variant: the directory of the variant above can't be published.
+(components["java"] as AdhocComponentWithVariants).addVariantsFromConfiguration(k2lCompilerRuntimeZip.get()) {}

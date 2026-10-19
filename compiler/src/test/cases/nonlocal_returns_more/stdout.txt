@@ -1,0 +1,62 @@
+finished [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30] [2, 4, 6, 8, 10, 12, 14] [1, 3, 5, 7, 9, 11, 13, 15] [e2, e4, e6, e8, e10, e12, e14] [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15] {1=v1, 2=v2, 3=v3, 4=v4, 5=v5, 6=v6, 7=v7, 8=v8, 9=v9, 10=v10, 11=v11, 12=v12, 13=v13, 14=v14, 15=v15} {10=1, 20=2, 30=3, 40=4, 50=5, 60=6, 70=7, 80=8, 90=9, 100=10, 110=11, 120=12, 130=13, 140=14, 150=15} {1=1, 2=4, 3=9, 4=16, 5=25, 6=36, 7=49, 8=64, 9=81, 10=100, 11=121, 12=144, 13=169, 14=196, 15=225} {1=[1, 4, 7, 10, 13], 2=[2, 5, 8, 11, 14], 0=[3, 6, 9, 12, 15]} [1, 3, 5, 7, 9, 11, 13, 15] [0:1, 1:2, 2:3, 3:4, 4:5, 5:6, 6:7, 7:8, 8:9, 9:10, 10:11, 11:12, 12:13, 13:14, 14:15]
+mapTo stopped, kept [2, 4]
+filterTo stopped, kept [2]
+filterNotTo stopped, kept [1]
+mapNotNullTo stopped, kept [e2]
+flatMapTo stopped, kept [1, 1, 2, 2]
+associateTo stopped, kept {1=v1, 2=v2}
+associateByTo stopped, kept {10=1, 20=2}
+associateWithTo stopped, kept {1=1, 2=4}
+groupByTo stopped, kept {1=[1], 2=[2]}
+filterIndexedTo stopped, kept [1]
+mapIndexedTo stopped, kept [0:1, 1:2]
+finished [] [] [] [] [] {} {} {} {} [] []
+finished [1, 3, 5, 7, 9, 11, 13, 15] [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15] 1121 1220 [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120] [1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120] [s, s1, s12, s123, s1234, s12345, s123456, s1234567, s12345678, s123456789, s12345678910, s1234567891011, s123456789101112, s12345678910111213, s1234567891011121314, s123456789101112131415] 120
+mapIndexedNotNull stopped at 2
+flatMapIndexed stopped at 2
+reduceIndexed stopped at 2 acc 3
+foldIndexed stopped at 2 acc 102
+runningFold stopped acc 3
+runningReduce stopped acc 3
+scan stopped acc s12
+sumOf stopped
+a=3 b=-1 c=6 d=[5, 6] e={fallback=1} m={x=1, abc=3}
+a=3 b=-1 c=-7 d=[5, 6] e={fallback=1} m={x=1, abc=3}
+a=3 b=-1 c=1 d=[500, 600] e={fallback=1} m={x=1, abc=3}
+a=3 b=-1 c=-5 d=[500, 600] e={fallback=1} m={x=1, abc=3}
+empty list
+getOrPut returned
+getOrElse returned
+{x=1, abc=3, bang=4}
+blank
+map stopped
+filter stopped
+count stopped
+any stopped
+all stopped
+indexOfFirst stopped
+takeWhile stopped
+dropWhile stopped
+sumOf stopped
+forEachIndexed stopped at 1
+closed a
+value 1
+closed a
+early from a
+closed a
+caught body failed
+closed inner
+closed outer
+early from inner in outer
+closed inner
+closed outer
+ran to the end
+closing fussy
+caught body failed
+left the lock
+got 42
+returned from runCatching
+result false null failed inside
+result true 30 null
+timed block left
+took true

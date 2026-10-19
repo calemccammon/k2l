@@ -1,0 +1,36 @@
+5 10 6 5 false
+-1 -2 null 0 true
+5 10 6 5 false
+getOrElse returned broken
+5 10 6 5 false
+onFailure returned broken
+onSuccess returned 5
+-1 -2 null 0 true
+fold success returned
+-1 -2 null 0 true
+5 10 6 5 false
+fold failure returned
+map returned
+-1 -2 null 0 true
+5 10 6 5 false
+recover returned broken
+50 null
+firstNotNullOf returned
+firstNotNullOfOrNull returned
+onEachIndexed returned at 2
+foldRight returned acc=654
+reduceRight returned acc=5
+array foldRight returned acc=0
+array reduceRight returned acc=3
+[0, 2, 6, 12, 20, 30] 654321 -3 321 6
+UnsupportedOperationException: Empty list can't be reduced.
+UnsupportedOperationException: Empty array can't be reduced.
+UnsupportedOperationException: Empty collection can't be reduced.
+UnsupportedOperationException: Empty array can't be reduced.
+NoSuchElementException: No element of the collection was transformed to a non-null value.
+no error
+{a=10, b=20, c=30} {aa=1, bb=2, cc=3} {a=1, c=3} [a, b, c]
+mapValuesTo returned, kept {a=10}
+mapKeysTo returned, kept {aa=1}
+filterTo returned, kept {a=1}
+mapTo returned, kept [a]

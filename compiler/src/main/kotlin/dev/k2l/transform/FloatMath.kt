@@ -22,8 +22,10 @@ internal fun FileTransformer.fround(e: LuaExpr): LuaExpr = lualibCall("Fround", 
 internal fun FileTransformer.roundedFloat(e: LuaExpr, lt: KaType?, rt: KaType?): LuaExpr = if (floatResult(lt, rt)) fround(e) else e
 
 /** `l / r` for numbers that are not both integral. */
-internal fun FileTransformer.floatDivision(l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr =
-    roundedFloat(LuaBinary(LuaBinOp.Div, l, r), lt, rt)
+internal fun FileTransformer.floatDivision(left: LuaExpr, lt: KaType?, right: LuaExpr, rt: KaType?): LuaExpr {
+    val (l, r) = long64Widen(left, lt, right, rt)
+    return roundedFloat(LuaBinary(LuaBinOp.Div, l, r), lt, rt)
+}
 
 /** Library calls whose `Float` overload computes in double precision on the JVM too, then narrows. */
 internal object FloatMappings {

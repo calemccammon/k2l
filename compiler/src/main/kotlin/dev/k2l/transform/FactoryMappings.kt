@@ -230,6 +230,7 @@ internal object FactoryMappings {
             -> primitiveArray(classId, site)
 
             else -> BigNumberMappings.construct(classId, site) ?: JdkCollectionsMappings.construct(classId, site)
+                ?: Utf16Mappings.construct(classId, site)
         }
     }
 

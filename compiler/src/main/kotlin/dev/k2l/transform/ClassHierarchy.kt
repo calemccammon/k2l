@@ -20,6 +20,8 @@ internal class SuperInfo(
     val sequenceBase: Boolean = false,
     /** The class extends `AbstractCoroutineContextElement(key)`, which the lualib implements. */
     val elementBase: Boolean = false,
+    /** The class implements `Sequence` next to a base class: the lualib `Sequence` is one of its interfaces. */
+    val sequenceMixin: Boolean = false,
 )
 
 /** Queries over the classes of the module being compiled: supertypes, initializers and `equals`. */
@@ -42,19 +44,7 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
     /** Top-level functions of the module's files. */
     fun topLevelFunctions(): List<KtNamedFunction> = module.files.flatMap { it.declarations.filterIsInstance<KtNamedFunction>() }
 
-    fun classInFile(id: ClassId): KtClassOrObject? {
-        var found: KtClassOrObject? = null
-        for (f in listOf(file) + module.files.filter { it != file }) {
-            if (found != null) break
-            f.accept(object : KtTreeVisitorVoid() {
-                override fun visitClassOrObject(classOrObject: KtClassOrObject) {
-                    if (found == null && classOrObject.getClassId() == id) found = classOrObject
-                    if (found == null) super.visitClassOrObject(classOrObject)
-                }
-            })
-        }
-        return found
-    }
+    fun classInFile(id: ClassId): KtClassOrObject? = module.classInFile(id, file)
 
     private val superInfoCache = HashMap<KtClassOrObject, SuperInfo>()
 
@@ -112,6 +102,6 @@ internal fun hasPrimary(c: KtClassOrObject) = c !is KtClass || c.primaryConstruc
 
 /** Whether [c] (or a source superclass) implements `Sequence`. */
 internal fun ClassHierarchy.isSequenceClass(c: KtClassOrObject): Boolean = superInfo(c).let {
-    it.sequenceBase ||
+    it.sequenceBase || it.sequenceMixin ||
         it.base?.let(::isSequenceClass) == true
 }

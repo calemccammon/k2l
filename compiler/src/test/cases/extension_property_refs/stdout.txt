@@ -1,0 +1,15 @@
+lastChar
+o
+d
+[b, d, z]
+lastChar of kotlin is n
+lastChar
+a
+a
+[3, 12]
+7
+[70, 8]
+first
+99
+[2, 1]
+100

@@ -16,12 +16,18 @@ enum class LuaTarget(val id: String) {
 
     /** Lualib variant suffixes to try, most specific first: `IDiv.float.lua` replaces `IDiv.lua`. */
     val lualibVariants: List<String>
-        get() = when (this) {
-            Lua54, Lua53 -> emptyList()
-            Lua52 -> listOf("52", "float")
-            Lua51 -> listOf("51", "float")
-            LuaJIT -> listOf("jit", "51", "float")
-        }
+        get() = lualibVariants(emulateLong64 = false)
+
+    /**
+     * With [emulateLong64] (`--long64 emulate`) the `l64` variants come first (`l64jit` on LuaJIT): `Exact.l64.lua`
+     * replaces `Exact.float.lua`. Targets with 64-bit integers have none.
+     */
+    fun lualibVariants(emulateLong64: Boolean): List<String> = when (this) {
+        Lua54, Lua53 -> emptyList()
+        Lua52 -> (if (emulateLong64) listOf("l64") else emptyList()) + listOf("52", "float")
+        Lua51 -> (if (emulateLong64) listOf("l64") else emptyList()) + listOf("51", "float")
+        LuaJIT -> (if (emulateLong64) listOf("l64jit", "l64") else emptyList()) + listOf("jit", "51", "float")
+    }
 
     companion object {
         fun parse(id: String): LuaTarget = entries.firstOrNull { it.id.equals(id, ignoreCase = true) }
@@ -68,11 +74,31 @@ enum class StringSemantics(val id: String) {
     }
 }
 
+/** How `Long` and `ULong` are represented on targets without 64-bit integers (Lua 5.1, 5.2 and LuaJIT). */
+enum class Long64(val id: String) {
+    /** A `Long` is a double: exact up to 2^53, and bitwise operations are 32-bit. Fastest, and the default. */
+    AsDouble("double"),
+
+    /** Exact 64-bit arithmetic: FFI `int64_t` on LuaJIT, a pair of 32-bit halves on 5.1 and 5.2. Slower. */
+    Emulate("emulate"),
+    ;
+
+    companion object {
+        fun parse(id: String): Long64 = entries.firstOrNull { it.id.equals(id, ignoreCase = true) }
+            ?: throw IllegalArgumentException("Unknown long64 mode '$id' (expected one of ${entries.joinToString { it.id }})")
+    }
+}
+
 data class CompilerOptions(
     val luaTarget: LuaTarget = LuaTarget.Lua54,
     val luaLibImport: LuaLibImport = LuaLibImport.Require,
     val intOverflow: IntOverflow = IntOverflow.Unchecked,
     val strings: StringSemantics = StringSemantics.Bytes,
+    /** Ignored on Lua 5.3 and 5.4, whose integers are already 64-bit. */
+    val long64: Long64 = Long64.AsDouble,
     /** Emit Source Map v3 files and make Lua errors and tracebacks report Kotlin positions. */
     val sourceMap: Boolean = false,
-)
+) {
+    /** Exact 64-bit `Long`/`ULong` are emulated: asked for, and the target has no integer subtype. */
+    val emulatesLong64: Boolean get() = long64 == Long64.Emulate && !luaTarget.hasIntegers
+}

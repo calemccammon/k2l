@@ -1,7 +1,7 @@
 -- requires: Utf16, Unicode, Numbers
 -- Unicode-aware Char classification and case mapping for --strings utf16, from the tables of Unicode.lua
--- (generated from the JDK). Locale-specific rules (Turkish dotted i, ...) are not applied: everything
--- behaves like Locale.ROOT. The final-sigma rule of String.lowercase() approximates Java's word-boundary
+-- (generated from the JDK). These are the rules of Locale.ROOT; the Turkish, Azeri and Lithuanian ones are in
+-- Utf16Locale.lua. The final-sigma rule of String.lowercase() approximates Java's word-boundary
 -- check: the sigma is final when the word it is in has a cased letter before it and none after it.
 local __K2L_Utf16Case = {}
 
@@ -265,6 +265,13 @@ do
             return a == b
         end
         return a == b or C.fold(a) == C.fold(b)
+    end
+
+    -- Regex IGNORE_CASE compares code points by this folding (Regex.lua loads before this file when it is used)
+    if __K2L_Regex ~= nil then
+        __K2L_Regex.____fold = foldUnit
+        __K2L_Regex.____upper = Uni.upper
+        __K2L_Regex.____lower = Uni.lower
     end
 
     function Text.caseInsensitiveOrder(a, b)

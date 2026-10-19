@@ -2,7 +2,8 @@
 -- kotlin.text.Regex: a backtracking matcher for the commonly used part of Java's regex syntax
 -- (classes, groups, named groups, alternation, greedy/lazy/possessive quantifiers, anchors, \b,
 -- lookaround, backreferences, inline flags). Strings are byte strings; `.` and negated classes
--- consume a whole UTF-8 character.
+-- consume a whole UTF-8 character. With --strings utf16 and Utf16Case loaded, IGNORE_CASE (and the inline flag (?u))
+-- compares characters by their Unicode case folding, as Java's UNICODE_CASE does.
 local __K2L_Regex = __K2L_Class("kotlin.text.Regex")
 local __K2L_MatchGroup = __K2L_Class("kotlin.text.MatchGroup")
 local __K2L_MatchResult = __K2L_Class("kotlin.text.MatchResult")
@@ -35,6 +36,19 @@ local function charLength(b)
         return 3
     end
     return 4
+end
+
+-- The code point of the UTF-8 character of `len` bytes at index i of s.
+local function decodeAt(s, i, len)
+    local b, b2, b3, b4 = s:byte(i, i + len - 1)
+    if len == 1 then
+        return b
+    elseif len == 2 then
+        return (b - 0xC0) * 64 + (b2 - 0x80)
+    elseif len == 3 then
+        return (b - 0xE0) * 4096 + (b2 - 0x80) * 64 + (b3 - 0x80)
+    end
+    return (b - 0xF0) * 262144 + (b2 - 0x80) * 4096 + (b3 - 0x80) * 64 + (b4 - 0x80)
 end
 
 local CLASSES = {
@@ -84,6 +98,7 @@ local function parse(pattern, options)
     local names = {}
     local flags = {
         ci = options.IGNORE_CASE == true,
+        uni = options.IGNORE_CASE == true and __K2L_Regex.____fold ~= nil,
         multiline = options.MULTILINE == true,
         dotall = options.DOT_MATCHES_ALL == true,
         comments = options.COMMENTS == true,
@@ -100,8 +115,19 @@ local function parse(pattern, options)
 
     local function literalNode(text)
         local items = {}
-        for i = 1, #text do
-            items[#items + 1] = {t = "char", c = text:byte(i), ci = flags.ci}
+        local fold = __K2L_Regex.____fold
+        local i = 1
+        while i <= #text do
+            local b = text:byte(i)
+            if flags.ci and flags.uni and fold ~= nil and (b >= 0xC0 or (b >= 65 and b <= 90) or (b >= 97 and b <= 122)) then
+                -- a letter compared by case folding: it also matches characters like the Kelvin sign
+                local len = b >= 0xC0 and charLength(b) or 1
+                items[#items + 1] = {t = "ufold", target = fold(decodeAt(text, i, len))}
+                i = i + len
+            else
+                items[#items + 1] = {t = "char", c = b, ci = flags.ci}
+                i = i + 1
+            end
         end
         if #items == 1 then
             return items[1]
@@ -111,7 +137,7 @@ local function parse(pattern, options)
 
     -- A set node: ascii byte predicates, literal multi-byte characters and class functions.
     local function newSet()
-        return {t = "set", bytes = {}, classes = {}, multi = {}, ranges = {}, neg = false, ci = flags.ci}
+        return {t = "set", bytes = {}, classes = {}, multi = {}, ranges = {}, cpRanges = {}, neg = false, ci = flags.ci, uni = flags.ci and flags.uni}
     end
 
     local function classNode(letter)
@@ -176,14 +202,14 @@ local function parse(pattern, options)
         elseif not inClass and (c == "z" or c == "Z") then
             return {t = "eol", absolute = true, final = c == "Z"}
         elseif not inClass and c:match("%d") then
-            return {t = "backref", index = tonumber(c)}
+            return {t = "backref", index = tonumber(c), ci = flags.ci, uni = flags.ci and flags.uni}
         elseif not inClass and c == "k" then
             local name = pattern:match("^<([%w_]+)>", pos)
             if name == nil then
                 fail("\\k is not followed by '<' for named capturing group")
             end
             pos = pos + #name + 2
-            return {t = "backref", name = name}
+            return {t = "backref", name = name, ci = flags.ci, uni = flags.ci and flags.uni}
         elseif c == "Q" then
             local close = pattern:find("\\E", pos, true)
             local text = pattern:sub(pos, (close or #pattern + 1) - 1)
@@ -249,6 +275,9 @@ local function parse(pattern, options)
                 for _, r in ipairs(inner.ranges) do
                     set.ranges[#set.ranges + 1] = r
                 end
+                for _, r in ipairs(inner.cpRanges) do
+                    set.cpRanges[#set.cpRanges + 1] = r
+                end
             elseif c == "&" and pattern:sub(pos, pos + 1) == "&&" then
                 fail("Class intersection is not supported")
             else
@@ -264,10 +293,20 @@ local function parse(pattern, options)
                 elseif peek() == "-" and pattern:sub(pos + 1, pos + 1) ~= "]" and pattern:sub(pos + 1, pos + 1) ~= "" then
                     pos = pos + 1
                     local last = readClassChar()
-                    if type(last) == "table" or #item ~= 1 or #last ~= 1 then
+                    if type(last) == "table" or charLength(item:byte()) ~= #item or charLength(last:byte()) ~= #last then
                         fail("Illegal character range")
                     end
-                    set.ranges[#set.ranges + 1] = {item:byte(), last:byte()}
+                    local lo, hi = decodeAt(item, 1, #item), decodeAt(last, 1, #last)
+                    if hi < lo then
+                        fail("Illegal character range")
+                    elseif hi < 128 then
+                        set.ranges[#set.ranges + 1] = {lo, hi}
+                    elseif lo < 128 then
+                        set.ranges[#set.ranges + 1] = {lo, 127}
+                        set.cpRanges[#set.cpRanges + 1] = {128, hi}
+                    else
+                        set.cpRanges[#set.cpRanges + 1] = {lo, hi}
+                    end
                 else
                     addToSet(set, item)
                 end
@@ -318,11 +357,13 @@ local function parse(pattern, options)
         local on, off = pattern:match("^([imsxu]*)%-?([imsx]*)", pos)
         local spec = pattern:match("^[imsxu%-]*", pos)
         pos = pos + #spec
-        local saved = {ci = flags.ci, multiline = flags.multiline, dotall = flags.dotall, comments = flags.comments}
+        local saved = {ci = flags.ci, uni = flags.uni, multiline = flags.multiline, dotall = flags.dotall, comments = flags.comments}
         local function apply(letters, value)
             for letter in letters:gmatch(".") do
                 if letter == "i" then
                     flags.ci = value
+                elseif letter == "u" then
+                    flags.uni = value and __K2L_Regex.____fold ~= nil
                 elseif letter == "m" then
                     flags.multiline = value
                 elseif letter == "s" then
@@ -408,7 +449,8 @@ local function parse(pattern, options)
             elseif kind == "atomic" then
                 return {t = "atomic", node = inner}
             elseif kind == "scoped" then
-                flags.ci, flags.multiline, flags.dotall, flags.comments = data.ci, data.multiline, data.dotall, data.comments
+                flags.ci, flags.uni, flags.multiline, flags.dotall, flags.comments =
+                    data.ci, data.uni, data.multiline, data.dotall, data.comments
             end
             return inner
         elseif c == "[" then
@@ -503,6 +545,22 @@ local function singleStep(node)
                 return i + 1
             end
         end
+    elseif t == "ufold" then
+        local target, fold = node.target, __K2L_Regex.____fold
+        return function(st, i)
+            local b = st.bytes[i]
+            if b == nil then
+                return nil
+            end
+            local cp, len = b, 1
+            if b >= 0xC0 then
+                len = charLength(b)
+                cp = decodeAt(st.s, i, len)
+            end
+            if fold(cp) == target then
+                return i + len
+            end
+        end
     elseif t == "any" then
         return function(st, i)
             local b = st.bytes[i]
@@ -512,7 +570,14 @@ local function singleStep(node)
             return i + charLength(b)
         end
     elseif t == "set" then
-        local ranges, bytes, classes, multi, neg, ci = node.ranges, node.bytes, node.classes, node.multi, node.neg, node.ci
+        local ranges, bytes, classes, multi, cpRanges, neg, ci =
+            node.ranges, node.bytes, node.classes, node.multi, node.cpRanges, node.neg, node.ci
+        local fold = node.uni and __K2L_Regex.____fold or nil
+        local upperOf, lowerOf = __K2L_Regex.____upper, __K2L_Regex.____lower
+        local multiCps = {}
+        for j, m in ipairs(multi) do
+            multiCps[j] = decodeAt(m, 1, #m)
+        end
         local function hasByte(b)
             if bytes[b] then
                 return true
@@ -529,6 +594,23 @@ local function singleStep(node)
             end
             return false
         end
+        -- membership of a code point, with its case
+        local function hasCodePoint(cp)
+            if cp < 128 then
+                return hasByte(cp)
+            end
+            for j = 1, #multiCps do
+                if multiCps[j] == cp then
+                    return true
+                end
+            end
+            for j = 1, #cpRanges do
+                if cp >= cpRanges[j][1] and cp <= cpRanges[j][2] then
+                    return true
+                end
+            end
+            return false
+        end
         return function(st, i)
             local b = st.bytes[i]
             if b == nil then
@@ -536,7 +618,23 @@ local function singleStep(node)
             end
             local hit
             local len = 1
-            if b >= 0xC0 then
+            if fold ~= nil then
+                -- compared by case folding, like Java's UNICODE_CASE: the char, its upper case and that one's lower case
+                local cp = b
+                if b >= 0xC0 then
+                    len = charLength(b)
+                    cp = decodeAt(st.s, i, len)
+                end
+                local up = upperOf(cp)
+                local folded = fold(cp)
+                hit = hasCodePoint(cp) or hasCodePoint(up) or hasCodePoint(lowerOf(up)) or
+                    (folded >= 97 and folded <= 122 and hasCodePoint(folded - 32))
+                for j = 1, #multiCps do
+                    if not hit and fold(multiCps[j]) == folded then
+                        hit = true
+                    end
+                end
+            elseif b >= 0xC0 then
                 len = charLength(b)
                 local text = st.s:sub(i, i + len - 1)
                 for _, m in ipairs(multi) do
@@ -544,6 +642,9 @@ local function singleStep(node)
                         hit = true
                         break
                     end
+                end
+                if not hit and #cpRanges > 0 then
+                    hit = hasCodePoint(decodeAt(text, 1, len))
                 end
             else
                 hit = hasByte(b)
@@ -659,6 +760,31 @@ local function compileRep(node)
     end
 end
 
+-- The index after the chars of `s` from index i that equal the chars of `text` ignoring case (ASCII, or by case folding when
+-- `unicode`), or nil.
+local function matchIgnoringCase(text, s, i, unicode)
+    local fold = unicode and __K2L_Regex.____fold or nil
+    local a, j = 1, i
+    while a <= #text do
+        local ca, cb = text:byte(a), s:byte(j)
+        if cb == nil then
+            return nil
+        end
+        local la, lb = 1, 1
+        if fold ~= nil then
+            if ca >= 0xC0 then la = charLength(ca) end
+            if cb >= 0xC0 then lb = charLength(cb) end
+            if fold(decodeAt(text, a, la)) ~= fold(decodeAt(s, j, lb)) then
+                return nil
+            end
+        elseif lowerByte(ca) ~= lowerByte(cb) then
+            return nil
+        end
+        a, j = a + la, j + lb
+    end
+    return j
+end
+
 function compile(node)
     local t = node.t
     local step = singleStep(node)
@@ -760,6 +886,12 @@ function compile(node)
             local text = st.s:sub(s, e - 1)
             if st.s:sub(i, i + #text - 1) == text then
                 return k(i + #text)
+            end
+            if node.ci then
+                local after = matchIgnoringCase(text, st.s, i, node.uni)
+                if after then
+                    return k(after)
+                end
             end
         end
     end

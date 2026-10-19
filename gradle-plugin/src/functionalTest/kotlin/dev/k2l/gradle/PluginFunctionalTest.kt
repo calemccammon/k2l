@@ -76,6 +76,17 @@ class PluginFunctionalTest {
     }
 
     @Test
+    fun long64OptionReachesTheCompiler() {
+        sampleProject("k2l { luaTarget = '5.1'; long64 = 'emulate' }")
+        write("src/main/kotlin/main.kt", "fun next(x: Long) = x + 1\n\nfun main() {\n    println(next(Long.MAX_VALUE))\n}\n")
+        val result = runner("compileKotlinToLua").build()
+        assertEquals(TaskOutcome.SUCCESS, result.task(":compileKotlinToLua")?.outcome, result.output)
+        val out = project.resolve("build/lua")
+        assertTrue(Files.readString(out.resolve("main.lua")).contains("__K2L_LAdd("), Files.readString(out.resolve("main.lua")))
+        assertTrue(Files.readString(out.resolve("lualib_bundle.lua")).contains("__K2L_Long64"))
+    }
+
+    @Test
     fun kotlinErrorFailsBuildWithDiagnostics() {
         sampleProject()
         write("src/main/kotlin/main.kt", "fun main() {\n    val x: Int = \"not a number\"\n}\n")

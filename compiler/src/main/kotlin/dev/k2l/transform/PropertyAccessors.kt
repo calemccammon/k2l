@@ -39,4 +39,6 @@ private fun FileTransformer.setterMethod(p: KtNamedDeclaration, ref: LuaExpr, fi
     emitMethod(ref, accessorName("set", p), listOf(param), setter?.let { accessorBody(it) } ?: listOf(assign(field, LuaName(param))))
 }
 
-private fun FileTransformer.accessorBody(accessor: KtPropertyAccessor): List<LuaStmt> = with(session) { collect { functionBody(accessor) } }
+private fun FileTransformer.accessorBody(accessor: KtPropertyAccessor): List<LuaStmt> = with(session) {
+    inFrame(FunctionFrame(FunctionFrame.Kind.Function, emptySet(), accessor)) { collect { functionBody(accessor) } }
+}

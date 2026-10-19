@@ -20,6 +20,7 @@ internal val FileTransformer.wrapsInt: Boolean get() = ctx.options.intOverflow =
 private const val TWO_31 = "0x80000000"
 private const val MASK_32 = "0xFFFFFFFF"
 private const val SMALL_FACTOR = 65536L
+private const val NEGATIVE_ZERO = -0.0
 
 private fun KaSession.isInt32(t: KaType?): Boolean =
     t != null && t.withoutFlexibility.let { it.isIntType || it.isShortType || it.isByteType }
@@ -49,7 +50,10 @@ internal fun FileTransformer.wrapInt32(value: LuaExpr): LuaExpr {
 private fun FileTransformer.unwrapInt32(e: LuaExpr): LuaExpr = ctx.int32Pending[e] ?: e
 
 /** `l op r` for `+`, `-` and `*`, wrapped to 32 bits when both operands are `Int`-like and wrapping is on. */
-internal fun FileTransformer.arithmetic(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr {
+internal fun FileTransformer.arithmetic(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr =
+    long64Arithmetic(op, l, lt, r, rt) ?: long64Widen(l, lt, r, rt).let { (a, b) -> narrowArithmetic(op, a, lt, b, rt) }
+
+private fun FileTransformer.narrowArithmetic(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr {
     val typed = if (floatResult(lt, rt)) fround(LuaBinary(op, l, r)) else unsignedArithmetic(op, l, lt, r, rt)
     if (typed != null) return typed
     if (!isInt32Arithmetic(lt, rt)) return LuaBinary(op, l, r)
@@ -60,14 +64,27 @@ internal fun FileTransformer.arithmetic(op: LuaBinOp, l: LuaExpr, lt: KaType?, r
     return wrapInt32(LuaBinary(op, unwrapInt32(l), unwrapInt32(r)))
 }
 
-internal fun FileTransformer.negation(value: LuaExpr, type: KaType?): LuaExpr {
+internal fun FileTransformer.negation(value: LuaExpr, type: KaType?): LuaExpr =
+    long64Negation(value, type) ?: negativeZero(value, type) ?: ordinaryNegation(value, type)
+
+/** `-0.0` of a floating literal: Lua 5.1 would merge the constant with 0.0, see [floatingLiteral]. */
+private fun FileTransformer.negativeZero(value: LuaExpr, type: KaType?): LuaExpr? {
+    val zero = value is LuaNumber && value.text.toDoubleOrNull() == 0.0
+    return if (zero && with(session) { type?.withoutFlexibility?.let { it.isDoubleType || it.isFloatType } == true }) {
+        floatingLiteral(NEGATIVE_ZERO)
+    } else {
+        null
+    }
+}
+
+private fun FileTransformer.ordinaryNegation(value: LuaExpr, type: KaType?): LuaExpr {
     val wrap = wrapsInt && with(session) { isInt32(type) } && value !is LuaNumber
     return if (wrap) wrapInt32(LuaUnary(LuaUnOp.Neg, unwrapInt32(value))) else LuaUnary(LuaUnOp.Neg, value)
 }
 
 /** `x + 1` / `x - 1` of `++` and `--`: wrapped to 32 bits for `Int`, to 16 or 8 bits for `Short` and `Byte`. */
 internal fun FileTransformer.stepped(op: LuaBinOp, read: LuaExpr, type: KaType?): LuaExpr =
-    bigNumberStep(op, read, type) ?: floatOrUnsignedStep(op, read, type) ?: integralStep(op, read, type)
+    long64Step(op, read, type) ?: bigNumberStep(op, read, type) ?: floatOrUnsignedStep(op, read, type) ?: integralStep(op, read, type)
 
 /** `++`/`--` of a `Float` (rounded to single precision) or an unsigned type (wrapped); null for other types. */
 private fun FileTransformer.floatOrUnsignedStep(op: LuaBinOp, read: LuaExpr, type: KaType?): LuaExpr? =
@@ -96,6 +113,7 @@ private fun FileTransformer.integralStep(op: LuaBinOp, read: LuaExpr, type: KaTy
 
 /** `l / r` of integers. With wrapping, `Int.MIN_VALUE / -1` is `Int.MIN_VALUE`, so only a positive literal divisor skips the wrap. */
 internal fun FileTransformer.integerDivision(l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr {
+    long64Division(remainder = false, l, lt, r, rt)?.let { return it }
     unsignedLongDivision(remainder = false, l, lt, r, rt)?.let { return it }
     val quotient = lualibCall("IDiv", l, r)
     val safe = (r as? LuaNumber)?.text?.toLongOrNull()?.let { it > 0 } == true
@@ -119,7 +137,10 @@ internal object IntOverflowMappings {
 }
 
 /** `a % b`: `math.fmod`, or `__K2L_IRem` (which throws on zero) for integers whose divisor is not a nonzero literal. */
-internal fun FileTransformer.remainder(l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr {
+internal fun FileTransformer.remainder(l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr =
+    long64Division(remainder = true, l, lt, r, rt) ?: long64Widen(l, lt, r, rt).let { (a, b) -> narrowRemainder(a, lt, b, rt) }
+
+private fun FileTransformer.narrowRemainder(l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr {
     unsignedLongDivision(remainder = true, l, lt, r, rt)?.let { return it }
     val integral = with(session) { lt != null && rt != null && lt.isIntegral && rt.isIntegral }
     val literal = (r as? LuaNumber)?.text?.toDoubleOrNull()?.let { it != 0.0 } == true

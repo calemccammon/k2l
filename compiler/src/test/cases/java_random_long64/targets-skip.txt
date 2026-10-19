@@ -1,3 +1,0 @@
-5.1: nextLong() and seeds above 2^53 need 64-bit integers
-5.2: nextLong() and seeds above 2^53 need 64-bit integers
-JIT: nextLong() and seeds above 2^53 need 64-bit integers

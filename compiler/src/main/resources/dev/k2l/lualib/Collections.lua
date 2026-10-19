@@ -71,6 +71,103 @@ local function stableSort(arr, n, less)
     return newList(src, n)
 end
 
+-- Whether `keys[1..n]` can be ordered with Lua's `<` and `>` exactly like __K2L_Compare: numbers (no NaN) or strings
+-- without supplementary characters (those order by UTF-16 code unit).
+local function directlyOrdered(keys, n)
+    local first = keys[1]
+    local t = type(first)
+    if t == "number" then
+        for i = 1, n do
+            local k = keys[i]
+            if type(k) ~= "number" or k ~= k then
+                return false
+            end
+        end
+        return true
+    elseif t == "string" then
+        for i = 1, n do
+            local k = keys[i]
+            if type(k) ~= "string" or k:find("[\240-\244]") then
+                return false
+            end
+        end
+        return true
+    end
+    return n == 0
+end
+
+-- Stable sort of arr[1..n] by the precomputed `keys` (keys[i] belongs to arr[i]), which are ordered by `<` directly.
+local function sortByKeys(arr, n, keys, descending)
+    local src, dst = {}, {}
+    for i = 1, n do
+        src[i] = i
+    end
+    local width = 1
+    while width < n do
+        local i = 1
+        while i <= n do
+            local mid, hi = math.min(i + width, n + 1), math.min(i + 2 * width, n + 1)
+            local a, b, k = i, mid, i
+            while a < mid and b < hi do
+                local ia, ib = src[a], src[b]
+                local takeB
+                if descending then
+                    takeB = keys[ib] > keys[ia]
+                else
+                    takeB = keys[ib] < keys[ia]
+                end
+                if takeB then
+                    dst[k] = ib
+                    b = b + 1
+                else
+                    dst[k] = ia
+                    a = a + 1
+                end
+                k = k + 1
+            end
+            while a < mid do
+                dst[k] = src[a]
+                a, k = a + 1, k + 1
+            end
+            while b < hi do
+                dst[k] = src[b]
+                b, k = b + 1, k + 1
+            end
+            i = i + 2 * width
+        end
+        src, dst = dst, src
+        width = width * 2
+    end
+    local out = {}
+    for i = 1, n do
+        out[i] = arr[src[i]]
+    end
+    return newList(out, n)
+end
+
+-- Sorts by `keys` (see sortByKeys); keys that are not plain numbers or strings go through __K2L_Compare.
+local function sortKeyed(arr, n, keys, descending)
+    if directlyOrdered(keys, n) then
+        return sortByKeys(arr, n, keys, descending)
+    end
+    local order = {}
+    for i = 1, n do
+        order[i] = i
+    end
+    local sorted = stableSort(order, n, function(a, b)
+        local c = __K2L_Compare(keys[a], keys[b])
+        if descending then
+            return c > 0
+        end
+        return c < 0
+    end)
+    local out = {}
+    for i = 1, n do
+        out[i] = arr[sorted[i]]
+    end
+    return newList(out, n)
+end
+
 local function illegalArgument(message)
     error(__K2L_IllegalArgumentException.new(message))
 end
@@ -468,22 +565,31 @@ function __K2L_Iterable:minOfOrNull(selector) return select(2, extreme(self, sel
 
 function __K2L_Iterable:sorted()
     local arr, n = self:____array()
-    return stableSort(arr, n, function(a, b) return __K2L_Compare(a, b) < 0 end)
+    return sortKeyed(arr, n, arr, false)
 end
 
 function __K2L_Iterable:sortedDescending()
     local arr, n = self:____array()
-    return stableSort(arr, n, function(a, b) return __K2L_Compare(a, b) > 0 end)
+    return sortKeyed(arr, n, arr, true)
+end
+
+-- The selector runs once per element (not once per comparison), and the sort compares plain keys directly.
+local function selectKeys(arr, n, selector)
+    local keys = {}
+    for i = 1, n do
+        keys[i] = selector(arr[i])
+    end
+    return keys
 end
 
 function __K2L_Iterable:sortedBy(selector)
     local arr, n = self:____array()
-    return stableSort(arr, n, function(a, b) return __K2L_Compare(selector(a), selector(b)) < 0 end)
+    return sortKeyed(arr, n, selectKeys(arr, n, selector), false)
 end
 
 function __K2L_Iterable:sortedByDescending(selector)
     local arr, n = self:____array()
-    return stableSort(arr, n, function(a, b) return __K2L_Compare(selector(a), selector(b)) > 0 end)
+    return sortKeyed(arr, n, selectKeys(arr, n, selector), true)
 end
 
 -- `comparator` is a Lua function (a, b) -> Int, from a Kotlin lambda or compareBy.
@@ -1691,8 +1797,10 @@ local NIL_KEY = {}
 
 -- Finds the slot of `key`: raw lookup for plain values, hashCode buckets plus equals() for objects.
 local function findSlot(self, key)
-    if type(key) == "table" and key.hashCode ~= nil then
-        local bucket = self.____buckets[key:hashCode()]
+    local kind = type(key)
+    if (kind == "table" and key.hashCode ~= nil) or kind == "cdata" then
+        -- cdata is an int64_t of --long64 emulate: table keys would compare it by identity
+        local bucket = self.____buckets[kind == "cdata" and __K2L_Hash(key) or key:hashCode()]
         if bucket ~= nil then
             for _, slot in ipairs(bucket) do
                 if __K2L_Equals(self.____keys[slot], key) then
@@ -1709,8 +1817,9 @@ local function addSlot(self, key)
     local slot = self.size + 1
     self.size = slot
     self.____keys[slot] = key
-    if type(key) == "table" and key.hashCode ~= nil then
-        local h = key:hashCode()
+    local kind = type(key)
+    if (kind == "table" and key.hashCode ~= nil) or kind == "cdata" then
+        local h = kind == "cdata" and __K2L_Hash(key) or key:hashCode()
         local bucket = self.____buckets[h]
         if bucket == nil then
             bucket = {}
@@ -1734,13 +1843,75 @@ local function reindex(self)
     self.____values = values
 end
 
+-- Removes the entry at `slot`, keeping the insertion order. The entries after it move down one slot, and their
+-- lookup entries are renumbered in place (no rehash of the map); only a key whose hashCode() changed since it was
+-- added falls back to rebuilding the lookup tables.
 local function removeSlot(self, slot)
     local n = self.size
-    local keys, values = self.____keys, self.____values
+    local keys, values, index, buckets = self.____keys, self.____values, self.____index, self.____buckets
+    local removed = keys[slot]
+    local stale = false
+    if type(removed) == "table" and removed.hashCode ~= nil then
+        local h = removed:hashCode()
+        local bucket = buckets[h]
+        if bucket == nil then
+            stale = true
+        else
+            for j = 1, #bucket do
+                if bucket[j] == slot then
+                    table.remove(bucket, j)
+                    break
+                end
+            end
+            if bucket[1] == nil then
+                buckets[h] = nil
+            end
+        end
+    else
+        index[removed == nil and NIL_KEY or removed] = nil
+    end
+    if next(buckets) == nil then
+        -- only plain keys (numbers, strings, ...): the common case, without the hashed-key bookkeeping
+        if values ~= nil then
+            for i = slot, n - 1 do
+                local key = keys[i + 1]
+                keys[i] = key
+                values[i] = values[i + 1]
+                index[key == nil and NIL_KEY or key] = i
+            end
+            values[n] = nil
+        else
+            for i = slot, n - 1 do
+                local key = keys[i + 1]
+                keys[i] = key
+                index[key == nil and NIL_KEY or key] = i
+            end
+        end
+        keys[n] = nil
+        self.size = n - 1
+        return
+    end
     for i = slot, n - 1 do
-        keys[i] = keys[i + 1]
+        local key = keys[i + 1]
+        keys[i] = key
         if values ~= nil then
             values[i] = values[i + 1]
+        end
+        if type(key) == "table" and key.hashCode ~= nil then
+            local bucket = buckets[key:hashCode()]
+            local found = false
+            if bucket ~= nil then
+                for j = 1, #bucket do
+                    if bucket[j] == i + 1 then
+                        bucket[j] = i
+                        found = true
+                        break
+                    end
+                end
+            end
+            stale = stale or not found
+        else
+            index[key == nil and NIL_KEY or key] = i
         end
     end
     keys[n] = nil
@@ -1748,7 +1919,9 @@ local function removeSlot(self, slot)
         values[n] = nil
     end
     self.size = n - 1
-    reindex(self)
+    if stale then
+        reindex(self)
+    end
 end
 
 ------------------------------------------------------------------ Set

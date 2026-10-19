@@ -15,18 +15,42 @@ internal fun FileTransformer.throwStatement(e: KtThrowExpression): Unit = with(s
  * matching jump is re-issued after the pcall; `finally` runs in between.
  */
 internal fun FileTransformer.tryInto(e: KtTryExpression, sink: ValueSink?): Unit = with(session) {
+    fun branch(body: KtExpression) = if (sink != null) valueInto(body, sink) else collect { block(body) }
+    val finally = e.finallyBlock?.finalExpression
+    lowerTry(
+        TryParts(
+            pcall = protectedCall(e),
+            body = { branch(e.tryBlock) },
+            handler = { result -> catchDispatch(e.catchClauses, result, ::branch) },
+            hasCatch = e.catchClauses.isNotEmpty(),
+            finally = finally?.let { f -> { _ -> collect { block(f) } } },
+        ),
+    )
+}
+
+/**
+ * The parts of a protected call, see [lowerTry]. [handler] gets the name of the variable that holds the error and is always
+ * evaluated, [hasCatch] tells whether it is used when there is a [finally], which gets the name of the success flag.
+ */
+internal class TryParts(
+    val pcall: LuaExpr,
+    val body: () -> List<LuaStmt>,
+    val handler: (String) -> List<LuaStmt>,
+    val hasCatch: Boolean,
+    val finally: ((String) -> List<LuaStmt>)?,
+)
+
+internal fun FileTransformer.lowerTry(parts: TryParts) {
     val ok = ctx.temp("ok")
     val result = ctx.temp("result")
     val returned = ctx.temp("returned")
     val exits = TryExits()
-    val pcall = protectedCall(e)
-    fun tryFunction(stmts: List<LuaStmt>): LuaExpr = luaCall(pcall, LuaFunction(emptyList(), exits.rewrite(stmts)))
-    fun branch(body: KtExpression) = if (sink != null) valueInto(body, sink) else collect { block(body) }
+    fun tryFunction(stmts: List<LuaStmt>): LuaExpr = luaCall(parts.pcall, LuaFunction(emptyList(), exits.rewrite(stmts)))
     fun resultNames() = if (exits.hasReturn) listOf(ok, result, returned) else listOf(ok, result)
 
-    val tryCall = tryFunction(branch(e.tryBlock))
-    val finally = e.finallyBlock?.finalExpression
-    val dispatch = catchDispatch(e.catchClauses, result, ::branch)
+    val tryCall = tryFunction(parts.body())
+    val dispatch = parts.handler(result)
+    val finally = parts.finally
     if (finally == null) {
         val names = resultNames()
         emit(LuaLocal(names, listOf(tryCall)))
@@ -34,13 +58,13 @@ internal fun FileTransformer.tryInto(e: KtTryExpression, sink: ValueSink?): Unit
         val failed = LuaUnary(LuaUnOp.Not, LuaName(ok))
         if (onSuccess.isNotEmpty()) emit(LuaIf(LuaName(ok), onSuccess, dispatch)) else emit(LuaIf(failed, dispatch))
     } else {
-        val catchCall = if (e.catchClauses.isNotEmpty()) tryFunction(dispatch) else null
+        val catchCall = if (parts.hasCatch) tryFunction(dispatch) else null
         val names = resultNames()
         emit(LuaLocal(names, listOf(tryCall)))
         if (catchCall != null) {
             emit(LuaIf(LuaUnary(LuaUnOp.Not, LuaName(ok)), listOf(LuaAssign(names.map { LuaName(it) }, listOf(catchCall)))))
         }
-        emitAll(collect { block(finally) })
+        emitAll(finally(ok))
         emit(LuaIf(LuaUnary(LuaUnOp.Not, LuaName(ok)), listOf(LuaCallStmt(luaCall(LuaName("error"), LuaName(result), LuaNumber("0"))))))
         emitAll(exits.reissue(result, returned))
     }

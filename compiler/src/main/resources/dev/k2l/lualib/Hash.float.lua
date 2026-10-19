@@ -94,6 +94,9 @@ local function __K2L_Hash(value)
         return __K2L_ToInt32(h)
     elseif t == "table" and value.hashCode ~= nil then
         return value:hashCode()
+    elseif t == "cdata" then
+        -- an int64_t of --long64 emulate: Long.hashCode()
+        return bit.tobit(bit.bxor(value, bit.rshift(value, 32)))
     end
     return __K2L_IdentityHash(value)
 end
