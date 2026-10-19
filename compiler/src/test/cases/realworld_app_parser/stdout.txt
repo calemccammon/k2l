@@ -1,0 +1,22 @@
+1 + 2 * 3  =>  (1 + (2 * 3)) = 7.0
+(1 + 2) * 3  =>  ((1 + 2) * 3) = 9.0
+x * x + y * y  =>  ((x * x) + (y * y)) = 25.0
+-x + 10 / 4  =>  (-x + (10 / 4)) = -0.5
+max(x, y, 2) * rate  =>  (max(x, y, 2) * rate) = 2.0
+sum(1, 2, 3, 4) % 3  =>  (sum(1, 2, 3, 4) % 3) = 1.0
+min()  =>  min() fails: NoSuchElementException
+unknown + 1  =>  (unknown + 1) fails: unknown variable unknown
+foo(1)  =>  foo(1) fails: unknown function foo/1
+7 / (y - 4)  =>  (7 / (y - 4)) fails: division by zero
+2 *  =>  syntax error: expected end of input at '*'@2
+(1 + 2  =>  syntax error: expected ")" at <end>
+3 $ 4  =>  syntax error: expected end of input at '$ 4'@2
+  12.5    =>  12.5 = 12.5
+{"name":"k2l","tags":["lua","kotlin"],"stars":42,"meta":{"license":null}}
+[1,2.5,[],{}]
+error: expected "}" at '"a": [1,'@1
+error: expected "}" at '"untermi'@1
+k has 3 items, sum 6.0
+Success(value=10, rest='rest'@0)
+Failure(expected=nothing, at=<end>)
+Success(value=[a, b, b, a], rest='c'@4)

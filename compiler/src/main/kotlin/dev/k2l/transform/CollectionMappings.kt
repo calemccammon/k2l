@@ -38,6 +38,10 @@ enum class CollectionKind {
     val isIndexable: Boolean get() = this == List || this == Array
 }
 
+/** The empty collection `null.orEmpty()` is, by kind. */
+private val EMPTY_OF = mapOf(CollectionKind.Set to "__K2L_ReadOnlySetOf", CollectionKind.Array to "__K2L_ArrayOf")
+private const val EMPTY_LIST = "__K2L_ReadOnlyListOf"
+
 /** `StringBuilder.append(text, start, end)` */
 private const val APPEND_RANGE_ARITY = 3
 
@@ -223,7 +227,7 @@ fun featureOf(luaName: String) = when {
 
     luaName == "__K2L_Regex" -> "Regex"
 
-    luaName in DEQUE_CLASSES -> DEQUES_FEATURE
+    luaName in DEQUE_CLASSES || luaName in DEQUE_INTERFACES -> DEQUES_FEATURE
 
     luaName.startsWith("__K2L_Compare") || luaName.startsWith("__K2L_Then") || luaName.startsWith("__K2L_Nulls") ||
         luaName == "__K2L_ReverseComparator" ||
@@ -249,6 +253,28 @@ internal const val DEQUES_FEATURE = "Deques"
 
 /** The lualib classes of `kotlin.collections.ArrayDeque`, `java.util.ArrayDeque` and `java.util.LinkedList`. */
 internal val DEQUE_CLASSES = setOf("__K2L_ArrayDeque", "__K2L_Deque", "__K2L_LinkedList")
+
+/** The lualib markers of `java.util.Queue` and `Deque`, which java.util.ArrayDeque, LinkedList and PriorityQueue implement. */
+private val DEQUE_INTERFACES = setOf("__K2L_QueueInterface", "__K2L_DequeInterface")
+
+/**
+ * Lua classes for `is`/`as` against library collection classes and interfaces that share their kind's representation
+ * with others (`is java.util.ArrayDeque` must not accept an ArrayList, `is Queue` a list): see `Deques.lua`.
+ */
+val SPECIFIC_COLLECTION_CLASSES = mapOf(
+    "java/util/ArrayDeque" to "__K2L_Deque",
+    "java/util/LinkedList" to "__K2L_LinkedList",
+    "kotlin/collections/ArrayDeque" to "__K2L_ArrayDeque",
+    "java/util/Queue" to "__K2L_QueueInterface",
+    "java/util/Deque" to "__K2L_DequeInterface",
+    "java/util/PriorityQueue" to "__K2L_PriorityQueue",
+    "java/util/TreeSet" to "__K2L_SortedSet",
+    "java/util/SortedSet" to "__K2L_SortedSet",
+    "java/util/NavigableSet" to "__K2L_SortedSet",
+    "java/util/TreeMap" to "__K2L_SortedMap",
+    "java/util/SortedMap" to "__K2L_SortedMap",
+    "java/util/NavigableMap" to "__K2L_SortedMap",
+)
 
 /** Collection, string and pair functions of the Kotlin stdlib. */
 @Suppress("TooManyFunctions") // one small mapper per receiver kind
@@ -300,6 +326,7 @@ object CollectionMappings {
         "filterNot", "mapValuesTo", "mapKeysTo", "orEmpty", "iterator", "asIterable", "toSortedMap", "firstKey", "lastKey",
         "firstEntry", "lastEntry", "floorKey", "lowerKey", "ceilingKey", "higherKey", "floorEntry", "lowerEntry", "ceilingEntry",
         "higherEntry", "pollFirstEntry", "pollLastEntry", "headMap", "tailMap", "subMap", "descendingMap", "descendingKeySet",
+        "navigableKeySet",
         "filterTo", "ifEmpty",
     )
 
@@ -486,6 +513,14 @@ object CollectionMappings {
                     site.unsupported("'appendCodePoint' without --strings utf16")
                 }
 
+            // the code point functions of String, on the builder's text
+            "codePointAt", "codePointBefore", "codePointCount", "offsetByCodePoints" ->
+                if (site.utf16) {
+                    site.u16(name, LuaMethodCall(self, "toString", emptyList()), *args.toTypedArray())
+                } else {
+                    site.unsupported("'$name' without --strings utf16")
+                }
+
             else -> null
         }
     }
@@ -574,7 +609,12 @@ object CollectionMappings {
 
             "indices" -> LuaMethodCall(self, "getIndices", emptyList())
 
-            "lastIndex" -> LuaBinary(LuaBinOp.Sub, LuaIndex(self, LuaString("size")), LuaNumber("1"))
+            // of a class of the program (which may override size): its getLastIndex, which calls size()
+            "lastIndex" -> if (isSourceClass(site)) {
+                LuaMethodCall(self, "getLastIndex", emptyList())
+            } else {
+                LuaBinary(LuaBinOp.Sub, LuaIndex(self, LuaString("size")), LuaNumber("1"))
+            }
 
             "add", "addAll", "asList", "remove" -> renamedMember(name, site)
 
@@ -605,12 +645,21 @@ object CollectionMappings {
 
             "toString" -> null
 
+            // the array type of the result (`listOf("a").toTypedArray()` is a String[])
+            "toTypedArray" -> LuaMethodCall(self, name, listOfNotNull(FactoryMappings.arrayBinary(site)?.let { LuaString(it) }))
+
             "isNullOrEmpty" -> LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.Eq, self, LuaNil), LuaMethodCall(self, "isEmpty", emptyList()))
 
-            "orEmpty" -> LuaBinary(LuaBinOp.Or, self, LuaCall(site.ref("Collections", "__K2L_ListOf"), emptyList()))
+            // null.orEmpty() is emptyList() (emptySet() for a set, an empty array for an array)
+            "orEmpty" -> LuaBinary(LuaBinOp.Or, self, LuaCall(site.ref("Collections", EMPTY_OF[kind] ?: EMPTY_LIST), emptyList()))
 
             else -> if (name in ITERABLE_METHODS) LuaMethodCall(self, name, site.args) else null
         }
+    }
+
+    private fun isSourceClass(site: CallSite): Boolean = with(site.session) {
+        val psi = site.receiverType?.expandedSymbol?.psi as? org.jetbrains.kotlin.psi.KtClassOrObject
+        psi != null && site.transformer.classes.isSource(psi)
     }
 
     /** Members whose lualib name depends on the arguments or the receiver's type. */
@@ -648,6 +697,9 @@ object CollectionMappings {
             "entries" -> LuaMethodCall(self, "getEntries", emptyList())
 
             "contains" -> LuaMethodCall(self, "containsKey", site.args)
+
+            // null.orEmpty() is emptyMap()
+            "orEmpty" -> LuaBinary(LuaBinOp.Or, self, LuaCall(site.ref("Collections", "__K2L_ReadOnlyMapOf"), emptyList()))
 
             "plusAssign" -> LuaMethodCall(self, if (isMapOrIterable(site)) "putAll" else "set", pairArguments(site))
 

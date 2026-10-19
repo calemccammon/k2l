@@ -1,9 +1,8 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_Array = ____lualib.__K2L_Array
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_IsArray = ____lualib.__K2L_IsArray
 local __K2L_Jump = ____lualib.__K2L_Jump
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_NewJump = ____lualib.__K2L_NewJump
@@ -17,9 +16,9 @@ local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_Unit = ____lualib.__K2L_Unit
 
 local function show(v)
-    if __K2L_InstanceOf(v, __K2L_Array) then
+    if __K2L_IsArray(v) then
         return v:contentToString()
-    elseif __K2L_InstanceOf(v, __K2L_Array) then
+    elseif __K2L_IsArray(v, "[I") then
         return v:contentToString()
     else
         return __K2L_Str(v)
@@ -856,7 +855,7 @@ function Returns2:t_Array_ctor(f)
                 __K2L_Jump(____jump_39, 1, "R")
             end
             return it
-        end, true)
+        end, "[Ljava.lang.Integer;")
     end)
     if not ____ok_39 then
         if ____result_39 == ____jump_39 then
@@ -877,7 +876,7 @@ function Returns2:t_IntArray_ctor(f)
                 __K2L_Jump(____jump_40, 1, "R")
             end
             return it
-        end, true)
+        end, "[I")
     end)
     if not ____ok_40 then
         if ____result_40 == ____jump_40 then
@@ -1184,7 +1183,7 @@ function Breaks1:t_IntArray_ctor(f)
                     __K2L_Jump(____jump_53, 1)
                 end
                 return it
-            end, true)
+            end, "[I")
         end)
         if not ____ok_53 then
             if ____result_53 == ____jump_53 then
@@ -1509,7 +1508,7 @@ function Continues1:t_IntArray_ctor(f)
                         __K2L_Jump(____jump_65, 1)
                     end
                     return it
-                end, true)
+                end, "[I")
             end)
             if not ____ok_65 then
                 if ____result_65 == ____jump_65 then

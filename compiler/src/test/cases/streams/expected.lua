@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Collectors = ____lualib.__K2L_Collectors
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
@@ -21,6 +20,7 @@ local __K2L_Streams = ____lualib.__K2L_Streams
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Person = __K2L_Class("Person")
 
@@ -50,10 +50,10 @@ local function sources()
     print(__K2L_Str(__K2L_Streams.of(__K2L_IntStream, __K2L_ListOf(5, 6, 7)):boxed():collect(__K2L_Collectors.toList())))
     print(__K2L_Streams.of(__K2L_IntStream, __K2L_ListOf(9)):sum())
     print(__K2L_Streams.empty(__K2L_IntStream):sum())
-    print(__K2L_Streams.ofArray(__K2L_IntStream, __K2L_ArrayOf(4, 8, 15, 16, 23, 42)):sum())
-    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_IntStream, __K2L_ArrayOf(4, 8, 15, 16, 23, 42), 1, 4):boxed():toList()))
-    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_Stream, __K2L_ArrayOf("p", "q", "r")):map(function(it) return it:upper() end):toList()))
-    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_ArrayOf(1.5, 2.5, 4.0)):sum()))
+    print(__K2L_Streams.ofArray(__K2L_IntStream, __K2L_TypedArrayOf("[I", 4, 8, 15, 16, 23, 42)):sum())
+    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_IntStream, __K2L_TypedArrayOf("[I", 4, 8, 15, 16, 23, 42), 1, 4):boxed():toList()))
+    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_Stream, __K2L_TypedArrayOf("[Ljava.lang.String;", "p", "q", "r")):map(function(it) return it:upper() end):toList()))
+    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_TypedArrayOf("[D", 1.5, 2.5, 4.0)):sum()))
     local list = __K2L_ReadOnlyListOf(3, 1, 2)
     print(__K2L_Str(__K2L_Streams.ofCollection(list):map(function(it) return it * 2 end):collect(__K2L_Collectors.toList())))
     print(__K2L_Streams.ofCollection(__K2L_ReadOnlySetOf("x", "y")):count())
@@ -75,7 +75,7 @@ local function sources()
 end
 
 local function intStreams()
-    local numbers = __K2L_ArrayOf(5, 3, 8, 1, 9, 2, 8)
+    local numbers = __K2L_TypedArrayOf("[I", 5, 3, 8, 1, 9, 2, 8)
     print(__K2L_Streams.ofArray(__K2L_IntStream, numbers):max():getAsInt())
     print(__K2L_Streams.ofArray(__K2L_IntStream, numbers):min():getAsInt())
     print(__K2L_Streams.ofArray(__K2L_IntStream, numbers):max():isPresent())
@@ -120,18 +120,18 @@ local function intStreams()
 end
 
 local function doubleStreams()
-    local values = __K2L_ArrayOf(0.1, 0.2, 0.3, 0.4, 1.0E10, -1.0E10)
+    local values = __K2L_TypedArrayOf("[D", 0.1, 0.2, 0.3, 0.4, 1.0E10, -1.0E10)
     print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, values):sum()))
-    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_ArrayOf(0.1, 0.2, 0.3)):sum()))
-    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_ArrayOf(0.1, 0.2, 0.3)):average()))
+    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_TypedArrayOf("[D", 0.1, 0.2, 0.3)):sum()))
+    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_TypedArrayOf("[D", 0.1, 0.2, 0.3)):average()))
     print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, values):max():getAsDouble()))
     print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, values):min():getAsDouble()))
     print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, values):filter(function(it) return it < 1 and it > 0 end):map(function(it) return it * 2 end):boxed():toList()))
     print(__K2L_Streams.ofArray(__K2L_DoubleStream, values):filter(function(it) return it > 0.25 end):count())
     print(__K2L_Streams.empty(__K2L_DoubleStream):average():isPresent())
-    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_ArrayOf(0.5, 1.5)):mapToObj(function(it) return "v" .. __K2L_Str(it) end):toList()))
-    print(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_ArrayOf(2.5, 3.5)):mapToInt(function(it) return __K2L_DoubleToInt(it) end):sum())
-    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_ArrayOf(1.5, 2.5, 3.5)):toArray():toList()))
+    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_TypedArrayOf("[D", 0.5, 1.5)):mapToObj(function(it) return "v" .. __K2L_Str(it) end):toList()))
+    print(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_TypedArrayOf("[D", 2.5, 3.5)):mapToInt(function(it) return __K2L_DoubleToInt(it) end):sum())
+    print(__K2L_Str(__K2L_Streams.ofArray(__K2L_DoubleStream, __K2L_TypedArrayOf("[D", 1.5, 2.5, 3.5)):toArray():toList()))
 end
 
 local function objectStreams()

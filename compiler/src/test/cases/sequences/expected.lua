@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
@@ -27,6 +26,7 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
 
 local Countdown
@@ -221,7 +221,7 @@ local function sources()
     print("-- sources")
     print(__K2L_AsSequence("hey"):map(function(it) return it:upper() end):joinToString(""))
     print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlyMapOf(__K2L_Pair.new(1, "one"), __K2L_Pair.new(2, "two"))):map(function(it) return it.key .. "=" .. it.value end):toList()))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_ArrayOf(5, 6, 7)):filter(function(it) return it ~= 6 end):toList()))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 5, 6, 7)):filter(function(it) return it ~= 6 end):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlySetOf("s", "t")):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_IntRange.new(10, 1, -1):withStep(3)):toList()))
     local custom = __K2L_SequenceFromIterator(function()

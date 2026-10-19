@@ -43,17 +43,21 @@ local function main()
     print(__K2L_Str(ages:getKeys()))
     print(__K2L_Str(ages:getValues()))
     print(ages:getOrDefault("zed", 0))
-    for name, age in ages:iter() do
+    local ____keys, ____values, ____n = ages:____arrays()
+    for ____i = 1, ____n do
+        local name, age = ____keys[____i], ____values[____i]
         print(name .. " is " .. age)
     end
-    for _, ____entry in ipairs(ages:getEntries()) do
+    local ____items, ____n_1 = ages:____entryArray()
+    for ____i_1 = 1, ____n_1 do
+        local ____entry = ____items[____i_1]
         do
             local k, v = ____entry.key, ____entry.value
             io.write(k .. "=" .. v .. " ")
         end
     end
     print()
-    for k, v in ages:iter() do
+    for k, v in ages:iter(true) do
         io.write(k .. ":" .. v .. " ")
     end
     print()
@@ -97,7 +101,9 @@ local function main()
     print(__K2L_Equals(__K2L_ReadOnlySetOf(1, 2), __K2L_ReadOnlySetOf(2, 1)))
     print(__K2L_Str(__K2L_ReadOnlyListOf(3, 3, 1):toSet()))
     local sum = 0
-    for _, x in ipairs(s:toList()) do
+    local ____items_1, ____n_2 = s:____array()
+    for ____i_2 = 1, ____n_2 do
+        local x = ____items_1[____i_2]
         sum = sum + x
     end
     print(sum)

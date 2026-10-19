@@ -252,8 +252,14 @@ function EventBus:publish(event)
         self.history:removeFirst()
     end
     local topic = __K2L_KClassOfValue(event).simpleName or "?"
-    for _, it in ipairs((self.listeners:get(topic) or __K2L_ListOf()):plusAll(self.listeners:get("*") or __K2L_ListOf())) do
+    local ____list = (self.listeners:get(topic) or __K2L_ReadOnlyListOf()):plusAll(self.listeners:get("*") or __K2L_ReadOnlyListOf())
+    local ____mod = ____list.____modCount
+    for ____i = 1, ____list.size do
+        local it = ____list[____i]
         it:onEvent(event)
+        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            break
+        end
     end
 end
 
@@ -445,10 +451,11 @@ local function main()
     __K2L_ClassInfo(____object_2, nil, "machine.MainKt$main$2", "class", false)
     function ____object_2:onEvent(event)
         cancellations = cancellations + 1
+        local ____arg = cancellations
         if not __K2L_InstanceOf(event, Event.Cancelled) then
             __K2L_CastFail(event, "machine.Event$Cancelled", "machine.Event.Cancelled")
         end
-        log:add("cancelled #" .. cancellations .. ": " .. event.reason)
+        log:add("cancelled #" .. ____arg .. ": " .. event.reason)
     end
     bus:subscribe("Cancelled", ____object_2)
     local script = __K2L_ReadOnlyListOf(Event.Placed.new(0, 25.0), Event.Placed.new(0, 99.5), Event.Placed.new(0, 7.25), Event.Paid.new(100, 25.0), Event.Shipped.new(100, "UPS"), Event.Delivered.new(100), Event.Paid.new(101, 99.5), Event.Cancelled.new(101, "changed mind"), Event.Delivered.new(102), Event.Cancelled.new(102, "out of stock"), Event.Paid.new(102, 7.25), Event.Paid.new(999, 1.0))
@@ -459,10 +466,17 @@ local function main()
         end
         processor:handle(event)
     end
-    for _, it in ipairs(log) do
+    local ____mod_1 = log.____modCount
+    for ____i_1 = 1, log.size do
+        local it = log[____i_1];
         (function(____p1) return print(__K2L_Str(____p1)) end)(it)
+        if log.____modCount ~= ____mod_1 and log:____comodified(____i_1) then
+            break
+        end
     end
-    for _, it in ipairs(processor:failures__1()) do
+    local ____list_1 = processor:failures__1()
+    for ____i_2 = 1, ____list_1.size do
+        local it = ____list_1[____i_2]
         print("! " .. it)
     end
     print(processor:report())

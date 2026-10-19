@@ -1,0 +1,3 @@
+a
+[Widget.Companion init, reference taken, Registry init, label Widget]
+[w]

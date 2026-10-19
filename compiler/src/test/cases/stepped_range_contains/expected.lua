@@ -88,7 +88,9 @@ local function main()
     end))
     print(tostring(9 >= 1 and 9 <= 10 and (9 - 1) % 2 == 0) .. " " .. tostring(10 >= 1 and 10 <= 10 and (10 - 1) % 2 == 0) .. " " .. __K2L_IntRange.new(1, 10):withStep(2).last)
     print(tostring(4 >= 1 and 4 <= 10 and (10 - 4) % 3 == 0) .. " " .. tostring(1 >= 1 and 1 <= 10 and (10 - 1) % 3 == 0) .. " " .. tostring(0 >= 1 and 0 <= 10 and (10 - 0) % 3 == 0))
-    for _, x in ipairs(__K2L_ReadOnlyListOf(0, 5, 10, 14, 17, 21, -3, 25, 26)) do
+    local ____list = __K2L_ReadOnlyListOf(0, 5, 10, 14, 17, 21, -3, 25, 26)
+    for ____i = 1, ____list.size do
+        local x = ____list[____i]
         io.write(classify(x) .. " ")
     end
     print()
@@ -128,13 +130,16 @@ local function main()
     print(____value_6 >= ____bound_12 and ____value_6 <= ____bound_11 and (____bound_11 - ____value_6) % ____step_3 == 0)
     local ____first_4 = ("a"):byte()
     local ____value_7 = ("e"):byte()
+    local ____arg = ____value_7 >= ____first_4 and ____value_7 <= ("z"):byte() and (____value_7 - ____first_4) % 4 == 0
     local ____first_5 = ("a"):byte()
     local ____value_8 = ("f"):byte()
+    local ____arg_1 = ____value_8 >= ____first_5 and ____value_8 <= ("z"):byte() and (____value_8 - ____first_5) % 4 == 0
     local ____first_6 = ("z"):byte()
     local ____value_9 = ("y"):byte()
+    local ____arg_2 = ____value_9 >= ("a"):byte() and ____value_9 <= ____first_6 and (____first_6 - ____value_9) % 3 == 0
     local ____first_7 = ("z"):byte()
     local ____value_10 = ("w"):byte()
-    print(tostring(____value_7 >= ____first_4 and ____value_7 <= ("z"):byte() and (____value_7 - ____first_4) % 4 == 0) .. " " .. tostring(____value_8 >= ____first_5 and ____value_8 <= ("z"):byte() and (____value_8 - ____first_5) % 4 == 0) .. " " .. tostring(____value_9 >= ("a"):byte() and ____value_9 <= ____first_6 and (____first_6 - ____value_9) % 3 == 0) .. " " .. tostring(____value_10 >= ("a"):byte() and ____value_10 <= ____first_7 and (____first_7 - ____value_10) % 3 == 0))
+    print(tostring(____arg) .. " " .. tostring(____arg_1) .. " " .. tostring(____arg_2) .. " " .. tostring(____value_10 >= ("a"):byte() and ____value_10 <= ____first_7 and (____first_7 - ____value_10) % 3 == 0))
     print(charKind("c") .. " " .. charKind("d") .. " " .. charKind("#"))
     local big = 3000000000
     local ____value_11 = big + 1
@@ -147,7 +152,9 @@ local function main()
         return it >= 2 and it <= 13 and (it - 2) % 5 == 0
     end)
     print(__K2L_Str(longs))
-    for _, s in ipairs(__K2L_ReadOnlyListOf(2, 0, -3)) do
+    local ____list_1 = __K2L_ReadOnlyListOf(2, 0, -3)
+    for ____i_1 = 1, ____list_1.size do
+        local s = ____list_1[____i_1]
         local ____ok, ____result = pcall(function()
             local ____step_4 = __K2L_CheckStep(s)
             print(5 >= 1 and 5 <= 10 and (5 - 1) % ____step_4 == 0)

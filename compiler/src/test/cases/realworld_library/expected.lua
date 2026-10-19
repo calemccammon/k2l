@@ -80,21 +80,28 @@ local function main()
     print(__K2L_Str(items))
     print(__K2L_Str(items:sorted():map(function(it) return it.title end)))
     local ruleSet = rules(3)
-    for _, m in ipairs(items) do
+    local ____mod = items.____modCount
+    for ____i = 1, items.size do
+        local m = items[____i]
         local problems = ruleSet:mapNotNull(function(it) return it:check(m) end)
         if problems:isNotEmpty() then
             print(m.id .. ": " .. __K2L_Str(problems))
+        end
+        if items.____modCount ~= ____mod and items:____comodified(____i) then
+            break
         end
     end
     print(__K2L_Str(ruleSet:last()))
     local clock = SimClock.new()
     local outbox = ____Desk.Outbox.new("mail to")
     local desk = ____Desk.Desk.new(clock, outbox)
-    desk:stock(__K2L_Unpack(items:toTypedArray()))
+    desk:stock(__K2L_Unpack(items:toTypedArray("[Llib.model.Media;")))
     local ann = ____Catalog.Member.new("Ann", 1)
     local ben = ____Catalog.Member.new("Ben", 2)
     local attempts = __K2L_ReadOnlyListOf(__K2L_Pair.new("B1", ann), __K2L_Pair.new("D1", ann), __K2L_Pair.new("B1", ben), __K2L_Pair.new("X9", ben), __K2L_Pair.new("B3", ann), __K2L_Pair.new("B2", ann), __K2L_Pair.new("d2", ben))
-    for _, ____item in ipairs(attempts) do
+    local ____mod_1 = attempts.____modCount
+    for ____i_1 = 1, attempts.size do
+        local ____item = attempts[____i_1]
         local id, member = ____item.first, ____item.second
         local ____ok, ____result = pcall(function()
             local loan = desk:checkout(member, id)
@@ -108,6 +115,9 @@ local function main()
             else
                 error(____error, 0)
             end
+        end
+        if attempts.____modCount ~= ____mod_1 and attempts:____comodified(____i_1) then
+            break
         end
     end
     clock:advance(10)
@@ -134,8 +144,14 @@ local function main()
         print("after close: " .. __K2L_Str(it.message))
     end)
     print("fines: " .. __K2L_Str(__K2L_ReadOnlyListOf(ann, ben):associate(function(it) return __K2L_Pair.new(it.name, it.fines) end)))
-    for _, it in ipairs(____Desk.Desk.Report.new(desk, "inventory"):lines()) do
+    local ____list = ____Desk.Desk.Report.new(desk, "inventory"):lines()
+    local ____mod_2 = ____list.____modCount
+    for ____i_2 = 1, ____list.size do
+        local it = ____list[____i_2];
         (function(____p1) return print(__K2L_Str(____p1)) end)(it)
+        if ____list.____modCount ~= ____mod_2 and ____list:____comodified(____i_2) then
+            break
+        end
     end
     print(desk:getAvailable():joinToString(nil, nil, nil, nil, nil, function(it) return it.id end))
     print(__K2L_Str(desk:log()))
@@ -161,7 +177,9 @@ local function main()
     end, function() return "lambda" end)
     print(__K2L_Str(actions:map(function(it) return it() end)))
     print("desks opened: " .. ____Desk.desksOpened)
-    for _, it in ipairs(items) do
+    local ____mod_3 = items.____modCount
+    for ____i_3 = 1, items.size do
+        local it = items[____i_3]
         do
             if __K2L_InstanceOf(it, ____Catalog.Dvd) then
                 goto ____inline_end
@@ -169,17 +187,29 @@ local function main()
             io.write(it.id .. " ")
             ::____inline_end::
         end
+        if items.____modCount ~= ____mod_3 and items:____comodified(____i_3) then
+            break
+        end
     end
     print()
     local ____value = __K2L_StringBuilder.new()
     local ____result_3
-    for _, ____entry in ipairs(items:groupBy(function(it) return __K2L_KClassOfValue(it).simpleName end):getEntries()) do
-        do
-            local k, v = ____entry.key, ____entry.value
-            ____value:append(__K2L_Str(k) .. "=" .. v.size .. ";")
+    do
+        local ____collection = items:groupBy(function(it) return __K2L_KClassOfValue(it).simpleName end)
+        local ____items, ____n = ____collection:____entryArray()
+        local ____mod_4 = ____collection.____modCount
+        for ____i_4 = 1, ____n do
+            local ____entry = ____items[____i_4]
+            do
+                local k, v = ____entry.key, ____entry.value
+                ____value:append(__K2L_Str(k) .. "=" .. v.size .. ";")
+            end
+            if ____collection.____modCount ~= ____mod_4 and ____collection:____comodified(____i_4, ____n) then
+                break
+            end
         end
+        ____result_3 = ____value:toString()
     end
-    ____result_3 = ____value:toString()
     local summary = ____result_3
     print(summary)
 end
@@ -237,6 +267,7 @@ Genre.KIDS = Genre.new("KIDS", 3)
 Genre.____values = {Genre.FICTION, Genre.SCIENCE, Genre.HISTORY, Genre.KIDS}
 local Media = __K2L_Class("lib.model.Media", nil, Identified)
 __K2L_ClassInfo(Media, "lib.model.Media", "lib.model.Media", "class")
+Media.____comparable = true
 
 function Media:____init(id, title)
     self.id = id
@@ -385,6 +416,7 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
+local __K2L_ListBuilderOf = ____lualib.__K2L_ListBuilderOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -420,8 +452,14 @@ end
 
 function Outbox:close()
     self.closed = true
-    for _, it in ipairs(self.messages) do
+    local ____list = self.messages
+    local ____mod = ____list.____modCount
+    for ____i = 1, ____list.size do
+        local it = ____list[____i];
         (function(____p1) return print(__K2L_Str(____p1)) end)(it)
+        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            break
+        end
     end
     self.messages:clear()
 end
@@ -441,7 +479,8 @@ end
 
 function Desk:stock(...)
     local items = __K2L_ArrayOf(...)
-    for _, it in ipairs(items) do
+    for ____i_1 = 1, items.size do
+        local it = items[____i_1]
         do
             local ____object = self.shelf
             local ____key = it.id
@@ -511,15 +550,24 @@ function Desk.Report:____init(____outer, title)
 end
 
 function Desk.Report:lines()
-    local ____builder = __K2L_ListOf()
-    ____builder:add("== " .. self.title .. " (day " .. self.____outer.clock.today .. ")")
-    for _, m in ipairs(self.____outer.shelf:getValues():toList()) do
-        do
-            local loan = self.____outer.active:firstOrNull(function(it) return __K2L_Equals(it.media, m) end)
-            ____builder:add(m:describe() .. " -> " .. (loan and loan.member.name .. " due d" .. loan:getDue() or "available"))
+    local ____builder = __K2L_ListBuilderOf()
+    do
+        ____builder:add("== " .. self.title .. " (day " .. self.____outer.clock.today .. ")")
+        local ____collection = self.____outer.shelf:getValues()
+        local ____items, ____n = ____collection:____array()
+        local ____mod_1 = ____collection.____modCount
+        for ____i_2 = 1, ____n do
+            local m = ____items[____i_2]
+            do
+                local loan = self.____outer.active:firstOrNull(function(it) return __K2L_Equals(it.media, m) end)
+                ____builder:add(m:describe() .. " -> " .. (loan and loan.member.name .. " due d" .. loan:getDue() or "available"))
+            end
+            if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_2, ____n) then
+                break
+            end
         end
     end
-    return ____builder
+    return ____builder:____build()
 end
 
 function Desk:notify(...)

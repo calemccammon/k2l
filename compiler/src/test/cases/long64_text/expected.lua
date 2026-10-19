@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_BigDecimal = ____lualib.__K2L_BigDecimal
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_Class = ____lualib.__K2L_Class
@@ -18,6 +17,7 @@ local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local P = __K2L_Class("P")
 
@@ -79,7 +79,7 @@ local function main()
     print((m or 0) + 1)
     print(__K2L_NotNull(m) - 1)
     print(__K2L_Str(__K2L_ReadOnlyListOf(big, max, 5):average()))
-    print(__K2L_Str(__K2L_ArrayOf(big, max):average()))
+    print(__K2L_Str(__K2L_TypedArrayOf("[J", big, max):average()))
     print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1, 2):sortedBy(function(it) return -it end, true)))
     print(__K2L_Str(__K2L_ReadOnlyListOf(big, max, 5):maxByOrNull(function(it) return math.fmod(it, 1000) end)))
     print(__K2L_ReadOnlyListOf(big, max, 5):maxOf(function(it) return math.fmod(it, 1000) end))
@@ -90,7 +90,7 @@ local function main()
     local elapsed = __K2L_Num.currentTimeMillis() - ms
     print(elapsed >= 0)
     print(elapsed < 1000)
-    local arr = __K2L_ListOfSize(3, 0, true)
+    local arr = __K2L_ListOfSize(3, 0, "[J")
     arr:set(0, max)
     arr:set(1, __K2L_IDiv(arr:get(0), 2))
     arr:set(2, arr:get(2) + big)
@@ -121,7 +121,7 @@ local function main()
     print(__K2L_Num.coerceIn(max, 0, big))
     print(tostring(9223372036854775807):reverse())
     print(__K2L_Num.toRadix(big, 10) == "5000000000000000000")
-    print(big)
+    print(__K2L_NotNull(big))
     print(__K2L_Str(__K2L_BigInteger.valueOf(big):multiply(__K2L_BigInteger.valueOf(big))))
     print(__K2L_BigInteger.valueOf(max):add(__K2L_BigInteger.ONE):toLong())
     print(__K2L_BigInteger.parse("123456789012345678901"):toLong())

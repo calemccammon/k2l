@@ -79,7 +79,9 @@ local function breakWithFinally()
 end
 
 local function throwingThenContinue()
-    for _, s in ipairs(__K2L_ReadOnlyListOf("1", "x", "3", "stop", "5")) do
+    local ____list = __K2L_ReadOnlyListOf("1", "x", "3", "stop", "5")
+    for ____i = 1, ____list.size do
+        local s = ____list[____i]
         do
             local ____ok_3, ____result_3 = pcall(function()
                 local n = __K2L_StringToInt(s)
@@ -368,7 +370,9 @@ local function doWhile()
 end
 
 local function firstEven(xs)
-    for _, x in ipairs(xs) do
+    local ____mod = xs.____modCount
+    for ____i_1 = 1, xs.size do
+        local x = xs[____i_1]
         local ____ok_14, ____result_14, ____returned_14 = pcall(function()
             if math.fmod(x, 2) == 0 then
                 return true, x
@@ -381,15 +385,23 @@ local function firstEven(xs)
         if ____result_14 then
             return ____returned_14
         end
+        if xs.____modCount ~= ____mod and xs:____comodified(____i_1) then
+            break
+        end
     end
     return -1
 end
 
 local function tryFirst(xs, f)
     local ____ok_15, ____result_15, ____returned_15 = pcall(function()
-        for _, x in ipairs(xs) do
+        local ____mod_1 = xs.____modCount
+        for ____i_2 = 1, xs.size do
+            local x = xs[____i_2]
             if f(x) then
                 return true, x
+            end
+            if xs.____modCount ~= ____mod_1 and xs:____comodified(____i_2) then
+                break
             end
         end
     end)
@@ -418,7 +430,9 @@ local function inTry(xs)
     local ____result_16
     do
         local ____ok_16, ____result_17, ____returned_16 = pcall(function()
-            for _, x in ipairs(xs) do
+            local ____mod_2 = xs.____modCount
+            for ____i_3 = 1, xs.size do
+                local x = xs[____i_3]
                 local ____result_18
                 if x > 5 then
                     return true, 5
@@ -428,6 +442,9 @@ local function inTry(xs)
                 if ____result_18 then
                     ____result_16 = x
                     return 1
+                end
+                if xs.____modCount ~= ____mod_2 and xs:____comodified(____i_3) then
+                    break
                 end
             end
         end)

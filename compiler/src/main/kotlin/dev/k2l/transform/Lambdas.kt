@@ -224,15 +224,19 @@ private fun FileTransformer.constructorReference(e: KtCallableReferenceExpressio
         ?: return libraryConstructorReference(e, symbol)
             ?: unsupported(e, "Reference to the library constructor '${symbol.containingClassId?.asString()}'")
     val constructor = LuaIndex(classRef(cls), LuaString("new" + constructorSuffix(psi)))
+    val params = (psi as? KtConstructor<*>)?.valueParameters ?: (cls as? KtClass)?.primaryConstructorParameters.orEmpty()
     return if (isInner(cls) && (e.receiverExpression == null || isBoundReference(e))) {
-        innerConstructorReference(e, cls, constructor)
+        varargAdapter(e, params, 0, innerConstructorReference(e, cls, constructor))
     } else {
-        constructor
+        varargAdapter(e, params, if (isInner(cls)) 1 else 0, constructor)
     }
 }
 
-/** A referenced callable as a Lua [function], and the value a bound reference closes over. */
-internal class ReferenceValue(val function: LuaExpr, val receiver: LuaExpr?)
+/**
+ * A referenced callable as a Lua [function], and the value a bound reference closes over; the function takes [leading]
+ * receivers before the value arguments (`String::shout`, `Type::method`).
+ */
+internal class ReferenceValue(val function: LuaExpr, val receiver: LuaExpr?, val leading: Int = 0)
 
 internal fun FileTransformer.callableReference(e: KtCallableReferenceExpression): LuaExpr = with(session) {
     val symbol = e.callableReference.mainReference.resolveToSymbol()
@@ -243,7 +247,7 @@ internal fun FileTransformer.callableReference(e: KtCallableReferenceExpression)
         psi is KtNamedFunction && psi.isMemberExtension() -> unsupported(e, "Reference to a member extension function")
 
         psi is KtNamedFunction && classes.isSource(psi) && symbol is KaCallableSymbol ->
-            functionReference(e, psi).let { named(e, symbol, it.function, it.receiver) }
+            functionReference(e, psi).let { named(e, symbol, varargAdapter(e, psi.valueParameters, it.leading, it.function), it.receiver) }
 
         (psi is KtProperty || psi is KtParameter) && classes.isSource(psi) ->
             propertyReference(e, psi as KtNamedDeclaration) ?: unsupported(e, "This property reference")
@@ -283,7 +287,9 @@ private fun FileTransformer.functionReference(e: KtCallableReferenceExpression, 
         val fn = if (psi.isTopLevel) topLevelRef(psi) else LuaName(naming.function(psi))
         // An extension function already takes its receiver first, so `String::shout` is just `shout`. Only extensions can
         // have a receiver here: Kotlin rejects `x::f` and `pkg::f` for other top-level and local functions.
-        if (boundReceiver == null || psi.receiverTypeReference == null) return ReferenceValue(fn, null)
+        if (boundReceiver == null || psi.receiverTypeReference == null) {
+            return ReferenceValue(fn, null, if (psi.receiverTypeReference != null) 1 else 0)
+        }
         val target = cache(expression(boundReceiver), "receiver")
         return ReferenceValue(
             LuaFunction(emptyList(), listOf(LuaReturn(listOf(LuaCall(fn, listOf(target) + rest)))), isVararg = true),
@@ -305,6 +311,7 @@ private fun FileTransformer.functionReference(e: KtCallableReferenceExpression, 
     ReferenceValue(
         LuaFunction(listOf("self"), listOf(LuaReturn(listOf(LuaMethodCall(LuaName("self"), method, rest)))), isVararg = true),
         null,
+        1,
     )
 }
 

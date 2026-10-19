@@ -91,7 +91,9 @@ local function arithmetic()
     print(__K2L_Str(a:max(b)))
     print(__K2L_Str(__K2L_BigDecimal.parse("123456789.123456789"):multiply(__K2L_BigDecimal.parse("987654321.987654321"))))
     local total = __K2L_BigDecimal.ZERO
-    for _, price in ipairs(__K2L_ReadOnlyListOf("19.99", "5.01", "0.10", "100")) do
+    local ____list = __K2L_ReadOnlyListOf("19.99", "5.01", "0.10", "100")
+    for ____i = 1, ____list.size do
+        local price = ____list[____i]
         total = total:add(__K2L_BigDecimal.parse(price))
     end
     total = total:multiply(__K2L_BigDecimal.parse("1.0825"))
@@ -115,7 +117,9 @@ end
 local function scaling()
     print("-- setScale table")
     local values = __K2L_ReadOnlyListOf("5.5", "2.5", "1.6", "1.1", "1.0", "0.5", "-0.5", "-1.1", "-1.6", "-2.5", "-5.5", "0.05", "99.995")
-    for _, v in ipairs(values) do
+    local ____mod = values.____modCount
+    for ____i_1 = 1, values.size do
+        local v = values[____i_1]
         local x = __K2L_BigDecimal.parse(v)
         local row = MODES:joinToString(" ", nil, nil, nil, nil, function(m)
             return m.name .. "=" .. __K2L_Str(x:setScale(0, m))
@@ -123,6 +127,9 @@ local function scaling()
         print(v .. ": " .. row)
         local row2 = MODES:joinToString(" ", nil, nil, nil, nil, function(m) return x:setScale(1, m):toString() end)
         print("  scale 1: " .. row2)
+        if values.____modCount ~= ____mod and values:____comodified(____i_1) then
+            break
+        end
     end
     print(__K2L_Str(__K2L_BigDecimal.parse("2.5"):setScale(3)))
     print(__K2L_Str(__K2L_BigDecimal.parse("2.500"):setScale(1)))
@@ -150,12 +157,17 @@ end
 local function division()
     print("-- division")
     local ____pairs = __K2L_ReadOnlyListOf(__K2L_Pair.new("1", "3"), __K2L_Pair.new("2", "3"), __K2L_Pair.new("10", "4"), __K2L_Pair.new("-10", "4"), __K2L_Pair.new("1", "7"), __K2L_Pair.new("22", "7"), __K2L_Pair.new("100", "-8"), __K2L_Pair.new("0.5", "3"), __K2L_Pair.new("1.00", "3"), __K2L_Pair.new("123456.789", "0.001"))
-    for _, ____item in ipairs(____pairs) do
+    local ____mod_1 = ____pairs.____modCount
+    for ____i_2 = 1, ____pairs.size do
+        local ____item = ____pairs[____i_2]
         local n, d = ____item.first, ____item.second
         local x = __K2L_BigDecimal.parse(n)
         local y = __K2L_BigDecimal.parse(d)
         print(n .. " / " .. d .. ": " .. __K2L_Str(x:div(y)) .. " | " .. __K2L_Str(x:divide(y, 5, __K2L_RoundingMode.HALF_UP)) .. " | " .. __K2L_Str(x:divide(y, 0, __K2L_RoundingMode.FLOOR)) .. " | " .. __K2L_Str(x:divide(y, 3, __K2L_RoundingMode.HALF_EVEN)) .. " | " .. __K2L_Str(x:divide(y, __K2L_MathContext.DECIMAL32)))
         print("  " .. __K2L_Str(x:divide(y, __K2L_MathContext.new(3))) .. " " .. __K2L_Str(x:divide(y, __K2L_MathContext.new(10, __K2L_RoundingMode.DOWN))) .. " " .. __K2L_Str(x:divide(y, __K2L_MathContext.new(1, __K2L_RoundingMode.UP))) .. " " .. __K2L_Str(x:divide(y, __K2L_RoundingMode.CEILING)))
+        if ____pairs.____modCount ~= ____mod_1 and ____pairs:____comodified(____i_2) then
+            break
+        end
     end
     print(__K2L_Str(__K2L_BigDecimal.parse("1"):divide(__K2L_BigDecimal.parse("8"))))
     print(__K2L_Str(__K2L_BigDecimal.parse("1.00"):divide(__K2L_BigDecimal.parse("8"))))
@@ -188,9 +200,14 @@ end
 local function formatting()
     print("-- formatting")
     local values = __K2L_ReadOnlyListOf("0", "0.0", "0.00", "1", "-1", "1.0", "12345.6789", "-0.5", "0.000001", "0.0000001", "1E+3", "1.23E+10", "-1.5E-7", "100", "1E-10", "123456789012345678901234567890.123456789", "0E+3", "1.000E+3")
-    for _, v in ipairs(values) do
+    local ____mod_2 = values.____modCount
+    for ____i_3 = 1, values.size do
+        local v = values[____i_3]
         local x = __K2L_BigDecimal.parse(v)
         print(v .. ": toString=" .. __K2L_Str(x) .. " plain=" .. __K2L_Str(x:toPlainString()) .. " scale=" .. x:scale() .. " precision=" .. x:precision() .. " strip=" .. __K2L_Str(x:stripTrailingZeros()) .. " strip.plain=" .. __K2L_Str(x:stripTrailingZeros():toPlainString()))
+        if values.____modCount ~= ____mod_2 and values:____comodified(____i_3) then
+            break
+        end
     end
     print(__K2L_Str(__K2L_BigDecimal.parse("1000"):stripTrailingZeros()))
     print(__K2L_BigDecimal.parse("1000"):stripTrailingZeros():scale())
@@ -228,9 +245,14 @@ end
 local function conversions()
     print("-- conversions")
     local values = __K2L_ReadOnlyListOf("0", "1.5", "-1.5", "123.999", "1E+3", "123456789012345678901.5", "1e-5", "-2147483649.5", "0.1", "3.14159265358979323846")
-    for _, v in ipairs(values) do
+    local ____mod_3 = values.____modCount
+    for ____i_4 = 1, values.size do
+        local v = values[____i_4]
         local x = __K2L_BigDecimal.parse(v)
         print(v .. ": int=" .. x:toInt() .. " double=" .. __K2L_Str(x:toDouble()))
+        if values.____modCount ~= ____mod_3 and values:____comodified(____i_4) then
+            break
+        end
     end
     print(__K2L_BigDecimal.parse("12345678901.7"):toLong())
     print(__K2L_Str(__K2L_BigDecimal.parse("0.1"):toDouble() + __K2L_BigDecimal.parse("0.2"):toDouble()))

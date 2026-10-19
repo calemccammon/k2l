@@ -113,6 +113,7 @@ local function primeFactors(n)
 end
 
 local Rational = __K2L_Class("Rational")
+Rational.____comparable = true
 
 function Rational:____init(num, den)
     self.num = num
@@ -162,6 +163,8 @@ function Rational:toDouble()
     return self.num:toDouble() / self.den:toDouble()
 end
 
+Rational.____companion = true
+
 function Rational:of(n, d)
     if d == nil then
         d = 1
@@ -195,7 +198,7 @@ local function harmonic(n)
 end
 
 local function bernoulli(n)
-    local a = __K2L_ListOfSize(n + 1, function(it) return Rational.ZERO end, true)
+    local a = __K2L_ListOfSize(n + 1, function(it) return Rational.ZERO end, "[LRational;")
     for m = 0, n do
         a:set(m, Rational:of(1, m + 1))
         for j = m, 1, -1 do
@@ -281,7 +284,9 @@ local function main()
     print("pi ≈ " .. __K2L_StringFormat("%.12f", pi) .. " error " .. __K2L_StringFormat("%.2e", math.abs(pi - math.pi)))
     local gauss = integrate(-5.0, 5.0, 2000, function(it) return math.exp(-it * it / 2) end) / math.sqrt(2 * math.pi)
     print("gaussian area ≈ " .. __K2L_StringFormat("%.8f", gauss))
-    for _, x in ipairs(__K2L_ReadOnlyListOf(2.0, 10.0, 12345.678)) do
+    local ____list = __K2L_ReadOnlyListOf(2.0, 10.0, 12345.678)
+    for ____i = 1, ____list.size do
+        local x = ____list[____i]
         print("sqrt(" .. __K2L_Str(x) .. ") = " .. __K2L_StringFormat("%.10f", sqrtNewton(x)) .. " (" .. __K2L_Str(math.sqrt(x)) .. ")")
     end
     print("doubles: " .. __K2L_Str(0.1 + 0.2) .. " " .. __K2L_Str(1.0 / 3) .. " " .. __K2L_Str(2.0 / 3 * 3) .. " " .. __K2L_Str(1.0E20) .. " " .. __K2L_Str(1.5E-7) .. " " .. __K2L_Str(100.0) .. " " .. __K2L_Str(-0.0) .. " " .. __K2L_Str(1.7976931348623157E308))

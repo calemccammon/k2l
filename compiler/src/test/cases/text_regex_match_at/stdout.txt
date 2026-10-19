@@ -1,0 +1,11 @@
+[id:x1@0, op:=@3, num:3.25@5, op:*@9, op:(@10, id:y@11, op:+@12, num:42@13, op:)@15, op:/@17, id:z_9@19, error@23, num:7@25]
+[hello, ello, null, world, null]
+[true, false, true, false]
+2..2 null true
+matchAt(-1): IndexOutOfBoundsException
+matchAt(12): IndexOutOfBoundsException
+[pr, gr, mm, ng, l, ng, g]
+[abc, def_]
+hijklm
+Hello #orld [12, 34, 67]
+1 3 [a, b, c]

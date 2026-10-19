@@ -57,8 +57,13 @@ end
 local function main()
     local words = __K2L_StringSplit("the quick brown fox jumps over the lazy dog while seven zebras quietly vex jumping kangaroos", " ")
     local counts = __K2L_HashMap.new()
-    for _, w in ipairs(words) do
+    local ____mod = words.____modCount
+    for ____i = 1, words.size do
+        local w = words[____i]
         counts:set(w, (counts:get(w) or 0) + 1)
+        if words.____modCount ~= ____mod and words:____comodified(____i) then
+            break
+        end
     end
     print(__K2L_Str(counts))
     print(__K2L_Str(counts:getKeys():take(5)))

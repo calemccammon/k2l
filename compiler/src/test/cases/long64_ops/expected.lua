@@ -1,6 +1,5 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArithmeticException = ____lualib.__K2L_ArithmeticException
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_Bits = ____lualib.__K2L_Bits
 local __K2L_CastFail = ____lualib.__K2L_CastFail
@@ -23,6 +22,7 @@ local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_NumberFormatException = ____lualib.__K2L_NumberFormatException
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -31,8 +31,10 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
+local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 
 local Account = __K2L_Class("Account")
@@ -281,10 +283,10 @@ local function main()
     print(__K2L_Str(__K2L_ReadOnlyListOf(max, min, 0, big):minOrNull()))
     print("big=" .. big .. ", max=" .. max .. ", min=" .. min)
     print(#tostring(big))
-    print(__K2L_StringFormat("%d|%5d|%x", 1, 22, 255))
+    print(__K2L_StringFormat("%d|%5d|%x", 1, 22, __K2L_Text.sized(255, 64)))
     print(__K2L_StringFormat("%d", big))
     print(__K2L_StringFormat("%,d", max))
-    print(__K2L_StringFormat("%x", big))
+    print(__K2L_StringFormat("%x", __K2L_Text.sized(big, 64)))
     print(__K2L_StringFormat("%020d", min))
     print(__K2L_StringFormat("%d", min))
     print(__K2L_Hash(max))
@@ -309,8 +311,14 @@ local function main()
     end)))
     print(__K2L_Str(ids:associateWith(function(it) return __K2L_Bits.ones64(it) end)))
     local counts = __K2L_HashMap.new()
-    for _, x in ipairs(ids:plusAll(ids)) do
+    local ____list = ids:plusAll(ids)
+    local ____mod = ____list.____modCount
+    for ____i = 1, ____list.size do
+        local x = ____list[____i]
         counts:set(x, (counts:get(x) or 0) + 1)
+        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            break
+        end
     end
     print(counts.size)
     print(__K2L_Str(counts:get(max)))
@@ -330,8 +338,8 @@ local function main()
     sorted:set(3, "three")
     sorted:set(max, "max")
     print(__K2L_Str(sorted))
-    print(sorted:firstKey())
-    print(sorted:lastKey())
+    print(__K2L_NotNull(sorted:firstKey()))
+    print(__K2L_NotNull(sorted:lastKey()))
     local accounts = __K2L_ReadOnlyListOf(Account.new(max, big), Account.new(1, 2), Account.new(max, big))
     print(__K2L_Str(accounts:get(0)))
     print(accounts:get(0):equals(accounts:get(2)))
@@ -341,7 +349,7 @@ local function main()
     print(__K2L_Str(accounts:groupBy(function(it) return it.id end):mapValues(function(it) return it.value.size end)))
     print(accounts:sumOf(function(it) return it.balance end))
     print(__K2L_Str(accounts:maxByOrNull(function(it) return it.balance end)))
-    local arr = __K2L_ArrayOf(big, 1, max, min)
+    local arr = __K2L_TypedArrayOf("[J", big, 1, max, min)
     print(arr:sum())
     print(arr:max())
     print(arr:min())
@@ -394,7 +402,7 @@ local function main()
         __K2L_CastFail(anyBig, "java.lang.Long", "kotlin.Long")
     end
     print(anyBig + 1)
-    local ____table = __K2L_ListOfSize(5, function(it) return it * big end, true)
+    local ____table = __K2L_ListOfSize(5, function(it) return it * big end, "[J")
     print(__K2L_Str(____table:toList()))
     local m = __K2L_MapOf()
     for i = 0, 5 do

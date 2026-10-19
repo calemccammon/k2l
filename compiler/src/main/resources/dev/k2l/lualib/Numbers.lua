@@ -156,7 +156,8 @@ local function roundHalfUp(x)
     if x - f >= 0.5 then
         return f + 1
     end
-    return f
+    -- + 0: math.floor(-0.0) is -0.0 where integers are doubles
+    return f + 0
 end
 
 function __K2L_Num.roundToInt(x)

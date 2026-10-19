@@ -174,11 +174,24 @@ function Library:add(book)
         error(LibraryException.new("duplicate isbn " .. book.isbn))
     end
     self.byAuthor:computeIfAbsent(book.author, function(it) return __K2L_ListOf() end):add(book.isbn)
-    for _, g in ipairs(book.genres:toList()) do
+    local ____collection = book.genres
+    local ____items, ____n = ____collection:____array()
+    local ____mod = ____collection.____modCount
+    for ____i = 1, ____n do
+        local g = ____items[____i]
         self.byGenre:getOrPut(g, function() return __K2L_SetOf() end):add(book.isbn)
+        if ____collection.____modCount ~= ____mod and ____collection:____comodified(____i, ____n) then
+            break
+        end
     end
-    for _, w in ipairs(__K2L_StringSplit(book.title:lower(), " "):filter(function(it) return #it > 2 end)) do
+    local ____list = __K2L_StringSplit(book.title:lower(), " "):filter(function(it) return #it > 2 end)
+    local ____mod_1 = ____list.____modCount
+    for ____i_1 = 1, ____list.size do
+        local w = ____list[____i_1]
         self.wordIndex:computeIfAbsent(w, function(it) return __K2L_SortedSetOf() end):add(book.isbn)
+        if ____list.____modCount ~= ____mod_1 and ____list:____comodified(____i_1) then
+            break
+        end
     end
 end
 
@@ -234,8 +247,8 @@ end
 
 function Library:search(query)
     local ____arg = __K2L_StringSplit(query:lower(), " "):filter(function(it) return #it > 2 end):map(function(it)
-        return self.wordIndex:get(it) or __K2L_ListOf()
-    end):reduceOrNull(function(acc, s) return acc:intersect(s) end) or __K2L_ListOf()
+        return self.wordIndex:get(it) or __K2L_ReadOnlySetOf()
+    end):reduceOrNull(function(acc, s) return acc:intersect(s) end) or __K2L_ReadOnlySetOf()
     local ____receiver_1 = self.books
     return ____arg:map(function(____p1) return ____receiver_1:getValue(____p1) end)
 end
@@ -243,10 +256,16 @@ end
 function Library:recommend(isbn)
     local readers = self.loans:filter(function(it) return it.isbn == isbn end):map(function(it) return it.member end):toSet()
     local counts = __K2L_MapOf()
-    for _, it in ipairs(self.loans:filter(function(it)
+    local ____list_1 = self.loans:filter(function(it)
         return readers:contains(it.member) and it.isbn ~= isbn
-    end):distinctBy(function(it) return __K2L_Pair.new(it.member, it.isbn) end)) do
+    end):distinctBy(function(it) return __K2L_Pair.new(it.member, it.isbn) end)
+    local ____mod_2 = ____list_1.____modCount
+    for ____i_2 = 1, ____list_1.size do
+        local it = ____list_1[____i_2]
         counts:merge(it.isbn, 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", function(____p1, ____p2) return ____p1 + ____p2 end))
+        if ____list_1.____modCount ~= ____mod_2 and ____list_1:____comodified(____i_2) then
+            break
+        end
     end
     return counts:getEntries():sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(function(it) return it.value end), function(it) return self.books:getValue(it.key).title end)):map(function(it)
         return __K2L_Pair.new(self.books:getValue(it.key).title, it.value)
@@ -341,8 +360,14 @@ end
 
 local function main()
     local lib = Library.new()
-    for _, it in ipairs(__K2L_ReadOnlyListOf(Book.new("978-0", "The Time Machine", "H. G. Wells", 1895, __K2L_ReadOnlySetOf(Genre.FICTION, Genre.SCIENCE), 2), Book.new("978-1", "The War of the Worlds", "H. G. Wells", 1898, __K2L_ReadOnlySetOf(Genre.FICTION)), Book.new("978-2", "A Brief History of Time", "Stephen Hawking", 1988, __K2L_ReadOnlySetOf(Genre.SCIENCE)), Book.new("978-3", "The Story of Art", "E. H. Gombrich", 1950, __K2L_ReadOnlySetOf(Genre.HISTORY)), Book.new("978-4", "A Little History of the World", "E. H. Gombrich", 1936, __K2L_ReadOnlySetOf(Genre.HISTORY, Genre.KIDS)), Book.new("978-5", "The Gruffalo", "Julia Donaldson", 1999, __K2L_ReadOnlySetOf(Genre.KIDS, Genre.POETRY), 3), Book.new("978-6", "Leaves of Grass", "Walt Whitman", 1855, __K2L_ReadOnlySetOf(Genre.POETRY)))) do
+    local ____list_2 = __K2L_ReadOnlyListOf(Book.new("978-0", "The Time Machine", "H. G. Wells", 1895, __K2L_ReadOnlySetOf(Genre.FICTION, Genre.SCIENCE), 2), Book.new("978-1", "The War of the Worlds", "H. G. Wells", 1898, __K2L_ReadOnlySetOf(Genre.FICTION)), Book.new("978-2", "A Brief History of Time", "Stephen Hawking", 1988, __K2L_ReadOnlySetOf(Genre.SCIENCE)), Book.new("978-3", "The Story of Art", "E. H. Gombrich", 1950, __K2L_ReadOnlySetOf(Genre.HISTORY)), Book.new("978-4", "A Little History of the World", "E. H. Gombrich", 1936, __K2L_ReadOnlySetOf(Genre.HISTORY, Genre.KIDS)), Book.new("978-5", "The Gruffalo", "Julia Donaldson", 1999, __K2L_ReadOnlySetOf(Genre.KIDS, Genre.POETRY), 3), Book.new("978-6", "Leaves of Grass", "Walt Whitman", 1855, __K2L_ReadOnlySetOf(Genre.POETRY)))
+    local ____mod_3 = ____list_2.____modCount
+    for ____i_3 = 1, ____list_2.size do
+        local it = ____list_2[____i_3];
         (function(...) return lib:add(...) end)(it)
+        if ____list_2.____modCount ~= ____mod_3 and ____list_2:____comodified(____i_3) then
+            break
+        end
     end
     local ____ok, ____result_1 = pcall(function()
         lib:add(Book.new("978-6", "Dup", "X", 2000, __K2L_ReadOnlySetOf()))
@@ -356,8 +381,14 @@ local function main()
             error(____error, 0)
         end
     end
-    for _, it in ipairs(__K2L_ReadOnlyListOf(Member.new(1, "Ana", Member.Tier.BASIC), Member.new(2, "Ben", Member.Tier.PLUS), Member.new(3, "Cy", Member.Tier.STAFF), Member.new(4, "Di", Member.Tier.PLUS))) do
+    local ____list_3 = __K2L_ReadOnlyListOf(Member.new(1, "Ana", Member.Tier.BASIC), Member.new(2, "Ben", Member.Tier.PLUS), Member.new(3, "Cy", Member.Tier.STAFF), Member.new(4, "Di", Member.Tier.PLUS))
+    local ____mod_4 = ____list_3.____modCount
+    for ____i_4 = 1, ____list_3.size do
+        local it = ____list_3[____i_4];
         (function(...) return lib:join(...) end)(it)
+        if ____list_3.____modCount ~= ____mod_4 and ____list_3:____comodified(____i_4) then
+            break
+        end
     end
     print("authors: " .. __K2L_Str(lib:authors()))
     print("genres: " .. __K2L_Str(lib:genres()))
@@ -365,7 +396,9 @@ local function main()
     print("search 'the time': " .. __K2L_Str(lib:search("THE time"):map(function(it) return it.title end)))
     print("search 'nothing here': " .. __K2L_Str(lib:search("nothing here")))
     local actions = __K2L_ReadOnlyListOf(__K2L_Triple.new("978-0", 1, 1), __K2L_Triple.new("978-2", 1, 1), __K2L_Triple.new("978-3", 1, 2), __K2L_Triple.new("978-0", 2, 2), __K2L_Triple.new("978-0", 3, 3), __K2L_Triple.new("978-2", 2, 3), __K2L_Triple.new("978-5", 4, 4), __K2L_Triple.new("978-0", 4, 5), __K2L_Triple.new("978-9", 2, 5), __K2L_Triple.new("978-1", 7, 5))
-    for _, ____item in ipairs(actions) do
+    local ____mod_5 = actions.____modCount
+    for ____i_5 = 1, actions.size do
+        local ____item = actions[____i_5]
         local isbn, member, day = ____item.first, ____item.second, ____item.third
         local ____ok_1, ____result_2 = pcall(function()
             local loan = lib:lend(isbn, member, day)
@@ -379,6 +412,9 @@ local function main()
             else
                 error(____error_1, 0)
             end
+        end
+        if actions.____modCount ~= ____mod_5 and actions:____comodified(____i_5) then
+            break
         end
     end
     print("available: " .. __K2L_Str(__K2L_ReadOnlyListOf("978-0", "978-2", "978-5"):associateWith(function(...) return lib:available(...) end)))

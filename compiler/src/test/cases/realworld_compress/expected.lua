@@ -30,6 +30,7 @@ local __K2L_Ushr = ____lualib.__K2L_Ushr
 
 local ____exports = {}
 local Node = __K2L_Class("Node")
+Node.____comparable = true
 
 function Node:____init(weight)
     self.weight = weight
@@ -65,10 +66,17 @@ end
 
 local function buildTree(text)
     local queue = __K2L_PriorityQueue.new()
-    for _, ____entry in ipairs(__K2L_StringToList(text):groupingBy(function(it) return it end):eachCount():getEntries()) do
+    local ____collection = __K2L_StringToList(text):groupingBy(function(it) return it end):eachCount()
+    local ____items, ____n = ____collection:____entryArray()
+    local ____mod = ____collection.____modCount
+    for ____i = 1, ____n do
+        local ____entry = ____items[____i]
         do
             local c, n = ____entry.key, ____entry.value
             queue:add(Node.Leaf.new(c, n))
+        end
+        if ____collection.____modCount ~= ____mod and ____collection:____comodified(____i, ____n) then
+            break
         end
     end
     if queue.size == 1 then
@@ -192,13 +200,18 @@ end
 
 local function unlz77(tokens)
     local sb = __K2L_StringBuilder.new()
-    for _, t in ipairs(tokens) do
+    local ____mod_1 = tokens.____modCount
+    for ____i_1 = 1, tokens.size do
+        local t = tokens[____i_1]
         if __K2L_InstanceOf(t, Token.Literal) then
             sb:append(t.c)
         elseif __K2L_InstanceOf(t, Token.Ref) then
             for it = 0, t.length - 1 do
                 sb:append(sb:get(sb:getLength() - t.distance))
             end
+        end
+        if tokens.____modCount ~= ____mod_1 and tokens:____comodified(____i_1) then
+            break
         end
     end
     return sb:toString()
@@ -232,12 +245,17 @@ local CRC_TABLE = __K2L_ListOfSize(256, function(n)
         c = c & 1 ~= 0 and __K2L_Ushr(c, 1) ~ __K2L_ToInt32(3988292384) or __K2L_Ushr(c, 1)
     end
     return c
-end, true)
+end, "[I")
 
 local function crc32(bytes)
     local crc = -1
-    for _, b in ipairs(bytes) do
+    local ____mod_2 = bytes.____modCount
+    for ____i_2 = 1, bytes.size do
+        local b = bytes[____i_2]
         crc = CRC_TABLE:get((crc ~ b) & 255) ~ __K2L_Ushr(crc, 8)
+        if bytes.____modCount ~= ____mod_2 and bytes:____comodified(____i_2) then
+            break
+        end
     end
     return ~crc & 4294967295
 end
@@ -284,7 +302,9 @@ local function main()
             return "<" .. it.distance .. "," .. it.length .. ">"
         end
     end))
-    for _, s in ipairs(__K2L_ReadOnlyListOf("Man", "Ma", "M", "hello, world!", "")) do
+    local ____list = __K2L_ReadOnlyListOf("Man", "Ma", "M", "hello, world!", "")
+    for ____i_3 = 1, ____list.size do
+        local s = ____list[____i_3]
         local bytes = __K2L_StringToList(s):map(function(it) return it:byte() end)
         local enc = base64(bytes)
         local back = unbase64(enc):map(function(it) return string.char(it) end):joinToString("")

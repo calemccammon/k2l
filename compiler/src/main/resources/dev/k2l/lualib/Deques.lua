@@ -4,13 +4,24 @@
 -- the public ones a subclass may override: an ArrayDeque's add, offer, addAll and its constructor call addLast, push calls
 -- addFirst, removeFirst and pop call pollFirst; a LinkedList's offer calls add, addAll(elements) calls addAll(index,
 -- elements), push calls addFirst and pop and remove() call removeFirst.
+-- A java.util.ArrayDeque is not a List (`is List` is false, its equals is Object's): its class is a plain collection whose
+-- missing members are ArrayList's. `is Queue` and `is Deque` test the interfaces below.
+local __K2L_QueueInterface = __K2L_Class("java.util.Queue")
+local __K2L_DequeInterface = __K2L_Class("java.util.Deque")
 local __K2L_ArrayDeque = __K2L_Class("kotlin.collections.ArrayDeque", __K2L_List)
-local __K2L_Deque = __K2L_Class("java.util.ArrayDeque", __K2L_List)
+local __K2L_Deque = __K2L_Class("java.util.ArrayDeque", __K2L_Iterable)
 local __K2L_LinkedList = __K2L_Class("java.util.LinkedList", __K2L_List)
+setmetatable(__K2L_Deque, {__index = __K2L_List})
+__K2L_Deque.____notList = true
+for _, deque in ipairs({__K2L_Deque, __K2L_LinkedList}) do
+    deque.____interfaces[__K2L_QueueInterface] = true
+    deque.____interfaces[__K2L_DequeInterface] = true
+end
+__K2L_PriorityQueue.____interfaces[__K2L_QueueInterface] = true
 
-__K2L_ArrayDeque.____iteratorClass = __K2L_Class("java.util.AbstractList$Itr", __K2L_CollectionIterator)
+__K2L_ArrayDeque.____iteratorClass = __K2L_Class("java.util.AbstractList$Itr", __K2L_ListItr)
 __K2L_Deque.____iteratorClass = __K2L_Class("java.util.ArrayDeque$DeqIterator", __K2L_CollectionIterator)
-__K2L_LinkedList.____iteratorClass = __K2L_Class("java.util.LinkedList$ListItr", __K2L_CollectionIterator)
+__K2L_LinkedList.____iteratorClass = __K2L_Class("java.util.LinkedList$ListItr", __K2L_ListItr)
 __K2L_ArrayDeque.____subListClass = __K2L_AbstractSubList
 __K2L_Deque.____subListClass = __K2L_AbstractSubList
 __K2L_LinkedList.____subListClass = __K2L_AbstractSubList
@@ -39,6 +50,7 @@ local function takeFirst(self)
     end
     self[n] = nil
     self.size = n - 1
+    self.____modCount = self.____modCount + 1
     return value
 end
 
@@ -50,6 +62,7 @@ local function takeLast(self)
     local value = self[n]
     self[n] = nil
     self.size = n - 1
+    self.____modCount = self.____modCount + 1
     return value
 end
 
@@ -59,11 +72,13 @@ local function putFirst(self, value)
     end
     self[1] = value
     self.size = self.size + 1
+    self.____modCount = self.____modCount + 1
 end
 
 local function putLast(self, value)
     self.size = self.size + 1
     self[self.size] = value
+    self.____modCount = self.____modCount + 1
 end
 
 ------------------------------------------------------------------ kotlin.collections.ArrayDeque
@@ -130,6 +145,40 @@ function __K2L_Deque:____init(elements)
             self:addLast(arr[i])
         end
     end
+end
+
+-- Its iterator counts the elements it has left when it starts and does not check for changes (it fails only on a slot
+-- emptied under it): `for` loops over it go on.
+function __K2L_Deque:____comodified()
+    return false
+end
+
+local DeqIterator = __K2L_Deque.____iteratorClass
+
+-- the JDK's DeqIterator starts from size(), which a subclass may override
+function __K2L_Deque:iterator()
+    if self.getSize ~= nil then
+        self:getSize()
+    end
+    return __K2L_Iterable.iterator(self)
+end
+
+function DeqIterator:next()
+    self.____expected = self.____source.____modCount
+    return __K2L_CollectionIterator.next(self)
+end
+
+function DeqIterator:remove()
+    self.____expected = self.____source.____modCount
+    return __K2L_CollectionIterator.remove(self)
+end
+
+-- LinkedList.ListItr.hasNext() is nextIndex < size
+function __K2L_LinkedList:____comodified(i)
+    if i < self.size then
+        __K2L_Comodification()
+    end
+    return true
 end
 
 -- Not a list: equal to itself only.

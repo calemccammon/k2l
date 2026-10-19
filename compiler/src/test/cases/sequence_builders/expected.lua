@@ -52,7 +52,9 @@ end
 
 local function classify(xs)
     return __K2L_SequenceBuilder(function(____this_2)
-        for _, x in ipairs(xs) do
+        local ____mod = xs.____modCount
+        for ____i = 1, xs.size do
+            local x = xs[____i]
             do
                 if x < 0 then
                     ____this_2:yield("negative " .. x)
@@ -65,6 +67,9 @@ local function classify(xs)
                 end
             end
             ::____continue::
+            if xs.____modCount ~= ____mod and xs:____comodified(____i) then
+                break
+            end
         end
         ____this_2:yield("done")
     end)

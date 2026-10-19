@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -27,6 +26,7 @@ local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_StringTrim = ____lualib.__K2L_StringTrim
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function searching()
     local s = "Hello, World, Hello"
@@ -148,7 +148,7 @@ local function conversions()
     print(__K2L_Str(__K2L_Text.toBooleanStrictOrNull("true")))
     print(__K2L_Str(__K2L_Text.toBooleanStrictOrNull("maybe")))
     print(__K2L_Text.toCharArray("abc").size)
-    print(__K2L_Text.string(__K2L_ArrayOf("h", "i")))
+    print(__K2L_Text.string(__K2L_TypedArrayOf("[C", "h", "i")))
     print(__K2L_StringFormat("%05.1f|%-5s|%5s|%x|%c", 3.14159, "ab", "cd", 255, "z"))
     print(__K2L_StringFormat("%,d", 1234567))
     print(__K2L_StringFormat("%08.3f", -2.5))

@@ -195,7 +195,7 @@ internal fun FileTransformer.eachElement(
     val index = indexParam?.let { LuaName(forEachVar(params, it, "index")).also { n -> stable += n } }
     val body = collect { step(element, index) }
     if (source.kind == CollectionKind.Map) {
-        val entries = LuaMethodCall(source.collection, "getEntries", emptyList())
+        val entries = LuaMethodCall(source.collection, "____entryArray", emptyList())
         emit(LuaGenericFor(listOf("_", item), listOf(luaCall(LuaName("ipairs"), entries)), body))
         return
     }

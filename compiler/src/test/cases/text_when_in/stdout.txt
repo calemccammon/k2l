@@ -1,0 +1,16 @@
+vowel a
+open (
+consonant b
+close ]
+consonant z
+other !
+next
+in set
+next
+n=3 in
+jvm
+sub
+Apple in bag
+kiwi not in bag
+second
+xy

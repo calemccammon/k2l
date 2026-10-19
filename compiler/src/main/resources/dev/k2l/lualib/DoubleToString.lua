@@ -1,6 +1,8 @@
 -- Kotlin/JVM Double.toString: shortest round-tripping digits, plain notation in [1e-3, 1e7).
 local function __K2L_DoubleToString(x)
-    if x ~= x then
+    if x == nil then
+        return "null"
+    elseif x ~= x then
         return "NaN"
     elseif x == math.huge then
         return "Infinity"

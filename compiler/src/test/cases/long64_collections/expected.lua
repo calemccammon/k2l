@@ -1,6 +1,5 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
 local __K2L_HashMap = ____lualib.__K2L_HashMap
@@ -8,18 +7,20 @@ local __K2L_HashSet = ____lualib.__K2L_HashSet
 local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_PriorityQueue = ____lualib.__K2L_PriorityQueue
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SortedSet = ____lualib.__K2L_SortedSet
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function main()
     local big = 5000000000000000000
     local max = 9223372036854775807
     local min = -9223372036854775807 - 1
-    local arr = __K2L_ArrayOf(max, 5, min, big, -3, 0)
+    local arr = __K2L_TypedArrayOf("[J", max, 5, min, big, -3, 0)
     arr:sort()
     print(__K2L_Str(arr:toList()))
     arr:sortDescending()
@@ -37,15 +38,15 @@ local function main()
     print(__K2L_Str(list:sortedBy(function(it) return it end, true)))
     print(list:binarySearch(5))
     print(list:sorted():binarySearch(big))
-    print(__K2L_JdkCollections.max(list))
-    print(__K2L_JdkCollections.min(list))
+    print(__K2L_NotNull(__K2L_JdkCollections.max(list)))
+    print(__K2L_NotNull(__K2L_JdkCollections.min(list)))
     local ts = __K2L_SortedSet.new()
     ts:addAll(list)
     print(__K2L_Str(ts))
-    print(ts:first())
-    print(ts:last())
-    print(ts:higher(5))
-    print(ts:lower(big))
+    print(__K2L_NotNull(ts:first()))
+    print(__K2L_NotNull(ts:last()))
+    print(__K2L_NotNull(ts:higher(5)))
+    print(__K2L_NotNull(ts:lower(big)))
     local pq = __K2L_PriorityQueue.new()
     pq:addAll(list)
     local out = __K2L_ListOf()
@@ -113,7 +114,7 @@ local function main()
     local hs = __K2L_HashSet.new(hm:getKeys())
     print(__K2L_Str(hs))
     print(__K2L_Str(hs:map(function(it) return math.fmod(it, 5) end):toSet()))
-    local big2 = __K2L_ListOfSize(3, function(it) return big * it end, true)
+    local big2 = __K2L_ListOfSize(3, function(it) return big * it end, "[Ljava.lang.Long;")
     print(__K2L_Str(big2:toList()))
     print(big2:sum())
 end

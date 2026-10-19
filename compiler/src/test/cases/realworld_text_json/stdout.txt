@@ -1,0 +1,62 @@
+{
+  "name": "k2l",
+  "version": "0.2.0",
+  "tags": [
+    "kotlin",
+    "lua",
+    "transpiler"
+  ],
+  "stars": 1234,
+  "ratio": 0.875,
+  "big": 1.5E20,
+  "neg": -0.04225,
+  "nested": {
+    "a/b": {
+      "m~n": [
+        1,
+        2,
+        {
+          "deep": true
+        }
+      ]
+    },
+    "empty": {},
+    "none": null
+  },
+  "escaped": "line1\nline2\t\"quoted\" \\ éA",
+  "matrix": [
+    [
+      1,
+      2
+    ],
+    [
+      3,
+      4
+    ],
+    []
+  ]
+}
+{"name":"k2l","version":"0.2.0","tags":["kotlin","lua","transpiler"],"stars":1234,"ratio":0.875,"big":1.5E20,"neg":-0.04225,"nested":{"a/b":{"m~n":[1,2,{"deep":true}]},"empty":{},"none":null},"escaped":"line1\nline2\t\"quoted\" \\ éA","matrix":[[1,2],[3,4],[]]}
+{|	"name": "k2l",|	"version": "0.2.0",|	"tags": [
+pointer '/name' -> "k2l"
+pointer '/tags/1' -> "lua"
+pointer '/nested/a~1b/m~0n/2/deep' -> true
+pointer '/matrix/1/0' -> 3
+pointer '/missing' -> <none>
+pointer '/tags/9' -> <none>
+pointer '' -> {"name":"k2l","version":"0.2.0
+{Arr=6, Bool=1, Null=1, Num=10, Obj=5, Str=6, maxDepth=5}
+round trip equal: true
+error: expected '"' but found '}' at line 1, column 9 (offset 8)
+error: expected ',' or ']' at line 1, column 6 (offset 5)
+error: expected ':' but found '1' at line 1, column 6 (offset 5)
+error: unterminated string at line 1, column 14 (offset 13)
+error: digit expected after '.' at line 1, column 4 (offset 3)
+error: bad literal at line 2, column 8 (offset 9)
+error: unexpected trailing '2' at line 1, column 5 (offset 4)
+error: unexpected character '@' at line 1, column 1 (offset 0)
+name    |   age|langs
+Ada     |  36.0|en+fr
+Linus   |  54.5|-
+Grace   |  85.0|en
+average age 58.500, 5.850000e+01, 58.5000

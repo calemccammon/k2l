@@ -14,7 +14,9 @@ local function ints()
     print("-- nextInt")
     local r = __K2L_JavaRandom.new(42)
     print(__K2L_Str(__K2L_IntRange.new(1, 8):map(function(it) return r:nextInt() end)))
-    for _, bound in ipairs(__K2L_ReadOnlyListOf(2, 10, 16, 100, 1000, 1024, 65536, 1000000007, 1073741825, 2147483647)) do
+    local ____list = __K2L_ReadOnlyListOf(2, 10, 16, 100, 1000, 1024, 65536, 1000000007, 1073741825, 2147483647)
+    for ____i = 1, ____list.size do
+        local bound = ____list[____i]
         print(bound .. ": " .. __K2L_Str(__K2L_IntRange.new(1, 6):map(function(it) return r:nextInt(bound) end)))
     end
     local negative = __K2L_JavaRandom.new(-12345)

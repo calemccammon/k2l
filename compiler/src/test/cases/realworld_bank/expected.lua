@@ -43,6 +43,7 @@ local Customer
 local Money = __K2L_Class("bank.Money")
 __K2L_ClassInfo(Money, "bank.Money", "bank.Money", "class")
 __K2L_CompanionInfo(Money, "bank.Money.Companion", "bank.Money$Companion", "Companion")
+Money.____comparable = true
 
 function Money:____init(cents)
     self.cents = cents
@@ -85,6 +86,8 @@ end
 function Money:equals(other)
     return getmetatable(other) == Money and self.cents == other.cents
 end
+
+Money.____companion = true
 
 function Money:of(amount)
     local ____value = __K2L_StringSplit(amount, ".")
@@ -343,9 +346,10 @@ function Bank:open(owner, kind, rate)
     if rate == nil then
         rate = 2
     end
+    local ____arg = __K2L_Text.first(kind.name)
     local ____old = self.nextNumber
     self.nextNumber = self.nextNumber + 1
-    local id = __K2L_Text.first(kind.name) .. "-" .. __K2L_StringPadStart(tostring(____old), 3, "0")
+    local id = ____arg .. "-" .. __K2L_StringPadStart(tostring(____old), 3, "0")
     local account
     if kind == Kind.CHECKING then
         account = Checking.new(id, owner)
@@ -391,8 +395,15 @@ function Bank:transfer(from, to, amount)
 end
 
 function Bank:monthEnd()
-    for _, it in ipairs(self.accounts:getValues():toList()) do
+    local ____collection = self.accounts:getValues()
+    local ____items, ____n = ____collection:____array()
+    local ____mod = ____collection.____modCount
+    for ____i = 1, ____n do
+        local it = ____items[____i];
         (function(self, ...) return self:monthEnd(...) end)(it)
+        if ____collection.____modCount ~= ____mod and ____collection:____comodified(____i, ____n) then
+            break
+        end
     end
 end
 
@@ -455,7 +466,7 @@ local function main()
             error(____error_2, 0)
         end
     end
-    for _, op in ipairs(__K2L_ReadOnlyListOf(function()
+    local ____list = __K2L_ReadOnlyListOf(function()
         a2:withdraw(getDollars(1))
     end, function()
         a2:withdraw(getDollars(1))
@@ -463,7 +474,10 @@ local function main()
         a1:deposit(Money.ZERO)
     end, function()
         bank:transfer("X-1", a1.id, getDollars(1))
-    end)) do
+    end)
+    local ____mod_1 = ____list.____modCount
+    for ____i_1 = 1, ____list.size do
+        local op = ____list[____i_1]
         do
             local ____ok_3, ____result_4 = pcall(function()
                 op()
@@ -478,6 +492,9 @@ local function main()
                 end
             end
         end
+        if ____list.____modCount ~= ____mod_1 and ____list:____comodified(____i_1) then
+            break
+        end
     end
     b1:setFrozen(true)
     b1:setFrozen(false)
@@ -486,8 +503,14 @@ local function main()
     b1:setFrozen(false)
     print("bob frozen after verification: " .. tostring(b1:getFrozen()))
     bank:monthEnd()
-    for _, it in ipairs(bank:report()) do
+    local ____list_1 = bank:report()
+    local ____mod_2 = ____list_1.____modCount
+    for ____i_2 = 1, ____list_1.size do
+        local it = ____list_1[____i_2];
         (function(____p1) return print(__K2L_Str(____p1)) end)(it)
+        if ____list_1.____modCount ~= ____mod_2 and ____list_1:____comodified(____i_2) then
+            break
+        end
     end
     print("holdings: " .. __K2L_Str(bank:totalHoldings()))
     print("owners: " .. __K2L_Str(bank:getByOwner()))
@@ -496,13 +519,16 @@ local function main()
         return f .. ">" .. t .. ":" .. __K2L_Str(m)
     end)))
     print("b1 audit:")
-    for _, it in ipairs(b1:getAuditLog()) do
+    local ____list_2 = b1:getAuditLog()
+    for ____i_3 = 1, ____list_2.size do
+        local it = ____list_2[____i_3]
         print("  " .. it)
     end
+    local ____arg_1 = a2:getAuditLog().size
     if not __K2L_InstanceOf(a2, Savings) then
         __K2L_CastFail(a2, "bank.Savings", "bank.Savings")
     end
-    print("a2 audit size: " .. a2:getAuditLog().size .. ", savings withdrawals: " .. a2.withdrawalsThisMonth)
+    print("a2 audit size: " .. ____arg_1 .. ", savings withdrawals: " .. a2.withdrawalsThisMonth)
     local set = __K2L_HashSetOf(a1, __K2L_NotNull(bank:get(a1.id)), b1)
     print("distinct accounts: " .. set.size .. ", max money: " .. __K2L_Str(__K2L_ReadOnlyListOf(getDollars(3), Money:of("3.01"), getDollars(5):unaryMinus()):max()))
     print(Money:of("7.5"):times(3):equals(Money:of("22.50")))

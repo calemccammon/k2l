@@ -1,0 +1,93 @@
+l toString -> [1, 2, 3] iterator
+l str -> [1, 2, 3] iterator
+l map -> [2, 4, 6] size,iterator
+l filter -> [2, 3] iterator
+l for -> 6 iterator
+l forEach -> 6 iterator
+l isEmpty -> false isEmpty
+l isNotEmpty -> true isEmpty
+l containsAll -> true contains(1),indexOf,contains(2),indexOf
+l contains -> true contains(2),indexOf
+l equals -> true 
+l equals2 -> true listIterator
+l hashCode -> 30817 
+l sum -> 6 iterator
+l first -> 1 isEmpty,get(0)
+l last -> 3 isEmpty,size,get(2)
+l joinToString -> 1, 2, 3 iterator
+l toList -> [1, 2, 3] size
+l toMutableList -> [1, 2, 3] 
+l toSet -> [1, 2, 3] size,size,iterator
+l indexOf -> 1 indexOf
+l sorted -> [1, 2, 3] size
+l reversed -> [3, 2, 1] size
+l count -> 3 size
+l any -> true isEmpty,iterator
+l getOrNull -> 2 size,get(1)
+l elementAt -> 2 get(1)
+l addAll to -> [1, 2, 3] 
+l ArrayList(l) -> [1, 2, 3] 
+l HashSet(l) -> [1, 2, 3] size,iterator
+l subList -> [1, 2] 
+l remove -> false 
+l size -> 3 size
+l max -> 3 iterator
+l take -> [1, 2] size,iterator
+l drop -> [2, 3] size,size,get(1),get(2)
+l zip -> [(1, 1)] iterator,size
+l withIndex -> [IndexedValue(index=0, value=1), IndexedValue(index=1, value=2), IndexedValue(index=2, value=3)] iterator
+l asSequence -> [1, 2, 3] iterator
+l plus -> [1, 2, 3, 4] size
+l lastIndex -> 2 size
+l indices -> 0..2 size
+l single -> null size
+s toString -> [1, 2, 3] iterator
+s map -> [2, 4, 6] size,iterator
+s for -> 6 iterator
+s isEmpty -> false isEmpty
+s containsAll -> true contains(1),contains(2)
+s equals -> true size,contains(1),contains(2),contains(3)
+s equals2 -> true size,iterator
+s hashCode -> 6 iterator
+s toList -> [1, 2, 3] size
+s first -> 1 iterator
+s count -> 3 size
+s joinToString -> 1, 2, 3 iterator
+s addAll to -> [1, 2, 3] 
+s removeAll -> true size
+s retainAll -> true iterator
+m toString -> {1=a, 2=b} entries
+m for -> 3 entries
+m forEach2 -> 3 entries
+m forEachkv -> 3 
+m keys -> [1, 2] keys
+m map -> [1, 2] size,entries
+m filter -> {2=b} entries
+m equals -> true size,entries
+m equals2 -> true size,get(1),get(2)
+m hashCode -> 192 entries
+m isEmpty -> false isEmpty
+m getValue -> a get(1)
+m getOrDefault -> a 
+m getOrElse -> a get(1)
+m getOrPut -> a get(1)
+m contains -> true containsKey(1)
+m containsValue -> true 
+m toList -> [(1, a), (2, b)] size,entries,size
+m toMap -> {1=a, 2=b} size,size,entries
+m HashMap(m) -> {1=a, 2=b} size,entries
+m putAll to -> {1=a, 2=b} size,entries
+m mapValues -> {1=a, 2=b} size,entries
+m count -> 2 size
+m any -> true isEmpty,entries
+m size -> 2 size
+m entries size -> 2 entries
+m keys size -> 2 keys
+m plus -> {1=a, 2=b, 3=c} isEmpty,size,entries
+m toSortedMap -> {1=a, 2=b} size,entries
+m maxBy -> 2=b entries
+m isNotEmpty -> true isEmpty
+m orEmpty -> {1=a, 2=b} entries
+m merge -> ax 
+m putIfAbsent -> a 
+m computeIfAbsent -> a 

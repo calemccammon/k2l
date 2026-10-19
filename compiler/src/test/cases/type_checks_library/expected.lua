@@ -41,6 +41,7 @@ end
 
 __K2L_PropertyOverride(Name, "length", "getLength")
 local Score = __K2L_Class("Score")
+Score.____comparable = true
 
 function Score:____init(n)
     self.n = n

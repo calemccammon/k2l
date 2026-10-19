@@ -1,6 +1,7 @@
 package dev.k2l.transform
 
 import dev.k2l.codegen.*
+import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 
@@ -62,8 +63,14 @@ internal object TextMappings {
      * `Locale.ROOT`, `en_US` and no locale at all use the formatter's own symbols.
      */
     private fun CallSite.formatCall(format: LuaExpr?): LuaExpr {
-        val locale = args.firstOrNull()?.takeIf { isLocale(argTypes.getOrNull(0)) }
-        val formatAndArguments = listOfNotNull(format) + (if (locale != null) args.drop(1) else args)
+        // the callee's parameter decides: `"%s %s".format(null, x)` is the Locale overload, as Kotlin resolves it
+        val hasLocale = args.isNotEmpty() && isLocale(parameterTypes.getOrNull(0) ?: argTypes.getOrNull(0))
+        val values = if (hasLocale) args.drop(1) else args
+        val valueTypes = if (hasLocale) argTypes.drop(1) else argTypes
+        val sized = formatArguments(format, values, valueTypes)
+        // a null locale formats without localization, like java.util.Formatter
+        val locale = if (hasLocale) args[0].takeIf { it != LuaNil } else null
+        val formatAndArguments = listOfNotNull(format) + sized
         val tag = (locale as? LuaString)?.value
         val uppercase = formatUppercase(formatAndArguments.firstOrNull(), tag, dynamicLocale = locale != null && tag == null)
         return when {
@@ -96,6 +103,56 @@ internal object TextMappings {
     }
 
     private val UPPERCASE_CONVERSION = Regex("%[-#+ 0,(<\\d$.]*[SCB]")
+    private val HASH_CONVERSION = Regex("%[-#+ 0,(<\\d$.]*[hH]")
+    private val SPECIFIER = Regex("%(\\d+\\$)?([-#+ 0,(<]*)(?:\\d+)?(?:\\.\\d+)?([a-zA-Z%])")
+    private val SIZED_BITS = mapOf("kotlin/Byte" to 8, "kotlin/Short" to 16, "kotlin/Long" to 64)
+
+    /**
+     * The arguments after the locale (the format first, unless it is the receiver [format]), as the formatter takes them; loads
+     * `%h`'s hashing when the format may use it.
+     */
+    private fun CallSite.formatArguments(format: LuaExpr?, values: List<LuaExpr>, types: List<KaType?>): List<LuaExpr> {
+        val formatText = ((format ?: values.firstOrNull()) as? LuaString)?.value
+        if (formatText == null || HASH_CONVERSION.containsMatchIn(formatText)) transformer.ctx.lualib += "FormatHash"
+        return sizedIntegers(values, types, firstArgument = if (format == null) 1 else 0, formatText)
+    }
+
+    /** The (1-based) arguments that a literal format prints with `%x`, `%X` or `%o`, as java.util.Formatter picks them. */
+    private fun radixArguments(format: String): Set<Int> {
+        val used = HashSet<Int>()
+        var ordinary = 0
+        var last = 0
+        for (m in SPECIFIER.findAll(format)) {
+            val (index, flags, conversion) = m.destructured
+            if (conversion == "%" || conversion == "n") continue
+            val arg = when {
+                '<' in flags -> last
+                index.isNotEmpty() -> index.dropLast(1).toInt()
+                else -> ++ordinary
+            }
+            last = arg
+            if (conversion == "x" || conversion == "X" || conversion == "o") used += arg
+        }
+        return used
+    }
+
+    /**
+     * Format arguments of static type `Byte`, `Short` or `Long` that a `%x` or `%o` prints (all of them when the format is not a
+     * literal) as `__K2L_Text.sized(x, bits)`, so a negative value gives the two's complement of the type's width
+     * (`(-1).toByte()` is `ff`, `-1L` sixteen `f`s), as on the JVM. [firstArgument] is the index of the first argument after
+     * the format in [values].
+     */
+    private fun CallSite.sizedIntegers(values: List<LuaExpr>, types: List<KaType?>, firstArgument: Int, format: String?): List<LuaExpr> {
+        if (values.size != types.size) return values
+        val radix = format?.let(::radixArguments)
+        if (radix?.isEmpty() == true) return values
+        return values.mapIndexed { i, v ->
+            val classId = with(session) { (types[i]?.withoutFlexibility as? KaClassType)?.classId?.asString() }
+            val bits = SIZED_BITS[classId]
+            val printedInRadix = i >= firstArgument && (radix == null || (i - firstArgument + 1) in radix)
+            if (bits == null || !printedInRadix) v else text("sized", v, LuaNumber(bits.toString()))
+        }
+    }
 
     /** With `--strings utf16`, these helpers are members of `__K2L_Text` that count UTF-16 units. */
     private val UTF16_HELPERS = mapOf(
@@ -362,7 +419,10 @@ internal object TextMappings {
 
             "toByteArray", "encodeToByteArray" -> c.text("toByteArray")
 
-            "toRegex" -> LuaCall(LuaIndex(c.site.ref("Regex", "__K2L_Regex"), LuaString("new")), listOf(c.self) + c.args)
+            "toRegex" -> {
+                c.site.requireRegexProperties(c.self)
+                LuaCall(LuaIndex(c.site.ref("Regex", "__K2L_Regex"), LuaString("new")), listOf(c.self) + c.args)
+            }
 
             else -> null
         }
@@ -468,8 +528,19 @@ internal object TextMappings {
             "lowercaseChar", "lowercase" -> LuaMethodCall(c, "lower", emptyList())
             "digitToInt" -> site.libMember("Numbers", "__K2L_Num", "digitToInt", c, *site.args.toTypedArray())
             "digitToIntOrNull" -> site.libMember("Numbers", "__K2L_Num", "digitToIntOrNull", c, *site.args.toTypedArray())
+            "equals" -> asciiCharEquals(site)
             "toString" -> c
             else -> null
+        }
+    }
+
+    /** `c.equals(other, ignoreCase)` on ASCII chars. */
+    private fun asciiCharEquals(site: CallSite): LuaExpr? {
+        val (other, ignoreCase) = site.args.takeIf { it.size == 2 } ?: return null
+        return when (ignoreCase) {
+            LuaBool(false) -> LuaBinary(LuaBinOp.Eq, site.self, other)
+            LuaBool(true) -> LuaCall(site.ref("Strings", "__K2L_StringEqualsIgnoreCase"), listOf(site.self, other))
+            else -> site.text("charEquals", site.self, other, ignoreCase)
         }
     }
 }

@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
@@ -19,7 +20,7 @@ local function main()
     print(__K2L_Utf16.out(__K2L_StringToInt("ＦＦ", 16, true)))
     print(__K2L_Utf16.out(__K2L_StringToInt("٧٧٧", nil, true)))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_StringToIntOrNull("١x", nil, true))))
-    print(__K2L_Utf16.out(__K2L_StringToInt("-٤", nil, true)))
+    print(__K2L_Utf16.out(__K2L_NotNull(__K2L_StringToInt("-٤", nil, true))))
 end
 
 main()

@@ -7,7 +7,7 @@ internal object RegexMappings {
     private val OPTIONS = listOf("IGNORE_CASE", "MULTILINE", "DOT_MATCHES_ALL", "LITERAL", "COMMENTS", "UNIX_LINES", "CANON_EQ")
 
     private val REGEX_METHODS =
-        setOf("find", "matchEntire", "matches", "containsMatchIn", "replace", "replaceFirst", "split")
+        setOf("find", "matchEntire", "matches", "containsMatchIn", "replace", "replaceFirst", "split", "matchAt", "matchesAt")
 
     fun install(t: MappingTable) {
         for (option in OPTIONS) {

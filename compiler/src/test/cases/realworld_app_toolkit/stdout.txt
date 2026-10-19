@@ -1,0 +1,26 @@
+ada: ok
+<anon>: name must not be blank; age must be positive, was -1; age must be an adult; email is invalid: nope
+bob: age must be an adult; email is invalid: bob@example
+succeeded on 3 after 3 calls, delays [10, 20]
+gave up: not retried, delays [10, 20]
+55 left early [sum took 5, early took 3]
+opened [db, cache, 42], close failures [cache refused to close], log [closed #42, closed db]
+two true [5] null
+User State Transition
+text 7 null
+4
+3
+a, five, z!
+4+6+10.
+true false true true true false STOPPED
+  pump: IDLE -> RUNNING
+  pump: RUNNING -> PAUSED
+  pump: PAUSED -> RUNNING
+  pump: RUNNING -> STOPPED
+(1, 1) null [3, 7, 0]
+[[12, 24, 36], [16, 29, 42]]
+fib(60) = 1548008755920
+true fatal: disk full
+NotImplementedError: An operation is not implemented: parse config
+need more than 5 users, got 3
+age age: too low true

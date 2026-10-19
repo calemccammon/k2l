@@ -79,6 +79,7 @@ end
 local Ref = __K2L_Class("sheet.Ref")
 __K2L_ClassInfo(Ref, "sheet.Ref", "sheet.Ref", "class")
 __K2L_CompanionInfo(Ref, "sheet.Ref.Companion", "sheet.Ref$Companion", "Companion")
+Ref.____comparable = true
 
 function Ref:____init(col, row)
     self.col = col
@@ -104,6 +105,8 @@ end
 function Ref:equals(other)
     return getmetatable(other) == Ref and self.col:equals(other.col) and self.row == other.row
 end
+
+Ref.____companion = true
 
 function Ref:parse(s)
     local ____value = self.PATTERN:matchEntire(__K2L_StringTrim(s):upper())
@@ -249,7 +252,9 @@ local function parseFormula(text)
             return Formula.Fn.new(name, Ref:parse(a):rangeTo(Ref:parse(b)))
         end
     end
-    for _, op in ipairs(__K2L_ReadOnlyListOf("+", "-", "*", "/")) do
+    local ____list = __K2L_ReadOnlyListOf("+", "-", "*", "/")
+    for ____i = 1, ____list.size do
+        local op = ____list[____i]
         local i = __K2L_StringLastIndexOf(t, op)
         if i > 0 then
             return Formula.Op.new(op, parseFormula(__K2L_Text.substring(t, 0, i)), parseFormula(__K2L_Text.substring(t, i + 1)))
@@ -296,15 +301,27 @@ function Sheet:order()
         local ____receiver_3 = ____receiver_2 and ____receiver_2:refs()
         local ____receiver_4 = ____receiver_3 and ____receiver_3:sorted()
         if ____receiver_4 ~= nil then
-            for _, it in ipairs(____receiver_4) do
+            local ____mod = ____receiver_4.____modCount
+            for ____i_1 = 1, ____receiver_4.size do
+                local it = ____receiver_4[____i_1]
                 visit(it)
+                if ____receiver_4.____modCount ~= ____mod and ____receiver_4:____comodified(____i_1) then
+                    break
+                end
             end
         end
         visiting:removeAt(visiting.size - 1)
         done:add(r)
     end
-    for _, it in ipairs(self.formulas:getKeys():toList()) do
+    local ____collection = self.formulas:getKeys()
+    local ____items, ____n = ____collection:____array()
+    local ____mod_1 = ____collection.____modCount
+    for ____i_2 = 1, ____n do
+        local it = ____items[____i_2]
         visit(it)
+        if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_2, ____n) then
+            break
+        end
     end
     return done:filter(function(it) return self.formulas:containsKey(it) end)
 end
@@ -312,9 +329,15 @@ end
 function Sheet:recalc()
     self.lastOrder = self:order()
     self.values:clear()
-    for _, ref in ipairs(self.lastOrder or __K2L_Uninitialized("lastOrder")) do
+    local ____list_1 = self.lastOrder or __K2L_Uninitialized("lastOrder")
+    local ____mod_2 = ____list_1.____modCount
+    for ____i_3 = 1, ____list_1.size do
+        local ref = ____list_1[____i_3]
         local ____object_1 = self.values
         ____object_1:set(ref, self:eval(self.formulas:getValue(ref)))
+        if ____list_1.____modCount ~= ____mod_2 and ____list_1:____comodified(____i_3) then
+            break
+        end
     end
 end
 
@@ -390,8 +413,14 @@ local function main()
     s:set("C2", "C1/A4")
     s:set("C3", "B3-A1-1")
     s:recalc()
-    for _, it in ipairs(s:describe()) do
+    local ____list_2 = s:describe()
+    local ____mod_3 = ____list_2.____modCount
+    for ____i_4 = 1, ____list_2.size do
+        local it = ____list_2[____i_4];
         (function(____p1) return print(__K2L_Str(____p1)) end)(it)
+        if ____list_2.____modCount ~= ____mod_3 and ____list_2:____comodified(____i_4) then
+            break
+        end
     end
     print("order: " .. __K2L_Str(s.lastOrder or __K2L_Uninitialized("lastOrder")))
     print(s:render(Ref:parse("A1"):rangeTo(Ref:parse("C3"))))

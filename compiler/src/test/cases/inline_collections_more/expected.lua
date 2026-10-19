@@ -1,11 +1,12 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_ListBuilderOf = ____lualib.__K2L_ListBuilderOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_MapBuilderOf = ____lualib.__K2L_MapBuilderOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -19,6 +20,7 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
 
 local Item = __K2L_Class("Item")
@@ -758,7 +760,7 @@ local function zips(xs, ys, stopAt)
         ____result_50:add(____result_51)
     end
     local a = ____result_50
-    local ____other = ys:toTypedArray()
+    local ____other = ys:toTypedArray("[Ljava.lang.String;")
     local ____result_52 = __K2L_ListOf()
     for ____i_12 = 1, xs.size do
         local x = xs[____i_12]
@@ -782,7 +784,7 @@ end
 
 local function maps(m, stopAt)
     local ____result_54 = __K2L_MapOf()
-    for _, it in ipairs(m:getEntries()) do
+    for _, it in ipairs(m:____entryArray()) do
         local ____result_55
         if it.value == stopAt then
             return "filter stop " .. it.key
@@ -794,7 +796,7 @@ local function maps(m, stopAt)
     end
     local a = ____result_54
     local ____result_56 = __K2L_MapOf()
-    for _, ____it in ipairs(m:getEntries()) do
+    for _, ____it in ipairs(m:____entryArray()) do
         local ____result_57
         do
             local k, v = ____it.key, ____it.value
@@ -809,7 +811,7 @@ local function maps(m, stopAt)
     end
     local b = ____result_56
     local ____result_58 = __K2L_MapOf()
-    for _, it in ipairs(m:getEntries()) do
+    for _, it in ipairs(m:____entryArray()) do
         local ____result_59
         if it.key == "zzz" then
             return "never"
@@ -819,7 +821,7 @@ local function maps(m, stopAt)
     end
     local c = ____result_58
     local ____result_60 = __K2L_MapOf()
-    for _, ____it_1 in ipairs(m:getEntries()) do
+    for _, ____it_1 in ipairs(m:____entryArray()) do
         local ____result_61
         do
             local k, v = ____it_1.key, ____it_1.value
@@ -832,7 +834,7 @@ local function maps(m, stopAt)
     end
     local d = ____result_60
     local ____result_62 = __K2L_MapOf()
-    for _, ____entry in ipairs(m:getEntries()) do
+    for _, ____entry in ipairs(m:____entryArray()) do
         local ____result_63
         do
             local it = ____entry.key
@@ -847,7 +849,7 @@ local function maps(m, stopAt)
     end
     local e = ____result_62
     local ____result_64 = __K2L_MapOf()
-    for _, ____entry_1 in ipairs(m:getEntries()) do
+    for _, ____entry_1 in ipairs(m:____entryArray()) do
         local ____result_65
         do
             local it = ____entry_1.value
@@ -862,7 +864,7 @@ local function maps(m, stopAt)
     end
     local f = ____result_64
     local seen = __K2L_ListOf()
-    for _, it in ipairs(m:getEntries()) do
+    for _, it in ipairs(m:____entryArray()) do
         if it.value == -3 then
             return "never"
         end
@@ -876,7 +878,7 @@ local function mapExtremes(m)
     local ____best_8
     local ____bestKey_8
     local ____has_8 = false
-    for _, it in ipairs(m:getEntries()) do
+    for _, it in ipairs(m:____entryArray()) do
         local ____result_66
         if it.value == -3 then
             return "never"
@@ -893,7 +895,7 @@ local function mapExtremes(m)
     local ____best_9
     local ____bestKey_9
     local ____has_9 = false
-    for _, it in ipairs(m:getEntries()) do
+    for _, it in ipairs(m:____entryArray()) do
         local ____result_67
         if it.value == -3 then
             return "never"
@@ -913,7 +915,7 @@ local function mapExtremes(m)
     local ____best_10
     local ____bestKey_10
     local ____has_10 = false
-    for _, it in ipairs(m:getEntries()) do
+    for _, it in ipairs(m:____entryArray()) do
         local ____result_68
         if it.value == -3 then
             return "never"
@@ -947,14 +949,14 @@ local function flatMaps(xs, stopAt)
 end
 
 local function builders(stopAt)
-    local ____builder = __K2L_ListOf()
+    local ____builder = __K2L_ListBuilderOf()
     for i = 1, 5 do
         if i == stopAt then
             return "buildList stop"
         end
         ____builder:add(i)
     end
-    local l = ____builder
+    local l = ____builder:____build()
     local ____builder_1 = __K2L_StringBuilder.new()
     for c in ("abc"):gmatch(".") do
         if c == "z" then
@@ -963,12 +965,12 @@ local function builders(stopAt)
         ____builder_1:append(c)
     end
     local s = ____builder_1:toString()
-    local ____builder_2 = __K2L_MapOf()
+    local ____builder_2 = __K2L_MapBuilderOf()
     ____builder_2:put("k", 1)
     if stopAt == 99 then
         return "buildMap stop"
     end
-    local m = ____builder_2
+    local m = ____builder_2:____build()
     local n = 0
     for it = 0, 2 do
         if stopAt == 98 then
@@ -980,7 +982,7 @@ local function builders(stopAt)
 end
 
 local function arrays(stopAt)
-    local arr = __K2L_ArrayOf(5, 3, 8)
+    local arr = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 5, 3, 8)
     local a = arr:sortedBy(function(it) return -it end, true)
     local ____result_71
     local ____found_9 = false

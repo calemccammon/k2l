@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
@@ -16,6 +15,7 @@ local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Vec = __K2L_Class("Vec")
 
@@ -62,10 +62,10 @@ local function main()
     print(__K2L_Str(v))
     print(__K2L_FloatToString(v:length()))
     print(__K2L_Str(v:scaled(__K2L_Fround(1.0 / 3))))
-    local arr = __K2L_ArrayOf(0.10000000149011612, 0.699999988079071, 1.2999999523162842)
+    local arr = __K2L_TypedArrayOf("[F", 0.10000000149011612, 0.699999988079071, 1.2999999523162842)
     print(__K2L_FloatToString(average(arr)))
     print(__K2L_Str(arr:toList()))
-    local zeros = __K2L_ListOfSize(2, 0.0, true)
+    local zeros = __K2L_ListOfSize(2, 0.0, "[F")
     print(__K2L_FloatToString(zeros:get(0)))
     zeros:set(1, __K2L_Fround(2.5 / 3))
     print(__K2L_FloatToString(zeros:get(1)))
@@ -86,8 +86,8 @@ local function main()
     local m = __K2L_ReadOnlyMapOf(__K2L_Pair.new("a", 0.10000000149011612), __K2L_Pair.new("b", __K2L_Fround(0.20000000298023224 + 0.10000000149011612)))
     print(__K2L_Str(m))
     local p = __K2L_Fround(0.699999988079071 * 3)
-    print(__K2L_Str(p))
-    print("p=" .. __K2L_Str(p))
+    print(__K2L_FloatToString(p))
+    print("p=" .. __K2L_FloatToString(p))
     local any = __K2L_Fround(1.0 / 7)
     print(__K2L_Str(any))
     print(__K2L_FloatToString(1000000.0))

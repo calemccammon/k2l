@@ -21,16 +21,17 @@ internal fun FileTransformer.forEachLoop(collection: LuaExpr, type: KaType?, lam
             emit(LuaGenericFor(listOf(k, v), listOf(luaCall(LuaName("pairs"), collection)), body(k, v)))
         }
 
+        // Map.forEach(BiConsumer) runs over the whole map, then throws if the action changed it (`iter(true)`)
         kind == CollectionKind.Map && params.size == 2 -> {
             val k = varName(0, "key")
             val v = varName(1, "value")
-            emit(LuaGenericFor(listOf(k, v), listOf(LuaMethodCall(collection, "iter", emptyList())), body(k, v)))
+            emit(LuaGenericFor(listOf(k, v), listOf(LuaMethodCall(collection, "iter", listOf(LuaBool(true)))), body(k, v)))
         }
 
         kind == CollectionKind.Map -> {
             val entry = varName(0, "entry")
-            val entries = LuaMethodCall(collection, "getEntries", emptyList())
-            emit(LuaGenericFor(listOf("_", entry), listOf(luaCall(LuaName("ipairs"), entries)), body(entry)))
+            val source = arraySource(collection, "____entryArray", mayChangeCollections(lambdaBody(lambda)))
+            elementsLoop(source, entry, null, body(entry))
         }
 
         (kind == CollectionKind.Sequence || kind == CollectionKind.Iterator) && !indexed -> {
@@ -66,7 +67,10 @@ private fun FileTransformer.forEachBody(lambda: KtExpression, vararg vars: Strin
     inlineLambda(lambda, vars.map { LuaName(it).also { v -> stable += v } }, null, null)
 }
 
-/** `forEach` over a list-like value, with an index when [indexed] (`forEachIndexed`). */
+/**
+ * `forEach` over a list-like value, with an index when [indexed] (`forEachIndexed`): Kotlin's forEach is a `for` loop
+ * over the collection's iterator, so it is checked for changes of the collection like one (see [elementsLoop]).
+ */
 private fun FileTransformer.forEachList(
     collection: LuaExpr,
     type: KaType?,
@@ -75,25 +79,22 @@ private fun FileTransformer.forEachList(
     params: List<KtParameter>,
 ): Unit = with(session) {
     val kind = type?.let { loopKind(it) }
-    fun varName(i: Int, default: String) = forEachVar(params, i, default)
-    fun body(vararg vars: String) = forEachBody(lambda, *vars)
+    val checked = mayChangeCollections(lambdaBody(lambda))
+    val source = when {
+        kind == CollectionKind.Array -> listSource(collection, false)
+        kind?.isIndexable == true -> listSource(collection, checked)
+        else -> arraySource(collection, checked = checked)
+    }
     if (indexed) {
-        val list = cache(asList(kind, collection), "list")
-        val index = varName(0, "index")
-        val value = varName(1, "value")
-        val element = LuaLocal(listOf(value), listOf(CollectionMappings.index(list, LuaName(index))))
-        val last = lastIndex(list)
-        emit(LuaNumericFor(index, LuaNumber("0"), last, null, listOf(element) + body(index, value)))
+        val index = forEachVar(params, 0, "index")
+        val value = forEachVar(params, 1, "value")
+        elementsLoop(source, value, index, forEachBody(lambda, index, value))
         return
     }
-    val list = asList(kind, collection)
-    val item = varName(0, "it").let { if (params.isEmpty()) "it" else it }
-    if (type?.elementType?.isMarkedNullable == false && !usesListViews) {
-        emit(LuaGenericFor(listOf("_", item), listOf(luaCall(LuaName("ipairs"), list)), body(item)))
-    } else {
-        val items = cache(list, "list")
-        val i = ctx.temp("i")
-        val element = LuaLocal(listOf(item), listOf(LuaIndex(items, LuaName(i))))
-        emit(LuaNumericFor(i, LuaNumber("1"), LuaIndex(items, LuaString("size")), null, listOf(element) + body(item)))
-    }
+    val item = forEachVar(params, 0, "it").let { if (params.isEmpty()) "it" else it }
+    elementsLoop(source, item, null, forEachBody(lambda, item))
 }
+
+/** The body of a lambda literal (null for other function values, which may do anything). */
+internal fun lambdaBody(lambda: KtExpression): KtExpression? =
+    (KtPsiUtil.safeDeparenthesize(lambda) as? KtLambdaExpression)?.bodyExpression ?: lambda

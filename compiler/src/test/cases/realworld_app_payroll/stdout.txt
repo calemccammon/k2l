@@ -1,0 +1,40 @@
+lead:
+  Employee(Ada) title=lead (null)
+  Engineer(Ada) level=3 bonus=0.0
+engineers:
+  Employee(Bo) title=null
+  Engineer(Bo) level=2 bonus=0.1
+  Employee(Cy) title=null
+  Engineer(Cy) level=1 bonus=0.1
+intern:
+  Employee(Dee) title=null
+  Employee secondary(Dee)
+managers:
+  Employee(Eve) title=null
+  Employee(Fay) title=null
+  Employee(Gus) title=null
+  Employee secondary(Gus)
+Manager(Fay, manager, 15000)
+  Manager(Eve, manager, 8000)
+    Lead(Ada, lead (engineer L3), 12500)
+    Engineer(Bo, engineer L2, 6600)
+    Engineer(Cy, engineer L1, 5500)
+    Intern(Dee, intern, 3000)
+      mentored by Bo
+  Intern(Gus, intern, 3000)
+headcount 7, everyone: [FAY-105, EVE-104, ADA-100, BO-101, CY-102, DEE-103, GUS-106]
+true true false lead 1: 12500 USD | 3: 6600 EUR | 12: 15000 EUR
+titles: [manager, manager, lead (engineer L3), engineer L2, engineer L1, intern, intern]
+currencies: [USD, EUR, GBP]
+Ada: 12500 +10% (annual review) +500 (launch) = 14250
+Bo: 6600 +200 (on call) -150 (laptop) +100 (referral) = 6750
+Dee: 3000 +5% (good start) = 3150
+{Fay=15000, Eve=8000, Ada=14250, Bo=6750, Cy=5500, Dee=3150, Gus=3000}
+bonuses 800, bo's bonuses 300, deductions 150
+false true 3 true
+other:
+  Employee(Ada) title=null
+  Engineer(Ada) level=1 bonus=0.1
+{Manager=[Fay, Eve], Lead=[Ada], Engineer=[Bo, Cy], Intern=[Dee, Gus]}
+intern lead 7: 12500 USD [lead 1: 12500 USD, lead 2: 12500 USD]
+3000

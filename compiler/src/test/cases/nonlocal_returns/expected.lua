@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
@@ -17,6 +16,7 @@ local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Item = __K2L_Class("Item")
 
@@ -249,10 +249,15 @@ local function summing(xs)
 end
 
 local function indexed(xs)
-    for i = 0, xs.size - 1 do
-        local s = xs[i + 1]
+    local ____mod = xs.____modCount
+    for ____i = 1, xs.size do
+        local s = xs[____i]
+        local i = ____i - 1
         if s == "x" then
             return "x at " .. i
+        end
+        if xs.____modCount ~= ____mod and xs:____comodified(____i) then
+            break
         end
     end
     return "no x"
@@ -433,8 +438,8 @@ end
 
 local function nullable(xs)
     local ____result_47 = __K2L_ListOf()
-    for ____i = 1, xs.size do
-        local it = xs[____i]
+    for ____i_1 = 1, xs.size do
+        local it = xs[____i_1]
         local ____result_48
         if it == 0 then
             return __K2L_ReadOnlyListOf()
@@ -457,7 +462,8 @@ local function overSet(s)
             ____result_49:add(it)
         end
     end
-    for _, x in ipairs(____result_49) do
+    for ____i_2 = 1, ____result_49.size do
+        local x = ____result_49[____i_2]
         print("set " .. x)
     end
     return 0
@@ -465,7 +471,7 @@ end
 
 local function overMap(m)
     local ____result_51 = __K2L_ListOf()
-    for _, ____it in ipairs(m:getEntries()) do
+    for _, ____it in ipairs(m:____entryArray()) do
         local ____result_52
         do
             local k, v = ____it.key, ____it.value
@@ -478,7 +484,7 @@ local function overMap(m)
     end
     local keys = ____result_51
     local ____result_53 = false
-    for _, it in ipairs(m:getEntries()) do
+    for _, it in ipairs(m:____entryArray()) do
         local ____result_54
         if it.value == 99 then
             return "99!"
@@ -511,8 +517,8 @@ local function overRange()
     local ____list = __K2L_IntRange.new(1, 5)
     local ____result_57 = __K2L_ListOf()
     local ____list_1 = ____list:toList()
-    for ____i_1 = 1, ____list_1.size do
-        local it = ____list_1[____i_1]
+    for ____i_3 = 1, ____list_1.size do
+        local it = ____list_1[____i_3]
         local ____result_58
         if it == 4 then
             return 40
@@ -526,7 +532,9 @@ end
 
 local function inLoop(xss)
     local out = __K2L_StringBuilder.new()
-    for _, xs in ipairs(xss) do
+    local ____mod_1 = xss.____modCount
+    for ____i_4 = 1, xss.size do
+        local xs = xss[____i_4]
         local ____result_59 = __K2L_ListOf()
         for _, it in ipairs(xs) do
             local ____result_60
@@ -540,6 +548,9 @@ local function inLoop(xss)
         end
         local r = ____result_59
         out:append(__K2L_Str(r))
+        if xss.____modCount ~= ____mod_1 and xss:____comodified(____i_4) then
+            break
+        end
     end
     return out:toString()
 end
@@ -651,8 +662,8 @@ local function main()
     print(overMap(__K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2))))
     print(overMap(__K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", -2))))
     print(overMap(__K2L_MapOf(__K2L_Pair.new("a", 99))))
-    print(overArray(__K2L_ArrayOf(1, 2, 3)))
-    print(overArray(__K2L_ArrayOf(1, 0)))
+    print(overArray(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2, 3)))
+    print(overArray(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 0)))
     print(overRange())
     print(inLoop(__K2L_ReadOnlyListOf(__K2L_ReadOnlyListOf(1, 2, 3), __K2L_ReadOnlyListOf(4, 0))))
     print(inTry(__K2L_ReadOnlyListOf(2, 3)))

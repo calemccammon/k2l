@@ -22,9 +22,13 @@ end
 
 local function main()
     local values = __K2L_ReadOnlyListOf(1, 2.5, "3", 4, nil, __K2L_BigInteger.TEN, __K2L_BigDecimal.parse("1.5"), __K2L_SingletonListOf(1), true, 3.0)
+    local ____mod = values.____modCount
     for ____i = 1, values.size do
         local it = values[____i]
         print(describe(it))
+        if values.____modCount ~= ____mod and values:____comodified(____i) then
+            break
+        end
     end
     print(values:filter(function(x) return __K2L_IsNumber(x) end).size)
     print(__K2L_Str(values:map(function(it)

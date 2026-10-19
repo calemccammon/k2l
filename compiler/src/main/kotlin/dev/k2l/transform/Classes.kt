@@ -85,6 +85,7 @@ private fun FileTransformer.emitClassTable(c: KtClassOrObject, ref: LuaExpr, inf
     emit(if (isLocal) LuaLocal(listOf(naming.of(c)), listOf(create)) else assign(ref, create))
     classInfo(c, ref)
     readOnlyFlag(c, ref)
+    comparableFlag(c, ref)
 }
 
 /** Annotations, enum entries and companions are emitted with their class. */
@@ -98,6 +99,7 @@ private fun FileTransformer.classBody(c: KtClassOrObject, ref: LuaExpr, info: Su
     delegatedMembers(c, ref)
     libraryDelegatedMembers(c, ref)
     libraryPropertyOverrides(c, ref)
+    collectionOverrides(c, ref)
     if (c is KtClass && c.hasDataMembers()) dataClassMembers(c, ref)
     if (c is KtObjectDeclaration && c.hasModifier(KtTokens.DATA_KEYWORD)) dataObjectMembers(c, ref)
     if (c is KtClass && c.isEnum()) enumMembers(c, ref)
@@ -192,6 +194,7 @@ internal fun FileTransformer.constructors(c: KtClassOrObject, ref: LuaExpr, info
             storeOuter(c)
             defaultArguments(params)
             if (isEnum) enumParams.forEach { emit(assign(LuaIndex(selfRef(), LuaString(it)), LuaName(it))) }
+            earlyFieldDefaults(c)
             superInit(info.baseCall, info)
             for (p in params) {
                 if (p.hasValOrVar()) emit(assign(LuaIndex(selfRef(), LuaString(fieldKey(p))), LuaName(naming.of(p))))
@@ -218,6 +221,7 @@ private fun FileTransformer.secondaryConstructor(c: KtClass, ctor: KtSecondaryCo
                 delegatingInit(delegation, c, enumParams)
             } else {
                 if (c.isEnum()) enumParams.forEach { emit(assign(LuaIndex(selfRef(), LuaString(it)), LuaName(it))) }
+                if (!hasPrimary(c)) earlyFieldDefaults(c)
                 superInit(delegation?.takeIf { it.valueArgumentList != null }, info)
                 if (!hasPrimary(c)) {
                     delegateFields(c)

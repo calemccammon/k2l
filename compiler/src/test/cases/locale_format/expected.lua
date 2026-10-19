@@ -11,9 +11,14 @@ end
 
 local function main()
     local locales = __K2L_ReadOnlyListOf("en_US", "", "en_GB", "de_DE", "fr_FR", "it_IT", "ja_JP", "zh_CN", "en_CA", "fr_CA", "ko_KR", __K2L_Locale.of("es", "ES"), __K2L_Locale.of("es", "MX"), __K2L_Locale.of("es", "AR"), __K2L_Locale.of("pt", "BR"), __K2L_Locale.of("pt", "PT"), __K2L_Locale.of("ru", "RU"), __K2L_Locale.of("pl", "PL"), __K2L_Locale.of("sv", "SE"), __K2L_Locale.of("nb", "NO"), __K2L_Locale.of("da", "DK"), __K2L_Locale.of("fi", "FI"), __K2L_Locale.of("cs", "CZ"), __K2L_Locale.of("nl", "NL"), __K2L_Locale.of("tr", "TR"), __K2L_Locale.of("de", "CH"), __K2L_Locale.of("de", "AT"), __K2L_Locale.of("fr", "CH"), __K2L_Locale.of("en", "IN"), __K2L_Locale.of("hi", "IN"), __K2L_Locale.of("ar", "EG"), __K2L_Locale.of("ar"), __K2L_Locale.of("fa", "IR"), __K2L_Locale.of("he", "IL"), __K2L_Locale.of("th", "TH"), __K2L_Locale.of("th", "TH", "TH"), __K2L_Locale.of("bn", "BD"), __K2L_Locale.of("mr", "IN"), __K2L_Locale.of("my", "MM"), __K2L_Locale.of("ne", "NP"), __K2L_Locale.of("hu", "HU"), __K2L_Locale.of("uk", "UA"), __K2L_Locale.of("bg", "BG"), __K2L_Locale.of("el", "GR"), __K2L_Locale.of("id", "ID"), __K2L_Locale.of("vi", "VN"), __K2L_Locale.of("de"), __K2L_Locale.of("fr"), __K2L_Locale.of("xx", "YY"), __K2L_Locale.of("zz"))
-    for _, locale in ipairs(locales) do
+    local ____mod = locales.____modCount
+    for ____i = 1, locales.size do
+        local locale = locales[____i]
         io.write(__K2L_Str(__K2L_Locale.language(locale)) .. "_" .. __K2L_Str(__K2L_Locale.country(locale)) .. ": ")
         line(locale, 1234567.891, 9876543210)
+        if locales.____modCount ~= ____mod and locales:____comodified(____i) then
+            break
+        end
     end
     local de = "de_DE"
     print(__K2L_LocaleFormat.format(de, nil, "%d", 1234567))
@@ -45,8 +50,8 @@ local function main()
     print(__K2L_LocaleFormat.format(__K2L_Locale.of("ar", "EG"), nil, "%,d", -1234567))
     print(__K2L_StringFormat("%d%%", 50))
     print(__K2L_StringFormat("%,d", 1234567))
-    print(__K2L_LocaleFormat.format(nil, nil, "%,d", 1234567))
-    print(__K2L_LocaleFormat.format(nil, nil, "%,.1f", 1234567.25))
+    print(__K2L_StringFormat("%,d", 1234567))
+    print(__K2L_StringFormat("%,.1f", 1234567.25))
     print(__K2L_LocaleFormat.format(de, nil, "%s", 1234567))
     print(__K2L_LocaleFormat.format(de, nil, "%s %s", 1.5, __K2L_ReadOnlyListOf(1.5, 2.5)))
     print(__K2L_LocaleFormat.format(de, nil, "%.2f%s", 0.5, "x"))

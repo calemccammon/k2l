@@ -39,6 +39,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Triple = ____lualib.__K2L_Triple
 
 local Version = __K2L_Class("Version")
+Version.____comparable = true
 
 function Version:____init(major, minor, patch, pre)
     if minor == nil then
@@ -118,6 +119,8 @@ end
 function Version:equals(other)
     return getmetatable(other) == Version and self.major == other.major and self.minor == other.minor and self.patch == other.patch and self.pre == other.pre
 end
+
+Version.____companion = true
 
 function Version:parse(s)
     local ____value_2 = self.PATTERN:matchEntire(__K2L_StringTrim(s))
@@ -332,7 +335,10 @@ function Resolver:solve(chosen, pending)
             return nil
         end
     end
-    for _, v in ipairs(self.registry:candidates(name, constraint)) do
+    local ____list = self.registry:candidates(name, constraint)
+    local ____mod = ____list.____modCount
+    for ____i = 1, ____list.size do
+        local v = ____list[____i]
         local newDeps = self.registry:deps(name, v):map(function(____destructured_3)
             local n, c = ____destructured_3.key, ____destructured_3.value
             return __K2L_Triple.new(name .. "@" .. __K2L_Str(v), n, c)
@@ -340,6 +346,9 @@ function Resolver:solve(chosen, pending)
         local result = self:solve(chosen:plus(__K2L_Pair.new(name, v)), rest:plusAll(newDeps))
         if result ~= nil then
             return result
+        end
+        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            break
         end
     end
     if from == "<root>" then
@@ -350,13 +359,28 @@ end
 
 local function lockFile(solution, registry)
     local ____builder = __K2L_StringBuilder.new()
-    ____builder:appendLine("# generated lock file")
-    for name, v in solution:iter() do
-        ____builder:appendLine(name .. " = \"" .. __K2L_Str(v) .. "\"")
-        for _, ____entry in ipairs(registry:deps(name, v):toSortedMap():getEntries()) do
-            do
-                local dep, c = ____entry.key, ____entry.value
-                ____builder:appendLine("  " .. __K2L_Str(dep) .. " " .. __K2L_Str(c) .. " -> " .. __K2L_Str(solution:get(dep)))
+    do
+        ____builder:appendLine("# generated lock file")
+        local ____keys, ____values, ____n = solution:____arrays()
+        local ____mod_2 = solution.____modCount
+        for ____i_2 = 1, ____n do
+            local name, v = ____keys[____i_2], ____values[____i_2]
+            ____builder:appendLine(name .. " = \"" .. __K2L_Str(v) .. "\"")
+            local ____collection = registry:deps(name, v):toSortedMap()
+            local ____items, ____n_1 = ____collection:____entryArray()
+            local ____mod_1 = ____collection.____modCount
+            for ____i_1 = 1, ____n_1 do
+                local ____entry = ____items[____i_1]
+                do
+                    local dep, c = ____entry.key, ____entry.value
+                    ____builder:appendLine("  " .. __K2L_Str(dep) .. " " .. __K2L_Str(c) .. " -> " .. __K2L_Str(solution:get(dep)))
+                end
+                if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_1, ____n_1) then
+                    break
+                end
+            end
+            if solution.____modCount ~= ____mod_2 and solution:____comodified(____i_2, ____n) then
+                break
             end
         end
     end
@@ -373,7 +397,9 @@ local function main()
     print("1.2.3 in 1.0..2.0: " .. tostring(__K2L_Compare(____value_9, ____bound) >= 0 and __K2L_Compare(____value_9, ____bound_1) <= 0))
     print("bumps: " .. __K2L_Str(__K2L_EnumValues(Version.Part):map(function(it) return toVersion("1.4.7"):bump(it) end)))
     print(__K2L_Str(__K2L_RunCatching(function() return toVersion("1.x") end):exceptionOrNull()))
-    for _, c in ipairs(__K2L_ReadOnlyListOf("^1.2.0", "~1.2.0", ">=1.10", "1.0 - 1.2", "=2.0.0", "*", "^0.9 || ^2.0")) do
+    local ____list_1 = __K2L_ReadOnlyListOf("^1.2.0", "~1.2.0", ">=1.10", "1.0 - 1.2", "=2.0.0", "*", "^0.9 || ^2.0")
+    for ____i_3 = 1, ____list_1.size do
+        local c = ____list_1[____i_3]
         local parsed = Constraint:parse(c)
         print(__K2L_StringPadEnd(c, 12) .. " " .. __K2L_Str(parsed) .. " allows " .. __K2L_Str(versions:filter(function(...) return parsed:allows(...) end):sorted()))
     end

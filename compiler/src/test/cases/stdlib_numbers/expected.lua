@@ -3,6 +3,7 @@ local __K2L_CharRange = ____lualib.__K2L_CharRange
 local __K2L_ClosedRange = ____lualib.__K2L_ClosedRange
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
+local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_Num = ____lualib.__K2L_Num
@@ -100,8 +101,8 @@ local function ranges()
     print(__K2L_IntRange.new(1, 5):max())
     print(__K2L_IntRange.new(1, 5):isEmpty())
     print(__K2L_IntRange.new(1, 0):isEmpty())
-    print(__K2L_ClosedRange.new(1.0, 2.0):contains(1.5))
-    print(__K2L_Str(__K2L_ClosedRange.new(1.0, 2.0).last))
+    print(__K2L_ClosedRange.new(1.0, 2.0, __K2L_DoubleToString):contains(1.5))
+    print(__K2L_Str(__K2L_ClosedRange.new(1.0, 2.0, __K2L_DoubleToString).last))
     print(__K2L_Str(__K2L_IntRange.new(1, 5)))
     print(__K2L_Str(__K2L_IntRange.new(1, 5):withStep(2)))
     print(__K2L_Str(__K2L_IntRange.new(1, 3):toList()))

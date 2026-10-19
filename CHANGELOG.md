@@ -109,9 +109,60 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   machine, a bank, generic containers, a text adventure, a generator-based scheduler, a multi-package lending library, a
   spreadsheet, a warehouse, grid puzzles with BFS/Dijkstra, a register machine, dynamic programming, CSV reports, sequences,
   big numbers, an inventory, graph algorithms, text tools, a simulation, linear algebra, a library catalogue, a dependency
-  resolver, timesheets, compression and bit puzzles.
+  resolver, timesheets, compression and bit puzzles. Generic-heavy and multi-package applications (`realworld_app_*`): a
+  dependency-injection container with an event bus, generic repositories with variance and query specs, a plugin host, a rules
+  engine DSL, a middleware pipeline, an undo/redo editor, a parser-combinator library, an entity-component system, a units
+  library on value classes, a tiny ORM with delegated columns, a payroll over a class hierarchy and a toolkit of inline helpers.
+- Text-heavy realistic programs and ports as test cases (`realworld_text_*`, `realworld_port_*`): a JSON parser and pretty
+  printer, a text formatter with tables and `String.format` reports, a Pratt parser with positioned errors, a Markdown-to-HTML
+  converter, string algorithms (KMP, Rabin-Karp, suffix arrays, Manacher, Levenshtein), a regex log analyzer, a templating engine,
+  a TOML-ish config parser, a CSV dialect sniffer, Unicode text processing, number formatting and parsing, Rosetta Code tasks and
+  Advent of Code text puzzles.
+- `String.format`: `%<s` (the previous specifier's argument), `%h`/`%H`, `%c` of any code point, precision on `%b`/`%h`, and
+  java.util.Formatter's exceptions (`MissingFormatArgumentException`, `UnknownFormatConversionException`,
+  `IllegalFormatConversionException`, `IllegalFormatPrecisionException`, `MissingFormatWidthException`,
+  `FormatFlagsConversionMismatchException`, all `IllegalFormatException`s) with the JDK's messages; they can be caught by name.
+- `Regex.matchAt(input, index)` and `matchesAt`, class intersection (`[a-z&&[^aeiou]]`, `[\w&&\D]`), and with `--strings utf16`
+  the Unicode properties `\p{L}`, `\p{Lu}`, `\p{Ll}`, `\p{Lt}`, `\p{N}`/`\p{Nd}`, `\p{M}`, `\p{Z}`/`\p{Zs}`, `\p{IsWhite_Space}`,
+  `\p{javaWhitespace}`, `\p{javaLetterOrDigit}` and their `Is`/`java` aliases (the POSIX classes such as `\p{Alpha}` stay ASCII, as in
+  Java).
+- `when (x) { in collection -> }` and `in "aeiou" ->`: `in` conditions that are not ranges call `contains`.
+- `Char.equals(other, ignoreCase)` without `--strings utf16`, `codePointAt`/`codePointBefore`/`codePointCount`/
+  `offsetByCodePoints` of a `StringBuilder`, hexadecimal floats in `toDouble()` (`"0x1.8p3"`), and `Boolean.xor`/`not()`.
+- `vararg` parameters that are not the last one (`fun row(vararg cells: String, width: Int = 5)`, `fun total(vararg xs: Int,
+  f: (Int) -> Int)`), in functions, methods, constructors and inline functions, and spreads that are not the last argument of
+  an `inline fun` expanded at the call site (`countOf<Int>(*xs, 2)`).
+- A companion object with a member named like a member of the class's instances (`fun ok()` next to `val ok`, `toString`,
+  `copy`) gets a table of its own instead of being an error.
+
+- `ConcurrentModificationException` as on the JVM: `ArrayList`, `LinkedList`, `HashMap`, `LinkedHashMap`, `HashSet`,
+  `TreeMap`, `TreeSet` and `PriorityQueue` count structural changes (`____modCount`), and `for` loops, `forEach`, iterators and
+  `subList` views check it where the JDK's iterators do (removing the second-to-last element during a loop ends it quietly;
+  `Map.forEach { k, v -> }` throws after the whole map). Loop bodies that cannot change a collection (locals, literals,
+  operators, plain property reads, `println`) and loops over arrays or fresh `listOf(...)` are not checked.
+- A class extending a library collection and overriding `size`, `iterator()`, `get`, `contains`, `isEmpty`, `indexOf`,
+  `listIterator`, `entries`, `keys`, `values` or `containsKey` has the overrides called by the library's operations where the
+  JDK and the stdlib call them (`toString`, `for`, `map`, `first()`, `contains`, `equals`, `toList`, `HashSet(c)`, a map's
+  `toString`, loops, `putAll`, ...), see `CollectionOverrides.lua`; other collections keep their direct paths.
+- `TreeMap.navigableKeySet()`, `descendingKeySet()` (navigable: `floor`, `ceiling`, `pollFirst`, `descendingSet`, ...),
+  `descendingMap()` as a live `TreeMap$DescendingSubMap`; `IntRange.EMPTY`, `LongRange.EMPTY`, `CharRange.EMPTY`.
+- Arrays know their JVM class at run time: an `IntArray` or `Array<String>` held in an `Any` has its class (`[I`,
+  `[Ljava.lang.String;`), `is IntArray`/`is Array<*>` tell arrays apart, and `toString()` is `[I@hash`.
+- `is Queue`, `is Deque`, `is TreeSet`, `is TreeMap`, `is PriorityQueue`, `is java.util.ArrayDeque` and `is LinkedList`
+  test the class itself.
 
 ### Changed
+- `println(x)` and `print(x)` of a platform-typed primitive (`treeMap.higherKey(k)` is `Int!`) throw `NullPointerException` for
+  null, as the JVM's unboxing for `println(Int)` does (`__K2L_NotNull(x)`).
+- A map's `keys`, `values` and `entries` are live views (they were copies that only wrote removals back): they see later
+  changes, track the map's size, and `remove`, `removeIf`, `retainAll`, `clear`, their iterators' `remove()` and `setValue`
+  write through; `values` is a `Collection`, not a `List`. Loops over a map's keys, values or entries read the map's arrays
+  without copying (much faster on PUC Lua), and `for (x in list)` is a numeric loop (faster than `ipairs` on PUC Lua).
+- `buildList { }`, `buildSet { }` and `buildMap { }` return the stdlib's `ListBuilder`, `SetBuilder` and `MapBuilder`, read-only
+  after the block (they were an `ArrayList`, `LinkedHashSet` and `LinkedHashMap`).
+- `java.util.ArrayDeque` is not a `List` (`is List` is false, `as List` throws `ClassCastException`, `==` a list is false).
+- `HashMap`'s and `LinkedHashMap`'s `putIfAbsent`, `merge` and `compute*` no longer call an overriding `get`/`put`, and
+  `ArrayList.contains` calls `indexOf`, as in the JDK.
 - Collections have the JVM's classes: `listOf()`/`emptyList()` are Kotlin's `EmptyList`, `listOf(x)` a
   `Collections$SingletonList`, `listOf(a, b, ...)`, `asList()` and the `sorted*()` results an `Arrays$ArrayList`, and the
   `setOf`/`mapOf`/`emptySet`/`emptyMap` variants and `java.util.Collections`' own likewise; `toList()`, `toSet()`, `toMap()`,
@@ -142,8 +193,28 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   for values below 2^53 on Lua 5.1, 5.2 and LuaJIT without `--long64 emulate` (they were 32-bit), so
   `x.toLong() and 0xFFFFFFFFL` and masks over 32 bits work.
 - `Regex.findAll` returns a lazy `Sequence`, as in Kotlin: matches are searched for as they are pulled.
+- `is Comparable<*>` is exact for classes of the program: objects (`object Version : Comparable<Version>`), implementations
+  through superclasses and interfaces and enums are Comparable (a class table records it in `____comparable`), a class with only
+  an `operator fun compareTo` is not.
 
 ### Fixed
+- `"%s %s".format(null, x)` and `"%s".format(null)` resolve to the `Locale` overload, as in Kotlin, so they throw
+  `MissingFormatArgumentException` like the JVM instead of printing `null`.
+- `String.format`: `%g` picks fixed or scientific notation after rounding (`999.9999` is `1000.00`), `%#010x` puts the zeros after
+  `0x`, `%x`/`%o` of a negative `Byte`, `Short` or `Long` give the two's complement of the type's width (`ff`, `ffff`, sixteen `f`s;
+  they were 32-bit), `%0s` and the like are rejected, and an unknown conversion is reported before a missing argument.
+  `%e`/`%g` of subnormal doubles keep two significant digits like Java (`4.900e-324`).
+- The literal `-2147483648` compiled to `-(-2147483648)`, which is `2147483648`.
+- `"-0.0".toDouble()` and `"-0".toDouble()` gave `0.0`; `(-0.5).toLong()`, `(-0.2).roundToInt()` and the like printed `-0` on
+  Lua 5.1, 5.2 and LuaJIT.
+- A `Double?` or `Float?` printed like an `Int` (`2` for `2.0`) on Lua 5.1, 5.2 and LuaJIT; it now prints by its static type.
+- A range of Doubles printed integral bounds as integers on Lua 5.1, 5.2 and LuaJIT (`30..50` for `30.0..50.0`).
+- `nullMap.orEmpty()` crashed ("attempt to index a nil value"); `nullSet.orEmpty()` gave a list, `nullList.orEmpty()` an
+  `ArrayList` (now `EmptyMap`, `EmptySet`, `EmptyList` as on the JVM).
+- `super.iterator()` in a class extending a library collection recursed forever.
+- A `TreeSet`'s `descendingSet()` was a `LinkedHashSet`.
+- `unmodifiableMap(m).keys` (and `values`, `entries`) are unmodifiable views, and `unmodifiableCollection` of a collection that
+  is not a list is a `Collections$UnmodifiableCollection`.
 - References to library properties compiled but failed at run time ("attempt to index a function value").
 - `::Constructor.name` is `<init>`.
 - `String.lastIndexOf("")` starts at the last index like Kotlin, `trimMargin` rejects a blank margin prefix, and string members
@@ -203,6 +274,21 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   `sb.trim()`) were rejected; they work on its text.
 - A null platform-typed value (`"${treeMap.higherKey(k)}"`, an `Int!` from a Java method) in a string template or
   concatenation failed with "attempt to concatenate a nil value" instead of printing `null`.
+- A string template ran an expanded inline call (or another entry needing statements) before the entries to its left
+  (`"${counter} ${get<T>()}"` printed the counter after the call).
+- A bound reference to a member of a companion (`Registry.register(Widget::create)`) did not initialize the companion when the
+  reference was made, and an object qualifier cached before arguments that need statements was initialized after them.
+- A top-level property whose initializer refers to the property itself in a lambda (`val json: Parser = lazyParser { ... json
+  ... }`) read an undefined global.
+- An override did not apply the default arguments it inherits from the function it overrides (`ceo.report()` with
+  `fun report(indent: String = "")` declared in an interface passed `nil` on).
+- A reference to a function with a `vararg` parameter used as a function taking the Array (`val f: (IntArray) -> Int = ::sum`)
+  passed the Array as one element.
+- `is T`/`as T?` with a reified `T` ignored the `?` (`null.isA<String?>()` was false, `firstOrNull { } as T?` threw
+  `NullPointerException` for null), and `is String?`/`when` branches `is Int?` did not hold for null.
+- A property read during construction before its initializer ran, through a method called by an earlier initializer or by a
+  superclass constructor (`val x = compute()` before `val y = 5`), was nil in Lua ("attempt to perform arithmetic on a nil
+  value"); it reads the JVM's `0`/`false`/`null`.
 
 ## Work before the first release
 

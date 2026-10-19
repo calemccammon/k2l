@@ -13,10 +13,12 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_Triple = ____lualib.__K2L_Triple
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
 local windowedSumPairs
 local Version = __K2L_Class("Version")
+Version.____comparable = true
 
 function Version:____init(major, minor)
     self.major = major
@@ -57,7 +59,7 @@ end
 local function main()
     print(sumAll())
     print(sumAll(1, 2, 3))
-    local nums = __K2L_ArrayOf(4, 5)
+    local nums = __K2L_TypedArrayOf("[I", 4, 5)
     print(sumAll(__K2L_Unpack(nums)))
     print(describe("parts", "a", "b"))
     local pair = __K2L_Pair.new("x", 1)

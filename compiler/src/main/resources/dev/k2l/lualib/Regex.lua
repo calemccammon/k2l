@@ -68,12 +68,53 @@ local PROPERTIES = {
     ASCII = function(b) return b < 128 end,
     XDigit = function(b) return b >= 48 and b <= 57 or b >= 65 and b <= 70 or b >= 97 and b <= 102 end,
 }
-PROPERTIES.L, PROPERTIES.IsAlphabetic, PROPERTIES.IsLetter = PROPERTIES.Alpha, PROPERTIES.Alpha, PROPERTIES.Alpha
-PROPERTIES.Lu, PROPERTIES.IsUppercase, PROPERTIES.javaUpperCase = PROPERTIES.Upper, PROPERTIES.Upper, PROPERTIES.Upper
-PROPERTIES.Ll, PROPERTIES.IsLowercase, PROPERTIES.javaLowerCase = PROPERTIES.Lower, PROPERTIES.Lower, PROPERTIES.Lower
-PROPERTIES.N, PROPERTIES.Nd, PROPERTIES.IsDigit = PROPERTIES.Digit, PROPERTIES.Digit, PROPERTIES.Digit
+-- The Unicode categories and properties (unlike the POSIX classes above, which are ASCII in Java): ASCII by `ascii`, other
+-- code points by the tables of Unicode.lua, which Utf16Case.lua puts in __K2L_Regex.____unicode with --strings utf16
+-- (without it, non-ASCII characters are not in them). The class functions take code points.
+local function unicodeProperty(ascii, test)
+    return function(cp)
+        if cp < 128 then
+            return ascii(cp)
+        end
+        local tables = __K2L_Regex.____unicode
+        return tables ~= nil and test(tables, cp) or false
+    end
+end
+
+local function none() return false end
+local letter = unicodeProperty(PROPERTIES.Alpha, function(u, cp) return u.letter(cp) end)
+local upper = unicodeProperty(PROPERTIES.Upper, function(u, cp) return u.upper(cp) end)
+local lower = unicodeProperty(PROPERTIES.Lower, function(u, cp) return u.lower(cp) end)
+local digit = unicodeProperty(PROPERTIES.Digit, function(u, cp) return u.digit(cp) end)
+-- Character.isSpaceChar (Zs, Zl, Zp): no control characters
+local separator = unicodeProperty(function(b) return b == 32 end, function(u, cp) return u.space(cp) end)
+for _, name in ipairs({"L", "IsL", "IsLetter", "IsAlphabetic", "javaLetter", "javaAlphabetic"}) do
+    PROPERTIES[name] = letter
+end
+for _, name in ipairs({"Lu", "IsLu", "IsUppercase", "javaUpperCase"}) do
+    PROPERTIES[name] = upper
+end
+for _, name in ipairs({"Ll", "IsLl", "IsLowercase", "javaLowerCase"}) do
+    PROPERTIES[name] = lower
+end
+for _, name in ipairs({"N", "Nd", "IsN", "IsNd", "IsDigit", "javaDigit"}) do
+    PROPERTIES[name] = digit
+end
+for _, name in ipairs({"Z", "IsZ", "javaSpaceChar"}) do
+    PROPERTIES[name] = separator
+end
+PROPERTIES.Lt = unicodeProperty(none, function(u, cp) return u.title(cp) end)
+PROPERTIES.IsTitlecase, PROPERTIES.javaTitleCase = PROPERTIES.Lt, PROPERTIES.Lt
+PROPERTIES.M = unicodeProperty(none, function(u, cp) return u.mark(cp) end)
+PROPERTIES.IsM = PROPERTIES.M
+PROPERTIES.Zs = unicodeProperty(function(b) return b == 32 end, function(u, cp) return u.space(cp) and cp ~= 0x2028 and cp ~= 0x2029 end)
+PROPERTIES.IsWhite_Space = unicodeProperty(function(b) return b == 32 or (b >= 9 and b <= 13) end,
+    function(u, cp) return cp == 0x85 or u.space(cp) end)
+-- Character.isWhitespace: not the no-break spaces
+PROPERTIES.javaWhitespace = unicodeProperty(function(b) return b == 32 or (b >= 9 and b <= 13) or (b >= 28 and b <= 31) end,
+    function(u, cp) return u.space(cp) and cp ~= 0xA0 and cp ~= 0x2007 and cp ~= 0x202F end)
+PROPERTIES.javaLetterOrDigit = unicodeProperty(PROPERTIES.Alnum, function(u, cp) return u.letter(cp) or u.digit(cp) end)
 PROPERTIES.P, PROPERTIES.IsPunctuation = PROPERTIES.Punct, PROPERTIES.Punct
-PROPERTIES.IsWhite_Space, PROPERTIES.Z = PROPERTIES.Space, PROPERTIES.Space
 
 ------------------------------------------------------------------ parser
 -- Nodes: char, any, set, seq, alt, group, rep, bol, eol, wordb, look, backref, atomic
@@ -263,13 +304,14 @@ local function parse(pattern, options)
         return text
     end
 
-    local function parseSet()
+    -- A class after "[" up to its "]"; `rest` parses the right operand of "&&", which has no "^" of its own.
+    local function parseSet(rest)
         local set = newSet()
-        if peek() == "^" then
+        if not rest and peek() == "^" then
             set.neg = true
             pos = pos + 1
         end
-        local first = true
+        local first = not rest
         while true do
             local c = peek()
             if c == "" then
@@ -282,7 +324,7 @@ local function parse(pattern, options)
             if c == "[" then
                 pos = pos + 1
                 local inner = parseSet()
-                if inner.neg then
+                if inner.neg or inner.t ~= "set" then
                     fail("Nested negated classes are not supported")
                 end
                 for b in pairs(inner.bytes) do
@@ -301,7 +343,23 @@ local function parse(pattern, options)
                     set.cpRanges[#set.cpRanges + 1] = r
                 end
             elseif c == "&" and pattern:sub(pos, pos + 1) == "&&" then
-                fail("Class intersection is not supported")
+                -- [a-z&&[^aeiou]]: a character in both operands
+                if set.neg then
+                    fail("Class intersection of a negated class is not supported")
+                end
+                pos = pos + 2
+                local right
+                if peek() == "[" then
+                    pos = pos + 1
+                    right = parseSet()
+                    if peek() ~= "]" then
+                        fail("Class intersection with more items after the nested class is not supported")
+                    end
+                    pos = pos + 1
+                else
+                    right = parseSet(true)
+                end
+                return {t = "and", items = {set, right}}
             else
                 local item = readClassChar()
                 if type(item) == "table" then
@@ -551,7 +609,22 @@ local compile
 local function singleStep(node)
     -- Returns function(st, i) -> next index or nil for nodes that always consume one character.
     local t = node.t
-    if t == "char" then
+    if t == "and" then
+        local steps = {}
+        for j, item in ipairs(node.items) do
+            steps[j] = singleStep(item)
+        end
+        return function(st, i)
+            local after
+            for j = 1, #steps do
+                after = steps[j](st, i)
+                if after == nil then
+                    return nil
+                end
+            end
+            return after
+        end
+    elseif t == "char" then
         local c = node.c
         if node.ci then
             local lc = lowerByte(c)
@@ -631,6 +704,11 @@ local function singleStep(node)
                     return true
                 end
             end
+            for _, fn in ipairs(classes) do
+                if fn(cp) then
+                    return true
+                end
+            end
             return false
         end
         return function(st, i)
@@ -665,7 +743,7 @@ local function singleStep(node)
                         break
                     end
                 end
-                if not hit and #cpRanges > 0 then
+                if not hit and (#cpRanges > 0 or #classes > 0) then
                     hit = hasCodePoint(decodeAt(text, 1, len))
                 end
             else
@@ -1033,7 +1111,7 @@ end
 -- Whether the node can match without consuming a character (so that Java also tries it between surrogate halves).
 local function nullable(node)
     local t = node.t
-    if t == "char" or t == "any" or t == "set" or t == "ufold" then
+    if t == "char" or t == "any" or t == "set" or t == "ufold" or t == "and" then
         return false
     elseif t == "seq" then
         for _, item in ipairs(node.items) do
@@ -1169,6 +1247,27 @@ end
 
 function __K2L_Regex:matches(input)
     return self:matchEntire(input) ~= nil
+end
+
+-- A match starting exactly at `index` (lookbehind sees the text before it, ^ does not match there), as Kotlin's matchAt
+-- runs Java's lookingAt on the region from index.
+function __K2L_Regex:matchAt(input, index)
+    local units = __K2L_Regex.____units
+    local length = units and units.len(input) or #input
+    if index < 0 or index > length then
+        error(__K2L_IndexOutOfBoundsException.new("start"))
+    end
+    local i = (units and units.toByte(input, index) or index) + 1
+    local st = newState(self, input)
+    local after = self.____program(st, i, anyEnd)
+    if after then
+        return __K2L_MatchResult.new(self, input, i, after, st, self.____groups)
+    end
+    return nil
+end
+
+function __K2L_Regex:matchesAt(input, index)
+    return self:matchAt(input, index) ~= nil
 end
 
 function __K2L_Regex:containsMatchIn(input)

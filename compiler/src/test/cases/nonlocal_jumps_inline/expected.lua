@@ -13,7 +13,9 @@ local function forEachJumps()
     local log = ""
     for i = 0, 4 do
         do
-            for _, it in ipairs(__K2L_ReadOnlyListOf(1, 2, 3)) do
+            local ____list = __K2L_ReadOnlyListOf(1, 2, 3)
+            for ____i = 1, ____list.size do
+                local it = ____list[____i]
                 if it == 2 and i == 3 then
                     goto ____break
                 end
@@ -33,9 +35,9 @@ local function mapJumps(stopAt)
     local rows = __K2L_ListOf()
     for i = 0, 4 do
         do
-            local ____list = __K2L_ReadOnlyListOf(1, 2, 3)
+            local ____list_1 = __K2L_ReadOnlyListOf(1, 2, 3)
             local ____result = __K2L_ListOf()
-            for _, it in ipairs(____list) do
+            for _, it in ipairs(____list_1) do
                 local ____result_1
                 if i == 1 then
                     goto ____continue_1
@@ -64,9 +66,10 @@ local function labeled()
         do
             for j = 0, 3 do
                 do
-                    local ____list_1 = __K2L_ReadOnlyListOf("a", "b")
-                    for k = 0, ____list_1.size - 1 do
-                        local s = ____list_1[k + 1]
+                    local ____list_2 = __K2L_ReadOnlyListOf("a", "b")
+                    for ____i_1 = 1, ____list_2.size do
+                        local s = ____list_2[____i_1]
+                        local k = ____i_1 - 1
                         if j == 1 then
                             goto ____continue_2
                         end
@@ -126,7 +129,9 @@ end
 
 local function stringAndSequence()
     local log = ""
-    for _, w in ipairs(__K2L_ReadOnlyListOf("abc", "xyz", "stop", "end")) do
+    local ____list_3 = __K2L_ReadOnlyListOf("abc", "xyz", "stop", "end")
+    for ____i_2 = 1, ____list_3.size do
+        local w = ____list_3[____i_2]
         do
             local ____chars = __K2L_StringToList(w)
             local ____result_2 = __K2L_ListOf()
@@ -168,14 +173,14 @@ local function userInline()
     local log = ""
     for k = 0, 3 do
         do
-            for ____i = 0, 1 do
+            for ____i_3 = 0, 1 do
                 if k == 1 then
                     goto ____continue_7
                 end
                 if k == 3 then
                     goto ____break_6
                 end
-                log = log .. k .. ____i .. " "
+                log = log .. k .. ____i_3 .. " "
             end
         end
         ::____continue_7::

@@ -33,6 +33,7 @@ local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local DateRange, Weekday
 local Date = __K2L_Class("Date")
+Date.____comparable = true
 
 function Date:____init(year, month, day)
     self.year = year
@@ -89,6 +90,8 @@ end
 function Date:equals(other)
     return getmetatable(other) == Date and self.year == other.year and self.month == other.month and self.day == other.day
 end
+
+Date.____companion = true
 
 function Date:isLeap(y)
     return math.fmod(y, 4) == 0 and (math.fmod(y, 100) ~= 0 or math.fmod(y, 400) == 0)
@@ -186,6 +189,7 @@ Weekday.SATURDAY = Weekday.new("SATURDAY", 5, "Sat")
 Weekday.SUNDAY = Weekday.new("SUNDAY", 6, "Sun")
 Weekday.____values = {Weekday.MONDAY, Weekday.TUESDAY, Weekday.WEDNESDAY, Weekday.THURSDAY, Weekday.FRIDAY, Weekday.SATURDAY, Weekday.SUNDAY}
 local Minutes = __K2L_Class("Minutes")
+Minutes.____comparable = true
 
 function Minutes:____init(total)
     self.total = total
@@ -218,6 +222,8 @@ end
 function Minutes:equals(other)
     return getmetatable(other) == Minutes and self.total == other.total
 end
+
+Minutes.____companion = true
 
 function Minutes:parseClock(s)
     local ____destructured = __K2L_StringSplit(s, ":"):map(function(it) return __K2L_StringToInt(it) end)
@@ -288,12 +294,19 @@ function Payroll:pay(shifts)
     local regular = 0
     local overtime = 0
     local weekend = 0
-    for _, week in ipairs(shifts:groupBy(function(it)
+    local ____collection = shifts:groupBy(function(it)
         return __K2L_IDiv(it.date:getEpochDay() + 3, 7)
-    end):getValues():toList()) do
+    end):getValues()
+    local ____items, ____n = ____collection:____array()
+    local ____mod_1 = ____collection.____modCount
+    for ____i_1 = 1, ____n do
+        local week = ____items[____i_1]
         do
             local weekMinutes = 0
-            for _, s in ipairs(week:sortedBy(function(it) return it.date end, true)) do
+            local ____list = week:sortedBy(function(it) return it.date end, true)
+            local ____mod = ____list.____modCount
+            for ____i = 1, ____list.size do
+                local s = ____list[____i]
                 local m = s:getWorked().total
                 if s.date:getDayOfWeek():getIsWeekend() then
                     weekend = weekend + m
@@ -305,7 +318,13 @@ function Payroll:pay(shifts)
                     regular = regular + m
                 end
                 weekMinutes = weekMinutes + m
+                if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+                    break
+                end
             end
+        end
+        if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_1, ____n) then
+            break
         end
     end
     local gross = __K2L_IDiv(regular * 2850 + __K2L_IDiv(overtime * 2850 * 3, 2) + weekend * 2850 * 2, 60)
@@ -358,8 +377,13 @@ local function main()
     end)))
     local shifts = parseShifts(SHIFTS)
     print(shifts.size .. " shifts")
-    for _, s in ipairs(shifts) do
+    local ____mod_2 = shifts.____modCount
+    for ____i_2 = 1, shifts.size do
+        local s = shifts[____i_2]
         print("  " .. __K2L_Str(s.date) .. " " .. s.date:getDayOfWeek().short .. " " .. __K2L_Str(s.start) .. "-" .. __K2L_Str(s["end"]) .. " worked " .. __K2L_Str(s:getWorked()) .. " (" .. __K2L_StringFormat("%.2f", s:getWorked():getHours()) .. "h)")
+        if shifts.____modCount ~= ____mod_2 and shifts:____comodified(____i_2) then
+            break
+        end
     end
     local total = shifts:map(function(it) return it:getWorked() end):fold(Minutes.ZERO, function(self, ...) return self:plus(...) end)
     print("total " .. __K2L_Str(total) .. ", longest " .. __K2L_Str(shifts:maxBy(function(it) return it:getWorked() end).date) .. ", shortest " .. __K2L_Str(shifts:minOf(function(it) return it:getWorked() end)))
@@ -371,7 +395,9 @@ local function main()
         return __K2L_StringEndsWith(k, "Min") and Minutes.new(__K2L_ToInt32(v)):toString() or cents(v)
     end)))
     print("net: " .. cents(pay:getValue("gross") - pay:getValue("tax")))
-    for _, g in ipairs(__K2L_ReadOnlyListOf(5000, 100000, 300000, 1000000)) do
+    local ____list_1 = __K2L_ReadOnlyListOf(5000, 100000, 300000, 1000000)
+    for ____i_3 = 1, ____list_1.size do
+        local g = ____list_1[____i_3]
         print("  tax on " .. __K2L_StringPadStart(cents(g), 9) .. ": " .. __K2L_StringPadStart(cents(Payroll:tax(g)), 8))
     end
     print(__K2L_Str(__K2L_RunCatching(function() return Minutes:parseClock("25:00") end):exceptionOrNull()))

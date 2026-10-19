@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
@@ -19,6 +18,7 @@ local __K2L_StringReplace = ____lualib.__K2L_StringReplace
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Utf16 = ____lualib.__K2L_Utf16
 local __K2L_Utf16Case = ____lualib.__K2L_Utf16Case
 
@@ -32,8 +32,13 @@ end
 
 local function lengthsAndIndexing()
     local words = __K2L_ReadOnlyListOf("hello", "héllo", "日本語テキスト", "a😀b😀c", "éx", "")
-    for _, w in ipairs(words) do
+    local ____mod = words.____modCount
+    for ____i = 1, words.size do
+        local w = words[____i]
         print(__K2L_Utf16.out("'" .. w .. "' length=" .. __K2L_Utf16.len(w) .. " indices=" .. __K2L_Str(__K2L_IntRange.new(0, __K2L_Utf16.len(w) - 1)) .. " lastIndex=" .. __K2L_Utf16.len(w) - 1 .. " empty=" .. tostring(#w == 0)))
+        if words.____modCount ~= ____mod and words:____comodified(____i) then
+            break
+        end
     end
     local s = "a😀b"
     print(__K2L_Utf16.out(hex(s)))
@@ -246,7 +251,7 @@ local function templatesAndConversion()
     print(__K2L_Utf16.out(__K2L_Utf16.norm(__K2L_Text.toCharArray(s):joinToString(""))))
     print(__K2L_Utf16.out(__K2L_Text.toList(s).size))
     print(__K2L_Utf16.out(__K2L_Text.toList(s):map(function(it) return __K2L_Utf16.code(it) end).size))
-    print(__K2L_Utf16.out(__K2L_Text.string(__K2L_ArrayOf("é", "日"))))
+    print(__K2L_Utf16.out(__K2L_Text.string(__K2L_TypedArrayOf("[C", "é", "日"))))
     print(__K2L_Utf16.out(__K2L_Text.filter(s, function(it) return it ~= "x" end)))
     print(__K2L_Utf16.out(__K2L_Text.filter(s, function(it) return __K2L_Utf16.code(it) < 128 end)))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_Text.partition(s, function(it) return __K2L_Utf16.code(it) < 128 end))))

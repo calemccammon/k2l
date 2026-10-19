@@ -152,6 +152,8 @@ function Level:____initEnum()
     Level.____values = {Level.LOW, Level.HIGH}
 end
 
+Level.____companion = true
+
 function Level:____initCompanion()
     self.default = Level.LOW
 end

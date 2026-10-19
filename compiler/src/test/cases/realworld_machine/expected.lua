@@ -466,7 +466,9 @@ local function main()
     local bits = __K2L_IntRange.new(0, 16):map(function(it) return __K2L_Num.countOneBits(it) end)
     print("bit counts: " .. __K2L_Str(bits) .. " highest=" .. __K2L_Bits.highest32(100) .. " trailing=" .. __K2L_Num.countTrailingZeroBits(96))
     local circuit = Circuit.new(CIRCUIT)
-    for _, w in ipairs(__K2L_ReadOnlyListOf("d", "e", "f", "g", "h", "i", "x", "y", "a")) do
+    local ____list = __K2L_ReadOnlyListOf("d", "e", "f", "g", "h", "i", "x", "y", "a")
+    for ____i = 1, ____list.size do
+        local w = ____list[____i]
         io.write(w .. "=" .. circuit:signal(w) .. " ")
     end
     print()

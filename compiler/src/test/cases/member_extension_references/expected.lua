@@ -40,10 +40,18 @@ end
 local function main()
     local b = Builder.new("!")
     do
-        for _, it in ipairs(__K2L_ReadOnlyListOf("a", "b")) do
+        local ____list = __K2L_ReadOnlyListOf("a", "b")
+        local ____mod = ____list.____modCount
+        for ____i = 1, ____list.size do
+            local it = ____list[____i]
             b:unaryPlus(it)
+            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+                break
+            end
         end
-        for _, it in ipairs(__K2L_SingletonListOf("c")) do
+        local ____list_1 = __K2L_SingletonListOf("c")
+        for ____i_1 = 1, ____list_1.size do
+            local it = ____list_1[____i_1]
             b:unaryPlus(it)
         end
         print(__K2L_Str(__K2L_ReadOnlyListOf("m", "n"):map(function(it) return b:shout(it) end)))

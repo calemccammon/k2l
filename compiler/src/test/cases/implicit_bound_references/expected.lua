@@ -71,8 +71,13 @@ function Registry:register(name)
 end
 
 function Registry:registerAll(xs)
-    for _, it in ipairs(xs) do
+    local ____mod = xs.____modCount
+    for ____i = 1, xs.size do
+        local it = xs[____i];
         (function(...) return self:register(...) end)(it)
+        if xs.____modCount ~= ____mod and xs:____comodified(____i) then
+            break
+        end
     end
     return self.names
 end

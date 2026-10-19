@@ -83,6 +83,7 @@ Dir.RIGHT = Dir.new("RIGHT", 1, 0, 1, ">")
 Dir.DOWN = Dir.new("DOWN", 2, 1, 0, "v")
 Dir.LEFT = Dir.new("LEFT", 3, 0, -1, "<")
 Dir.____values = {Dir.UP, Dir.RIGHT, Dir.DOWN, Dir.LEFT}
+Dir.____companion = true
 
 function Dir:of(c)
     return __K2L_EnumValues(Dir):firstOrNull(function(it) return it.symbol == c end)
@@ -173,7 +174,10 @@ local function bfs(grid, start, goal)
             end
             return path:asReversed()
         end
-        for _, n in ipairs(grid:neighbours(cur)) do
+        local ____list = grid:neighbours(cur)
+        local ____mod = ____list.____modCount
+        for ____i = 1, ____list.size do
+            local n = ____list[____i]
             do
                 if grid:get(n) == "#" or not seen:add(n) then
                     goto ____continue
@@ -182,6 +186,9 @@ local function bfs(grid, start, goal)
                 queue:addLast(n)
             end
             ::____continue::
+            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+                break
+            end
         end
     end
     return nil
@@ -223,7 +230,9 @@ local function cheapestRoute(grid, start, goal)
                 goto ____continue_1
             end
             local moves = __K2L_ReadOnlyListOf(__K2L_Pair.new(State.new(state.pos:plus(state.dir), state.dir), 1), __K2L_Pair.new(State.new(state.pos, state.dir:turnLeft()), 1000), __K2L_Pair.new(State.new(state.pos, state.dir:turnRight()), 1000))
-            for _, ____item in ipairs(moves) do
+            local ____mod_1 = moves.____modCount
+            for ____i_1 = 1, moves.size do
+                local ____item = moves[____i_1]
                 local ____next, step = ____item.first, ____item.second
                 do
                     if grid:get(____next.pos) == "#" then
@@ -236,6 +245,9 @@ local function cheapestRoute(grid, start, goal)
                     end
                 end
                 ::____continue_2::
+                if moves.____modCount ~= ____mod_1 and moves:____comodified(____i_1) then
+                    break
+                end
             end
         end
         ::____continue_1::
@@ -284,7 +296,9 @@ local function regions(grid)
             while stack:isNotEmpty() do
                 local p = stack:removeLast()
                 area = area + 1
-                for _, d in ipairs(__K2L_EnumValues(Dir)) do
+                local ____list_1 = __K2L_EnumValues(Dir)
+                for ____i_2 = 1, ____list_1.size do
+                    local d = ____list_1[____i_2]
                     local n = p:plus(d)
                     if grid:get(n) ~= plant then
                         perimeter = perimeter + 1
@@ -340,7 +354,10 @@ local function main()
     print("shortest path: " .. path.size - 1 .. " steps")
     print("first steps: " .. path:take(5):joinToString(" -> "))
     local drawn = maze:copy()
-    for _, ____it in ipairs(path:zipWithNext()) do
+    local ____list_2 = path:zipWithNext()
+    local ____mod_2 = ____list_2.____modCount
+    for ____i_3 = 1, ____list_2.size do
+        local ____it = ____list_2[____i_3]
         do
             local a, b = ____it.first, ____it.second
             local d = __K2L_EnumValues(Dir):single(function(it) return a:plus(it):equals(b) end)
@@ -348,14 +365,23 @@ local function main()
                 drawn:set(b, d.symbol)
             end
         end
+        if ____list_2.____modCount ~= ____mod_2 and ____list_2:____comodified(____i_3) then
+            break
+        end
     end
     print(drawn:render())
     print("cheapest route: " .. cheapestRoute(maze, start, ____end))
     print("walled-in: " .. __K2L_Str(bfs(maze, start, Pos.new(0, 0))))
     local garden = Grid:parse(GARDEN)
     local rs = regions(garden)
-    for _, it in ipairs(rs:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(function(it) return it:getPrice() end), function(it) return it.plant end))) do
+    local ____list_3 = rs:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(function(it) return it:getPrice() end), function(it) return it.plant end))
+    local ____mod_3 = ____list_3.____modCount
+    for ____i_4 = 1, ____list_3.size do
+        local it = ____list_3[____i_4]
         print("  " .. it.plant .. ": area=" .. it.area .. " perimeter=" .. it.perimeter .. " price=" .. it:getPrice())
+        if ____list_3.____modCount ~= ____mod_3 and ____list_3:____comodified(____i_4) then
+            break
+        end
     end
     print("total price: " .. rs:sumOf(function(it) return it:getPrice() end))
     local byPlant = rs:groupBy(function(it) return it.plant end, function(it) return it.area end)

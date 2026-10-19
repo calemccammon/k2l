@@ -529,6 +529,28 @@ function __K2L_AbstractMap:getValues()
     return values
 end
 
+-- the arrays loops over keys, values and entries read (see __K2L_Map:____keyArray)
+function __K2L_AbstractMap:____keyArray()
+    return self:getKeys():____array()
+end
+
+function __K2L_AbstractMap:____valueArray()
+    return self:getValues():____array()
+end
+
+function __K2L_AbstractMap:____entryArray()
+    return entriesOf(self)
+end
+
+function __K2L_AbstractMap:____arrays()
+    local arr, n = entriesOf(self)
+    local keys, values = {}, {}
+    for i = 1, n do
+        keys[i], values[i] = arr[i].key, arr[i].value
+    end
+    return keys, values, n
+end
+
 -- for k, v in map:iter() do ... end
 function __K2L_AbstractMap:iter()
     local arr, n = entriesOf(self)

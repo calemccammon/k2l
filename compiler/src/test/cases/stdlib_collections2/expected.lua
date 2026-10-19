@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -17,6 +16,7 @@ local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function ordering()
     local xs = __K2L_ReadOnlyListOf(3, 1, 2)
@@ -161,11 +161,11 @@ local function misc()
     end)))
     print(__K2L_Str(mp:minus("a")))
     print(__K2L_Str(mp:plus(__K2L_Pair.new("d", 4))))
-    print(__K2L_Str(__K2L_ArrayOf(3, 1, 2):sortedArray():toList()))
-    print(__K2L_ArrayOf(3, 1, 2):sum())
+    print(__K2L_Str(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 3, 1, 2):sortedArray():toList()))
+    print(__K2L_TypedArrayOf("[I", 3, 1, 2):sum())
     print(__K2L_ListOfSize(2, function(it)
-        return __K2L_ListOfSize(2, function(it) return it end, true)
-    end, true):contentDeepToString())
+        return __K2L_ListOfSize(2, function(it) return it end, "[Ljava.lang.Integer;")
+    end, "[[Ljava.lang.Integer;"):contentDeepToString())
     print(__K2L_Str(__K2L_ReadOnlyListOf():ifEmpty(function() return __K2L_SingletonListOf(0) end)))
 end
 

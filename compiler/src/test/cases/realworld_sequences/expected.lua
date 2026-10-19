@@ -54,7 +54,7 @@ local primes = __K2L_SequenceBuilder(function(self)
 end)
 
 local function sieve(n)
-    local composite = __K2L_ListOfSize(n + 1, false, true)
+    local composite = __K2L_ListOfSize(n + 1, false, "[Z")
     for i = 2, n do
         do
             if composite:get(i) then
@@ -162,7 +162,8 @@ local function main()
     local chunks = clean:chunked(5, function(chunk)
         return chunk:first().minute .. "-" .. chunk:last().minute .. ": max " .. __K2L_Str(chunk:maxOf(function(it) return it.celsius end))
     end)
-    for _, it in ipairs(chunks) do
+    for ____i = 1, chunks.size do
+        local it = chunks[____i]
         print("  " .. it)
     end
     local trend = clean:zipWithNext(function(a, b)

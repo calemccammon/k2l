@@ -1,0 +1,39 @@
+before install: []
+after install: [Registry.init, UpperPlugin.Companion.init]
+loaded Guard<=16[10]: start / Describable(guard)+Lifecycle
+loaded Replace(cat->dog)[3]: start / Replace:Describable(replace)+Lifecycle
+loaded UPPER[5]: upper ready / Describable(upper)+Lifecycle
+loaded Counter(!)[1]: start / Describable(counter)+Lifecycle
+init order:
+  Plugin.init(guard) tag=null
+  Plugin.init(replace) tag=null
+  CountingPlugin.init(replace) createdAt=2
+  ReplacePlugin.init cat->dog
+  Plugin.init(upper) tag=null
+  CountingPlugin.init(upper) createdAt=5
+  UpperPlugin.init
+  Plugin.init(counter) tag=plugin
+order: [guard, upper, replace, counter]
+the cat sat => main: THE CAT SAT
+    upper: the cat sat -> THE CAT SAT
+!cat => main: !#2
+    upper: !cat -> !CAT
+    counter: !CAT -> !#2
+NO CHANGE => main: NO CHANGE
+a very long input line => rejected by Guard<=16[10]
+cat cat => main: CAT CAT
+    upper: cat cat -> CAT CAT
+report:
+  | guard (started)
+  | upper handled 3
+  | replace handled 0 (from=cat)
+  | counter (started)
+  | unknown plugin 'missing'; known: upper, replace, guard, counter
+  | plugin guard failed: input too long (22 > 16)
+  | cause: IllegalArgumentException
+lookups: 5, registered: [upper, replace, guard, counter]
+error: plugin upper registered twice
+UPPER[7] UPPER Describable(upper)+Lifecycle -1
+v1.4 comparable | comparable, describable high HIGH! Describable(low)
+not comparable, describable both, lifecycle both: Lifecycle/Describable(both) | comparable, describable upper, lifecycle | comparable | not comparable
+comparables: 6

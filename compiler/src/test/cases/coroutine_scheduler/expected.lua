@@ -55,8 +55,13 @@ end
 function Scheduler:cancelAll(reason)
     local all = self.waiting:toList()
     self.waiting:clear()
-    for _, w in ipairs(all) do
+    local ____mod = all.____modCount
+    for ____i = 1, all.size do
+        local w = all[____i]
         w.cont:resumeWith(__K2L_Result.failure(__K2L_IllegalStateException.new(reason)))
+        if all.____modCount ~= ____mod and all:____comodified(____i) then
+            break
+        end
     end
 end
 
@@ -64,8 +69,13 @@ function Scheduler:runFrame()
     self.frame = self.frame + 1
     local due = self.waiting:filter(function(it) return it.wakeAt <= self.frame end)
     self.waiting:removeAll(due)
-    for _, w in ipairs(due) do
+    local ____mod_1 = due.____modCount
+    for ____i_1 = 1, due.size do
+        local w = due[____i_1]
         w.cont:resumeWith(__K2L_Result.success(__K2L_Unit))
+        if due.____modCount ~= ____mod_1 and due:____comodified(____i_1) then
+            break
+        end
     end
     return self.active > 0
 end

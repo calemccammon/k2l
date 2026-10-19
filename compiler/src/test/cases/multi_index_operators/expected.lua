@@ -16,7 +16,7 @@ local Matrix = __K2L_Class("Matrix")
 function Matrix:____init(rows, cols)
     self.rows = rows
     self.cols = cols
-    self.data = __K2L_ListOfSize(self.rows * self.cols, 0, true)
+    self.data = __K2L_ListOfSize(self.rows * self.cols, 0, "[I")
 end
 
 function Matrix:get(i, j)

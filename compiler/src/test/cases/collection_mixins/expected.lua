@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CollectionBase = ____lualib.__K2L_CollectionBase
@@ -20,6 +19,7 @@ local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Throwable = ____lualib.__K2L_Throwable
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Named = __K2L_Class("Named")
 
@@ -243,9 +243,9 @@ local function main()
     local m = Mixed.new()
     print(m.name .. " " .. m:describe() .. " " .. __K2L_Str(m:toList()) .. " " .. __K2L_Str(m:sorted()) .. " " .. m:sum() .. " " .. __K2L_Str(m:map(function(it) return it * 10 end)) .. " " .. m:count() .. " " .. m:first())
     local total = 0
-    local ____list = m:toList()
-    for ____i = 1, ____list.size do
-        local x = ____list[____i]
+    local ____items, ____n = m:____array()
+    for ____i = 1, ____n do
+        local x = ____items[____i]
         total = total + x
     end
     print("loop " .. total .. " " .. tostring(__K2L_InstanceOf(m, __K2L_Iterable)) .. " " .. tostring(__K2L_InstanceOf(m, Named)))
@@ -258,24 +258,25 @@ local function main()
         local ____error = __K2L_ToThrowable(____result)
         if __K2L_InstanceOf(____error, __K2L_Exception) then
             local e = ____error
+            local ____arg = e.message
             if not __K2L_InstanceOf(e, Wrapped) then
                 __K2L_CastFail(e, "Wrapped", "Wrapped")
             end
-            print("caught " .. __K2L_Str(e.message) .. " " .. e:getSize())
+            print("caught " .. __K2L_Str(____arg) .. " " .. e:getSize())
         else
             error(____error, 0)
         end
     end
     local r = Row.new("r1", __K2L_ReadOnlyListOf("a", "b", "c"))
     print(r:describe() .. " " .. r:get(1) .. " " .. r:indexOf("c") .. " " .. __K2L_Str(r:reversed()) .. " " .. r:joinToString("") .. " " .. r.name .. " " .. tostring(__K2L_InstanceOf(r, __K2L_List)))
-    local ____list_1 = r:toList()
-    for ____i_1 = 1, ____list_1.size do
-        local cell = ____list_1[____i_1]
+    local ____items_1, ____n_1 = r:____array()
+    for ____i_1 = 1, ____n_1 do
+        local cell = ____items_1[____i_1]
         io.write(cell .. " ")
     end
     print()
-    local s = Scores.new(__K2L_ArrayOf(5, 7, 9))
-    print(s:getSize() .. " " .. s:get(2) .. " " .. s:max() .. " " .. __K2L_Str(s:subList(0, 2)) .. " " .. __K2L_Str(s:filter(function(it) return it > 5 end)) .. " " .. s:describe() .. " " .. s.size - 1 .. " " .. __K2L_Str(s:getOrNull(5)))
+    local s = Scores.new(__K2L_TypedArrayOf("[I", 5, 7, 9))
+    print(s:getSize() .. " " .. s:get(2) .. " " .. s:max() .. " " .. __K2L_Str(s:subList(0, 2)) .. " " .. __K2L_Str(s:filter(function(it) return it > 5 end)) .. " " .. s:describe() .. " " .. s:getLastIndex() .. " " .. __K2L_Str(s:getOrNull(5)))
     local sum = 0
     for i = 0, s.size - 1 do
         sum = sum + s:get(i)
@@ -284,7 +285,9 @@ local function main()
     local settings = Settings.new(__K2L_MapOf(__K2L_Pair.new("theme", "dark")))
     settings:set("font", "mono")
     print(settings.size .. " " .. __K2L_Str(settings:get("theme")) .. " " .. __K2L_Str(settings:getKeys()) .. " " .. __K2L_Str(settings:getEntries():map(function(it) return it.value end)) .. " " .. settings:describe())
-    for k, v in settings:iter() do
+    local ____keys, ____values, ____n_2 = settings:____arrays()
+    for ____i_2 = 1, ____n_2 do
+        local k, v = ____keys[____i_2], ____values[____i_2]
         io.write(k .. "=" .. v .. " ")
     end
     print()

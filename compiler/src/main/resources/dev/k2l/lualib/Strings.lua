@@ -211,10 +211,20 @@ local function __K2L_StringToDoubleOrNull(s)
         return -math.huge
     end
     trimmed = trimmed:gsub("^(.*%d)[fFdD]$", "%1")
+    -- a hexadecimal float has a binary exponent: 0x1.8p3 is 12.0
+    local sign, int, frac, exp = trimmed:match("^([+-]?)0[xX](%x*)%.?(%x*)[pP]([+-]?%d+)$")
+    if sign ~= nil and #int + #frac > 0 then
+        local n = tonumber(int .. frac, 16) * 2 ^ (tonumber(exp) - 4 * #frac)
+        return sign == "-" and -n or n + 0.0
+    end
     if trimmed == "" or trimmed:match("^[+-]?0[xX]") or trimmed:match("[nN]") then
         return nil
     end
     local n = tonumber(trimmed)
+    if n == 0 and trimmed:sub(1, 1) == "-" then
+        -- "-0" and "-0.0" are -0.0 (n + 0.0 would be 0.0; a -0.0 literal can be folded into the constant 0 on Lua 5.1)
+        return -1 / math.huge
+    end
     return n and n + 0.0
 end
 
@@ -570,7 +580,7 @@ end
 function __K2L_Text.toCharArray(s)
     local out = chars(s)
     out.size = #s
-    return setmetatable(out, __K2L_Array)
+    return setmetatable(out, __K2L_ArrayClassOf("[C"))
 end
 
 function __K2L_Text.toByteArray(s)
@@ -580,7 +590,7 @@ function __K2L_Text.toByteArray(s)
         out[i] = b >= 128 and b - 256 or b
     end
     out.size = #s
-    return setmetatable(out, __K2L_Array)
+    return setmetatable(out, __K2L_ArrayClassOf("[B"))
 end
 
 function __K2L_Text.ifEmpty(s, default)
@@ -649,6 +659,11 @@ function __K2L_Text.windowed(s, size, step, partial, transform)
         i = i + step
     end
     return out
+end
+
+-- Char.equals(other, ignoreCase) on ASCII chars
+function __K2L_Text.charEquals(a, b, ignoreCase)
+    return a == b or (ignoreCase and a:lower() == b:lower())
 end
 
 function __K2L_Text.caseInsensitiveOrder(a, b)
@@ -898,7 +913,8 @@ local function decimalDigits(x)
         return "0", 0
     end
     local s
-    for precision = 0, 16 do
+    -- at least two digits, as Java writes them: 4.9E-324, not 5E-324
+    for precision = 1, 16 do
         s = string.format("%." .. precision .. "e", x)
         if tonumber(s) == x then
             break
@@ -1076,13 +1092,20 @@ local function formatFloat(conv, value, flags, width, precision)
         body = scientificNotation(value, precision, conv == "E")
     else
         -- %g: scientific for small or large magnitudes, fixed otherwise, `precision` significant digits
+        -- (chosen by the exponent of the value rounded to that many digits: 999.9999 is 1000.00, as in Java)
         local p = precision == 0 and 1 or precision
-        local abs = math.abs(value)
-        if abs ~= 0 and (abs < 1e-4 or abs >= 10 ^ p) then
+        local exp = 0
+        if value ~= 0 then
+            local digits
+            digits, exp = decimalDigits(value)
+            if #roundDigits(digits, p) > p then
+                exp = exp + 1
+            end
+        end
+        if exp < -4 or exp >= p then
             body = scientificNotation(value, p - 1, conv == "G")
         else
-            local _, exp = decimalDigits(value)
-            local int, frac = fixedNotation(value, math.max(p - (abs == 0 and 1 or exp + 1), 0))
+            local int, frac = fixedNotation(value, math.max(p - (exp + 1), 0))
             body = #frac > 0 and int .. "." .. frac or int
         end
     end
@@ -1135,7 +1158,19 @@ local function twosComplement(text)
     return (string.reverse(table.concat(out)):gsub("^0+", ""))
 end
 
-local function formatInteger(conv, value, flags, width)
+-- The hexadecimal or octal digits of a negative number as the two's complement of its type (8, 16, 32 or 64 bits;
+-- without a static type, 32 bits for an Int's range, else 64).
+local function negativeRadixDigits(value, radix, bits)
+    bits = bits or (value >= -2147483648 and 32 or 64)
+    if bits < 64 then
+        return __K2L_Num.toRadix(value % (bits == 32 and 4294967296 or bits == 16 and 65536 or 256), radix)
+    elseif math.type and math.type(value) == "integer" then
+        return string.format(radix == 8 and "%o" or "%x", value)
+    end
+    return decimalToRadix(twosComplement(string.format("%.0f", -value)), radix)
+end
+
+local function formatInteger(conv, value, flags, width, bits)
     local digits
     if type(value) ~= "number" then
         local text = longText(value)
@@ -1165,20 +1200,21 @@ local function formatInteger(conv, value, flags, width)
         body = digits
     elseif value >= 0 then
         body = __K2L_Num.toRadix(value, radix)
-    elseif value >= -2147483648 then
-        body = __K2L_Num.toRadix(value % 4294967296, radix)
     else
-        body = __K2L_Num.toRadix(value % 18446744073709551616, radix)
+        body = negativeRadixDigits(value, radix, bits)
     end
     if conv == "X" then
         body = body:upper()
     end
+    local prefix = ""
     if flags.alt then
-        body = (radix == 8 and "0" or (conv == "X" and "0X" or "0x")) .. body
+        prefix = radix == 8 and "0" or (conv == "X" and "0X" or "0x")
     end
+    body = prefix .. body
     if width and #body < width then
         if flags.zero then
-            body = string.rep("0", width - #body) .. body
+            -- the zeros go after the 0x of %#010x
+            body = prefix .. string.rep("0", width - #body) .. body:sub(#prefix + 1)
         else
             return pad(body, width, flags.left)
         end
@@ -1186,15 +1222,120 @@ local function formatInteger(conv, value, flags, width)
     return body
 end
 
-local function missingArgument(spec)
-    error(__K2L_IllegalArgumentException.new("Format specifier '" .. spec .. "'"))
+-- java.util.Formatter's exceptions, all IllegalArgumentExceptions, with the JDK's messages.
+local FormatErrors = {
+    MissingFormatArgument = __K2L_MissingFormatArgumentException,
+    UnknownFormatConversion = __K2L_UnknownFormatConversionException,
+    MissingFormatWidth = __K2L_MissingFormatWidthException,
+    IllegalFormatConversion = __K2L_IllegalFormatConversionException,
+    IllegalFormatPrecision = __K2L_IllegalFormatPrecisionException,
+    FormatFlagsConversionMismatch = __K2L_FormatFlagsConversionMismatchException,
+}
+
+local function formatError(kind, message)
+    error(FormatErrors[kind].new(message))
+end
+
+-- The JVM class of a format argument that a numeric conversion rejects, or nil when it takes it.
+local function rejectedClass(value, integral)
+    local kind = type(value)
+    if kind == "string" then
+        return "java.lang.String"
+    elseif kind == "boolean" then
+        return "java.lang.Boolean"
+    elseif integral and kind == "number" and math.type and math.type(value) == "float" then
+        return "java.lang.Double"
+    end
+    return nil
+end
+
+-- The UTF-8 text of a code point (%c of an Int).
+local function codePointText(cp)
+    if cp < 0x80 then
+        return string.char(cp)
+    elseif cp < 0x800 then
+        return string.char(0xC0 + math.floor(cp / 0x40), 0x80 + cp % 0x40)
+    elseif cp < 0x10000 then
+        return string.char(0xE0 + math.floor(cp / 0x1000), 0x80 + math.floor(cp / 0x40) % 0x40, 0x80 + cp % 0x40)
+    end
+    return string.char(0xF0 + math.floor(cp / 0x40000), 0x80 + math.floor(cp / 0x1000) % 0x40,
+        0x80 + math.floor(cp / 0x40) % 0x40, 0x80 + cp % 0x40)
+end
+
+-- An argument of static type Byte, Short or Long, whose %x and %o are the two's complement of its own width.
+local Sized = {}
+
+function __K2L_Text.sized(value, bits)
+    return setmetatable({value = value, bits = bits}, Sized)
+end
+
+-- One conversion of an argument (anything but %% and %n).
+local function convert(spec, conv, value, bits, flags, width, precision)
+    local lower = conv:lower()
+    local numeric = lower == "d" or lower == "x" or lower == "o" or lower == "f" or lower == "e" or lower == "g"
+    if (flags.left or (numeric and flags.zero)) and width == nil then
+        formatError("MissingFormatWidth", spec)
+    end
+    if precision and (lower == "d" or lower == "x" or lower == "o" or lower == "c") then
+        formatError("IllegalFormatPrecision", tostring(precision))
+    end
+    if not numeric then
+        -- flags only numbers take, checked in the JDK's order (# is rejected too: no argument is Formattable here)
+        for _, flag in ipairs({{"alt", "#"}, {"plus", "+"}, {"space", " "}, {"zero", "0"}, {"comma", ","}, {"paren", "("}}) do
+            if flags[flag[1]] then
+                formatError("FormatFlagsConversionMismatch", "Conversion = " .. conv .. ", Flags = " .. flag[2])
+            end
+        end
+    end
+    if numeric then
+        if value == nil then
+            return pad("null", width, flags.left)
+        end
+        local integral = lower == "d" or lower == "x" or lower == "o"
+        local rejected = rejectedClass(value, integral)
+        if rejected then
+            formatError("IllegalFormatConversion", conv .. " != " .. rejected)
+        end
+        if integral then
+            return formatInteger(conv, value, flags, width, bits)
+        end
+        return formatFloat(conv, value, flags, width, precision or 6)
+    end
+    local text
+    if lower == "s" then
+        text = __K2L_Str(value)
+        if precision then
+            text = __K2L_Text.take(text, precision)
+        end
+    elseif lower == "c" then
+        if value == nil then
+            text = "null"
+        else
+            text = type(value) == "number" and codePointText(value) or __K2L_Str(value)
+        end
+    elseif lower == "b" or lower == "h" then
+        if lower == "b" then
+            text = tostring(value ~= nil and value ~= false)
+        else
+            text = __K2L_Text.formatHash(value)
+        end
+        if precision then
+            text = text:sub(1, precision)
+        end
+    else
+        formatError("UnknownFormatConversion", "Conversion = '" .. conv .. "'")
+    end
+    if conv ~= lower then
+        text = (activeUpper or string.upper)(text)
+    end
+    return pad(text, width, flags.left)
 end
 
 local function formatText(format, ...)
     local n = select("#", ...)
     local args = {...}
     local out = {}
-    local nextArg = 0
+    local nextArg, lastArg = 0, nil
     local pos = 1
     while pos <= #format do
         local percent = format:find("%", pos, true)
@@ -1204,9 +1345,11 @@ local function formatText(format, ...)
         end
         out[#out + 1] = format:sub(pos, percent - 1)
         local spec, index, flagText, widthText, precisionText, conv =
-            format:match("^(%%(%d*%$?)([-#+ 0,(]*)(%d*)%.?(%d*)([a-zA-Z%%]))", percent)
-        if spec == nil then
-            error(__K2L_IllegalArgumentException.new("Unknown format conversion at index " .. (percent - 1)))
+            format:match("^(%%(%d*%$?)([-#+ 0,(<]*)(%d*)%.?(%d*)([a-zA-Z%%]))", percent)
+        if spec == nil or not conv:find("^[bBhHsScCdoxXeEfgGn%%]$") then
+            -- checked before the argument, as the JDK parses the whole specifier first
+            local after = conv or format:match("^%%[-#+ 0,(<%d$.]*(.)", percent)
+            formatError("UnknownFormatConversion", "Conversion = '" .. (after or "%") .. "'")
         end
         -- "1$" is an argument index; a bare number belongs to flags/width
         local argIndex
@@ -1226,7 +1369,7 @@ local function formatText(format, ...)
             paren = flagText:find("(", 1, true) ~= nil,
             alt = flagText:find("#", 1, true) ~= nil,
         }
-        if widthText:sub(1, 1) == "0" and #widthText > 1 then
+        if widthText:sub(1, 1) == "0" then
             flags.zero = true
             widthText = widthText:gsub("^0+", "")
         end
@@ -1237,52 +1380,22 @@ local function formatText(format, ...)
         elseif conv == "n" then
             out[#out + 1] = "\n"
         else
-            local value
-            if argIndex then
-                value = args[argIndex]
-                if argIndex > n then
-                    missingArgument(spec)
-                end
-            else
+            -- "%<s" reuses the previous specifier's argument; explicit indices do not move the ordinary one
+            if flagText:find("<", 1, true) then
+                argIndex = lastArg
+            elseif argIndex == nil then
                 nextArg = nextArg + 1
-                if nextArg > n then
-                    missingArgument(spec)
-                end
-                value = args[nextArg]
+                argIndex = nextArg
             end
-            local lower = conv:lower()
-            local text
-            if lower == "d" or lower == "x" or lower == "o" then
-                if value == nil then
-                    text = pad("null", width, flags.left)
-                else
-                    text = formatInteger(conv, value, flags, width)
-                end
-            elseif lower == "f" or lower == "e" or lower == "g" then
-                if value == nil then
-                    text = pad("null", width, flags.left)
-                else
-                    text = formatFloat(conv, value, flags, width, precision or 6)
-                end
-            elseif lower == "s" then
-                text = __K2L_Str(value)
-                if precision then
-                    text = __K2L_Text.take(text, precision)
-                end
-                if conv == "S" then
-                    text = (activeUpper or string.upper)(text)
-                end
-                text = pad(text, width, flags.left)
-            elseif lower == "c" then
-                text = type(value) == "number" and string.char(value) or __K2L_Str(value)
-                text = pad(conv == "C" and (activeUpper or string.upper)(text) or text, width, flags.left)
-            elseif lower == "b" then
-                local b = value ~= nil and value ~= false
-                text = pad(conv == "B" and (activeUpper or string.upper)(tostring(b)) or tostring(b), width, flags.left)
-            else
-                error(__K2L_IllegalArgumentException.new("Conversion = '" .. conv .. "'"))
+            if argIndex == nil or argIndex > n then
+                formatError("MissingFormatArgument", "Format specifier '" .. spec .. "'")
             end
-            out[#out + 1] = text
+            lastArg = argIndex
+            local value, bits = args[argIndex], nil
+            if getmetatable(value) == Sized then
+                value, bits = value.value, value.bits
+            end
+            out[#out + 1] = convert(spec, conv, value, bits, flags, width, precision)
         end
         pos = percent + #spec
     end

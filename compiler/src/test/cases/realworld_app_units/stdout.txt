@@ -1,0 +1,20 @@
+3250.00 m 12m30s 15.6 km/h 31200.00 m 6500.00 m 1625.00 m -3250.00 m 13.0
+true true -1 2 0.20833333333333334
+36.0 km/h 36.0 2.3 kg 77.5 kg
+distances: [120.00 m, 900.00 m, 2500.00 m, 5000.00 m], min 120.00 m, max 5000.00 m, total 8520.00 m
+times: [1m30s, 45m00s, 1h00m, 3h05m], min 1m30s, max 3h05m, total 4h51m
+commute: 3 legs, 8.65 km in 40m00s (avg 13.0 km/h), co2 0.6 kg
+  1. walk 800.00 m in 10m00s at 4.8 km/h
+  2. bus 7500.00 m in 25m00s at 18.0 km/h
+  3. walk 350.00 m in 5m00s at 4.2 km/h
+by mode: {WALK=1150.00 m, BUS=7500.00 m}
+fastest: BUS at 18.0 km/h, average leg 2883.33 m
+weekend: 2 legs, 54.0 km in 1h30m (avg 36.0 km/h), co2 7.1 kg
+  1. car (108.0 km/h) 42000.00 m in 40m00s at 63.0 km/h
+  2. bike 12000.00 m in 50m00s at 14.4 km/h
+rejected: BIKE too fast: 90.0 km/h > 21.6 km/h (BIKE)
+rejected: a leg must have a positive distance
+rejected: average of no s values
+total co2 7.7 kg, distance 62650.00 m
+[walk<=5.4 km/h, bike<=21.6 km/h, bus<=50.4 km/h, car (108.0 km/h)<=108.0 km/h]
+7 m m true true true false

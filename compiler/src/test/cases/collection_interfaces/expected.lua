@@ -1,6 +1,5 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AbstractList = ____lualib.__K2L_AbstractList
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CollectionBase = ____lualib.__K2L_CollectionBase
@@ -25,6 +24,7 @@ local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Window = __K2L_Class("Window", __K2L_ListBase)
 __K2L_ClassInfo(Window, "Window", "Window", "class")
@@ -276,13 +276,13 @@ end
 __K2L_PropertyOverride(Shelf, "size", "getSize")
 
 local function interfaces()
-    local w = Window.new(__K2L_ArrayOf(5, 6, 7, 8, 9), 1, 4)
+    local w = Window.new(__K2L_TypedArrayOf("[I", 5, 6, 7, 8, 9), 1, 4)
     print(tostring(__K2L_StringStartsWith(__K2L_Str(w), "Window@")) .. " " .. w:getSize() .. " " .. w:get(1) .. " " .. w:indexOf(8) .. " " .. tostring(w:contains(7)) .. " " .. __K2L_Str(w:subList(1, 3):toList()) .. " " .. __K2L_Str(w:map(function(it) return it * 2 end)) .. " " .. tostring(w:equals(__K2L_ReadOnlyListOf(6, 7, 8))))
     print(w:sum() .. " " .. __K2L_Str(w:reversed()) .. " " .. w:last() .. " " .. tostring(w:containsAll(__K2L_ReadOnlyListOf(6, 8))) .. " " .. w:listIteratorAt(1):next() .. " " .. w:joinToString())
     local t = 0
-    local ____list = w:toList()
-    for ____i = 1, ____list.size do
-        local x = ____list[____i]
+    local ____items, ____n = w:____array()
+    for ____i = 1, ____n do
+        local x = ____items[____i]
         t = t + x
     end
     print("loop " .. t .. " " .. tostring(__K2L_Str(w) == "[6, 7, 8]") .. " " .. tostring(__K2L_Hash(w) == __K2L_Hash(__K2L_ReadOnlyListOf(6, 7, 8))))
@@ -290,7 +290,9 @@ local function interfaces()
     print(tostring(__K2L_StringStartsWith(__K2L_Str(n), "Numbers@")) .. " " .. n:getSize() .. " " .. tostring(n:contains(3)) .. " " .. __K2L_Str(n:filter(function(it) return math.fmod(it, 2) == 0 end)) .. " " .. __K2L_Str(n:toList()) .. " " .. n:max() .. " " .. tostring(n:equals(Numbers.new(4))))
     local c = Constants.new()
     print(tostring(__K2L_StringStartsWith(__K2L_Str(c), "Constants@")) .. " " .. __K2L_Str(c:get("pi")) .. " " .. __K2L_Str(c:getKeys()) .. " " .. __K2L_Str(c:getValues()) .. " " .. c:getSize() .. " " .. tostring(c:containsKey("e")) .. " " .. __K2L_Str(c:map(function(it) return it.key end)) .. " " .. tostring(c:equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("pi", 3.14), __K2L_Pair.new("e", 2.72)))))
-    for k, v in c:iter() do
+    local ____keys, ____values, ____n_1 = c:____arrays()
+    for ____i_1 = 1, ____n_1 do
+        local k, v = ____keys[____i_1], ____values[____i_1]
         io.write(k .. "=" .. __K2L_Str(v) .. ";")
     end
     print()
@@ -314,9 +316,9 @@ local function subclasses()
     print("snapshot " .. __K2L_Str(s) .. " " .. s.size)
     local sized = Sized.new()
     local unsized = Unsized.new()
-    local ____list_1 = __K2L_ReadOnlyListOf(40, 3, 17, 64, 1)
-    for ____i_1 = 1, ____list_1.size do
-        local k = ____list_1[____i_1]
+    local ____list = __K2L_ReadOnlyListOf(40, 3, 17, 64, 1)
+    for ____i_2 = 1, ____list.size do
+        local k = ____list[____i_2]
         sized:set(k, "v" .. k)
         unsized:set(k, "v" .. k)
     end

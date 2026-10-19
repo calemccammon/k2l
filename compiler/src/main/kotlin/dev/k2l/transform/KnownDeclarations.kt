@@ -18,6 +18,20 @@ internal val SCOPE_FUNCTIONS = setOf(
     "kotlin/collections/buildList", "kotlin/collections/buildMap", "kotlin/collections/buildSet",
 )
 
+/**
+ * The exceptions of `String.format` (java.util.Formatter): they can be caught and type-checked, and `message` reads the JDK's
+ * text. Their constructors (which build that text from a conversion or flags) are not mapped.
+ */
+internal val FORMATTER_EXCEPTIONS = listOf(
+    "IllegalFormatException",
+    "MissingFormatArgumentException",
+    "UnknownFormatConversionException",
+    "MissingFormatWidthException",
+    "IllegalFormatConversionException",
+    "IllegalFormatPrecisionException",
+    "FormatFlagsConversionMismatchException",
+)
+
 /** Library classes implemented by lualib, by ClassId (JVM typealiases expand to java.lang classes). */
 internal val LIBRARY_CLASSES = listOf(
     "Throwable", "Exception", "Error", "RuntimeException", "IllegalArgumentException", "IllegalStateException",
@@ -32,7 +46,7 @@ internal val LIBRARY_CLASSES = listOf(
     "kotlin/NotImplementedError" to "__K2L_NotImplementedError",
     "kotlin/UninitializedPropertyAccessException" to "__K2L_UninitializedPropertyAccessException",
     "java/lang/ArrayIndexOutOfBoundsException" to "__K2L_ArrayIndexOutOfBoundsException",
-)
+) + FORMATTER_EXCEPTIONS.associate { "java/util/$it" to "__K2L_$it" }
 
 /** Library supertypes that need no runtime support (Comparable is honored via compareTo). */
 internal val MARKER_INTERFACES = setOf(

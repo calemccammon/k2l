@@ -652,8 +652,10 @@ local function caught(early)
         ____outcome = __K2L_Result.failure(__K2L_ToThrowable(____result_57))
     end
     local r = ____outcome
+    local ____arg = r:isSuccess()
+    local ____arg_1 = r:getOrNull()
     local ____receiver = r:exceptionOrNull()
-    return "result " .. tostring(r:isSuccess()) .. " " .. __K2L_Str(r:getOrNull()) .. " " .. __K2L_Str(____receiver and ____receiver.message)
+    return "result " .. tostring(____arg) .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(____receiver and ____receiver.message)
 end
 
 local function timed(early)

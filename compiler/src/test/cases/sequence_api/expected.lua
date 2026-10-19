@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
@@ -18,6 +17,7 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_Text = ____lualib.__K2L_Text
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unit = ____lualib.__K2L_Unit
 
 local function seq()
@@ -75,11 +75,11 @@ local function sequenceFunctions()
     print(__K2L_Str(seq():sumByDouble(function(it) return it / 2.0 end)))
     print(seq():requireNoNulls():count())
     print(__K2L_Str(seq():minus(1):toList()))
-    print(__K2L_Str(seq():minusAll(__K2L_ArrayOf(1, 2)):toList()))
+    print(__K2L_Str(seq():minusAll(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2)):toList()))
     print(__K2L_Str(seq():minusAll(__K2L_SingletonListOf(3)):toList()))
     print(__K2L_Str(seq():minusAll(__K2L_SequenceOf(2)):toList()))
     print(__K2L_Str(seq():minus(3):toList()))
-    print(__K2L_Str(seq():plusAll(__K2L_ArrayOf(7)):toList()))
+    print(__K2L_Str(seq():plusAll(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 7)):toList()))
     print(__K2L_Str(seq():plus(8):toList()))
     print(__K2L_Str(seq():joinTo(__K2L_StringBuilder.new(), "-")))
     print(seq():shuffled(__K2L_Random.seeded(1)):count())
@@ -98,8 +98,8 @@ local function sequenceFunctions()
     print(__K2L_ReadOnlyListOf(3, 1):minOfWith(__K2L_CompareBy(function(it) return it end), function(it) return -it end))
     print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1):maxOfWithOrNull(__K2L_CompareBy(function(it) return it end), function(it) return -it end)))
     print(__K2L_Str(__K2L_ReadOnlyListOf():minOfWithOrNull(__K2L_CompareBy(function(it) return it end), function(it) return -it end)))
-    print(__K2L_ArrayOf(3, 1):maxOfWith(__K2L_CompareBy(function(it) return it end), function(it) return -it end))
-    print(__K2L_ArrayOf(3, 1):minOfWith(__K2L_CompareBy(function(it) return it end), function(it) return -it end))
+    print(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 3, 1):maxOfWith(__K2L_CompareBy(function(it) return it end), function(it) return -it end))
+    print(__K2L_TypedArrayOf("[I", 3, 1):minOfWith(__K2L_CompareBy(function(it) return it end), function(it) return -it end))
     print(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):getEntries():maxOfWith(__K2L_CompareBy(function(it) return it end), function(it) return it.value end))
     print(__K2L_StringToList("ab"):maxOfWith(__K2L_CompareBy(function(it) return it end), function(it) return it:byte() end))
     print(seq():count())
@@ -220,11 +220,11 @@ local function iterableFunctions()
     print(__K2L_Str(____sum_1))
     print(list():requireNoNulls():count())
     print(__K2L_Str(list():minus(1)))
-    print(__K2L_Str(list():minusAll(__K2L_ArrayOf(1, 2))))
+    print(__K2L_Str(list():minusAll(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2))))
     print(__K2L_Str(list():minusAll(__K2L_SingletonListOf(3))))
     print(__K2L_Str(list():minusAll(__K2L_SequenceOf(2))))
     print(__K2L_Str(list():minus(3)))
-    print(__K2L_Str(list():plusAll(__K2L_ArrayOf(7))))
+    print(__K2L_Str(list():plusAll(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 7))))
     print(__K2L_Str(list():plus(8)))
     print(__K2L_Str(list():joinTo(__K2L_StringBuilder.new(), "-")))
     print(list():shuffled(__K2L_Random.seeded(1)):count())
@@ -235,8 +235,9 @@ local function iterableFunctions()
     print(__K2L_Str(list():windowed(2, nil, nil, function(it) return it:sum() end)))
     print(__K2L_Str(list():chunked(2, function(it) return it.size end)))
     local ____list_8 = list()
-    for i = 0, ____list_8.size - 1 do
-        local x = ____list_8[i + 1]
+    for ____i_1 = 1, ____list_8.size do
+        local x = ____list_8[____i_1]
+        local i = ____i_1 - 1
         io.write(i .. x .. " ")
     end
     print("kotlin.Unit")
@@ -245,12 +246,12 @@ local function iterableFunctions()
     print(__K2L_ReadOnlyListOf(3, 1):minOfWith(__K2L_CompareBy(function(it) return it end), function(it) return -it end))
     print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1):maxOfWithOrNull(__K2L_CompareBy(function(it) return it end), function(it) return -it end)))
     print(__K2L_Str(__K2L_ReadOnlyListOf():minOfWithOrNull(__K2L_CompareBy(function(it) return it end), function(it) return -it end)))
-    print(__K2L_ArrayOf(3, 1):maxOfWith(__K2L_CompareBy(function(it) return it end), function(it) return -it end))
-    print(__K2L_ArrayOf(3, 1):minOfWith(__K2L_CompareBy(function(it) return it end), function(it) return -it end))
+    print(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 3, 1):maxOfWith(__K2L_CompareBy(function(it) return it end), function(it) return -it end))
+    print(__K2L_TypedArrayOf("[I", 3, 1):minOfWith(__K2L_CompareBy(function(it) return it end), function(it) return -it end))
     print(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):getEntries():maxOfWith(__K2L_CompareBy(function(it) return it end), function(it) return it.value end))
     print(__K2L_StringToList("ab"):maxOfWith(__K2L_CompareBy(function(it) return it end), function(it) return it:byte() end))
     print(list():count())
-    print((list() or __K2L_ListOf()):count())
+    print((list() or __K2L_ReadOnlyListOf()):count())
 end
 
 local function interleaving()

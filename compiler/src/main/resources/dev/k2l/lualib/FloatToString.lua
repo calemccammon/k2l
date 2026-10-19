@@ -1,7 +1,9 @@
 -- requires: Fround, DoubleToString, Str
 -- Kotlin/JVM Float.toString: the shortest digits (at least two) that round-trip as a float, plain notation in [1e-3, 1e7).
 local function __K2L_FloatToString(x)
-    if x ~= x then
+    if x == nil then
+        return "null"
+    elseif x ~= x then
         return "NaN"
     elseif x == math.huge then
         return "Infinity"

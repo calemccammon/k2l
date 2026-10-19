@@ -7,6 +7,7 @@ local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
@@ -49,17 +50,30 @@ local function main()
     backing:removeAt(1)
     print(__K2L_Str(view) .. " " .. view.size)
     local seen = __K2L_ListOf()
+    local ____mod = view.____modCount
     for ____i_1 = 1, view.size do
         local x = view[____i_1]
         seen:add(x)
+        if view.____modCount ~= ____mod and view:____comodified(____i_1) then
+            break
+        end
     end
+    local ____mod_1 = view.____modCount
     for ____i_2 = 1, view.size do
         local it = view[____i_2]
         seen:add(it * 100)
+        if view.____modCount ~= ____mod_1 and view:____comodified(____i_2) then
+            break
+        end
     end
-    for i = 0, view.size - 1 do
-        local x = view[i + 1]
+    local ____mod_2 = view.____modCount
+    for ____i_3 = 1, view.size do
+        local x = view[____i_3]
+        local i = ____i_3 - 1
         seen:add(i * 1000 + x)
+        if view.____modCount ~= ____mod_2 and view:____comodified(____i_3) then
+            break
+        end
     end
     print(__K2L_Str(seen))
     print(total(view))
@@ -76,14 +90,14 @@ local function main()
     print(view:joinToString("-"))
     print(view:sum())
     local firstBig = view:first(function(it) return it > 3 end)
-    print(firstBig)
+    print(__K2L_NotNull(firstBig))
     for i = 0, view.size - 1 do
         local x = view[i + 1]
         io.write(i .. "=" .. __K2L_Str(x) .. " ")
     end
     print()
     for i = 0, view.size - 1 do
-        io.write(__K2L_Str(view:get(i)))
+        io.write(__K2L_Str(__K2L_NotNull(view:get(i))))
     end
     print()
     print(__K2L_Equals(view, backing))
@@ -123,10 +137,14 @@ local function main()
     local nullView = __K2L_JdkCollections.unmodifiableList(nullable)
     nullable:add("c")
     local count = 0
-    for ____i_3 = 1, nullView.size do
-        local s = nullView[____i_3]
+    local ____mod_3 = nullView.____modCount
+    for ____i_4 = 1, nullView.size do
+        local s = nullView[____i_4]
         if s == nil then
             count = count + 1
+        end
+        if nullView.____modCount ~= ____mod_3 and nullView:____comodified(____i_4) then
+            break
         end
     end
     print(__K2L_Str(nullView) .. " " .. count)
@@ -135,10 +153,10 @@ local function main()
     s:add(9)
     s:remove(1)
     print(__K2L_Str(sv) .. " " .. sv.size .. " " .. tostring(sv:contains(9)) .. " " .. tostring(sv:contains(1)))
-    local ____list = sv:toList()
-    for ____i_4 = 1, ____list.size do
-        local x = ____list[____i_4]
-        io.write(__K2L_Str(x))
+    local ____items, ____n = sv:____array()
+    for ____i_5 = 1, ____n do
+        local x = ____items[____i_5]
+        io.write(__K2L_Str(__K2L_NotNull(x)))
     end
     print()
     attempt("setAdd", function()
@@ -156,8 +174,14 @@ local function main()
     m:set("c", 3)
     m:remove("a")
     print(__K2L_Str(mv) .. " " .. mv.size .. " " .. __K2L_Str(mv:get("c")) .. " " .. tostring(mv:containsKey("a")) .. " " .. __K2L_Str(mv:getKeys()) .. " " .. __K2L_Str(mv:getValues()))
-    for k, v in mv:iter() do
+    local ____keys, ____values, ____n_1 = mv:____arrays()
+    local ____mod_4 = mv.____modCount
+    for ____i_6 = 1, ____n_1 do
+        local k, v = ____keys[____i_6], ____values[____i_6]
         io.write(__K2L_Str(k) .. __K2L_Str(v) .. " ")
+        if mv.____modCount ~= ____mod_4 and mv:____comodified(____i_6, ____n_1) then
+            break
+        end
     end
     print()
     print(__K2L_Str(mv:getEntries():map(function(it) return it.key .. __K2L_Str(it.value) end)))

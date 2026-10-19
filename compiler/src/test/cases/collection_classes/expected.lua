@@ -1,6 +1,5 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayIndexOutOfBoundsException = ____lualib.__K2L_ArrayIndexOutOfBoundsException
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Equals = ____lualib.__K2L_Equals
@@ -24,6 +23,7 @@ local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unit = ____lualib.__K2L_Unit
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
@@ -47,9 +47,9 @@ local function factories()
     show("emptyList", __K2L_ReadOnlyListOf())
     show("listOf(1)", __K2L_SingletonListOf(1))
     show("listOf(1,2)", __K2L_ReadOnlyListOf(1, 2))
-    local arr = __K2L_ArrayOf(1)
+    local arr = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1)
     show("listOf(*arr)", __K2L_ReadOnlyListOf(__K2L_Unpack(arr)))
-    show("asList", __K2L_ArrayOf(1, 2):asList())
+    show("asList", __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2):asList())
     show("mutableListOf", __K2L_ListOf(1))
     show("arrayListOf", __K2L_ListOf(1))
     show("listOfNotNull(1)", __K2L_ListOf(1):filterNotNull():toList())
@@ -65,7 +65,7 @@ local function factories()
     show("mapOf()", __K2L_ReadOnlyMapOf())
     show("emptyMap", __K2L_ReadOnlyMapOf())
     show("mapOf(1)", __K2L_SingletonMapOf(__K2L_Pair.new(1, 2)))
-    local ____pairs = __K2L_ArrayOf(__K2L_Pair.new(1, 2))
+    local ____pairs = __K2L_TypedArrayOf("[Lkotlin.Pair;", __K2L_Pair.new(1, 2))
     show("mapOf(*pairs)", __K2L_ReadOnlyMapOf(__K2L_Unpack(____pairs)))
     show("mapOf(2)", __K2L_ReadOnlyMapOf(__K2L_Pair.new(1, 2), __K2L_Pair.new(3, 4)))
     show("mutableMapOf", __K2L_MapOf(__K2L_Pair.new(1, 2)))
@@ -97,7 +97,7 @@ local function operations()
     show("sortedWith", xs:sortedWith(__K2L_CompareBy(function(it) return -it end)))
     show("sortedBy", xs:sortedBy(function(it) return -it end, true))
     show("sortedDescending", xs:sortedDescending())
-    show("array.sorted", __K2L_ArrayOf(1):sorted())
+    show("array.sorted", __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1):sorted())
     show("filter", xs:filter(function(it) return true end))
     show("map", xs:map(function(it) return it end))
     show("take1", xs:take(1))
@@ -123,16 +123,20 @@ local function indexes()
     tryIt("listOf(1)[-1]", function() return __K2L_SingletonListOf(1):get(-1) end)
     tryIt("listOf(1,2)[2]", function() return __K2L_ReadOnlyListOf(1, 2):get(2) end)
     tryIt("listOf(1,2)[-1]", function() return __K2L_ReadOnlyListOf(1, 2):get(-1) end)
-    tryIt("arr[2]", function() return __K2L_ArrayOf(1, 2):get(2) end)
-    tryIt("intarr[2]", function() return __K2L_ArrayOf(1, 2):get(2) end)
+    tryIt("arr[2]", function()
+        return __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2):get(2)
+    end)
+    tryIt("intarr[2]", function() return __K2L_TypedArrayOf("[I", 1, 2):get(2) end)
     tryIt("arr set", function()
-        local a = __K2L_ArrayOf(1)
+        local a = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1)
         a:set(3, 4)
         return __K2L_Unit
     end)
     tryIt("mutable[2]", function() return __K2L_ListOf(1, 2):get(2) end)
     tryIt("mutable[-1]", function() return __K2L_ListOf(1, 2):get(-1) end)
-    tryIt("asList.get", function() return __K2L_ArrayOf(1):asList():get(3) end)
+    tryIt("asList.get", function()
+        return __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1):asList():get(3)
+    end)
     tryIt("sorted get", function()
         return __K2L_ReadOnlyListOf(2, 1):sorted():get(2)
     end)
@@ -178,7 +182,7 @@ local function indexes()
     end)
     tryIt("catch for an array", function()
         local ____ok_2, ____result_2, ____returned_2 = pcall(function()
-            return true, __K2L_ArrayOf(1):get(3)
+            return true, __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1):get(3)
         end)
         if ____ok_2 then
             if ____result_2 then
@@ -493,12 +497,16 @@ local function equality()
         local x = ____list[____i_1]
         total = total + x
     end
-    local ____list_1 = __K2L_ReadOnlySetOf(7):toList()
-    for ____i_2 = 1, ____list_1.size do
-        local x = ____list_1[____i_2]
+    local ____collection = __K2L_ReadOnlySetOf(7)
+    local ____items, ____n = ____collection:____array()
+    for ____i_2 = 1, ____n do
+        local x = ____items[____i_2]
         total = total + x
     end
-    for k, v in __K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):iter() do
+    local ____map = __K2L_SingletonMapOf(__K2L_Pair.new(1, 2))
+    local ____keys, ____values, ____n_1 = ____map:____arrays()
+    for ____i_3 = 1, ____n_1 do
+        local k, v = ____keys[____i_3], ____values[____i_3]
         total = total + (k + v)
     end
     print("loops " .. total .. " " .. __K2L_Str(single:map(function(it) return it * 2 end)) .. " " .. __K2L_Str(__K2L_ReadOnlySetOf(3):map(function(it) return it end)) .. " " .. __K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):map(function(it) return it.value end)))

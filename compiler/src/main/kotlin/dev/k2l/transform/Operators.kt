@@ -99,10 +99,9 @@ internal fun FileTransformer.cast(e: KtBinaryExpressionWithTypeRHS): LuaExpr = w
     if (e.operationReference.getReferencedNameElementType() != KtTokens.AS_SAFE) {
         if (!castNeedsCheck(e, type)) return value
         val v = cache(value, "cast")
-        val test = typeTest(v, type, e)
-        val guarded = if (type.isMarkedNullable) shortCircuit(LuaBinOp.Or, LuaBinary(LuaBinOp.Eq, v, LuaNil)) { test } else test
+        val test = typeTest(v, type, e) // `as String?` lets null through
         val fail = lualibCall("CastFail", v, LuaString(jvmClassName(type)), LuaString(kotlinClassName(type)))
-        emit(LuaIf(negate(guarded), listOf(LuaCallStmt(fail))))
+        emit(LuaIf(negate(test), listOf(LuaCallStmt(fail))))
         return v
     }
     val v = cache(value, "cast")

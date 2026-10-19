@@ -466,9 +466,9 @@ local function lists()
     l:sort()
     print(__K2L_Str(l.inner) .. " " .. l:first() .. " " .. l:last() .. " " .. l:sum() .. " " .. __K2L_Str(l:map(function(it) return it * 2 end)) .. " " .. __K2L_Str(l:filter(function(it) return it > 3 end)) .. " " .. l:joinToString("-"))
     local total = 0
-    local ____list = l:toList()
-    for ____i = 1, ____list.size do
-        local x = ____list[____i]
+    local ____items, ____n = l:____array()
+    for ____i = 1, ____n do
+        local x = ____items[____i]
         total = total + x
     end
     print("loop " .. total .. " " .. tostring(l:equals(__K2L_ReadOnlyListOf(1, 2, 4, 5, 6, 30))) .. " " .. tostring(__K2L_Equals(__K2L_ReadOnlyListOf(1, 2, 4, 5, 6, 30), l)) .. " " .. tostring(__K2L_Hash(l) == __K2L_Hash(l.inner)))
@@ -488,7 +488,9 @@ local function maps()
     t:put("Z", 3)
     t:putAll(__K2L_SingletonMapOf(__K2L_Pair.new("W", 4)))
     print(t.size .. " " .. __K2L_Str(t:get("y")) .. " " .. __K2L_Str(t:getKeys()) .. " " .. __K2L_Str(t:getValues()) .. " " .. tostring(t:containsKey("z")) .. " " .. tostring(t:containsValue(4)) .. " " .. tostring(t:containsKey("x")))
-    for k, v in t:iter() do
+    local ____keys, ____values, ____n_1 = t:____arrays()
+    for ____i_1 = 1, ____n_1 do
+        local k, v = ____keys[____i_1], ____values[____i_1]
         io.write(k .. "=" .. v .. " ")
     end
     print()
@@ -507,9 +509,9 @@ local function others()
     local w = Wrap.new(__K2L_IntRange.new(1, 4))
     print(__K2L_Str(w:map(function(it) return it * it end)) .. " " .. w:sum() .. " " .. __K2L_Str(w:toList()) .. " " .. w:count() .. " " .. w:first())
     local s = 0
-    local ____list_1 = w:toList()
-    for ____i_1 = 1, ____list_1.size do
-        local x = ____list_1[____i_1]
+    local ____items_1, ____n_2 = w:____array()
+    for ____i_2 = 1, ____n_2 do
+        local x = ____items_1[____i_2]
         s = s + x
     end
     local steps = Steps.new(__K2L_IteratorOf(__K2L_ReadOnlyListOf(5, 6)))
@@ -525,9 +527,13 @@ local function others()
     end)
     j()
     local jobs = __K2L_SingletonListOf(j)
-    for ____i_2 = 1, jobs.size do
-        local it = jobs[____i_2]
+    local ____mod = jobs.____modCount
+    for ____i_3 = 1, jobs.size do
+        local it = jobs[____i_3]
         it()
+        if jobs.____modCount ~= ____mod and jobs:____comodified(____i_3) then
+            break
+        end
     end
     local twice = Twice.new(function(it) return it * 2 end)
     print(twice(21) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf(1, 2):map(twice)))
@@ -657,6 +663,7 @@ function Draining:next()
 end
 
 local Version = __K2L_Class("Version")
+Version.____comparable = true
 
 function Version:____init(n)
     self.n = n
@@ -679,6 +686,7 @@ function Version:equals(other)
 end
 
 local Release = __K2L_Class("Release")
+Release.____comparable = true
 
 function Release:____init(v, label)
     self.label = label
@@ -854,9 +862,9 @@ local function more()
     local layer = Layer.new(Window.new(__K2L_ReadOnlyListOf(1, 2, 3, 4), 1))
     print(layer.size .. " " .. layer:get(0) .. " " .. __K2L_Str(layer:toList()) .. " " .. layer:indexOf(4) .. " " .. __K2L_Str(layer:subList(0, 2)) .. " " .. layer:sum() .. " " .. layer:max())
     local total = 0
-    local ____list_2 = layer:toList()
-    for ____i_3 = 1, ____list_2.size do
-        local x = ____list_2[____i_3]
+    local ____items_2, ____n_3 = layer:____array()
+    for ____i_4 = 1, ____n_3 do
+        local x = ____items_2[____i_4]
         total = total + x
     end
     local ____object = __K2L_Class("MainKt$more$anonymous$1", __K2L_ListBase)
@@ -963,14 +971,14 @@ __K2L_PropertyOverride(Traced, "size", "getSize")
 
 local function traced()
     local t = Traced.new(__K2L_ReadOnlyListOf(4, 5, 6))
-    local ____list_3 = t:toList()
-    for ____i_4 = 1, ____list_3.size do
-        local x = ____list_3[____i_4]
+    local ____items_3, ____n_4 = t:____array()
+    for ____i_5 = 1, ____n_4 do
+        local x = ____items_3[____i_5]
         io.write(x .. " ")
     end
-    local ____list_4 = t:toList()
-    for ____i_5 = 1, ____list_4.size do
-        local it = ____list_4[____i_5]
+    local ____items_4, ____n_5 = t:____array()
+    for ____i_6 = 1, ____n_5 do
+        local it = ____items_4[____i_6]
         io.write(it .. " ")
     end
     print(__K2L_Str(t.log))

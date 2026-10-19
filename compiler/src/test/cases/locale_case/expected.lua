@@ -32,8 +32,13 @@ local function main()
     print(__K2L_Utf16.out(hex(__K2L_Utf16Locale.lowercase("̇", tr))))
     print(__K2L_Utf16.out(hex(__K2L_Utf16Locale.uppercase("Iß", tr))))
     print(__K2L_Utf16.out(hex(__K2L_Utf16Locale.uppercase("ıÇ", tr))))
-    for _, locale in ipairs(others) do
+    local ____mod = others.____modCount
+    for ____i = 1, others.size do
+        local locale = others[____i]
         print(__K2L_Utf16.out(hex(__K2L_Utf16Locale.lowercase("Iİıi", locale)) .. " | " .. hex(__K2L_Utf16Locale.uppercase("Iİıi", locale))))
+        if others.____modCount ~= ____mod and others:____comodified(____i) then
+            break
+        end
     end
     print(__K2L_Utf16.out(hex(__K2L_Utf16Locale.lowercase("Ì", lt))))
     print(__K2L_Utf16.out(hex(__K2L_Utf16Locale.lowercase("J́x", lt))))
@@ -53,7 +58,9 @@ local function main()
     print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar("istanbul", function(it) return __K2L_Utf16Locale.titlecase(it, tr) end)))
     print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar("istanbul", function(it) return __K2L_Utf16Case.titlecase(it) end)))
     print(__K2L_Utf16.out(__K2L_Utf16Case.titlecase("ǆ")))
-    for _, c in ipairs(__K2L_ReadOnlyListOf("i", "I", "ı", "İ", "ß", "ŉ", "ǆ", "a", "ǰ")) do
+    local ____list = __K2L_ReadOnlyListOf("i", "I", "ı", "İ", "ß", "ŉ", "ǆ", "a", "ǰ")
+    for ____i_1 = 1, ____list.size do
+        local c = ____list[____i_1]
         print(__K2L_Utf16.out(__K2L_Utf16.norm(c .. " " .. hex(__K2L_Utf16Locale.titlecase(c, tr)) .. " " .. hex(__K2L_Utf16Locale.titlecase(c, lt)) .. " " .. hex(__K2L_Utf16Case.titlecase(c)) .. " " .. hex(__K2L_Utf16Case.titlecase(c)))))
     end
     print(__K2L_Utf16.out(__K2L_Locale.language(tr) .. " " .. __K2L_Str(__K2L_Locale.country(trTR)) .. " " .. __K2L_Str(trTR) .. " " .. __K2L_Str(lt) .. " " .. __K2L_Str(az)))

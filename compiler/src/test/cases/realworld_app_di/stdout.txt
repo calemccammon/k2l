@@ -1,0 +1,76 @@
+== bindings
+  Binding(Clock, SINGLETON)
+  Binding(Logger, SINGLETON)
+  Binding(Logger@audit, SINGLETON)
+  Binding(EventBus, SINGLETON)
+  Binding(UserRepository, SINGLETON)
+  Binding(RequestId, PROTOTYPE)
+  Binding(UserService, SINGLETON)
+  Binding(OrderService, SINGLETON)
+  Binding(Audit, SINGLETON)
+same logger: true, audit logger differs: true
+== users
+  ada -> 1
+  grace -> 2
+  linus -> 3
+  error: user ada already exists
+  repo: {ada=1}
+== orders
+  100
+  101
+  error: an order needs at least one item
+  direct: delivered to 1
+  overflow: failed: IllegalStateException: order 8 too large: 4000.0
+  shutdown: dropped
+  after stop: dropped
+  dead users: [UserCreated(source=x, user=y)], dead events: 2
+  counts: {UserCreated=0, UserDeleted=0, OrderPlaced=0}
+  audit: created ada via users/req-1
+  audit: created grace via users/req-2
+  audit: created linus via users/req-3
+  audit: deleted grace (requested)
+  audit: deleted linus (unspecified)
+  audit: order 100 = 29.75
+  audit: order 7 = 12.0
+== scopes
+  Session(ada, #0) same=true Session(anon, #1) true
+  request ids issued: 5, fresh: req-6 req-7
+  Binding(Session, SCOPED)
+    ^ Binding(Clock, SINGLETON)
+    ^ Binding(Logger, SINGLETON)
+    ^ Binding(Logger@audit, SINGLETON)
+    ^ Binding(EventBus, SINGLETON)
+    ^ Binding(UserRepository, SINGLETON)
+    ^ Binding(RequestId, PROTOTYPE)
+    ^ Binding(UserService, SINGLETON)
+    ^ Binding(OrderService, SINGLETON)
+    ^ Binding(Audit, SINGLETON)
+    ^ Binding(Session, SCOPED)
+== failures
+  resolve String failed: no binding for String in app
+  resolve Map failed: no binding for Map in request-2
+  cycle: A -> B -> A (3 links)
+  lazy cycle ok: true
+  duplicate binding for EventBus in app
+  lazy initialized: false prefix=app true
+== logs
+  [app@1000] added ada as #1
+  [app@1015] added grace as #2
+  [app@1030] added linus as #3
+  [app@1045] remove grace -> true
+  [app@1060] remove linus -> true
+  [app@1075] remove nobody -> false
+  [audit@1090] order 100: 2 items
+  [audit@1105] order 101: 2 items
+  creations: {Clock=1, Logger=1, Logger#audit=1, EventBus=1, UserRepository=1, RequestId=7, UserService=1, OrderService=1, Audit=1, Session=1}
+  register Clock
+  register Logger
+  register Logger#audit
+  register EventBus
+  register UserRepository
+  register RequestId
+  register UserService
+  register OrderService
+  register Audit
+  register Session
+  [request-1] register Session

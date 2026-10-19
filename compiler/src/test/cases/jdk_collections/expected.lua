@@ -1,5 +1,4 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
@@ -11,6 +10,7 @@ local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
@@ -18,6 +18,7 @@ local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unit = ____lualib.__K2L_Unit
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
@@ -69,14 +70,14 @@ end
 local function queries()
     print("-- queries")
     local list = __K2L_ReadOnlyListOf(4, 8, 15, 16, 23, 42, 8)
-    print(__K2L_JdkCollections.max(list))
-    print(__K2L_JdkCollections.min(list))
-    print(__K2L_JdkCollections.max(list, __K2L_JdkCollections.reverseOrder()))
+    print(__K2L_NotNull(__K2L_JdkCollections.max(list)))
+    print(__K2L_NotNull(__K2L_JdkCollections.min(list)))
+    print(__K2L_NotNull(__K2L_JdkCollections.max(list, __K2L_JdkCollections.reverseOrder())))
     print(__K2L_Str(__K2L_JdkCollections.max(__K2L_ReadOnlyListOf("b", "abc", "zz"), __K2L_CompareBy(function(it) return #it end))))
     print(__K2L_JdkCollections.frequency(list, 8))
     print(__K2L_JdkCollections.frequency(list, 99))
     print(__K2L_JdkCollections.frequency(__K2L_ReadOnlyListOf("a", "b", "a", nil), nil))
-    print(__K2L_JdkCollections.max(__K2L_ReadOnlySetOf(3, 1, 2)))
+    print(__K2L_NotNull(__K2L_JdkCollections.max(__K2L_ReadOnlySetOf(3, 1, 2))))
     print(__K2L_JdkCollections.disjoint(__K2L_ReadOnlyListOf(1, 2), __K2L_ReadOnlyListOf(3, 4)))
     print(__K2L_JdkCollections.disjoint(__K2L_ReadOnlyListOf(1, 2), __K2L_ReadOnlyListOf(2, 4)))
     attempt("emptyMax", function()
@@ -165,10 +166,10 @@ end
 
 local function arrays()
     print("-- arrays")
-    local ints = __K2L_ArrayOf(5, 2, 8, 1, 9, 3)
+    local ints = __K2L_TypedArrayOf("[I", 5, 2, 8, 1, 9, 3)
     __K2L_JdkCollections.sort_array(ints)
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(ints)))
-    local part = __K2L_ArrayOf(9, 8, 7, 6, 5, 4)
+    local part = __K2L_TypedArrayOf("[I", 9, 8, 7, 6, 5, 4)
     __K2L_JdkCollections.sort_array(part, 1, 4)
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(part)))
     local ____ok_1, ____result_1 = pcall(function()
@@ -187,12 +188,12 @@ local function arrays()
         __K2L_JdkCollections.sort_array(part, 3, 1)
         return __K2L_Unit
     end)
-    local strings = __K2L_ArrayOf("pear", "fig", "banana")
+    local strings = __K2L_TypedArrayOf("[Ljava.lang.String;", "pear", "fig", "banana")
     __K2L_JdkCollections.sort_array(strings)
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(strings)))
     __K2L_JdkCollections.sort_array(strings, function(a, b) return #b - #a end)
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(strings)))
-    local filled = __K2L_ListOfSize(5, 0, true)
+    local filled = __K2L_ListOfSize(5, 0, "[I")
     __K2L_JdkCollections.fill_array(filled, 7)
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(filled)))
     __K2L_JdkCollections.fill_array(filled, 1, 3, 0)
@@ -202,26 +203,26 @@ local function arrays()
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(__K2L_JdkCollections.copyOfRange(ints, 2, 4, 0))))
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(__K2L_JdkCollections.copyOfRange(ints, 4, 9, 0))))
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(__K2L_JdkCollections.copyOf(strings, 5, nil))))
-    print(__K2L_Str(__K2L_JdkCollections.arrayToString(__K2L_JdkCollections.copyOf(__K2L_ArrayOf(true), 3, false))))
+    print(__K2L_Str(__K2L_JdkCollections.arrayToString(__K2L_JdkCollections.copyOf(__K2L_TypedArrayOf("[Z", true), 3, false))))
     attempt("copyRange", function()
         return __K2L_JdkCollections.copyOfRange(ints, 5, 2, 0)
     end)
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(nil)))
-    print(__K2L_JdkCollections.arrayEquals(__K2L_ArrayOf(1, 2), __K2L_ArrayOf(1, 2)))
-    print(__K2L_JdkCollections.arrayEquals(__K2L_ArrayOf(1, 2), __K2L_ArrayOf(2, 1)))
-    print(__K2L_JdkCollections.arrayEquals(__K2L_ArrayOf(1, 2), __K2L_ArrayOf(1, 2, 3)))
-    print(__K2L_JdkCollections.arrayHashCode(__K2L_ArrayOf(1, 2, 3)))
-    print(__K2L_JdkCollections.arrayHashCode(__K2L_ArrayOf("a", "b")))
+    print(__K2L_JdkCollections.arrayEquals(__K2L_TypedArrayOf("[I", 1, 2), __K2L_TypedArrayOf("[I", 1, 2)))
+    print(__K2L_JdkCollections.arrayEquals(__K2L_TypedArrayOf("[I", 1, 2), __K2L_TypedArrayOf("[I", 2, 1)))
+    print(__K2L_JdkCollections.arrayEquals(__K2L_TypedArrayOf("[I", 1, 2), __K2L_TypedArrayOf("[I", 1, 2, 3)))
+    print(__K2L_JdkCollections.arrayHashCode(__K2L_TypedArrayOf("[I", 1, 2, 3)))
+    print(__K2L_JdkCollections.arrayHashCode(__K2L_TypedArrayOf("[Ljava.lang.String;", "a", "b")))
     print(__K2L_JdkCollections.arrayHashCode(nil))
-    print(__K2L_Str(__K2L_JdkCollections.deepToString(__K2L_ArrayOf(__K2L_ArrayOf(1, 2), __K2L_ArrayOf(3)))))
-    print(__K2L_Str(__K2L_JdkCollections.deepToString(__K2L_ArrayOf(__K2L_ArrayOf(1, 2), __K2L_ArrayOf(3, __K2L_ArrayOf(4))))))
-    local sorted = __K2L_ArrayOf(1, 3, 5, 7, 9, 11)
+    print(__K2L_Str(__K2L_JdkCollections.deepToString(__K2L_TypedArrayOf("[[I", __K2L_TypedArrayOf("[I", 1, 2), __K2L_TypedArrayOf("[I", 3)))))
+    print(__K2L_Str(__K2L_JdkCollections.deepToString(__K2L_TypedArrayOf("[[Ljava.io.Serializable;", __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2), __K2L_TypedArrayOf("[Ljava.io.Serializable;", 3, __K2L_TypedArrayOf("[Ljava.lang.Integer;", 4))))))
+    local sorted = __K2L_TypedArrayOf("[I", 1, 3, 5, 7, 9, 11)
     print(__K2L_JdkCollections.binarySearch_array(sorted, 7))
     print(__K2L_JdkCollections.binarySearch_array(sorted, 4))
     print(__K2L_JdkCollections.binarySearch_array(sorted, 2, 5, 9))
     print(__K2L_JdkCollections.binarySearch_array(sorted, 2, 5, 11))
-    print(__K2L_JdkCollections.binarySearch_array(__K2L_ArrayOf("a", "c", "e"), "c"))
-    local squares = __K2L_ListOfSize(5, 0, true)
+    print(__K2L_JdkCollections.binarySearch_array(__K2L_TypedArrayOf("[Ljava.lang.String;", "a", "c", "e"), "c"))
+    local squares = __K2L_ListOfSize(5, 0, "[I")
     __K2L_JdkCollections.setAll(squares, function(it) return it * it end)
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(squares)))
     local list = __K2L_JdkCollections.asList(3, 1, 2)
@@ -234,7 +235,7 @@ local function arrays()
     attempt("asListAdd", function() return list:add(4) end)
     attempt("asListRemove", function() return list:removeAt(0) end)
     print(__K2L_JdkCollections.asList("x", "y").size)
-    print(__K2L_Str(__K2L_JdkCollections.asList(__K2L_Unpack(__K2L_ArrayOf(1, 2, 3)))))
+    print(__K2L_Str(__K2L_JdkCollections.asList(__K2L_Unpack(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2, 3)))))
 end
 
 local function main()

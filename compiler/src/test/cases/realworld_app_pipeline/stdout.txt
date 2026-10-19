@@ -1,0 +1,22 @@
+GET /health -> 200 up [X-Path=GET:1]
+GET /users -> 401 unauthorized
+GET /users -> 200 ada, grace [X-Path=GET:1]
+GET /users/1 -> 200 ada [X-Path=GET:2]
+GET /users/1 -> 200 ada [X-Path=GET:2 X-Cache=hit]
+GET /users/9 -> 404 user 9 not found
+GET /users/x -> 400 parameter id is not a number: x
+GET /users/2/greeting/fr -> 200 Bonjour, grace! [X-Path=GET:4]
+GET /users/2/greeting/es -> 400 unknown language es
+POST /users -> 201 created 3 [X-Path=POST:1]
+POST /users -> 500 IllegalArgumentException: empty name
+GET /users -> 200 ada, grace, linus [X-Path=GET:1]
+GET /crash/0 -> 500 ArithmeticException: / by zero
+GET /crash/zero -> 400 bad number: For input string: "zero"
+DELETE /users/1 -> 404 no route for /users/1 [X-Path=DELETE:2]
+log: [log> GET /health, log< 200, log> GET /users, log< 401, log> GET /users, log< 200] ... 30 lines
+counts: {/crash/0=1, /crash/zero=1, /health=1, /users=5, /users/1=3, /users/2/greeting/es=1, /users/2/greeting/fr=1, /users/9=1, /users/x=1}
+cache hits=1 misses=10 size=2
+<42>
+15 3 [11, 12, 13]
+20
+{GET=12, POST=2, DELETE=1}

@@ -45,6 +45,29 @@ internal fun FileTransformer.staticArrayClass(type: KaType?): LuaExpr? = with(se
     return LuaCall(lualibRef("KClass", "__K2L_KClassOfArray"), args)
 }
 
+/**
+ * The JVM name of the array type [type] (`[I`, `[Ljava.lang.String;`), which the lualib makes its class at run time (see
+ * `__K2L_ArrayClassOf`), or null when it is not an array or an `Object[]`, the default class of arrays.
+ */
+internal fun FileTransformer.arrayBinary(type: KaType?): String? = with(session) {
+    val id = type?.expandedSymbol?.classId?.asString() ?: return null
+    if (id in UNSIGNED_ARRAYS) return id.replace('/', '.')
+    if (id != "kotlin/Array" && id !in PRIMITIVE_ARRAYS) return null
+    arrayNames(type)?.first?.takeIf { it != OBJECT_ARRAY }
+}
+
+private const val OBJECT_ARRAY = "[Ljava.lang.Object;"
+
+/** `is IntArray` (an array of the JVM type `[I`) and `is Array<*>` (any array of objects): arrays know their type at run time. */
+internal fun FileTransformer.arrayTypeTest(value: LuaExpr, type: KaType): LuaExpr = with(session) {
+    val primitive = type.expandedSymbol?.classId?.asString() != "kotlin/Array"
+    val binary = if (primitive) arrayBinary(type)?.let { LuaString(it) } else null
+    LuaCall(lualibRef("Collections", "__K2L_IsArray"), listOfNotNull(value, binary))
+}
+
+/** Value classes over primitive arrays, whose class is their own (`kotlin.UIntArray`). */
+private val UNSIGNED_ARRAYS = setOf("kotlin/UIntArray", "kotlin/ULongArray", "kotlin/UByteArray", "kotlin/UShortArray")
+
 /** The JVM name and the Java simple name of an array type, or of an array's element type when it is not an array. */
 private fun FileTransformer.arrayNames(type: KaType): Pair<String, String>? = with(session) {
     val id = type.expandedSymbol?.classId

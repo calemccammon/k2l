@@ -1,10 +1,10 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function divide(a, b)
     return (__K2L_IDiv(a, b) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
@@ -51,8 +51,8 @@ local function main()
         return (it * 2 + 0x80000000 & 0xFFFFFFFF) - 0x80000000
     end) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print((__K2L_AsSequence(big):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
-    print((__K2L_ArrayOf(2147483647, 2147483647):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
-    print((__K2L_ArrayOf(2147483647, 2):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
+    print((__K2L_TypedArrayOf("[Ljava.lang.Integer;", 2147483647, 2147483647):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
+    print((__K2L_TypedArrayOf("[I", 2147483647, 2):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print(firstBig(big))
     print(big:sumOf(function(it) return it end))
     print((__K2L_ReadOnlyListOf(1, 2, 3):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)

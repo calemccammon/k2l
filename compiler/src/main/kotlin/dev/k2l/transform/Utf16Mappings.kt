@@ -39,6 +39,15 @@ internal fun CallSite.requireUtf16Case() {
     if (utf16) transformer.ctx.lualib += UTF16_CASE
 }
 
+/**
+ * With `--strings utf16`, a regex whose pattern may use Unicode properties (`\p{L}`, `\p{Lu}`, `\P{Nd}`, ...) loads the
+ * Unicode tables they test non-ASCII characters with: when the pattern is not a literal, or a literal that has `\p` or `\P`.
+ */
+internal fun CallSite.requireRegexProperties(pattern: LuaExpr) {
+    val text = (pattern as? LuaString)?.value
+    if (text == null || "\\p" in text || "\\P" in text) requireUtf16Case()
+}
+
 /** Wraps [text] so that surrogate halves joined by concatenation become one character. */
 internal fun FileTransformer.u16Norm(text: LuaExpr): LuaExpr = u16("norm", text)
 

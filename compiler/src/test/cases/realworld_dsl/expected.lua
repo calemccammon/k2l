@@ -65,8 +65,14 @@ function Tag:render(builder, indent)
         return
     end
     builder:append(">\n")
-    for _, c in ipairs(self.children) do
+    local ____list = self.children
+    local ____mod = ____list.____modCount
+    for ____i = 1, ____list.size do
+        local c = ____list[____i]
         c:render(builder, indent .. "  ")
+        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            break
+        end
     end
     builder:append(indent .. "</" .. self.name .. ">\n")
 end
@@ -338,13 +344,18 @@ end
 
 function Json.JArray:write(sb)
     sb:append("[")
-    local ____list = self.items
-    for i = 0, ____list.size - 1 do
-        local item = ____list[i + 1]
+    local ____list_1 = self.items
+    local ____mod_1 = ____list_1.____modCount
+    for ____i_1 = 1, ____list_1.size do
+        local item = ____list_1[____i_1]
+        local i = ____i_1 - 1
         if i > 0 then
             sb:append(",")
         end
         item:write(sb)
+        if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_1) then
+            break
+        end
     end
     sb:append("]")
 end
@@ -358,7 +369,11 @@ end
 function Json.JObject:write(sb)
     sb:append("{")
     local first = true
-    for k, v in self.fields:iter() do
+    local ____map = self.fields
+    local ____keys, ____values, ____n = ____map:____arrays()
+    local ____mod_2 = ____map.____modCount
+    for ____i_2 = 1, ____n do
+        local k, v = ____keys[____i_2], ____values[____i_2]
         if not first then
             sb:append(",")
         end
@@ -366,6 +381,9 @@ function Json.JObject:write(sb)
         Json.JString.new(k):write(sb)
         sb:append(":")
         v:write(sb)
+        if ____map.____modCount ~= ____mod_2 and ____map:____comodified(____i_2, ____n) then
+            break
+        end
     end
     sb:append("}")
 end
@@ -475,9 +493,9 @@ local function main()
                 ____this_9:set("data-id", "p1")
             end)
             ____this_7:ul(function(____this_11)
-                local ____list_1 = __K2L_ReadOnlyListOf("apples", "pears", "plums")
-                for i = 0, ____list_1.size - 1 do
-                    local item = ____list_1[i + 1]
+                local ____list_2 = __K2L_ReadOnlyListOf("apples", "pears", "plums")
+                for i = 0, ____list_2.size - 1 do
+                    local item = ____list_2[i + 1]
                     ____this_11:li(function(____this_12)
                         if math.fmod(i, 2) == 0 then
                             setCssClass(____this_12, "even")
@@ -497,11 +515,13 @@ local function main()
         __K2L_CastFail(____cast, "dsl.Body", "dsl.Body")
     end
     local body = ____cast
+    local ____arg_1 = getCssClass(body)
+    local ____arg_2 = getDepth(page)
     local ____cast_1 = body.children:get(1)
     if not __K2L_InstanceOf(____cast_1, Tag) then
         __K2L_CastFail(____cast_1, "dsl.Tag", "dsl.Tag")
     end
-    print("body class=" .. __K2L_Str(getCssClass(body)) .. " depth=" .. getDepth(page) .. " p=" .. __K2L_Str(____cast_1:get("data-id")))
+    print("body class=" .. __K2L_Str(____arg_1) .. " depth=" .. ____arg_2 .. " p=" .. __K2L_Str(____cast_1:get("data-id")))
     setCssClass(body, nil)
     print("after: " .. __K2L_Str(getCssClass(body)) .. " " .. __K2L_Str(body.attributes))
     local link = body.children:filter(function(x) return __K2L_InstanceOf(x, A) end):single()

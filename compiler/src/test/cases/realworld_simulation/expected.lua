@@ -26,6 +26,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Customer
 local SimEvent = __K2L_Class("SimEvent")
+SimEvent.____comparable = true
 
 function SimEvent:____init(time)
     self.time = time
@@ -104,8 +105,8 @@ function Bank:____init(tellers, log)
     self.log = log
     self.events = __K2L_PriorityQueue.new()
     self.queue = __K2L_ArrayDeque.new()
-    self.busy = __K2L_ListOfSize(self.tellers, false, true)
-    self.busyTime = __K2L_ListOfSize(self.tellers, 0, true)
+    self.busy = __K2L_ListOfSize(self.tellers, false, "[Z")
+    self.busyTime = __K2L_ListOfSize(self.tellers, 0, "[I")
     self.stats = BankStats.new()
     self.clock = 0
 end
@@ -177,8 +178,8 @@ function Life:____init(w, h, alive)
     self.w = w
     self.h = h
     self.cells = __K2L_ListOfSize(self.h, function(y)
-        return __K2L_ListOfSize(self.w, function(x) return alive:contains(__K2L_Pair.new(x, y)) end, true)
-    end, true)
+        return __K2L_ListOfSize(self.w, function(x) return alive:contains(__K2L_Pair.new(x, y)) end, "[Z")
+    end, "[[Z")
     self.generation = 0
 end
 
@@ -201,8 +202,8 @@ function Life:step()
         return __K2L_ListOfSize(self.w, function(x)
             local n = self:neighbours(x, y)
             return n == 3 or n == 2 and self.cells:get(y):get(x)
-        end, true)
-    end, true)
+        end, "[Z")
+    end, "[[Z")
     self.generation = self.generation + 1
 end
 
@@ -279,8 +280,13 @@ local function main()
     print("vips: " .. __K2L_Str(people:filter(function(it) return it.vip end):map(function(it) return it.id end)))
     for tellers = 1, 3 do
         local bank = Bank.new(tellers)
-        for _, it in ipairs(people) do
+        local ____mod = people.____modCount
+        for ____i = 1, people.size do
+            local it = people[____i]
             bank:schedule(SimEvent.Arrival.new(it.arrival, it))
+            if people.____modCount ~= ____mod and people:____comodified(____i) then
+                break
+            end
         end
         bank:run()
         local s = bank.stats
@@ -288,15 +294,21 @@ local function main()
         print("tellers=" .. tellers .. " served=" .. s.served .. " avgWait=" .. __K2L_StringFormat("%.2f", s:getAverageWait()) .. " maxWait=" .. s.maxWait .. " " .. "p90=" .. p90 .. " maxQueue=" .. s.maxQueue .. " end=" .. bank.clock .. " util=" .. __K2L_Str(bank:utilisation()))
     end
     local small = Bank.new(2, true)
-    for _, it in ipairs(customers(6, 7)) do
+    local ____list = customers(6, 7)
+    local ____mod_1 = ____list.____modCount
+    for ____i_1 = 1, ____list.size do
+        local it = ____list[____i_1]
         small:schedule(SimEvent.Arrival.new(it.arrival, it))
+        if ____list.____modCount ~= ____mod_1 and ____list:____comodified(____i_1) then
+            break
+        end
     end
     small:run()
     local rnd = __K2L_Random.seeded(99)
     print("dice: " .. __K2L_Str(__K2L_ListOfSize(10, function(it) return rnd:nextInt(1, 7) end)) .. " coin: " .. __K2L_ListOfSize(8, function(it) return rnd:nextBoolean() and "H" or "T" end):joinToString(""))
     local shuffled = __K2L_IntRange.new(1, 10):shuffled(__K2L_Random.seeded(5))
     print("shuffled: " .. __K2L_Str(shuffled) .. " sorted back: " .. tostring(__K2L_Equals(shuffled:sorted(), __K2L_IntRange.new(1, 10):toList())))
-    local histogram = __K2L_ListOfSize(6, 0, true)
+    local histogram = __K2L_ListOfSize(6, 0, "[I")
     for it = 0, 599 do
         do
             local ____key_1 = __K2L_Random.seeded(it):nextInt(6)
