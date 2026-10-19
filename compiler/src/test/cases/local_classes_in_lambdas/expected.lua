@@ -1,0 +1,68 @@
+local ____lualib = require("lualib_bundle")
+local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_Exception = ____lualib.__K2L_Exception
+local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
+local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+
+local Greeter = __K2L_Class("Greeter")
+
+local function main()
+    local errors = __K2L_ListOf(1, 2):map(function(n)
+        local MyEx = __K2L_Class("MyEx", __K2L_Exception)
+        function MyEx:____init(m)
+            __K2L_Exception.____init(self, m)
+        end
+        return MyEx.new("failure " .. n)
+    end)
+    print(__K2L_Str(errors:map(function(it) return it.message end)))
+    local ____value = errors:first()
+    print(__K2L_InstanceOf(____value, __K2L_Exception))
+    local outcomes = __K2L_ListOf("a", "b"):map(function(s)
+        local Oops = __K2L_Class("Oops", __K2L_RuntimeException)
+        function Oops:____init(code)
+            __K2L_RuntimeException.____init(self, "oops " .. s)
+            self.code = code
+        end
+        local ____ok, ____result = pcall(function()
+            error(Oops.new(#s))
+        end)
+        if not ____ok then
+            local ____error = __K2L_ToThrowable(____result)
+            if __K2L_InstanceOf(____error, Oops) then
+                local e = ____error
+                return __K2L_Str(e.message) .. "/" .. e.code
+            else
+                error(____error, 0)
+            end
+        end
+    end)
+    print(__K2L_Str(outcomes))
+    local ____result_1
+    do
+        local English = __K2L_Class("English", nil, Greeter)
+        function English:____init(who)
+            self.who = who
+        end
+        function English:greet()
+            return "Hello, " .. self.who
+        end
+        ____result_1 = English.new("lambda"):greet()
+    end
+    local greeting = ____result_1
+    print(greeting)
+    local make = function(n)
+        local Box = __K2L_Class("Box")
+        function Box:____init(v)
+            self.v = v
+        end
+        return Box.new(n * 2)
+    end
+    local ____value_1 = make(2)
+    print(____value_1 ~= nil)
+end
+
+main()
+return {Greeter = Greeter}

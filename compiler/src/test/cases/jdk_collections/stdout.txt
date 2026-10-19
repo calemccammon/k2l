@@ -1,0 +1,110 @@
+-- sorting
+[1, 3, 3, 5, 7, 9]
+[9, 7, 5, 3, 3, 1]
+[9, 5, 1, 7, 3, 3]
+[apple, banana, fig, kiwi, pear]
+[fig, kiwi, pear, apple, banana]
+[banana, apple, kiwi, pear, fig]
+[fig, pear, kiwi, apple, banana]
+[banana, pear, kiwi, apple, fig]
+swap: IndexOutOfBoundsException: Index 10 out of bounds for length 5
+3
+-3
+-3
+1
+-- queries
+42
+4
+4
+abc
+2
+0
+1
+3
+true
+false
+emptyMax: NoSuchElementException: null
+emptyMin: NoSuchElementException: null
+-- mutations
+[4, 5, 1, 2, 3]
+[5, 1, 2, 3, 4]
+[3, 4, 5, 1, 2]
+[0, 0, 0, 0, 0]
+[7, 8, 0, 0]
+copy: IndexOutOfBoundsException: Source does not fit in dest
+true
+[7, 8, 9, 9]
+true
+[7, 8, 9, 9, 1, 2, 3]
+true
+[1, 2, 3]
+[5, 7, 3, 2, 8, 10, 9, 6, 4, 1]
+[5, 7, 1, 2, 6, 8, 4, 10, 3, 9]
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+-- factories
+[ab, ab, ab]
+[]
+[]
+[]
+{}
+[5]
+[x]
+{k=1}
+3
+z+z
+nCopies: IllegalArgumentException: List length = -1
+[1, 2, 3]
+3
+[2, 4, 6]
+add: UnsupportedOperationException: null
+set: UnsupportedOperationException: null
+remove: UnsupportedOperationException: null
+sort: UnsupportedOperationException: null
+emptyAdd: UnsupportedOperationException: null
+single: UnsupportedOperationException: null
+[3, 1, 2]
+true
+setAdd: UnsupportedOperationException: null
+{a=1, b=2}
+1
+mapPut: UnsupportedOperationException: null
+[1, 2]
+-- arrays
+[1, 2, 3, 5, 8, 9]
+[9, 6, 7, 8, 5, 4]
+sortRange: Array index out of range: 9
+sortRange2: IllegalArgumentException: fromIndex(3) > toIndex(1)
+[banana, fig, pear]
+[banana, pear, fig]
+[7, 7, 7, 7, 7]
+[7, 0, 0, 7, 7]
+[1, 2, 3]
+[1, 2, 3, 5, 8, 9, 0, 0, 0]
+[3, 5]
+[8, 9, 0, 0, 0]
+[banana, pear, fig, null, null]
+[true, false, false]
+copyRange: IllegalArgumentException: 5 > 2
+null
+true
+false
+false
+30817
+4066
+0
+[[1, 2], [3]]
+[[1, 2], [3, [4]]]
+3
+-3
+4
+-6
+1
+[0, 1, 4, 9, 16]
+[3, 1, 2]
+[10, 1, 2]
+[1, 2, 10]
+[1, 2, 10]
+asListAdd: UnsupportedOperationException: null
+asListRemove: UnsupportedOperationException: null
+2
+[1, 2, 3]

@@ -43,7 +43,7 @@ internal fun FileTransformer.entryClassInfo(entry: KtEnumEntry, ref: LuaExpr) {
 }
 
 /** `pkg.Outer$Inner` */
-private fun binaryName(c: KtClassOrObject): String {
+internal fun binaryName(c: KtClassOrObject): String {
     val chain = generateSequence(c) { it.containingClassOrObject }.toList().reversed()
     val pkg = c.containingKtFile.packageFqName.asString()
     val names = chain.joinToString("$") { it.name ?: "" }
@@ -98,7 +98,33 @@ internal object ReflectionMappings {
         }
         table.def("java/lang/Class.name", "java/lang/Class.getName") { LuaIndex(self, LuaString("name")) }
         table.def("kotlin/reflect/KClass.isInstance", "java/lang/Class.isInstance") { method(self, "isInstance", arg(0)) }
+        table.def(
+            "kotlin/reflect/KProperty0.get",
+            "kotlin/reflect/KProperty1.get",
+            "kotlin/reflect/KProperty0.invoke",
+            "kotlin/reflect/KProperty1.invoke",
+            "kotlin/reflect/KMutableProperty0.get",
+            "kotlin/reflect/KMutableProperty1.get",
+        ) { method(self, "get", *args.toTypedArray()) }
+        table.def("kotlin/reflect/KMutableProperty0.set", "kotlin/reflect/KMutableProperty1.set") {
+            method(self, "set", *args.toTypedArray())
+        }
+        // Needs kotlin-reflect, which the JVM program may lack too: then these throw KotlinReflectionNotSupportedError.
+        val needsReflect = listOf(
+            "isData", "isAbstract", "isOpen", "isSealed", "isFinal", "isCompanion", "isInner", "isFun", "isValue", "objectInstance",
+            "sealedSubclasses", "supertypes", "members", "constructors", "nestedClasses", "typeParameters", "visibility",
+        )
+        needsReflect.forEach { member ->
+            table.def("kotlin/reflect/KClass.$member") { method(self, "____needsReflect") }
+        }
         table.def("kotlin/jvm/javaClass") { LuaCall(ref(KCLASS_FEATURE, "__K2L_KClassOfValue"), listOf(self)) }
         table.def("kotlin/jvm/java", "kotlin/jvm/kotlin") { self }
     }
+}
+
+/** `::twice.name` and `Person::greet.name`: the name is known where the reference is written, so no object is needed. */
+internal fun referencedName(element: KtElement): LuaExpr? {
+    val receiver = (element as? KtDotQualifiedExpression)?.receiverExpression ?: return null
+    val reference = KtPsiUtil.safeDeparenthesize(receiver) as? KtCallableReferenceExpression ?: return null
+    return LuaString(reference.callableReference.getReferencedName())
 }

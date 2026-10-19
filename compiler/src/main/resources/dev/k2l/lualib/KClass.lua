@@ -1,4 +1,4 @@
--- requires: Class, InstanceOf
+-- requires: Class, InstanceOf, Exceptions
 -- KClass / java.lang.Class stand-ins: simpleName, qualifiedName, name, isInstance. One object per class, so == is identity.
 local __K2L_KClassImpl = __K2L_Class("kotlin.jvm.internal.ClassReference")
 local __K2L_KClassCache = {}
@@ -87,4 +87,9 @@ end
 
 function __K2L_KClassImpl:toString()
     return (self.____kind == "interface" and "interface " or "class ") .. (self.qualifiedName or self.name or "")
+end
+
+-- The members that need kotlin-reflect (isData, objectInstance, members, ...). Like on the JVM without it, they throw.
+function __K2L_KClassImpl:____needsReflect()
+    error(__K2L_KotlinReflectionNotSupportedError.new("Kotlin reflection implementation is not found at runtime. Make sure you have kotlin-reflect.jar in the classpath"))
 end

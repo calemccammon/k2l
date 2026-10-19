@@ -16,12 +16,36 @@ object Lualib {
     const val BUNDLE_MODULE = "lualib_bundle"
     private const val REQUIRES_PREFIX = "-- requires:"
 
+    /** The table holding every feature's exports, in the bundle and in a file that inlines the runtime. */
+    private const val EXPORTS = "____lualib"
+
+    private val REFERENCE = Regex("""\b__K2L_\w+""")
+
     /** The shared runtime: every used feature, returning a table of their exports. */
-    fun bundle(features: Collection<String>, target: LuaTarget = LuaTarget.Lua54): String {
-        val resolved = resolve(features, target)
-        val exports = resolved.flatMap { it.exports }.distinct()
-        return resolved.joinToString("\n\n") { it.code } +
-            exports.joinToString(",\n", prefix = "\n\nreturn {\n", postfix = ",\n}\n") { "    $it = $it" }
+    fun bundle(features: Collection<String>, target: LuaTarget = LuaTarget.Lua54): String =
+        scoped(resolve(features, target)) + "\nreturn $EXPORTS\n"
+
+    /** The runtime copied into one file: the used features, then a local for each runtime name the file refers to. */
+    fun inline(features: Collection<String>, names: Collection<String>, target: LuaTarget = LuaTarget.Lua54): String =
+        scoped(resolve(features, target)) + names.joinToString("") { "local $it = $EXPORTS.$it\n" }
+
+    /**
+     * The features, each in its own `do` block: Lua allows a function (the chunk included) 200 locals, which all features'
+     * top-level locals together exceed. A block imports the earlier exports it uses and publishes its own to [EXPORTS].
+     */
+    private fun scoped(features: List<Feature>): String = buildString {
+        append("local $EXPORTS = {}\n")
+        val published = LinkedHashSet<String>()
+        for (feature in features) {
+            val own = feature.exports.toSet()
+            val imports = REFERENCE.findAll(feature.code).map { it.value }.filter { it !in own && it in published }.distinct()
+            append("\ndo\n")
+            imports.forEach { append("local $it = $EXPORTS.$it\n") }
+            append(feature.code).append('\n')
+            feature.exports.forEach { append("$EXPORTS.$it = $it\n") }
+            append("end\n")
+            published += feature.exports
+        }
     }
 
     private val cache = mutableMapOf<Pair<String, LuaTarget>, Feature>()

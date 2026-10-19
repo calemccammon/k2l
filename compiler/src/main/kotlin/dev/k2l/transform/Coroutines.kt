@@ -43,12 +43,24 @@ internal const val COROUTINES_FEATURE = "Coroutines"
 internal const val RESULT_FEATURE = "Result"
 
 /** Library objects used as values: `EmptyCoroutineContext`, `Result` (its companion) and `Unit`. */
-internal val LIBRARY_OBJECTS = setOf("kotlin/coroutines/EmptyCoroutineContext", "kotlin/Result", "kotlin/Result.Companion", "kotlin/Unit")
+internal val LIBRARY_OBJECTS = setOf(
+    "kotlin/coroutines/EmptyCoroutineContext",
+    "kotlin/Result",
+    "kotlin/Result.Companion",
+    "kotlin/Unit",
+    "kotlin/coroutines/ContinuationInterceptor",
+    "kotlin/coroutines/ContinuationInterceptor.Key",
+)
 
 /** The Lua value of one of the [LIBRARY_OBJECTS]. */
 internal fun FileTransformer.libraryObject(classId: String): LuaExpr = when (classId) {
     "kotlin/coroutines/EmptyCoroutineContext" -> lualibRef(COROUTINES_FEATURE, "__K2L_EmptyCoroutineContext")
+
     "kotlin/Unit" -> LuaNil
+
+    "kotlin/coroutines/ContinuationInterceptor", "kotlin/coroutines/ContinuationInterceptor.Key" ->
+        lualibRef(COROUTINES_FEATURE, "__K2L_ContinuationInterceptor")
+
     else -> lualibRef(RESULT_FEATURE, "__K2L_Result")
 }
 
@@ -67,7 +79,27 @@ internal object CoroutineMappings {
     private fun CallSite.resultOf(kind: String, value: LuaExpr): LuaExpr =
         LuaCall(LuaIndex(ref(RESULT_FEATURE, "__K2L_Result"), LuaString(kind)), listOf(value))
 
-    private fun coroutine(callableId: String?, site: CallSite): LuaExpr? = with(site) {
+    private val CONTEXT_OWNERS = setOf(
+        "kotlin/coroutines/CoroutineContext",
+        "kotlin/coroutines/CoroutineContext.Element",
+        "kotlin/coroutines/EmptyCoroutineContext",
+        "kotlin/coroutines/AbstractCoroutineContextElement",
+    )
+
+    /** `get`, `plus`, `minusKey`, `fold` and `key` of a context or one of its elements. */
+    private fun context(callableId: String?, site: CallSite): LuaExpr? = with(site) {
+        if (callableId == null || callableId.substringBeforeLast('.') !in CONTEXT_OWNERS) return null
+        when (callableId.substringAfterLast('.')) {
+            "get" -> call(COROUTINES_FEATURE, "__K2L_ContextGet", self, arg(0))
+            "plus" -> call(COROUTINES_FEATURE, "__K2L_ContextPlus", self, arg(0))
+            "minusKey" -> call(COROUTINES_FEATURE, "__K2L_ContextMinusKey", self, arg(0))
+            "fold" -> call(COROUTINES_FEATURE, "__K2L_ContextFold", self, arg(0), arg(1))
+            "key" -> LuaIndex(self, LuaString("key"))
+            else -> null
+        }
+    }
+
+    private fun coroutine(callableId: String?, site: CallSite): LuaExpr? = context(callableId, site) ?: with(site) {
         when (callableId) {
             // block.startCoroutine(completion) / block.startCoroutine(receiver, completion)
             "kotlin/coroutines/startCoroutine", "kotlin/coroutines/createCoroutine" -> {
@@ -76,6 +108,21 @@ internal object CoroutineMappings {
             }
 
             "kotlin/coroutines/suspendCoroutine" -> call(COROUTINES_FEATURE, "__K2L_SuspendCoroutine", arg(0))
+
+            "kotlin/coroutines/intrinsics/suspendCoroutineUninterceptedOrReturn" ->
+                call(COROUTINES_FEATURE, "__K2L_SuspendCoroutineUninterceptedOrReturn", arg(0))
+
+            "kotlin/coroutines/intrinsics/COROUTINE_SUSPENDED" -> ref(COROUTINES_FEATURE, "__K2L_COROUTINE_SUSPENDED")
+
+            "kotlin/coroutines/intrinsics/createCoroutineUnintercepted",
+            "kotlin/coroutines/intrinsics/startCoroutineUninterceptedOrReturn",
+            -> {
+                val created = callableId.endsWith("createCoroutineUnintercepted")
+                val name = if (created) "CreateCoroutineUnintercepted" else "StartCoroutineUninterceptedOrReturn"
+                call(COROUTINES_FEATURE, "__K2L_$name", self, args.last(), *args.dropLast(1).toTypedArray())
+            }
+
+            "kotlin/coroutines/intrinsics/intercepted" -> call(COROUTINES_FEATURE, "__K2L_Intercepted", self)
 
             "kotlin/coroutines/Continuation" -> LuaCall(LuaIndex(ref(COROUTINES_FEATURE, "__K2L_Continuation"), LuaString("new")), args)
 

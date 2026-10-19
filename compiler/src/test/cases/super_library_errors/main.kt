@@ -1,8 +1,12 @@
-// Only Any's toString/equals/hashCode and Throwable's message/cause/toString are available through `super`.
+// Only Any's toString/equals/hashCode and Throwable's message/cause/toString/printStackTrace/fillInStackTrace are available through `super`.
 class Failure : Exception("failed") {
-    fun dump() = super.printStackTrace()
+    fun dump() = super.printStackTrace() // supported: written to stderr
 
-    fun trace() = super.fillInStackTrace()
+    fun same() = super.fillInStackTrace() === this // supported
+
+    fun trace() = super.getStackTrace()
+
+    fun suppressed() = super.getSuppressed()
 }
 
 class Names {

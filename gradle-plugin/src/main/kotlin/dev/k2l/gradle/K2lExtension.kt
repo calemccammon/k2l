@@ -24,6 +24,9 @@ abstract class K2lExtension {
     /** `unchecked` (default) or `wrap`: make `Int` arithmetic wrap to 32 bits like the JVM. */
     abstract val intOverflow: Property<String>
 
+    /** `bytes` (default) or `utf16`: make `String` and `Char` behave like the JVM's UTF-16 strings. */
+    abstract val strings: Property<String>
+
     /** Write Source Map v3 files and make Lua errors show Kotlin positions. */
     abstract val sourceMap: Property<Boolean>
 

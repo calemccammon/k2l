@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
+import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
@@ -11,7 +12,9 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 /**
  * Delegated properties (`val x by ...`). The delegate lives in a hidden slot (`self.____x_delegate` for members,
  * a local `____x_delegate` otherwise) and reads and writes call its `getValue`/`setValue`. The `KProperty`
- * argument is a table `{ name = "x" }`: only `property.name` is available.
+ * argument is a table `{ name = "x" }`: only `property.name` is available. `provideDelegate` is called once, where
+ * the delegate would be stored. Open and overriding delegated properties belong to the accessor families of
+ * [PropertyFamilies]: every member is read through `getX`.
  */
 private const val GET_VALUE = "getValue"
 private const val SET_VALUE = "setValue"
@@ -24,61 +27,94 @@ private fun FileTransformer.delegateKind(p: KtProperty): DelegateKind? {
 
 private fun FileTransformer.computeKind(p: KtProperty): DelegateKind? = with(session) {
     val expr = p.delegateExpression ?: return null
-    val type = expr.expressionType ?: return unsupported(p, "Delegate of unknown type").let { null }
+    var type = expr.expressionType ?: return unsupported(p, "Delegate of unknown type").let { null }
+    // `by provider`: the delegate is what provider.provideDelegate(thisRef, property) returns
+    findOperators(type, "provideDelegate").let { found ->
+        if (found.size > 1) return unsupported(p, "Delegate that overloads provideDelegate").let { null }
+        found.singleOrNull()?.let { (operator, result) ->
+            delegateProviders[p] = operator
+            type = result ?: return unsupported(p, "Delegate whose provideDelegate has an unknown type").let { null }
+        }
+    }
     val symbol = type.expandedSymbol
     val classId = symbol?.classId?.asString()
     val psi = symbol?.psi as? KtClassOrObject
     return when {
         classId == "kotlin/Lazy" -> DelegateKind.Lazy
         type.collectionKind() == CollectionKind.Map -> DelegateKind.MapKey
-        psi != null && classes.isSource(psi) -> userKind(p, psi)
         classId in LIBRARY_DELEGATE_TYPES -> DelegateKind.Library
+        psi != null && classes.isSource(psi) -> userKind(p, type)
         else -> unsupported(p, "Delegate of type '${type.pretty()}'").let { null }
     }
 }
 
-private fun FileTransformer.userKind(p: KtProperty, cls: KtClassOrObject): DelegateKind? {
-    // An override shares its Lua name with what it overrides, so distinct names are distinct overloads.
-    fun operators(name: String) = classes.hierarchy(cls).flatMap { c ->
-        c.declarations.filterIsInstance<KtNamedFunction>().filter { it.name == name }
-    }.distinctBy { naming.function(it) }
-
-    if (operators("provideDelegate").isNotEmpty()) {
-        unsupported(p, "Delegate with provideDelegate")
-        return null
+/**
+ * The operator functions [name] that apply to a value of [type] and the type each returns: members of its class and
+ * supertypes in this program, and top-level extension functions of the module whose receiver is one of its classes.
+ */
+private fun FileTransformer.findOperators(type: KaType, name: String): List<Pair<Operator, KaType?>> = with(session) {
+    val cls = type.expandedSymbol?.psi as? KtClassOrObject
+    val members = if (cls != null && classes.isSource(cls)) {
+        // An override shares its Lua name with what it overrides, so distinct names are distinct overloads.
+        classes.hierarchy(cls).flatMap { c -> c.declarations.filterIsInstance<KtNamedFunction>().filter { it.name == name } }
+            .distinctBy { naming.function(it) }.map { Operator.Method(naming.function(it)) to returnTypeOf(it) }
+    } else {
+        emptyList()
     }
-    val getters = operators(GET_VALUE)
-    val setters = operators(SET_VALUE)
+    val ids = (sequenceOf(type) + type.allSupertypes).mapNotNull { it.expandedSymbol?.classId }.toSet()
+    val extensions = classes.topLevelFunctions().filter { fn ->
+        fn.name == name && fn.receiverTypeReference?.type?.expandedSymbol?.classId in ids
+    }.map { Operator.Extension(it) to returnTypeOf(it) }
+    members + extensions
+}
+
+private fun FileTransformer.returnTypeOf(fn: KtNamedFunction): KaType? = with(session) { fn.symbol.returnType }
+
+private fun FileTransformer.userKind(p: KtProperty, type: KaType): DelegateKind? = with(session) {
+    val getters = findOperators(type, GET_VALUE)
+    val setters = findOperators(type, SET_VALUE)
     val problem = when {
-        getters.isEmpty() -> "has no member getValue (extension operators are not supported)"
+        getters.isEmpty() -> "has no getValue"
         getters.size > 1 || setters.size > 1 -> "overloads getValue or setValue"
-        p.isVar && setters.isEmpty() -> "has no member setValue"
+        p.isVar && setters.isEmpty() -> "has no setValue"
         else -> null
     }
     if (problem != null) {
-        unsupported(p, "Delegate class '${cls.name}' that $problem")
+        unsupported(p, "Delegate class '${type.expandedSymbol?.name?.asString()}' that $problem")
         return null
     }
-    return DelegateKind.User(naming.function(getters.single()), setters.singleOrNull()?.let { naming.function(it) })
+    return DelegateKind.User(getters.single().first, setters.singleOrNull()?.first)
 }
 
 /** The `KProperty` stand-in. */
 private fun propertyInfo(name: String): LuaExpr = LuaTable(listOf(LuaField.Named("name", LuaString(name))))
 
-private fun delegateGet(kind: DelegateKind, delegate: LuaExpr, thisRef: LuaExpr, name: String): LuaExpr = when (kind) {
+private fun FileTransformer.operatorCall(operator: Operator, delegate: LuaExpr, args: List<LuaExpr>): LuaExpr = when (operator) {
+    is Operator.Method -> LuaMethodCall(delegate, operator.name, args)
+    is Operator.Extension -> LuaCall(topLevelRef(operator.function), listOf(delegate) + args)
+}
+
+/** `provideDelegate`: what `by provider` actually delegates to. */
+private fun FileTransformer.provide(p: KtProperty, provider: LuaExpr, thisRef: LuaExpr): LuaExpr {
+    val operator = delegateProviders[p] ?: return provider
+    return operatorCall(operator, provider, listOf(thisRef, propertyInfo(p.name!!)))
+}
+
+private fun FileTransformer.delegateGet(kind: DelegateKind, delegate: LuaExpr, thisRef: LuaExpr, name: String): LuaExpr = when (kind) {
     DelegateKind.Lazy -> LuaMethodCall(delegate, GET_VALUE, emptyList())
     DelegateKind.MapKey -> LuaMethodCall(delegate, GET_VALUE, listOf(LuaString(name)))
     DelegateKind.Library -> LuaMethodCall(delegate, GET_VALUE, listOf(thisRef, propertyInfo(name)))
-    is DelegateKind.User -> LuaMethodCall(delegate, kind.get, listOf(thisRef, propertyInfo(name)))
+    is DelegateKind.User -> operatorCall(kind.get, delegate, listOf(thisRef, propertyInfo(name)))
 }
 
-private fun delegateSet(kind: DelegateKind, delegate: LuaExpr, thisRef: LuaExpr, name: String, value: LuaExpr): LuaStmt = LuaCallStmt(
-    when (kind) {
-        DelegateKind.MapKey -> LuaMethodCall(delegate, "set", listOf(LuaString(name), value))
-        is DelegateKind.User -> LuaMethodCall(delegate, kind.set!!, listOf(thisRef, propertyInfo(name), value))
-        else -> LuaMethodCall(delegate, SET_VALUE, listOf(thisRef, propertyInfo(name), value))
-    },
-)
+private fun FileTransformer.delegateSet(kind: DelegateKind, delegate: LuaExpr, thisRef: LuaExpr, name: String, value: LuaExpr): LuaStmt =
+    LuaCallStmt(
+        when (kind) {
+            DelegateKind.MapKey -> LuaMethodCall(delegate, "set", listOf(LuaString(name), value))
+            is DelegateKind.User -> operatorCall(kind.set!!, delegate, listOf(thisRef, propertyInfo(name), value))
+            else -> LuaMethodCall(delegate, SET_VALUE, listOf(thisRef, propertyInfo(name), value))
+        },
+    )
 
 // ---- local and top-level ----
 
@@ -87,7 +123,7 @@ internal fun FileTransformer.delegatedVariable(p: KtProperty, isLocal: Boolean):
     delegateKind(p) ?: return
     val expr = p.delegateExpression ?: return
     val name = naming.delegate(p)
-    val value = expression(expr)
+    val value = provide(p, expression(expr), LuaNil)
     emit(if (isLocal) LuaLocal(listOf(name), listOf(value)) else assign(LuaName(name), value))
 }
 
@@ -110,7 +146,11 @@ internal fun FileTransformer.delegatedVariableTarget(p: KtProperty): Target? {
 
 // ---- members ----
 
-private fun delegateField(p: KtProperty, self: LuaExpr): LuaExpr = LuaIndex(self, LuaString("____${p.name}_delegate"))
+/** Each class of an override family that delegates has a delegate slot of its own, like the JVM's `x$delegate` fields. */
+private fun delegateField(p: KtProperty, self: LuaExpr): LuaExpr {
+    val owner = if (p.hasModifier(KtTokens.OVERRIDE_KEYWORD)) "__${p.containingClassOrObject?.name ?: "object"}" else ""
+    return LuaIndex(self, LuaString("____${p.name}_delegate$owner"))
+}
 
 /** A member property's initializer: its field, or its delegate's slot. */
 internal fun FileTransformer.propertyInitializer(p: KtProperty): Unit = with(session) {
@@ -128,16 +168,11 @@ internal fun FileTransformer.propertyInitializer(p: KtProperty): Unit = with(ses
 private fun FileTransformer.delegateInitializer(p: KtProperty): Unit = with(session) {
     delegateKind(p) ?: return
     val expr = p.delegateExpression ?: return
-    emitAll(valueInto(expr) { listOf(assign(delegateField(p, selfRef()), it)) })
+    emitAll(valueInto(expr) { listOf(assign(delegateField(p, selfRef()), provide(p, it, selfRef()))) })
 }
 
 /** `getX`/`setX` methods that forward to the delegate. */
 internal fun FileTransformer.delegatedAccessors(p: KtProperty, ref: LuaExpr) {
-    val unsupportedModifier = listOf(KtTokens.OPEN_KEYWORD, KtTokens.OVERRIDE_KEYWORD, KtTokens.ABSTRACT_KEYWORD).any { p.hasModifier(it) }
-    if (unsupportedModifier) {
-        unsupported(p, "Delegated property that is open or overriding")
-        return
-    }
     val kind = delegateKind(p) ?: return
     val delegate = delegateField(p, selfRef())
     val name = p.name!!

@@ -47,6 +47,7 @@ class FileTransformer(
     private val module: ModuleContext = ModuleContext.single(file),
 ) : StatementEmitter() {
     internal val usesReflection get() = module.usesReflection
+    internal val usesFloat get() = module.usesFloat
 
     /** `local ____strings = require("util.strings")` for another file of the module. */
     private fun moduleRef(other: KtFile): LuaExpr =
@@ -70,10 +71,18 @@ class FileTransformer(
     /** Delegated properties' delegate kinds (null when unsupported, already reported). */
     internal val delegateKinds = HashMap<KtProperty, DelegateKind?>()
 
+    /** The `provideDelegate` operator of delegated properties whose delegate has one. */
+    internal val delegateProviders = HashMap<KtProperty, Operator>()
+
     internal val interop = LuaInterop(session, ctx)
     internal val classes = ClassHierarchy(session, file, module)
+    internal val lazyInit = LazyInit(session, classes)
     internal val naming = DeclarationNames(session, classes)
     internal val props = PropertyFamilies(session, module, classes) { interop.isExternalDeclaration(it) }
+
+    init {
+        naming.plainAccessors = { props.usesAccessors(it) || it.delegate != null }
+    }
 
     internal val target get() = ctx.options.luaTarget
 
@@ -93,6 +102,7 @@ class FileTransformer(
     fun transformFile(): LuaChunk = with(session) { transformChunk() }
 
     private fun KaSession.transformChunk(): LuaChunk {
+        renameHidingLocals()
         val topLevel = file.declarations.filter { isTransformedTopLevel(it) }
         val forward = forwardReferenced(topLevel.filterNot { tableMode && isExportedVar(it) }.toSet())
         val main = topLevel.filterIsInstance<KtNamedFunction>().firstOrNull(::isMain)
@@ -316,6 +326,8 @@ class FileTransformer(
         when (e) {
             is KtParenthesizedExpression -> e.expression?.let { statement(it) }
 
+            is KtAnnotatedExpression -> e.baseExpression?.let { statement(it) }
+
             is KtProperty -> property(e, isLocal = true)
 
             is KtDestructuringDeclaration -> {
@@ -417,7 +429,7 @@ class FileTransformer(
                 val value = call(e, e)
                 if (value is LuaCall || value is LuaMethodCall) emit(LuaCallStmt(value))
             } else {
-                emit(target.write(call(e, e)))
+                emit(target.write(compoundOperatorCall(e) ?: call(e, e)))
             }
             return
         }
@@ -503,7 +515,15 @@ class FileTransformer(
 
     private fun KaSession.increment(e: KtUnaryExpression, target: Target) {
         val op = if (e.operationToken == KtTokens.PLUSPLUS) LuaBinOp.Add else LuaBinOp.Sub
-        emit(target.write(stepped(op, target.read, e.baseExpression?.expressionType)))
+        val type = e.baseExpression?.expressionType
+        emit(target.write(if (type?.isCharType == true) charStepped(op, target.read) else stepped(op, target.read, type)))
+    }
+
+    /** `c++` on a Char: the Char whose code is one more (or less). */
+    private fun charStepped(op: LuaBinOp, read: LuaExpr): LuaExpr = if (utf16) {
+        u16("char", LuaBinary(op, u16("code", read), LuaNumber("1")))
+    } else {
+        luaCall(luaPath("string", "char"), LuaBinary(op, LuaMethodCall(read, "byte", emptyList()), LuaNumber("1")))
     }
 
     private fun KaSession.returnStatement(e: KtReturnExpression) {
@@ -621,7 +641,7 @@ class FileTransformer(
         e.accept(object : KtTreeVisitorVoid() {
             override fun visitElement(element: PsiElement) {
                 if (found) return
-                if (needsStatements(element) || (element is KtCallExpression && mayExpandInline(element))) {
+                if (needsStatements(element) || mayExpandOrCheck(element)) {
                     found = true
                     return
                 }
@@ -630,6 +650,9 @@ class FileTransformer(
         })
         return found
     }
+
+    private fun KaSession.mayExpandOrCheck(element: PsiElement) =
+        (element is KtCallExpression && mayExpandInline(element)) || (element is KtBinaryExpressionWithTypeRHS && mayCheckCast(element))
 
     private fun needsStatements(element: PsiElement) = when (element) {
         is KtIfExpression, is KtWhenExpression, is KtTryExpression, is KtSafeQualifiedExpression, is KtLambdaExpression -> true
@@ -713,6 +736,23 @@ class FileTransformer(
         return typeTest(subject, type, c).let { if (c.isNegated) negate(it) else it }
     }
 
+    private fun KaType.isPrimitiveLike() = with(session) {
+        isStringType || isCharType || isBooleanType || isIntegral || isDoubleType ||
+            isFloatType
+    }
+
+    /** Whether [typeTest] can test [declaredType] (type parameters and unmapped library types cannot be told at run time). */
+    internal fun KaSession.isTestable(declaredType: KaType): Boolean {
+        val type = reifiedType(declaredType)
+        if (type.isPrimitiveLike()) return true
+        val symbol = type.expandedSymbol ?: return false
+        val psi = symbol.psi as? KtClassOrObject
+        return symbol.classId?.asString() == "kotlin/Any" ||
+            type.collectionKind()?.let(LIBRARY_COLLECTION_CLASSES::get) != null ||
+            symbol.classId?.asString() in LIBRARY_CLASSES ||
+            (psi != null && classes.isSource(psi))
+    }
+
     internal fun KaSession.typeTest(value: LuaExpr, declaredType: KaType, element: KtElement): LuaExpr {
         val type = reifiedType(declaredType)
         val luaType = when {
@@ -774,13 +814,15 @@ class FileTransformer(
     // ---- expressions ----
 
     /** `*array` arguments, expanded with table.unpack. */
-    private val spreads = HashSet<KtExpression>()
+    internal val spreads = HashSet<KtExpression>()
 
     /** Values substituted for receiver expressions, e.g. the cached receiver of `a?.b`. */
     internal val overrides = HashMap<KtExpression, LuaExpr>()
 
     fun KaSession.expression(e: KtExpression): LuaExpr = overrides[e] ?: when (e) {
-        is KtParenthesizedExpression -> e.expression?.let { expression(it) } ?: LuaNil
+        is KtParenthesizedExpression, is KtAnnotatedExpression ->
+            ((e as? KtParenthesizedExpression)?.expression ?: (e as? KtAnnotatedExpression)?.baseExpression)?.let { expression(it) }
+                ?: LuaNil
 
         is KtConstantExpression -> constant(e)
 
@@ -859,7 +901,15 @@ class FileTransformer(
 
         is KaConstantValue.DoubleValue -> doubleLiteral(c.value)
 
-        is KaConstantValue.FloatValue -> doubleLiteral(c.value.toString().toDouble())
+        is KaConstantValue.FloatValue -> doubleLiteral(c.value.toDouble())
+
+        is KaConstantValue.UIntValue -> unsignedLiteral(c.value.toULong())
+
+        is KaConstantValue.ULongValue -> unsignedLiteral(c.value)
+
+        is KaConstantValue.UShortValue -> unsignedLiteral(c.value.toULong())
+
+        is KaConstantValue.UByteValue -> unsignedLiteral(c.value.toULong())
 
         is KaConstantValue.BooleanValue -> LuaBool(c.value)
 
@@ -877,6 +927,7 @@ class FileTransformer(
     private fun KaSession.template(e: KtStringTemplateExpression): LuaExpr {
         val parts = mutableListOf<LuaExpr>()
         var lone: Pair<KtExpression, LuaExpr>? = null
+        var hasChar = false
         val pending = StringBuilder()
         fun flush() {
             if (pending.isNotEmpty()) parts += LuaString(pending.toString())
@@ -893,19 +944,22 @@ class FileTransformer(
                     flush()
                     val value = expression(expr)
                     lone = expr to value
+                    if (expr.expressionType?.isCharType == true && expr.evaluate() == null) hasChar = true
                     parts += str(value, expr.expressionType, forConcat = true)
                 }
             }
         }
         flush()
-        return when (parts.size) {
-            0 -> LuaString("")
+        return joined(templateParts(parts, lone), hasChar)
+    }
 
-            // "$x" on its own still has to produce a string.
-            1 -> lone?.let { (expr, value) -> str(value, expr.expressionType) } ?: parts[0]
+    private fun KaSession.templateParts(parts: List<LuaExpr>, lone: Pair<KtExpression, LuaExpr>?): LuaExpr = when (parts.size) {
+        0 -> LuaString("")
 
-            else -> parts.reduceRight { part, acc -> LuaBinary(LuaBinOp.Concat, part, acc) }
-        }
+        // "$x" on its own still has to produce a string.
+        1 -> lone?.let { (expr, value) -> str(value, expr.expressionType) } ?: parts[0]
+
+        else -> parts.reduceRight { part, acc -> LuaBinary(LuaBinOp.Concat, part, acc) }
     }
 
     /**
@@ -917,12 +971,17 @@ class FileTransformer(
         return when {
             t == null -> lualibCall("Str", value)
 
+            t.withoutFlexibility.isFloatType -> lualibCall("FloatToString", value)
+
             // At runtime 2.0 and 2 look the same without integers, so use the static type.
-            !target.hasIntegers && (t.withoutFlexibility.isDoubleType || t.withoutFlexibility.isFloatType) ->
+            (!target.hasIntegers || usesFloat) && t.withoutFlexibility.isDoubleType ->
                 lualibCall("DoubleToString", value)
 
             // tostring() keeps only 14 digits of a large Long when numbers are doubles.
             !target.hasIntegers && t.withoutFlexibility.isLongType -> lualibCall("Str", value)
+
+            t.withoutFlexibility.isULongType ->
+                LuaCall(LuaIndex(lualibRef("Unsigned", "__K2L_Unsigned"), LuaString("toString")), listOf(value))
 
             t.isStringType || t.isCharType -> value
 
@@ -963,7 +1022,10 @@ class FileTransformer(
             symbol is KaEnumEntrySymbol && psi is KtEnumEntry && classes.isSource(psi) ->
                 LuaIndex(classRef(psi.containingClassOrObject!!), LuaString(psi.name!!))
 
-            symbol is KaClassLikeSymbol -> classLikeReference(symbol, psi) ?: call(e, full)
+            symbol is KaClassLikeSymbol -> classLikeReference(symbol, psi)?.let {
+                if (initializesOnUse(e, psi)) lualibCall("TouchObject", it) else it
+            }
+                ?: call(e, full)
 
             else -> call(e, full)
         }
@@ -975,6 +1037,15 @@ class FileTransformer(
         symbol.classId?.asString() in LIBRARY_OBJECTS -> libraryObject(symbol.classId!!.asString())
         psi is KtClassOrObject && classes.isSource(psi) -> classRef(psi)
         else -> null
+    }
+
+    /** An object with observable initialization used as a value (not as the qualifier of a member): that initializes it. */
+    private fun initializesOnUse(e: KtNameReferenceExpression, psi: PsiElement?): Boolean {
+        if (psi !is KtObjectDeclaration || psi.isCompanion() || !lazyInit.isObservable(psi)) return false
+        val parent = e.parent
+        val qualified = if (parent is KtDotQualifiedExpression && parent.selectorExpression == e) parent else e
+        val outer = qualified.parent
+        return !(outer is KtDotQualifiedExpression && outer.receiverExpression == qualified)
     }
 
     private fun isSourceTopLevelProperty(symbol: KaSymbol?, psi: PsiElement?) =
@@ -1029,7 +1100,7 @@ class FileTransformer(
     }
 
     /** `left op right` for `and`/`or`, keeping [right]'s preceding statements behind the short circuit. */
-    private fun shortCircuit(op: LuaBinOp, left: LuaExpr, right: () -> LuaExpr): LuaExpr {
+    internal fun shortCircuit(op: LuaBinOp, left: LuaExpr, right: () -> LuaExpr): LuaExpr {
         val (r, pre) = withPreceding(right)
         if (pre.isEmpty()) return LuaBinary(op, left, r)
         val name = ctx.temp("cond")
@@ -1047,7 +1118,7 @@ class FileTransformer(
         val numeric = both(lt, rt) { it.isNumber }
         return charArithmetic(op, l, lt, r, rt) ?: when (op) {
             LuaBinOp.Add -> when {
-                lt?.isStringType == true -> LuaBinary(LuaBinOp.Concat, l, str(r, rt, forConcat = true))
+                lt?.isStringType == true -> joined(LuaBinary(LuaBinOp.Concat, l, str(r, rt, forConcat = true)), rt?.isCharType == true)
                 numeric -> arithmetic(op, l, lt, r, rt)
                 else -> unsupported(element, "'+' on '${lt.pretty()}'")
             }
@@ -1056,8 +1127,8 @@ class FileTransformer(
                 if (numeric) arithmetic(op, l, lt, r, rt) else unsupported(element, "Arithmetic on '${lt.pretty()}'")
 
             LuaBinOp.Div -> when {
-                numeric && both(lt, rt) { it.isIntegral } -> lualibCall("IDiv", l, r)
-                numeric -> LuaBinary(op, l, r)
+                numeric && both(lt, rt) { it.isIntegral } -> integerDivision(l, lt, r, rt)
+                numeric -> floatDivision(l, lt, r, rt)
                 else -> unsupported(element, "'/' on '${lt.pretty()}'")
             }
 
@@ -1066,8 +1137,9 @@ class FileTransformer(
             LuaBinOp.Eq, LuaBinOp.Ne -> LuaBinary(op, l, r)
 
             LuaBinOp.Lt, LuaBinOp.Gt, LuaBinOp.Le, LuaBinOp.Ge ->
-                if (numeric || (lt.isTextual && rt.isTextual)) {
-                    LuaBinary(op, l, r)
+                // strings compare by UTF-16 unit, which differs from the byte order for supplementary characters
+                if (numeric || comparesNatively(lt, rt)) {
+                    unsignedLongComparison(op, l, lt, r, rt) ?: LuaBinary(op, l, r)
                 } else {
                     LuaBinary(op, lualibCall("Compare", l, r), LuaNumber("0"))
                 }
@@ -1077,16 +1149,27 @@ class FileTransformer(
         }
     }
 
+    /** A concatenation involving Chars: with `--strings utf16`, two surrogate halves next to each other become one character. */
+    private fun joined(concatenation: LuaExpr, hasChar: Boolean): LuaExpr = if (utf16 && hasChar) u16Norm(concatenation) else concatenation
+
+    /** Texts compare with Lua's `<`, except two Strings with `--strings utf16`, which go through `__K2L_Compare` (UTF-16 order). */
+    private fun KaSession.comparesNatively(lt: KaType?, rt: KaType?): Boolean {
+        val strings = lt?.isStringType == true && rt?.isStringType == true
+        return lt.isTextual && rt.isTextual && !(utf16 && strings)
+    }
+
     private fun both(lt: KaType?, rt: KaType?, test: (KaType) -> Boolean) = listOfNotNull(lt, rt).let { it.size == 2 && it.all(test) }
 
     /** Chars are one-character strings: 'c' - 'a' is an Int, 'a' + 1 is a Char. */
     private fun KaSession.charArithmetic(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr? {
         val addOrSub = op == LuaBinOp.Add || op == LuaBinOp.Sub
         if (lt?.isCharType != true || lt.isMarkedNullable || !addOrSub) return null
-        if (op == LuaBinOp.Add && rt?.isStringType == true) return LuaBinary(LuaBinOp.Concat, l, r) // 'a' + "bc" is a String
-        val code = LuaMethodCall(l, "byte", emptyList())
+        if (op == LuaBinOp.Add && rt?.isStringType == true) return joined(LuaBinary(LuaBinOp.Concat, l, r), true) // 'a' + "bc" is a String
+        val code = if (utf16) u16("code", l) else LuaMethodCall(l, "byte", emptyList())
         return if (rt?.isCharType == true) {
-            LuaBinary(LuaBinOp.Sub, code, LuaMethodCall(r, "byte", emptyList()))
+            LuaBinary(LuaBinOp.Sub, code, if (utf16) u16("code", r) else LuaMethodCall(r, "byte", emptyList()))
+        } else if (utf16) {
+            u16("char", LuaBinary(op, code, r))
         } else {
             luaCall(luaPath("string", "char"), LuaBinary(op, code, r))
         }
@@ -1302,7 +1385,7 @@ class FileTransformer(
         if (classId == null) (constructor as? KtClassOrObject) ?: (constructor as? KtConstructor<*>)?.getContainingClassOrObject() else null
 
     /** A top-level or extension function, or a method (including `super.method()`), declared in this program. */
-    private fun KaSession.sourceFunctionCall(
+    internal fun KaSession.sourceFunctionCall(
         psi: KtNamedFunction,
         args: List<KtExpression?>,
         receiverExpr: KtExpression?,
@@ -1367,7 +1450,7 @@ class FileTransformer(
     }
 
     /** A Kotlin standard library call, translated through [StdlibMappings]. */
-    private fun KaSession.libraryCall(
+    internal fun KaSession.libraryCall(
         name: String?,
         callableId: String?,
         receiverExpr: KtExpression?,
@@ -1472,6 +1555,8 @@ class FileTransformer(
     fun lualibRef(feature: String, name: String): LuaExpr {
         ctx.lualib += feature
         ctx.lualibNames += name
+        // --strings utf16 patches the text and Regex runtime in place when its feature is loaded
+        if (utf16 && (feature == "Strings" || feature == "Regex")) ctx.lualib += "Utf16"
         return LuaName(name)
     }
 

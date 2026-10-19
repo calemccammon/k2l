@@ -308,9 +308,11 @@ class LuaPrinter(private val indentUnit: String = "    ", private val origins: M
         private fun isIdentifier(s: String) = s.isNotEmpty() && (s[0].isLetter() || s[0] == '_') && s[0].code < ASCII_LIMIT &&
             s.all { (it.isLetterOrDigit() || it == '_') && it.code < ASCII_LIMIT } && s !in KEYWORDS
 
+        private const val BYTE_MASK = 0xFF
+
         private fun quote(s: String): String = buildString {
             append('"')
-            val bytes = s.toByteArray(Charsets.UTF_8)
+            val bytes = utf8(s)
             var i = 0
             while (i < bytes.size) {
                 val b = bytes[i].toInt() and 0xFF
@@ -336,7 +338,12 @@ class LuaPrinter(private val indentUnit: String = "    ", private val origins: M
                             b >= 0xE0 -> 3
                             else -> 2
                         }
-                        append(String(bytes, i, minOf(len, bytes.size - i), Charsets.UTF_8))
+                        if (isLoneSurrogate(bytes, i)) {
+                            // A lone surrogate (a Char of --strings utf16) in its 3-byte form, which is not valid UTF-8
+                            for (k in 0 until len) append("\\").append((bytes[i + k].toInt() and BYTE_MASK).toString())
+                        } else {
+                            append(String(bytes, i, minOf(len, bytes.size - i), Charsets.UTF_8))
+                        }
                         i += len
                         continue
                     }

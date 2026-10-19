@@ -70,7 +70,7 @@ internal object SequenceMappings {
     private fun sequenceMember(name: String, site: CallSite): LuaExpr? = with(site) {
         val elementType = with(session) { receiverType?.elementType }
         when (name) {
-            "sum" -> LuaMethodCall(self, "sum", zeroFor(site, elementType))
+            "sum" -> FloatMappings.sum(site) ?: LuaMethodCall(self, "sum", zeroFor(site, elementType))
             "sumOf" -> LuaMethodCall(self, "sumOf", args + zeroFor(site, (argTypes.getOrNull(0) as? KaFunctionType)?.returnType))
             "plus", "minus" -> LuaMethodCall(self, if (isElements(site, argTypes.getOrNull(0), elementType)) name + "All" else name, args)
             "plusElement", "minusElement" -> LuaMethodCall(self, name.removeSuffix("Element"), args)

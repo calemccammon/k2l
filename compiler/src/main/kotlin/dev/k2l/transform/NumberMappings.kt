@@ -104,10 +104,24 @@ internal object NumberMappings {
         }
         t.def("kotlin/Boolean.hashCode", "kotlin/String.hashCode") { lualib("Hash", self) }
         for (type in INTEGRAL) {
-            t.def("kotlin/$type.div") { lualib("IDiv", self, arg(0)) }
+            t.def("kotlin/$type.div") {
+                if (isFloating(
+                        argTypes[0],
+                    )
+                ) {
+                    transformer.floatDivision(
+                        self,
+                        receiverType,
+                        arg(0),
+                        argTypes[0],
+                    )
+                } else {
+                    transformer.integerDivision(self, receiverType, arg(0), argTypes[0])
+                }
+            }
         }
         for (type in FLOATING) {
-            t.def("kotlin/$type.div") { LuaBinary(LuaBinOp.Div, self, arg(0)) }
+            t.def("kotlin/$type.div") { transformer.floatDivision(self, receiverType, arg(0), argTypes[0]) }
         }
         for (type in INTEGRAL) {
             t.def("kotlin/$type.inc") { transformer.stepped(LuaBinOp.Add, self, receiverType) }
@@ -155,9 +169,9 @@ internal object NumberMappings {
         t.def("kotlin/text/digitToChar") { n("digitToChar", self, *args.toTypedArray()) }
     }
 
-    private fun charCode(c: LuaExpr): LuaExpr = LuaMethodCall(c, "byte", emptyList())
+    private fun CallSite.charCode(c: LuaExpr): LuaExpr = if (utf16) u16("code", c) else LuaMethodCall(c, "byte", emptyList())
 
-    private fun charFromCode(code: LuaExpr): LuaExpr = lua("string.char", code)
+    private fun CallSite.charFromCode(code: LuaExpr): LuaExpr = if (utf16) u16("char", code) else lua("string.char", code)
 
     /** `java.lang.Math`, `Integer`, `Long` and `Double` statics. */
     private fun javaStatics(t: MappingTable) {

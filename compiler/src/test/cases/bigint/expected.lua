@@ -1,0 +1,295 @@
+local ____lualib = require("lualib_bundle")
+local __K2L_BigInteger = ____lualib.__K2L_BigInteger
+local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_Exception = ____lualib.__K2L_Exception
+local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_Num = ____lualib.__K2L_Num
+local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+
+local function factorial(n)
+    local result = __K2L_BigInteger.ONE
+    for i = 2, n do
+        result = result:multiply(__K2L_BigInteger.valueOf(i))
+    end
+    return result
+end
+
+local function fibonacci(n)
+    local a = __K2L_BigInteger.ZERO
+    local b = __K2L_BigInteger.ONE
+    for it = 0, n - 1 do
+        do
+            local ____next = a:add(b)
+            a = b
+            b = ____next
+        end
+    end
+    return a
+end
+
+local function construction()
+    print("-- construction")
+    print(__K2L_Str(__K2L_BigInteger.parse("123456789012345678901234567890")))
+    print(__K2L_Str(__K2L_BigInteger.parse("-0042")))
+    print(__K2L_Str(__K2L_BigInteger.parse("+17")))
+    print(__K2L_Str(__K2L_BigInteger.parse("ff", 16)))
+    print(__K2L_Str(__K2L_BigInteger.parse("-FF", 16)))
+    print(__K2L_Str(__K2L_BigInteger.parse("101101", 2)))
+    print(__K2L_Str(__K2L_BigInteger.parse("zz", 36)))
+    print(__K2L_Str(__K2L_BigInteger.parse("0")))
+    print(__K2L_Str(__K2L_BigInteger.parse("-0")))
+    print(__K2L_Str(__K2L_BigInteger.valueOf(-9007199254740991)))
+    print(__K2L_Str(__K2L_BigInteger.valueOf(42)))
+    print(__K2L_Str(__K2L_BigInteger.valueOf(-7)))
+    print(__K2L_Str(__K2L_BigInteger.parse("98765432109876543210")))
+    print(__K2L_Str(__K2L_BigInteger.parse("1f", 16)))
+    print(__K2L_Str(__K2L_BigInteger.parseOrNull("12x")))
+    print(__K2L_Str(__K2L_BigInteger.parseOrNull("-12")))
+    print(__K2L_Str(__K2L_BigInteger.parseOrNull("+12")))
+    print(__K2L_Str(__K2L_BigInteger.parseOrNull("")))
+    print(__K2L_Str(__K2L_BigInteger.ZERO))
+    print(__K2L_Str(__K2L_BigInteger.ONE))
+    print(__K2L_Str(__K2L_BigInteger.TWO))
+    print(__K2L_Str(__K2L_BigInteger.TEN))
+end
+
+local function big()
+    print("-- big values")
+    print(__K2L_Str(factorial(50)))
+    print(__K2L_Str(factorial(25):toString(16)))
+    print(__K2L_Str(factorial(30):toString(2)))
+    print(__K2L_Str(factorial(20):toString(36)))
+    print(__K2L_Str(__K2L_BigInteger.TWO:pow(200)))
+    print(__K2L_Str(__K2L_BigInteger.TWO:pow(200):toString(16)))
+    print(__K2L_Str(__K2L_BigInteger.TWO:pow(64):subtract(__K2L_BigInteger.ONE)))
+    print(__K2L_Str(fibonacci(300)))
+    print(__K2L_Str(__K2L_BigInteger.TEN:pow(40):add(__K2L_BigInteger.ONE)))
+    print(__K2L_Str(factorial(40):divide(factorial(38))))
+    print(__K2L_Str(factorial(60):remainder(__K2L_BigInteger.parse("1000000007"))))
+    print(__K2L_Str(factorial(22):negate():toString(7)))
+end
+
+local function divisions()
+    print("-- division")
+    local values = __K2L_ListOf("7", "-7", "1000000000000000000000", "-1000000000000000000001")
+    local divisors = __K2L_ListOf("2", "-2", "3", "123456789123456789", "-99999999999999999999")
+    for _, a in ipairs(values) do
+        for _, b in ipairs(divisors) do
+            local x = __K2L_BigInteger.parse(a)
+            local y = __K2L_BigInteger.parse(b)
+            local qr = x:divideAndRemainder(y)
+            print(a .. " / " .. b .. " = " .. __K2L_Str(x:divide(y)) .. " rem " .. __K2L_Str(x:remainder(y)) .. " mod " .. __K2L_Str(x:mod(y:abs())) .. " qr=" .. __K2L_Str(qr:get(0)) .. "," .. __K2L_Str(qr:get(1)) .. " " .. tostring(__K2L_Equals(x:divide(y):multiply(y):add(x:remainder(y)), x)))
+        end
+    end
+    local huge = __K2L_BigInteger.parse("98765432109876543210987654321098765432109876543210")
+    local divisor = __K2L_BigInteger.parse("12345678901234567890123")
+    print(__K2L_Str(huge:divide(divisor)))
+    print(__K2L_Str(huge:remainder(divisor)))
+    print(__K2L_Str(huge:remainder(divisor:negate())))
+    print(__K2L_Str(huge:divide(__K2L_BigInteger.valueOf(10000000))))
+    print(__K2L_Str(__K2L_BigInteger.parse("100000000000000000000000000000000"):divide(__K2L_BigInteger.parse("10000000000000000"))))
+    print(__K2L_Str(__K2L_BigInteger.parse("99999999999999999999999999999999"):divide(__K2L_BigInteger.parse("99999999999999999"))))
+end
+
+local function bits()
+    print("-- bits")
+    local values = __K2L_ListOf("0", "1", "-1", "255", "-256", "123456789012345678901234567890", "-123456789012345678901234567890")
+    for _, a in ipairs(values) do
+        local x = __K2L_BigInteger.parse(a)
+        print(a .. ": bitLength=" .. x:bitLength() .. " bitCount=" .. x:bitCount() .. " lowest=" .. x:getLowestSetBit() .. " not=" .. __K2L_Str(x:bnot()) .. " signum=" .. x:signum())
+        print("  shl 5=" .. __K2L_Str(x:shiftLeft(5)) .. " shr 5=" .. __K2L_Str(x:shiftRight(5)) .. " shl 100=" .. __K2L_Str(x:shiftLeft(100)) .. " shr 100=" .. __K2L_Str(x:shiftRight(100)) .. " shr -3=" .. __K2L_Str(x:shiftRight(-3)))
+    end
+    local ____pairs = __K2L_ListOf(__K2L_Pair.new("12345678901234567890", "-987654321"), __K2L_Pair.new("-5", "3"), __K2L_Pair.new("-123456789012345678901234567890", "-7"), __K2L_Pair.new("0", "-1"))
+    for _, ____item in ipairs(____pairs) do
+        local a, b = ____item.first, ____item.second
+        local x = __K2L_BigInteger.parse(a)
+        local y = __K2L_BigInteger.parse(b)
+        print(a .. ", " .. b .. ": and=" .. __K2L_Str(x:band(y)) .. " or=" .. __K2L_Str(x:bor(y)) .. " xor=" .. __K2L_Str(x:bxor(y)) .. " andNot=" .. __K2L_Str(x:andNot(y)))
+    end
+    local m = __K2L_BigInteger.parse("-1000000000000000000000")
+    print(m:testBit(0))
+    print(m:testBit(70))
+    print(m:testBit(200))
+    print(__K2L_Str(m:setBit(3)))
+    print(__K2L_Str(m:clearBit(69)))
+    print(__K2L_Str(m:flipBit(100)))
+    print(__K2L_BigInteger.ONE:shiftLeft(100):bitLength())
+    print(__K2L_BigInteger.ONE:shiftLeft(100):subtract(__K2L_BigInteger.ONE):bitLength())
+    print(__K2L_BigInteger.ONE:shiftLeft(100):negate():bitLength())
+end
+
+local function conversions()
+    print("-- conversions")
+    local values = __K2L_ListOf("0", "1", "-1", "2147483647", "2147483648", "-2147483649", "4294967296", "123456789012345678901234567890", "-123456789012345678901234567890")
+    for _, a in ipairs(values) do
+        local x = __K2L_BigInteger.parse(a)
+        print(a .. ": int=" .. x:toInt() .. " hash=" .. x:hashCode() .. " double=" .. __K2L_Str(x:toDouble()))
+    end
+    local longs = __K2L_ListOf("4503599627370496", "-4503599627370497", "123456789012", "9007199254740992", "4294967295")
+    for _, a in ipairs(longs) do
+        print(a .. ": long=" .. __K2L_BigInteger.parse(a):toLong() .. " hash=" .. __K2L_BigInteger.parse(a):hashCode())
+    end
+    print(__K2L_BigInteger.parse("18446744073709551616"):toLong())
+    print(__K2L_BigInteger.parse("18446744073709551617"):toLong())
+    print(__K2L_Str(__K2L_BigInteger.parse("1" .. ("0"):rep(400)):toDouble()))
+    print(__K2L_Str(__K2L_BigInteger.parse("123456789012345678901234567890123456789"):toDouble()))
+end
+
+local function numberTheory()
+    print("-- number theory")
+    local a = __K2L_BigInteger.parse("123456789012345678901234567890")
+    local b = __K2L_BigInteger.parse("987654321098765432109876543210")
+    print(__K2L_Str(a:gcd(b)))
+    print(__K2L_Str(a:gcd(__K2L_BigInteger.ZERO)))
+    print(__K2L_Str(__K2L_BigInteger.ZERO:gcd(__K2L_BigInteger.ZERO)))
+    print(__K2L_Str(a:negate():gcd(b)))
+    print(__K2L_Str(__K2L_BigInteger.valueOf(3):modPow(__K2L_BigInteger.valueOf(200), __K2L_BigInteger.parse("1000000007"))))
+    print(__K2L_Str(a:modPow(b, __K2L_BigInteger.parse("1000000000000000000000007"))))
+    print(__K2L_Str(__K2L_BigInteger.valueOf(7):modPow(__K2L_BigInteger.valueOf(-1), __K2L_BigInteger.valueOf(40))))
+    print(__K2L_Str(__K2L_BigInteger.valueOf(17):modInverse(__K2L_BigInteger.valueOf(3120))))
+    print(__K2L_Str(a:sqrt()))
+    print(__K2L_Str(__K2L_BigInteger.TEN:pow(41):sqrt()))
+    print(__K2L_Str(__K2L_BigInteger.valueOf(99):sqrt()))
+    print(__K2L_Str(__K2L_BigInteger.valueOf(100):sqrt()))
+    print(__K2L_Str(__K2L_BigInteger.ZERO:sqrt()))
+    print(__K2L_BigInteger.valueOf(1000000007):isProbablePrime(20))
+    print(__K2L_BigInteger.valueOf(1000000011):isProbablePrime(20))
+    print(__K2L_BigInteger.parse("170141183460469231731687303715884105727"):isProbablePrime(20))
+    print(__K2L_BigInteger.parse("170141183460469231731687303715884105729"):isProbablePrime(20))
+    print(__K2L_Str(__K2L_BigInteger.valueOf(100):nextProbablePrime()))
+    print(__K2L_Str(__K2L_BigInteger.valueOf(-5):pow(3)))
+    print(__K2L_Str(__K2L_BigInteger.valueOf(0):pow(0)))
+    print(__K2L_Str(a:abs():min(b):max(__K2L_BigInteger.TEN)))
+    print(__K2L_Equals(a:negate():abs(), a))
+    print(a:signum())
+end
+
+local function comparisons()
+    print("-- comparisons")
+    local a = __K2L_BigInteger.parse("100000000000000000000")
+    local b = __K2L_BigInteger.parse("99999999999999999999")
+    local c = __K2L_BigInteger.parse("100000000000000000000")
+    print(__K2L_Compare(a, b) > 0)
+    print(__K2L_Compare(a, b) < 0)
+    print(__K2L_Compare(a, c) >= 0)
+    print(__K2L_Compare(a, b) <= 0)
+    print(__K2L_Equals(a, c))
+    print(not __K2L_Equals(a, c))
+    print(a:equals(c))
+    print(a:equals(b))
+    print(a:compareTo(b))
+    print(b:compareTo(a))
+    print(a:compareTo(c))
+    print(a:negate():compareTo(b))
+    print(a:hashCode() == c:hashCode())
+    local sorted = __K2L_ListOf(a, b, __K2L_BigInteger.ZERO, a:negate(), __K2L_BigInteger.TEN):sorted()
+    print(__K2L_Str(sorted))
+    print(__K2L_ListOf(a, b, c):distinct().size)
+    print(__K2L_SetOf(a, c, b).size)
+    local counts = __K2L_MapOf()
+    for _, x in ipairs(__K2L_ListOf(a, b, c, a)) do
+        counts:set(x, (counts:get(x) or 0) + 1)
+    end
+    print(__K2L_Str(counts))
+    print(__K2L_Str(__K2L_ListOf(a, b):maxOrNull()))
+    print(__K2L_Str(__K2L_ListOf(a, b):minByOrNull(function(it) return it end)))
+    print(__K2L_Str(__K2L_Num.maxOf(a, b)))
+end
+
+local function operators()
+    print("-- operators")
+    local x = __K2L_BigInteger.parse("5")
+    x = x:inc()
+    print(__K2L_Str(x))
+    x = x:dec()
+    x = x:dec()
+    print(__K2L_Str(x))
+    x = x:add(__K2L_BigInteger.TEN)
+    x = x:multiply(x)
+    x = x:subtract(__K2L_BigInteger.ONE)
+    x = x:divide(__K2L_BigInteger.TWO)
+    x = x:remainder(__K2L_BigInteger.valueOf(50))
+    print(__K2L_Str(x))
+    print(__K2L_Str(x:negate()))
+    print(__K2L_Str(x:bnot()))
+    local y = __K2L_BigInteger.parse("-12")
+    print(__K2L_Str(y) .. " " .. __K2L_Str(x) .. " " .. __K2L_Str(y:multiply(x)) .. " " .. __K2L_Str(y:add(x)) .. " " .. __K2L_Str(y:subtract(x)))
+    print(__K2L_Str(__K2L_ListOf(1, 2, 3, 4, 5):map(function(it) return __K2L_BigInteger.valueOf(it) end):fold(__K2L_BigInteger.ONE, function(acc, v) return acc:multiply(v) end)))
+    print(__K2L_Str(__K2L_ListOf("1", "2", "3"):sumOf(function(it) return __K2L_BigInteger.parse(it) end, __K2L_BigInteger.ZERO)))
+    print(__K2L_Str(__K2L_IntRange.new(1, 5):map(function(it) return __K2L_BigInteger.valueOf(it) end):reduce(function(acc, v) return acc:multiply(v) end)))
+end
+
+local function failures()
+    print("-- failures")
+    local function attempt(label, block)
+        local ____ok, ____result = pcall(function()
+            print(label .. ": " .. __K2L_Str(block()))
+        end)
+        if not ____ok then
+            local ____error = __K2L_ToThrowable(____result)
+            if __K2L_InstanceOf(____error, __K2L_Exception) then
+                local e = ____error
+                print(label .. ": " .. __K2L_Str(__K2L_KClassOfValue(e).simpleName) .. ": " .. __K2L_Str(e.message))
+            else
+                error(____error, 0)
+            end
+        end
+    end
+    attempt("div0", function()
+        return __K2L_BigInteger.TEN:divide(__K2L_BigInteger.ZERO)
+    end)
+    attempt("rem0", function()
+        return __K2L_BigInteger.TEN:remainder(__K2L_BigInteger.ZERO)
+    end)
+    attempt("mod0", function()
+        return __K2L_BigInteger.TEN:mod(__K2L_BigInteger.ZERO)
+    end)
+    attempt("modNeg", function()
+        return __K2L_BigInteger.TEN:mod(__K2L_BigInteger.valueOf(-3))
+    end)
+    attempt("sqrtNeg", function() return __K2L_BigInteger.valueOf(-4):sqrt() end)
+    attempt("powNeg", function() return __K2L_BigInteger.TEN:pow(-1) end)
+    attempt("inverse", function()
+        return __K2L_BigInteger.valueOf(4):modInverse(__K2L_BigInteger.valueOf(8))
+    end)
+    attempt("empty", function() return __K2L_BigInteger.parse("") end)
+    attempt("sign only", function() return __K2L_BigInteger.parse("-") end)
+    attempt("letters", function() return __K2L_BigInteger.parse("abc") end)
+    attempt("embedded", function() return __K2L_BigInteger.parse("12-3") end)
+    attempt("double sign", function() return __K2L_BigInteger.parse("--3") end)
+    attempt("digit", function()
+        return __K2L_BigInteger.parse("12345678901234567890x")
+    end)
+    attempt("radix", function() return __K2L_BigInteger.parse("12", 99) end)
+    attempt("hex", function() return __K2L_BigInteger.parse("xyz", 16) end)
+    attempt("bit", function() return __K2L_BigInteger.TEN:testBit(-1) end)
+    attempt("intExact", function()
+        return __K2L_BigInteger.parse("12345678901"):intValueExact()
+    end)
+    attempt("longExact", function()
+        return __K2L_BigInteger.parse("123456789012345678901"):longValueExact()
+    end)
+end
+
+local function main()
+    construction()
+    big()
+    divisions()
+    bits()
+    conversions()
+    numberTheory()
+    comparisons()
+    operators()
+    failures()
+end
+
+main()
+return {factorial = factorial, fibonacci = fibonacci, construction = construction, big = big, divisions = divisions, bits = bits, conversions = conversions, numberTheory = numberTheory, comparisons = comparisons, operators = operators, failures = failures}

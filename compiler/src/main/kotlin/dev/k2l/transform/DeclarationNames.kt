@@ -3,6 +3,7 @@ package dev.k2l.transform
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.symbols.KaNamedFunctionSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaPropertySymbol
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
@@ -63,6 +64,40 @@ internal class DeclarationNames(private val session: KaSession, private val clas
         val index = topLevelOverloads(p.parent, raw).indexOf(p to prefix)
         val base = LuaNames.of(raw)
         if (index <= 0) base else "${base}__$index"
+    }
+
+    /** Whether a plain (non-extension) member property is accessed through `getX`/`setX`; set once the property families are known. */
+    var plainAccessors: (KtProperty) -> Boolean = { false }
+
+    private val memberAccessorNames = HashMap<Pair<KtProperty, String>, String>()
+
+    /**
+     * Lua name of the accessor method of a member extension property (`getX`/`setX`). Extension properties of one class
+     * hierarchy that share a name (`val String.x`, `val Int.x`) and ones that clash with a function or another property's
+     * accessor get `__1`, `__2`, ...; an override keeps the name of the property it overrides.
+     */
+    fun memberAccessor(p: KtProperty, prefix: String): String = memberAccessorNames.getOrPut(p to prefix) {
+        if (p.hasModifier(KtTokens.OVERRIDE_KEYWORD)) {
+            val overridden = with(session) {
+                (p.symbol as? KaPropertySymbol)?.directlyOverriddenSymbols?.mapNotNull { it.psi as? KtProperty }
+                    ?.firstOrNull { classes.isSource(it) }
+            }
+            if (overridden != null) return@getOrPut memberAccessor(overridden, prefix)
+        }
+        val raw = accessorRaw(p, prefix)
+        val members = classes.hierarchy(p.containingClassOrObject!!).flatMap { it.declarations }
+        val taken = HashSet<String>()
+        members.filterIsInstance<KtNamedFunction>().mapTo(taken) { function(it) }
+        for (other in members.filterIsInstance<KtProperty>()) {
+            if (other.name == null || other.receiverTypeReference != null || !plainAccessors(other)) continue
+            taken += accessorRaw(other, "get")
+            taken += accessorRaw(other, "set")
+        }
+        val earlier = members.filterIsInstance<KtProperty>().filter {
+            it.receiverTypeReference != null && it.name != null && !it.hasModifier(KtTokens.OVERRIDE_KEYWORD)
+        }.takeWhile { it != p }
+        earlier.filter { prefix == "get" || it.isVar }.mapTo(taken) { memberAccessor(it, prefix) }
+        generateSequence(0) { it + 1 }.map { if (it == 0) raw else "${raw}__$it" }.first { it !in taken }
     }
 
     /** The name of the hidden Lua local holding the backing field of a top-level property with custom accessors. */

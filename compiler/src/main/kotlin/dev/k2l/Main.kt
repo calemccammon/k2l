@@ -25,6 +25,7 @@ private val USAGE = """
     |  -t, --target VERSION    Lua version: 5.1, 5.2, 5.3, 5.4 (default) or JIT
     |      --lualib MODE       require (default: one shared lualib_bundle.lua) or inline
     |      --int-overflow MODE unchecked (default) or wrap: make Int arithmetic wrap to 32 bits like the JVM
+    |      --strings MODE      bytes (default) or utf16: make String and Char behave like the JVM's UTF-16 strings
     |      --classpath PATHS   extra jars or class directories, e.g. Lua bindings (':'-separated)
     |      --source-map        write main.lua.map files and make Lua errors and tracebacks show Kotlin positions
     |      --watch             rebuild whenever a source file or the project file changes (Ctrl-C to stop)
@@ -40,6 +41,7 @@ private data class Settings(
     val lualib: LuaLibImport = CompilerOptions().luaLibImport,
     val classpath: List<Path> = emptyList(),
     val intOverflow: IntOverflow = CompilerOptions().intOverflow,
+    val strings: StringSemantics = CompilerOptions().strings,
     val sourceMap: Boolean = false,
     val watch: Boolean = false,
     /** The k2l.json the settings came from, if any. */
@@ -77,6 +79,7 @@ private fun build(settings: Settings): CompileResult {
         luaTarget = settings.target,
         luaLibImport = settings.lualib,
         intOverflow = settings.intOverflow,
+        strings = settings.strings,
         sourceMap = settings.sourceMap,
     )
     val result = SourceSession.create(listOf(module), settings.classpath).use { session ->
@@ -131,6 +134,8 @@ private fun parseArgs(args: Array<String>): Settings {
 
             "--int-overflow" -> IntOverflow.parse(value(arg)).let { mode -> overrides += { s -> s.copy(intOverflow = mode) } }
 
+            "--strings" -> StringSemantics.parse(value(arg)).let { mode -> overrides += { s -> s.copy(strings = mode) } }
+
             "--classpath" -> value(arg).split(java.io.File.pathSeparatorChar).filter { p -> p.isNotEmpty() }.map { p -> Paths.get(p) }
                 .let { cp -> overrides += { s -> s.copy(classpath = s.classpath + cp) } }
 
@@ -164,7 +169,7 @@ private fun parseLualib(mode: String) = when (mode.lowercase()) {
 /**
  * k2l.json, with paths relative to its directory:
  * `{"srcDirs": ["src"], "outDir": "out", "luaTarget": "5.4", "luaLibImport": "require", "classpath": [], "intOverflow": "unchecked",
- * "sourceMap": false}`
+ * "strings": "bytes", "sourceMap": false}`
  */
 private fun readProject(file: Path): Settings {
     require(Files.isRegularFile(file)) { "project file $file not found" }
@@ -172,7 +177,7 @@ private fun readProject(file: Path): Settings {
     val dir = file.toAbsolutePath().parent
     fun string(key: String) = (json[key] as? JsonPrimitive)?.takeIf { it.isString }?.content
     fun paths(key: String) = (json[key] as? JsonArray).orEmpty().map { dir.resolve((it as JsonPrimitive).content) }
-    val unknown = json.keys - setOf("srcDirs", "outDir", "luaTarget", "luaLibImport", "classpath", "intOverflow", "sourceMap")
+    val unknown = json.keys - setOf("srcDirs", "outDir", "luaTarget", "luaLibImport", "classpath", "intOverflow", "strings", "sourceMap")
     require(unknown.isEmpty()) { "unknown key(s) in $file: ${unknown.joinToString()}" }
     return Settings(
         sources = paths("srcDirs"),
@@ -181,6 +186,7 @@ private fun readProject(file: Path): Settings {
         lualib = string("luaLibImport")?.let(::parseLualib) ?: LuaLibImport.Require,
         classpath = paths("classpath"),
         intOverflow = string("intOverflow")?.let(IntOverflow::parse) ?: IntOverflow.Unchecked,
+        strings = string("strings")?.let(StringSemantics::parse) ?: StringSemantics.Bytes,
         sourceMap = (json["sourceMap"] as? JsonPrimitive)?.booleanOrNull ?: false,
     )
 }

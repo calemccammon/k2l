@@ -1,0 +1,24 @@
+launched, queue=2
+A step 1 in alpha user=1
+B step 1 in beta user=null
+after first run, waiting=2
+A step 2 in alpha user=1
+B done
+A done
+dispatched=5
+n
+7
+true
+true
+7
+m
+107
+7
+n
+true
+true
+true
+falsefalsetrue
+queued=1 finished=false
+created body in created
+finished=true

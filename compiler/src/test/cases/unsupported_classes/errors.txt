@@ -1,1 +1,0 @@
-4:15: Reference to an inner class constructor is not supported yet

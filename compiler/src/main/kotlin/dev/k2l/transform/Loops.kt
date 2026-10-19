@@ -107,7 +107,7 @@ private fun FileTransformer.rangeLoop(
         return
     }
     val values = ordered(listOfNotNull(range.first, range.last, range.step))
-        .map { if (isChar) LuaMethodCall(it, "byte", emptyList()) else it }
+        .map { if (isChar) charCode(it) else it }
     val limit = if (range.inclusive) values[1] else plusConstant(values[1], -1)
     val step = when {
         range.step != null -> if (range.descending) LuaUnary(LuaUnOp.Neg, values[2]) else values[2]
@@ -117,7 +117,7 @@ private fun FileTransformer.rangeLoop(
     if (isChar) {
         // Chars are one-character strings: loop over their codes.
         val code = ctx.temp("code")
-        val local = LuaLocal(listOf(naming.of(param)), listOf(luaCall(luaPath("string", "char"), LuaName(code))))
+        val local = LuaLocal(listOf(naming.of(param)), listOf(charFromCode(LuaName(code))))
         emit(LuaNumericFor(code, values[0], limit, step, listOf(local) + loopBody(frame, e.body)))
     } else {
         emit(LuaNumericFor(naming.of(param), values[0], limit, step, loopBody(frame, e.body)))
@@ -164,8 +164,7 @@ private fun FileTransformer.iterationLoop(e: KtForExpression, frame: LoopFrame, 
 
             type?.isStringType == true && destructuring == null -> {
                 val text = expression(rangeExpr)
-                val chars = LuaMethodCall(text, "gmatch", listOf(LuaString(".")))
-                emit(LuaGenericFor(listOf(naming.of(param)), listOf(chars), loopBody(frame, e.body)))
+                emit(LuaGenericFor(listOf(naming.of(param)), listOf(stringChars(text)), loopBody(frame, e.body)))
             }
 
             else -> unsupported(rangeExpr, "Iterating over '${type.pretty()}'")
@@ -375,7 +374,7 @@ internal fun FileTransformer.forEachLoop(collection: LuaExpr, type: KaType?, lam
 
         type?.isStringType == true -> {
             val c = varName(0, "char")
-            emit(LuaGenericFor(listOf(c), listOf(LuaMethodCall(collection, "gmatch", listOf(LuaString(".")))), body(c)))
+            emit(LuaGenericFor(listOf(c), listOf(stringChars(collection)), body(c)))
         }
 
         else -> forEachList(collection, type, lambda, indexed, params)

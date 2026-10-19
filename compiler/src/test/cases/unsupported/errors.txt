@@ -1,2 +1,0 @@
-1:64: Extension property 'last' would share its Lua method 'getLast' with another member
-4:19: Inner class of a local class is not supported yet

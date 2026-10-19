@@ -1,7 +1,1 @@
-10:5: Custom accessors on a property overriding a library property are not supported yet
-15:17: Extending 'Sequence<Int>' is not supported yet
-19:72: Kotlin library API 'kotlin/coroutines/intrinsics/COROUTINE_SUSPENDED' is not supported yet
-19:32: Kotlin library API 'kotlin/coroutines/intrinsics/suspendCoroutineUninterceptedOrReturn' is not supported yet
-21:46: Unresolved call 'ContinuationInterceptor' is not supported yet
-21:29: Kotlin library API 'kotlin/coroutines/CoroutineContext.get' is not supported yet
-26:13: Kotlin library API 'kotlin/sequences/asIterable' is not supported yet
+14:13: Kotlin library API 'kotlin/sequences/asIterable' is not supported yet

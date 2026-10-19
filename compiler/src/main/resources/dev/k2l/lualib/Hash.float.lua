@@ -37,6 +37,34 @@ local function doubleBits(x)
     return sign + e * 0x100000 + hi, frac - hi * 4294967296
 end
 
+-- hashCode() of a string with non-ASCII characters: JVM strings hash their UTF-16 code units, so the UTF-8 is decoded.
+local function hashUtf8(s)
+    local h, i, n = 0, 1, #s
+    local function add(unit)
+        h = (31 * h + unit) % 4294967296
+    end
+    while i <= n do
+        local b = s:byte(i)
+        if b < 0xC0 then
+            add(b)
+            i = i + 1
+        elseif b < 0xE0 then
+            add((b - 0xC0) * 64 + ((s:byte(i + 1) or 0x80) - 0x80))
+            i = i + 2
+        elseif b < 0xF0 then
+            add((b - 0xE0) * 4096 + ((s:byte(i + 1) or 0x80) - 0x80) * 64 + ((s:byte(i + 2) or 0x80) - 0x80))
+            i = i + 3
+        else
+            local cp = (b - 0xF0) * 262144 + ((s:byte(i + 1) or 0x80) - 0x80) * 4096 + ((s:byte(i + 2) or 0x80) - 0x80) * 64
+                + ((s:byte(i + 3) or 0x80) - 0x80) - 0x10000
+            add(0xD800 + math.floor(cp / 1024))
+            add(0xDC00 + cp % 1024)
+            i = i + 4
+        end
+    end
+    return __K2L_ToInt32(h)
+end
+
 local function __K2L_Hash(value)
     local t = type(value)
     if value == nil then
@@ -56,6 +84,9 @@ local function __K2L_Hash(value)
         end
         return __K2L_ToInt32(xor32(hi, lo))
     elseif t == "string" then
+        if value:find("[\128-\255]") then
+            return hashUtf8(value)
+        end
         local h = 0
         for i = 1, #value do
             h = (31 * h + value:byte(i)) % 4294967296

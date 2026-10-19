@@ -1,0 +1,31 @@
+woof from rex
+cat: ClassCastException
+text
+string as Int: ClassCastException
+42
+int as String: ClassCastException
+int as Boolean: ClassCastException
+true
+boolean as String: ClassCastException
+null
+null
+null as String: NullPointerException
+null as Dog: NullPointerException
+true
+true
+square as Animal: ClassCastException
+object: true
+string as Single: ClassCastException
+3
+3
+list as Map: ClassCastException
+string as List: ClassCastException
+fine
+ABC
+other
+up
+2.5
+[a, n]
+in args: ClassCastException
+class java.lang.String cannot be cast to class java.lang.Integer (java.lang.String and java.lang.Integer are in module java.base of loader 'bootstrap')
+class Dog cannot be cast to class Cat

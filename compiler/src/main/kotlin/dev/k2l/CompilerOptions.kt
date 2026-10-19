@@ -53,10 +53,26 @@ enum class IntOverflow(val id: String) {
     }
 }
 
+/** How `String` and `Char` behave: Lua's bytes, or the JVM's UTF-16 code units. */
+enum class StringSemantics(val id: String) {
+    /** `length`, indices and `Char` count UTF-8 bytes; `isLetter()`, `uppercase()` and so on are ASCII only. The default. */
+    Bytes("bytes"),
+
+    /** Strings stay UTF-8, but lengths, indices, `Char`s and classification behave like the JVM's UTF-16 strings. */
+    Utf16("utf16"),
+    ;
+
+    companion object {
+        fun parse(id: String): StringSemantics = entries.firstOrNull { it.id.equals(id, ignoreCase = true) }
+            ?: throw IllegalArgumentException("Unknown strings mode '$id' (expected one of ${entries.joinToString { it.id }})")
+    }
+}
+
 data class CompilerOptions(
     val luaTarget: LuaTarget = LuaTarget.Lua54,
     val luaLibImport: LuaLibImport = LuaLibImport.Require,
     val intOverflow: IntOverflow = IntOverflow.Unchecked,
+    val strings: StringSemantics = StringSemantics.Bytes,
     /** Emit Source Map v3 files and make Lua errors and tracebacks report Kotlin positions. */
     val sourceMap: Boolean = false,
 )

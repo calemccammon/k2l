@@ -1,3 +1,1 @@
-21:5: Inlining a function with a vararg parameter is not supported yet
-28:5: Inlining 'capped' here would hide 'limit', which the function uses, behind a local of the same name
-40:49: Non-local return out of a lambda passed to 'partition' is not supported yet
+24:62: Non-local return out of a lambda passed to 'mapTo' is not supported yet
