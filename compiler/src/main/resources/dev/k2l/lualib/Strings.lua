@@ -28,6 +28,11 @@ end
 -- Kotlin's String.indexOf, lastIndexOf, replace, split(String) and lines(), see __K2L_Text below.
 local __K2L_Text = {}
 
+-- The length in chars: --strings utf16 (Utf16.lua) replaces it with a count of UTF-16 units
+function __K2L_Text.len(s)
+    return #s
+end
+
 local function __K2L_StringIndexOf(s, part, from)
     return __K2L_Text.indexOf(s, part, from)
 end
@@ -919,11 +924,12 @@ local function finishNumber(body, negative, flags, width)
 end
 
 local function pad(text, width, left)
-    if width and #text < width then
+    local length = width and __K2L_Text.len(text)
+    if width and length < width then
         if left then
-            return text .. string.rep(" ", width - #text)
+            return text .. string.rep(" ", width - length)
         end
-        return string.rep(" ", width - #text) .. text
+        return string.rep(" ", width - length) .. text
     end
     return text
 end
@@ -1085,7 +1091,7 @@ function __K2L_StringFormat(format, ...)
             elseif lower == "s" then
                 text = __K2L_Str(value)
                 if precision then
-                    text = text:sub(1, precision)
+                    text = __K2L_Text.take(text, precision)
                 end
                 if conv == "S" then
                     text = text:upper()

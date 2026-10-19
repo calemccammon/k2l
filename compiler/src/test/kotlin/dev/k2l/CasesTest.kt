@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
  * - `main.kt`: the Kotlin input
  * - `expected.lua`: the exact transpiler output (regenerate with `-PupdateGolden`)
  * - `stdout.txt`: what the program prints, produced by the Kotlin/JVM oracle (`kotlinOracle` task)
- * - `options.txt` (optional): compiler options for the case, one `name=value` per line (`intOverflow=wrap`)
+ * - `options.txt` (optional): compiler options for the case, one `name=value` per line (`intOverflow=wrap`, `strings=utf16`)
  * - `errors.txt` (instead of the other two): expected diagnostics, one `line:column: message` per line
  */
 class CasesTest {
@@ -72,13 +72,14 @@ class CasesTest {
         val values = lines.associate { it.substringBefore('=').trim() to it.substringAfter('=').trim() }
         require(
             values.keys.all {
-                it == "intOverflow" || it == "luaLibImport"
+                it == "intOverflow" || it == "luaLibImport" || it == "strings"
             },
         ) { "unknown option in ${dir.name}/options.txt: ${values.keys}" }
         return CompilerOptions(
             luaLibImport =
             values["luaLibImport"]?.let { if (it == "inline") LuaLibImport.Inline else LuaLibImport.Require } ?: LuaLibImport.Require,
             intOverflow = values["intOverflow"]?.let(IntOverflow::parse) ?: IntOverflow.Unchecked,
+            strings = values["strings"]?.let(StringSemantics::parse) ?: StringSemantics.Bytes,
         )
     }
 
@@ -160,7 +161,10 @@ class CasesTest {
 
         private val modules: List<SourceModule> by lazy {
             Files.list(casesDir).use { dirs ->
-                dirs.filter { Files.isRegularFile(it.resolve("main.kt")) }.sorted().toList()
+                val only = System.getProperty("k2l.only")?.split(',')
+                dirs.filter {
+                    Files.isRegularFile(it.resolve("main.kt")) && (only == null || it.fileName.toString() in only)
+                }.sorted().toList()
                     .map { SourceModule(it.fileName.toString(), listOf(it.toAbsolutePath())) }
             }
         }

@@ -1,0 +1,7 @@
+HELLO
+hello
+HELLO
+ 3.14|x
+3 items
+true
+B

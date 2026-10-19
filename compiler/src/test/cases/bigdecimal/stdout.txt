@@ -1,0 +1,238 @@
+-- construction
+1.10
+-0.000001
+-1E-7
+1E+3
+1.5E-10
+1.23456E+7
+0.00
+0E-10
+0E+10
+0.5
+5
+7.0
+42
+123456789012
+0.5
+0.1000000000000000055511151231257827021181583404541015625
+-2.75
+100000000000000000000
+3
+12345678901234567890
+12.345
+1.2345E+7
+2.5
+0.1
+100.0
+0.000010
+1.0E+10
+12345
+123.45
+-5E+2
+7
+7
+1.5
+0.1
+3.14159
+null
+1.5
+10
+12.34
+0
+1
+10
+-- arithmetic
+3.605
+-1.405
+2.75550
+-1.10
+1.10
+3
+5
+6
+1.331000
+0.0009765625
+110
+1
+-1
+0
+0.20
+1
+-1.5
+14
+142
+0
+1.10
+2.505
+121932631356500531.347203169112635269
+135.420750
+135.42
+10.9
+8.9
+0.00110
+1100
+11.0
+1.10E+5
+1234
+-1234
+100000
+-- setScale table
+5.5: UP=6 DOWN=5 CEILING=6 FLOOR=5 HALF_UP=6 HALF_DOWN=5 HALF_EVEN=6
+  scale 1: 5.5 5.5 5.5 5.5 5.5 5.5 5.5
+2.5: UP=3 DOWN=2 CEILING=3 FLOOR=2 HALF_UP=3 HALF_DOWN=2 HALF_EVEN=2
+  scale 1: 2.5 2.5 2.5 2.5 2.5 2.5 2.5
+1.6: UP=2 DOWN=1 CEILING=2 FLOOR=1 HALF_UP=2 HALF_DOWN=2 HALF_EVEN=2
+  scale 1: 1.6 1.6 1.6 1.6 1.6 1.6 1.6
+1.1: UP=2 DOWN=1 CEILING=2 FLOOR=1 HALF_UP=1 HALF_DOWN=1 HALF_EVEN=1
+  scale 1: 1.1 1.1 1.1 1.1 1.1 1.1 1.1
+1.0: UP=1 DOWN=1 CEILING=1 FLOOR=1 HALF_UP=1 HALF_DOWN=1 HALF_EVEN=1
+  scale 1: 1.0 1.0 1.0 1.0 1.0 1.0 1.0
+0.5: UP=1 DOWN=0 CEILING=1 FLOOR=0 HALF_UP=1 HALF_DOWN=0 HALF_EVEN=0
+  scale 1: 0.5 0.5 0.5 0.5 0.5 0.5 0.5
+-0.5: UP=-1 DOWN=0 CEILING=0 FLOOR=-1 HALF_UP=-1 HALF_DOWN=0 HALF_EVEN=0
+  scale 1: -0.5 -0.5 -0.5 -0.5 -0.5 -0.5 -0.5
+-1.1: UP=-2 DOWN=-1 CEILING=-1 FLOOR=-2 HALF_UP=-1 HALF_DOWN=-1 HALF_EVEN=-1
+  scale 1: -1.1 -1.1 -1.1 -1.1 -1.1 -1.1 -1.1
+-1.6: UP=-2 DOWN=-1 CEILING=-1 FLOOR=-2 HALF_UP=-2 HALF_DOWN=-2 HALF_EVEN=-2
+  scale 1: -1.6 -1.6 -1.6 -1.6 -1.6 -1.6 -1.6
+-2.5: UP=-3 DOWN=-2 CEILING=-2 FLOOR=-3 HALF_UP=-3 HALF_DOWN=-2 HALF_EVEN=-2
+  scale 1: -2.5 -2.5 -2.5 -2.5 -2.5 -2.5 -2.5
+-5.5: UP=-6 DOWN=-5 CEILING=-5 FLOOR=-6 HALF_UP=-6 HALF_DOWN=-5 HALF_EVEN=-6
+  scale 1: -5.5 -5.5 -5.5 -5.5 -5.5 -5.5 -5.5
+0.05: UP=1 DOWN=0 CEILING=1 FLOOR=0 HALF_UP=0 HALF_DOWN=0 HALF_EVEN=0
+  scale 1: 0.1 0.0 0.1 0.0 0.1 0.0 0.0
+99.995: UP=100 DOWN=99 CEILING=100 FLOOR=99 HALF_UP=100 HALF_DOWN=100 HALF_EVEN=100
+  scale 1: 100.0 99.9 100.0 99.9 100.0 100.0 100.0
+2.500
+2.5
+1000
+1.23E+4
+1.236E+4
+ArithmeticException: Rounding necessary
+HALF_EVEN
+CEILING
+true
+1
+-- division
+1 / 3: 0 | 0.33333 | 0 | 0.333 | 0.3333333
+  0.333 0.3333333333 0.4 1
+2 / 3: 1 | 0.66667 | 0 | 0.667 | 0.6666667
+  0.667 0.6666666666 0.7 1
+10 / 4: 2 | 2.50000 | 2 | 2.500 | 2.5
+  2.5 2.5 3 3
+-10 / 4: -2 | -2.50000 | -3 | -2.500 | -2.5
+  -2.5 -2.5 -3 -2
+1 / 7: 0 | 0.14286 | 0 | 0.143 | 0.1428571
+  0.143 0.1428571428 0.2 1
+22 / 7: 3 | 3.14286 | 3 | 3.143 | 3.142857
+  3.14 3.142857142 4 4
+100 / -8: -12 | -12.50000 | -13 | -12.500 | -12.5
+  -12.5 -12.5 -2E+1 -12
+0.5 / 3: 0.2 | 0.16667 | 0 | 0.167 | 0.1666667
+  0.167 0.1666666666 0.2 0.2
+1.00 / 3: 0.33 | 0.33333 | 0 | 0.333 | 0.3333333
+  0.333 0.3333333333 0.4 0.34
+123456.789 / 0.001: 123456789.000 | 123456789.00000 | 123456789 | 123456789.000 | 1.234568E+8
+  1.23E+8 123456789 2E+8 123456789.000
+0.125
+0.125
+25
+4
+2
+2.5E+2
+2.5E+2
+0.33333333333333333333
+0.6666666666666667
+0.6666666666666666666666666666666667
+3.33
+1.00E+3
+0E+1
+1.000E+11
+3.1416
+4
+1.00E+3
+11.11
+12.19
+precision=7 roundingMode=HALF_EVEN
+precision=5 roundingMode=FLOOR
+16
+HALF_EVEN
+-- formatting
+0: toString=0 plain=0 scale=0 precision=1 strip=0 strip.plain=0
+0.0: toString=0.0 plain=0.0 scale=1 precision=1 strip=0 strip.plain=0
+0.00: toString=0.00 plain=0.00 scale=2 precision=1 strip=0 strip.plain=0
+1: toString=1 plain=1 scale=0 precision=1 strip=1 strip.plain=1
+-1: toString=-1 plain=-1 scale=0 precision=1 strip=-1 strip.plain=-1
+1.0: toString=1.0 plain=1.0 scale=1 precision=2 strip=1 strip.plain=1
+12345.6789: toString=12345.6789 plain=12345.6789 scale=4 precision=9 strip=12345.6789 strip.plain=12345.6789
+-0.5: toString=-0.5 plain=-0.5 scale=1 precision=1 strip=-0.5 strip.plain=-0.5
+0.000001: toString=0.000001 plain=0.000001 scale=6 precision=1 strip=0.000001 strip.plain=0.000001
+0.0000001: toString=1E-7 plain=0.0000001 scale=7 precision=1 strip=1E-7 strip.plain=0.0000001
+1E+3: toString=1E+3 plain=1000 scale=-3 precision=1 strip=1E+3 strip.plain=1000
+1.23E+10: toString=1.23E+10 plain=12300000000 scale=-8 precision=3 strip=1.23E+10 strip.plain=12300000000
+-1.5E-7: toString=-1.5E-7 plain=-0.00000015 scale=8 precision=2 strip=-1.5E-7 strip.plain=-0.00000015
+100: toString=100 plain=100 scale=0 precision=3 strip=1E+2 strip.plain=100
+1E-10: toString=1E-10 plain=0.0000000001 scale=10 precision=1 strip=1E-10 strip.plain=0.0000000001
+123456789012345678901234567890.123456789: toString=123456789012345678901234567890.123456789 plain=123456789012345678901234567890.123456789 scale=9 precision=39 strip=123456789012345678901234567890.123456789 strip.plain=123456789012345678901234567890.123456789
+0E+3: toString=0E+3 plain=0 scale=-3 precision=1 strip=0 strip.plain=0
+1.000E+3: toString=1000 plain=1000 scale=0 precision=4 strip=1E+3 strip.plain=1000
+1E+3
+-3
+10.5
+0
+price: 9.99
+[1.5, 2.50]
+-- comparisons
+false
+false
+0
+-1
+1
+true
+true
+311
+3102
+1113278083
+-10073
+0
+2
+1
+[-3, 1.0, 1.5, 2]
+2
+6.6
+6.6
+-- conversions
+0: int=0 double=0.0
+1.5: int=1 double=1.5
+-1.5: int=-1 double=-1.5
+123.999: int=123 double=123.999
+1E+3: int=1000 double=1000.0
+123456789012345678901.5: int=792095797 double=1.2345678901234568E20
+1e-5: int=0 double=1.0E-5
+-2147483649.5: int=2147483647 double=-2.1474836495E9
+0.1: int=0 double=0.1
+3.14159265358979323846: int=3 double=3.141592653589793
+12345678901
+0.30000000000000004
+Infinity
+-- failures
+div0: ArithmeticException: / by zero
+0div0: ArithmeticException: Division undefined
+exact1: ArithmeticException: Division by zero
+exact2: ArithmeticException: Non-terminating decimal expansion; no exact representable decimal result.
+scaled0: ArithmeticException: / by zero
+mc0: ArithmeticException: Division by zero
+rem0: ArithmeticException: Division by zero
+big0: ArithmeticException: BigInteger divide by zero
+pow: ArithmeticException: Invalid operation
+empty: NumberFormatException: null
+sign: NumberFormatException: No digits found.
+letters: NumberFormatException: Character a is neither a decimal digit number, decimal point, nor "e" notation exponential mark.
+twoDots: NumberFormatException: Character array contains more than one decimal point.
+exp: NumberFormatException: null
+exp2: NumberFormatException: null
+exp3: NumberFormatException: Not a digit.
+nan: NumberFormatException: Infinite or NaN
+inf: NumberFormatException: Infinite or NaN
+valueOfNan: NumberFormatException: Character N is neither a decimal digit number, decimal point, nor "e" notation exponential mark.
+enum: IllegalArgumentException: No enum constant java.math.RoundingMode.SIDEWAYS

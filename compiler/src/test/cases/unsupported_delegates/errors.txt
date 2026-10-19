@@ -1,3 +1,0 @@
-16:5: Delegated property that is open or overriding is not supported yet
-19:1: Delegate with provideDelegate is not supported yet
-20:1: Delegate class 'NoMember' that has no member getValue (extension operators are not supported) is not supported yet

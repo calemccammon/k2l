@@ -1,0 +1,23 @@
+name
+age
+ann
+bob
+25
+26
+[ann, bob]
+56
+name=ann
+age=26
+name
+ann
+ann
+31
+level
+3
+counter
+10
+top
+twice
+greet
+greet
+[2, 4]

@@ -69,7 +69,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         ctx.lualibNames += REGISTER_NAME
         // The runtime table is one line, so the code starts after the lines of the header plus that line.
         val top = when (options.luaLibImport) {
-            LuaLibImport.Inline -> Lualib.resolve(ctx.lualib, options.luaTarget).joinToString("\n\n", postfix = "\n") { it.code }
+            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget)
 
             LuaLibImport.Require -> buildString {
                 append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")
@@ -87,7 +87,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val code = LuaPrinter().print(chunk)
         if (ctx.lualib.isEmpty()) return code
         return when (options.luaLibImport) {
-            LuaLibImport.Inline -> Lualib.resolve(ctx.lualib, options.luaTarget).joinToString("\n\n", postfix = "\n\n") { it.code } + code
+            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget) + "\n" + code
 
             LuaLibImport.Require -> buildString {
                 append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")

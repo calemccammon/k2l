@@ -3,19 +3,27 @@
 -- function returning `true, element` for each element and nothing at the end, so a loop is
 -- `for _, x in seq:iter() do ... end` and null elements are fine. Intermediate operations wrap the
 -- generator and run nothing until a terminal operation pulls elements, one at a time, as on the JVM.
+local __K2L_Iterator -- below
 local __K2L_Sequence = __K2L_Class("kotlin.sequences.Sequence")
 
 function __K2L_Sequence:____init(factory)
     self.____factory = factory
 end
 
+-- Sequence classes written in Kotlin implement iterator() instead of having a factory.
+__K2L_Sequence.____isSequence = true
+
 function __K2L_Sequence:iter()
-    return self.____factory()
+    local factory = self.____factory
+    if factory ~= nil then
+        return factory()
+    end
+    return __K2L_Iterator.iter(self:iterator())
 end
 
 ------------------------------------------------------------------ Iterator
 -- kotlin.collections.Iterator over a generator: hasNext() pulls the next element and keeps it.
-local __K2L_Iterator = __K2L_Class("kotlin.collections.Iterator")
+__K2L_Iterator = __K2L_Class("kotlin.collections.Iterator")
 
 function __K2L_Iterator:____init(gen)
     self.____gen = gen
@@ -58,7 +66,7 @@ local function __K2L_Generator(source)
                 return true, source:sub(i, i)
             end
         end
-    elseif source.____factory ~= nil then
+    elseif source.____isSequence then
         return source:iter()
     elseif source.hasNext ~= nil then
         return __K2L_Iterator.iter(source)
@@ -112,7 +120,7 @@ end
 
 -- collection.asSequence(), string.asSequence(), map.asSequence(): iterates the live source.
 local function __K2L_AsSequence(source)
-    if type(source) == "table" and source.____factory ~= nil then
+    if type(source) == "table" and source.____isSequence then
         return source
     elseif type(source) == "table" and source.hasNext ~= nil then
         return __K2L_Sequence.new(function() return __K2L_Iterator.iter(source) end):constrainOnce()

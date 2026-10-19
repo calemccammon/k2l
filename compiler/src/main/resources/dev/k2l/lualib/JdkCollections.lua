@@ -1,0 +1,503 @@
+-- requires: Class, Exceptions, Collections, Comparators, Compare, Equals, Random
+-- java.util.Collections and java.util.Arrays helpers, Map.withDefault and List.listIterator.
+-- The unmodifiable* wrappers are read-only copies (a later change to the original is not visible through them).
+local __K2L_JdkCollections = {}
+local __K2L_ListIterator = __K2L_Class("java.util.ArrayList$ListItr")
+local __K2L_ReadOnlyList = __K2L_Class("java.util.Collections$UnmodifiableRandomAccessList", __K2L_List)
+local __K2L_ReadOnlySet = __K2L_Class("java.util.Collections$UnmodifiableSet", __K2L_Set)
+local __K2L_ReadOnlyMap = __K2L_Class("java.util.Collections$UnmodifiableMap", __K2L_Map)
+local __K2L_FixedSizeList = __K2L_Class("java.util.Arrays$ArrayList", __K2L_List)
+
+do
+
+local J = __K2L_JdkCollections
+
+local function unsupported()
+    error(__K2L_UnsupportedOperationException.new())
+end
+
+local function illegalArgument(message)
+    error(__K2L_IllegalArgumentException.new(message))
+end
+
+local function arrayIndex(index)
+    error(__K2L_IndexOutOfBoundsException.new("Array index out of range: " .. index))
+end
+
+------------------------------------------------------------------ listIterator
+function __K2L_ListIterator:____init(list, cursor)
+    self.list, self.cursor, self.lastReturned = list, cursor, -1
+end
+
+function __K2L_ListIterator:hasNext()
+    return self.cursor ~= self.list.size
+end
+
+function __K2L_ListIterator:next()
+    local i = self.cursor
+    if i >= self.list.size then
+        error(__K2L_NoSuchElementException.new())
+    end
+    self.cursor, self.lastReturned = i + 1, i
+    return self.list[i + 1]
+end
+
+function __K2L_ListIterator:hasPrevious()
+    return self.cursor ~= 0
+end
+
+function __K2L_ListIterator:previous()
+    local i = self.cursor - 1
+    if i < 0 then
+        error(__K2L_NoSuchElementException.new())
+    end
+    self.cursor, self.lastReturned = i, i
+    return self.list[i + 1]
+end
+
+function __K2L_ListIterator:nextIndex()
+    return self.cursor
+end
+
+function __K2L_ListIterator:previousIndex()
+    return self.cursor - 1
+end
+
+function __K2L_ListIterator:remove()
+    if self.lastReturned < 0 then
+        error(__K2L_IllegalStateException.new())
+    end
+    self.list:removeAt(self.lastReturned)
+    self.cursor, self.lastReturned = self.lastReturned, -1
+end
+
+function __K2L_ListIterator:set(value)
+    if self.lastReturned < 0 then
+        error(__K2L_IllegalStateException.new())
+    end
+    self.list:set(self.lastReturned, value)
+end
+
+function __K2L_ListIterator:add(value)
+    self.list:addAt(self.cursor, value)
+    self.cursor, self.lastReturned = self.cursor + 1, -1
+end
+
+-- list.listIterator() and list.listIterator(index)
+function J.listIterator(list, index)
+    index = index or 0
+    if index < 0 or index > list.size then
+        error(__K2L_IndexOutOfBoundsException.new("Index: " .. index .. ", Size: " .. list.size))
+    end
+    return __K2L_ListIterator.new(list, index)
+end
+
+------------------------------------------------------------------ withDefault
+-- A view of `map` whose getValue() falls back to default(key); everything else, writes included, goes to the map.
+function J.withDefault(map, default)
+    local function getValue(_, key)
+        if map:containsKey(key) then
+            return map:get(key)
+        end
+        return default(key)
+    end
+    return setmetatable({}, {
+        __index = function(proxy, name)
+            if name == "getValue" or name == "getOrImplicitDefault" then
+                return getValue
+            end
+            local member = map[name]
+            if type(member) == "function" then
+                local forwarded = function(_, ...)
+                    return member(map, ...)
+                end
+                rawset(proxy, name, forwarded)
+                return forwarded
+            end
+            return member
+        end,
+        __tostring = function()
+            return map:toString()
+        end,
+    })
+end
+
+------------------------------------------------------------------ read-only collections
+local LIST_MUTATORS = {
+    "add", "addAt", "addAll", "addAllAt", "removeAt", "remove", "removeAll", "retainAll", "removeIf", "clear", "set", "sort",
+    "sortDescending", "sortBy", "sortByDescending", "sortWith", "reverse", "shuffle", "fill", "replaceAll", "addFirst", "addLast",
+    "removeFirst", "removeLast", "removeFirstOrNull", "removeLastOrNull", "push", "pop", "poll", "pollFirst", "pollLast",
+    "offer", "offerFirst", "offerLast",
+}
+local SET_MUTATORS = {"add", "addAll", "remove", "removeAll", "retainAll", "removeIf", "clear"}
+local MAP_MUTATORS = {
+    "put", "set", "putAll", "remove", "clear", "putIfAbsent", "merge", "compute", "computeIfAbsent", "computeIfPresent",
+    "replaceAll", "getOrPut",
+}
+for _, name in ipairs(LIST_MUTATORS) do
+    __K2L_ReadOnlyList[name] = unsupported
+end
+for _, name in ipairs(SET_MUTATORS) do
+    __K2L_ReadOnlySet[name] = unsupported
+end
+for _, name in ipairs(MAP_MUTATORS) do
+    __K2L_ReadOnlyMap[name] = unsupported
+end
+
+local function readOnlyList(source)
+    local arr, n = source:____array()
+    local out = __K2L_ReadOnlyList.new()
+    for i = 1, n do
+        out[i] = arr[i]
+    end
+    out.size = n
+    return out
+end
+
+local function readOnlySet(source)
+    local arr, n = source:____array()
+    local out = __K2L_ReadOnlySet.new()
+    for i = 1, n do
+        __K2L_Set.add(out, arr[i])
+    end
+    return out
+end
+
+local function readOnlyMap(source)
+    local out = __K2L_ReadOnlyMap.new()
+    for key, value in source:iter() do
+        __K2L_Map.put(out, key, value)
+    end
+    return out
+end
+
+-- Arrays.asList: elements can be replaced, but the size is fixed
+for _, name in ipairs({"add", "addAt", "removeAt", "removeFirst", "removeLast", "addFirst", "addLast", "push", "pop"}) do
+    __K2L_FixedSizeList[name] = unsupported
+end
+
+function __K2L_FixedSizeList:addAll(elements)
+    local _, n = elements:____array()
+    if n > 0 then
+        unsupported()
+    end
+    return false
+end
+
+function __K2L_FixedSizeList:remove(element)
+    if self:contains(element) then
+        unsupported()
+    end
+    return false
+end
+
+function __K2L_FixedSizeList:clear()
+    if self.size > 0 then
+        unsupported()
+    end
+end
+
+function J.unmodifiableList(source)
+    return readOnlyList(source)
+end
+
+J.unmodifiableCollection = J.unmodifiableList
+
+function J.unmodifiableSet(source)
+    return readOnlySet(source)
+end
+
+function J.unmodifiableMap(source)
+    return readOnlyMap(source)
+end
+
+function J.emptyList()
+    return __K2L_ReadOnlyList.new()
+end
+
+function J.emptySet()
+    return __K2L_ReadOnlySet.new()
+end
+
+function J.emptyMap()
+    return __K2L_ReadOnlyMap.new()
+end
+
+function J.singletonList(value)
+    local out = __K2L_ReadOnlyList.new()
+    out[1], out.size = value, 1
+    return out
+end
+
+function J.singleton(value)
+    local out = __K2L_ReadOnlySet.new()
+    __K2L_Set.add(out, value)
+    return out
+end
+
+function J.singletonMap(key, value)
+    local out = __K2L_ReadOnlyMap.new()
+    __K2L_Map.put(out, key, value)
+    return out
+end
+
+function J.nCopies(n, value)
+    if n < 0 then
+        illegalArgument("List length = " .. n)
+    end
+    local out = __K2L_ReadOnlyList.new()
+    for i = 1, n do
+        out[i] = value
+    end
+    out.size = n
+    return out
+end
+
+-- synchronizedList and friends
+function J.identity(collection)
+    return collection
+end
+
+------------------------------------------------------------------ Collections
+function J.sort(list, comparator)
+    if comparator ~= nil then
+        list:sortWith(comparator)
+    else
+        list:sort()
+    end
+end
+
+function J.reverse(list)
+    list:reverse()
+end
+
+function J.shuffle(list, random)
+    list:shuffle(random or __K2L_Random.default())
+end
+
+function J.swap(list, i, j)
+    local first = list:get(i)
+    list:set(i, list:get(j))
+    list:set(j, first)
+end
+
+local function extreme(collection, comparator, sign)
+    local arr, n = collection:____array()
+    if n == 0 then
+        error(__K2L_NoSuchElementException.new())
+    end
+    comparator = comparator or __K2L_Compare
+    local best = arr[1]
+    for i = 2, n do
+        if comparator(arr[i], best) * sign > 0 then
+            best = arr[i]
+        end
+    end
+    return best
+end
+
+function J.max(collection, comparator)
+    return extreme(collection, comparator, 1)
+end
+
+function J.min(collection, comparator)
+    return extreme(collection, comparator, -1)
+end
+
+function J.frequency(collection, value)
+    local arr, n = collection:____array()
+    local count = 0
+    for i = 1, n do
+        if __K2L_Equals(value, arr[i]) then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+function J.addAll(collection, ...)
+    local changed = false
+    for i = 1, select("#", ...) do
+        if collection:add((select(i, ...))) then
+            changed = true
+        end
+    end
+    return changed
+end
+
+function J.fill(list, value)
+    list:fill(value)
+end
+
+function J.rotate(list, distance)
+    local n = list.size
+    if n == 0 then
+        return
+    end
+    distance = distance % n
+    if distance == 0 then
+        return
+    end
+    local copy = {}
+    for i = 1, n do
+        copy[i] = list[i]
+    end
+    for i = 0, n - 1 do
+        list:set((i + distance) % n, copy[i + 1])
+    end
+end
+
+function J.replaceAll(list, oldValue, newValue)
+    local changed = false
+    for i = 0, list.size - 1 do
+        if __K2L_Equals(oldValue, list[i + 1]) then
+            list:set(i, newValue)
+            changed = true
+        end
+    end
+    return changed
+end
+
+function J.copy(destination, source)
+    local arr, n = source:____array()
+    if n > destination.size then
+        error(__K2L_IndexOutOfBoundsException.new("Source does not fit in dest"))
+    end
+    for i = 1, n do
+        destination:set(i - 1, arr[i])
+    end
+end
+
+function J.disjoint(first, second)
+    local arr, n = first:____array()
+    for i = 1, n do
+        if second:contains(arr[i]) then
+            return false
+        end
+    end
+    return true
+end
+
+function J.reverseOrder(comparator)
+    if comparator ~= nil then
+        return __K2L_ReverseComparator(comparator)
+    end
+    return __K2L_ReverseOrder
+end
+
+------------------------------------------------------------------ Arrays
+function J.asList(...)
+    local list = __K2L_FixedSizeList.new()
+    local n = select("#", ...)
+    for i = 1, n do
+        list[i] = (select(i, ...))
+    end
+    list.size = n
+    return list
+end
+
+local function checkRange(size, from, to)
+    if from > to then
+        illegalArgument("fromIndex(" .. from .. ") > toIndex(" .. to .. ")")
+    elseif from < 0 then
+        arrayIndex(from)
+    elseif to > size then
+        arrayIndex(to)
+    end
+end
+
+-- sort(array), sort(array, comparator), sort(array, from, to) and sort(array, from, to, comparator)
+function J.sort_array(array, a, b, comparator)
+    if type(a) ~= "number" then
+        J.sort(array, a)
+        return
+    end
+    checkRange(array.size, a, b)
+    local slice = __K2L_List.new()
+    for i = a + 1, b do
+        slice[i - a] = array[i]
+    end
+    slice.size = b - a
+    local sorted = comparator and slice:sortedWith(comparator) or slice:sorted()
+    for i = 1, b - a do
+        array[a + i] = sorted[i]
+    end
+end
+
+-- fill(array, value) and fill(array, from, to, value)
+function J.fill_array(array, a, b, value)
+    if b == nil then
+        array:fill(a)
+        return
+    end
+    checkRange(array.size, a, b)
+    array:fill(value, a, b)
+end
+
+-- copyOf(array, newLength) and copyOfRange(array, from, to); `pad` is the zero value of the element type
+function J.copyOf(array, newLength, pad)
+    return array:copyOfSize(newLength, pad)
+end
+
+function J.copyOfRange(array, from, to, pad)
+    if from > to then
+        illegalArgument(from .. " > " .. to)
+    elseif from < 0 or from > array.size then
+        arrayIndex(from)
+    end
+    local out = {}
+    for i = from + 1, to do
+        if i <= array.size then
+            out[i - from] = array[i]
+        else
+            out[i - from] = pad
+        end
+    end
+    out.size = to - from
+    return setmetatable(out, getmetatable(array))
+end
+
+function J.arrayToString(array)
+    if array == nil then
+        return "null"
+    end
+    return array:contentToString()
+end
+
+function J.deepToString(array)
+    if array == nil then
+        return "null"
+    end
+    return array:contentDeepToString()
+end
+
+function J.arrayEquals(a, b)
+    if a == nil or b == nil then
+        return a == b
+    end
+    return (a.contentEquals or a.equals)(a, b)
+end
+
+function J.arrayHashCode(array)
+    if array == nil then
+        return 0
+    end
+    return (array.contentHashCode or array.hashCode)(array)
+end
+
+-- binarySearch(a, key), (a, key, comparator), (a, from, to, key) and (a, from, to, key, comparator)
+function J.binarySearch_array(array, a, b, c, d)
+    if c == nil then
+        return array:binarySearch(a, b)
+    end
+    checkRange(array.size, a, b)
+    return array:binarySearch(c, d or __K2L_Compare, a, b)
+end
+
+function J.setAll(array, generator)
+    for i = 1, array.size do
+        array[i] = generator(i - 1)
+    end
+end
+
+end

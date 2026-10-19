@@ -3,6 +3,7 @@ package dev.k2l.transform
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 
@@ -80,10 +81,22 @@ internal fun FileTransformer.isPrimitiveOperand(t: KaType?): Boolean = with(sess
 context(s: KaSession)
 private val KaType?.isNullLiteral get() = this != null && with(s) { isNothingType }
 
+/**
+ * `x as T` checks the erased class of `T` unless the static type already guarantees it; `as?` yields null on a mismatch.
+ * Type parameters and library types without a runtime test stay unchecked.
+ */
 internal fun FileTransformer.cast(e: KtBinaryExpressionWithTypeRHS): LuaExpr = with(session) {
     val type = e.right?.type?.let { reifiedType(it) } ?: return LuaNil
     val value = expression(e.left)
-    if (e.operationReference.getReferencedNameElementType() != KtTokens.AS_SAFE) return value // unchecked, as in TSTL
+    if (e.operationReference.getReferencedNameElementType() != KtTokens.AS_SAFE) {
+        if (!castNeedsCheck(e, type)) return value
+        val v = cache(value, "cast")
+        val test = typeTest(v, type, e)
+        val guarded = if (type.isMarkedNullable) shortCircuit(LuaBinOp.Or, LuaBinary(LuaBinOp.Eq, v, LuaNil)) { test } else test
+        val fail = lualibCall("CastFail", v, LuaString(jvmClassName(type)), LuaString(kotlinClassName(type)))
+        emit(LuaIf(negate(guarded), listOf(LuaCallStmt(fail))))
+        return v
+    }
     val v = cache(value, "cast")
     if (type.isBooleanType) {
         val name = ctx.temp("cast")
@@ -92,4 +105,45 @@ internal fun FileTransformer.cast(e: KtBinaryExpressionWithTypeRHS): LuaExpr = w
         return LuaName(name)
     }
     return LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.And, typeTest(v, type, e), v), LuaNil)
+}
+
+/** Whether `as` on [e] emits a runtime check; used conservatively (type parameters count as checked) to order evaluation. */
+internal fun FileTransformer.mayCheckCast(e: KtBinaryExpressionWithTypeRHS): Boolean = with(session) {
+    if (e.operationReference.getReferencedNameElementType() == KtTokens.AS_SAFE) return false
+    val type = e.right?.type ?: return false
+    return type is KaTypeParameterType || castNeedsCheck(e, type)
+}
+
+private fun FileTransformer.castNeedsCheck(e: KtBinaryExpressionWithTypeRHS, type: KaType): Boolean = with(session) {
+    if (!isTestable(type)) return false
+    val left = e.left
+    val source = left.expressionType
+    val smart = left.smartCastInfo?.smartCastType
+    return listOfNotNull(source, smart).none { it.isSubtypeOf(type) }
+}
+
+private val JVM_NAMES = mapOf(
+    "kotlin/String" to "java.lang.String", "kotlin/Int" to "java.lang.Integer", "kotlin/Long" to "java.lang.Long",
+    "kotlin/Double" to "java.lang.Double", "kotlin/Float" to "java.lang.Float", "kotlin/Boolean" to "java.lang.Boolean",
+    "kotlin/Char" to "java.lang.Character", "kotlin/Short" to "java.lang.Short", "kotlin/Byte" to "java.lang.Byte",
+    "kotlin/Any" to "java.lang.Object", "kotlin/collections/List" to "java.util.List",
+    "kotlin/collections/MutableList" to "java.util.List", "kotlin/collections/Set" to "java.util.Set",
+    "kotlin/collections/MutableSet" to "java.util.Set", "kotlin/collections/Map" to "java.util.Map",
+    "kotlin/collections/MutableMap" to "java.util.Map", "kotlin/Throwable" to "java.lang.Throwable",
+)
+
+private fun FileTransformer.jvmClassName(type: KaType): String = with(session) {
+    val symbol = type.expandedSymbol
+    val psi = symbol?.psi as? KtClassOrObject
+    val id = symbol?.classId?.asString()
+    return when {
+        psi != null && classes.isSource(psi) -> binaryName(psi)
+        id in JVM_NAMES -> JVM_NAMES.getValue(id!!)
+        id != null -> id.replace('/', '.').let { if (it.startsWith("kotlin.")) "java.lang." + it.removePrefix("kotlin.") else it }
+        else -> type.pretty()
+    }
+}
+
+private fun FileTransformer.kotlinClassName(type: KaType): String = with(session) {
+    type.expandedSymbol?.classId?.asString()?.replace('/', '.') ?: type.pretty()
 }

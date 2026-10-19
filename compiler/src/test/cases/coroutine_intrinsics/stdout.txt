@@ -1,0 +1,13 @@
+immediate 42
+resumedBeforeSuspend 41
+parked 1
+park 7
+nestedSync 11
+parked 1
+nested 100
+parked 1
+caught boom
+end
+created
+unintercepted body
+done true

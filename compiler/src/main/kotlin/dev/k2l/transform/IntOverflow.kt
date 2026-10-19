@@ -50,6 +50,8 @@ private fun FileTransformer.unwrapInt32(e: LuaExpr): LuaExpr = ctx.int32Pending[
 
 /** `l op r` for `+`, `-` and `*`, wrapped to 32 bits when both operands are `Int`-like and wrapping is on. */
 internal fun FileTransformer.arithmetic(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr {
+    val typed = if (floatResult(lt, rt)) fround(LuaBinary(op, l, r)) else unsignedArithmetic(op, l, lt, r, rt)
+    if (typed != null) return typed
     if (!isInt32Arithmetic(lt, rt)) return LuaBinary(op, l, r)
     if (op == LuaBinOp.Mul && !target.hasIntegers) {
         val small = listOf(l, r).any { (it as? LuaNumber)?.text?.toLongOrNull()?.let { n -> n in -SMALL_FACTOR..SMALL_FACTOR } == true }
@@ -64,7 +66,18 @@ internal fun FileTransformer.negation(value: LuaExpr, type: KaType?): LuaExpr {
 }
 
 /** `x + 1` / `x - 1` of `++` and `--`: wrapped to 32 bits for `Int`, to 16 or 8 bits for `Short` and `Byte`. */
-internal fun FileTransformer.stepped(op: LuaBinOp, read: LuaExpr, type: KaType?): LuaExpr {
+internal fun FileTransformer.stepped(op: LuaBinOp, read: LuaExpr, type: KaType?): LuaExpr =
+    bigNumberStep(op, read, type) ?: floatOrUnsignedStep(op, read, type) ?: integralStep(op, read, type)
+
+/** `++`/`--` of a `Float` (rounded to single precision) or an unsigned type (wrapped); null for other types. */
+private fun FileTransformer.floatOrUnsignedStep(op: LuaBinOp, read: LuaExpr, type: KaType?): LuaExpr? =
+    if (with(session) { type != null && type.withoutFlexibility.isFloatType }) {
+        fround(LuaBinary(op, read, LuaNumber("1")))
+    } else {
+        unsignedStep(op, read, type)
+    }
+
+private fun FileTransformer.integralStep(op: LuaBinOp, read: LuaExpr, type: KaType?): LuaExpr {
     val one = LuaNumber("1")
     if (!wrapsInt) return LuaBinary(op, read, one)
     return with(session) {
@@ -81,9 +94,37 @@ internal fun FileTransformer.stepped(op: LuaBinOp, read: LuaExpr, type: KaType?)
     }
 }
 
+/** `l / r` of integers. With wrapping, `Int.MIN_VALUE / -1` is `Int.MIN_VALUE`, so only a positive literal divisor skips the wrap. */
+internal fun FileTransformer.integerDivision(l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr {
+    unsignedLongDivision(remainder = false, l, lt, r, rt)?.let { return it }
+    val quotient = lualibCall("IDiv", l, r)
+    val safe = (r as? LuaNumber)?.text?.toLongOrNull()?.let { it > 0 } == true
+    return if (isInt32Arithmetic(lt, rt) && !safe) wrapInt32(quotient) else quotient
+}
+
+/** Library calls that can leave the `Int` range: `abs(Int.MIN_VALUE)`, and `sum()` / `sumOf` of `Int`s (wrapped once at the end). */
+internal object IntOverflowMappings {
+    private val ABS = setOf("kotlin/math/abs", "kotlin/math/absoluteValue", "java/lang/Math.abs")
+
+    fun post(callableId: String?, site: CallSite, result: LuaExpr?): LuaExpr? {
+        val transformer = site.transformer
+        if (result == null || callableId == null || !transformer.wrapsInt) return result
+        val sums =
+            site.name in setOf("sum", "sumOf") &&
+                (callableId.startsWith("kotlin/collections/") || callableId.startsWith("kotlin/sequences/"))
+        if (!sums && callableId !in ABS) return result
+        val returnsInt = with(site.session) { site.element.expressionType?.let { !it.isMarkedNullable && it.isIntType } == true }
+        return if (returnsInt) transformer.wrapInt32(result) else result
+    }
+}
+
 /** `a % b`: `math.fmod`, or `__K2L_IRem` (which throws on zero) for integers whose divisor is not a nonzero literal. */
 internal fun FileTransformer.remainder(l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr {
+    unsignedLongDivision(remainder = true, l, lt, r, rt)?.let { return it }
     val integral = with(session) { lt != null && rt != null && lt.isIntegral && rt.isIntegral }
     val literal = (r as? LuaNumber)?.text?.toDoubleOrNull()?.let { it != 0.0 } == true
-    return if (integral && !literal) lualibCall("IRem", l, r) else luaCall(luaPath("math", "fmod"), l, r)
+    if (integral && !literal) return lualibCall("IRem", l, r)
+    val fmod = luaCall(luaPath("math", "fmod"), l, r)
+    // fmod(-4, 2) is -0 when numbers are floats, and an Int must print as 0
+    return if (integral && !target.hasIntegers) LuaBinary(LuaBinOp.Add, fmod, LuaNumber("0")) else fmod
 }

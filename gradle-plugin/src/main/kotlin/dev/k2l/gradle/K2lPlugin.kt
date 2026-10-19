@@ -27,6 +27,7 @@ class K2lPlugin : Plugin<Project> {
         extension.luaTarget.convention("5.4")
         extension.luaLibImport.convention("require")
         extension.intOverflow.convention("unchecked")
+        extension.strings.convention("bytes")
         extension.sourceMap.convention(false)
 
         val compiler = project.configurations.create(COMPILER_CONFIGURATION) { cfg ->
@@ -46,6 +47,7 @@ class K2lPlugin : Plugin<Project> {
             task.luaTarget.set(extension.luaTarget)
             task.luaLibImport.set(extension.luaLibImport)
             task.intOverflow.set(extension.intOverflow)
+            task.strings.set(extension.strings)
             task.sourceMap.set(extension.sourceMap)
             task.outputDir.set(extension.outputDir)
             // The Analysis API needs JDK 21+; fall back to a toolchain when Gradle itself runs on something older.

@@ -792,14 +792,23 @@ end
 function __K2L_MatchResult:____init(regex, input, first, after, st, groupCount)
     self.____regex, self.____input, self.____after = regex, input, after
     self.____empty = after == first
+    self.____first = first
     self.value = input:sub(first, after - 1)
-    self.range = __K2L_IntRange.new(first - 1, after - 2)
-    local values, groups = {self.value}, {__K2L_MatchGroup.new(self.value, first - 1, after - 2)}
+    -- Indices are bytes, or UTF-16 units under --strings utf16 (see Utf16.lua)
+    local units = __K2L_Regex.____units
+    local function range(from, to)
+        if units then
+            return units.toUnit(input, from - 1), units.toUnit(input, to) - 1
+        end
+        return from - 1, to - 1
+    end
+    self.range = __K2L_IntRange.new(range(first, after - 1))
+    local values, groups = {self.value}, {__K2L_MatchGroup.new(self.value, range(first, after - 1))}
     for g = 1, groupCount do
         local s, e = st.starts[g], st.ends[g]
         if s ~= nil then
             values[g + 1] = input:sub(s, e - 1)
-            groups[g + 1] = __K2L_MatchGroup.new(values[g + 1], s - 1, e - 2)
+            groups[g + 1] = __K2L_MatchGroup.new(values[g + 1], range(s, e - 1))
         else
             values[g + 1] = ""
             groups[g + 1] = nil
@@ -821,6 +830,14 @@ function __K2L_MatchResult:next()
     local start = self.____after
     if self.____empty then
         start = start + 1
+        if __K2L_Regex.____units then
+            -- an empty match continues after the whole UTF-8 character
+            local b = self.____input:byte(start)
+            while b ~= nil and b >= 0x80 and b < 0xC0 do
+                start = start + 1
+                b = self.____input:byte(start)
+            end
+        end
     end
     return self.____regex:____find(self.____input, start)
 end
@@ -882,10 +899,14 @@ end
 
 function __K2L_Regex:____find(s, from)
     local st = newState(self, s)
+    local utf8Aware = __K2L_Regex.____units ~= nil
     for i = from, #s + 1 do
-        local after = self.____program(st, i, anyEnd)
-        if after then
-            return __K2L_MatchResult.new(self, s, i, after, st, self.____groups)
+        local b = utf8Aware and s:byte(i) or 0
+        if b < 0x80 or b >= 0xC0 then
+            local after = self.____program(st, i, anyEnd)
+            if after then
+                return __K2L_MatchResult.new(self, s, i, after, st, self.____groups)
+            end
         end
     end
     return nil
@@ -893,10 +914,12 @@ end
 
 function __K2L_Regex:find(input, startIndex)
     startIndex = startIndex or 0
-    if startIndex < 0 or startIndex > #input then
-        error(__K2L_IndexOutOfBoundsException.new("Start index out of bounds: " .. startIndex .. ", input length: " .. #input))
+    local units = __K2L_Regex.____units
+    local length = units and units.len(input) or #input
+    if startIndex < 0 or startIndex > length then
+        error(__K2L_IndexOutOfBoundsException.new("Start index out of bounds: " .. startIndex .. ", input length: " .. length))
     end
-    return self:____find(input, startIndex + 1)
+    return self:____find(input, (units and units.toByte(input, startIndex) or startIndex) + 1)
 end
 
 -- All matches as a list; after an empty match the search resumes one character later.
@@ -906,7 +929,7 @@ function __K2L_Regex:findAll(input, startIndex)
     while match ~= nil do
         out:add(match)
         match = match:next()
-        if match ~= nil and match.range.first > #input then
+        if match ~= nil and match.____first - 1 > #input then
             break
         end
     end
@@ -985,7 +1008,7 @@ local function replaceMatches(self, input, replacement, onlyFirst)
     local out, last = {}, 1
     local match = self:____find(input, 1)
     while match ~= nil do
-        out[#out + 1] = input:sub(last, match.range.first)
+        out[#out + 1] = input:sub(last, match.____first - 1)
         if type(replacement) == "function" then
             out[#out + 1] = __K2L_Str(replacement(match))
         else
@@ -996,7 +1019,7 @@ local function replaceMatches(self, input, replacement, onlyFirst)
             break
         end
         match = match:next()
-        if match ~= nil and match.range.first >= #input + 1 and match.____empty and last > #input then
+        if match ~= nil and match.____first - 1 >= #input + 1 and match.____empty and last > #input then
             break
         end
     end
@@ -1025,7 +1048,7 @@ function __K2L_Regex:split(input, limit)
     local out = __K2L_List.new()
     local last = 1
     repeat
-        out:add(input:sub(last, match.range.first))
+        out:add(input:sub(last, match.____first - 1))
         last = match.____after
         if limit > 0 and out.size == limit - 1 then
             break

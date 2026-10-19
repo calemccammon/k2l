@@ -7,7 +7,10 @@ import org.jetbrains.kotlin.types.Variance
 
 context(s: KaSession)
 val KaType.isIntegral: Boolean get() = with(s) {
-    withoutFlexibility.let { it.isIntType || it.isLongType || it.isShortType || it.isByteType }
+    withoutFlexibility.let {
+        it.isIntType || it.isLongType || it.isShortType || it.isByteType || it.isUIntType || it.isULongType || it.isUShortType ||
+            it.isUByteType
+    }
 }
 
 context(s: KaSession)

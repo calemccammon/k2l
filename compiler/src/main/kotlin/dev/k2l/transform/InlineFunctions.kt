@@ -78,6 +78,8 @@ private class InlineSite(
     val full: KtExpression,
     val lambdas: Map<KtParameter, InlinedLambda>,
     val provided: Map<KtParameter, KtExpression>,
+    /** The arguments of a trailing `vararg` parameter, a spread among them. */
+    val varargs: List<KtExpression>,
 )
 
 /**
@@ -98,11 +100,23 @@ internal fun FileTransformer.userInlineCall(call: KaCallableMemberCall<*, *>, fu
         provided[p]?.let(::lambdaArgument)?.let { p to it }
     }.toMap()
     if (!fn.isReifiedInline() && lambdas.values.none { it.fromParameter || hasNonLocalReturn(it) }) return null
-    if (fn.valueParameters.any { it.isVarArg }) return unsupported(full, "Inlining a function with a vararg parameter")
-    return inlineUserFunction(InlineSite(fn, call, full, lambdas, provided))
+    return inlineUserFunction(InlineSite(fn, call, full, lambdas, provided, varargArguments(fn, call)))
 }
 
-private fun FileTransformer.isInlinedParameter(p: KtParameter) = with(session) {
+/** The arguments of the function's `vararg` parameter in source order; only the last may be a spread (`*array`). */
+private fun FileTransformer.varargArguments(fn: KtNamedFunction, call: KaFunctionCall<*>): List<KtExpression> = with(session) {
+    val vararg = fn.valueParameters.firstOrNull { it.isVarArg } ?: return emptyList()
+    val args = call.valueArgumentMapping.entries.filter { it.value.symbol.psi == vararg }.map { it.key }
+        .sortedBy { it.textRange.startOffset }
+    for (arg in args) {
+        if ((arg.parent as? KtValueArgument)?.getSpreadElement() == null) continue
+        if (arg != args.last()) unsupported(arg, "A spread argument that is not last")
+        spreads += arg
+    }
+    return args
+}
+
+internal fun FileTransformer.isInlinedParameter(p: KtParameter) = with(session) {
     !p.hasModifier(KtTokens.NOINLINE_KEYWORD) && !p.hasModifier(KtTokens.CROSSINLINE_KEYWORD) &&
         p.returnType.let { it is KaFunctionType && !it.isMarkedNullable }
 }
@@ -157,7 +171,7 @@ private fun FileTransformer.inlineUserFunction(site: InlineSite): LuaExpr = with
     val fn = site.fn
     val pas = site.call.partiallyAppliedSymbol
     val receivers = listOfNotNull(pas.dispatchReceiver, pas.extensionReceiver).map { receiverOperand(it, site.full) ?: return LuaNil }
-    val valueArgs = fn.valueParameters.map { p -> site.provided[p]?.takeIf { p !in site.lambdas } }
+    val valueArgs = fn.valueParameters.filter { !it.isVarArg }.map { p -> site.provided[p]?.takeIf { p !in site.lambdas } } + site.varargs
     val values = arguments(receivers, valueArgs).let { it + List(receivers.size + valueArgs.size - it.size) { LuaNil } }
 
     val scope = Scope()
@@ -194,16 +208,27 @@ private fun FileTransformer.bindReceivers(site: InlineSite, values: List<LuaExpr
 }
 
 /** A parameter stands for its argument (substituted when it is stable, else copied to a local); lambdas are inlined where invoked. */
-private fun FileTransformer.bindParameters(site: InlineSite, values: List<LuaExpr>, scope: Scope): Unit = with(session) {
+private fun FileTransformer.bindParameters(site: InlineSite, values: List<LuaExpr>, scope: Scope) {
+    val varargAt = site.fn.valueParameters.indexOfFirst { it.isVarArg }
     for ((i, p) in site.fn.valueParameters.withIndex()) {
         val lambda = site.lambdas[p]
-        if (lambda != null) {
-            scope.put(inlinedLambdas, p, lambda)
-            continue
+        when {
+            p.isVarArg -> {
+                // The arguments, spreads included, become the Array the body sees (they follow the other parameters' values).
+                val array = LuaCall(lualibRef("Collections", "__K2L_ArrayOf"), values.drop(site.fn.valueParameters.size - 1))
+                scope.put(lambdaBindings, site.fn to p.name!!, bindToLocal(p, array))
+            }
+
+            lambda != null -> scope.put(inlinedLambdas, p, lambda)
+
+            else -> bindArgument(site, p, if (varargAt in 0 until i) i - 1 else i, values, scope)
         }
-        val value = if (site.provided[p] != null) values[i] else p.defaultValue?.let { expression(it) }
-        if (value != null) scope.put(lambdaBindings, site.fn to p.name!!, bindToLocal(p, value))
     }
+}
+
+private fun FileTransformer.bindArgument(site: InlineSite, p: KtParameter, slot: Int, values: List<LuaExpr>, scope: Scope) {
+    val value = if (site.provided[p] != null) values[slot] else with(session) { p.defaultValue?.let { expression(it) } }
+    if (value != null) scope.put(lambdaBindings, site.fn to p.name!!, bindToLocal(p, value))
 }
 
 private fun FileTransformer.bindToLocal(p: KtParameter, value: LuaExpr): LuaExpr {
@@ -266,7 +291,6 @@ private fun FileTransformer.avoidCaptures(site: InlineSite, values: List<LuaExpr
         val name = raw?.takeIf { it != "_" }?.let { LuaNames.of(it) } ?: continue
         if (name in used) scope.put(naming.renames, d, ctx.temp(name))
     }
-    checkCallerLocals(site)
 }
 
 private fun collectNames(e: LuaExpr, out: MutableSet<String>) {
@@ -295,37 +319,4 @@ private fun collectNames(e: LuaExpr, out: MutableSet<String>) {
     }
 }
 
-private fun FileTransformer.checkCallerLocals(site: InlineSite): Unit = with(session) {
-    val fn = site.fn
-    if (fn.containingFile != file) return // reached through the module table, which locals cannot hide
-    val globals = HashSet<String>()
-    fn.bodyExpression?.accept(object : KtTreeVisitorVoid() {
-        override fun visitReferenceExpression(expression: KtReferenceExpression) {
-            super.visitReferenceExpression(expression)
-            val target = (expression as? KtNameReferenceExpression)?.mainReference?.resolve() as? KtNamedDeclaration ?: return
-            if (target.isTopLevel() && target.containingFile == file) globals += target.name ?: return
-        }
-    })
-    if (globals.isEmpty()) return
-    val enclosing = PsiTreeUtil.getTopmostParentOfType(site.full, KtDeclaration::class.java) ?: return
-    val locals = PsiTreeUtil.collectElements(enclosing) { it is KtProperty || it is KtParameter || it is KtDestructuringDeclarationEntry }
-    val hiding = locals.filterIsInstance<KtNamedDeclaration>().firstOrNull { d ->
-        val name: String? = d.name
-        name in globals && !d.isTopLevel() && d.textRange.startOffset < site.full.textRange.startOffset &&
-            PsiTreeUtil.getParentOfType(
-                d,
-                KtBlockExpression::class.java,
-                KtFunction::class.java,
-                KtForExpression::class.java,
-                KtCatchClause::class.java,
-            )?.let { PsiTreeUtil.isAncestor(it, site.full, true) } == true
-    }
-    if (hiding != null) {
-        ctx.error(
-            site.full,
-            "Inlining '${fn.name}' here would hide '${hiding.name}', which the function uses, behind a local of the same name",
-        )
-    }
-}
-
-private fun KtNamedDeclaration.isTopLevel() = parent is KtFile
+internal fun KtNamedDeclaration.isTopLevel() = parent is KtFile

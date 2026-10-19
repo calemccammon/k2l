@@ -1,0 +1,42 @@
+start
+1
+#ff0000 2
+before Config
+Config initialized
+holding a reference
+true
+1
+Config(config)
+2
+before Loud
+computing Loud
+LOUD!
+LOUD
+before Second
+Second initialized
+config-second
+before Derived
+Base(7)
+derived
+7
+before Service
+Nested initialized
+3
+Service companion initialized
+true
+[one]
+5
+0
+before Level
+Level.LOW created
+Level.HIGH created
+2
+[LOW, HIGH]
+LOW
+1
+before Mode
+Mode.A upper
+Mode.B upper
+mode b
+A
+end

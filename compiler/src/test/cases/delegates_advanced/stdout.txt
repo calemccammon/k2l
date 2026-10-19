@@ -1,0 +1,43 @@
+providing top.top for nothing
+providing member.tracked for an object
+created
+set member:tracked = 5
+get member:tracked
+5
+bare=x
+settable=ABC
+10
+11
+hi-greeting
+get top:top
+0
+topBare=z
+topBare=Q
+providing local.local for nothing
+set local:local = 3
+get local:local
+3
+localBare=l
+base title
+get base-level
+base/0
+set base-level = 2
+get base-level
+2
+derived title
+get derived-level
+derived/0
+set derived-level = 7
+get derived-level
+7
+base title
+base
+derived
+get derived-level
+7
+42
+plain now
+42
+plain now
+from lazy
+lazy name

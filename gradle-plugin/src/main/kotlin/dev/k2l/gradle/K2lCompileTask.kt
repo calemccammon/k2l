@@ -49,6 +49,9 @@ abstract class K2lCompileTask @Inject constructor(private val exec: ExecOperatio
     abstract val intOverflow: Property<String>
 
     @get:Input
+    abstract val strings: Property<String>
+
+    @get:Input
     abstract val sourceMap: Property<Boolean>
 
     @get:OutputDirectory
@@ -80,6 +83,8 @@ abstract class K2lCompileTask @Inject constructor(private val exec: ExecOperatio
                 luaLibImport.get(),
                 "--int-overflow",
                 intOverflow.get(),
+                "--strings",
+                strings.get(),
             )
         if (sourceMap.get()) args += "--source-map"
         val extra = classpath.files.filter { it.exists() }

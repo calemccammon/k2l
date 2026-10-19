@@ -17,15 +17,25 @@ internal object TextMappings {
         "iterator", "groupingBy", "toSortedSet",
     )
 
+    private val IGNORE_CASE_MEMBERS = setOf(
+        "contains", "startsWith", "endsWith", "indexOf", "lastIndexOf", "indexOfAny", "replace", "replaceFirst", "split", "equals",
+        "compareTo", "regionMatches", "removeSurrounding", "commonPrefixWith", "commonSuffixWith",
+    )
+
     fun map(callableId: String?, site: CallSite): LuaExpr? {
         val receiverType = site.receiverType
         val name = site.name ?: return null
         if (receiverType == null) return topLevel(callableId, site)
-        if (site.isChar(receiverType)) return chars(name, site)
+        if (site.isChar(receiverType)) return charMember(name, site)
         val isString = with(site.session) { receiverType.isStringType || receiverType.isCharSequenceType }
         if (!isString || callableId?.startsWith("kotlin/") != true) return null
+        if (ignoreCaseCall(name, site)) site.requireUtf16Case()
         return stringMember(name, StringCall(site))
     }
+
+    /** Calls whose `ignoreCase` argument needs the Unicode case folding of `--strings utf16`. */
+    private fun ignoreCaseCall(name: String, site: CallSite) =
+        name in IGNORE_CASE_MEMBERS && site.argTypes.any { it != null && with(site.session) { it.isBooleanType } }
 
     private fun stringMember(name: String, c: StringCall): LuaExpr? =
         regexMember(name, c) ?: indexing(name, c) ?: search(name, c) ?: trimming(name, c) ?: nullAndBlank(name, c)
@@ -33,7 +43,7 @@ internal object TextMappings {
 
     /** Calls without a String receiver: `String.format(...)`, `String(chars)`, `String.CASE_INSENSITIVE_ORDER`. */
     private fun topLevel(callableId: String?, site: CallSite): LuaExpr? = when (callableId) {
-        "kotlin/text/format" -> LuaCall(site.ref("Strings", "__K2L_StringFormat"), site.args)
+        "kotlin/text/format" -> LuaCall(site.ref("Strings", "__K2L_StringFormat"), site.withoutLocale(site.args, 0))
         "kotlin/text/String" -> site.text("string", site.arg(0))
         "kotlin/text/CASE_INSENSITIVE_ORDER" -> LuaIndex(site.ref("Strings", "__K2L_Text"), LuaString("caseInsensitiveOrder"))
         else -> null
@@ -44,8 +54,27 @@ internal object TextMappings {
     private fun CallSite.text(member: String, vararg args: LuaExpr) =
         libMember("Strings", "__K2L_Text", member, *args.toList().dropTrailingNil().toTypedArray())
 
-    private fun CallSite.helper(fn: String, vararg args: LuaExpr): LuaExpr =
-        LuaCall(ref("Strings", "__K2L_String$fn"), args.toList().dropTrailingNil())
+    /** The arguments of `format`, without a leading `Locale` (all locales format like `Locale.ROOT`). */
+    private fun CallSite.withoutLocale(all: List<LuaExpr>, index: Int): List<LuaExpr> =
+        if (isLocale(argTypes.getOrNull(index))) all.filterIndexed { i, _ -> i != index } else all
+
+    /** With `--strings utf16`, these helpers are members of `__K2L_Text` that count UTF-16 units. */
+    private val UTF16_HELPERS = mapOf(
+        "CharAt" to "get",
+        "PadStart" to "padStart",
+        "PadEnd" to "padEnd",
+        "ToList" to "toList",
+        "Trim" to "trim",
+        "TrimStart" to "trimStart",
+        "TrimEnd" to "trimEnd",
+        "IsBlank" to "isBlank",
+    )
+
+    private fun CallSite.helper(fn: String, vararg args: LuaExpr): LuaExpr = when {
+        utf16 && fn in UTF16_HELPERS -> text(UTF16_HELPERS.getValue(fn), *args)
+        utf16 && fn == "EqualsIgnoreCase" -> u16Case("equalsIgnoreCase", *args)
+        else -> LuaCall(ref("Strings", "__K2L_String$fn"), args.toList().dropTrailingNil())
+    }
 
     private class StringCall(val site: CallSite) {
         val self = site.self
@@ -63,7 +92,10 @@ internal object TextMappings {
 
         fun literalIgnoreCase(i: Int): Boolean = site.args.getOrNull(i) == LuaBool(true)
 
-        fun lower(e: LuaExpr): LuaExpr = LuaMethodCall(e, "lower", emptyList())
+        fun lower(e: LuaExpr): LuaExpr = if (site.utf16) site.u16Case("fold", e) else LuaMethodCall(e, "lower", emptyList())
+
+        /** The length of the receiver in chars: bytes, or UTF-16 units. */
+        fun length(): LuaExpr = if (site.utf16) site.u16("len", self) else LuaUnary(LuaUnOp.Len, self)
 
         fun argType(i: Int): KaType? = site.argTypes.getOrNull(i)
 
@@ -71,7 +103,8 @@ internal object TextMappings {
 
         fun isString(i: Int) = site.isString(site.argTypes.getOrNull(i))
 
-        fun helperOf(e: LuaExpr): LuaExpr = LuaCall(site.ref("Strings", "__K2L_StringToList"), listOf(e))
+        fun helperOf(e: LuaExpr): LuaExpr =
+            if (site.utf16) site.text("toList", e) else LuaCall(site.ref("Strings", "__K2L_StringToList"), listOf(e))
 
         fun isRegex(i: Int) = site.argTypes.getOrNull(i)?.let { with(site.session) { it.collectionKind() } } == CollectionKind.Regex
 
@@ -104,13 +137,13 @@ internal object TextMappings {
 
         "substring", "subSequence" -> if (c.isRange(0)) c.text("substringOf", c.args[0]) else c.text("substring", *c.args.toTypedArray())
 
-        "reversed" -> LuaMethodCall(c.self, "reverse", emptyList())
+        "reversed" -> if (c.site.utf16) c.text("reversed") else LuaMethodCall(c.self, "reverse", emptyList())
 
-        "lastIndex" -> LuaBinary(LuaBinOp.Sub, LuaUnary(LuaUnOp.Len, c.self), LuaNumber("1"))
+        "lastIndex" -> LuaBinary(LuaBinOp.Sub, c.length(), LuaNumber("1"))
 
         "indices" -> LuaCall(
             LuaIndex(c.site.ref("Collections", "__K2L_IntRange"), LuaString("new")),
-            listOf(LuaNumber("0"), LuaBinary(LuaBinOp.Sub, LuaUnary(LuaUnOp.Len, c.self), LuaNumber("1"))),
+            listOf(LuaNumber("0"), LuaBinary(LuaBinOp.Sub, c.length(), LuaNumber("1"))),
         )
 
         "getOrNull", "elementAtOrNull" -> c.text("getOrNull", c.args[0])
@@ -125,6 +158,7 @@ internal object TextMappings {
     /** `s:sub(i + 1, i + 1)` */
     private fun charAt(c: StringCall): LuaExpr {
         val i = c.args[0]
+        if (c.site.utf16) return c.site.u16("at", c.self, i)
         val n = (i as? LuaNumber)?.text?.toLongOrNull()
         val at = if (n != null) LuaNumber("${n + 1}") else LuaBinary(LuaBinOp.Add, i, LuaNumber("1"))
         return LuaMethodCall(c.self, "sub", listOf(at, at))
@@ -173,7 +207,7 @@ internal object TextMappings {
 
             "commonSuffixWith" -> c.text("commonSuffixWith", a[0])
 
-            "format" -> LuaCall(c.site.ref("Strings", "__K2L_StringFormat"), listOf(c.self) + a)
+            "format" -> LuaCall(c.site.ref("Strings", "__K2L_StringFormat"), listOf(c.self) + c.site.withoutLocale(a, 0))
 
             else -> null
         }
@@ -193,6 +227,7 @@ internal object TextMappings {
     /** `startsWith(prefix, startIndex)` */
     private fun startsWithAt(c: StringCall): LuaExpr {
         val start = c.args[1]
+        if (c.site.utf16) return c.text("startsWithAt", c.args[0], start)
         val from = LuaBinary(LuaBinOp.Add, start, LuaNumber("1"))
         val to = LuaBinary(LuaBinOp.Add, start, LuaUnary(LuaUnOp.Len, c.args[0]))
         return LuaBinary(LuaBinOp.Eq, LuaMethodCall(c.self, "sub", listOf(from, to)), c.args[0])
@@ -302,7 +337,7 @@ internal object TextMappings {
 
     /** Everything else is the `Iterable` operation over the string's characters. */
     private fun onChars(name: String, c: StringCall): LuaExpr? {
-        if (name == "count" && c.args.isEmpty()) return LuaUnary(LuaUnOp.Len, c.self)
+        if (name == "count" && c.args.isEmpty()) return c.length()
         if ((name == "first" || name == "last") && c.args.isEmpty()) return c.text(name)
         if (name == "single" && c.args.isEmpty()) return c.text("single")
         if (name !in ON_CHAR_LIST) return null
@@ -311,7 +346,42 @@ internal object TextMappings {
         return LuaMethodCall(c.listOfChars(), name, c.args)
     }
 
-    private fun chars(name: String, site: CallSite): LuaExpr? {
+    /** Members of `Char`; Unicode-aware with `--strings utf16`, ASCII only otherwise. */
+    internal fun charMember(name: String, site: CallSite): LuaExpr? = if (site.utf16) unicodeChar(name, site) else asciiChar(name, site)
+
+    private fun unicodeChar(name: String, site: CallSite): LuaExpr? {
+        val c = site.self
+        return when (name) {
+            "code" -> site.u16("code", c)
+
+            "isDigit", "isLetter", "isLetterOrDigit", "isWhitespace", "isUpperCase", "isLowerCase", "isTitleCase",
+            "uppercaseChar", "lowercaseChar", "titlecaseChar", "uppercase", "lowercase", "titlecase",
+            -> site.u16Case(name, c)
+
+            "isSurrogate", "isHighSurrogate", "isLowSurrogate" -> site.u16(name, c)
+
+            "digitToInt", "digitToIntOrNull" -> {
+                site.requireUtf16Case()
+                site.libMember("Numbers", "__K2L_Num", name, c, *site.args.toTypedArray())
+            }
+
+            "equals" -> charEquals(site)
+
+            "toString" -> c
+
+            else -> null
+        }
+    }
+
+    /** `c.equals(other, ignoreCase)` */
+    private fun charEquals(site: CallSite): LuaExpr? {
+        val (other, ignoreCase) = site.args.takeIf { it.size == 2 } ?: return null
+        val same = LuaBinary(LuaBinOp.Eq, site.self, other)
+        if (ignoreCase == LuaBool(false)) return same
+        return LuaBinary(LuaBinOp.Or, same, LuaBinary(LuaBinOp.And, ignoreCase, site.u16Case("equalsIgnoreCase", site.self, other)))
+    }
+
+    private fun asciiChar(name: String, site: CallSite): LuaExpr? {
         val c = site.self
         fun matches(pattern: String) = LuaBinary(LuaBinOp.Ne, LuaMethodCall(c, "match", listOf(LuaString(pattern))), LuaNil)
         return when (name) {

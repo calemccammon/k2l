@@ -49,15 +49,32 @@ internal fun FileTransformer.classDeclaration(c: KtClassOrObject, isLocal: Boole
     val ref = classRef(c)
     emitClassTable(c, ref, info, isLocal)
     classBody(c, ref, info)
-    if (c is KtClass && c.isEnum()) enumEntries(c, ref)
-    c.companionObjects.forEach { companion(it, ref) }
-    // Objects are initialized where they are declared (Kotlin initializes them lazily, on first access).
-    if (c is KtObjectDeclaration && classes.initNeeded(c)) emit(LuaCallStmt(LuaMethodCall(ref, INIT, emptyList())))
+    // Kotlin initializes objects, companions and enums on first access. Those whose initialization nobody could notice
+    // are initialized where they are declared; the others wait for the first access, see LazyInit.
+    val lazy = mutableListOf<String>()
+    if (c is KtClass && c.isEnum()) {
+        if (lazyInit.isObservable(c)) {
+            emitMethod(ref, INIT_ENUM, emptyList(), collect { enumEntries(c, ref) })
+            lazy += INIT_ENUM
+        } else {
+            enumEntries(c, ref)
+        }
+    }
+    c.companionObjects.forEach { if (companion(it, ref)) lazy += INIT_COMPANION }
+    if (c is KtObjectDeclaration && classes.initNeeded(c)) {
+        if (lazyInit.isObservable(c)) lazy += INIT else emit(LuaCallStmt(LuaMethodCall(ref, INIT, emptyList())))
+    }
+    if (lazy.isNotEmpty()) emit(LuaCallStmt(lualibCall("LazyObject", ref, *lazy.map { LuaString(it) }.toTypedArray())))
 }
 
 private fun FileTransformer.emitClassTable(c: KtClassOrObject, ref: LuaExpr, info: SuperInfo, isLocal: Boolean) {
     val classArgs = mutableListOf<LuaExpr>(LuaString(c.name ?: "?"))
     val baseRef = info.base?.let(::classRef) ?: info.libraryBase?.let { lualibRef(EXCEPTIONS_FEATURE, it) }
+        ?: when {
+            info.sequenceBase -> lualibRef(SEQUENCE_FEATURE, "__K2L_Sequence")
+            info.elementBase -> lualibRef(COROUTINES_FEATURE, "__K2L_AbstractCoroutineContextElement")
+            else -> null
+        }
     if (baseRef != null || info.interfaces.isNotEmpty()) classArgs += baseRef ?: LuaNil
     info.interfaces.mapTo(classArgs) { classRef(it) }
     val create = lualibCall("Class", *classArgs.toTypedArray())
@@ -66,22 +83,30 @@ private fun FileTransformer.emitClassTable(c: KtClassOrObject, ref: LuaExpr, inf
 }
 
 /** Annotations, enum entries and companions are emitted with their class. */
-private fun FileTransformer.isSkipped(c: KtClassOrObject): Boolean {
-    val outer = c.containingClassOrObject
-    if (isInner(c) && (outer == null || outer.isLocal())) {
-        unsupported(c, "Inner class of a local class")
-        return true
-    }
-    return c is KtEnumEntry || (c is KtClass && c.isAnnotation()) || (c is KtObjectDeclaration && c.isCompanion())
-}
+private fun isSkipped(c: KtClassOrObject): Boolean =
+    c is KtEnumEntry || (c is KtClass && c.isAnnotation()) || (c is KtObjectDeclaration && c.isCompanion())
 
 private fun FileTransformer.classBody(c: KtClassOrObject, ref: LuaExpr, info: SuperInfo) = withClass(c) {
     checkMembers(c)
     constructors(c, ref, info)
     members(c, ref)
+    libraryPropertyOverrides(c, ref)
     if (c is KtClass && c.isData()) dataClassMembers(c, ref)
     if (c is KtClass && c.isEnum() && c.declaredFunction("toString") == null) {
         emitMethod(ref, "toString", emptyList(), listOf(LuaReturn(listOf(LuaIndex(selfRef(), LuaString("name"))))))
+    }
+}
+
+/** `override val message: String get() = ...`: lualib code reading `self.message` has to reach the getter. */
+private fun FileTransformer.libraryPropertyOverrides(c: KtClassOrObject, ref: LuaExpr) {
+    val properties = c.declarations.filterIsInstance<KtProperty>() +
+        (c as? KtClass)?.primaryConstructorParameters?.filter { it.hasValOrVar() }.orEmpty()
+    for (p in properties.filter { props.overridesLibraryWithAccessor(it) }) {
+        emit(
+            LuaCallStmt(
+                LuaCall(lualibRef("Class", "__K2L_PropertyOverride"), listOf(ref, LuaString(p.name!!), LuaString(accessorName("get", p)))),
+            ),
+        )
     }
 }
 
@@ -93,7 +118,6 @@ internal fun FileTransformer.emitMethod(ref: LuaExpr, name: String, params: List
 internal fun FileTransformer.checkMembers(c: KtClassOrObject) {
     val fields = (c as? KtClass)?.primaryConstructorParameters?.filter { it.hasValOrVar() }?.mapNotNull { it.name }.orEmpty().toMutableSet()
     c.declarations.filterIsInstance<KtProperty>().mapNotNullTo(fields) { it.name }
-    checkMemberExtensionProperties(c)
     for (decl in c.declarations.filterIsInstance<KtNamedFunction>()) {
         val name = naming.function(decl)
         when {
@@ -148,7 +172,7 @@ internal fun FileTransformer.constructors(c: KtClassOrObject, ref: LuaExpr, info
             storeOuter(c)
             defaultArguments(params)
             if (isEnum) enumParams.forEach { emit(assign(LuaIndex(selfRef(), LuaString(it)), LuaName(it))) }
-            superInit(info.baseCall, info.base, info.libraryBase)
+            superInit(info.baseCall, info.base, info.libraryBase, info.elementBase)
             for (p in params) {
                 if (p.hasValOrVar()) emit(assign(LuaIndex(selfRef(), LuaString(props.fieldName(p))), LuaName(naming.of(p))))
             }
@@ -171,7 +195,7 @@ private fun FileTransformer.secondaryConstructor(c: KtClass, ctor: KtSecondaryCo
                 delegatingInit(delegation, c, enumParams)
             } else {
                 if (c.isEnum()) enumParams.forEach { emit(assign(LuaIndex(selfRef(), LuaString(it)), LuaName(it))) }
-                superInit(delegation?.takeIf { it.valueArgumentList != null }, info.base, info.libraryBase)
+                superInit(delegation?.takeIf { it.valueArgumentList != null }, info.base, info.libraryBase, info.elementBase)
                 if (!hasPrimary(c)) initializers(c)
             }
             ctor.bodyExpression?.let { block(it) }
@@ -206,7 +230,19 @@ internal fun FileTransformer.initializers(c: KtClassOrObject): Unit = with(sessi
 }
 
 /** Calls the base class constructor that [call] (a super-type entry or `super(...)`) resolves to. */
-private fun FileTransformer.superInit(call: KtCallElement?, base: KtClassOrObject?, libraryBase: String? = null): Unit = with(session) {
+private fun FileTransformer.superInit(
+    call: KtCallElement?,
+    base: KtClassOrObject?,
+    libraryBase: String? = null,
+    elementBase: Boolean = false,
+): Unit = with(session) {
+    if (elementBase) {
+        val resolved = call?.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>() ?: return
+        val args = arguments(emptyList(), callArguments(resolved))
+        val init = LuaIndex(lualibRef(COROUTINES_FEATURE, "__K2L_AbstractCoroutineContextElement"), LuaString(INIT))
+        emit(LuaCallStmt(LuaCall(init, listOf(selfRef()) + args)))
+        return
+    }
     if (libraryBase != null) {
         val resolved = call?.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>()
         val args = resolved?.let { throwableArguments(callArguments(it)) }.orEmpty()
@@ -242,7 +278,9 @@ internal fun FileTransformer.isMemberProperty(psi: PsiElement?): Boolean = (psi 
 
 internal fun FileTransformer.hasAccessors(p: KtNamedDeclaration) = props.usesAccessors(p) || (p is KtProperty && p.delegate != null)
 
-internal fun FileTransformer.accessorName(prefix: String, p: KtNamedDeclaration) = prefix + p.name!!.replaceFirstChar { it.uppercaseChar() }
+internal fun FileTransformer.accessorName(prefix: String, p: KtNamedDeclaration) =
+    (p as? KtProperty)?.takeIf { it.isMemberExtension() }?.let { naming.memberAccessor(it, prefix) }
+        ?: (prefix + p.name!!.replaceFirstChar { it.uppercaseChar() })
 
 internal fun FileTransformer.propertyRead(receiver: LuaExpr, p: KtNamedDeclaration): LuaExpr = if (hasAccessors(p)) {
     LuaMethodCall(receiver, accessorName("get", p), emptyList())
@@ -270,10 +308,10 @@ private fun FileTransformer.fieldName(symbol: KaKotlinPropertySymbol): String {
 }
 
 /** Companion members live on the class table; their initializers run in `____initCompanion`. */
-internal fun FileTransformer.companion(companion: KtObjectDeclaration, ref: LuaExpr): Unit = with(session) {
-    if (companion.superTypeListEntries.isNotEmpty()) {
+internal fun FileTransformer.companion(companion: KtObjectDeclaration, ref: LuaExpr): Boolean = with(session) {
+    if (companion.superTypeListEntries.any { it.typeReference?.type?.expandedSymbol?.classId?.asString() !in MARKER_INTERFACES }) {
         unsupported(companion, "Companion object with supertypes")
-        return
+        return false
     }
     withClass(companion) {
         checkMembers(companion)
@@ -287,7 +325,9 @@ internal fun FileTransformer.companion(companion: KtObjectDeclaration, ref: LuaE
         val init = collect { initializers(companion) }
         if (init.isNotEmpty()) {
             emitMethod(ref, INIT_COMPANION, emptyList(), init)
+            if (lazyInit.isObservable(companion)) return@withClass true
             emit(LuaCallStmt(LuaMethodCall(ref, INIT_COMPANION, emptyList())))
         }
+        false
     }
 }

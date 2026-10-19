@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.analysis.api.types.KaFlexibleType
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
+import org.jetbrains.kotlin.psi.KtClassOrObject
 
 /** Runtime representation of a Kotlin library type, see `Collections.lua`. */
 enum class CollectionKind {
@@ -57,7 +58,10 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "kotlin/text/MatchGroupCollection",
     )
     val arrayTypes =
-        listOf("Array", "IntArray", "LongArray", "DoubleArray", "FloatArray", "BooleanArray", "CharArray", "ShortArray", "ByteArray")
+        listOf(
+            "Array", "IntArray", "LongArray", "DoubleArray", "FloatArray", "BooleanArray", "CharArray", "ShortArray", "ByteArray",
+            "UIntArray", "ULongArray", "UByteArray", "UShortArray",
+        )
     for (t in arrayTypes) {
         put("kotlin/$t", CollectionKind.Array)
     }
@@ -142,7 +146,16 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
 val KaType.withoutFlexibility: KaType get() = (this as? KaFlexibleType)?.lowerBound ?: this
 
 context(s: KaSession)
-fun KaType.collectionKind(): CollectionKind? = with(s) { withoutFlexibility.expandedSymbol?.classId?.asString()?.let(KIND_BY_CLASS::get) }
+fun KaType.collectionKind(): CollectionKind? = with(s) {
+    val direct = withoutFlexibility.expandedSymbol?.classId?.asString()?.let(KIND_BY_CLASS::get)
+    if (direct != null) return direct
+    // A class of the program implementing Sequence has all the Sequence operations.
+    val symbol = withoutFlexibility.expandedSymbol
+    if (symbol?.psi !is KtClassOrObject) return null
+    return CollectionKind.Sequence.takeIf { withoutFlexibility.allSupertypes.any { it.expandedSymbol?.classId?.asString() == SEQUENCE_ID } }
+}
+
+private const val SEQUENCE_ID = "kotlin/sequences/Sequence"
 
 context(s: KaSession)
 val KaType.elementType: KaType? get() = (withoutFlexibility as? KaClassType)?.typeArguments?.firstOrNull()?.type
@@ -219,6 +232,9 @@ object CollectionMappings {
         "filterTo", "ifEmpty",
     )
 
+    private val ITERATOR_METHODS =
+        setOf("hasNext", "next", "remove", "hasPrevious", "previous", "nextIndex", "previousIndex", "set", "add")
+
     /** `Random` is passed explicitly to the lualib methods; calls without one use `Random.Default`. */
     private val RANDOM_METHODS = setOf("shuffled", "shuffle", "random", "randomOrNull")
 
@@ -228,7 +244,8 @@ object CollectionMappings {
         val kind = site.receiverType?.let { with(site.session) { it.collectionKind() } } ?: return TextMappings.map(callableId, site)
         val name = site.name ?: return null
         return when (kind) {
-            CollectionKind.List, CollectionKind.Array, CollectionKind.Set, CollectionKind.Iterable -> iterable(kind, name, site)
+            CollectionKind.List, CollectionKind.Array, CollectionKind.Set, CollectionKind.Iterable ->
+                iterable(kind, name, site)?.let { if (site.utf16 && name == "joinToString") site.transformer.u16Norm(it) else it }
 
             CollectionKind.Map -> mapMember(name, site)
 
@@ -262,7 +279,7 @@ object CollectionMappings {
     }
 
     private fun iteratorMember(name: String, site: CallSite): LuaExpr? =
-        if (name in setOf("hasNext", "next", "remove")) LuaMethodCall(site.self, name, site.args) else null
+        if (name in ITERATOR_METHODS) LuaMethodCall(site.self, name, site.args) else null
 
     private fun rangeMember(name: String, site: CallSite): LuaExpr? = when (name) {
         "first", "last", "step" ->
@@ -366,15 +383,40 @@ object CollectionMappings {
 
             "setCharAt" -> LuaMethodCall(self, "set", args)
 
+            "appendCodePoint" ->
+                if (site.utf16) {
+                    LuaMethodCall(
+                        self,
+                        "appendCodePoint",
+                        args,
+                    )
+                } else {
+                    site.unsupported("'appendCodePoint' without --strings utf16")
+                }
+
             else -> null
         }
     }
 
-    private fun substringOf(site: CallSite, text: Int, from: Int, to: Int): LuaExpr = LuaMethodCall(
-        site.str(site.arg(text), site.argTypes.getOrNull(text)),
-        "sub",
-        listOf(LuaBinary(LuaBinOp.Add, site.arg(from), LuaNumber("1")), site.arg(to)),
-    )
+    private fun substringOf(site: CallSite, text: Int, from: Int, to: Int): LuaExpr = if (site.utf16) {
+        site.libMember(
+            "Strings",
+            "__K2L_Text",
+            "substring",
+            site.str(site.arg(text), site.argTypes.getOrNull(text)),
+            site.arg(from),
+            site.arg(to),
+        )
+    } else {
+        LuaMethodCall(
+            site.str(site.arg(text), site.argTypes.getOrNull(text)),
+            "sub",
+            listOf(LuaBinary(LuaBinOp.Add, site.arg(from), LuaNumber("1")), site.arg(to)),
+        )
+    }
+
+    private fun concatToString(site: CallSite, self: LuaExpr): LuaExpr =
+        LuaMethodCall(self, "joinToString", listOf(LuaString(""))).let { if (site.utf16) site.transformer.u16Norm(it) else it }
 
     private fun isCollection(site: CallSite, type: KaType?) = type != null && with(site.session) { type.collectionKind() } in setOf(
         CollectionKind.List,
@@ -386,6 +428,7 @@ object CollectionMappings {
     )
 
     private fun zeroFor(site: CallSite, type: KaType?): List<LuaExpr> = with(site.session) {
+        BigNumberMappings.zero(site, type)?.let { return listOf(it) }
         if (type != null && (type.isDoubleType || type.isFloatType)) listOf(LuaNumber("0.0")) else emptyList()
     }
 
@@ -395,9 +438,15 @@ object CollectionMappings {
         val classId = (type as? KaClassType)?.classId?.asString()
         when (classId) {
             "kotlin/DoubleArray", "kotlin/FloatArray" -> LuaNumber("0.0")
-            "kotlin/IntArray", "kotlin/LongArray", "kotlin/ShortArray", "kotlin/ByteArray" -> LuaNumber("0")
+
+            "kotlin/IntArray", "kotlin/LongArray", "kotlin/ShortArray", "kotlin/ByteArray", "kotlin/UIntArray", "kotlin/ULongArray",
+            "kotlin/UByteArray", "kotlin/UShortArray",
+            -> LuaNumber("0")
+
             "kotlin/BooleanArray" -> LuaBool(false)
+
             "kotlin/CharArray" -> LuaString("\u0000")
+
             else -> LuaNil
         }
     }
@@ -439,7 +488,8 @@ object CollectionMappings {
 
             "addAll" -> if (site.args.size == 2) LuaMethodCall(self, "addAllAt", site.args) else LuaMethodCall(self, "addAll", site.args)
 
-            "sum" -> LuaMethodCall(self, "sum", zeroFor(site, with(site.session) { site.receiverType?.elementType }))
+            "sum" -> FloatMappings.sum(site)
+                ?: LuaMethodCall(self, "sum", zeroFor(site, with(site.session) { site.receiverType?.elementType }))
 
             "sumOf" -> LuaMethodCall(self, "sumOf", site.args + zeroFor(site, (site.argTypes.getOrNull(0) as? KaFunctionType)?.returnType))
 
@@ -459,7 +509,7 @@ object CollectionMappings {
                 LuaMethodCall(self, "copyOfSize", listOf(site.arg(0), padFor(site)))
             }
 
-            "concatToString" -> LuaMethodCall(self, "joinToString", listOf(LuaString("")))
+            "concatToString" -> concatToString(site, self)
 
             "toString" -> null
 

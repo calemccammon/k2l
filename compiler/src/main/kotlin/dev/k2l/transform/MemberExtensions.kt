@@ -54,21 +54,6 @@ internal fun FileTransformer.memberExtensionPropertyDeclaration(p: KtProperty, r
     }
 }
 
-/** The accessor methods of member extension properties share Lua's one namespace with functions and other accessors. */
-internal fun FileTransformer.checkMemberExtensionProperties(c: KtClassOrObject) {
-    val properties = c.declarations.filterIsInstance<KtProperty>().filter { it.name != null }
-    val extensions = properties.filter { it.receiverTypeReference != null }
-    if (extensions.isEmpty()) return
-    fun methods(p: KtProperty) = listOfNotNull(accessorName("get", p), if (p.isVar) accessorName("set", p) else null)
-    val others = properties.filter { it.receiverTypeReference == null && hasAccessors(it) }.flatMap(::methods) +
-        c.declarations.filterIsInstance<KtNamedFunction>().map { naming.function(it) }
-    val seen = HashSet<String>()
-    for (p in extensions) {
-        val clash = methods(p).firstOrNull { it in others || !seen.add(it) } ?: continue
-        ctx.error(p, "Extension property '${p.name}' would share its Lua method '$clash' with another member")
-    }
-}
-
 /** `this.x += 1` on a member extension property is `self:setX(r, self:getX(r) + 1)`, evaluating both receivers once. */
 internal fun FileTransformer.memberExtensionPropertyTarget(
     p: KtProperty,

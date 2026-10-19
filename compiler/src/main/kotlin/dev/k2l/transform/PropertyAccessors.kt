@@ -8,26 +8,28 @@ import org.jetbrains.kotlin.psi.*
  * field. Abstract and interface members without a body get no method.
  */
 internal fun FileTransformer.accessorMethods(p: KtNamedDeclaration, ref: LuaExpr): Unit = with(session) {
-    if (p is KtProperty && p.receiverTypeReference != null) {
-        memberExtensionPropertyDeclaration(p, ref)
-        return
-    }
-    if (p is KtProperty && p.delegate != null) {
-        delegatedAccessors(p, ref)
-        return
-    }
-    props.problem(p)?.let {
-        ctx.error(p, it)
-        return
-    }
+    if (specialAccessors(p, ref)) return
     val property = p as? KtProperty
     val bodiless = property != null && !props.hasOwnField(p)
     val field = LuaIndex(selfRef(), LuaString(props.fieldName(p)))
+    // A constructor can read an overridden property before the subclass initialized its field
+    val fieldRead = props.uninitializedValue(p)?.let { zero -> LuaBinary(LuaBinOp.Or, field, zero) } ?: field
     val getter = property?.getter?.takeIf { it.hasBody() }
     if (getter != null || !bodiless) {
-        emitMethod(ref, accessorName("get", p), emptyList(), getter?.let { accessorBody(it) } ?: listOf(LuaReturn(listOf(field))))
+        emitMethod(ref, accessorName("get", p), emptyList(), getter?.let { accessorBody(it) } ?: listOf(LuaReturn(listOf(fieldRead))))
     }
     if (property?.isVar ?: (p as KtParameter).isMutable) setterMethod(p, ref, field, bodiless)
+}
+
+/** Member extension and delegated properties have accessors of their own kind. */
+private fun FileTransformer.specialAccessors(p: KtNamedDeclaration, ref: LuaExpr): Boolean {
+    if (p !is KtProperty) return false
+    when {
+        p.receiverTypeReference != null -> memberExtensionPropertyDeclaration(p, ref)
+        p.delegate != null -> delegatedAccessors(p, ref)
+        else -> return false
+    }
+    return true
 }
 
 private fun FileTransformer.setterMethod(p: KtNamedDeclaration, ref: LuaExpr, field: LuaExpr, bodiless: Boolean) {

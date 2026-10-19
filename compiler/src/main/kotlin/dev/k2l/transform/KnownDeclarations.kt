@@ -43,6 +43,11 @@ internal val MARKER_INTERFACES = setOf(
     // implemented by objects with resumeWith()/hasNext()/next(), as the lualib calls them
     "kotlin/coroutines/Continuation",
     "kotlin/collections/Iterator",
+    // coroutine contexts are handled by the lualib's functions, which read the `key` field
+    "kotlin/coroutines/CoroutineContext",
+    "kotlin/coroutines/CoroutineContext.Element",
+    "kotlin/coroutines/CoroutineContext.Key",
+    "kotlin/coroutines/ContinuationInterceptor",
 )
 
 /** Types compared by value, whose `equals` can never be overridden. */
@@ -63,6 +68,9 @@ internal const val INIT = "____init"
 
 /** Name of the generated companion-object initializer method. */
 internal const val INIT_COMPANION = "____initCompanion"
+
+/** Creates the entries of an enum class whose initialization is lazy. */
+internal const val INIT_ENUM = "____initEnum"
 
 /** lualib feature that implements the exception classes. */
 internal const val EXCEPTIONS_FEATURE = "Exceptions"

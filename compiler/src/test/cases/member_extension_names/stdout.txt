@@ -1,0 +1,5 @@
+7
+8 38 32
+parent:s int:1
+child:s int:1
+double:2.5 child:t

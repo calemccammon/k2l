@@ -47,6 +47,7 @@ k2l [options] [SOURCE_DIR...]
   -t, --target VERSION    Lua version: 5.1, 5.2, 5.3, 5.4 (default) or JIT
       --lualib MODE       require (default: one shared lualib_bundle.lua) or inline
       --int-overflow MODE unchecked (default) or wrap: make Int arithmetic wrap to 32 bits like the JVM
+      --strings MODE      bytes (default) or utf16: make String and Char behave like the JVM's UTF-16 strings
       --classpath PATHS   extra jars or class directories, e.g. Lua bindings
       --source-map        write main.lua.map files and make Lua errors and tracebacks show Kotlin positions
       --watch             rebuild whenever a source file or the project file changes (Ctrl-C to stop)
@@ -63,6 +64,7 @@ options override it:
   "luaLibImport": "require",
   "classpath": [],
   "intOverflow": "unchecked",
+  "strings": "bytes",
   "sourceMap": false
 }
 ```
@@ -73,6 +75,8 @@ options override it:
 | `outDir` | output directory | `-o`, `--out` |
 | `luaTarget` | `5.1`, `5.2`, `5.3`, `5.4` or `JIT` | `-t`, `--target` |
 | `luaLibImport` | `require` or `inline` | `--lualib` |
+| `intOverflow` | `unchecked` or `wrap` | `--int-overflow` |
+| `strings` | `bytes` or `utf16` (see [Strings](#strings)) | `--strings` |
 | `classpath` | extra jars or class directories | `--classpath` |
 | `sourceMap` | source maps and Kotlin positions in errors | `--source-map` |
 
@@ -142,6 +146,7 @@ k2l {
     luaTarget.set("5.4")              // 5.1, 5.2, 5.3, 5.4 or JIT
     luaLibImport.set("require")       // or "inline"
     intOverflow.set("unchecked")      // or "wrap"
+    strings.set("bytes")              // or "utf16"
     sourceMap.set(false)
     classpath.from(files("libs/bindings.jar"))   // extra Lua bindings
 }
@@ -172,29 +177,31 @@ it is 21 or newer, otherwise a toolchain).
 | string templates | `..` concatenation; values formatted like Kotlin's `toString()` |
 | `class`, `interface`, `object`, `enum class`, `data class` | metatable-based classes: `Point.new(1, 2)`, `p:distance(q)` |
 | primary/secondary constructors, `init` | `Class:____init(...)`, chained to the superclass |
-| properties | table fields; custom accessors become `getX()`/`setX()` methods (for open, overriding and interface properties, in every member of the override family) |
+| properties | table fields; custom accessors become `getX()`/`setX()` methods (for open, overriding and interface properties, in every member of the override family; `override val message` on an exception is also what lualib code reading `e.message` sees) |
 | top-level properties with custom accessors | functions `getNow()` / `setTotal(v)`, exported like any function; a backing field is a hidden local `____total_field`; reads, writes, `+=` and `++` call them |
 | companion objects | members on the class table: `Point:of(1, 2)` |
 | `inner class` | a nested class whose instances keep `self.____outer`; `outer.Inner(x)` is `Outer.Inner.new(outer, x)` and `this@Outer` is `self.____outer` |
 | enum entries with bodies, `values()`, `entries`, `valueOf` | each body is an anonymous subclass of the enum: `Op.PLUS = ____PLUS.new("PLUS", 0, "+")`; `__K2L_EnumValues(Op)` |
 | `==` | `==` for primitives/enums/objects, `equals()` when a class may override it |
 | `is`, `as?` | `__K2L_InstanceOf(x, Class)`, `type(x) == "string"`, ... |
+| `x as T`, `x as T?` | a check unless the static type already guarantees it (upcasts, smart casts, type parameters): `__K2L_CastFail` throws `ClassCastException` (`class A cannot be cast to class B (...)`, JVM wording) or `NullPointerException` for null. Only the erased class is checked (`as List<String>` accepts any list) |
+| `object`, companion objects, enums | initialized where they are declared when that is unobservable (constants, literals, collection factories, plain constructors); otherwise on first access, see [Lazy initialization](#lazy-initialization) |
 | `x?.y`, `x ?: y`, `x!!` | `x and x.y`, `x or y` (when safe), `__K2L_NotNull(x)` |
 | lambdas, function references | Lua closures |
 | `let`, `apply`, `also`, `run`, `with`, `forEach`, `buildString`, ... | inlined, so `return` inside them works as in Kotlin |
-| your own `inline fun` | an ordinary function, unless a lambda argument has a `return` out of the caller or a type parameter is `reified`: then the body is expanded at the call site (arguments evaluated once, lambdas inlined where the body invokes them, the body's `return` is a `goto`), so a non-local `return` leaves the caller and `is T` checks the actual type. `noinline`/`crossinline` lambdas stay closures |
+| your own `inline fun` | an ordinary function, unless a lambda argument has a `return` out of the caller or a type parameter is `reified`: then the body is expanded at the call site (arguments evaluated once, lambdas inlined where the body invokes them, the body's `return` is a `goto`), so a non-local `return` leaves the caller and `is T` checks the actual type. `noinline`/`crossinline` lambdas stay closures. A `vararg` parameter is bound to an `Array` built from the arguments (a trailing spread `*xs` included). Locals of the caller that have the name of a top-level declaration the body uses get a fresh Lua name (`____limit`), so the expansion still sees the declaration |
 | extension functions | plain functions taking the receiver first: `shout("hi")` |
 | extension properties | `getLastChar(s)` / `setLastChar(s, v)`: functions taking the receiver first |
-| extension functions and properties declared in a class | methods taking the extension receiver as their first argument: `function Builder:unaryPlus(____this)`, `builder:unaryPlus("x")`; `this` is `____this` and `this@Builder` is `self`. Properties are `builder:getTag(s)` / `builder:setTag(s, v)`; operators such as `+"x"` work, also inside `with(builder) { }` |
+| extension functions and properties declared in a class | methods taking the extension receiver as their first argument: `function Builder:unaryPlus(____this)`, `builder:unaryPlus("x")`; `this` is `____this` and `this@Builder` is `self`. Properties are `builder:getTag(s)` / `builder:setTag(s, v)` (same-named ones, `val String.x` and `val Int.x`, are `getX` and `getX__1`); operators such as `+"x"` work, also inside `with(builder) { }` |
 | `super.toString()`, `super.equals(o)`, `super.hashCode()` | `__K2L_AnyToString(self)` (`Name@hex`, as on the JVM), `self == o` (identity), `__K2L_IdentityHash(self)` (the hash `Map`/`Set` give objects without `hashCode()`); on exceptions `super.toString()` is `Throwable.toString` and `super.message`/`super.cause` are fields |
-| delegated properties (`by`) | the delegate lives in `self.____x_delegate` (a local `____x_delegate` outside classes); reads and writes call its `getValue`/`setValue` |
+| delegated properties (`by`) | `provideDelegate` is called once when the delegate is stored, `getValue`/`setValue` may be extensions, open and overriding ones are accessor families with a delegate slot per class; the delegate lives in `self.____x_delegate` (a local `____x_delegate` outside classes); reads and writes call its `getValue`/`setValue` |
 | `by lazy { }`, `Delegates.observable`/`vetoable`/`notNull`, `by map`, your own `getValue`/`setValue` | lualib objects with the same methods; `by map` reads `map:getValue("x")` |
 | default and named arguments | `if x == nil then x = default end` in the callee; callers pass `nil` for omitted ones |
 | overloads | `describe`, `describe__1`, ... (overrides keep their parent's name) |
 | `vararg`, `*spread` | Lua varargs packed into an array; `table.unpack` |
 | `throw`, `try`/`catch`/`finally` | `error(exception)`, `pcall`; JVM exception classes and messages. A `return`, `break` or `continue` (labeled too) out of the `try` or a `catch` returns a code from the `pcall`ed function (`return true, x` for `return`, `return 1` for the first jump, ...); after the `pcall` and the `finally` code, the matching `return`/`break`/`goto` is re-issued |
 | `x::class`, `Foo::class`, `T::class` (reified), `.simpleName`, `.qualifiedName`, `isInstance`, `javaClass` | `__K2L_KClassOfValue(x)`, `__K2L_KClassOf(Foo)`, `__K2L_KClassNamed("kotlin.String")`: one object per class, so `==` is identity; see [Reflection](#reflection) |
-| `return` inside `map { }`, `filter { }`, `any { }`, `first { }`, `fold`, ... | a lambda with a `return` out of the enclosing function makes the call an inlined loop: `local r = __K2L_ListOf(); for _, it in ipairs(xs) do ... return ... r:add(v) end` (also `mapNotNull`, `filterNot`, `all`, `none`, `firstOrNull`, `find`, `count`, `sumOf`, `onEach`, `takeWhile`, `flatMap`, `associate*`, `groupBy`; `forEach`/`forEachIndexed` always are). Without such a `return` they are ordinary method calls |
+| `return` inside `map { }`, `filter { }`, `any { }`, `first { }`, `fold`, ... | a lambda with a `return` out of the enclosing function makes the call an inlined loop: `local r = __K2L_ListOf(); for _, it in ipairs(xs) do ... return ... r:add(v) end` (also `mapNotNull`, `filterNot`, `all`, `none`, `firstOrNull`, `find`, `count`, `sumOf`, `onEach`, `takeWhile`, `flatMap` (of lists or sequences), `associate*`, `groupBy`, `partition`, `maxBy`/`minBy`(`OrNull`), `maxOf`/`minOf`(`OrNull`), `reduce`/`reduceOrNull`, `distinctBy`, `filterIndexed`, `mapIndexed`, `indexOfFirst`/`indexOfLast`, `last`/`lastOrNull`/`findLast`, `single`/`singleOrNull`, `takeLastWhile`/`dropLastWhile`/`dropWhile`, `zip(other) { }`, and on a `Map` `filter`, `filterNot`, `onEach`, `mapValues`, `mapKeys`, `filterKeys`, `filterValues`, `maxBy`/`minBy`; `forEach`/`forEachIndexed`, `repeat` and `buildList`/`buildString`/`buildMap` always are; `sortedBy`'s selector is `crossinline` in Kotlin, so it cannot contain a `return`). Lists and arrays are walked from the end where the JVM does so (`last { }`, `indexOfLast { }`, `takeLastWhile { }`). Without such a `return` they are ordinary method calls |
 | `List`, `MutableList`, `Array` | a lualib class: elements in the array part, explicit `size` (nil-safe) |
 | `xs[i]`, `xs.size` | `xs:get(i)` (throws `IndexOutOfBoundsException`), `xs.size`; the index of a loop over `xs.indices` is a direct `xs[i + 1]` |
 | `Map`, `Set` | insertion-ordered lualib classes honoring `equals()`/`hashCode()` keys |
@@ -202,6 +209,7 @@ it is 21 or newer, otherwise a toolchain).
 | `Pair`, `Triple`, destructuring | lualib classes; `local a, b = p.first, p.second` |
 | `Sequence`, `asSequence()`, `generateSequence`, `sequenceOf` | a lazy lualib class: `__K2L_AsSequence(xs):map(f):take(3):toList()` |
 | `for (x in sequence)`, `seq.forEach { }` | `for _, x in seq:iter() do` (a generator returning `true, x` per element) |
+| `class Foo : Sequence<T>` | the class extends the lualib sequence and its `iterator()` feeds every `Sequence` operation and `for` |
 | `sequence { yield(x) }`, `iterator { }` | the block runs in a Lua coroutine: `__K2L_SequenceBuilder(function(self) self:yield(x) end)` |
 | `suspend fun`, suspend lambdas | plain Lua functions, run inside a Lua coroutine (see [Coroutines](#coroutines)) |
 | `startCoroutine`, `suspendCoroutine`, `cont.resume(x)` | `__K2L_StartCoroutine(block, completion)`, `__K2L_SuspendCoroutine(function(cont) ... end)`, `cont:resumeWith(__K2L_Result.success(x))` |
@@ -215,7 +223,30 @@ JVM (`Short`/`Byte` arithmetic is `Int` arithmetic, as in Kotlin; `Short`/`Byte`
 wrapped once: `31 * h + x` is `(31 * h + x + 0x80000000 & 0xFFFFFFFF) - 0x80000000` on 5.3/5.4 and
 `__K2L_ToInt32(31 * h + x)` on 5.1/5.2/LuaJIT, where a product of two variables goes through `__K2L_IMul`
 (an exact 32-bit multiply, since the plain product can exceed 2^53). Constant `Int` expressions are folded like
-Kotlin does. Not wrapped: `Int.MIN_VALUE / -1`, `sum()`/`sumOf`, and `Long` (64-bit natively on 5.3/5.4).
+Kotlin does. Also wrapped: `Int.MIN_VALUE / -1`, `abs(Int.MIN_VALUE)`, `sum()`/`sumOf` of `Int`s (once, at the end) and
+`inc()`/`dec()`. Not wrapped: `Long` (64-bit natively on 5.3/5.4; a double elsewhere).
+
+`Float` is a double rounded to IEEE single precision after every arithmetic operation, conversion and `kotlin.math` call
+(`__K2L_Fround`: `string.pack("f")` on 5.3/5.4, a `frexp`/`ldexp` rounding elsewhere), and a statically typed `Float` prints
+like `Float.toString` (`1f / 3` is `0.33333334`, `1.1f.toDouble()` is `1.100000023841858`). `UByte`, `UShort`, `UInt` and
+`ULong` are Lua numbers holding the unsigned value; the first three wrap modulo 2^8/2^16/2^32 on every target whatever
+`--int-overflow` says (`(a + b) & 0xFFFFFFFF`, or `% 2^32` before 5.3), `ULong` is a 64-bit pattern in a Lua integer on 5.3/5.4
+(unsigned division, comparison via `math.ult`, printing) and a double elsewhere.
+
+## Lazy initialization
+
+Kotlin initializes `object`s, companion objects and enum classes on first access. k2l does that only where somebody
+could notice: an `init` block that does more than assign pure values, a property initializer that calls code or reads
+mutable state, a constructor with a body, entry arguments or a superclass doing any of that. Everything else is
+initialized where it is declared, as before. For the observable cases the table is armed with
+`__K2L_LazyObject(Config, "____init")`: its members are put aside and the first read or write of a member (or using the
+object as a value, `__K2L_TouchObject(Config)`) restores them and runs the initializers; afterwards calls are plain
+table lookups. A companion arms its outer class (its first use is a member access or construction); an enum arms
+`____initEnum`, which creates the entries. Nested classes and the `____name`/metamethod keys stay available.
+
+Open or abstract properties that a constructor reads (directly or through the functions it calls) and a subclass
+overrides with its own field behave like the JVM: the base constructor sees `0`, `false`, `null` (a non-null `String` reads
+as `"null"`) until the subclass initializes its field.
 
 ## Calling Lua from Kotlin
 
@@ -310,6 +341,21 @@ end
 that yields an element at each `yield(x)`, so elements are computed on demand and infinite generators
 work. Sequences are lazy, and side effects in `map`/`filter` interleave exactly as on the JVM.
 
+### Contexts, interceptors and intrinsics
+
+A coroutine's context is the completion's `context`. `CoroutineContext`, `Element`, `Key`, `AbstractCoroutineContextElement`,
+`EmptyCoroutineContext`, `coroutineContext[Key]`, `plus` / `+`, `minusKey` and `fold` follow the standard library (the
+interceptor stays last when contexts are added). An element is any object with a `key` field; the context operations are lualib
+functions (`__K2L_ContextGet(ctx, key)`, ...), not methods. A `ContinuationInterceptor` in the context is honoured: the coroutine is
+started through `interceptor:interceptContinuation(cont)`, and so is every resumption of a `suspendCoroutine`
+(`createCoroutine` as well), so a dispatcher written in plain Kotlin decides when the coroutine runs again. `releaseInterceptedContinuation`
+is called when the coroutine ends. `startCoroutine` dispatches its first run like the JVM does.
+
+`kotlin.coroutines.intrinsics` maps onto the same model: `suspendCoroutineUninterceptedOrReturn { cont -> }` returns the block's value,
+or, when it returns `COROUTINE_SUSPENDED`, yields until `cont` is resumed (directly, not through the interceptor);
+`createCoroutineUnintercepted` and `startCoroutineUninterceptedOrReturn` (its value if the block finishes without suspending, else
+`COROUTINE_SUSPENDED`) run the block as a task of its own; `cont.intercepted()` asks the interceptor.
+
 To drive Kotlin coroutines from hand-written Lua, export an ordinary Kotlin function that starts them
 (e.g. `fun launch(task: suspend () -> Unit)` calling `task.startCoroutine(...)`) and one that resumes
 your scheduler; Lua code calls those like any other exported function.
@@ -327,7 +373,14 @@ Yielding through a Lua C function (e.g. a `table.sort` comparator or raw `Lua.pc
 (`class app.Dog`), `name` of a `Class`, and `==`/`!=`, use as map keys, in `when` and in collections. Classes of the
 program match the JVM: package-qualified names (`app.model.Outer.Nested`, binary `app.model.Outer$Nested` for
 `javaClass.name`), `null` as `qualifiedName` of local classes, and enum entries with bodies are classes named after the
-entry. Everything else (`members`, `primaryConstructor`, `objectInstance`, ...) is reported as unsupported.
+entry. The members that need kotlin-reflect (`isData`, `isAbstract`, `isOpen`, `isFinal`, `isSealed`, `isCompanion`, `isInner`,
+`objectInstance`, `sealedSubclasses`, `supertypes`, `members`, ...) throw `KotlinReflectionNotSupportedError` like a JVM program
+without `kotlin-reflect` does (the oracle compiles with `-no-reflect`); other members are reported as unsupported.
+
+Property references are values with `name`, `get`, `set` and `invoke` (also called like a function): `Person::name`,
+`person::age` (bound), `Config::level` (an `object`'s property) and `::counter`.
+`Person::name` is `__K2L_PropertyRef.new("name", function(receiver) return receiver.name end)`, passable to `map(Person::name)`.
+`::fn.name` and `Type::method.name` are the name written in the reference. A reference to a function stays a plain Lua function.
 
 Names are only recorded in the generated classes when the module uses `::class` or `javaClass`. Differences from the JVM,
 because Lua values carry less type information:
@@ -340,6 +393,41 @@ because Lua values carry less type information:
   `HashMap`, `TreeMap`, ... match. A lambda is `kotlin.Function`.
 - `Outer.Companion::class` works, but `outer.companionValue::class` is the class of `Outer` (companions have no table of
   their own).
+
+## Strings
+
+By default Lua strings are byte strings: `length` and indexing count UTF-8 bytes, `Char` is a one-byte string, and
+`isLetter()`, `uppercase()` and so on are ASCII only. With `--strings utf16` (`"strings": "utf16"` in k2l.json,
+`strings.set("utf16")` in Gradle) strings behave like the JVM's UTF-16 strings, while still being UTF-8 Lua strings
+that print and concatenate normally (`"😀".length == 2`, `s[i]` is a UTF-16 code unit):
+
+- A `Char` is the UTF-8 string of one code unit. A surrogate half, which UTF-8 cannot encode, is its 3-byte generalized form
+  (WTF-8), so lone surrogates round-trip; `+`, templates with a `Char`, `StringBuilder`, `String(chars)`, `joinToString` and
+  `filter` join two adjacent halves into the real 4-byte character. `print` writes an
+  unpaired surrogate as `?`, like the JVM.
+- All-ASCII strings (checked once per string and cached) use the byte implementations; other strings are decoded to
+  UTF-16 units once (a small cache) and `length`, `[]`, `substring`, `indexOf`/`lastIndexOf`, `padStart`, `reversed()` (keeps
+  surrogate pairs), `take`/`drop`, `chunked`, `windowed`, `for (c in s)`, `Char.code`, `Char(code)`, `toChar()`, `Char + Int`,
+  char ranges, `toCharArray`, `StringBuilder` (`insert`, `setCharAt`, `deleteCharAt`, `length`, ...), `compareTo` and `<`
+  (UTF-16 order) and `hashCode` (also used for `HashMap` order) work on code units, exactly like the JVM.
+- `isLetter`, `isDigit`, `isLetterOrDigit`, `isWhitespace`, `isUpperCase`, `isLowerCase`, `uppercaseChar()`, `uppercase()`
+  (`ß` becomes `SS`), `titlecase()`, `String.uppercase()/lowercase()`, `equals(ignoreCase)` and the other `ignoreCase`
+  functions, and `digitToInt()` use Unicode tables generated from the JDK (`compiler/tools/GenUnicode.java`, about 23 KB of
+  range lists in `Unicode.lua`, loaded only by programs that use them). Regex `\w \d \s` stay ASCII, as in Java.
+- Code points: `codePointAt/Before/Count`, `offsetByCodePoints`, `codePoints()` and `chars()` (a list with the `IntStream`
+  methods `forEach`, `filter`, `map`, `count`, `sum`, `toArray`, `boxed`, `toList`, `anyMatch`...), `Character.toChars`,
+  `isSupplementaryCodePoint`, `charCount`, `toCodePoint`, `isSurrogate`..., `StringBuilder.appendCodePoint`, and the
+  `Character.isLetter(int)` family. Regex match ranges and start indices are UTF-16 indices.
+- `Locale` arguments (`uppercase(Locale.ROOT)`, `String.format(Locale.US, ...)`, `Locale.getDefault()`) are accepted in both
+  modes; every locale behaves like `Locale.ROOT` (no Turkish dotted i and so on).
+
+Differences from the JVM in `utf16` mode: the final-sigma rule of `lowercase()` approximates Java's word-boundary check
+(letters, digits, marks, `_` and `-` count as word characters); `IGNORE_CASE` in a `Regex` and `ignoreCase` on a search for
+text with Unicode-only case pairs use simple case folding of single characters; empty regex matches do not stop between the
+two halves of a surrogate pair; the `contains`, `replace` and `split` byte searches do not find a lone surrogate half
+inside a pair; `trimIndent`/`trimMargin` measure indents by ASCII whitespace; `toInt()` accepts ASCII digits only;
+two Strings holding the halves of a pair that are joined with `+` (no `Char` involved) stay two 3-byte halves until a
+later `Char` operation normalizes them. Code point APIs without `--strings utf16` are reported as unsupported.
 
 ## Lua targets
 
@@ -355,19 +443,16 @@ because Lua values carry less type information:
 
 ## Not supported yet
 
-Inner classes of local classes and `::Inner` references, reflection beyond the basics below (delegates see
-`KProperty` only as `{ name = "x" }`), `provideDelegate` and extension-operator delegates, extension
-properties of a class that share a name (`val String.x` and `val Int.x` would both be `getX`),
-references to member extension functions, open or overriding delegated properties, and custom accessors on properties that override library properties (e.g.
-`Exception.message`, or `Continuation.context`: declare it as `override val context =
-EmptyCoroutineContext`). Through `super`, only `Any`'s `toString`/`equals`/`hashCode` and `Throwable`'s
-`message`/`cause`/`toString` are available. Inline functions with a `vararg` parameter cannot be
-expanded; a non-local `return` out of a lambda passed to a library function that is not inlined (such as
-`partition`, `maxByOrNull` or `reduce`; only the collection functions listed in the table are inlined, and `filter`,
-`filterNot` and `onEach` not on a `Map`) is an error, as is an expansion whose locals
-would hide a top-level declaration the inline function uses. For coroutines: kotlinx.coroutines,
-coroutine context elements and interceptors, the `kotlin.coroutines.intrinsics` API, and classes
-implementing `Sequence`. Each is reported as an error rather than miscompiled.
+Reflection beyond the basics above (delegates see `KProperty` only as `{ name = "x" }`; `.name` of a function reference
+held in a variable), references to extension properties, and library properties other than `Throwable.message`/`cause`
+and `Continuation.context` that are overridden with a custom accessor (library code that reads the field would not see
+the getter; this includes `CoroutineContext.Element.key`). Kotlin itself forbids references to member extension
+functions. Through `super`, only `Any`'s `toString`/`equals`/`hashCode` and `Throwable`'s `message`/`cause`/`toString`/
+`printStackTrace`/`fillInStackTrace` are available. A non-local `return` out of a lambda passed to a library function
+that is not inlined (such as `mapTo`; only the collection functions listed in the table are inlined, and not those of a
+`Sequence`, which run lazily later) is an error. For coroutines: kotlinx.coroutines, a class that extends both a source
+class and `AbstractCoroutineContextElement` or `Sequence` through different parents, and `Sequence.asIterable()`. Each
+is reported as an error rather than miscompiled.
 
 ### Standard library coverage
 
@@ -389,26 +474,48 @@ and checks them against the JVM (see the `stdlib_*` test cases):
 - `Regex`: an own backtracking engine implementing the common `java.util.regex` syntax (classes, groups,
   named groups, back-references, lazy and possessive quantifiers, lookahead, `IGNORE_CASE`/`MULTILINE`/
   `DOT_MATCHES_ALL`); `find`, `findAll`, `matches`, `replace` (with `$1` and lambdas), `split`, `destructured`.
-  Strings are bytes, so classes such as `\w` are ASCII only.
+  Match indices are bytes (UTF-16 units with `--strings utf16`); classes such as `\w` are ASCII only, as in Java.
 
-Not available: `java.util.Collections`/`Arrays` helpers, `Math.*Exact`, `UInt` and unsigned types,
-`BigInteger`/`BigDecimal`, `Locale`, `String.chars()`/code points, `withDefault`, `listIterator`,
-`rotateLeft`/`takeHighestOneBit`, `withSign`, `Random.nextLong(bound)`.
+- Numbers: `Float` (single precision), `UByte`/`UShort`/`UInt`/`ULong` with literals, arithmetic, comparison, shifts, bit
+  operations, conversions, ranges and `UIntArray`s, `Math.addExact`/`subtractExact`/`multiplyExact`/`negateExact`/
+  `incrementExact`/`decrementExact`/`toIntExact`/`absExact`, `rotateLeft`/`rotateRight`, `takeHighestOneBit`/`takeLowestOneBit`,
+  `Long` bit counts, `withSign`, `ulp`, `nextUp`/`nextDown`/`nextTowards`, `toBits`/`toRawBits`/`fromBits`,
+  `Random.nextLong(bound)`, `nextLong(from, until)`, `nextUInt` and `nextULong` (seeded sequences match the JVM on 5.3+).
+- `java.math`: `BigInteger` (sign and magnitude over base 10^7 limbs, so every product is exact in doubles; Knuth division,
+  `modPow`, `gcd`, `sqrt`, `isProbablePrime`, two's complement `and`/`or`/`xor`/shifts, JVM `hashCode`, `toInt`/`toLong` wrap
+  like the JVM), `BigDecimal` (unscaled value plus scale; all `RoundingMode`s, `MathContext` division and rounding,
+  scale-sensitive `equals`, JVM `toString`/`toPlainString`, `stripTrailingZeros`), and Kotlin's operators and
+  `toBigInteger()`/`toBigDecimal()` conversions. In Lua the Java keyword methods are `band`/`bor`/`bxor`/`bnot`.
+- `java.util.Collections` and `Arrays` helpers (`sort`, `reverse`, `shuffle`, `swap`, `max`/`min`, `frequency`, `nCopies`,
+  `rotate`, `binarySearch`, `fill`, `copyOf`, `toString`, `deepToString`, `asList` ...) and `java.util.Random` (the JVM's
+  48-bit generator: seeded sequences, `shuffle(list, Random(seed))` and `nextGaussian` match the JVM).
+  `Map.withDefault { }` (`getValue` uses the default, `get` does not) and `listIterator()` with `hasPrevious`/`set`/`add`/`remove`.
 
-Known differences: `Float` is a double (`1f / 3` prints 16 digits); `Int` overflow is not wrapped unless
-`--int-overflow wrap` is given; `Char.isLetter()` etc. are ASCII only; `as T` casts are unchecked (no
-`ClassCastException`); `removeFirst()`/`removeLast()` on an empty list say "List is empty." (the JDK's own
+Big numbers and JDK helpers differ from the JVM in: `unmodifiableList/Set/Map` return read-only copies, not live views;
+`BigInteger.toLong()` and `Random.nextLong()` are exact only on Lua 5.3+ (above 2^53); `Float.toBigDecimal()` sees the float
+as a double; `ArrayIndexOutOfBoundsException` is reported as `IndexOutOfBoundsException`.
+
+Not available: locale-specific rules (every `Locale` behaves like `Locale.ROOT`), code points without `--strings utf16`, `BigDecimal.sqrt`, `Arrays.stream`, `String.toUInt()`/`toULong()`,
+rotations of `UByte`/`UShort`.
+
+Known differences: `Int` overflow is not wrapped unless `--int-overflow wrap` is given (`UInt` always wraps);
+a `Float` or `ULong` among untyped values (a collection, `Any`, nullable) loses its static type: a number that is exactly a float
+and has a long double representation prints as a `Float`, so a `Double` equal to `0.1f.toDouble()` in a list prints `0.1`, and a `ULong`
+from 2^63 prints as a negative number; on Lua 5.1, 5.2 and LuaJIT `ULong` and `Long` are exact only up to 2^53 and
+`Double.toBits()` keeps 53 bits (`Float.toBits()` is exact); `Math.*Exact` of `Long` checks ±2^63 on doubles;
+`nextLong(bound)` there is JVM-exact only below 2^52; `Char.isLetter()` etc. are ASCII only unless `--strings utf16` (see [Strings](#strings)); `removeFirst()`/`removeLast()` on an empty list say "List is empty." (the JDK's own
 message is null); `listOf(x)` and `emptyList()` throw `IndexOutOfBoundsException` messages in the
 `ArrayList` wording ("Index 1 out of bounds for length 1"), where the JVM's singleton list says "Index: 1, Size: 1";
-`Int.MIN_VALUE / -1` is not wrapped; the exception class of `list[i]` is `IndexOutOfBoundsException` (the JVM
+the exception class of `list[i]` is `IndexOutOfBoundsException` (the JVM
 throws its subclass `ArrayIndexOutOfBoundsException` for `listOf(...)` and arrays), so `catch` clauses behave the same.
 Indexing, `substring`, `subSequence`, `first()`/`last()` of an empty string, `repeat`, `padStart`, `/`, `%`,
 `rem`, `mod` and `floorDiv` throw the same exception types and messages as the JVM. Doubles keep IEEE behaviour
 (`x / 0.0` is Infinity, `x % 0.0` is NaN).
 
-Other semantic differences to be aware of: strings are byte strings, so `length` and indexing count
-UTF-8 bytes; objects are initialized
-when their file loads rather than on first access; Lua runtime errors are caught as
+Other semantic differences to be aware of: strings are byte strings (unless `--strings utf16`), so `length` and indexing count
+UTF-8 bytes; top-level properties of a file are
+initialized when the file loads (the JVM does it when the file's facade class is first used), so a side effect in the
+initializer of a top-level property of another file of a multi-file program happens at startup; Lua runtime errors are caught as
 `RuntimeException`; `Unit` is `nil`, so it prints as `null` (e.g. in `Success(null)`).
 
 ## Development
@@ -416,6 +523,7 @@ when their file loads rather than on first access; Lua runtime errors are caught
 ```sh
 ./gradlew test                     # transpile + run every test case on every Lua interpreter found
 ./gradlew test -PupdateGolden      # rewrite expected.lua files after an intended output change
+./gradlew test -Ponly=casts,lazy_objects   # only these cases (also for kotlinOracle)
 ./gradlew :compiler:kotlinOracle   # check each stdout.txt against what Kotlin/JVM prints
 ./gradlew check                    # tests + Gradle plugin functional tests + ktlint (spotlessCheck) + detekt, as CI runs it
 ./gradlew :gradle-plugin:functionalTest   # only the TestKit tests of the Gradle plugin (about 15 s)
@@ -432,7 +540,7 @@ Lua 5.1, 5.2, 5.3 and LuaJIT when those interpreters are installed (`lua5.1`, `l
 `kotlinOracle` task compiles and runs each case with the real Kotlin compiler (`-PupdateOracle`
 rewrites the files). A case with `errors.txt` instead checks the diagnostics; `targets-skip.txt`
 lists documented differences on specific targets; `jvm-skip` marks cases that call hand-written Lua; `options.txt` sets compiler options for a case, one
-`name=value` per line (`intOverflow=wrap`, `luaLibImport=inline`).
+`name=value` per line (`intOverflow=wrap`, `luaLibImport=inline`, `strings=utf16`).
 
 Layout:
 

@@ -50,30 +50,43 @@ object StdlibMappings {
         bitwise()
         basicStrings()
         NumberMappings.install(table)
+        BitMappings.install(table)
+        UnsignedMappings.install(table)
         RandomMappings.install(table)
         ThrowableMappings.install(table)
         RegexMappings.install(table)
         ReflectionMappings.install(table)
+        Utf16Mappings.install(table)
     }
 
     private fun io() {
         def("kotlin/io/println") {
-            if (args.isEmpty()) lua("print") else lua("print", printable(arg(0), argTypes[0]))
+            if (args.isEmpty()) lua("print") else lua("print", output(printable(arg(0), argTypes[0])))
         }
-        def("kotlin/io/print") { lua("io.write", str(arg(0), argTypes[0])) }
+        def("kotlin/io/print") { lua("io.write", output(str(arg(0), argTypes[0]))) }
         def("kotlin/io/readLine", "kotlin/io/readlnOrNull", "kotlin/io/readln") { lua("io.read") }
     }
 
     /** Int arithmetic is not wrapped to 32 bits; explicit narrowing is. */
     private fun conversions() {
         for (t in INTEGRAL) {
-            def("kotlin/$t.toDouble", "kotlin/$t.toFloat") { LuaBinary(LuaBinOp.Add, self, LuaNumber("0.0")) }
+            def("kotlin/$t.toDouble") { LuaBinary(LuaBinOp.Add, self, LuaNumber("0.0")) }
+            def("kotlin/$t.toFloat") {
+                if (t == "Int" ||
+                    t == "Long"
+                ) {
+                    transformer.fround(self)
+                } else {
+                    LuaBinary(LuaBinOp.Add, self, LuaNumber("0.0"))
+                }
+            }
             def("kotlin/$t.toLong") { self }
-            def("kotlin/$t.toChar") { lua("string.char", self) }
+            def("kotlin/$t.toChar") { if (utf16) u16("char", self) else lua("string.char", self) }
             def("kotlin/$t.toInt") { if (t == "Long") lualib("ToInt32", self) else self }
         }
         for (t in FLOATING) {
-            def("kotlin/$t.toDouble", "kotlin/$t.toFloat") { self }
+            def("kotlin/$t.toDouble") { self }
+            def("kotlin/$t.toFloat") { if (t == "Double") transformer.fround(self) else self }
             def("kotlin/$t.toInt") { lualib("DoubleToInt", self) }
             def("kotlin/$t.toLong") { lualib("DoubleToLong", self) }
         }
@@ -87,7 +100,9 @@ object StdlibMappings {
         // Lazy values and the KProperty stand-in passed to delegates (a table with a `name`)
         def("kotlin/Lazy.value") { method(self, "getValue") }
         def("kotlin/Lazy.isInitialized") { method(self, "isInitialized") }
-        def("kotlin/reflect/KCallable.name", "kotlin/reflect/KProperty.name") { LuaIndex(self, LuaString("name")) }
+        def("kotlin/reflect/KCallable.name", "kotlin/reflect/KProperty.name") {
+            referencedName(element) ?: LuaIndex(self, LuaString("name"))
+        }
         def("kotlin/Enum.name") { LuaIndex(self, LuaString("name")) }
         def("kotlin/Enum.ordinal") { LuaIndex(self, LuaString("ordinal")) }
     }
@@ -119,10 +134,31 @@ object StdlibMappings {
     }
 
     private fun basicStrings() {
-        def("kotlin/String.length") { LuaUnary(LuaUnOp.Len, self) }
+        def("kotlin/String.length") { if (utf16) u16("len", self) else LuaUnary(LuaUnOp.Len, self) }
         def("kotlin/String.plus") { LuaBinary(LuaBinOp.Concat, self, str(arg(0), argTypes[0], forConcat = true)) }
-        def("kotlin/text/uppercase") { if (args.isEmpty()) method(self, "upper") else null }
-        def("kotlin/text/lowercase") { if (args.isEmpty()) method(self, "lower") else null }
+        // uppercase(Locale) and lowercase(Locale): every locale behaves like Locale.ROOT
+        def("kotlin/text/uppercase") {
+            if (args.isNotEmpty() &&
+                !isLocale(argTypes.firstOrNull())
+            ) {
+                null
+            } else if (utf16) {
+                u16Case("uppercase", self)
+            } else {
+                method(self, "upper")
+            }
+        }
+        def("kotlin/text/lowercase") {
+            if (args.isNotEmpty() &&
+                !isLocale(argTypes.firstOrNull())
+            ) {
+                null
+            } else if (utf16) {
+                u16Case("lowercase", self)
+            } else {
+                method(self, "lower")
+            }
+        }
         def("kotlin/text/repeat") {
             val count = (arg(0) as? LuaNumber)?.text?.toLongOrNull()
             if (count != null &&
@@ -133,7 +169,7 @@ object StdlibMappings {
                 libMember("Strings", "__K2L_Text", "repeatCount", self, arg(0))
             }
         }
-        def("kotlin/CharSequence.length") { LuaUnary(LuaUnOp.Len, self) }
+        def("kotlin/CharSequence.length") { if (utf16) u16("len", self) else LuaUnary(LuaUnOp.Len, self) }
         def("kotlin/text/isEmpty") {
             if (isBuilder(receiverType)) method(self, "isEmpty") else LuaBinary(LuaBinOp.Eq, LuaUnary(LuaUnOp.Len, self), LuaNumber("0"))
         }
@@ -141,6 +177,9 @@ object StdlibMappings {
             if (isBuilder(receiverType)) method(self, "isNotEmpty") else LuaBinary(LuaBinOp.Gt, LuaUnary(LuaUnOp.Len, self), LuaNumber("0"))
         }
     }
+
+    /** The JVM writes an unpaired surrogate as `?`; with `--strings utf16` so does print. */
+    private fun CallSite.output(text: LuaExpr): LuaExpr = if (utf16) u16("out", text) else text
 
     private fun CallSite.isBuilder(type: KaType?) = type != null && with(session) { type.collectionKind() } == CollectionKind.StringBuilder
 
@@ -154,11 +193,19 @@ object StdlibMappings {
 
     private fun CallSite.bitCall(name: String): LuaExpr = LuaCall(ref("Bit", name), listOfNotNull(receiver) + args)
 
-    fun map(callableId: String?, site: CallSite): LuaExpr? {
+    fun map(callableId: String?, site: CallSite): LuaExpr? = UnsignedMappings.post(
+        callableId,
+        site,
+        IntOverflowMappings.post(callableId, site, FloatMappings.post(callableId, site, mapUnrounded(callableId, site))),
+    )
+
+    private fun mapUnrounded(callableId: String?, site: CallSite): LuaExpr? {
         val special = if (site.receiver != null && callableId?.startsWith("kotlin/") == true) universalMethod(site) else null
         return special
             ?: callableId?.let { mappings[it] }?.invoke(site)
             ?: TypeTestMappings.map(callableId, site)
+            ?: BigNumberMappings.map(callableId, site)
+            ?: JdkCollectionsMappings.map(callableId, site)
             ?: SequenceMappings.map(callableId, site)
             ?: CoroutineMappings.map(callableId, site)
             ?: CollectionMappings.map(callableId, site)
@@ -173,7 +220,7 @@ object StdlibMappings {
             LuaCall(LuaIndex(site.ref("Strings", "__K2L_Text"), LuaString("compare")), listOf(site.self, site.arg(0)))
 
         site.name == "compareTo" && site.args.size == 1 ->
-            LuaCall(site.ref("Compare", "__K2L_Compare"), listOf(site.self, site.arg(0)))
+            UnsignedMappings.compareTo(site) ?: LuaCall(site.ref("Compare", "__K2L_Compare"), listOf(site.self, site.arg(0)))
 
         else -> null
     }
@@ -186,5 +233,5 @@ object StdlibMappings {
 
     context(s: KaSession)
     private fun KaType?.printsLikeKotlin() =
-        this != null && with(s) { !isMarkedNullable && (isStringType || isCharType || isIntegral || isBooleanType) }
+        this != null && with(s) { !isMarkedNullable && (isStringType || isCharType || isIntegral || isBooleanType) && !isULongType }
 }

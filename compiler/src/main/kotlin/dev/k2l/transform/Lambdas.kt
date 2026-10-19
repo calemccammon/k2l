@@ -1,5 +1,6 @@
 package dev.k2l.transform
 
+import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
@@ -189,25 +190,55 @@ internal fun FileTransformer.lambdaReturnsUnit(e: KtExpression): Boolean = with(
 
 internal fun FileTransformer.symbol(call: KaCallableMemberCall<*, *>) = call.partiallyAppliedSymbol.symbol
 
+/** `::Point`, `::Inner` or `outer::Inner`: the class's `new` function, bound to the outer instance for inner classes. */
+private fun FileTransformer.constructorReference(e: KtCallableReferenceExpression, symbol: KaConstructorSymbol, psi: PsiElement?): LuaExpr {
+    val cls = symbol.containingClassId?.let(classes::classInFile)
+        ?: ((psi as? KtConstructor<*>)?.getContainingClassOrObject() ?: psi as? KtClassOrObject)?.takeIf { classes.isSource(it) }
+        ?: return unsupported(e, "Reference to a library constructor")
+    val constructor = LuaIndex(classRef(cls), LuaString("new" + constructorSuffix(psi)))
+    return if (isInner(cls) && (e.receiverExpression == null || isBoundReference(e))) {
+        innerConstructorReference(e, cls, constructor)
+    } else {
+        constructor
+    }
+}
+
 internal fun FileTransformer.callableReference(e: KtCallableReferenceExpression): LuaExpr = with(session) {
     val symbol = e.callableReference.mainReference.resolveToSymbol()
     val psi = symbol?.psi
     val receiverExpr = e.receiverExpression
     return when {
-        symbol is KaConstructorSymbol -> {
-            val cls = symbol.containingClassId?.let(classes::classInFile) ?: return unsupported(e, "Reference to a library constructor")
-            if (isInner(cls)) return unsupported(e, "Reference to an inner class constructor")
-            LuaIndex(classRef(cls), LuaString("new" + constructorSuffix(psi)))
-        }
+        symbol is KaConstructorSymbol -> constructorReference(e, symbol, psi)
 
         psi is KtNamedFunction && psi.isMemberExtension() -> unsupported(e, "Reference to a member extension function")
 
         psi is KtNamedFunction && classes.isSource(psi) -> functionReference(e, psi)
 
+        (psi is KtProperty || psi is KtParameter) && classes.isSource(psi) ->
+            propertyReference(e, psi as KtNamedDeclaration) ?: unsupported(e, "This property reference")
+
         symbol is KaCallableSymbol -> libraryReference(e, symbol) ?: unsupported(e, "This callable reference")
 
         else -> unsupported(e, "This callable reference")
     }
+}
+
+/** `::Inner` and `outer::Inner` are bound to the enclosing instance, which the constructor takes first; `Outer::Inner` is not. */
+private fun FileTransformer.innerConstructorReference(
+    e: KtCallableReferenceExpression,
+    cls: KtClassOrObject,
+    constructor: LuaExpr,
+): LuaExpr = with(session) {
+    val receiverExpr = e.receiverExpression
+    val wanted = cls.containingClassOrObject
+    val outer = if (receiverExpr != null) {
+        expression(receiverExpr)
+    } else {
+        enclosingInstances().firstOrNull { (c, _) -> wanted != null && wanted in classes.hierarchy(c) }?.second
+            ?: return unsupported(e, "Reference to an inner class constructor without an enclosing instance")
+    }
+    val target = cache(outer, "outer")
+    LuaFunction(emptyList(), listOf(LuaReturn(listOf(LuaCall(constructor, listOf(target, LuaName("...")))))), isVararg = true)
 }
 
 private fun FileTransformer.functionReference(e: KtCallableReferenceExpression, psi: KtNamedFunction): LuaExpr = with(session) {

@@ -16,6 +16,10 @@ internal class SuperInfo(
     val unsupported: KtSuperTypeListEntry?,
     /** A lualib class extended instead of an in-file one, e.g. `__K2L_Exception`. */
     val libraryBase: String? = null,
+    /** The class implements `kotlin.sequences.Sequence` itself (its table extends the lualib `Sequence`). */
+    val sequenceBase: Boolean = false,
+    /** The class extends `AbstractCoroutineContextElement(key)`, which the lualib implements. */
+    val elementBase: Boolean = false,
 )
 
 /** Queries over the classes of the module being compiled: supertypes, initializers and `equals`. */
@@ -34,6 +38,9 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
         visit(c)
         return result.toList()
     }
+
+    /** Top-level functions of the module's files. */
+    fun topLevelFunctions(): List<KtNamedFunction> = module.files.flatMap { it.declarations.filterIsInstance<KtNamedFunction>() }
 
     fun classInFile(id: ClassId): KtClassOrObject? {
         var found: KtClassOrObject? = null
@@ -57,36 +64,10 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
             val call = c.initializerList?.initializers?.firstOrNull() as? KtSuperTypeCallEntry
             return@getOrPut SuperInfo(c.containingClassOrObject, call, emptyList(), null)
         }
-        with(session) {
-            var base: KtClassOrObject? = null
-            var baseCall: KtSuperTypeCallEntry? = null
-            var bad: KtSuperTypeListEntry? = null
-            var libraryBase: String? = null
-            val interfaces = mutableListOf<KtClassOrObject>()
-            for (entry in c.superTypeListEntries) {
-                val symbol = entry.typeReference?.type?.expandedSymbol
-                val psi = symbol?.psi as? KtClassOrObject
-                when {
-                    symbol?.classId?.asString() in MARKER_INTERFACES -> Unit
-
-                    symbol?.classId?.asString() in LIBRARY_CLASSES -> {
-                        libraryBase = LIBRARY_CLASSES[symbol?.classId?.asString()]
-                        baseCall = entry as? KtSuperTypeCallEntry
-                    }
-
-                    psi == null || !isSource(psi) -> bad = bad ?: entry
-
-                    psi is KtClass && psi.isInterface() -> interfaces += psi
-
-                    else -> {
-                        base = psi
-                        baseCall = entry as? KtSuperTypeCallEntry
-                    }
-                }
-            }
-            SuperInfo(base, baseCall, interfaces, bad, libraryBase)
-        }
+        with(session) { classifySupertypes(c, ::isSource, ::isSequenceClass) }
     }
+
+    /** Whether [c] or a source class it extends implements `Sequence`. */
 
     private val initCache = HashMap<KtClassOrObject, Boolean>()
 
@@ -95,7 +76,7 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
         if ((c is KtClass && c.isInterface()) || !hasPrimary(c)) return@getOrPut false
         val info = superInfo(c)
         c.hasConstructorState() || c.hasInitializers() || info.baseCall?.valueArguments?.isNotEmpty() == true ||
-            info.libraryBase != null || info.base?.let { !hasPrimary(it) || initNeeded(it) } == true
+            info.libraryBase != null || info.elementBase || info.base?.let { !hasPrimary(it) || initNeeded(it) } == true
     }
 
     private fun KtClassOrObject.hasConstructorState() =
@@ -128,3 +109,9 @@ internal fun KtClassOrObject.declaredFunction(name: String) =
     declarations.filterIsInstance<KtNamedFunction>().firstOrNull { it.name == name }
 
 internal fun hasPrimary(c: KtClassOrObject) = c !is KtClass || c.primaryConstructor != null || c.secondaryConstructors.isEmpty()
+
+/** Whether [c] (or a source superclass) implements `Sequence`. */
+internal fun ClassHierarchy.isSequenceClass(c: KtClassOrObject): Boolean = superInfo(c).let {
+    it.sequenceBase ||
+        it.base?.let(::isSequenceClass) == true
+}

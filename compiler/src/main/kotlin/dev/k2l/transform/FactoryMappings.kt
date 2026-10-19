@@ -18,6 +18,7 @@ internal object FactoryMappings {
 
             "kotlin/arrayOf", "kotlin/intArrayOf", "kotlin/longArrayOf", "kotlin/doubleArrayOf", "kotlin/floatArrayOf",
             "kotlin/booleanArrayOf", "kotlin/charArrayOf", "kotlin/shortArrayOf", "kotlin/byteArrayOf", "kotlin/emptyArray",
+            "kotlin/uintArrayOf", "kotlin/ulongArrayOf", "kotlin/ubyteArrayOf", "kotlin/ushortArrayOf",
             ->
                 call("__K2L_ArrayOf", *args)
 
@@ -119,7 +120,7 @@ internal object FactoryMappings {
 
             "kotlin/Int.rangeUntil", "kotlin/ranges/until" ->
                 if (charOperands) {
-                    newCharRange(site, site.self, LuaCall(luaPath("string", "char"), listOf(charCodeMinusOne(site.arg(0)))))
+                    newCharRange(site, site.self, charFromCode(site, charCodeMinusOne(site, site.arg(0))))
                 } else {
                     newRange(site, site.self, LuaBinary(LuaBinOp.Sub, site.arg(0), LuaNumber("1")))
                 }
@@ -142,7 +143,11 @@ internal object FactoryMappings {
         }
     }
 
-    private fun charCodeMinusOne(c: LuaExpr): LuaExpr = LuaBinary(LuaBinOp.Sub, LuaMethodCall(c, "byte", emptyList()), LuaNumber("1"))
+    private fun charCodeMinusOne(site: CallSite, c: LuaExpr): LuaExpr =
+        LuaBinary(LuaBinOp.Sub, if (site.utf16) site.u16("code", c) else LuaMethodCall(c, "byte", emptyList()), LuaNumber("1"))
+
+    private fun charFromCode(site: CallSite, code: LuaExpr): LuaExpr =
+        if (site.utf16) site.u16("char", code) else LuaCall(luaPath("string", "char"), listOf(code))
 
     private fun misc(callableId: String?, site: CallSite): LuaExpr? = when (callableId) {
         "java/util/Objects.equals" -> LuaCall(site.ref("Equals", "__K2L_Equals"), listOf(site.arg(0), site.arg(1)))
@@ -158,8 +163,17 @@ internal object FactoryMappings {
     private fun newRange(site: CallSite, first: LuaExpr, last: LuaExpr, step: LuaExpr? = null) =
         LuaCall(LuaIndex(site.ref("Collections", "__K2L_IntRange"), LuaString("new")), listOfNotNull(first, last, step))
 
-    private fun newCharRange(site: CallSite, first: LuaExpr, last: LuaExpr, step: LuaExpr? = null) =
-        LuaCall(LuaIndex(site.ref("Collections", "__K2L_CharRange"), LuaString("new")), listOfNotNull(first, last, step))
+    private fun newCharRange(site: CallSite, first: LuaExpr, last: LuaExpr, step: LuaExpr? = null): LuaExpr {
+        val range = if (site.utf16) {
+            LuaIndex(
+                LuaIndex(site.ref("Utf16", "__K2L_Utf16"), LuaString("CharRange")),
+                LuaString("new"),
+            )
+        } else {
+            LuaIndex(site.ref("Collections", "__K2L_CharRange"), LuaString("new"))
+        }
+        return LuaCall(range, listOfNotNull(first, last, step))
+    }
 
     /** Constructor of a library class, or null. */
     fun construct(classId: String?, site: CallSite): LuaExpr? {
@@ -206,15 +220,16 @@ internal object FactoryMappings {
 
             "dev/k2l/lua/LuaTable" -> LuaTable(emptyList())
 
-            "kotlin/Char" -> LuaCall(LuaIndex(LuaName("string"), LuaString("char")), listOf(site.arg(0)))
+            "kotlin/Char" -> charFromCode(site, site.arg(0))
 
             "kotlin/Array" -> LuaCall(site.ref("Collections", "__K2L_ListOfSize"), listOf(site.arg(0), site.arg(1), LuaBool(true)))
 
             "kotlin/IntArray", "kotlin/LongArray", "kotlin/ShortArray", "kotlin/ByteArray", "kotlin/DoubleArray",
-            "kotlin/FloatArray", "kotlin/BooleanArray", "kotlin/CharArray",
+            "kotlin/FloatArray", "kotlin/BooleanArray", "kotlin/CharArray", "kotlin/UIntArray", "kotlin/ULongArray", "kotlin/UByteArray",
+            "kotlin/UShortArray",
             -> primitiveArray(classId, site)
 
-            else -> null
+            else -> BigNumberMappings.construct(classId, site) ?: JdkCollectionsMappings.construct(classId, site)
         }
     }
 
