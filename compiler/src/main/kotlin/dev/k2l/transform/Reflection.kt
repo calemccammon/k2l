@@ -1,7 +1,9 @@
 package dev.k2l.transform
 
 import dev.k2l.codegen.*
+import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassLikeSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaConstructorSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaTypeParameterSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaType
@@ -22,15 +24,21 @@ private fun FileTransformer.kclass(function: String, vararg args: LuaExpr): LuaE
 
 /**
  * With reflection in the module (`::class`, `javaClass`), every class records its package-qualified and JVM binary names
- * after its table is created, see `KClass.lua`. Local classes have no qualified name.
+ * after its table is created, see `KClass.lua`. Local classes have no qualified name, object expressions no simple name.
  */
 internal fun FileTransformer.classInfo(c: KtClassOrObject, ref: LuaExpr) {
     if (!usesReflection) return
     val local = c.isLocal
     val kind = if (c is KtClass && c.isInterface()) "interface" else "class"
     val qualified = if (local) LuaNil else c.fqName?.asString()?.let(::LuaString) ?: LuaNil
-    val binary = if (local) LuaNil else LuaString(binaryName(c))
-    emit(LuaCallStmt(LuaCall(lualibRef(KCLASS_FEATURE, "__K2L_ClassInfo"), listOf(ref, qualified, binary, LuaString(kind)))))
+    // an object expression has no simple name (false: not derived from the class name)
+    val args = listOf(ref, qualified, LuaString(binaryName(c)), LuaString(kind)) + listOfNotNull(LuaBool(false).takeIf { c.name == null })
+    emit(LuaCallStmt(LuaCall(lualibRef(KCLASS_FEATURE, "__K2L_ClassInfo"), args)))
+    // A companion without supertypes is the class's table at run time; `companionValue::class` finds its names there
+    val companion = (c as? KtClass)?.companionObjects?.firstOrNull()?.takeUnless { hasOwnTable(it) } ?: return
+    val names =
+        listOf(LuaString(companion.fqName?.asString() ?: ""), LuaString(binaryName(companion)), LuaString(companion.name ?: "Companion"))
+    emit(LuaCallStmt(LuaCall(lualibRef(KCLASS_FEATURE, "__K2L_CompanionInfo"), listOf(ref) + names)))
 }
 
 /** An enum entry with a body is a subclass named after the entry: `pkg.Color$GREEN`, `pkg.Color.GREEN`. */
@@ -40,14 +48,6 @@ internal fun FileTransformer.entryClassInfo(entry: KtEnumEntry, ref: LuaExpr) {
     val qualified = LuaString(entry.fqName?.asString() ?: name)
     val args = listOf(ref, qualified, LuaString(binaryName(entry)), LuaString("class"), LuaString(name))
     emit(LuaCallStmt(LuaCall(lualibRef(KCLASS_FEATURE, "__K2L_ClassInfo"), args)))
-}
-
-/** `pkg.Outer$Inner` */
-internal fun binaryName(c: KtClassOrObject): String {
-    val chain = generateSequence(c) { it.containingClassOrObject }.toList().reversed()
-    val pkg = c.containingKtFile.packageFqName.asString()
-    val names = chain.joinToString("$") { it.name ?: "" }
-    return if (pkg.isEmpty()) names else "$pkg.$names"
 }
 
 /** `Foo::class`, `x::class` and `T::class` (for a reified `T`): a [KClass.lua] object, one per class. */
@@ -70,9 +70,14 @@ private fun FileTransformer.classOfType(declared: KaType, element: KtElement): L
 
         source == null -> kclass("Named", LuaString(classId!!.asString().replace('/', '.')))
 
-        // A companion has no table of its own (it lives on its class)
-        source is KtObjectDeclaration && source.isCompanion() ->
-            kclass("Named", LuaString(source.fqName?.asString() ?: ""), LuaString(source.name ?: "Companion"))
+        // A companion without supertypes has no table of its own (it lives on its class)
+        source is KtObjectDeclaration && source.isCompanion() && !hasOwnTable(source) ->
+            kclass(
+                "Named",
+                LuaString(source.fqName?.asString() ?: ""),
+                LuaString(source.name ?: "Companion"),
+                LuaString(binaryName(source)),
+            )
 
         else -> kclass("Of", classRef(source))
     }
@@ -87,11 +92,37 @@ private fun FileTransformer.valueClass(receiver: KtExpression): LuaExpr = with(s
     return kclass("Named", LuaString(classId!!.replace('/', '.')))
 }
 
-/** `KClass` and `java.lang.Class` members; both are the same Lua object. */
+private val PROPERTIES = listOf("KProperty", "KProperty0", "KProperty1", "KProperty2")
+private val MUTABLE_PROPERTIES = listOf("KMutableProperty", "KMutableProperty0", "KMutableProperty1", "KMutableProperty2")
+private const val MAX_ARITY = 22
+
+/** `KFunction1.call`: members of a reference to a function resolve in the interface of its arity. */
+private val FUNCTIONS = listOf("KFunction") + (0..MAX_ARITY).flatMap { listOf("KFunction$it", "KSuspendFunction$it") }
+private val CALLABLES = listOf("KCallable") + FUNCTIONS + PROPERTIES + MUTABLE_PROPERTIES
+
+/** The members of the reflection interfaces that need kotlin-reflect at run time (`-no-reflect` on the JVM), by declaring interface. */
+private val NEEDS_REFLECT = listOf(
+    listOf("KClass") to listOf(
+        "isData", "isAbstract", "isOpen", "isSealed", "isFinal", "isCompanion", "isInner", "isFun", "isValue", "objectInstance",
+        "sealedSubclasses", "supertypes", "members", "constructors", "nestedClasses", "typeParameters", "visibility",
+    ),
+    listOf("KAnnotatedElement") + CALLABLES to listOf("annotations"),
+    CALLABLES to listOf(
+        "parameters", "returnType", "typeParameters", "visibility", "isFinal", "isOpen", "isAbstract", "isSuspend", "call", "callBy",
+    ),
+    FUNCTIONS to listOf("isInline", "isExternal", "isOperator", "isInfix", "isSuspend"),
+    PROPERTIES + MUTABLE_PROPERTIES to listOf("isLateinit", "isConst", "getter"),
+    MUTABLE_PROPERTIES to listOf("setter"),
+    listOf("KProperty0", "KProperty1", "KProperty2") to listOf("getDelegate"),
+)
+
+/** `KClass` and `java.lang.Class` members; both kinds of objects have the same fields. */
 internal object ReflectionMappings {
     fun install(table: MappingTable) {
-        table.def("kotlin/reflect/KClass.simpleName", "java/lang/Class.simpleName", "java/lang/Class.getSimpleName") {
-            LuaIndex(self, LuaString("simpleName"))
+        table.def("kotlin/reflect/KClass.simpleName") { LuaIndex(self, LuaString("simpleName")) }
+        // the Java name of an anonymous class is "" where Kotlin's is null
+        table.def("java/lang/Class.simpleName", "java/lang/Class.getSimpleName") {
+            LuaBinary(LuaBinOp.Or, LuaIndex(self, LuaString("simpleName")), LuaString(""))
         }
         table.def("kotlin/reflect/KClass.qualifiedName", "java/lang/Class.canonicalName", "java/lang/Class.getCanonicalName") {
             LuaIndex(self, LuaString("qualifiedName"))
@@ -109,22 +140,27 @@ internal object ReflectionMappings {
         table.def("kotlin/reflect/KMutableProperty0.set", "kotlin/reflect/KMutableProperty1.set") {
             method(self, "set", *args.toTypedArray())
         }
-        // Needs kotlin-reflect, which the JVM program may lack too: then these throw KotlinReflectionNotSupportedError.
-        val needsReflect = listOf(
-            "isData", "isAbstract", "isOpen", "isSealed", "isFinal", "isCompanion", "isInner", "isFun", "isValue", "objectInstance",
-            "sealedSubclasses", "supertypes", "members", "constructors", "nestedClasses", "typeParameters", "visibility",
-        )
-        needsReflect.forEach { member ->
-            table.def("kotlin/reflect/KClass.$member") { method(self, "____needsReflect") }
+        // References and the KProperty passed to delegates are objects with a `name`
+        table.def(*CALLABLES.map { "kotlin/reflect/$it.name" }.toTypedArray()) {
+            with(session) { referencedName(element) } ?: LuaIndex(self, LuaString("name"))
         }
-        table.def("kotlin/jvm/javaClass") { LuaCall(ref(KCLASS_FEATURE, "__K2L_KClassOfValue"), listOf(self)) }
-        table.def("kotlin/jvm/java", "kotlin/jvm/kotlin") { self }
+        // Needs kotlin-reflect, which the JVM program may lack too: then these throw KotlinReflectionNotSupportedError.
+        val needsReflect = NEEDS_REFLECT.flatMap { (owners, members) -> owners.flatMap { o -> members.map { "kotlin/reflect/$o.$it" } } }
+        table.def(*needsReflect.toTypedArray()) { LuaCall(ref("NeedsReflect", "__K2L_NeedsReflect"), listOf(self) + args) }
+        // A Class is an object of its own (it prints without the KClass suffix), one per KClass
+        table.def("kotlin/jvm/javaClass") {
+            LuaCall(ref(KCLASS_FEATURE, "__K2L_JavaClass"), listOf(LuaCall(ref(KCLASS_FEATURE, "__K2L_KClassOfValue"), listOf(self))))
+        }
+        table.def("kotlin/jvm/java") { LuaCall(ref(KCLASS_FEATURE, "__K2L_JavaClass"), listOf(self)) }
+        table.def("kotlin/jvm/kotlin") { LuaIndex(self, LuaString("____kotlin")) }
     }
 }
 
 /** `::twice.name` and `Person::greet.name`: the name is known where the reference is written, so no object is needed. */
-internal fun referencedName(element: KtElement): LuaExpr? {
+context(s: KaSession)
+internal fun referencedName(element: KtElement): LuaExpr? = with(s) {
     val receiver = (element as? KtDotQualifiedExpression)?.receiverExpression ?: return null
     val reference = KtPsiUtil.safeDeparenthesize(receiver) as? KtCallableReferenceExpression ?: return null
-    return LuaString(reference.callableReference.getReferencedName())
+    val constructor = reference.callableReference.mainReference.resolveToSymbol() is KaConstructorSymbol
+    LuaString(if (constructor) "<init>" else reference.callableReference.getReferencedName())
 }

@@ -1,9 +1,3 @@
-val limit = 3
-
-inline fun capped(n: Int, f: (Int) -> Unit) {
-    for (i in 0 until limit) f(n + i)
-}
-
 inline fun tryFirst(xs: List<Int>, f: (Int) -> Boolean): Int {
     try {
         for (x in xs) if (f(x)) return x
@@ -19,12 +13,15 @@ fun inTry(): Int {
     return 0
 }
 
-// the non-local return would have to leave the closure of `trim`, which is not inlined
-fun viaTrim(s: String): List<Int> {
-    capped(1) { s.trim { c -> if (c.code > it) return emptyList() else true } }
-    return listOf(s.length)
+inline fun total(vararg xs: Int, f: (Int) -> Int): Int {
+    var sum = 0
+    for (x in xs) sum += f(x)
+    return sum
 }
 
+// an expanded call takes a spread `vararg` argument only as the last one
+fun spreadFirst(xs: IntArray): Int = total(*xs, 1) { if (it < 0) return -1 else it }
+
 fun main() {
-    println(inTry() + viaTrim("a").size)
+    println(inTry() + spreadFirst(intArrayOf(1)))
 }

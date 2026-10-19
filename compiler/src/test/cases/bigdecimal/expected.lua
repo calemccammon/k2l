@@ -7,15 +7,15 @@ local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MathContext = ____lualib.__K2L_MathContext
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_RoundingMode = ____lualib.__K2L_RoundingMode
-local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
-local MODES = __K2L_ListOf(__K2L_RoundingMode.UP, __K2L_RoundingMode.DOWN, __K2L_RoundingMode.CEILING, __K2L_RoundingMode.FLOOR, __K2L_RoundingMode.HALF_UP, __K2L_RoundingMode.HALF_DOWN, __K2L_RoundingMode.HALF_EVEN)
+local MODES = __K2L_ReadOnlyListOf(__K2L_RoundingMode.UP, __K2L_RoundingMode.DOWN, __K2L_RoundingMode.CEILING, __K2L_RoundingMode.FLOOR, __K2L_RoundingMode.HALF_UP, __K2L_RoundingMode.HALF_DOWN, __K2L_RoundingMode.HALF_EVEN)
 
 local function construction()
     print("-- construction")
@@ -91,7 +91,7 @@ local function arithmetic()
     print(__K2L_Str(a:max(b)))
     print(__K2L_Str(__K2L_BigDecimal.parse("123456789.123456789"):multiply(__K2L_BigDecimal.parse("987654321.987654321"))))
     local total = __K2L_BigDecimal.ZERO
-    for _, price in ipairs(__K2L_ListOf("19.99", "5.01", "0.10", "100")) do
+    for _, price in ipairs(__K2L_ReadOnlyListOf("19.99", "5.01", "0.10", "100")) do
         total = total:add(__K2L_BigDecimal.parse(price))
     end
     total = total:multiply(__K2L_BigDecimal.parse("1.0825"))
@@ -114,7 +114,7 @@ end
 
 local function scaling()
     print("-- setScale table")
-    local values = __K2L_ListOf("5.5", "2.5", "1.6", "1.1", "1.0", "0.5", "-0.5", "-1.1", "-1.6", "-2.5", "-5.5", "0.05", "99.995")
+    local values = __K2L_ReadOnlyListOf("5.5", "2.5", "1.6", "1.1", "1.0", "0.5", "-0.5", "-1.1", "-1.6", "-2.5", "-5.5", "0.05", "99.995")
     for _, v in ipairs(values) do
         local x = __K2L_BigDecimal.parse(v)
         local row = MODES:joinToString(" ", nil, nil, nil, nil, function(m)
@@ -149,7 +149,7 @@ end
 
 local function division()
     print("-- division")
-    local ____pairs = __K2L_ListOf(__K2L_Pair.new("1", "3"), __K2L_Pair.new("2", "3"), __K2L_Pair.new("10", "4"), __K2L_Pair.new("-10", "4"), __K2L_Pair.new("1", "7"), __K2L_Pair.new("22", "7"), __K2L_Pair.new("100", "-8"), __K2L_Pair.new("0.5", "3"), __K2L_Pair.new("1.00", "3"), __K2L_Pair.new("123456.789", "0.001"))
+    local ____pairs = __K2L_ReadOnlyListOf(__K2L_Pair.new("1", "3"), __K2L_Pair.new("2", "3"), __K2L_Pair.new("10", "4"), __K2L_Pair.new("-10", "4"), __K2L_Pair.new("1", "7"), __K2L_Pair.new("22", "7"), __K2L_Pair.new("100", "-8"), __K2L_Pair.new("0.5", "3"), __K2L_Pair.new("1.00", "3"), __K2L_Pair.new("123456.789", "0.001"))
     for _, ____item in ipairs(____pairs) do
         local n, d = ____item.first, ____item.second
         local x = __K2L_BigDecimal.parse(n)
@@ -187,7 +187,7 @@ end
 
 local function formatting()
     print("-- formatting")
-    local values = __K2L_ListOf("0", "0.0", "0.00", "1", "-1", "1.0", "12345.6789", "-0.5", "0.000001", "0.0000001", "1E+3", "1.23E+10", "-1.5E-7", "100", "1E-10", "123456789012345678901234567890.123456789", "0E+3", "1.000E+3")
+    local values = __K2L_ReadOnlyListOf("0", "0.0", "0.00", "1", "-1", "1.0", "12345.6789", "-0.5", "0.000001", "0.0000001", "1E+3", "1.23E+10", "-1.5E-7", "100", "1E-10", "123456789012345678901234567890.123456789", "0E+3", "1.000E+3")
     for _, v in ipairs(values) do
         local x = __K2L_BigDecimal.parse(v)
         print(v .. ": toString=" .. __K2L_Str(x) .. " plain=" .. __K2L_Str(x:toPlainString()) .. " scale=" .. x:scale() .. " precision=" .. x:precision() .. " strip=" .. __K2L_Str(x:stripTrailingZeros()) .. " strip.plain=" .. __K2L_Str(x:stripTrailingZeros():toPlainString()))
@@ -197,7 +197,7 @@ local function formatting()
     print(__K2L_Str(__K2L_BigDecimal.parse("10.50"):stripTrailingZeros()))
     print(__K2L_Str(__K2L_BigDecimal.parse("0.000"):stripTrailingZeros()))
     print("price: " .. __K2L_Str(__K2L_BigDecimal.parse("9.99")))
-    print(__K2L_Str(__K2L_ListOf(__K2L_BigDecimal.parse("1.5"), __K2L_BigDecimal.parse("2.50"))))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(__K2L_BigDecimal.parse("1.5"), __K2L_BigDecimal.parse("2.50"))))
 end
 
 local function comparisons()
@@ -217,17 +217,17 @@ local function comparisons()
     print(__K2L_BigDecimal.parse("123456789012345678901234567890.5"):hashCode())
     print(__K2L_BigDecimal.parse("-3.25"):hashCode())
     print(__K2L_BigDecimal.parse("0"):hashCode())
-    print(__K2L_SetOf(a, b, __K2L_BigDecimal.parse("1.0")).size)
-    print(__K2L_ListOf(a, b):map(function(it) return it:stripTrailingZeros() end):toSet().size)
-    print(__K2L_Str(__K2L_ListOf(c, a, __K2L_BigDecimal.parse("-3"), __K2L_BigDecimal.parse("1.5")):sorted()))
-    print(__K2L_Str(__K2L_ListOf(c, a, __K2L_BigDecimal.parse("-3")):maxOrNull()))
-    print(__K2L_Str(__K2L_ListOf("1.1", "2.2", "3.3"):map(function(it) return __K2L_BigDecimal.parse(it) end):fold(__K2L_BigDecimal.ZERO, function(acc, v) return acc:add(v) end)))
-    print(__K2L_Str(__K2L_ListOf("1.1", "2.2", "3.3"):sumOf(function(it) return __K2L_BigDecimal.parse(it) end, __K2L_BigDecimal.ZERO)))
+    print(__K2L_ReadOnlySetOf(a, b, __K2L_BigDecimal.parse("1.0")).size)
+    print(__K2L_ReadOnlyListOf(a, b):map(function(it) return it:stripTrailingZeros() end):toSet().size)
+    print(__K2L_Str(__K2L_ReadOnlyListOf(c, a, __K2L_BigDecimal.parse("-3"), __K2L_BigDecimal.parse("1.5")):sorted()))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(c, a, __K2L_BigDecimal.parse("-3")):maxOrNull()))
+    print(__K2L_Str(__K2L_ReadOnlyListOf("1.1", "2.2", "3.3"):map(function(it) return __K2L_BigDecimal.parse(it) end):fold(__K2L_BigDecimal.ZERO, function(acc, v) return acc:add(v) end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf("1.1", "2.2", "3.3"):sumOf(function(it) return __K2L_BigDecimal.parse(it) end, __K2L_BigDecimal.ZERO)))
 end
 
 local function conversions()
     print("-- conversions")
-    local values = __K2L_ListOf("0", "1.5", "-1.5", "123.999", "1E+3", "123456789012345678901.5", "1e-5", "-2147483649.5", "0.1", "3.14159265358979323846")
+    local values = __K2L_ReadOnlyListOf("0", "1.5", "-1.5", "123.999", "1E+3", "123456789012345678901.5", "1e-5", "-2147483649.5", "0.1", "3.14159265358979323846")
     for _, v in ipairs(values) do
         local x = __K2L_BigDecimal.parse(v)
         print(v .. ": int=" .. x:toInt() .. " double=" .. __K2L_Str(x:toDouble()))

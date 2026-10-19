@@ -1,44 +1,93 @@
 package dev.k2l.transform
 
 import dev.k2l.codegen.*
+import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaConstructorSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
-import org.jetbrains.kotlin.idea.references.mainReference
+import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 
 private const val FUNCTION_REF_FEATURE = "FunctionRef"
 
+/** What a program can learn from a reference held in a value besides calling it. */
+private val OBJECT_MEMBERS = setOf("name", "toString", "equals", "hashCode")
+
 /**
- * References to functions are plain Lua functions. When the program reads the `name` of a function reference held in a value
- * (`val f = ::greet; f.name`), the references that are not passed straight to a parameter of a function type become
- * `__K2L_FunctionRef` objects, which carry the name and can still be called (see `FunctionRef.lua`).
+ * References to functions are plain Lua functions. When the program looks at a function reference held in a value as an object
+ * (`val f = ::greet; f.name`, `println(f)`, `f == g`), the references that are not passed straight to a parameter of a function
+ * type become `__K2L_FunctionRef` objects, which carry the name, the [symbol]'s key for `==` and the bound [receiver], and can
+ * still be called (see `FunctionRef.lua`).
  */
-internal fun FileTransformer.named(e: KtCallableReferenceExpression, function: LuaExpr): LuaExpr = with(session) {
-    if (function == LuaNil || !usesFunctionNames { files -> files.any { readsFunctionName(it) } }) return function
+internal fun FileTransformer.named(
+    e: KtCallableReferenceExpression,
+    symbol: KaCallableSymbol,
+    function: LuaExpr,
+    receiver: LuaExpr? = null,
+): LuaExpr = with(session) {
+    if (function == LuaNil || !usesFunctionNames { files -> files.any { observesFunctionReferences(it) } }) return function
     val expected = e.expectedType
     if (expected is KaFunctionType && !expected.isReflectionFunctionType()) return function
-    val constructor = e.callableReference.mainReference.resolveToSymbol() is KaConstructorSymbol
-    val name = if (constructor) "<init>" else e.callableReference.getReferencedName()
-    LuaCall(LuaIndex(lualibRef(FUNCTION_REF_FEATURE, "__K2L_FunctionRef"), LuaString("new")), listOf(LuaString(name), function))
+    val name = if (symbol is KaConstructorSymbol) "<init>" else e.callableReference.getReferencedName()
+    val args = listOf(LuaString(name), LuaString(referenceKey(symbol)), function) + listOfNotNull(receiver)
+    LuaCall(LuaIndex(lualibRef(FUNCTION_REF_FEATURE, "__K2L_FunctionRef"), LuaString("new")), args)
 }
 
-private fun FileTransformer.readsFunctionName(file: KtFile): Boolean = with(session) {
+/**
+ * What identifies a callable for `==` between references: its id, with the receiver type of an extension and the parameter types
+ * of a function (`kotlin.String.kotlin/text/uppercase()`), since overloads share an id. Local declarations have no id.
+ */
+context(s: KaSession)
+internal fun referenceKey(symbol: KaCallableSymbol): String = with(s) {
+    val id = symbol.callableId?.toString()
+        ?: (symbol as? KaConstructorSymbol)?.containingClassId?.let { "$it.<init>" }
+        ?: (symbol.psi as? KtNamedDeclaration)?.let { "${it.name}@${it.textOffset}" }
+        ?: "?"
+    val receiver = symbol.receiverParameter?.returnType?.let { "${it.pretty()}." }.orEmpty()
+    val params = (symbol as? KaFunctionSymbol)?.valueParameters?.joinToString(",", "(", ")") { it.returnType.pretty() }.orEmpty()
+    receiver + id + params
+}
+
+/**
+ * Whether [file] looks at a function reference held in a value as an object: reads its `name` (`::f.name` is the name written
+ * there, see [referencedName]), calls `toString`/`equals`/`hashCode`, compares it with `==`, puts it in a string template or
+ * passes it where no function is expected (`println(f)`, `listOf(f)`).
+ */
+private fun FileTransformer.observesFunctionReferences(file: KtFile): Boolean = with(session) {
     var found = false
     file.accept(object : KtTreeVisitorVoid() {
-        override fun visitQualifiedExpression(expression: KtQualifiedExpression) {
-            super.visitQualifiedExpression(expression)
-            val selector = expression.selectorExpression as? KtNameReferenceExpression
-            if (found || selector?.getReferencedName() != "name") return
-            val receiver = expression.receiverExpression
-            // `::f.name` is the name written there, see referencedName
-            if (KtPsiUtil.safeDeparenthesize(receiver) is KtCallableReferenceExpression) return
-            if (receiver.expressionType.isFunctionReferenceType()) found = true
+        override fun visitExpression(expression: KtExpression) {
+            super.visitExpression(expression)
+            // the syntax first: types are only computed for the few expressions in such places
+            if (found || !isObservingPlace(expression) || !expression.expressionType.isFunctionReferenceType()) return
+            found =
+                expression.parent !is KtValueArgument ||
+                expression.expectedType.let { it !is KaFunctionType || it.isReflectionFunctionType() }
         }
     })
     found
 }
+
+private fun isObservingPlace(e: KtExpression): Boolean {
+    val parent = e.parent
+    return when {
+        parent is KtQualifiedExpression && parent.receiverExpression == e -> {
+            val selector = parent.selectorExpression
+            val member = (selector as? KtNameReferenceExpression ?: (selector as? KtCallExpression)?.calleeExpression)
+                ?.let { (it as? KtNameReferenceExpression)?.getReferencedName() }
+            member in OBJECT_MEMBERS && !(member == "name" && KtPsiUtil.safeDeparenthesize(e) is KtCallableReferenceExpression)
+        }
+
+        parent is KtBinaryExpression -> parent.operationToken in EQUALITY_TOKENS
+
+        else -> parent is KtStringTemplateEntryWithExpression || parent is KtValueArgument
+    }
+}
+
+private val EQUALITY_TOKENS = setOf(KtTokens.EQEQ, KtTokens.EXCLEQ, KtTokens.EQEQEQ, KtTokens.EXCLEQEQEQ)
 
 /** `KFunction1<A, R>`, `KCallable<R>` and the like: the types of a reference, as opposed to the function types `(A) -> R`. */
 private fun KaType?.isFunctionReferenceType(): Boolean {
@@ -46,7 +95,7 @@ private fun KaType?.isFunctionReferenceType(): Boolean {
     return id == "kotlin/reflect/KCallable" || id.startsWith("kotlin/reflect/KFunction") || id.startsWith("kotlin/reflect/KSuspendFunction")
 }
 
-private fun KaFunctionType.isReflectionFunctionType(): Boolean {
+internal fun KaFunctionType.isReflectionFunctionType(): Boolean {
     val id = classId.asString()
     return id.startsWith("kotlin/reflect/")
 }

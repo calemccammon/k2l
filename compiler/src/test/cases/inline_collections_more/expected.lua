@@ -9,8 +9,12 @@ local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
+local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
@@ -36,7 +40,7 @@ function Item:equals(other)
     return getmetatable(other) == Item and self.name == other.name and self.price == other.price
 end
 
-local items = __K2L_ListOf(Item.new("pen", 3), Item.new("book", 12), Item.new("cup", 7), Item.new("lamp", 12))
+local items = __K2L_ReadOnlyListOf(Item.new("pen", 3), Item.new("book", 12), Item.new("cup", 7), Item.new("lamp", 12))
 
 local function partitions(xs, stopAt)
     local ____yes = __K2L_ListOf()
@@ -127,7 +131,7 @@ local function maxBys(stopAt)
         error(__K2L_NoSuchElementException.new(nil))
     end
     local d = ____best_2
-    local ____list_3 = __K2L_ListOf()
+    local ____list_3 = __K2L_ReadOnlyListOf()
     local ____best_3
     local ____bestKey_3
     local ____has_3 = false
@@ -192,7 +196,7 @@ local function extremes(stopAt)
         error(__K2L_NoSuchElementException.new(nil))
     end
     local b = ____bestKey_5
-    local ____list_6 = __K2L_ListOf()
+    local ____list_6 = __K2L_ReadOnlyListOf()
     local ____best_6
     local ____bestKey_6
     local ____has_6 = false
@@ -275,7 +279,7 @@ local function reduces(xs, stopAt)
         end
     end
     local b = ____acc_1
-    local ____list_8 = __K2L_ListOf()
+    local ____list_8 = __K2L_ReadOnlyListOf()
     local ____acc_2
     local ____started_2 = false
     for _, x in ipairs(____list_8) do
@@ -301,7 +305,7 @@ end
 
 local function emptyReduce()
     local ____ok, ____result_12, ____returned = pcall(function()
-        local ____list_9 = __K2L_ListOf()
+        local ____list_9 = __K2L_ReadOnlyListOf()
         local ____acc_3
         local ____started_3 = false
         for _, b in ipairs(____list_9) do
@@ -347,7 +351,7 @@ local function distincts(xs, stop)
     for _, it in ipairs(xs) do
         local ____result_15
         if it == stop then
-            return __K2L_ListOf("stopped")
+            return __K2L_SingletonListOf("stopped")
         end
         ____result_15 = #it
         if ____seen:add(____result_15) then
@@ -934,7 +938,7 @@ local function flatMaps(xs, stopAt)
     for _, x in ipairs(xs) do
         local ____result_70
         if x == stopAt then
-            return __K2L_ListOf(-1)
+            return __K2L_SingletonListOf(-1)
         end
         ____result_70 = __K2L_SequenceOf(x, x * 10)
         ____result_69:addAll(____result_70:toList())
@@ -977,7 +981,7 @@ end
 
 local function arrays(stopAt)
     local arr = __K2L_ArrayOf(5, 3, 8)
-    local a = arr:sortedBy(function(it) return -it end)
+    local a = arr:sortedBy(function(it) return -it end, true)
     local ____result_71
     local ____found_9 = false
     for ____i_13 = arr.size, 1, -1 do
@@ -1038,7 +1042,7 @@ local function arrays(stopAt)
 end
 
 local function sets(stopAt)
-    local s = __K2L_SetOf(4, 8, 15, 16)
+    local s = __K2L_ReadOnlySetOf(4, 8, 15, 16)
     local ____result_75
     local ____found_10 = false
     for _, it in ipairs(s:toList()) do
@@ -1077,36 +1081,36 @@ local function sets(stopAt)
 end
 
 local function main()
-    print(partitions(__K2L_ListOf(1, 9, 3, 7), 100))
-    print(partitions(__K2L_ListOf(1, 9, 3, 7), 3))
+    print(partitions(__K2L_ReadOnlyListOf(1, 9, 3, 7), 100))
+    print(partitions(__K2L_ReadOnlyListOf(1, 9, 3, 7), 3))
     print(maxBys(100))
     print(maxBys(7))
     print(extremes(100))
     print(extremes(7))
-    print(reduces(__K2L_ListOf(1, 2, 3), 100))
-    print(reduces(__K2L_ListOf(1, 2, 3), 3))
+    print(reduces(__K2L_ReadOnlyListOf(1, 2, 3), 100))
+    print(reduces(__K2L_ReadOnlyListOf(1, 2, 3), 3))
     print(emptyReduce())
-    print(__K2L_Str(distincts(__K2L_ListOf("a", "bb", "c", "dd", "eee"), "zz")))
-    print(__K2L_Str(distincts(__K2L_ListOf("a", "bb", "c", "dd", "eee"), "dd")))
-    print(indexedOps(__K2L_ListOf(4, 5, 6, 7), 100))
-    print(indexedOps(__K2L_ListOf(4, 5, 6, 7), 6))
-    print(indexSearch(__K2L_ListOf(1, 3, 2, 5, 1), 100))
-    print(indexSearch(__K2L_ListOf(1, 3, 2, 5, 1), 3))
-    print(lasts(__K2L_ListOf(1, 2, 3, 4), 100))
-    print(lasts(__K2L_ListOf(1, 2, 3, 4), 3))
-    print(lastNone(__K2L_ListOf(1, 2)))
-    print(singles(__K2L_ListOf(1, 3, 5), 100))
-    print(singles(__K2L_ListOf(1, 3, 5), 3))
-    print(singleErrors(__K2L_ListOf(1, 2)))
-    print(trims(__K2L_ListOf(1, 5, 6, 3, 4), 100))
-    print(trims(__K2L_ListOf(1, 5, 6, 3, 4), 6))
-    print(zips(__K2L_ListOf(1, 2, 3), __K2L_ListOf("a", "b"), 100))
-    print(zips(__K2L_ListOf(1, 2, 3), __K2L_ListOf("a", "b"), 2))
-    print(maps(__K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2), __K2L_Pair.new("c", 3)), 100))
-    print(maps(__K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2), __K2L_Pair.new("c", 3)), 2))
-    print(mapExtremes(__K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 5), __K2L_Pair.new("c", 5))))
-    print(__K2L_Str(flatMaps(__K2L_ListOf(1, 2), 100)))
-    print(__K2L_Str(flatMaps(__K2L_ListOf(1, 2), 2)))
+    print(__K2L_Str(distincts(__K2L_ReadOnlyListOf("a", "bb", "c", "dd", "eee"), "zz")))
+    print(__K2L_Str(distincts(__K2L_ReadOnlyListOf("a", "bb", "c", "dd", "eee"), "dd")))
+    print(indexedOps(__K2L_ReadOnlyListOf(4, 5, 6, 7), 100))
+    print(indexedOps(__K2L_ReadOnlyListOf(4, 5, 6, 7), 6))
+    print(indexSearch(__K2L_ReadOnlyListOf(1, 3, 2, 5, 1), 100))
+    print(indexSearch(__K2L_ReadOnlyListOf(1, 3, 2, 5, 1), 3))
+    print(lasts(__K2L_ReadOnlyListOf(1, 2, 3, 4), 100))
+    print(lasts(__K2L_ReadOnlyListOf(1, 2, 3, 4), 3))
+    print(lastNone(__K2L_ReadOnlyListOf(1, 2)))
+    print(singles(__K2L_ReadOnlyListOf(1, 3, 5), 100))
+    print(singles(__K2L_ReadOnlyListOf(1, 3, 5), 3))
+    print(singleErrors(__K2L_ReadOnlyListOf(1, 2)))
+    print(trims(__K2L_ReadOnlyListOf(1, 5, 6, 3, 4), 100))
+    print(trims(__K2L_ReadOnlyListOf(1, 5, 6, 3, 4), 6))
+    print(zips(__K2L_ReadOnlyListOf(1, 2, 3), __K2L_ReadOnlyListOf("a", "b"), 100))
+    print(zips(__K2L_ReadOnlyListOf(1, 2, 3), __K2L_ReadOnlyListOf("a", "b"), 2))
+    print(maps(__K2L_ReadOnlyMapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2), __K2L_Pair.new("c", 3)), 100))
+    print(maps(__K2L_ReadOnlyMapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2), __K2L_Pair.new("c", 3)), 2))
+    print(mapExtremes(__K2L_ReadOnlyMapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 5), __K2L_Pair.new("c", 5))))
+    print(__K2L_Str(flatMaps(__K2L_ReadOnlyListOf(1, 2), 100)))
+    print(__K2L_Str(flatMaps(__K2L_ReadOnlyListOf(1, 2), 2)))
     print(builders(100))
     print(builders(3))
     print(builders(99))

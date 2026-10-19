@@ -1,8 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Locale = ____lualib.__K2L_Locale
 local __K2L_Num = ____lualib.__K2L_Num
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_Utf16 = ____lualib.__K2L_Utf16
@@ -20,7 +20,7 @@ local function main()
     local trTR = __K2L_Locale.of("tr", "TR")
     local az = __K2L_Locale.forLanguageTag("az-Latn-AZ")
     local lt = __K2L_Locale.of("LT", "lt")
-    local others = __K2L_ListOf("", "en", "en_US", "de_DE", __K2L_Locale.of("el"), "fr_FR")
+    local others = __K2L_ReadOnlyListOf("", "en", "en_US", "de_DE", __K2L_Locale.of("el"), "fr_FR")
     print(__K2L_Utf16.out(__K2L_Utf16Locale.uppercase("Iİıi", tr)))
     print(__K2L_Utf16.out(__K2L_Utf16Locale.lowercase("Iİıi", trTR)))
     print(__K2L_Utf16.out(__K2L_Utf16Locale.lowercase("TITLE İSTANBUL", tr)))
@@ -53,7 +53,7 @@ local function main()
     print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar("istanbul", function(it) return __K2L_Utf16Locale.titlecase(it, tr) end)))
     print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar("istanbul", function(it) return __K2L_Utf16Case.titlecase(it) end)))
     print(__K2L_Utf16.out(__K2L_Utf16Case.titlecase("ǆ")))
-    for _, c in ipairs(__K2L_ListOf("i", "I", "ı", "İ", "ß", "ŉ", "ǆ", "a", "ǰ")) do
+    for _, c in ipairs(__K2L_ReadOnlyListOf("i", "I", "ı", "İ", "ß", "ŉ", "ǆ", "a", "ǰ")) do
         print(__K2L_Utf16.out(__K2L_Utf16.norm(c .. " " .. hex(__K2L_Utf16Locale.titlecase(c, tr)) .. " " .. hex(__K2L_Utf16Locale.titlecase(c, lt)) .. " " .. hex(__K2L_Utf16Case.titlecase(c)) .. " " .. hex(__K2L_Utf16Case.titlecase(c)))))
     end
     print(__K2L_Utf16.out(__K2L_Locale.language(tr) .. " " .. __K2L_Str(__K2L_Locale.country(trTR)) .. " " .. __K2L_Str(trTR) .. " " .. __K2L_Str(lt) .. " " .. __K2L_Str(az)))

@@ -1,0 +1,69 @@
+Returns1 list_zipWithNext: ok [3, 5] / R
+Returns1 seq_all: ok false / R
+Returns1 seq_any: ok true / R
+Returns1 seq_count: ok 2 / R
+Returns1 seq_find: ok 2 / R
+Returns1 seq_first: ok 2 / R
+Returns1 seq_firstOrNull: ok 2 / R
+Returns1 seq_forEachIndexed: ok kotlin.Unit / R
+Returns1 seq_last: ok 3 / R
+Returns1 seq_lastOrNull: ok 3 / R
+Returns1 seq_none: ok false / R
+Returns1 seq_associateBy: ok {1=1, 2=2, 3=3} / R
+Returns1 seq_associate: ok {1=1, 2=2, 3=3} / R
+Returns1 seq_associateWith: ok {1=1, 2=2, 3=3} / R
+Returns1 seq_findLast: ok 3 / R
+Returns1 seq_fold: ok 6 / R
+Returns1 seq_foldIndexed: ok 6 / R
+Returns1 seq_groupBy: ok {1=[1], 2=[2], 3=[3]} / R
+Returns1 seq_indexOfFirst: ok 1 / R
+Returns1 seq_maxBy: ok 3 / R
+Returns1 seq_maxByOrNull: ok 3 / R
+Returns1 seq_maxOf: ok 3 / R
+Returns1 seq_maxOfOrNull: ok 3 / R
+Returns1 seq_minBy: ok 1 / R
+Returns1 seq_minByOrNull: ok 1 / R
+Returns1 seq_minOf: ok 1 / R
+Returns1 seq_minOfOrNull: ok 1 / R
+Returns1 seq_partition: ok ([2, 3], [1]) / R
+Returns1 seq_reduce: ok 6 / R
+Returns1 seq_single: ok 2 / R
+Returns2 seq_singleOrNull: ok null / R
+Returns2 seq_sumOf: ok 6 / R
+Returns2 range_zipWithNext: ok [3, 5] / R
+Returns2 text_trim: ok  / R
+Returns2 text_maxOf: ok c / R
+Returns2 text_partition: ok (abc, ) / R
+Returns2 text_trimEnd: ok  / R
+Returns2 text_trimStart: ok  / R
+Returns2 text_zipWithNext: ok [a, b] / R
+Returns2 Array_ctor: ok [0, 1, 2] / R
+Returns2 IntArray_ctor: ok [0, 1, 2] / R
+Returns2 List_ctor: ok [0, 1, 2] / R
+Returns2 MutableList_ctor: ok [0, 1, 2] / R
+Returns2 result_mapCatching: ok Success(1) / R
+Returns2 result_recoverCatching: ok Success(0) / R
+Breaks1 seq_any: 0:true;1:true;2:true; / 0:true;
+Breaks1 seq_fold: 0:6;1:6;2:6; / 0:6;
+Breaks1 seq_forEachIndexed: 0:kotlin.Unit;1:kotlin.Unit;2:kotlin.Unit; / 0:kotlin.Unit;
+Breaks1 seq_maxOf: 0:3;1:3;2:3; / 0:3;
+Breaks1 seq_partition: 0:([2, 3], [1]);1:([2, 3], [1]);2:([2, 3], [1]); / 0:([2, 3], [1]);
+Breaks1 text_trim: 0:;1:;2:; / 0:;
+Breaks1 text_zipWithNext: 0:[a, b];1:[a, b];2:[a, b]; / 0:[a, b];
+Breaks1 List_ctor: 0:[0, 1, 2];1:[0, 1, 2];2:[0, 1, 2]; / 0:[0, 1, 2];
+Breaks1 IntArray_ctor: 0:[0, 1, 2];1:[0, 1, 2];2:[0, 1, 2]; / 0:[0, 1, 2];
+Breaks1 result_mapCatching: 0:Success(1);1:Success(1);2:Success(1); / 0:Success(1);
+Breaks1 result_recoverCatching: 0:Success(0);1:Success(0);2:Success(0); / 0:Success(0);
+Breaks1 seq_sumOf: 0:6;1:6;2:6; / 0:6;
+Continues1 seq_any: 0:true;1:true;2:true; / 0:true;2:true;
+Continues1 seq_fold: 0:6;1:6;2:6; / 0:6;2:6;
+Continues1 seq_forEachIndexed: 0:kotlin.Unit;1:kotlin.Unit;2:kotlin.Unit; / 0:kotlin.Unit;2:kotlin.Unit;
+Continues1 seq_maxOf: 0:3;1:3;2:3; / 0:3;2:3;
+Continues1 seq_partition: 0:([2, 3], [1]);1:([2, 3], [1]);2:([2, 3], [1]); / 0:([2, 3], [1]);2:([2, 3], [1]);
+Continues1 text_trim: 0:;1:;2:; / 0:;2:;
+Continues1 text_zipWithNext: 0:[a, b];1:[a, b];2:[a, b]; / 0:[a, b];2:[a, b];
+Continues1 List_ctor: 0:[0, 1, 2];1:[0, 1, 2];2:[0, 1, 2]; / 0:[0, 1, 2];2:[0, 1, 2];
+Continues1 IntArray_ctor: 0:[0, 1, 2];1:[0, 1, 2];2:[0, 1, 2]; / 0:[0, 1, 2];2:[0, 1, 2];
+Continues1 result_mapCatching: 0:Success(1);1:Success(1);2:Success(1); / 0:Success(1);2:Success(1);
+Continues1 result_recoverCatching: 0:Success(0);1:Success(0);2:Success(0); / 0:Success(0);2:Success(0);
+Continues1 seq_sumOf: 0:6;1:6;2:6; / 0:6;2:6;

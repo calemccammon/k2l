@@ -1,13 +1,13 @@
 -- requires: Class, Exceptions, Collections, Comparators, Compare, Equals, Random
 -- java.util.Collections and java.util.Arrays helpers, Map.withDefault and List.listIterator.
 -- The unmodifiable* wrappers are live read-only views of their argument (see "views" below). The empty and singleton
--- collections, nCopies and the like are read-only collections of their own.
+-- collections, nCopies and the like are read-only collections of their own, with the JVM's classes.
 local __K2L_JdkCollections = {}
 local __K2L_ListIterator = __K2L_Class("java.util.ArrayList$ListItr")
-local __K2L_ReadOnlyList = __K2L_Class("java.util.Collections$UnmodifiableRandomAccessList", __K2L_List)
-local __K2L_ReadOnlySet = __K2L_Class("java.util.Collections$UnmodifiableSet", __K2L_Set)
-local __K2L_ReadOnlyMap = __K2L_Class("java.util.Collections$UnmodifiableMap", __K2L_Map)
-local __K2L_FixedSizeList = __K2L_Class("java.util.Arrays$ArrayList", __K2L_List)
+local __K2L_JdkEmptyList = __K2L_MakeReadOnly(__K2L_Class("java.util.Collections$EmptyList", __K2L_List), "list")
+local __K2L_JdkEmptySet = __K2L_MakeReadOnly(__K2L_Class("java.util.Collections$EmptySet", __K2L_Set), "set")
+local __K2L_JdkEmptyMap = __K2L_MakeReadOnly(__K2L_Class("java.util.Collections$EmptyMap", __K2L_Map), "map")
+local __K2L_CopiesList = __K2L_MakeReadOnly(__K2L_Class("java.util.Collections$CopiesList", __K2L_List), "list")
 local __K2L_ListView = __K2L_Class("java.util.Collections$UnmodifiableRandomAccessList", __K2L_List)
 local __K2L_SetView = __K2L_Class("java.util.Collections$UnmodifiableSet", __K2L_Set)
 local __K2L_MapView = __K2L_Class("java.util.Collections$UnmodifiableMap", __K2L_Map)
@@ -25,7 +25,7 @@ local function illegalArgument(message)
 end
 
 local function arrayIndex(index)
-    error(__K2L_IndexOutOfBoundsException.new("Array index out of range: " .. index))
+    error(__K2L_ArrayIndexOutOfBoundsException.new("Array index out of range: " .. index))
 end
 
 ------------------------------------------------------------------ listIterator
@@ -126,7 +126,7 @@ function J.withDefault(map, default)
     })
 end
 
------------------------------------------------------------------- read-only collections
+------------------------------------------------------------------ views
 local LIST_MUTATORS = {
     "add", "addAt", "addAll", "addAllAt", "removeAt", "remove", "removeAll", "retainAll", "removeIf", "clear", "set", "sort",
     "sortDescending", "sortBy", "sortByDescending", "sortWith", "reverse", "shuffle", "fill", "replaceAll", "addFirst", "addLast",
@@ -138,17 +138,7 @@ local MAP_MUTATORS = {
     "put", "set", "putAll", "remove", "clear", "putIfAbsent", "merge", "compute", "computeIfAbsent", "computeIfPresent",
     "replaceAll", "getOrPut",
 }
-for _, name in ipairs(LIST_MUTATORS) do
-    __K2L_ReadOnlyList[name] = unsupported
-end
-for _, name in ipairs(SET_MUTATORS) do
-    __K2L_ReadOnlySet[name] = unsupported
-end
-for _, name in ipairs(MAP_MUTATORS) do
-    __K2L_ReadOnlyMap[name] = unsupported
-end
 
------------------------------------------------------------------- views
 -- unmodifiableList(list) and friends: a table holding only the argument. Every key the view does not define is read from
 -- the argument, so reads (the `size` field, `view[i]`, the internal tables the methods use, and the methods of the argument's
 -- own class, e.g. a HashMap's iteration order) see later changes to it; the mutating methods throw. The index and the
@@ -196,32 +186,6 @@ local function isSet(source)
     return false
 end
 
--- Arrays.asList: elements can be replaced, but the size is fixed
-for _, name in ipairs({"add", "addAt", "removeAt", "removeFirst", "removeLast", "addFirst", "addLast", "push", "pop"}) do
-    __K2L_FixedSizeList[name] = unsupported
-end
-
-function __K2L_FixedSizeList:addAll(elements)
-    local _, n = elements:____array()
-    if n > 0 then
-        unsupported()
-    end
-    return false
-end
-
-function __K2L_FixedSizeList:remove(element)
-    if self:contains(element) then
-        unsupported()
-    end
-    return false
-end
-
-function __K2L_FixedSizeList:clear()
-    if self.size > 0 then
-        unsupported()
-    end
-end
-
 function J.unmodifiableList(source)
     return viewOf(__K2L_ListView, source)
 end
@@ -238,41 +202,43 @@ function J.unmodifiableMap(source)
     return viewOf(__K2L_MapView, source)
 end
 
+function __K2L_JdkEmptyList:get(index)
+    error(__K2L_IndexOutOfBoundsException.new("Index: " .. index))
+end
+
 function J.emptyList()
-    return __K2L_ReadOnlyList.new()
+    return __K2L_JdkEmptyList.new()
 end
 
 function J.emptySet()
-    return __K2L_ReadOnlySet.new()
+    return __K2L_JdkEmptySet.new()
 end
 
 function J.emptyMap()
-    return __K2L_ReadOnlyMap.new()
+    return __K2L_JdkEmptyMap.new()
 end
 
 function J.singletonList(value)
-    local out = __K2L_ReadOnlyList.new()
-    out[1], out.size = value, 1
-    return out
+    return __K2L_SingletonListOf(value)
 end
 
 function J.singleton(value)
-    local out = __K2L_ReadOnlySet.new()
-    __K2L_Set.add(out, value)
-    return out
+    local out = __K2L_Set.new()
+    out:add(value)
+    return setmetatable(out, __K2L_SingletonSet)
 end
 
 function J.singletonMap(key, value)
-    local out = __K2L_ReadOnlyMap.new()
-    __K2L_Map.put(out, key, value)
-    return out
+    local out = __K2L_Map.new()
+    out:put(key, value)
+    return setmetatable(out, __K2L_SingletonMap)
 end
 
 function J.nCopies(n, value)
     if n < 0 then
         illegalArgument("List length = " .. n)
     end
-    local out = __K2L_ReadOnlyList.new()
+    local out = __K2L_CopiesList.new()
     for i = 1, n do
         out[i] = value
     end

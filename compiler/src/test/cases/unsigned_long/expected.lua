@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
@@ -79,7 +79,7 @@ local function main()
     print()
     print((small & 0xFFFFFFFF) + 1 & 0xFFFFFFFF)
     print(__K2L_Unsigned.toString(math.max(small, 7)))
-    print(__K2L_ListOf(big, small, max).size)
+    print(__K2L_ReadOnlyListOf(big, small, max).size)
 end
 
 main()

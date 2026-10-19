@@ -1,6 +1,7 @@
 package dev.k2l.transform
 
 import dev.k2l.codegen.*
+import org.jetbrains.kotlin.analysis.api.types.KaType
 
 /** kotlin.math, numeric members, `Char` members and the `java.lang` statics Kotlin code reaches for. */
 @Suppress("TooManyFunctions") // one small installer per group of numeric members
@@ -85,9 +86,17 @@ internal object NumberMappings {
         t.def("kotlin/math/roundToLong") { n("roundToLong", self) }
     }
 
+    private fun CallSite.isNumber(type: KaType?) =
+        type != null && with(session) { type.isPrimitive && !type.isCharType && !type.isBooleanType }
+
     private fun coercions(t: MappingTable) {
-        t.def("kotlin/ranges/coerceAtLeast") { lua("math.max", self, arg(0)) }
-        t.def("kotlin/ranges/coerceAtMost") { lua("math.min", self, arg(0)) }
+        // math.max/min for numbers; Comparable objects go through compareTo
+        t.def("kotlin/ranges/coerceAtLeast") {
+            if (isNumber(receiverType)) lua("math.max", self, arg(0)) else n("coerceAtLeast", self, arg(0))
+        }
+        t.def("kotlin/ranges/coerceAtMost") {
+            if (isNumber(receiverType)) lua("math.min", self, arg(0)) else n("coerceAtMost", self, arg(0))
+        }
         t.def("kotlin/ranges/coerceIn") {
             if (args.size == 2) n("coerceIn", self, arg(0), arg(1)) else n("coerceInRange", self, arg(0))
         }
@@ -138,7 +147,16 @@ internal object NumberMappings {
         t.def("kotlin/countOneBits") { n("countOneBits", self) }
         t.def("kotlin/countTrailingZeroBits") { n("countTrailingZeroBits", self) }
         t.def("kotlin/countLeadingZeroBits") { n("countLeadingZeroBits", self) }
-        t.def("kotlin/text/toString") { if (args.size == 1) n("toRadix", self, arg(0)) else null }
+        t.def("kotlin/text/toString") {
+            when {
+                args.size != 1 -> null
+
+                with(session) { unsignedOf(receiverType) } == Unsigned.ULong ->
+                    LuaCall(LuaIndex(ref("Unsigned", "__K2L_Unsigned"), LuaString("toRadix")), listOf(self, arg(0)))
+
+                else -> n("toRadix", self, arg(0))
+            }
+        }
         t.def("kotlin/Any.hashCode") { lualib("Hash", self) }
         t.def("kotlin/Char.hashCode") { lualib("Hash", self) }
     }
@@ -187,7 +205,13 @@ internal object NumberMappings {
         t.def("java/lang/Integer.parseInt") { stringToInt(arg(0), args.getOrNull(1), long = false) }
         t.def("java/lang/Long.parseLong") { stringToInt(arg(0), args.getOrNull(1), long = true) }
         t.def("java/lang/Double.parseDouble") { LuaCall(ref("Strings", "__K2L_StringToDouble"), listOf(arg(0))) }
-        t.def("java/lang/Integer.valueOf", "java/lang/Long.valueOf") { arg(0) }
+        // valueOf(Int) is the number itself, valueOf(String[, radix]) parses it
+        t.def("java/lang/Integer.valueOf") {
+            if (isTextual(argTypes.firstOrNull())) stringToInt(arg(0), args.getOrNull(1), long = false) else arg(0)
+        }
+        t.def("java/lang/Long.valueOf") {
+            if (isTextual(argTypes.firstOrNull())) stringToInt(arg(0), args.getOrNull(1), long = true) else arg(0)
+        }
         t.def("java/lang/Integer.compare", "java/lang/Long.compare", "java/lang/Double.compare") {
             LuaCall(ref("Compare", "__K2L_Compare"), listOf(arg(0), arg(1)))
         }
@@ -205,8 +229,13 @@ internal object NumberMappings {
         }
     }
 
-    private fun CallSite.stringToInt(text: LuaExpr, radix: LuaExpr?, long: Boolean): LuaExpr =
-        LuaCall(ref("Strings", "__K2L_StringToInt"), if (long) listOf(text, radix ?: LuaNil, LuaBool(true)) else listOfNotNull(text, radix))
+    private fun CallSite.stringToInt(text: LuaExpr, radix: LuaExpr?, long: Boolean): LuaExpr {
+        requireUtf16Case()
+        return LuaCall(
+            ref("Strings", "__K2L_StringToInt"),
+            if (long) listOf(text, radix ?: LuaNil, LuaBool(true)) else listOfNotNull(text, radix),
+        )
+    }
 
     private fun mathStatics(t: MappingTable) {
         t.def("java/lang/Math.floor") { floatPlusZero(lua("math.floor", arg(0))) }

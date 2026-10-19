@@ -8,6 +8,7 @@ local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -233,7 +234,7 @@ end
 local function emptyFolds(which)
     local ____ok, ____result_15, ____returned = pcall(function()
         if which == 0 then
-            local ____list = __K2L_ListOf()
+            local ____list = __K2L_ReadOnlyListOf()
             local ____acc_4
             local ____started_2 = false
             for ____i_5 = ____list.size, 1, -1 do
@@ -285,7 +286,7 @@ local function emptyFolds(which)
             end
         end
         if which == 2 then
-            local ____list_2 = __K2L_ListOf()
+            local ____list_2 = __K2L_ReadOnlyListOf()
             local ____acc_6
             local ____started_4 = false
             for ____i_7 = 1, ____list_2.size do
@@ -339,7 +340,7 @@ local function emptyFolds(which)
             end
         end
         if which == 4 then
-            local ____list_4 = __K2L_ListOf()
+            local ____list_4 = __K2L_ReadOnlyListOf()
             local ____result_20
             for _, it in ipairs(____list_4) do
                 local ____result_21
@@ -359,7 +360,7 @@ local function emptyFolds(which)
             end
         end
         if which == 5 then
-            local ____list_5 = __K2L_ListOf()
+            local ____list_5 = __K2L_ReadOnlyListOf()
             local ____acc_8
             local ____started_6 = false
             for ____i_9 = ____list_5.size, 1, -1 do
@@ -456,7 +457,7 @@ local function main()
         print(results(ok, which))
         print(results(bad, which))
     end
-    local xs = __K2L_ListOf(1, 2, 3, 4, 5, 6)
+    local xs = __K2L_ReadOnlyListOf(1, 2, 3, 4, 5, 6)
     print(notNull(xs, 99))
     print(notNull(xs, 0))
     print(notNull(xs, 1))

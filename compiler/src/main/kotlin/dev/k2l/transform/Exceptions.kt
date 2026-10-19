@@ -23,21 +23,22 @@ internal fun FileTransformer.tryInto(e: KtTryExpression, sink: ValueSink?): Unit
             body = { branch(e.tryBlock) },
             handler = { result -> catchDispatch(e.catchClauses, result, ::branch) },
             hasCatch = e.catchClauses.isNotEmpty(),
-            finally = finally?.let { f -> { _ -> collect { block(f) } } },
+            finally = finally?.let { f -> { _, _ -> collect { block(f) } } },
         ),
     )
 }
 
 /**
  * The parts of a protected call, see [lowerTry]. [handler] gets the name of the variable that holds the error and is always
- * evaluated, [hasCatch] tells whether it is used when there is a [finally], which gets the name of the success flag.
+ * evaluated, [hasCatch] tells whether it is used when there is a [finally], which gets the names of the success flag and of
+ * the result (the error when the flag is false).
  */
 internal class TryParts(
     val pcall: LuaExpr,
     val body: () -> List<LuaStmt>,
     val handler: (String) -> List<LuaStmt>,
     val hasCatch: Boolean,
-    val finally: ((String) -> List<LuaStmt>)?,
+    val finally: ((String, String) -> List<LuaStmt>)?,
 )
 
 internal fun FileTransformer.lowerTry(parts: TryParts) {
@@ -64,7 +65,7 @@ internal fun FileTransformer.lowerTry(parts: TryParts) {
         if (catchCall != null) {
             emit(LuaIf(LuaUnary(LuaUnOp.Not, LuaName(ok)), listOf(LuaAssign(names.map { LuaName(it) }, listOf(catchCall)))))
         }
-        emitAll(finally(ok))
+        emitAll(finally(ok, result))
         emit(LuaIf(LuaUnary(LuaUnOp.Not, LuaName(ok)), listOf(LuaCallStmt(luaCall(LuaName("error"), LuaName(result), LuaNumber("0"))))))
         emitAll(exits.reissue(result, returned))
     }

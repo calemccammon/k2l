@@ -20,7 +20,13 @@ internal object SequenceMappings {
         "elementAtOrNull", "indexOf", "indexOfFirst", "contains", "any", "all", "none", "count", "average", "max", "min",
         "maxOrNull", "minOrNull", "maxBy", "minBy", "maxByOrNull", "minByOrNull", "maxOf", "minOf", "maxOfOrNull",
         "minOfOrNull", "joinToString", "groupBy", "associate", "associateBy", "associateWith", "toMap", "partition", "iterator",
-        "asIterable", "toCollection",
+        "asIterable", "toCollection", "elementAtOrElse", "firstNotNullOf", "firstNotNullOfOrNull", "indexOfLast", "lastIndexOf",
+        "filterIndexedTo", "filterTo", "filterNotTo", "filterNotNullTo", "mapIndexedNotNullTo", "mapIndexedTo", "mapTo",
+        "mapNotNullTo", "flatMapIndexedTo", "flatMapTo", "flatMapIndexed", "associateTo", "associateByTo", "associateWithTo",
+        "groupByTo", "groupingBy", "maxWith", "minWith", "maxWithOrNull", "minWithOrNull", "maxOfWith", "minOfWith",
+        "maxOfWithOrNull", "minOfWithOrNull", "reduceIndexed",
+        "reduceIndexedOrNull", "reduceOrNull", "runningFoldIndexed", "scanIndexed", "runningReduceIndexed", "sumBy",
+        "sumByDouble", "requireNoNulls", "joinTo", "toSortedSet",
     )
 
     private val ASSEQUENCE_IDS = setOf("kotlin/collections/asSequence", "kotlin/sequences/asSequence", "kotlin/text/asSequence")
@@ -73,15 +79,19 @@ internal object SequenceMappings {
         when (name) {
             "sum" -> FloatMappings.sum(site) ?: LuaMethodCall(self, "sum", zeroFor(site, elementType))
             "sumOf" -> LuaMethodCall(self, "sumOf", args + zeroFor(site, (argTypes.getOrNull(0) as? KaFunctionType)?.returnType))
-            "plus", "minus" -> LuaMethodCall(self, if (isElements(site, argTypes.getOrNull(0), elementType)) name + "All" else name, args)
+            "plus", "minus" -> LuaMethodCall(self, if (isElements(site, elementType)) name + "All" else name, args)
             "plusElement", "minusElement" -> LuaMethodCall(self, name.removeSuffix("Element"), args)
+            "sortedBy", "sortedByDescending" -> CollectionMappings.sortBySelector(name, site)
+            "shuffled" -> LuaMethodCall(self, "shuffled", listOf(args.firstOrNull() ?: libMember("Random", "__K2L_Random", "default")))
+            "orEmpty" -> LuaBinary(LuaBinOp.Or, self, call("__K2L_SequenceOf"))
             else -> if (name in SEQUENCE_METHODS) LuaMethodCall(self, name, args) else null
         }
     }
 
-    /** Whether a `plus`/`minus` argument is a group of elements rather than one element. */
-    private fun isElements(site: CallSite, argType: KaType?, elementType: KaType?): Boolean = with(site.session) {
-        val kind = argType?.collectionKind() ?: return false
+    /** Whether a `plus`/`minus` argument is a group of elements rather than one element (as the resolved overload says). */
+    private fun isElements(site: CallSite, elementType: KaType?): Boolean = with(site.session) {
+        val declared = site.parameterTypes.getOrNull(0)
+        val kind = (declared ?: site.argTypes.getOrNull(0))?.collectionKind() ?: return false
         val groups = setOf(
             CollectionKind.List,
             CollectionKind.Array,
@@ -90,7 +100,7 @@ internal object SequenceMappings {
             CollectionKind.Range,
             CollectionKind.Sequence,
         )
-        kind in groups && elementType?.collectionKind() == null
+        kind in groups && (declared != null || elementType?.collectionKind() == null)
     }
 
     private fun zeroFor(site: CallSite, type: KaType?): List<LuaExpr> = with(site.session) {

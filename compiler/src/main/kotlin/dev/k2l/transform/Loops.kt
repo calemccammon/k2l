@@ -7,12 +7,15 @@ import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.*
 
+/**
+ * A labeled statement: a loop that `break@label` and `continue@label` can name. Elsewhere a label only matters to
+ * `return@label` in a lambda, see [lambdaLabels], so the expression is an ordinary statement.
+ */
 internal fun FileTransformer.labeled(e: KtLabeledExpression): Unit = with(session) {
-    val base = e.baseExpression
-    if (base is KtLoopExpression) {
-        loop(base, e.getLabelName())
-    } else {
-        unsupported(e, "Labeled expression")
+    when (val base = e.baseExpression) {
+        null -> Unit
+        is KtLoopExpression -> loop(base, e.getLabelName())
+        else -> statement(base)
     }
 }
 
@@ -47,12 +50,14 @@ internal fun FileTransformer.loop(e: KtLoopExpression, label: String?): Unit = w
 }
 
 internal fun FileTransformer.loopBody(frame: LoopFrame, body: KtExpression?): List<LuaStmt> = with(session) {
+    frame.owner = frames.lastOrNull()
     loops.addLast(frame)
-    val stmts = try {
+    val collected = try {
         collect { body?.let { block(it) } }
     } finally {
         loops.removeLast()
     }
+    val stmts = ownExits(frame, collected)
     val cont = frame.continueLabel ?: return stmts
     // The label sits outside a do-block so `goto` never jumps into the scope of a body local.
     if (target.hasGoto) return listOf(LuaDo(stmts), LuaLabel(cont))
@@ -63,6 +68,8 @@ internal fun FileTransformer.loopBody(frame: LoopFrame, body: KtExpression?): Li
         when (s) {
             is LuaGoto -> if (s.label == cont && depth == 0) {
                 listOf(LuaBreak)
+            } else if (s.label in jumpLabels && s.label != cont) {
+                listOf(s) // an enclosing loop's or inlined body's, lowered there
             } else {
                 ctx.error(file, "continue to an outer loop needs goto, which Lua 5.1 lacks")
                 listOf(s)
@@ -112,13 +119,9 @@ private fun FileTransformer.rangeLoop(
         return
     }
     val values = ordered(listOfNotNull(range.first, range.last, range.step))
-        .map { if (isChar) charCode(it) else it }
+        .mapIndexed { i, value -> if (isChar && i < 2) charCode(value) else value } // a Char range's step is an Int
     val limit = if (range.inclusive) values[1] else plusConstant(values[1], -1)
-    val step = when {
-        range.step != null -> if (range.descending) LuaUnary(LuaUnOp.Neg, values[2]) else values[2]
-        range.descending -> LuaNumber("-1")
-        else -> null
-    }
+    val step = loopStep(range, values.getOrNull(2))
     if (isChar) {
         // Chars are one-character strings: loop over their codes.
         val code = ctx.temp("code")
@@ -127,6 +130,13 @@ private fun FileTransformer.rangeLoop(
     } else {
         emit(LuaNumericFor(naming.of(param), values[0], limit, step, loopBody(frame, e.body)))
     }
+}
+
+/** The step of the numeric `for` over [range]: its checked `step` [value] (negated for `downTo`), or null for 1. */
+private fun FileTransformer.loopStep(range: KRange, value: LuaExpr?): LuaExpr? = when {
+    range.step != null && value != null -> checkedStep(range.step, value).let { if (range.descending) LuaUnary(LuaUnOp.Neg, it) else it }
+    range.descending -> LuaNumber("-1")
+    else -> null
 }
 
 /** Loops over collections, maps, ranges held in values, and strings. */
@@ -300,62 +310,3 @@ internal fun FileTransformer.component(entry: KtDestructuringDeclarationEntry, v
 /** [collection] itself when it is already a `List`/`Array`, else a list copy of it. */
 internal fun FileTransformer.asList(kind: CollectionKind?, collection: LuaExpr): LuaExpr =
     if (kind?.isIndexable == true) collection else LuaMethodCall(collection, "toList", emptyList())
-
-private fun FileTransformer.jumpTarget(e: KtExpressionWithLabel): LoopFrame? = with(session) {
-    val label = e.getLabelName()
-    val frame = if (label != null) loops.lastOrNull { it.label == label } else loops.lastOrNull()
-    if (frame == null) unsupported(e, "Jump outside of a loop")
-    return frame
-}
-
-internal fun FileTransformer.breakStatement(e: KtBreakExpression): Unit = with(session) {
-    val frame = jumpTarget(e) ?: return
-    if (frame === loops.last()) {
-        emit(LuaBreak)
-    } else if (!target.hasGoto) {
-        // break@outer without goto: set a flag, and have each loop in between break when it is set.
-        val flag = frame.breakFlag ?: ctx.temp("break").also { frame.breakFlag = it }
-        emit(assign(flag, LuaBool(true)))
-        emit(LuaBreak)
-        innerFrames(frame).forEach { inner -> inner.addCheck(LuaIf(LuaName(flag), listOf(LuaBreak))) }
-    } else {
-        val label = frame.breakLabel ?: ctx.temp("break").also { frame.breakLabel = it }
-        emit(LuaGoto(label))
-    }
-}
-
-internal fun FileTransformer.continueStatement(e: KtContinueExpression): Unit = with(session) {
-    val frame = jumpTarget(e) ?: return
-    val label = frame.continueLabel ?: ctx.temp("continue").also { frame.continueLabel = it }
-    if (target.hasGoto || frame === loops.last()) {
-        emit(LuaGoto(label))
-        return
-    }
-    // continue@outer without goto: break out of the inner loops, then continue the outer one.
-    val flag = frame.continueFlag ?: ctx.temp("continue").also { frame.continueFlag = it }
-    emit(assign(flag, LuaBool(true)))
-    emit(LuaBreak)
-    val inner = innerFrames(frame)
-    inner.dropLast(1).forEach { it.addCheck(LuaIf(LuaName(flag), listOf(LuaBreak))) }
-    inner.last().addCheck(LuaIf(LuaName(flag), listOf(LuaGoto(label))))
-}
-
-/** Loops nested inside [outer], innermost first. */
-private fun FileTransformer.innerFrames(outer: LoopFrame): List<LoopFrame> = loops.toList().takeLastWhile { it !== outer }.reversed()
-
-/** `x in range` for ranges without a step. */
-internal fun FileTransformer.rangeContains(value: LuaExpr, range: KRange, element: KtElement): LuaExpr = with(session) {
-    if (range.step != null) return unsupported(element, "'in' with a stepped range")
-    val (first, last) = ordered(listOf(range.first, range.last)).let { it[0] to it[1] }
-    val x = cache(value, "value")
-    val lo = if (range.descending) last else first
-    val hi = if (range.descending) first else last
-    val upperOp = if (range.inclusive) LuaBinOp.Le else LuaBinOp.Lt
-    val wide = if (emulatesLong) wideRangeType(range) else null
-    if (wide != null) {
-        val upper = long64Comparison(upperOp, x, wide, hi, wide)!!
-        return LuaBinary(LuaBinOp.And, long64Comparison(LuaBinOp.Ge, x, wide, lo, wide)!!, upper)
-    }
-    val upper = LuaBinary(upperOp, x, hi)
-    return LuaBinary(LuaBinOp.And, LuaBinary(LuaBinOp.Ge, x, lo), upper)
-}

@@ -36,7 +36,7 @@ private fun FileTransformer.expands(fn: KtNamedFunction, call: KtCallExpression)
     call.valueArguments.mapNotNull { it.getArgumentExpression() }.any { arg ->
         val unwrapped = KtPsiUtil.safeDeparenthesize(arg).let { (it as? KtLabeledExpression)?.baseExpression ?: it }
         when (unwrapped) {
-            is KtLambdaExpression -> hasNonLocalReturn(unwrapped)
+            is KtLambdaExpression -> hasNonLocalJump(unwrapped)
             is KtNameReferenceExpression -> (unwrapped.mainReference.resolve() as? KtParameter)?.let { isInlinedParameter(it) } == true
             else -> false
         }

@@ -1,0 +1,19 @@
+Hi Ann
+init of the dog object
+Rex says woof Rex says woof 2
+true true Rex
+13
+current after one call: 7
+9 11
+Welcome to Corner, Bo (visit 1)
+Welcome to Corner, Cy (visit 2)
+25
+Corner desk helps Di
+1 2
+[100, 200, 300]
+false
+app.MainKt$main$Local
+app.Shop$greeter$1 app.MainKt$main$point$1
+app.Shop$counter$1 app.MainKt$main$made$1$1
+null Local null
+true

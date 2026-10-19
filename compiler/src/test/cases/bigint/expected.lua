@@ -6,11 +6,11 @@ local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
@@ -79,8 +79,8 @@ end
 
 local function divisions()
     print("-- division")
-    local values = __K2L_ListOf("7", "-7", "1000000000000000000000", "-1000000000000000000001")
-    local divisors = __K2L_ListOf("2", "-2", "3", "123456789123456789", "-99999999999999999999")
+    local values = __K2L_ReadOnlyListOf("7", "-7", "1000000000000000000000", "-1000000000000000000001")
+    local divisors = __K2L_ReadOnlyListOf("2", "-2", "3", "123456789123456789", "-99999999999999999999")
     for _, a in ipairs(values) do
         for _, b in ipairs(divisors) do
             local x = __K2L_BigInteger.parse(a)
@@ -101,13 +101,13 @@ end
 
 local function bits()
     print("-- bits")
-    local values = __K2L_ListOf("0", "1", "-1", "255", "-256", "123456789012345678901234567890", "-123456789012345678901234567890")
+    local values = __K2L_ReadOnlyListOf("0", "1", "-1", "255", "-256", "123456789012345678901234567890", "-123456789012345678901234567890")
     for _, a in ipairs(values) do
         local x = __K2L_BigInteger.parse(a)
         print(a .. ": bitLength=" .. x:bitLength() .. " bitCount=" .. x:bitCount() .. " lowest=" .. x:getLowestSetBit() .. " not=" .. __K2L_Str(x:bnot()) .. " signum=" .. x:signum())
         print("  shl 5=" .. __K2L_Str(x:shiftLeft(5)) .. " shr 5=" .. __K2L_Str(x:shiftRight(5)) .. " shl 100=" .. __K2L_Str(x:shiftLeft(100)) .. " shr 100=" .. __K2L_Str(x:shiftRight(100)) .. " shr -3=" .. __K2L_Str(x:shiftRight(-3)))
     end
-    local ____pairs = __K2L_ListOf(__K2L_Pair.new("12345678901234567890", "-987654321"), __K2L_Pair.new("-5", "3"), __K2L_Pair.new("-123456789012345678901234567890", "-7"), __K2L_Pair.new("0", "-1"))
+    local ____pairs = __K2L_ReadOnlyListOf(__K2L_Pair.new("12345678901234567890", "-987654321"), __K2L_Pair.new("-5", "3"), __K2L_Pair.new("-123456789012345678901234567890", "-7"), __K2L_Pair.new("0", "-1"))
     for _, ____item in ipairs(____pairs) do
         local a, b = ____item.first, ____item.second
         local x = __K2L_BigInteger.parse(a)
@@ -128,12 +128,12 @@ end
 
 local function conversions()
     print("-- conversions")
-    local values = __K2L_ListOf("0", "1", "-1", "2147483647", "2147483648", "-2147483649", "4294967296", "123456789012345678901234567890", "-123456789012345678901234567890")
+    local values = __K2L_ReadOnlyListOf("0", "1", "-1", "2147483647", "2147483648", "-2147483649", "4294967296", "123456789012345678901234567890", "-123456789012345678901234567890")
     for _, a in ipairs(values) do
         local x = __K2L_BigInteger.parse(a)
         print(a .. ": int=" .. x:toInt() .. " hash=" .. x:hashCode() .. " double=" .. __K2L_Str(x:toDouble()))
     end
-    local longs = __K2L_ListOf("4503599627370496", "-4503599627370497", "123456789012", "9007199254740992", "4294967295")
+    local longs = __K2L_ReadOnlyListOf("4503599627370496", "-4503599627370497", "123456789012", "9007199254740992", "4294967295")
     for _, a in ipairs(longs) do
         print(a .. ": long=" .. __K2L_BigInteger.parse(a):toLong() .. " hash=" .. __K2L_BigInteger.parse(a):hashCode())
     end
@@ -190,17 +190,17 @@ local function comparisons()
     print(a:compareTo(c))
     print(a:negate():compareTo(b))
     print(a:hashCode() == c:hashCode())
-    local sorted = __K2L_ListOf(a, b, __K2L_BigInteger.ZERO, a:negate(), __K2L_BigInteger.TEN):sorted()
+    local sorted = __K2L_ReadOnlyListOf(a, b, __K2L_BigInteger.ZERO, a:negate(), __K2L_BigInteger.TEN):sorted()
     print(__K2L_Str(sorted))
-    print(__K2L_ListOf(a, b, c):distinct().size)
-    print(__K2L_SetOf(a, c, b).size)
+    print(__K2L_ReadOnlyListOf(a, b, c):distinct().size)
+    print(__K2L_ReadOnlySetOf(a, c, b).size)
     local counts = __K2L_MapOf()
-    for _, x in ipairs(__K2L_ListOf(a, b, c, a)) do
+    for _, x in ipairs(__K2L_ReadOnlyListOf(a, b, c, a)) do
         counts:set(x, (counts:get(x) or 0) + 1)
     end
     print(__K2L_Str(counts))
-    print(__K2L_Str(__K2L_ListOf(a, b):maxOrNull()))
-    print(__K2L_Str(__K2L_ListOf(a, b):minByOrNull(function(it) return it end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(a, b):maxOrNull()))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(a, b):minByOrNull(function(it) return it end)))
     print(__K2L_Str(__K2L_Num.maxOf(a, b)))
 end
 
@@ -222,8 +222,8 @@ local function operators()
     print(__K2L_Str(x:bnot()))
     local y = __K2L_BigInteger.parse("-12")
     print(__K2L_Str(y) .. " " .. __K2L_Str(x) .. " " .. __K2L_Str(y:multiply(x)) .. " " .. __K2L_Str(y:add(x)) .. " " .. __K2L_Str(y:subtract(x)))
-    print(__K2L_Str(__K2L_ListOf(1, 2, 3, 4, 5):map(function(it) return __K2L_BigInteger.valueOf(it) end):fold(__K2L_BigInteger.ONE, function(acc, v) return acc:multiply(v) end)))
-    print(__K2L_Str(__K2L_ListOf("1", "2", "3"):sumOf(function(it) return __K2L_BigInteger.parse(it) end, __K2L_BigInteger.ZERO)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2, 3, 4, 5):map(function(it) return __K2L_BigInteger.valueOf(it) end):fold(__K2L_BigInteger.ONE, function(acc, v) return acc:multiply(v) end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf("1", "2", "3"):sumOf(function(it) return __K2L_BigInteger.parse(it) end, __K2L_BigInteger.ZERO)))
     print(__K2L_Str(__K2L_IntRange.new(1, 5):map(function(it) return __K2L_BigInteger.valueOf(it) end):reduce(function(acc, v) return acc:multiply(v) end)))
 end
 

@@ -46,7 +46,7 @@ local function describe()
     return getName() .. "/" .. getVolume() .. "/" .. getHits()
 end
 
-local Settings = __K2L_Class("Settings")
+local Settings = __K2L_Class("app.config.Settings")
 
 function Settings:touch()
     calls = calls + 1
@@ -57,6 +57,7 @@ return {history = history, getName = getName, setName = setName, getVolume = get
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____exports = {}
@@ -139,7 +140,7 @@ local function setFlag(v)
 end
 
 local function getComputed()
-    return __K2L_ListOf(____exports.counter, ____exports.counter + 1)
+    return __K2L_ReadOnlyListOf(____exports.counter, ____exports.counter + 1)
 end
 
 local function getNow__1()

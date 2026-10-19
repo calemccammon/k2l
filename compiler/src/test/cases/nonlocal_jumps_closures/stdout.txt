@@ -1,0 +1,29 @@
+bang
+[a]
+10
+-1
+8
+[any=20 first=30 fold=-3 count=-1 sum=99 none=true]
+returned
+Success(20)
+recovered-returned
+0a 0b 0c 1a 2a 2b
+loop done, log=02
+returned at 2, log=0
+[1, 200, 0, 2, -6]
+42
+finally of the outer lambda
+returned through two lambdas and a try, log=[]
+12
+3
+20
+[leaving]
+returned through try, log=[try a, finally a]
+finally runs, log=[lambda a]
+returned, log=[lambda a]
+7
+[close ra, close rc]
+returned out of runCatching
+boom
+[1, 2, 3]
+[10, 11, 20]

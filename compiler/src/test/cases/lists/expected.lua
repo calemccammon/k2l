@@ -5,6 +5,8 @@ local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
@@ -28,7 +30,7 @@ function Item:equals(other)
 end
 
 local function main()
-    local xs = __K2L_ListOf(5, 3, 8, 1, 9, 2)
+    local xs = __K2L_ReadOnlyListOf(5, 3, 8, 1, 9, 2)
     print(__K2L_Str(xs))
     print(xs.size)
     print(xs:get(0) + xs:get(xs.size - 1))
@@ -56,16 +58,16 @@ local function main()
     print(xs:reduce(function(a, b) return a * b end))
     print(__K2L_Str(xs:firstOrNull(function(it) return it > 100 end)))
     print(__K2L_Str(xs:find(function(it) return it > 4 end)))
-    print(__K2L_Str(__K2L_ListOf(1, 1, 2, 3, 3):distinct()))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 1, 2, 3, 3):distinct()))
     print(__K2L_Str(xs:chunked(4)))
-    print(__K2L_Str(xs:zip(__K2L_ListOf("a", "b", "c"))))
+    print(__K2L_Str(xs:zip(__K2L_ReadOnlyListOf("a", "b", "c"))))
     print(__K2L_Str(xs:withIndex():map(function(____destructured)
         local i, v = ____destructured.index, ____destructured.value
         return i * v
     end)))
-    local items = __K2L_ListOf(Item.new("pen", 3), Item.new("book", 12), Item.new("cup", 5), Item.new("ink", 3))
-    print(__K2L_Str(items:sortedBy(function(it) return it.price end):map(function(it) return it.name end)))
-    print(items:sortedByDescending(function(it) return it.price end):first().name)
+    local items = __K2L_ReadOnlyListOf(Item.new("pen", 3), Item.new("book", 12), Item.new("cup", 5), Item.new("ink", 3))
+    print(__K2L_Str(items:sortedBy(function(it) return it.price end, true):map(function(it) return it.name end)))
+    print(items:sortedByDescending(function(it) return it.price end, true):first().name)
     print(__K2L_Str(items:maxByOrNull(function(it) return it.price end)))
     print(items:sumOf(function(it) return it.price end))
     print(__K2L_Str(items:groupBy(function(it) return it.price end)))
@@ -116,12 +118,12 @@ local function main()
             print("first is " .. x)
         end
     end
-    local nested = __K2L_ListOf(__K2L_ListOf(1, 2), __K2L_ListOf(3), __K2L_ListOf())
+    local nested = __K2L_ReadOnlyListOf(__K2L_ReadOnlyListOf(1, 2), __K2L_SingletonListOf(3), __K2L_ReadOnlyListOf())
     print(__K2L_Str(nested:flatten()))
     print(__K2L_Str(nested:flatMap(function(it)
         return it:map(function(x) return x * 10 end)
     end)))
-    print(__K2L_Equals(__K2L_ListOf(1, 2), __K2L_ListOf(1, 2)))
+    print(__K2L_Equals(__K2L_ReadOnlyListOf(1, 2), __K2L_ReadOnlyListOf(1, 2)))
     print(__K2L_Str(__K2L_ListOfSize(4, function(it) return it * it end)))
     local arr = __K2L_ArrayOf(3, 1, 2)
     arr:set(1, 7)
@@ -129,8 +131,8 @@ local function main()
     print(__K2L_Str(arr:toList()))
     local words = __K2L_ArrayOf("x", "y")
     print(words:joinToString(""))
-    print(__K2L_Str(__K2L_ListOf("a", nil, "b"):filterNotNull()))
-    local ____destructured_1 = __K2L_ListOf(10, 20)
+    print(__K2L_Str(__K2L_ReadOnlyListOf("a", nil, "b"):filterNotNull()))
+    local ____destructured_1 = __K2L_ReadOnlyListOf(10, 20)
     local a, b = ____destructured_1[1], ____destructured_1[2]
     print(a + b)
 end

@@ -1,15 +1,18 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_JavaClass = ____lualib.__K2L_JavaClass
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Num = ____lualib.__K2L_Num
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_TouchObject = ____lualib.__K2L_TouchObject
 
@@ -53,7 +56,7 @@ __K2L_ClassInfo(Plain, "Plain", "Plain", "class")
 
 function Plain:____init()
     self.x = 10
-    self.names = __K2L_ListOf("a", "b")
+    self.names = __K2L_ReadOnlyListOf("a", "b")
     self.count = 0
 end
 
@@ -91,7 +94,8 @@ end
 __K2L_LazyObject(Derived, "____init")
 local Service = __K2L_Class("Service")
 __K2L_ClassInfo(Service, "Service", "Service", "class")
-Service.Nested = __K2L_Class("Nested")
+__K2L_CompanionInfo(Service, "Service.Companion", "Service$Companion", "Companion")
+Service.Nested = __K2L_Class("Service$Nested")
 __K2L_ClassInfo(Service.Nested, "Service.Nested", "Service$Nested", "class")
 
 function Service.Nested:____init()
@@ -114,6 +118,7 @@ end
 __K2L_LazyObject(Service, "____initCompanion")
 local Quiet = __K2L_Class("Quiet")
 __K2L_ClassInfo(Quiet, "Quiet", "Quiet", "class")
+__K2L_CompanionInfo(Quiet, "Quiet.Companion", "Quiet$Companion", "Companion")
 
 function Quiet:____initCompanion()
     self.ZERO = Quiet.new()
@@ -124,6 +129,7 @@ end
 Quiet:____initCompanion()
 local Level = __K2L_Class("Level")
 __K2L_ClassInfo(Level, "Level", "Level", "class")
+__K2L_CompanionInfo(Level, "Level.Companion", "Level$Companion", "Companion")
 
 function Level:____init(name, ordinal, code)
     self.name = name
@@ -225,7 +231,7 @@ local function main()
     print(Derived.id)
     print("before Service")
     print(Service.Nested.k)
-    print(__K2L_Equals(__K2L_KClassOfValue(Service:create("one")), __K2L_KClassOf(Service)))
+    print(__K2L_Equals(__K2L_JavaClass(__K2L_KClassOfValue(Service:create("one"))), __K2L_JavaClass(__K2L_KClassOf(Service))))
     print(__K2L_Str(Service.instances))
     print(5)
     print(Quiet.made)

@@ -47,4 +47,12 @@ fun main() {
     println()
     for (i in ULong.MAX_VALUE downTo ULong.MAX_VALUE - 1uL) print("$i ")
     println()
+    // stepped `in` over Long and ULong progressions with values beyond 2^53 and 2^63 (the JVM walks the elements, so
+    // they are short)
+    val top = ULong.MAX_VALUE
+    val half = 1uL shl 63
+    println("${top in top - 8uL..top step 2L} ${top - 1uL in top - 8uL..top step 2L} ${half + 3uL in half - 3uL..half + 9uL step 3L}")
+    println("${half - 1uL in half + 5uL downTo half - 7uL step 3L} ${top !in top - 9uL until top step 1L} ${half in 1uL..9uL step 2L}")
+    println("${max - 2 in max - 10..max step 2L} ${max - 1 in max - 10..max step 2L} ${big + 3 in big + 9 downTo big step 3L}")
+    println("${5u in 1u..10u step 2} ${6u in 1u..10u step 2} ${UInt.MAX_VALUE in UInt.MAX_VALUE - 10u..UInt.MAX_VALUE step 5}")
 }

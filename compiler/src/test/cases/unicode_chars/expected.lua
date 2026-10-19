@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CompareByWith = ____lualib.__K2L_CompareByWith
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Num = ____lualib.__K2L_Num
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
@@ -38,7 +38,7 @@ local function flags(c)
 end
 
 local function classification()
-    local samples = __K2L_ListOf("a", "Z", "5", " ", "\t", "_", "é", "É", "ß", "ÿ", "Σ", "ς", "σ", "Ω", "ж", "Ж", "日", "テ", "ｱ", "한", "١", "٣", "²", "½", "٫", " ", " ", "​", "　", "", "\031", "ǅ", "ǆ", "Ⅷ", "ⅷ", "ⓐ", "Ⓐ", "ª", "º", "ʰ", "́", "€")
+    local samples = __K2L_ReadOnlyListOf("a", "Z", "5", " ", "\t", "_", "é", "É", "ß", "ÿ", "Σ", "ς", "σ", "Ω", "ж", "Ж", "日", "テ", "ｱ", "한", "١", "٣", "²", "½", "٫", " ", " ", "​", "　", "", "\031", "ǅ", "ǆ", "Ⅷ", "ⅷ", "ⓐ", "Ⓐ", "ª", "º", "ʰ", "́", "€")
     for _, c in ipairs(samples) do
         print(__K2L_Utf16.out("U+" .. __K2L_Text.padStart(__K2L_Num.toRadix(__K2L_Utf16.code(c), 16), 4, "0") .. " " .. flags(c)))
     end
@@ -73,7 +73,7 @@ local function caseMapping()
 end
 
 local function stringCase()
-    local words = __K2L_ListOf("straße", "Straße", "ǆ", "ﬃ", "άέή ώ", "ΐ", "ŉ", "İSTANBUL", "ÀÉÎÕÜ", "àéîõü", "日本語 abc", "Привет Мир", "ÿ", "µ", "a😀b", "𐐨𐐀", "ǅungla")
+    local words = __K2L_ReadOnlyListOf("straße", "Straße", "ǆ", "ﬃ", "άέή ώ", "ΐ", "ŉ", "İSTANBUL", "ÀÉÎÕÜ", "àéîõü", "日本語 abc", "Привет Мир", "ÿ", "µ", "a😀b", "𐐨𐐀", "ǅungla")
     for _, w in ipairs(words) do
         print(__K2L_Utf16.out(w .. " -> " .. __K2L_Utf16Case.uppercase(w) .. " " .. __K2L_Utf16Case.lowercase(w) .. " " .. __K2L_Utf16.len(__K2L_Utf16Case.uppercase(w)) .. " " .. __K2L_Utf16.len(__K2L_Utf16Case.lowercase(w))))
     end
@@ -113,9 +113,9 @@ local function ignoreCase()
     print(__K2L_Utf16.out(__K2L_Str(__K2L_Text.split("a É b é c", {"é"}, nil, true))))
     print(__K2L_Utf16.out(__K2L_Text.compare(__K2L_Utf16Case.fold("é"), __K2L_Utf16Case.fold("É"))))
     print(__K2L_Utf16.out(__K2L_Text.compare("é", "É")))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_ListOf("zèbre", "Zèbre", "éclair", "Éclat", "apple", "Äpfel", "Zoo"):sortedWith(__K2L_Text.caseInsensitiveOrder))))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_ListOf("zèbre", "Zèbre", "éclair", "Éclat", "apple", "Äpfel", "Zoo"):sorted())))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_ListOf("b", "é", "a", "É"):sortedWith(__K2L_CompareByWith(__K2L_Text.caseInsensitiveOrder, function(it) return it end)))))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ReadOnlyListOf("zèbre", "Zèbre", "éclair", "Éclat", "apple", "Äpfel", "Zoo"):sortedWith(__K2L_Text.caseInsensitiveOrder))))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ReadOnlyListOf("zèbre", "Zèbre", "éclair", "Éclat", "apple", "Äpfel", "Zoo"):sorted())))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ReadOnlyListOf("b", "é", "a", "É"):sortedWith(__K2L_CompareByWith(__K2L_Text.caseInsensitiveOrder, function(it) return it end)))))
     print(__K2L_Utf16.out("é" == "É"))
     print(__K2L_Utf16.out("é" == "É" or true and __K2L_Utf16Case.equalsIgnoreCase("é", "É")))
     print(__K2L_Utf16.out("a" == "b" or true and __K2L_Utf16Case.equalsIgnoreCase("a", "b")))

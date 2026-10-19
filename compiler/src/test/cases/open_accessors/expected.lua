@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Shape = __K2L_Class("Shape")
@@ -123,7 +123,7 @@ function PlainSub:____init(a)
 end
 
 local function main()
-    local shapes = __K2L_ListOf(Rect.new(2.0, 3.0), Square.new(4.0))
+    local shapes = __K2L_ReadOnlyListOf(Rect.new(2.0, 3.0), Square.new(4.0))
     for _, s in ipairs(shapes) do
         print(s:getName() .. " " .. __K2L_Str(s:getArea()))
     end
@@ -137,7 +137,7 @@ local function main()
     local q = Rect.new(1.0, 1.0)
     q:setCount(q:getCount() + 2)
     print(q:describe())
-    local bases = __K2L_ListOf(Impl.new(3), Fixed.new())
+    local bases = __K2L_ReadOnlyListOf(Impl.new(3), Fixed.new())
     for _, b in ipairs(bases) do
         print(b:getId() .. " " .. b:getDesc())
     end

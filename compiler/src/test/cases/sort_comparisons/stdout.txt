@@ -1,0 +1,63 @@
+[1, 2, 3, 4, 5] 2-5 4-2 4-5 4-2 1-4 1-2 3-4 3-2
+[4, 3, 2, 1] 2-1 3-2 4-3
+[Item(key=0, id=1), Item(key=0, id=7), Item(key=0, id=12), Item(key=0, id=22), Item(key=0, id=27), Item(key=0, id=34)]
+[Item(key=8, id=0), Item(key=8, id=4), Item(key=7, id=5), Item(key=7, id=6)]
+[Item(key=8, id=0), Item(key=0, id=1), Item(key=4, id=2)]
+[a, bb, dd, ccc]
+[(0, y), (1, z), (1, x)]
+[SPADES, HEARTS, CLUBS]
+-1.0, -0.0, 0.0, 2.5, NaN
+-3.5, -0.0, 0.0, NaN
+NaN, NaN, NaN, NaN, NaN, NaN, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0
+-1 1 0 1
+[a, b]
+[Item(key=8, id=0), Item(key=0, id=7), Item(key=5, id=14), Item(key=6, id=21), Item(key=8, id=28)]
+[Item(key=4, id=59), Item(key=2, id=58)]
+getter selector calls=318 [0, 25, 5, 30, 10]
+n=0 [0 calls=0 hash=0] [1 calls=0 hash=0] [2 calls=0 hash=0] [3 calls=0 hash=0] [4 calls=0 hash=0] [5 calls=0 hash=0] [6 calls=0 hash=0]
+n=1 [0 calls=0 hash=0] [1 calls=0 hash=0] [2 calls=0 hash=0] [3 calls=0 hash=0] [4 calls=0 hash=0] [5 calls=0 hash=0] [6 calls=0 hash=0]
+n=2 [0 calls=1 hash=1533] [1 calls=1 hash=17] [2 calls=1 hash=7] [3 calls=1 hash=9] [4 calls=1 hash=49] [5 calls=1 hash=7] [6 calls=1 hash=7]
+n=3 [0 calls=4 hash=49064] [1 calls=2 hash=270] [2 calls=2 hash=232] [3 calls=2 hash=536] [4 calls=4 hash=473671] [5 calls=2 hash=232] [6 calls=4 hash=758532]
+n=7 [0 calls=13 hash=239713] [1 calls=10 hash=491030] [2 calls=6 hash=976750] [3 calls=6 hash=724921] [4 calls=13 hash=429394] [5 calls=6 hash=976750] [6 calls=6 hash=976750]
+n=31 [0 calls=112 hash=540785] [1 calls=108 hash=205823] [2 calls=30 hash=908391] [3 calls=30 hash=323714] [4 calls=109 hash=481027] [5 calls=54 hash=591096] [6 calls=62 hash=105470]
+n=32 [0 calls=123 hash=361794] [1 calls=118 hash=52655] [2 calls=31 hash=160844] [3 calls=31 hash=267435] [4 calls=119 hash=103779] [5 calls=60 hash=857977] [6 calls=41 hash=947335]
+n=33 [0 calls=129 hash=704089] [1 calls=117 hash=246430] [2 calls=32 hash=986487] [3 calls=32 hash=486779] [4 calls=127 hash=343741] [5 calls=63 hash=785217] [6 calls=79 hash=497800]
+n=64 [0 calls=306 hash=928711] [1 calls=287 hash=842300] [2 calls=63 hash=276611] [3 calls=63 hash=774175] [4 calls=306 hash=176790] [5 calls=105 hash=803586] [6 calls=214 hash=732878]
+n=65 [0 calls=312 hash=354772] [1 calls=297 hash=759025] [2 calls=64 hash=575588] [3 calls=64 hash=477567] [4 calls=309 hash=485743] [5 calls=104 hash=670342] [6 calls=196 hash=905317]
+n=100 [0 calls=542 hash=977314] [1 calls=479 hash=967905] [2 calls=99 hash=693840] [3 calls=99 hash=668874] [4 calls=534 hash=556957] [5 calls=228 hash=235279] [6 calls=370 hash=230805]
+n=257 [0 calls=1748 hash=159782] [1 calls=1364 hash=43415] [2 calls=256 hash=432926] [3 calls=256 hash=931915] [4 calls=1676 hash=812849] [5 calls=644 hash=262208] [6 calls=955 hash=114188]
+n=1000 [0 calls=8670 hash=327754] [1 calls=5406 hash=417478] [2 calls=999 hash=463489] [3 calls=999 hash=532770] [4 calls=7239 hash=45495] [5 calls=4732 hash=563059] [6 calls=5095 hash=855482]
+n=3000 [0 calls=30881 hash=30201] [1 calls=16670 hash=363745] [2 calls=2999 hash=266472] [3 calls=2999 hash=288195] [4 calls=22237 hash=178710] [5 calls=8749 hash=976625] [6 calls=13327 hash=282678]
+sortedBy [fig, pear, kiwi, plum, date, apple, banana, cherry] selector=30
+sortedByDescending [banana, cherry, apple, pear, kiwi, plum, date, fig] selector=36
+selector order [a, b, c, a, c, b]
+descending selector order [b, a, a, c, a, c, b, c]
+sortBy [banana, apple, date, fig, kiwi, plum, pear, cherry] selector=32
+sortByDescending [plum, pear, kiwi, fig, date, cherry, banana, apple] selector=36
+one element [x] selector=0
+compareBy.thenBy [fig, date, kiwi, pear, plum, apple, banana, cherry] selector=40
+sorted() calls=408 hash=261680 stable=true
+sortedDescending() calls=403 hash=906618 first=Item(key=19, id=0)
+sort() calls=408 hash=261680 true
+sortDescending() calls=308 hash=965012 true
+Array.sort() calls=408 hash=261680 true
+max Item(key=19, id=0) calls=79 hash=11723
+maxOrNull Item(key=19, id=0) minOrNull Item(key=0, id=17) calls=158 hash=386007
+sortedBy item Item(key=0, id=17) calls=408 hash=261680
+maxBy Item(key=19, id=0) calls=79 hash=11723
+Collections.sort calls=903 hash=762394
+Arrays.sort calls=903 hash=762394 true
+Arrays.sort range calls=609 hash=848625 [299, 499, 74, 52, 30, 139, 427, 379, 445, 303, 5, 9]
+Array.sortWith calls=903 hash=762394
+sortedArrayWith [5, 9, 12, 15, 24] calls=903 hash=762394
+MutableList.sortWith calls=903 hash=912248
+reversed comparator [499, 499, 498, 493, 485] calls=896 hash=99940
+maxWith 499 calls=149 hash=188072
+minWith 5 calls=149 hash=753288
+maxWith order [3-1, 3-2]
+random comparator 1: sorted
+random comparator 2: Comparison method violates its general contract!
+random comparator 3: Comparison method violates its general contract!
+random comparator 4: Comparison method violates its general contract!
+random comparator 5: Comparison method violates its general contract!
+random comparator 6: Comparison method violates its general contract!

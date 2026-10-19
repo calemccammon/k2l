@@ -1,0 +1,19 @@
+[[1], []]
+[{a=1}]
+{z=1, a=2}
+[3]
+[1, 2, 3]
+{a=2, b=1}
+[2, 1]
+x1
+hi!
+[a?, b?]
+[(1, one), (2, two), (3, three)]
+(1, t, true)
+[bad, worse]
+outer bad
+null
+caught from a reference
+[true, false]
+[x]
+true

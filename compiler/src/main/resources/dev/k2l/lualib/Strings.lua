@@ -87,19 +87,44 @@ local function __K2L_StringPadEnd(s, length, pad)
     return s .. string.rep(pad, length - #s)
 end
 
+-- The sign and the digit values of an integer literal in [radix], or nil when it is not one. ASCII letters and digits only,
+-- unless --strings utf16 is on (Utf16Case.lua sets __K2L_Text.unicodeDigits: Character.digit accepts Unicode digits).
+local function digitValues(s, radix)
+    local sign, digits = s:match("^([+-]?)(%w+)$")
+    if digits == nil then
+        local unicode = __K2L_Text.unicodeDigits
+        if unicode ~= nil and s:find("[\128-\255]") then
+            return unicode(s, radix)
+        end
+        return nil
+    end
+    local values, byte = {}, string.byte
+    for i = 1, #digits do
+        local b = byte(digits, i)
+        local d = b - 48
+        if b >= 97 then
+            d = b - 87
+        elseif b >= 65 then
+            d = b - 55
+        end
+        if d < 0 or d >= radix then
+            return nil
+        end
+        values[i] = d
+    end
+    return sign, values
+end
+
 -- String.toInt / toLong (radix 10 unless given); returns nil for malformed or out-of-range text.
 local function __K2L_StringToIntOrNull(s, radix, long)
     radix = radix or 10
-    local sign, digits = s:match("^([+-]?)(%w+)$")
-    if digits == nil then
+    local sign, values = digitValues(s, radix)
+    if values == nil then
         return nil
     end
     local acc, facc = 0, 0.0
-    for i = 1, #digits do
-        local d = tonumber(digits:sub(i, i), 36)
-        if d == nil or d >= radix then
-            return nil
-        end
+    for i = 1, #values do
+        local d = values[i]
         acc = acc * radix + d
         facc = facc * radix + d
     end
@@ -124,6 +149,54 @@ local function __K2L_StringToInt(s, radix, long)
     if n == nil then
         local suffix = (radix ~= nil and radix ~= 10) and " under radix " .. radix or ""
         error(__K2L_NumberFormatException.new("For input string: \"" .. s .. "\"" .. suffix))
+    end
+    return n
+end
+
+local TWO32 = 4294967296
+
+-- String.toUInt / toULong / toUByte / toUShort for [bits] 32, 64, 8 and 16: Kotlin's own parser, which accepts a leading "+"
+-- but no "-"; nil when the text is malformed or does not fit. A ULong is the Long with the same bits on Lua 5.3+, else a double.
+local function __K2L_StringToUnsignedOrNull(s, radix, bits)
+    radix = radix or 10
+    if radix < 2 or radix > 36 then
+        error(__K2L_IllegalArgumentException.new("radix " .. radix .. " was not in valid range 2..36"))
+    end
+    local sign, values = digitValues(s, radix)
+    if values == nil or sign == "-" then
+        return nil
+    end
+    if bits < 64 then
+        local limit, acc = 2 ^ bits - 1, 0
+        for i = 1, #values do
+            acc = acc * radix + values[i]
+            if acc > limit then
+                return nil
+            end
+        end
+        return acc
+    end
+    -- 32-bit halves keep every step exact in doubles
+    local hi, lo = 0, 0
+    for i = 1, #values do
+        lo = lo * radix + values[i]
+        local carry = math.floor(lo / TWO32)
+        lo = lo - carry * TWO32
+        hi = hi * radix + carry
+        if hi >= TWO32 then
+            return nil
+        end
+    end
+    if math.tointeger then
+        return math.tointeger(hi) * TWO32 + math.tointeger(lo)
+    end
+    return hi * TWO32 + lo
+end
+
+local function __K2L_StringToUnsigned(s, radix, bits)
+    local n = __K2L_StringToUnsignedOrNull(s, radix, bits)
+    if n == nil then
+        error(__K2L_NumberFormatException.new("Invalid number format: '" .. s .. "'"))
     end
     return n
 end
@@ -551,7 +624,10 @@ function __K2L_Text.chunked(s, size, transform)
     local out = __K2L_List.new()
     for i = 1, #s, size do
         local chunk = s:sub(i, i + size - 1)
-        out:add(transform and transform(chunk) or chunk)
+        if transform ~= nil then
+            chunk = transform(chunk)
+        end
+        out:add(chunk)
     end
     return out
 end
@@ -566,7 +642,10 @@ function __K2L_Text.windowed(s, size, step, partial, transform)
     local i = 1
     while i <= #s and (partial or i + size - 1 <= #s) do
         local window = s:sub(i, i + size - 1)
-        out:add(transform and transform(window) or window)
+        if transform ~= nil then
+            window = transform(window)
+        end
+        out:add(window)
         i = i + step
     end
     return out
@@ -674,7 +753,9 @@ function __K2L_Text.lastIndexOf(s, part, from, ignoreCase)
     end
     local last = -1
     local i = s:find(part, 1, true)
-    while i and (from == nil or i - 1 <= from) do
+    -- the default start index is lastIndex, which an empty part cannot go beyond either
+    from = from or #s - 1
+    while i and i - 1 <= from do
         last = i - 1
         i = s:find(part, i + 1, true)
     end
@@ -762,6 +843,9 @@ end
 
 function __K2L_Text.trimMargin(s, prefix)
     prefix = prefix or "|"
+    if isBlankLine(prefix) then
+        error(__K2L_IllegalArgumentException.new("marginPrefix must be non-blank string."))
+    end
     local lines = lineList(s)
     local first, last = dropEdgeBlanks(lines)
     local out = {}
@@ -894,9 +978,42 @@ local function scientificNotation(x, precision, upper)
     return mantissa .. (upper and "E" or "e") .. string.format("%s%02d", exp < 0 and "-" or "+", math.abs(exp))
 end
 
+-- The number symbols of the locale being formatted (see LocaleFormat.lua): decimal and group separators, the ten digits
+-- and the group size, or nil for Locale.ROOT and en_US. `activeUpper` maps %S, %C and %B for that locale.
+local active, activeUpper
+
+-- Groups of the locale's size (3 for ASCII); the "," marks are the group separators until localize replaces them.
 local function groupThousands(int)
-    local out = int:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+    local size = active and active.size or 3
+    if size == 0 then
+        return int
+    end
+    local out = int:reverse():gsub(string.rep("%d", size), "%0,"):reverse()
     return (out:gsub("^,", ""))
+end
+
+-- The digits, "." and "," of a formatted number written with the locale's symbols.
+local function localize(text)
+    if active == nil then
+        return text
+    end
+    local digits = active.digits
+    return (text:gsub("[0-9.,]", function(c)
+        if c == "." then
+            return active.decimal
+        elseif c == "," then
+            return active.group
+        end
+        return digits[c:byte() - 47]
+    end))
+end
+
+-- The length in characters of a number; the digits of a locale can take several bytes.
+local function numberLength(text)
+    if active == nil then
+        return #text
+    end
+    return #(text:gsub("[\128-\191]", ""))
 end
 
 -- Applies sign, grouping, zero padding and width to a formatted magnitude.
@@ -911,13 +1028,14 @@ local function finishNumber(body, negative, flags, width)
     end
     local suffix = (negative and flags.paren) and ")" or ""
     local text = sign .. body .. suffix
-    if width and #text < width then
+    local length = numberLength(text)
+    if width and length < width then
         if flags.zero then
-            text = sign .. string.rep("0", width - #text) .. body .. suffix
+            text = sign .. string.rep(active and active.digits[1] or "0", width - length) .. body .. suffix
         elseif flags.left then
-            text = text .. string.rep(" ", width - #text)
+            text = text .. string.rep(" ", width - length)
         else
-            text = string.rep(" ", width - #text) .. text
+            text = string.rep(" ", width - length) .. text
         end
     end
     return text
@@ -968,7 +1086,7 @@ local function formatFloat(conv, value, flags, width, precision)
             body = #frac > 0 and int .. "." .. frac or int
         end
     end
-    return finishNumber(body, negative, flags, width)
+    return finishNumber(localize(body), negative, flags, width)
 end
 
 -- The decimal text of a Long that is not a Lua number (--long64 emulate: a {hi, lo} table or an int64_t cdata).
@@ -1024,7 +1142,7 @@ local function formatInteger(conv, value, flags, width)
         local negative = text:sub(1, 1) == "-"
         local magnitude = negative and text:sub(2) or text
         if conv == "d" then
-            return finishNumber(flags.comma and groupThousands(magnitude) or magnitude, negative, flags, width)
+            return finishNumber(localize(flags.comma and groupThousands(magnitude) or magnitude), negative, flags, width)
         end
         digits = decimalToRadix(negative and twosComplement(magnitude) or magnitude, conv == "o" and 8 or 16)
     end
@@ -1039,7 +1157,7 @@ local function formatInteger(conv, value, flags, width)
         if flags.comma then
             body = groupThousands(body)
         end
-        return finishNumber(body, negative, flags, width)
+        return finishNumber(localize(body), negative, flags, width)
     end
     local radix = conv == "o" and 8 or 16
     local body
@@ -1072,7 +1190,7 @@ local function missingArgument(spec)
     error(__K2L_IllegalArgumentException.new("Format specifier '" .. spec .. "'"))
 end
 
-function __K2L_StringFormat(format, ...)
+local function formatText(format, ...)
     local n = select("#", ...)
     local args = {...}
     local out = {}
@@ -1152,15 +1270,15 @@ function __K2L_StringFormat(format, ...)
                     text = __K2L_Text.take(text, precision)
                 end
                 if conv == "S" then
-                    text = text:upper()
+                    text = (activeUpper or string.upper)(text)
                 end
                 text = pad(text, width, flags.left)
             elseif lower == "c" then
                 text = type(value) == "number" and string.char(value) or __K2L_Str(value)
-                text = pad(conv == "C" and text:upper() or text, width, flags.left)
+                text = pad(conv == "C" and (activeUpper or string.upper)(text) or text, width, flags.left)
             elseif lower == "b" then
                 local b = value ~= nil and value ~= false
-                text = pad(conv == "B" and tostring(b):upper() or tostring(b), width, flags.left)
+                text = pad(conv == "B" and (activeUpper or string.upper)(tostring(b)) or tostring(b), width, flags.left)
             else
                 error(__K2L_IllegalArgumentException.new("Conversion = '" .. conv .. "'"))
             end
@@ -1169,6 +1287,23 @@ function __K2L_StringFormat(format, ...)
         pos = percent + #spec
     end
     return table.concat(out)
+end
+
+function __K2L_StringFormat(format, ...)
+    local savedSymbols, savedUpper = active, activeUpper
+    active, activeUpper = nil, nil
+    local text = formatText(format, ...)
+    active, activeUpper = savedSymbols, savedUpper
+    return text
+end
+
+-- String.format(locale, ...) with the symbols and uppercase function of the locale (see LocaleFormat.lua)
+function __K2L_Text.formatWith(symbols, upper, format, ...)
+    local savedSymbols, savedUpper = active, activeUpper
+    active, activeUpper = symbols, upper
+    local text = formatText(format, ...)
+    active, activeUpper = savedSymbols, savedUpper
+    return text
 end
 
 end

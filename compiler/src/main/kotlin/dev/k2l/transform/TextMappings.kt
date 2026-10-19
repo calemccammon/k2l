@@ -14,7 +14,9 @@ internal object TextMappings {
         "maxBy", "minBy", "maxByOrNull", "minByOrNull", "maxOf", "minOf", "indexOfFirst", "indexOfLast", "find", "findLast",
         "firstOrNull", "lastOrNull", "fold", "reduce", "foldIndexed", "reduceOrNull", "zipWithNext", "asIterable", "onEach", "distinct",
         "count", "first", "last", "random", "elementAtOrNull", "elementAtOrElse", "getOrElse", "single", "singleOrNull",
-        "iterator", "groupingBy", "toSortedSet",
+        "iterator", "groupingBy", "toSortedSet", "maxOfWith", "minOfWith", "maxOfWithOrNull", "minOfWithOrNull", "maxWith",
+        "minWith", "maxWithOrNull",
+        "minWithOrNull",
     )
 
     private val IGNORE_CASE_MEMBERS = setOf(
@@ -27,7 +29,7 @@ internal object TextMappings {
         val name = site.name ?: return null
         if (receiverType == null) return topLevel(callableId, site)
         if (site.isChar(receiverType)) return charMember(name, site)
-        val isString = with(site.session) { receiverType.isStringType || receiverType.isCharSequenceType }
+        val isString = with(site.session) { receiverType.withoutFlexibility.let { it.isStringType || it.isCharSequenceType } }
         if (!isString || callableId?.startsWith("kotlin/") != true) return null
         if (ignoreCaseCall(name, site)) site.requireUtf16Case()
         return stringMember(name, StringCall(site))
@@ -43,7 +45,7 @@ internal object TextMappings {
 
     /** Calls without a String receiver: `String.format(...)`, `String(chars)`, `String.CASE_INSENSITIVE_ORDER`. */
     private fun topLevel(callableId: String?, site: CallSite): LuaExpr? = when (callableId) {
-        "kotlin/text/format" -> LuaCall(site.ref("Strings", "__K2L_StringFormat"), site.withoutLocale(site.args, 0))
+        "kotlin/text/format" -> site.formatCall(null)
         "kotlin/text/String" -> site.text("string", site.arg(0))
         "kotlin/text/CASE_INSENSITIVE_ORDER" -> LuaIndex(site.ref("Strings", "__K2L_Text"), LuaString("caseInsensitiveOrder"))
         else -> null
@@ -54,9 +56,46 @@ internal object TextMappings {
     private fun CallSite.text(member: String, vararg args: LuaExpr) =
         libMember("Strings", "__K2L_Text", member, *args.toList().dropTrailingNil().toTypedArray())
 
-    /** The arguments of `format`, without a leading `Locale` (all locales format like `Locale.ROOT`). */
-    private fun CallSite.withoutLocale(all: List<LuaExpr>, index: Int): List<LuaExpr> =
-        if (isLocale(argTypes.getOrNull(index))) all.filterIndexed { i, _ -> i != index } else all
+    /**
+     * `String.format(locale, format, args)` and `format.format(locale, args)`. The locale chooses the decimal and grouping
+     * separators and the digits of the numbers (see `LocaleFormat.lua`), and with `--strings utf16` the case rules of `%S`.
+     * `Locale.ROOT`, `en_US` and no locale at all use the formatter's own symbols.
+     */
+    private fun CallSite.formatCall(format: LuaExpr?): LuaExpr {
+        val locale = args.firstOrNull()?.takeIf { isLocale(argTypes.getOrNull(0)) }
+        val formatAndArguments = listOfNotNull(format) + (if (locale != null) args.drop(1) else args)
+        val tag = (locale as? LuaString)?.value
+        val uppercase = formatUppercase(formatAndArguments.firstOrNull(), tag, dynamicLocale = locale != null && tag == null)
+        return when {
+            locale != null && tag != "" && tag != "en_US" -> LuaCall(
+                LuaIndex(ref("LocaleFormat", "__K2L_LocaleFormat"), LuaString("format")),
+                listOf(locale, uppercase ?: LuaNil) + formatAndArguments,
+            )
+
+            uppercase != null -> LuaCall(
+                LuaIndex(ref("Strings", "__K2L_Text"), LuaString("formatWith")),
+                listOf(LuaNil, uppercase) + formatAndArguments,
+            )
+
+            else -> LuaCall(ref("Strings", "__K2L_StringFormat"), formatAndArguments)
+        }
+    }
+
+    /**
+     * With `--strings utf16`, the Unicode (and, for a locale of Turkish, Azeri or Lithuanian, the locale's) upper-casing of `%S`,
+     * `%C` and `%B`; null when the format has none of them or the strings are byte strings.
+     */
+    private fun CallSite.formatUppercase(format: LuaExpr?, tag: String?, dynamicLocale: Boolean): LuaExpr? {
+        if (!utf16) return null
+        val text = (format as? LuaString)?.value
+        if (text != null && !UPPERCASE_CONVERSION.containsMatchIn(text)) return null
+        if (dynamicLocale || (tag != null && tag.substringBefore('_') in LOCALE_SENSITIVE)) {
+            return LuaIndex(ref("Utf16Locale", "__K2L_Utf16Locale"), LuaString("uppercase"))
+        }
+        return LuaIndex(ref("Utf16Case", "__K2L_Utf16Case"), LuaString("uppercase"))
+    }
+
+    private val UPPERCASE_CONVERSION = Regex("%[-#+ 0,(<\\d$.]*[SCB]")
 
     /** With `--strings utf16`, these helpers are members of `__K2L_Text` that count UTF-16 units. */
     private val UTF16_HELPERS = mapOf(
@@ -68,6 +107,9 @@ internal object TextMappings {
         "TrimStart" to "trimStart",
         "TrimEnd" to "trimEnd",
         "IsBlank" to "isBlank",
+        "Contains" to "contains",
+        "StartsWith" to "startsWith",
+        "EndsWith" to "endsWith",
     )
 
     private fun CallSite.helper(fn: String, vararg args: LuaExpr): LuaExpr = when {
@@ -207,7 +249,7 @@ internal object TextMappings {
 
             "commonSuffixWith" -> c.text("commonSuffixWith", a[0])
 
-            "format" -> LuaCall(c.site.ref("Strings", "__K2L_StringFormat"), listOf(c.self) + c.site.withoutLocale(a, 0))
+            "format" -> c.site.formatCall(c.self)
 
             else -> null
         }
@@ -288,22 +330,50 @@ internal object TextMappings {
 
     private fun conversion(name: String, c: StringCall): LuaExpr? {
         val radix = c.args.getOrElse(0) { LuaNil }
+        // with --strings utf16 the integer parsers take Unicode digits (Utf16Case.lua)
+        if (name.startsWith("toInt") || name.startsWith("toLong") || name.startsWith("toU")) c.site.requireUtf16Case()
         return when (name) {
             "toInt" -> c.helper("ToInt", radix)
+
             "toLong" -> c.helper("ToInt", radix, LuaBool(true))
+
             "toIntOrNull" -> c.helper("ToIntOrNull", radix)
+
             "toLongOrNull" -> c.helper("ToIntOrNull", radix, LuaBool(true))
+
+            "toUInt", "toULong", "toUByte", "toUShort" -> c.helper("ToUnsigned", radix, LuaNumber(unsignedBits(name)))
+
+            "toUIntOrNull", "toULongOrNull", "toUByteOrNull", "toUShortOrNull" ->
+                c.helper("ToUnsignedOrNull", radix, LuaNumber(unsignedBits(name)))
+
             "toDouble", "toFloat" -> c.helper("ToDouble")
+
             "toDoubleOrNull", "toFloatOrNull" -> c.helper("ToDoubleOrNull")
+
             "toBoolean" -> c.text("toBoolean")
+
             "toBooleanStrict" -> c.text("toBooleanStrict")
+
             "toBooleanStrictOrNull" -> c.text("toBooleanStrictOrNull")
+
             "toList" -> c.helper("ToList")
+
             "toCharArray" -> c.text("toCharArray")
+
             "toByteArray", "encodeToByteArray" -> c.text("toByteArray")
+
             "toRegex" -> LuaCall(LuaIndex(c.site.ref("Regex", "__K2L_Regex"), LuaString("new")), listOf(c.self) + c.args)
+
             else -> null
         }
+    }
+
+    /** The width of the type that `toUInt()`, `toUByteOrNull()` ... name. */
+    private fun unsignedBits(name: String): String = when {
+        name.startsWith("toUByte") -> "8"
+        name.startsWith("toUShort") -> "16"
+        name.startsWith("toUInt") -> "32"
+        else -> "64"
     }
 
     /** String-valued transformations; the overloads taking Char or predicate arguments map to the same helpers. */

@@ -184,13 +184,35 @@ local function parse(pattern, options)
         elseif ESCAPES[c] then
             return string.char(ESCAPES[c])
         elseif c == "x" then
+            local braced = pattern:match("^{(%x+)}", pos)
+            if braced ~= nil then
+                pos = pos + #braced + 2
+                local code = tonumber(braced, 16)
+                if code > 0x10FFFF then
+                    fail("Hexadecimal codepoint is too big")
+                end
+                return utf8Bytes(code)
+            end
             local hex = pattern:match("^%x%x", pos)
+            if hex == nil then
+                fail("Illegal hexadecimal escape sequence")
+            end
             pos = pos + 2
             return utf8Bytes(tonumber(hex, 16))
         elseif c == "u" then
             local hex = pattern:match("^%x%x%x%x", pos)
+            if hex == nil then
+                fail("Illegal Unicode escape sequence")
+            end
             pos = pos + 4
-            return utf8Bytes(tonumber(hex, 16))
+            local code = tonumber(hex, 16)
+            -- a high and a low surrogate escape together are one supplementary character
+            local low = code >= 0xD800 and code <= 0xDBFF and pattern:match("^\\u([dD][c-fC-F]%x%x)", pos)
+            if low then
+                pos = pos + 6
+                code = 0x10000 + (code - 0xD800) * 1024 + (tonumber(low, 16) - 0xDC00)
+            end
+            return utf8Bytes(code)
         elseif c == "0" then
             return string.char(0)
         elseif not inClass and c == "b" then
@@ -899,6 +921,13 @@ function compile(node)
 end
 
 ------------------------------------------------------------------ MatchResult
+-- The 4-byte character at i written as its two surrogate halves (3 bytes each), for a search that continues between them.
+local function splitPair(s, i)
+    local b1, b2, b3, b4 = s:byte(i, i + 3)
+    local cp = (b1 - 0xF0) * 262144 + (b2 - 0x80) * 4096 + (b3 - 0x80) * 64 + (b4 - 0x80) - 0x10000
+    return s:sub(1, i - 1) .. utf8Bytes(0xD800 + math.floor(cp / 1024)) .. utf8Bytes(0xDC00 + cp % 1024) .. s:sub(i + 4)
+end
+
 function __K2L_MatchGroup:____init(value, first, last)
     self.value = value
     self.range = __K2L_IntRange.new(first, last)
@@ -925,7 +954,8 @@ function __K2L_MatchResult:____init(regex, input, first, after, st, groupCount)
     self.____regex, self.____input, self.____after = regex, input, after
     self.____empty = after == first
     self.____first = first
-    self.value = input:sub(first, after - 1)
+    local norm = __K2L_Regex.____norm or tostring
+    self.value = norm(input:sub(first, after - 1))
     -- Indices are bytes, or UTF-16 units under --strings utf16 (see Utf16.lua)
     local units = __K2L_Regex.____units
     local function range(from, to)
@@ -939,7 +969,7 @@ function __K2L_MatchResult:____init(regex, input, first, after, st, groupCount)
     for g = 1, groupCount do
         local s, e = st.starts[g], st.ends[g]
         if s ~= nil then
-            values[g + 1] = input:sub(s, e - 1)
+            values[g + 1] = norm(input:sub(s, e - 1))
             groups[g + 1] = __K2L_MatchGroup.new(values[g + 1], range(s, e - 1))
         else
             values[g + 1] = ""
@@ -959,19 +989,26 @@ function __K2L_MatchResult:____init(regex, input, first, after, st, groupCount)
 end
 
 function __K2L_MatchResult:next()
-    local start = self.____after
+    local start, input = self.____after, self.____input
     if self.____empty then
-        start = start + 1
-        if __K2L_Regex.____units then
-            -- an empty match continues after the whole UTF-8 character
-            local b = self.____input:byte(start)
-            while b ~= nil and b >= 0x80 and b < 0xC0 do
-                start = start + 1
-                b = self.____input:byte(start)
+        local b = input:byte(start)
+        if __K2L_Regex.____units and b ~= nil and b >= 0xF0 then
+            -- the next search starts one UTF-16 unit later, between the two halves of a surrogate pair
+            input = splitPair(input, start)
+            start = start + 3
+        else
+            start = start + 1
+            if __K2L_Regex.____units then
+                -- an empty match continues after the whole UTF-8 character
+                b = input:byte(start)
+                while b ~= nil and b >= 0x80 and b < 0xC0 do
+                    start = start + 1
+                    b = input:byte(start)
+                end
             end
         end
     end
-    return self.____regex:____find(self.____input, start)
+    return self.____regex:____find(input, start)
 end
 
 function __K2L_MatchResult:toString()
@@ -993,10 +1030,40 @@ local function optionSet(options)
 end
 
 -- Regex(pattern) and Regex(pattern, option or set of options)
+-- Whether the node can match without consuming a character (so that Java also tries it between surrogate halves).
+local function nullable(node)
+    local t = node.t
+    if t == "char" or t == "any" or t == "set" or t == "ufold" then
+        return false
+    elseif t == "seq" then
+        for _, item in ipairs(node.items) do
+            if not nullable(item) then
+                return false
+            end
+        end
+        return true
+    elseif t == "alt" then
+        for _, alt in ipairs(node.alts) do
+            if nullable(alt) then
+                return true
+            end
+        end
+        return false
+    elseif t == "group" or t == "atomic" then
+        return nullable(node.node)
+    elseif t == "rep" then
+        return node.min == 0 or nullable(node.node)
+    end
+    return true
+end
+
 function __K2L_Regex:____init(pattern, options)
+    -- two halves of a pair joined with + are one character
+    pattern = (__K2L_Regex.____norm or tostring)(pattern)
     self.pattern = pattern
     local optionNames = optionSet(options)
     local node, groupCount, names = parse(pattern, optionNames)
+    self.____nullable = nullable(node)
     self.____program = compile(node)
     self.____groups = groupCount
     self.____names = names
@@ -1039,6 +1106,15 @@ function __K2L_Regex:____find(s, from)
             if after then
                 return __K2L_MatchResult.new(self, s, i, after, st, self.____groups)
             end
+            if utf8Aware and self.____nullable and s:byte(i) ~= nil and s:byte(i) >= 0xF0 then
+                -- Java also tries between the two halves of a surrogate pair
+                local split = splitPair(s, i)
+                local splitState = newState(self, split)
+                after = self.____program(splitState, i + 3, anyEnd)
+                if after then
+                    return __K2L_MatchResult.new(self, split, i + 3, after, splitState, self.____groups)
+                end
+            end
         end
     end
     return nil
@@ -1061,7 +1137,7 @@ function __K2L_Regex:findAll(input, startIndex)
     while match ~= nil do
         out:add(match)
         match = match:next()
-        if match ~= nil and match.____first - 1 > #input then
+        if match ~= nil and match.____first - 1 > #match.____input then
             break
         end
     end
@@ -1140,6 +1216,7 @@ local function replaceMatches(self, input, replacement, onlyFirst)
     local out, last = {}, 1
     local match = self:____find(input, 1)
     while match ~= nil do
+        input = match.____input -- a search between the halves of a pair continues on the string with them apart
         out[#out + 1] = input:sub(last, match.____first - 1)
         if type(replacement) == "function" then
             out[#out + 1] = __K2L_Str(replacement(match))
@@ -1151,12 +1228,12 @@ local function replaceMatches(self, input, replacement, onlyFirst)
             break
         end
         match = match:next()
-        if match ~= nil and match.____first - 1 >= #input + 1 and match.____empty and last > #input then
+        if match ~= nil and match.____first - 1 >= #match.____input + 1 and match.____empty and last > #match.____input then
             break
         end
     end
     out[#out + 1] = input:sub(last)
-    return table.concat(out)
+    return (__K2L_Regex.____norm or tostring)(table.concat(out))
 end
 
 -- replacement: a string with $1 / ${name} references, or a function (MatchResult) -> String
@@ -1179,15 +1256,17 @@ function __K2L_Regex:split(input, limit)
     end
     local out = __K2L_List.new()
     local last = 1
+    local norm = __K2L_Regex.____norm or tostring
     repeat
-        out:add(input:sub(last, match.____first - 1))
+        input = match.____input
+        out:add(norm(input:sub(last, match.____first - 1)))
         last = match.____after
         if limit > 0 and out.size == limit - 1 then
             break
         end
         match = match:next()
     until match == nil
-    out:add(input:sub(last))
+    out:add(norm(input:sub(last)))
     return out
 end
 

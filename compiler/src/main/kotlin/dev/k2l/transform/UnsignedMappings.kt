@@ -111,7 +111,11 @@ internal object UnsignedMappings {
             t.def("kotlin/$name.to${to.name}") { toUnsigned(to) }
         }
         t.def("kotlin/$name.toString") {
-            if (args.isEmpty()) str(self, receiverType) else libMember("Numbers", "__K2L_Num", "toRadix", self, arg(0))
+            when {
+                args.isEmpty() -> str(self, receiverType)
+                kind == Unsigned.ULong -> unsignedTable("toRadix", self, arg(0))
+                else -> libMember("Numbers", "__K2L_Num", "toRadix", self, arg(0))
+            }
         }
     }
 

@@ -6,9 +6,9 @@ local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FloatToString = ____lualib.__K2L_FloatToString
 local __K2L_Fround = ____lualib.__K2L_Fround
 local __K2L_IDiv = ____lualib.__K2L_IDiv
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_Num = ____lualib.__K2L_Num
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
@@ -98,8 +98,8 @@ local function main()
     local s = 65535
     print(s)
     print(s + 1)
-    print(__K2L_Str(__K2L_ListOf(3, 1, 2):sorted()))
-    print(__K2L_Str(__K2L_ListOf(1, 2):map(function(it) return it * 2 & 0xFFFFFFFF end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1, 2):sorted()))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2):map(function(it) return it * 2 & 0xFFFFFFFF end)))
     print(math.max(5, 9))
     print(tostring(a))
     print(__K2L_Num.toRadix(a, 16))

@@ -1,0 +1,2 @@
+strings=utf16
+long64=emulate

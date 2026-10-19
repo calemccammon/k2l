@@ -1,1 +1,1 @@
-14:13: Kotlin library API 'kotlin/sequences/lastIndexOf' is not supported yet
+15:13: Kotlin library API 'kotlin/streams/asStream' is not supported yet

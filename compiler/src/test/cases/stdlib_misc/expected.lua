@@ -14,10 +14,15 @@ local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotImplementedError = ____lualib.__K2L_NotImplementedError
 local __K2L_NumberFormatException = ____lualib.__K2L_NumberFormatException
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
+local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -36,11 +41,11 @@ local function ____pairs()
     print(__K2L_Str(t.third))
     print(__K2L_Str(t:copy(nil, "z")))
     print(__K2L_Str(__K2L_ListOf(t.first, t.second, t.third)))
-    print(__K2L_Str(__K2L_ListOf(__K2L_Pair.new(1, "x"), __K2L_Pair.new(2, "y")):toMap()))
-    print(__K2L_Str(__K2L_ListOf(__K2L_Pair.new(1, "x"), __K2L_Pair.new(2, "y")):map(function(it) return it.second end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(__K2L_Pair.new(1, "x"), __K2L_Pair.new(2, "y")):toMap()))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(__K2L_Pair.new(1, "x"), __K2L_Pair.new(2, "y")):map(function(it) return it.second end)))
     print(__K2L_Pair.new(__K2L_Pair.new(1, 2), 3).first.second)
     print(__K2L_Pair.new(1, 2):hashCode() == __K2L_Pair.new(1, 2):hashCode())
-    print(__K2L_Str(__K2L_MapOf(__K2L_Pair.new(__K2L_Pair.new(1, 2), "v")):get(__K2L_Pair.new(1, 2))))
+    print(__K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new(__K2L_Pair.new(1, 2), "v")):get(__K2L_Pair.new(1, 2))))
 end
 
 local function checks()
@@ -164,7 +169,7 @@ end
 
 local function errors()
     local ____ok_8, ____result_8 = pcall(function()
-        __K2L_ListOf(1):first(function(it) return it > 5 end)
+        __K2L_SingletonListOf(1):first(function(it) return it > 5 end)
     end)
     if not ____ok_8 then
         local ____error_8 = __K2L_ToThrowable(____result_8)
@@ -176,7 +181,7 @@ local function errors()
         end
     end
     local ____ok_9, ____result_9 = pcall(function()
-        __K2L_ListOf():first()
+        __K2L_ReadOnlyListOf():first()
     end)
     if not ____ok_9 then
         local ____error_9 = __K2L_ToThrowable(____result_9)
@@ -188,7 +193,7 @@ local function errors()
         end
     end
     local ____ok_10, ____result_10 = pcall(function()
-        __K2L_ListOf():max()
+        __K2L_ReadOnlyListOf():max()
     end)
     if not ____ok_10 then
         local ____error_10 = __K2L_ToThrowable(____result_10)
@@ -200,7 +205,7 @@ local function errors()
         end
     end
     local ____ok_11, ____result_11 = pcall(function()
-        __K2L_ListOf(1, 2):single()
+        __K2L_ReadOnlyListOf(1, 2):single()
     end)
     if not ____ok_11 then
         local ____error_11 = __K2L_ToThrowable(____result_11)
@@ -212,7 +217,7 @@ local function errors()
         end
     end
     local ____ok_12, ____result_12 = pcall(function()
-        __K2L_MapOf(__K2L_Pair.new("a", 1)):getValue("b")
+        __K2L_SingletonMapOf(__K2L_Pair.new("a", 1)):getValue("b")
     end)
     if not ____ok_12 then
         local ____error_12 = __K2L_ToThrowable(____result_12)
@@ -224,7 +229,7 @@ local function errors()
         end
     end
     local ____ok_13, ____result_13 = pcall(function()
-        __K2L_ListOf(1):get(5)
+        __K2L_SingletonListOf(1):get(5)
     end)
     if not ____ok_13 then
         local ____error_13 = __K2L_ToThrowable(____result_13)
@@ -248,7 +253,7 @@ local function errors()
         end
     end
     local ____ok_15, ____result_15 = pcall(function()
-        print(__K2L_IDiv(1, __K2L_ListOf(0):get(0)))
+        print(__K2L_IDiv(1, __K2L_SingletonListOf(0):get(0)))
     end)
     if not ____ok_15 then
         local ____error_15 = __K2L_ToThrowable(____result_15)
@@ -260,7 +265,7 @@ local function errors()
         end
     end
     local ____ok_16, ____result_16 = pcall(function()
-        __K2L_ListOf(1, 2, 3):chunked(0)
+        __K2L_ReadOnlyListOf(1, 2, 3):chunked(0)
     end)
     if not ____ok_16 then
         local ____error_16 = __K2L_ToThrowable(____result_16)
@@ -272,7 +277,7 @@ local function errors()
         end
     end
     local ____ok_17, ____result_17 = pcall(function()
-        __K2L_ListOf(1):take(-1)
+        __K2L_SingletonListOf(1):take(-1)
     end)
     if not ____ok_17 then
         local ____error_17 = __K2L_ToThrowable(____result_17)
@@ -323,13 +328,13 @@ local function scope()
     print(__K2L_Str(__K2L_ListOfSize(2, function(it) return "x" .. it end)))
     print(__K2L_Str(__K2L_ListOfSize(3, function(it) return it + 1 end, true):toList()))
     print(__K2L_Str(__K2L_ListOf(1, nil, 2):filterNotNull()))
-    print(__K2L_Str(__K2L_MapOf()))
-    print(__K2L_Str(__K2L_SetOf(3, 1, 2):sorted()))
+    print(__K2L_Str(__K2L_ReadOnlyMapOf()))
+    print(__K2L_Str(__K2L_ReadOnlySetOf(3, 1, 2):sorted()))
     local ____value = __K2L_ListOf(1, 2)
     ____value:add(3)
     print(__K2L_Str(____value))
     local ____value_1 = __K2L_SetOf(1)
-    ____value_1:addAll(__K2L_ListOf(2, 3))
+    ____value_1:addAll(__K2L_ReadOnlyListOf(2, 3))
     print(__K2L_Str(____value_1))
     print(__K2L_Lazy(function() return 5 end):getValue())
 end

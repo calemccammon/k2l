@@ -1,0 +1,48 @@
+#1 English | United States | English (United States)
+#2 English | United Kingdom | English (United Kingdom)
+#3 German | Germany | German (Germany)
+#4 French | France | French (France)
+#5 Japanese | Japan | Japanese (Japan)
+#6 Chinese | China | Chinese (China)
+#7 English | Canada | English (Canada)
+#8 Italian |  | Italian
+#9 Korean | South Korea | Korean (South Korea)
+#10  |  | 
+#11 English | United States | English (United States)
+#12 Turkish | Türkiye | Turkish (Türkiye)
+#13 Portuguese | Brazil | Portuguese (Brazil)
+#14 Spanish | Latin America | Spanish (Latin America)
+#15 Serbian | Serbia | Serbian (Serbia, Latn)
+#16 German | Switzerland | German (Switzerland)
+#17 Filipino | Philippines | Filipino (Philippines)
+#18 Asturian |  | Asturian
+#19 Hawaiian | United States | Hawaiian (United States)
+#20 xx | YY | xx (YY)
+#21  | United States | United States
+#22 English | United States | English (United States, Computer)
+#23 English |  | English (Computer)
+#24 Japanese | Japan | Japanese (Japan, JP, Japanese Calendar)
+#25 Thai | Thailand | Thai (Thailand, TH, Thai Digits)
+#26 Hebrew |  | Hebrew
+#27 Hebrew | Israel | Hebrew (Israel)
+#28 Indonesian | Indonesia | Indonesian (Indonesia)
+#29 Chinese | Taiwan | Chinese (Taiwan)
+#30 English |  | English
+#31 Chinese | China | Chinese (Simplified, China)
+#32 Chinese | Taiwan | Chinese (Traditional, Taiwan)
+#33 Serbian | Serbia | Serbian (Cyrillic, Serbia)
+#34 Azerbaijani | Azerbaijan | Azerbaijani (Latin, Azerbaijan)
+#35 English | world | English (world)
+#36 Catalan | Spain | Catalan (Spain, valencia)
+French
+France
+French (France)
+Japanese (Japan)
+Simplified
+Simplified
+Computer
+true
+true
+German
+[English, German, French]
+[Arabic, French, Japanese, Korean, Russian]

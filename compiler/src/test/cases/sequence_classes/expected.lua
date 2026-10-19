@@ -2,7 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_IteratorBuilder = ____lualib.__K2L_IteratorBuilder
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
-local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
@@ -61,7 +61,7 @@ end
 local Base = __K2L_Class("Base", __K2L_Sequence)
 
 function Base:iterator()
-    return __K2L_IteratorOf(__K2L_ListOf(7, 8, 9))
+    return __K2L_IteratorOf(__K2L_ReadOnlyListOf(7, 8, 9))
 end
 
 local Derived = __K2L_Class("Derived", Base)

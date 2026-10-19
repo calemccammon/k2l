@@ -7,6 +7,7 @@ local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Set = ____lualib.__K2L_Set
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -114,25 +115,25 @@ local function main()
     a.v = 10
     ms:remove(Mutable.new(2))
     print(ms.size)
-    print(__K2L_Str(__K2L_ListOf(3, 1, 2, 1, 5):sorted()))
-    print(__K2L_Str(__K2L_ListOf(3.5, -1.5, 2.25):sortedDescending()))
-    print(__K2L_Str(__K2L_ListOf("pear", "apple", "fig"):sorted()))
-    local words = __K2L_ListOf("bb", "a", "ccc", "dd", "e")
-    print(__K2L_Str(words:sortedBy(function(it) return #it end)))
-    print(__K2L_Str(words:sortedByDescending(function(it) return #it end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1, 2, 1, 5):sorted()))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3.5, -1.5, 2.25):sortedDescending()))
+    print(__K2L_Str(__K2L_ReadOnlyListOf("pear", "apple", "fig"):sorted()))
+    local words = __K2L_ReadOnlyListOf("bb", "a", "ccc", "dd", "e")
+    print(__K2L_Str(words:sortedBy(function(it) return #it end, true)))
+    print(__K2L_Str(words:sortedByDescending(function(it) return #it end, true)))
     print(__K2L_Str(words:sortedBy(function(it) return __K2L_Text.first(it) end)))
-    print(__K2L_Str(__K2L_ListOf(Pt.new(2, 1), Pt.new(1, 5), Pt.new(2, 0), Pt.new(1, 2)):sortedBy(function(it) return it.x end)))
-    print(__K2L_Str(__K2L_ListOf(3, nil, 1):sortedBy(function(it) return it end)))
-    print(__K2L_Str(__K2L_ListOf(3, nil, 1):sortedByDescending(function(it) return it end)))
-    print(__K2L_Str(__K2L_ListOf(true, false, true):sortedBy(function(it) return it end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(Pt.new(2, 1), Pt.new(1, 5), Pt.new(2, 0), Pt.new(1, 2)):sortedBy(function(it) return it.x end, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3, nil, 1):sortedBy(function(it) return it end, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3, nil, 1):sortedByDescending(function(it) return it end, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(true, false, true):sortedBy(function(it) return it end, true)))
     local calls = __K2L_List.new()
-    local sortedWithCalls = __K2L_ListOf("x", "y"):sortedBy(function(it)
+    local sortedWithCalls = __K2L_ReadOnlyListOf("x", "y"):sortedBy(function(it)
         calls:add(it)
         return it
     end)
     print(__K2L_Str(sortedWithCalls))
     local mutable = __K2L_ListOf(5, 2, 9)
-    mutable:sortBy(function(it) return -it end)
+    mutable:sortBy(function(it) return -it end, true)
     print(__K2L_Str(mutable))
 end
 

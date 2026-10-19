@@ -3,7 +3,7 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
-local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local function divide(a, b)
@@ -44,7 +44,7 @@ local function main()
     local n = 2147483647
     n = (n + 1 + 0x80000000 & 0xFFFFFFFF) - 0x80000000
     print(n)
-    local big = __K2L_ListOf(2147483647, 1, 2147483647, 5)
+    local big = __K2L_ReadOnlyListOf(2147483647, 1, 2147483647, 5)
     print((big:sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print((big:sumOf(function(it) return it end) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print((big:sumOf(function(it)
@@ -55,8 +55,8 @@ local function main()
     print((__K2L_ArrayOf(2147483647, 2):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print(firstBig(big))
     print(big:sumOf(function(it) return it end))
-    print((__K2L_ListOf(1, 2, 3):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
-    print(__K2L_Str(__K2L_ListOf(1.5, 2.5):sum(0.0)))
+    print((__K2L_ReadOnlyListOf(1, 2, 3):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
+    print(__K2L_Str(__K2L_ReadOnlyListOf(1.5, 2.5):sum(0.0)))
     local h = 0
     for c in ("hello world, this is a long string"):gmatch(".") do
         h = (31 * h + c:byte() + 0x80000000 & 0xFFFFFFFF) - 0x80000000

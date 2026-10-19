@@ -14,13 +14,15 @@ local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_Iterator = ____lualib.__K2L_Iterator
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
+local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_SequenceFromIterator = ____lualib.__K2L_SequenceFromIterator
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
-local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
@@ -60,7 +62,7 @@ end
 
 local function laziness()
     print("-- laziness")
-    local result = __K2L_AsSequence(__K2L_ListOf(1, 2, 3, 4)):map(function(it)
+    local result = __K2L_AsSequence(__K2L_ReadOnlyListOf(1, 2, 3, 4)):map(function(it)
         print("map " .. it)
         return it * 10
     end):filter(function(it)
@@ -140,7 +142,7 @@ end
 
 local function operations()
     print("-- operations")
-    local items = __K2L_ListOf(Item.new("apple", 3), Item.new("pear", 5), Item.new("fig", 2), Item.new("kiwi", 5))
+    local items = __K2L_ReadOnlyListOf(Item.new("apple", 3), Item.new("pear", 5), Item.new("fig", 2), Item.new("kiwi", 5))
     local seq = __K2L_AsSequence(items)
     print(__K2L_Str(seq:map(function(it) return it.name end):toList()))
     print(__K2L_Str(seq:filterNot(function(it) return it.price > 3 end):map(function(it) return it.name end):toSet()))
@@ -149,7 +151,9 @@ local function operations()
     end):toList()))
     print(__K2L_Str(seq:mapIndexed(function(i, item) return i .. ":" .. item.name end):toList()))
     print(seq:flatMap(function(it) return __K2L_AsSequence(it.name) end):distinct():count())
-    print(__K2L_Str(seq:flatMap(function(it) return __K2L_ListOf(it.price, -it.price) end):toList()))
+    print(__K2L_Str(seq:flatMap(function(it)
+        return __K2L_ReadOnlyListOf(it.price, -it.price)
+    end):toList()))
     print(__K2L_Str(seq:map(function(it) return it.price end):distinct():toList()))
     print(__K2L_Str(seq:distinctBy(function(it) return it.price end):map(function(it) return it.name end):toList()))
     print(seq:withIndex():map(function(____destructured_1)
@@ -168,8 +172,8 @@ local function operations()
     print(__K2L_Str(seq:map(function(it) return it.price end):maxOrNull()))
     print(seq:map(function(it) return it.name end):min())
     print(seq:maxOf(function(it) return #it.name end))
-    print(__K2L_Str(seq:sortedBy(function(it) return it.price end):map(function(it) return it.name end):toList()))
-    print(seq:sortedByDescending(function(it) return it.name end):first().name)
+    print(__K2L_Str(seq:sortedBy(function(it) return it.price end, true):map(function(it) return it.name end):toList()))
+    print(seq:sortedByDescending(function(it) return it.name end, true):first().name)
     print(__K2L_Str(seq:map(function(it) return it.price end):sorted():toList()))
     print(__K2L_Str(seq:map(function(it) return it.price end):sortedDescending():toList()))
     print(__K2L_Str(seq:sortedWith(__K2L_CompareBy(function(it) return it.price end, function(it) return it.name end)):map(function(it) return it.name end):toList()))
@@ -191,7 +195,7 @@ local function operations()
     print(__K2L_Str(seq:map(function(it) return it.name end):chunked(3):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_IntRange.new(1, 7)):windowed(3, 2):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_IntRange.new(1, 7)):windowed(3, 3, true):map(function(it) return it:sum() end):toList()))
-    print(__K2L_Str(__K2L_SequenceOf(1, 2, 3):plus(4):plusAll(__K2L_ListOf(5, 6)):plusAll(__K2L_SequenceOf(7)):toList()))
+    print(__K2L_Str(__K2L_SequenceOf(1, 2, 3):plus(4):plusAll(__K2L_ReadOnlyListOf(5, 6)):plusAll(__K2L_SequenceOf(7)):toList()))
     print(__K2L_Str(__K2L_SequenceOf(1, 2, 3, 2):minus(2):toList()))
     print(__K2L_Str(__K2L_SequenceOf(3, 1, 2):zip(__K2L_SequenceOf("c", "a"), function(n, s) return s .. n end):toList()))
     print(__K2L_Str(__K2L_SequenceOf(1, 2, 3):zipWithNext():toList()))
@@ -209,19 +213,19 @@ local function operations()
     local ____value = __K2L_SequenceOf(1, 2):toMutableList()
     ____value:add(3)
     print(__K2L_Str(____value))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_ListOf(3, 4)):ifEmpty(function() return __K2L_SequenceOf(0) end):toList()))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlyListOf(3, 4)):ifEmpty(function() return __K2L_SequenceOf(0) end):toList()))
     print(__K2L_Str(__K2L_SequenceOf():ifEmpty(function() return __K2L_SequenceOf(0) end):toList()))
 end
 
 local function sources()
     print("-- sources")
     print(__K2L_AsSequence("hey"):map(function(it) return it:upper() end):joinToString(""))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_MapOf(__K2L_Pair.new(1, "one"), __K2L_Pair.new(2, "two"))):map(function(it) return it.key .. "=" .. it.value end):toList()))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlyMapOf(__K2L_Pair.new(1, "one"), __K2L_Pair.new(2, "two"))):map(function(it) return it.key .. "=" .. it.value end):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_ArrayOf(5, 6, 7)):filter(function(it) return it ~= 6 end):toList()))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_SetOf("s", "t")):toList()))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlySetOf("s", "t")):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_IntRange.new(10, 1, -1):withStep(3)):toList()))
     local custom = __K2L_SequenceFromIterator(function()
-        return __K2L_IteratorOf(__K2L_ListOf(1, 2, 3))
+        return __K2L_IteratorOf(__K2L_ReadOnlyListOf(1, 2, 3))
     end)
     print(__K2L_Str(custom:map(function(it) return it * 2 end):toList()))
     print(__K2L_Str(custom:toList()))
@@ -230,7 +234,7 @@ local function sources()
         io.write(it:next() .. " ")
     end
     print()
-    local once = __K2L_AsSequence(__K2L_IteratorOf(__K2L_ListOf(7, 8)))
+    local once = __K2L_AsSequence(__K2L_IteratorOf(__K2L_ReadOnlyListOf(7, 8)))
     print(__K2L_Str(once:toList()))
     local ____ok_1, ____result_1 = pcall(function()
         once:toList()
@@ -244,7 +248,7 @@ local function sources()
             error(____error_1, 0)
         end
     end
-    local reusable = __K2L_AsSequence(__K2L_ListOf(1, 2)):map(function(it) return it + 1 end)
+    local reusable = __K2L_AsSequence(__K2L_ReadOnlyListOf(1, 2)):map(function(it) return it + 1 end)
     print(__K2L_Str(reusable:toList():plusAll(reusable:toList())))
     local s = reusable
     print(__K2L_InstanceOf(s, __K2L_Sequence))
@@ -252,7 +256,7 @@ local function sources()
         local i, v = ____item.index, ____item.value
         print(i .. " -> " .. v)
     end
-    print(__K2L_Str(__K2L_ListOf(0):plusAll(__K2L_SequenceOf(1, 2))))
+    print(__K2L_Str(__K2L_SingletonListOf(0):plusAll(__K2L_SequenceOf(1, 2))))
     local target = __K2L_ListOf(1)
     target:addAll(__K2L_SequenceOf(2, 3))
     print(__K2L_Str(target))

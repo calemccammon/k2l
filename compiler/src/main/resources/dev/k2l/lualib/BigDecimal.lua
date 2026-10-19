@@ -654,6 +654,88 @@ function __K2L_BigDecimal:hashCode()
     return __K2L_ToInt32(31 * self.u:hashCode() + self.s)
 end
 
+------------------------------------------------------------------ sqrt
+local ONE_HALF, ONE_TENTH = make(BI.valueOf(5), 1), make(ONE_I, 1)
+
+-- Java's int division by two (truncates toward zero)
+local function halfOf(n)
+    return n >= 0 and floor(n / 2) or -floor(-n / 2)
+end
+
+-- BigDecimal.sqrt(mc): the JDK's algorithm. A Newton iteration from the double square root, to twice the requested
+-- precision for the HALF_* modes (so the final rounding is right), then a fix-up for the directed modes and the
+-- preferred scale (this.scale() / 2). Exact results (UNNECESSARY or an unlimited precision) are verified by squaring.
+function __K2L_BigDecimal:sqrt(mc)
+    local signum = self.u.sign
+    if signum < 0 then
+        arithmetic("Attempted square root of negative BigDecimal")
+    elseif signum == 0 then
+        return make(ZERO_I, halfOf(self.s))
+    end
+    local preferredScale = halfOf(self.s)
+    local zeroAtPreferred = make(ZERO_I, preferredScale)
+    local stripped = self:stripTrailingZeros()
+    local strippedScale = stripped.s
+    if stripped.u:equals(ONE_I) and strippedScale % 2 == 0 then
+        local result = make(ONE_I, halfOf(strippedScale))
+        if result.s ~= preferredScale then
+            result = result:add(zeroAtPreferred, mc)
+        end
+        return result
+    end
+    -- normalize to 0.1 <= working < 10 with an even scale adjustment
+    local scale = strippedScale - precisionOf(stripped) + 1
+    local scaleAdjust = scale % 2 == 0 and scale or scale - 1
+    local working = make(stripped.u, stripped.s - scaleAdjust)
+    local guess = fromDouble(math.sqrt(working:toDouble()))
+    local guessPrecision = 15
+    local originalPrecision = mc.precision
+    local targetRm = mc.roundingMode
+    local targetPrecision
+    if originalPrecision == 0 then
+        targetPrecision = floor(precisionOf(stripped) / 2) + 1
+    elseif targetRm == HALF_UP or targetRm == HALF_DOWN or targetRm == HALF_EVEN then
+        targetPrecision = 2 * originalPrecision
+    else
+        targetPrecision = originalPrecision
+    end
+    local approx = guess
+    local workingPrecision = precisionOf(working)
+    repeat
+        local tmpPrecision = max(max(guessPrecision, targetPrecision + 2), workingPrecision)
+        local mcTmp = __K2L_MathContext.new(tmpPrecision, HALF_EVEN)
+        approx = ONE_HALF:multiply(approx:add(divideMc(working, approx, mcTmp), mcTmp))
+        guessPrecision = guessPrecision * 2
+    until guessPrecision >= targetPrecision + 2
+    local scaled = make(approx.u, approx.s + halfOf(scaleAdjust))
+    local result
+    if targetRm == UNNECESSARY or originalPrecision == 0 then
+        result = roundTo(scaled, __K2L_MathContext.new(targetPrecision, targetRm == UNNECESSARY and DOWN or targetRm))
+        if self:subtract(result:multiply(result)).u.sign ~= 0 then
+            arithmetic("Computed square root not exact.")
+        end
+    else
+        result = roundTo(scaled, mc)
+        if targetRm == DOWN or targetRm == FLOOR then
+            if result:multiply(result):compareTo(self) > 0 then
+                local ulp = make(ONE_I, result.s)
+                if approx:compareTo(__K2L_BigDecimal.ONE) == 0 then
+                    ulp = ulp:multiply(ONE_TENTH)
+                end
+                result = result:subtract(ulp)
+            end
+        elseif targetRm == UP or targetRm == CEILING then
+            if result:multiply(result):compareTo(self) < 0 then
+                result = result:add(make(ONE_I, result.s))
+            end
+        end
+    end
+    if result.s ~= preferredScale then
+        result = result:stripTrailingZeros():add(zeroAtPreferred, __K2L_MathContext.new(originalPrecision, UNNECESSARY))
+    end
+    return result
+end
+
 ------------------------------------------------------------------ conversions
 function __K2L_BigDecimal:toString()
     return sci(self)

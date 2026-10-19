@@ -3,6 +3,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 
@@ -57,7 +59,7 @@ local function getSafeLength(____this_8)
     return ____this_8 and #____this_8 or -1
 end
 
-local Box = __K2L_Class("Box")
+local Box = __K2L_Class("app.Box")
 
 function Box:____init(value, name)
     self.value = value
@@ -112,13 +114,13 @@ local function main()
     print(getIsEven(4))
     print(getIsEven(3))
     print(getSize2("abc"))
-    print(getSize2__1(__K2L_ListOf(1, 2, 3)))
+    print(getSize2__1(__K2L_ReadOnlyListOf(1, 2, 3)))
     print(getTwice__1("ab"))
     print(getTwice())
     print(getTwice__2(5))
-    print(getSecond(__K2L_ListOf("x", "y", "z")))
-    print(__K2L_Str(getPenultimate(__K2L_ListOf(1, 2, 3))))
-    print(__K2L_Str(getPenultimate(__K2L_ListOf(1))))
+    print(getSecond(__K2L_ReadOnlyListOf("x", "y", "z")))
+    print(__K2L_Str(getPenultimate(__K2L_ReadOnlyListOf(1, 2, 3))))
+    print(__K2L_Str(getPenultimate(__K2L_SingletonListOf(1))))
     local missing = nil
     print(getOrDash(missing))
     print(getOrDash("here"))
@@ -207,7 +209,7 @@ local function setHead(____this, value)
     ____this:set(0, value)
 end
 
-local Counter = __K2L_Class("Counter")
+local Counter = __K2L_Class("app.util.Counter")
 
 function Counter:____init(count)
     self.count = count

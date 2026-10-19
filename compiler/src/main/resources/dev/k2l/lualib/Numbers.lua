@@ -222,6 +222,26 @@ function __K2L_Num.toRadixUnsigned(n, radix)
     return __K2L_Num.toRadix(n % 4294967296, radix)
 end
 
+local POW2 = {[0] = 1}
+for i = 1, 16 do
+    POW2[i] = POW2[i - 1] * 2
+end
+
+-- Byte, Short, UByte and UShort .rotateLeft(n) within [bits] (8 or 16) bits; a negative n rotates right.
+function __K2L_Num.rotateSmall(x, n, bits, signed)
+    local size = POW2[bits]
+    local u = x % size
+    n = n % bits
+    if n ~= 0 then
+        local high = math.floor(u / POW2[bits - n])
+        u = (u - high * POW2[bits - n]) * POW2[n] + high
+    end
+    if signed and u >= POW2[bits - 1] then
+        u = u - size
+    end
+    return u
+end
+
 function __K2L_Num.countOneBits(n)
     n = n % 4294967296
     local count = 0
@@ -304,6 +324,15 @@ function __K2L_Num.coerceIn(x, lo, hi)
         return hi
     end
     return x
+end
+
+-- coerceAtLeast/coerceAtMost of Comparable values: x < minimum is x.compareTo(minimum) < 0
+function __K2L_Num.coerceAtLeast(x, minimum)
+    return __K2L_Compare(x, minimum) < 0 and minimum or x
+end
+
+function __K2L_Num.coerceAtMost(x, maximum)
+    return __K2L_Compare(x, maximum) > 0 and maximum or x
 end
 
 function __K2L_Num.coerceInRange(x, range)

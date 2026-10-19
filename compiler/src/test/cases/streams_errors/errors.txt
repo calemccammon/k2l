@@ -1,0 +1,12 @@
+8:13: Kotlin library API 'java/util/stream/LongStream.range' is not supported yet
+8:13: Kotlin library API 'java/util/stream/LongStream.sum' is not supported yet
+9:13: Kotlin library API 'java/util/Arrays.stream' is not supported yet
+9:13: Kotlin library API 'java/util/stream/LongStream.sum' is not supported yet
+10:13: Kotlin library API 'kotlin/collections/List.parallelStream' is not supported yet
+11:13: Kotlin library API 'java/util/stream/Stream.iterator' is not supported yet
+12:13: Kotlin library API 'java/util/stream/IntStream.summaryStatistics' is not supported yet
+12:13: Kotlin library API 'java/util/IntSummaryStatistics.max' is not supported yet
+13:13: Kotlin library API 'java/util/stream/IntStream.mapToLong' is not supported yet
+13:13: Kotlin library API 'java/util/stream/LongStream.sum' is not supported yet
+14:13: Kotlin library API 'java/util/stream/Stream.flatMapToInt' is not supported yet
+15:35: Kotlin library API 'java/util/stream/Collectors.summingLong' is not supported yet

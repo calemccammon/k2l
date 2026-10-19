@@ -6,20 +6,17 @@ local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Num = ____lualib.__K2L_Num
-local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_StringContains = ____lualib.__K2L_StringContains
-local __K2L_StringEndsWith = ____lualib.__K2L_StringEndsWith
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
 local __K2L_StringLastIndexOf = ____lualib.__K2L_StringLastIndexOf
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringReplace = ____lualib.__K2L_StringReplace
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
-local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Utf16 = ____lualib.__K2L_Utf16
@@ -34,7 +31,7 @@ local function hex(s)
 end
 
 local function lengthsAndIndexing()
-    local words = __K2L_ListOf("hello", "héllo", "日本語テキスト", "a😀b😀c", "éx", "")
+    local words = __K2L_ReadOnlyListOf("hello", "héllo", "日本語テキスト", "a😀b😀c", "éx", "")
     for _, w in ipairs(words) do
         print(__K2L_Utf16.out("'" .. w .. "' length=" .. __K2L_Utf16.len(w) .. " indices=" .. __K2L_Str(__K2L_IntRange.new(0, __K2L_Utf16.len(w) - 1)) .. " lastIndex=" .. __K2L_Utf16.len(w) - 1 .. " empty=" .. tostring(#w == 0)))
     end
@@ -92,7 +89,7 @@ local function substrings()
     print(__K2L_Utf16.out(__K2L_Text.removeRange(s, 1, 5)))
     print(__K2L_Utf16.out(__K2L_Text.replaceRange(s, 0, 5, "HELLO")))
     print(__K2L_Utf16.out(__K2L_Text.slice(s, __K2L_IntRange.new(0, 4))))
-    print(__K2L_Utf16.out(__K2L_Text.slice(s, __K2L_ListOf(1, 7, 13))))
+    print(__K2L_Utf16.out(__K2L_Text.slice(s, __K2L_ReadOnlyListOf(1, 7, 13))))
     print(__K2L_Utf16.out(__K2L_Text.substringBefore(s, "w")))
     print(__K2L_Utf16.out(__K2L_Text.substringAfter(s, "w")))
     print(__K2L_Utf16.out(__K2L_Text.substringAfterLast(s, " ")))
@@ -135,11 +132,11 @@ local function searching()
     print(__K2L_Utf16.out(__K2L_StringLastIndexOf(s, "and")))
     print(__K2L_Utf16.out(__K2L_StringIndexOf(s, "😀")))
     print(__K2L_Utf16.out(__K2L_StringIndexOf(s, "zzz")))
-    print(__K2L_Utf16.out(__K2L_StringContains(s, "😀")))
-    print(__K2L_Utf16.out(__K2L_Text.indexOfAny(s, __K2L_ListOf("and", "😀"))))
+    print(__K2L_Utf16.out(__K2L_Text.contains(s, "😀")))
+    print(__K2L_Utf16.out(__K2L_Text.indexOfAny(s, __K2L_ReadOnlyListOf("and", "😀"))))
     print(__K2L_Utf16.out(__K2L_Text.startsWithAt(s, "本語", 1)))
-    print(__K2L_Utf16.out(__K2L_StringStartsWith(s, "本語")))
-    print(__K2L_Utf16.out(__K2L_StringEndsWith(s, "😀")))
+    print(__K2L_Utf16.out(__K2L_Text.startsWith(s, "本語")))
+    print(__K2L_Utf16.out(__K2L_Text.endsWith(s, "😀")))
     print(__K2L_Utf16.out(__K2L_StringReplace(s, "日本語", "X")))
     print(__K2L_Utf16.out(__K2L_StringReplace(s, "and", "&")))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_StringSplit(s, " "))))
@@ -258,7 +255,7 @@ local function templatesAndConversion()
 end
 
 local function ordering()
-    local items = __K2L_ListOf("￿", "😀", "z", "é", "日", "", "𝄞")
+    local items = __K2L_ReadOnlyListOf("￿", "😀", "z", "é", "日", "", "𝄞")
     print(__K2L_Utf16.out(__K2L_Str(items:sorted():map(function(it) return hex(it) end))))
     print(__K2L_Utf16.out(__K2L_Str(items:sortedDescending():map(function(it) return __K2L_Utf16.len(it) end))))
     print(__K2L_Utf16.out(__K2L_Compare("😀", "￿") < 0))
@@ -269,14 +266,14 @@ local function ordering()
     print(__K2L_Utf16.out(__K2L_Str(____receiver_1 and __K2L_Utf16.len(____receiver_1))))
     print(__K2L_Utf16.out(__K2L_Utf16Case.equalsIgnoreCase("a", "A")))
     local map = __K2L_HashMap.new()
-    local ____list = __K2L_ListOf("héllo", "日本語", "😀", "wörld", "zebra", "café", "ñandú")
+    local ____list = __K2L_ReadOnlyListOf("héllo", "日本語", "😀", "wörld", "zebra", "café", "ñandú")
     for i = 0, ____list.size - 1 do
         local w = ____list[i + 1]
         map:set(w, i)
     end
     print(__K2L_Utf16.out(__K2L_Str(map)))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_SetOf("é", "日", "😀", "ab"):toList())))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_ListOf("héllo", "日本語", "😀"):map(function(it) return __K2L_Hash(it) end))))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ReadOnlySetOf("é", "日", "😀", "ab"):toList())))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ReadOnlyListOf("héllo", "日本語", "😀"):map(function(it) return __K2L_Hash(it) end))))
     print(__K2L_Utf16.out(__K2L_Hash("é")))
     print(__K2L_Utf16.out(__K2L_Hash("😀")))
     print(__K2L_Utf16.out(__K2L_Hash("日本語テキスト")))

@@ -30,12 +30,15 @@ internal val LIBRARY_CLASSES = listOf(
     "java/util/ConcurrentModificationException" to "__K2L_ConcurrentModificationException",
     "kotlin/ConcurrentModificationException" to "__K2L_ConcurrentModificationException",
     "kotlin/NotImplementedError" to "__K2L_NotImplementedError",
+    "java/lang/ArrayIndexOutOfBoundsException" to "__K2L_ArrayIndexOutOfBoundsException",
 )
 
 /** Library supertypes that need no runtime support (Comparable is honored via compareTo). */
 internal val MARKER_INTERFACES = setOf(
     "kotlin/Any",
     "kotlin/Comparable",
+    // its members are the class's own; library text functions read its toString() (see CharSequences.kt)
+    "kotlin/CharSequence",
     "java/lang/Comparable",
     "java/io/Serializable",
     "java/io/Closeable",
@@ -45,12 +48,23 @@ internal val MARKER_INTERFACES = setOf(
     // implemented by objects with resumeWith()/hasNext()/next(), as the lualib calls them
     "kotlin/coroutines/Continuation",
     "kotlin/collections/Iterator",
+    "kotlin/collections/MutableIterator",
+    "kotlin/collections/ListIterator",
+    "kotlin/collections/MutableListIterator",
+    "java/util/Iterator",
+    "java/util/RandomAccess",
+    // read through their key and value fields
+    "kotlin/collections/Map.Entry",
+    "kotlin/collections/MutableMap.MutableEntry",
     // coroutine contexts are handled by the lualib's functions, which read the `key` field
     "kotlin/coroutines/CoroutineContext",
     "kotlin/coroutines/CoroutineContext.Element",
     "kotlin/coroutines/CoroutineContext.Key",
     "kotlin/coroutines/ContinuationInterceptor",
 )
+
+/** `Collection` types, which an `is` check tells apart from other Iterables by their `size`. */
+internal val COLLECTION_INTERFACES = setOf("kotlin/collections/Collection", "kotlin/collections/MutableCollection", "java/util/Collection")
 
 /** Types compared by value, whose `equals` can never be overridden. */
 internal val IDENTITY_TYPES = setOf(

@@ -2,14 +2,14 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArithmeticException = ____lualib.__K2L_ArithmeticException
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local longValueExactOrNull
 
 local function main()
-    local longs = __K2L_ListOf("9223372036854775807", "-9223372036854775808", "9223372036854775808", "12345678901234567890", "-9007199254740993")
+    local longs = __K2L_ReadOnlyListOf("9223372036854775807", "-9223372036854775808", "9223372036854775808", "12345678901234567890", "-9007199254740993")
     for _, a in ipairs(longs) do
         print(a .. ": long=" .. __K2L_BigInteger.parse(a):toLong() .. " hash=" .. __K2L_BigInteger.parse(a):hashCode())
     end

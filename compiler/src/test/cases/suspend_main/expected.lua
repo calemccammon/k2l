@@ -4,6 +4,7 @@ local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_RunSuspend = ____lualib.__K2L_RunSuspend
 local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
@@ -28,7 +29,7 @@ end
 local function main()
     print("main runs as a coroutine: " .. double(21))
     local results = __K2L_ListOf()
-    for _, name in ipairs(__K2L_ListOf("a", "b")) do
+    for _, name in ipairs(__K2L_ReadOnlyListOf("a", "b")) do
         __K2L_StartCoroutine(function() return results:add(request(name)) end, __K2L_Continuation.new(__K2L_EmptyCoroutineContext, function(it) end))
     end
     print("pending " .. pending.size)

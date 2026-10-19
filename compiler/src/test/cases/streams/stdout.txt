@@ -1,0 +1,98 @@
+10
+15
+0
+0
+[5, 6, 7]
+9
+0
+108
+[8, 15, 16]
+[P, Q, R]
+8.0
+[6, 2, 4]
+2
+a, b, c
+[1, 2, 3]
+0
+[1, 2, 3]
+[0, 1, 10, 11]
+[1, 2, 4, 8, 16, 32, 64, 128]
+[1, 3, 9, 27]
+[10, 7, 4, 1]
+[0, 1, 2, 3]
+2.0
+9
+1
+true
+false
+true
+5.142857142857143
+OptionalDouble[5.142857142857143]
+OptionalDouble.empty
+7
+4
+248
+[1, 2, 3, 5, 8, 8, 9]
+[1, 2, 3, 5, 8, 9]
+[5, 3, 8]
+[9, 2, 8]
+18
+[5, 3, 8, 1, 9, 2, 8]
+[6, 4, 9, 2, 10, 3, 9]
+true
+true
+true
+false
+36
+OptionalInt[17280]
+OptionalInt.empty
+OptionalInt[5]
+OptionalInt.empty
+[5, 3, 8]
+[1, 9, 2, 8]
+<n1-n2-n3-n4>
+10.0
+5.0
+[0, 0, 1, 0, 1, 2]
+10
+-2147483648
+98
+[12, 14, 16, 18]
+1.0
+0.6
+OptionalDouble[0.19999999999999998]
+1.0E10
+-1.0E10
+[0.2, 0.4, 0.6, 0.8]
+3
+false
+[v0.5, v1.5]
+5
+[1.5, 2.5, 3.5]
+[pear, apple, kiwi, banana]
+[4, 3, 5, 4, 6, 3]
+[apple, banana, fig, fig, kiwi, pear]
+[pear, kiwi, fig, fig, banana, apple]
+[fig, fig, pear, kiwi, apple, banana]
+[pear, fig, apple, kiwi, banana]
+[apple, kiwi]
+25
+6
+true
+true
+true
+pear
+banana
+none
+banana
+fig
+pear
+pfakbf
+Optional[banana]
+[pear, PEAR, fig, FIG, apple]
+6
+6
+word pear
+word fig
+[pear, fig]
+[apple, kiwi, banana, fig]

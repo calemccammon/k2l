@@ -7,10 +7,14 @@ local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
+local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_Unit = ____lualib.__K2L_Unit
 
 local function attempt(label, block)
     local ____ok, ____result = pcall(function()
@@ -29,7 +33,7 @@ end
 
 local function defaults()
     print("-- withDefault")
-    local base = __K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2))
+    local base = __K2L_ReadOnlyMapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2))
     local m = __K2L_JdkCollections.withDefault(base, function(it) return #it * 10 end)
     print(m:getValue("a"))
     print(m:getValue("missing"))
@@ -53,8 +57,8 @@ local function defaults()
     print(__K2L_Str(counts))
     print(counts:getValue("nothing"))
     print(counts.size)
-    local lists = __K2L_JdkCollections.withDefault(__K2L_MapOf(), function(it) return __K2L_ListOf() end)
-    lists:set(1, __K2L_ListOf("x"))
+    local lists = __K2L_JdkCollections.withDefault(__K2L_MapOf(), function(it) return __K2L_ReadOnlyListOf() end)
+    lists:set(1, __K2L_SingletonListOf("x"))
     print(__K2L_Str(lists:getValue(1)))
     print(__K2L_Str(lists:getValue(2)))
     print(__K2L_Str(lists:map(function(it) return it.key end):sorted()))
@@ -103,15 +107,18 @@ local function iterators()
     end)
     attempt("removeFirst", function()
         __K2L_JdkCollections.listIterator(list):remove()
+        return __K2L_Unit
     end)
     attempt("setFirst", function()
         __K2L_JdkCollections.listIterator(list):set(1)
+        return __K2L_Unit
     end)
     local again = __K2L_JdkCollections.listIterator(list)
     again:next()
     again:remove()
     attempt("removeTwice", function()
         again:remove()
+        return __K2L_Unit
     end)
     print(__K2L_Str(list))
     local words = __K2L_ListOf("a", "b", "c")
@@ -122,7 +129,7 @@ local function iterators()
         wi:add(w)
     end
     print(__K2L_Str(words))
-    local ro = __K2L_JdkCollections.listIterator(__K2L_ListOf(1, 2, 3))
+    local ro = __K2L_JdkCollections.listIterator(__K2L_ReadOnlyListOf(1, 2, 3))
     local sum = 0
     while ro:hasNext() do
         sum = sum + ro:next()

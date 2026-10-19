@@ -7,8 +7,8 @@ local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
@@ -67,7 +67,7 @@ local function main()
     print(name .. "=" .. value)
     local triple = __K2L_Triple.new(1, "two", 3.0)
     print(__K2L_Str(triple))
-    local versions = __K2L_ListOf(Version.new(1, 2), Version.new(0, 9), Version.new(1, 0))
+    local versions = __K2L_ReadOnlyListOf(Version.new(1, 2), Version.new(0, 9), Version.new(1, 0))
     print(__K2L_Str(versions:sorted()))
     print(__K2L_Compare(Version.new(1, 0), Version.new(1, 2)) < 0)
     print(__K2L_Str(versions:maxOrNull()))
@@ -86,7 +86,7 @@ local function main()
     print(__K2L_Str(r))
     local evens = __K2L_IntRange.new(0, 10 - 1):withStep(2):toList()
     print(__K2L_Str(evens))
-    local words = __K2L_ListOf("banana", "Apple", "cherry")
+    local words = __K2L_ReadOnlyListOf("banana", "Apple", "cherry")
     print(__K2L_Str(words:sortedBy(function(it) return it:lower() end)))
     print(words:map(function(it) return #it end):sum())
     print(words:filter(function(it) return #it > 5 end).size)
@@ -95,12 +95,12 @@ local function main()
         return __K2L_Pair.new(w, i)
     end)
     print(__K2L_Str(lookup))
-    print(__K2L_Str(__K2L_ListOf(3, 1, 2):sortedWith(function(a, b) return b - a end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1, 2):sortedWith(function(a, b) return b - a end)))
     local queue = __K2L_List.new()
-    queue:addAll(__K2L_ListOf(1, 2, 3))
+    queue:addAll(__K2L_ReadOnlyListOf(1, 2, 3))
     print(queue:removeFirst())
     print(__K2L_Str(queue))
-    print(__K2L_Str(windowedSumPairs(__K2L_ListOf(1, 2, 3, 4))))
+    print(__K2L_Str(windowedSumPairs(__K2L_ReadOnlyListOf(1, 2, 3, 4))))
 end
 
 function windowedSumPairs(self)

@@ -10,6 +10,7 @@ local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_SuspendCoroutine = ____lualib.__K2L_SuspendCoroutine
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_Unit = ____lualib.__K2L_Unit
 
 local Scheduler = __K2L_Class("Scheduler")
 
@@ -19,7 +20,7 @@ function Scheduler:____init()
     self.active = 0
 end
 
-Scheduler.Waiting = __K2L_Class("Waiting")
+Scheduler.Waiting = __K2L_Class("Scheduler$Waiting")
 
 function Scheduler.Waiting:____init(wakeAt, cont)
     self.wakeAt = wakeAt
@@ -28,7 +29,10 @@ end
 
 function Scheduler:launch(name, task)
     self.active = self.active + 1
-    __K2L_StartCoroutine(task, __K2L_Continuation.new(__K2L_EmptyCoroutineContext, function(result)
+    __K2L_StartCoroutine(function(...)
+        task(...)
+        return __K2L_Unit
+    end, __K2L_Continuation.new(__K2L_EmptyCoroutineContext, function(result)
         self.active = self.active - 1
         local ____error = result:exceptionOrNull()
         if ____error ~= nil then
@@ -61,7 +65,7 @@ function Scheduler:runFrame()
     local due = self.waiting:filter(function(it) return it.wakeAt <= self.frame end)
     self.waiting:removeAll(due)
     for _, w in ipairs(due) do
-        w.cont:resumeWith(__K2L_Result.success(nil))
+        w.cont:resumeWith(__K2L_Result.success(__K2L_Unit))
     end
     return self.active > 0
 end

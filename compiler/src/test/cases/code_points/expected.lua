@@ -24,11 +24,9 @@ local function codePoints()
     print(__K2L_Utf16.out(__K2L_Utf16.chars16(s):count()))
     print(__K2L_Utf16.out(__K2L_Utf16.chars16(s):sum()))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_Utf16.codePoints(s):boxed():toList())))
-    local ____list = __K2L_Utf16.codePoints(s):toList()
-    for ____i = 1, ____list.size do
-        local it = ____list[____i]
+    __K2L_Utf16.codePoints(s):forEach(function(it)
         print(__K2L_Utf16.out(__K2L_Str(__K2L_Num.toRadixUnsigned(it, 16))))
-    end
+    end)
     print(__K2L_Utf16.out(__K2L_Utf16.codePoints(s):filter(function(it) return it > 65535 end):count()))
     print(__K2L_Utf16.out(__K2L_Utf16.codePoints(s):map(function(it) return it + 1 end):sum()))
 end

@@ -11,9 +11,10 @@ local __K2L_IteratorBuilder = ____lualib.__K2L_IteratorBuilder
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
-local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
@@ -173,7 +174,7 @@ end
 local function main()
     print(__K2L_Str(fibonacci():take(10):toList()))
     print(primes():take(8):joinToString())
-    print(__K2L_Str(classify(__K2L_ListOf(3, 0, -2, 4)):toList()))
+    print(__K2L_Str(classify(__K2L_ReadOnlyListOf(3, 0, -2, 4)):toList()))
     local tree = Tree.new(4, Tree.new(2, Tree.new(1), Tree.new(3)), Tree.new(6, Tree.new(5)))
     print(__K2L_Str(tree:inOrder():toList()))
     print(__K2L_Str(tree:inOrder():filter(function(it) return math.fmod(it, 2) == 1 end):map(function(it) return it * 10 end):toList()))
@@ -191,12 +192,12 @@ local function main()
     print(logged:first())
     print("-- yieldAll")
     local all = __K2L_SequenceBuilder(function(____this_9)
-        ____this_9:yieldAll(__K2L_ListOf(1, 2))
-        ____this_9:yieldAll(__K2L_SetOf(3))
+        ____this_9:yieldAll(__K2L_ReadOnlyListOf(1, 2))
+        ____this_9:yieldAll(__K2L_ReadOnlySetOf(3))
         ____this_9:yieldAll(__K2L_SequenceOf(4, 5))
         ____this_9:yieldAll(__K2L_GenerateSequence(6, function(it) return it < 8 and it + 1 or nil end))
-        ____this_9:yieldAll(__K2L_IteratorOf(__K2L_ListOf(9, 10)))
-        ____this_9:yieldAll(__K2L_ListOf())
+        ____this_9:yieldAll(__K2L_IteratorOf(__K2L_ReadOnlyListOf(9, 10)))
+        ____this_9:yieldAll(__K2L_ReadOnlyListOf())
     end)
     print(__K2L_Str(all:toList()))
     print(all:count())

@@ -111,9 +111,11 @@ internal class PropertyFamilies(
             }
         }
         val constructorReads = ConstructorReads(declarations).reads
+        val delegated = delegatedInterfaces(declarations.classes)
         val result = HashMap<KtNamedDeclaration, Family>()
         for ((_, members) in all.groupBy(::find)) {
-            val family = family(members, members.filter { it in libraryOverrides }.toSet(), declarations.readThroughSuper, constructorReads)
+            val overrides = members.filter { it in libraryOverrides }.toSet()
+            val family = family(members, overrides, declarations.readThroughSuper, constructorReads, delegated)
             members.forEach { result[it] = family }
         }
         return result
@@ -124,14 +126,25 @@ internal class PropertyFamilies(
         libraryOverrides: Set<KtNamedDeclaration>,
         readThroughSuper: Set<PsiElement>,
         constructorReads: Set<PsiElement>,
+        delegated: Set<KtClassOrObject>,
     ): Family {
         val fields = members.filter(::declaresField).sortedBy { classes.hierarchy(ownerClass(it) ?: return@sortedBy 0).size }
         // Separate backing fields are only observable through `super` or a constructor reading an overridden property;
         // otherwise one shared field behaves the same.
         val readInConstructor = members.any { it in constructorReads }
         val separateFields = fields.size > 1 && (readInConstructor || members.any { it in readThroughSuper })
-        val accessors = members.any(::hasCustomAccessor) || separateFields
+        // a class delegating an interface forwards its properties to the delegate, which needs methods
+        val accessors = members.any(::hasCustomAccessor) || separateFields || members.any { ownerClass(it) in delegated }
         return Family(members, accessors, null, libraryOverrides, fields, readInConstructor)
+    }
+
+    /** The interfaces some class delegates (`: I by impl`), with their superinterfaces. */
+    private fun delegatedInterfaces(all: List<KtClassOrObject>): Set<KtClassOrObject> = with(session) {
+        all.flatMap { c -> c.superTypeListEntries.filterIsInstance<KtDelegatedSuperTypeEntry>() }
+            .mapNotNull { it.typeReference?.type?.expandedSymbol?.psi as? KtClassOrObject }
+            .filter { classes.isSource(it) }
+            .flatMap { classes.hierarchy(it) }
+            .toSet()
     }
 
     private fun overriddenDeclarations(d: KtNamedDeclaration): List<PsiElement?> = with(session) {

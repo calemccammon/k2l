@@ -1,0 +1,48 @@
+kotlin.Unit
+kotlin.Unit
+value: kotlin.Unit
+kotlin.Unit
+kotlin.Unit
+kotlin.Unit
+kotlin.Unit
+[kotlin.Unit, kotlin.Unit, 1]
+Success(kotlin.Unit)
+Success(4)
+kotlin.Unit
+[kotlin.Unit, kotlin.Unit]
+the Unit object
+the Unit object
+null
+kotlin.Unit
+kotlin.Unit
+true
+true
+true
+Box(kotlin.Unit)
+{1=kotlin.Unit}
+[kotlin.Unit, kotlin.Unit]
+kotlin.Unit
+null
+kotlin.Unit
+kotlin.Unit
+Success(kotlin.Unit)
+kotlin.Unit
+true
+1
+kotlin.Unit
+kotlin.Unit!
+Unit
+completed: Success(kotlin.Unit)
+kotlin.Unit
+Success(kotlin.Unit)
+[kotlin.Unit]
+kotlin.Unit
+null
+kotlin.Unit
+kotlin.Unit
+{1=kotlin.Unit, 2=kotlin.Unit}
+[kotlin.Unit]
+{1=kotlin.Unit}
+[kotlin.Unit, kotlin.Unit] Success(kotlin.Unit)
+stopped
+calls: 34

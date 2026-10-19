@@ -22,7 +22,16 @@ internal class SuperInfo(
     val elementBase: Boolean = false,
     /** The class implements `Sequence` next to a base class: the lualib `Sequence` is one of its interfaces. */
     val sequenceMixin: Boolean = false,
+    /** A lualib collection class extended or implemented, e.g. `__K2L_AbstractList` or `__K2L_List` (see CollectionBases). */
+    val collectionBase: String? = null,
+    /** Lualib mixins of library SAM interfaces the class implements (`Comparator`, `Runnable`, function types). */
+    val samMixins: List<String> = emptyList(),
+    /** `: I by expr` entries, in declaration order. */
+    val delegations: List<InterfaceDelegation> = emptyList(),
 )
+
+/** `: I by expr`: the delegate is stored in [field] of the instance when it is constructed. */
+internal class InterfaceDelegation(val entry: KtDelegatedSuperTypeEntry, val iface: KtClassOrObject, val field: String)
 
 /** Queries over the classes of the module being compiled: supertypes, initializers and `equals`. */
 internal class ClassHierarchy(private val session: KaSession, private val file: KtFile, private val module: ModuleContext) {
@@ -54,7 +63,7 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
             val call = c.initializerList?.initializers?.firstOrNull() as? KtSuperTypeCallEntry
             return@getOrPut SuperInfo(c.containingClassOrObject, call, emptyList(), null)
         }
-        with(session) { classifySupertypes(c, ::isSource, ::isSequenceClass) }
+        with(session) { classifySupertypes(c, ::isSource, ::isSequenceClass, { collectionBaseOf(it) != null }) }
     }
 
     /** Whether [c] or a source class it extends implements `Sequence`. */
@@ -66,7 +75,9 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
         if ((c is KtClass && c.isInterface()) || !hasPrimary(c)) return@getOrPut false
         val info = superInfo(c)
         c.hasConstructorState() || c.hasInitializers() || info.baseCall?.valueArguments?.isNotEmpty() == true ||
-            info.libraryBase != null || info.elementBase || info.base?.let { !hasPrimary(it) || initNeeded(it) } == true
+            info.libraryBase != null || info.elementBase || info.collectionBase in CONCRETE_COLLECTION_BASES ||
+            info.delegations.isNotEmpty() ||
+            info.base?.let { !hasPrimary(it) || initNeeded(it) } == true
     }
 
     private fun KtClassOrObject.hasConstructorState() =
@@ -90,8 +101,10 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
         return isSource(psi) && overridesEquals(psi)
     }
 
+    /** Whether [c] has an `equals` other than identity: its own, a data class's, or a library collection's it extends. */
     fun overridesEquals(c: KtClassOrObject): Boolean = (c is KtClass && c.isData()) ||
         c.declaredFunction("equals")?.hasModifier(KtTokens.OVERRIDE_KEYWORD) == true ||
+        superInfo(c).collectionBase != null ||
         superInfo(c).base?.let { overridesEquals(it) } == true
 }
 
@@ -104,4 +117,9 @@ internal fun hasPrimary(c: KtClassOrObject) = c !is KtClass || c.primaryConstruc
 internal fun ClassHierarchy.isSequenceClass(c: KtClassOrObject): Boolean = superInfo(c).let {
     it.sequenceBase || it.sequenceMixin ||
         it.base?.let(::isSequenceClass) == true
+}
+
+/** The lualib collection class [c] (or a source superclass) extends or implements, if any. */
+internal fun ClassHierarchy.collectionBaseOf(c: KtClassOrObject): String? = superInfo(c).let {
+    it.collectionBase ?: it.base?.let(::collectionBaseOf)
 }

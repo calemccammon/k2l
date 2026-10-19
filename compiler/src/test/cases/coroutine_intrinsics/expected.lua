@@ -12,6 +12,7 @@ local __K2L_StartCoroutineUninterceptedOrReturn = ____lualib.__K2L_StartCoroutin
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_SuspendCoroutineUninterceptedOrReturn = ____lualib.__K2L_SuspendCoroutineUninterceptedOrReturn
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_Unit = ____lualib.__K2L_Unit
 
 local parked = __K2L_ListOf()
 
@@ -41,7 +42,10 @@ local function failing()
 end
 
 local function run(block)
-    __K2L_StartCoroutine(block, __K2L_Continuation.new(__K2L_EmptyCoroutineContext, function(it)
+    __K2L_StartCoroutine(function(...)
+        block(...)
+        return __K2L_Unit
+    end, __K2L_Continuation.new(__K2L_EmptyCoroutineContext, function(it)
         local ____receiver = it:exceptionOrNull()
         if ____receiver ~= nil then
             print("failed: " .. __K2L_Str(____receiver.message))
@@ -95,11 +99,12 @@ local function main()
     parked:removeAt(0):resumeWith(__K2L_Result.failure(__K2L_IllegalStateException.new("boom")))
     local created = __K2L_CreateCoroutineUnintercepted(function()
         print("unintercepted body")
+        return __K2L_Unit
     end, __K2L_Continuation.new(__K2L_EmptyCoroutineContext, function(it)
         print("done " .. tostring(it:isSuccess()))
     end))
     print("created")
-    created:resumeWith(__K2L_Result.success(nil))
+    created:resumeWith(__K2L_Result.success(__K2L_Unit))
 end
 
 main()

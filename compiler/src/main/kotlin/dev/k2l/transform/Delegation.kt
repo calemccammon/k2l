@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
+import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
@@ -12,7 +13,7 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 /**
  * Delegated properties (`val x by ...`). The delegate lives in a hidden slot (`self.____x_delegate` for members,
  * a local `____x_delegate` otherwise) and reads and writes call its `getValue`/`setValue`. The `KProperty`
- * argument is a table `{ name = "x" }`: only `property.name` is available. `provideDelegate` is called once, where
+ * argument is a property reference without accessors, see [propertyInfo]. `provideDelegate` is called once, where
  * the delegate would be stored. Open and overriding delegated properties belong to the accessor families of
  * [PropertyFamilies]: every member is read through `getX`.
  */
@@ -86,8 +87,16 @@ private fun FileTransformer.userKind(p: KtProperty, type: KaType): DelegateKind?
     return DelegateKind.User(getters.single().first, setters.singleOrNull()?.first)
 }
 
-/** The `KProperty` stand-in. */
-private fun propertyInfo(name: String): LuaExpr = LuaTable(listOf(LuaField.Named("name", LuaString(name))))
+/**
+ * The `KProperty` passed to the delegate: a property reference (see [propertyRefObject]) with the name, `toString()` and `==` of
+ * the JVM's, without accessors (on the JVM only kotlin-reflect would make them reachable for a `KProperty<*>`). Members store
+ * theirs in the class; for top-level and local properties `__K2L_KProperty` keeps one per property.
+ */
+private fun FileTransformer.propertyInfo(p: KtProperty, member: Boolean = false): LuaExpr = with(session) {
+    val key = referenceKey(p.symbol as KaCallableSymbol)
+    if (member) return propertyRefObject(p.name!!, key, LuaNil, null, null)
+    LuaCall(lualibRef("PropertyRef", "__K2L_KProperty"), listOf(LuaString(p.name!!), LuaString(key)))
+}
 
 private fun FileTransformer.operatorCall(operator: Operator, delegate: LuaExpr, args: List<LuaExpr>): LuaExpr = when (operator) {
     is Operator.Method -> LuaMethodCall(delegate, operator.name, args)
@@ -97,35 +106,35 @@ private fun FileTransformer.operatorCall(operator: Operator, delegate: LuaExpr, 
 /** `provideDelegate`: what `by provider` actually delegates to. */
 private fun FileTransformer.provide(p: KtProperty, provider: LuaExpr, thisRef: LuaExpr): LuaExpr {
     val operator = delegateProviders[p] ?: return provider
-    return operatorCall(operator, provider, listOf(thisRef, propertyInfo(p.name!!)))
+    return operatorCall(operator, provider, listOf(thisRef, propertyInfo(p)))
 }
 
-/** [info] is the `KProperty` stand-in passed to the delegate; accessors of a class pass a constant, locals a fresh table. */
+/** [info] is the `KProperty` passed to the delegate: accessors of a class pass a constant, others [propertyInfo]. */
 private fun FileTransformer.delegateGet(
     kind: DelegateKind,
     delegate: LuaExpr,
     thisRef: LuaExpr,
-    name: String,
-    info: LuaExpr = propertyInfo(name),
+    p: KtProperty,
+    info: LuaExpr? = null,
 ): LuaExpr = when (kind) {
     DelegateKind.Lazy -> LuaMethodCall(delegate, GET_VALUE, emptyList())
-    DelegateKind.MapKey -> LuaMethodCall(delegate, GET_VALUE, listOf(LuaString(name)))
-    DelegateKind.Library -> LuaMethodCall(delegate, GET_VALUE, listOf(thisRef, info))
-    is DelegateKind.User -> operatorCall(kind.get, delegate, listOf(thisRef, info))
+    DelegateKind.MapKey -> LuaMethodCall(delegate, GET_VALUE, listOf(LuaString(p.name!!)))
+    DelegateKind.Library -> LuaMethodCall(delegate, GET_VALUE, listOf(thisRef, info ?: propertyInfo(p)))
+    is DelegateKind.User -> operatorCall(kind.get, delegate, listOf(thisRef, info ?: propertyInfo(p)))
 }
 
 private fun FileTransformer.delegateSet(
     kind: DelegateKind,
     delegate: LuaExpr,
     thisRef: LuaExpr,
-    name: String,
+    p: KtProperty,
     value: LuaExpr,
-    info: LuaExpr = propertyInfo(name),
+    info: LuaExpr? = null,
 ): LuaStmt = LuaCallStmt(
     when (kind) {
-        DelegateKind.MapKey -> LuaMethodCall(delegate, "set", listOf(LuaString(name), value))
-        is DelegateKind.User -> operatorCall(kind.set!!, delegate, listOf(thisRef, info, value))
-        else -> LuaMethodCall(delegate, SET_VALUE, listOf(thisRef, info, value))
+        DelegateKind.MapKey -> LuaMethodCall(delegate, "set", listOf(LuaString(p.name!!), value))
+        is DelegateKind.User -> operatorCall(kind.set!!, delegate, listOf(thisRef, info ?: propertyInfo(p), value))
+        else -> LuaMethodCall(delegate, SET_VALUE, listOf(thisRef, info ?: propertyInfo(p), value))
     },
 )
 
@@ -148,13 +157,13 @@ internal fun FileTransformer.isSourceDelegatedVariable(psi: PsiElement?): Boolea
 
 internal fun FileTransformer.delegatedVariableRead(p: KtProperty): LuaExpr {
     val kind = delegateKind(p) ?: return LuaNil
-    return delegateGet(kind, variableDelegate(p), LuaNil, p.name!!)
+    return delegateGet(kind, variableDelegate(p), LuaNil, p)
 }
 
 internal fun FileTransformer.delegatedVariableTarget(p: KtProperty): Target? {
     val kind = delegateKind(p) ?: return null
     val delegate = variableDelegate(p)
-    return Target(delegateGet(kind, delegate, LuaNil, p.name!!)) { delegateSet(kind, delegate, LuaNil, p.name!!, it) }
+    return Target(delegateGet(kind, delegate, LuaNil, p)) { delegateSet(kind, delegate, LuaNil, p, it) }
 }
 
 // ---- members ----
@@ -190,22 +199,21 @@ private fun FileTransformer.delegateInitializer(p: KtProperty): Unit = with(sess
 internal fun FileTransformer.delegatedAccessors(p: KtProperty, ref: LuaExpr) {
     val kind = delegateKind(p) ?: return
     val delegate = delegateField(p, selfRef())
-    val name = p.name!!
-    // The property stand-in is built once per property, not on every access: `Holder.____x_property = {name = "x"}`
+    // The KProperty is built once per property, not on every access: `Holder.____x_property = __K2L_PropertyRef.new("x", ...)`
     val info = if (kind == DelegateKind.Lazy || kind == DelegateKind.MapKey) {
-        propertyInfo(name)
+        null
     } else {
         LuaIndex(ref, LuaString(delegateSlot(p, "property"))).also {
-            emit(assign(it, propertyInfo(name)))
+            emit(assign(it, propertyInfo(p, member = true)))
         }
     }
-    emitMethod(ref, accessorName("get", p), emptyList(), listOf(LuaReturn(listOf(delegateGet(kind, delegate, selfRef(), name, info)))))
+    emitMethod(ref, accessorName("get", p), emptyList(), listOf(LuaReturn(listOf(delegateGet(kind, delegate, selfRef(), p, info)))))
     if (p.isVar) {
         emitMethod(
             ref,
             accessorName("set", p),
             listOf("value"),
-            listOf(delegateSet(kind, delegate, selfRef(), name, LuaName("value"), info)),
+            listOf(delegateSet(kind, delegate, selfRef(), p, LuaName("value"), info)),
         )
     }
 }

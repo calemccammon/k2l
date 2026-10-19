@@ -8,6 +8,7 @@ local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
+local __K2L_JavaClass = ____lualib.__K2L_JavaClass
 local __K2L_KClassNamed = ____lualib.__K2L_KClassNamed
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
@@ -15,6 +16,8 @@ local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -22,9 +25,9 @@ local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local ____model = require("model.model")
-local Plain = __K2L_Class("Plain")
+local Plain = __K2L_Class("app.Plain")
 __K2L_ClassInfo(Plain, "app.Plain", "app.Plain", "class")
-local Point = __K2L_Class("Point")
+local Point = __K2L_Class("app.Point")
 __K2L_ClassInfo(Point, "app.Point", "app.Point", "class")
 
 function Point:____init(x, y)
@@ -44,16 +47,16 @@ function Point:equals(other)
     return getmetatable(other) == Point and self.x == other.x and self.y == other.y
 end
 
-local Animal = __K2L_Class("Animal")
+local Animal = __K2L_Class("app.Animal")
 __K2L_ClassInfo(Animal, "app.Animal", "app.Animal", "class")
 
 function Animal:toString()
     return "I am a " .. __K2L_Str(__K2L_KClassOfValue(self).simpleName)
 end
 
-local Dog = __K2L_Class("Dog", Animal)
+local Dog = __K2L_Class("app.Dog", Animal)
 __K2L_ClassInfo(Dog, "app.Dog", "app.Dog", "class")
-local Cat = __K2L_Class("Cat", Animal)
+local Cat = __K2L_Class("app.Cat", Animal)
 __K2L_ClassInfo(Cat, "app.Cat", "app.Cat", "class")
 
 local function describe(x)
@@ -65,14 +68,14 @@ local function describe(x)
 end
 
 local function localClasses()
-    local Local = __K2L_Class("Local")
-    __K2L_ClassInfo(Local, nil, nil, "class")
+    local Local = __K2L_Class("app.MainKt$localClasses$Local")
+    __K2L_ClassInfo(Local, nil, "app.MainKt$localClasses$Local", "class")
     local l = Local.new()
     print(__K2L_Str(__K2L_KClassOfValue(l).simpleName))
     print(__K2L_Str(__K2L_KClassOf(Local).qualifiedName))
 end
 
-local handlers = __K2L_MapOf(__K2L_Pair.new(__K2L_KClassOf(Plain), function(_) return "plain handler" end), __K2L_Pair.new(__K2L_KClassOf(Point), function(p) return "point handler for " .. __K2L_Str(p) end))
+local handlers = __K2L_ReadOnlyMapOf(__K2L_Pair.new(__K2L_KClassOf(Plain), function(_) return "plain handler" end), __K2L_Pair.new(__K2L_KClassOf(Point), function(p) return "point handler for " .. __K2L_Str(p) end))
 
 local function kindOf(x)
     local ____subject = __K2L_KClassOfValue(x)
@@ -116,22 +119,22 @@ local function main()
     print(__K2L_Str(__K2L_KClassOf(____model.Registry).qualifiedName))
     print(__K2L_Str(__K2L_KClassOf(____model.Outer.Nested).simpleName))
     print(__K2L_Str(__K2L_KClassOf(____model.Outer.Nested).qualifiedName))
-    print(__K2L_Str(__K2L_KClassNamed("app.model.Outer.Companion", "Companion").simpleName))
-    print(__K2L_Str(__K2L_KClassNamed("app.model.Outer.Companion", "Companion").qualifiedName))
+    print(__K2L_Str(__K2L_KClassNamed("app.model.Outer.Companion", "Companion", "app.model.Outer$Companion").simpleName))
+    print(__K2L_Str(__K2L_KClassNamed("app.model.Outer.Companion", "Companion", "app.model.Outer$Companion").qualifiedName))
     print(__K2L_Str(__K2L_KClassOfValue(____model.Outer.Inner.new(____model.Outer.new())).qualifiedName))
     print(__K2L_Str(__K2L_KClassOfValue(____model.Color.RED).simpleName))
     print(__K2L_Str(__K2L_KClassOf(____model.Color).qualifiedName))
     print(__K2L_Equals(__K2L_KClassOfValue(____model.Color.GREEN), __K2L_KClassOf(____model.Color)))
     print(__K2L_Str(__K2L_KClassOfValue(____model.Color.GREEN).simpleName))
     print(__K2L_Str(__K2L_KClassOfValue(____model.Color.GREEN).qualifiedName))
-    print(__K2L_Str(__K2L_KClassOfValue(____model.Color.GREEN).name))
-    print(__K2L_Str(__K2L_KClassOfValue(____model.Color.RED).name))
+    print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(____model.Color.GREEN)).name))
+    print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(____model.Color.RED)).name))
     print(__K2L_KClassOfValue(____model.Color.GREEN):isInstance(____model.Color.RED))
     print(__K2L_KClassOf(____model.Color):isInstance(____model.Color.GREEN))
     print(__K2L_Equals(__K2L_KClassOfValue(____model.Op.PLUS), __K2L_KClassOf(____model.Op)))
     print(__K2L_Str(__K2L_KClassOfValue(__K2L_EnumValueOf(____model.Op, "MINUS")).simpleName))
-    print(__K2L_Str(__K2L_KClassOfValue(____model.Op.PLUS).simpleName))
-    print(__K2L_Str(__K2L_KClassOfValue(____model.Outer.Nested.new()).name))
+    print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(____model.Op.PLUS)).simpleName or ""))
+    print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(____model.Outer.Nested.new())).name))
     print(__K2L_Str(__K2L_KClassOf(____model.Shape).simpleName))
     print(__K2L_Str(__K2L_KClassOf(____model.Shape).qualifiedName))
     localClasses()
@@ -153,10 +156,10 @@ local function main()
     local ____result_5
     ____result_5 = __K2L_KClassNamed("kotlin.Double").qualifiedName
     print(__K2L_Str(____result_5))
-    print(__K2L_Str(__K2L_KClassOfValue(Plain.new()).simpleName))
-    print(__K2L_Str(__K2L_KClassOfValue(Point.new(0, 0)).simpleName))
-    print(__K2L_Str(__K2L_KClassOfValue(Dog.new()).name))
-    print(__K2L_Str(__K2L_KClassOfValue(____model.Circle.new(1.0)).name))
+    print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(Plain.new())).simpleName or ""))
+    print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(Point.new(0, 0))).simpleName or ""))
+    print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(Dog.new())).name))
+    print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(____model.Circle.new(1.0))).name))
     print(__K2L_Str(__K2L_KClassNamed("kotlin.String").simpleName))
     print(__K2L_Str(__K2L_KClassNamed("kotlin.Int").simpleName))
     print(__K2L_Str(__K2L_KClassNamed("kotlin.Long").simpleName))
@@ -173,7 +176,7 @@ local function main()
     print(__K2L_Str(__K2L_KClassOfValue(__K2L_Pair.new(1, 2)).simpleName))
     print(__K2L_Str(__K2L_KClassOfValue(__K2L_Exception.new("x")).simpleName))
     print(__K2L_Str(__K2L_KClassOfValue(__K2L_IllegalStateException.new("x")).qualifiedName))
-    print(__K2L_Str(__K2L_KClassOfValue(__K2L_RuntimeException.new("x")).simpleName))
+    print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(__K2L_RuntimeException.new("x"))).simpleName or ""))
     print(__K2L_Str(__K2L_KClassOfValue(__K2L_StringBuilder.new()).simpleName))
     print(__K2L_Equals(__K2L_KClassNamed("kotlin.String"), __K2L_KClassNamed("kotlin.String")))
     print(__K2L_Equals(__K2L_KClassNamed("kotlin.Int"), __K2L_KClassNamed("kotlin.Int")))
@@ -188,7 +191,7 @@ local function main()
     print(kindOf("s"))
     print(kindOf(3))
     print(kindOf(3.5))
-    local classes = __K2L_ListOf(__K2L_KClassOf(Dog), __K2L_KClassOf(Cat), __K2L_KClassOf(Dog))
+    local classes = __K2L_ReadOnlyListOf(__K2L_KClassOf(Dog), __K2L_KClassOf(Cat), __K2L_KClassOf(Dog))
     print(__K2L_Str(classes:map(function(it) return it.simpleName end)))
     print(classes:distinct().size)
     print(classes:toSet().size)
@@ -212,37 +215,39 @@ return {Plain = Plain, Point = Point, Animal = Animal, Dog = Dog, Cat = Cat, des
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 
-local Shape = __K2L_Class("Shape")
+local Shape = __K2L_Class("app.model.Shape")
 __K2L_ClassInfo(Shape, "app.model.Shape", "app.model.Shape", "interface")
-local Circle = __K2L_Class("Circle", nil, Shape)
+local Circle = __K2L_Class("app.model.Circle", nil, Shape)
 __K2L_ClassInfo(Circle, "app.model.Circle", "app.model.Circle", "class")
 
 function Circle:____init(r)
     self.r = r
 end
 
-local Square = __K2L_Class("Square", nil, Shape)
+local Square = __K2L_Class("app.model.Square", nil, Shape)
 __K2L_ClassInfo(Square, "app.model.Square", "app.model.Square", "class")
 
 function Square:____init(side)
     self.side = side
 end
 
-local Registry = __K2L_Class("Registry")
+local Registry = __K2L_Class("app.model.Registry")
 __K2L_ClassInfo(Registry, "app.model.Registry", "app.model.Registry", "class")
-local Outer = __K2L_Class("Outer")
+local Outer = __K2L_Class("app.model.Outer")
 __K2L_ClassInfo(Outer, "app.model.Outer", "app.model.Outer", "class")
-Outer.Nested = __K2L_Class("Nested")
+__K2L_CompanionInfo(Outer, "app.model.Outer.Companion", "app.model.Outer$Companion", "Companion")
+Outer.Nested = __K2L_Class("app.model.Outer$Nested")
 __K2L_ClassInfo(Outer.Nested, "app.model.Outer.Nested", "app.model.Outer$Nested", "class")
-Outer.Inner = __K2L_Class("Inner")
+Outer.Inner = __K2L_Class("app.model.Outer$Inner")
 __K2L_ClassInfo(Outer.Inner, "app.model.Outer.Inner", "app.model.Outer$Inner", "class")
 
 function Outer.Inner:____init(____outer)
     self.____outer = ____outer
 end
 
-local Color = __K2L_Class("Color")
+local Color = __K2L_Class("app.model.Color")
 __K2L_ClassInfo(Color, "app.model.Color", "app.model.Color", "class")
 
 function Color:____init(name, ordinal)
@@ -264,7 +269,7 @@ do
     Color.GREEN = ____GREEN.new("GREEN", 1)
 end
 Color.____values = {Color.RED, Color.GREEN}
-local Op = __K2L_Class("Op")
+local Op = __K2L_Class("app.model.Op")
 __K2L_ClassInfo(Op, "app.model.Op", "app.model.Op", "class")
 
 function Op:____init(name, ordinal, symbol)

@@ -1,0 +1,4 @@
+5:16: Extending 'TreeMap<String, Int>()' is not supported yet
+7:15: Extending 'java.util.ArrayDeque<Int>()' is not supported yet
+11:24: Extending 'Iterable<Int>' is not supported yet
+15:30: Extending 'Collection<Int>' is not supported yet

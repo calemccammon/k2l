@@ -46,6 +46,24 @@ function __K2L_Unsigned.toString(a)
     return tostring(q) .. tostring(a - q * 10)
 end
 
+-- ULong.toString(radix)
+function __K2L_Unsigned.toRadix(a, radix)
+    if radix < 2 or radix > 36 then
+        error(__K2L_IllegalArgumentException.new("radix " .. radix .. " was not in valid range 2..36"))
+    end
+    if a == 0 then
+        return "0"
+    end
+    local digits, out = "0123456789abcdefghijklmnopqrstuvwxyz", {}
+    while a ~= 0 do
+        local q = udiv(a, radix)
+        local d = a - q * radix
+        out[#out + 1] = digits:sub(d + 1, d + 1)
+        a = q
+    end
+    return string.reverse(table.concat(out))
+end
+
 -- Halving with the lowest bit kept makes the conversion round like a direct one.
 function __K2L_Unsigned.toDouble(a)
     if a >= 0 then

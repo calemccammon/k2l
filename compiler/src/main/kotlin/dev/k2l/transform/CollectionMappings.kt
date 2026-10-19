@@ -56,6 +56,8 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "java/util/Deque",
         "kotlin/text/MatchResult.Destructured",
         "kotlin/text/MatchGroupCollection",
+        "kotlin/collections/AbstractList",
+        "kotlin/collections/AbstractMutableList",
     )
     val arrayTypes =
         listOf(
@@ -77,6 +79,9 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "java/util/TreeSet",
         "java/util/SortedSet",
         "java/util/NavigableSet",
+        "kotlin/collections/AbstractSet",
+        "kotlin/collections/AbstractMutableSet",
+        "java/util/AbstractSet",
     )
     kind(
         CollectionKind.Map,
@@ -90,6 +95,9 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "java/util/TreeMap",
         "java/util/SortedMap",
         "java/util/NavigableMap",
+        "kotlin/collections/AbstractMap",
+        "kotlin/collections/AbstractMutableMap",
+        "java/util/AbstractMap",
     )
     kind(
         CollectionKind.Iterable,
@@ -100,6 +108,9 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "java/util/Collection",
         "java/lang/Iterable",
         "java/util/PriorityQueue",
+        "kotlin/collections/AbstractCollection",
+        "kotlin/collections/AbstractMutableCollection",
+        "java/util/AbstractCollection",
     )
     kind(
         CollectionKind.Range,
@@ -127,6 +138,7 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "kotlin/collections/CharIterator",
         "kotlin/collections/IntIterator",
         "java/util/Iterator",
+        "kotlin/collections/AbstractIterator",
     )
     put("kotlin/collections/Map.Entry", CollectionKind.Entry)
     put("kotlin/collections/MutableMap.MutableEntry", CollectionKind.Entry)
@@ -149,13 +161,21 @@ context(s: KaSession)
 fun KaType.collectionKind(): CollectionKind? = with(s) {
     val direct = withoutFlexibility.expandedSymbol?.classId?.asString()?.let(KIND_BY_CLASS::get)
     if (direct != null) return direct
-    // A class of the program implementing Sequence has all the Sequence operations.
+    // A class of the program implementing Sequence has all the Sequence operations; one extending or implementing a library
+    // collection (AbstractList, ArrayList, Map, ...) those of the collection.
     val symbol = withoutFlexibility.expandedSymbol
     if (symbol?.psi !is KtClassOrObject) return null
-    return CollectionKind.Sequence.takeIf { withoutFlexibility.allSupertypes.any { it.expandedSymbol?.classId?.asString() == SEQUENCE_ID } }
+    val supertypes = withoutFlexibility.allSupertypes.mapNotNull { it.expandedSymbol?.classId?.asString() }.toSet()
+    if (SEQUENCE_ID in supertypes) return CollectionKind.Sequence
+    val kinds = supertypes.mapNotNull(KIND_BY_CLASS::get).toSet()
+    return INHERITED_KINDS.firstOrNull { it in kinds }
 }
 
 private const val SEQUENCE_ID = "kotlin/sequences/Sequence"
+
+/** The collection kinds a class of the program can inherit, most specific first. */
+private val INHERITED_KINDS =
+    listOf(CollectionKind.Map, CollectionKind.List, CollectionKind.Set, CollectionKind.Iterator, CollectionKind.Iterable)
 
 context(s: KaSession)
 val KaType.elementType: KaType? get() = (withoutFlexibility as? KaClassType)?.typeArguments?.firstOrNull()?.type
@@ -207,10 +227,14 @@ object CollectionMappings {
         "dropLastWhile", "mapIndexedNotNull", "flatMapIndexed", "mapTo", "filterTo", "toCollection", "associateByTo",
         "associateWithTo", "elementAtOrNull", "elementAtOrElse", "firstNotNullOfOrNull", "firstNotNullOf", "ifEmpty", "slice",
         "requireNoNulls", "asReversed", "asList", "binarySearch", "binarySearchBy", "sortedArray", "sortedArrayDescending",
-        "reversedArray", "copyOfRange", "copyInto", "iterator", "addFirst", "addLast", "removeFirstOrNull", "removeLastOrNull",
+        "sortedArrayWith", "reversedArray", "copyOfRange", "copyInto", "iterator", "addFirst", "addLast", "removeFirstOrNull",
+        "removeLastOrNull",
         "replaceAll", "offer", "poll", "peek", "push", "pop", "offerFirst", "offerLast", "pollFirst", "pollLast", "peekFirst",
         "peekLast", "element", "groupingBy", "sliceArray", "contentDeepToString", "toSortedSet", "floor", "lower", "ceiling",
         "higher", "pollFirst", "pollLast", "headSet", "tailSet", "subSet", "descendingSet", "foldRightIndexed", "mapIndexedTo",
+        "maxOfWith", "minOfWith", "maxOfWithOrNull", "minOfWithOrNull", "reduceIndexedOrNull", "runningFoldIndexed",
+        "scanIndexed", "runningReduceIndexed",
+        "filterNotNullTo", "mapIndexedNotNullTo", "flatMapIndexedTo", "joinTo",
     )
 
     /** `Map` operations that are the `Iterable<Map.Entry>` ones, so they run over `entries`. */
@@ -219,6 +243,7 @@ object CollectionMappings {
         "minWith", "firstNotNullOfOrNull", "firstNotNullOf", "sortedBy", "sortedByDescending", "sortedWith", "groupBy",
         "associate", "associateBy", "associateWith", "firstOrNull", "first", "toList", "flatMap", "mapNotNull", "mapIndexed",
         "fold", "single", "singleOrNull", "withIndex", "zip", "filterIsInstance",
+        "maxOfWith", "minOfWith", "maxOfWithOrNull", "minOfWithOrNull",
     )
 
     private val MAP_METHODS = setOf(
@@ -233,7 +258,7 @@ object CollectionMappings {
     )
 
     private val ITERATOR_METHODS =
-        setOf("hasNext", "next", "remove", "hasPrevious", "previous", "nextIndex", "previousIndex", "set", "add")
+        setOf("hasNext", "next", "remove", "hasPrevious", "previous", "nextIndex", "previousIndex", "set", "add", "setNext", "done")
 
     /** `Random` is passed explicitly to the lualib methods; calls without one use `Random.Default`. */
     private val RANDOM_METHODS = setOf("shuffled", "shuffle", "random", "randomOrNull")
@@ -282,8 +307,12 @@ object CollectionMappings {
         if (name in ITERATOR_METHODS) LuaMethodCall(site.self, name, site.args) else null
 
     private fun rangeMember(name: String, site: CallSite): LuaExpr? = when (name) {
-        "first", "last", "step" ->
-            if (site.args.isEmpty()) LuaIndex(site.self, LuaString(name)) else iterable(CollectionKind.Range, name, site)
+        "first", "last", "step" -> if (site.args.isEmpty() && !site.isFunctionCall()) {
+            LuaIndex(site.self, LuaString(name))
+        } else {
+            // the range's `first` and `last` fields hide the Iterable methods of the same name
+            LuaCall(LuaIndex(site.ref("Collections", "__K2L_Iterable"), LuaString(name)), listOf(site.self) + site.args)
+        }
 
         "start" -> LuaIndex(site.self, LuaString("first"))
 
@@ -493,11 +522,13 @@ object CollectionMappings {
 
             "sumOf" -> LuaMethodCall(self, "sumOf", site.args + zeroFor(site, (site.argTypes.getOrNull(0) as? KaFunctionType)?.returnType))
 
-            "plus", "minus" -> LuaMethodCall(self, if (isCollection(site, site.argTypes.getOrNull(0))) name + "All" else name, site.args)
+            "plus", "minus" -> LuaMethodCall(self, if (isCollection(site, site.overloadType(0))) name + "All" else name, site.args)
 
-            "plusAssign" -> LuaMethodCall(self, if (isCollection(site, site.argTypes.getOrNull(0))) "addAll" else "add", site.args)
+            "plusAssign" -> LuaMethodCall(self, if (isCollection(site, site.overloadType(0))) "addAll" else "add", site.args)
 
-            "minusAssign" -> LuaMethodCall(self, if (isCollection(site, site.argTypes.getOrNull(0))) "removeAll" else "remove", site.args)
+            "minusAssign" -> LuaMethodCall(self, if (isCollection(site, site.overloadType(0))) "removeAll" else "remove", site.args)
+
+            "sortedBy", "sortedByDescending", "sortBy", "sortByDescending" -> sortBySelector(name, site)
 
             "plusElement" -> LuaMethodCall(self, "plus", site.args)
 
@@ -521,6 +552,12 @@ object CollectionMappings {
         }
     }
 
+    /** `sortedBy(selector)` and the like; a pure selector lets the lualib compute each key once (see `isPureSelector`). */
+    fun sortBySelector(name: String, site: CallSite): LuaExpr {
+        val pure = site.transformer.isPureSelector(site.element)
+        return LuaMethodCall(site.self, name, if (pure) listOf(site.arg(0), LuaBool(true)) else site.args)
+    }
+
     private fun mapMember(name: String, site: CallSite): LuaExpr? {
         val self = site.self
         return when (name) {
@@ -538,9 +575,9 @@ object CollectionMappings {
 
             "plus" -> LuaMethodCall(self, "plus", site.args)
 
-            "minus" -> LuaMethodCall(self, if (isCollection(site, site.argTypes.getOrNull(0))) "minusAll" else "minus", site.args)
+            "minus" -> LuaMethodCall(self, if (isCollection(site, site.overloadType(0))) "minusAll" else "minus", site.args)
 
-            "minusAssign" -> if (isCollection(site, site.argTypes.getOrNull(0))) {
+            "minusAssign" -> if (isCollection(site, site.overloadType(0))) {
                 LuaMethodCall(LuaMethodCall(self, "getKeys", emptyList()), "removeAll", site.args)
             } else {
                 LuaMethodCall(self, "remove", site.args)
@@ -563,13 +600,20 @@ object CollectionMappings {
     }
 
     private fun isMapOrIterable(site: CallSite) = with(site.session) {
-        site.argTypes.getOrNull(0)?.collectionKind() in
-            setOf(CollectionKind.Map, CollectionKind.List, CollectionKind.Array, CollectionKind.Set)
+        site.overloadType(0)?.collectionKind() in
+            setOf(
+                CollectionKind.Map,
+                CollectionKind.List,
+                CollectionKind.Array,
+                CollectionKind.Set,
+                CollectionKind.Iterable,
+                CollectionKind.Sequence,
+            )
     }
 
     /** `map += pair` is `set(first, second)`; `map += otherMap` and `map += listOfPairs` are `putAll`. */
     private fun pairArguments(site: CallSite): List<LuaExpr> =
-        if (with(site.session) { site.argTypes.getOrNull(0)?.collectionKind() } == CollectionKind.Pair) {
+        if (with(site.session) { site.overloadType(0)?.collectionKind() } == CollectionKind.Pair) {
             listOf(LuaIndex(site.arg(0), LuaString("first")), LuaIndex(site.arg(0), LuaString("second")))
         } else {
             site.args

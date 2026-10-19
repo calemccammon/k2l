@@ -2,6 +2,11 @@ package dev.k2l.transform
 
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
+import org.jetbrains.kotlin.psi.KtCallExpression
+import org.jetbrains.kotlin.psi.KtQualifiedExpression
+
+/** `LinkedHashMap(initialCapacity, loadFactor, accessOrder)` */
+internal const val LINKED_MAP_ACCESS_ORDER_ARITY = 3
 
 /** Functions that create collections, ranges, comparators and pairs, and constructors of library classes. */
 @Suppress("TooManyFunctions") // one small mapper per kind of factory
@@ -10,11 +15,23 @@ internal object FactoryMappings {
         fun call(name: String, vararg args: LuaExpr) = LuaCall(site.ref(featureOf(name), name), args.toList())
         val args = site.args.toTypedArray()
         return when (callableId) {
-            "kotlin/collections/listOf", "kotlin/collections/mutableListOf", "kotlin/collections/arrayListOf",
-            "kotlin/collections/emptyList",
-            -> call("__K2L_ListOf", *args)
+            // the JVM's classes: EmptyList, Collections$SingletonList for listOf(x), Arrays$ArrayList for listOf(a, b, ...)
+            "kotlin/collections/listOf" -> if (isSingleArgument(
+                    site,
+                )
+            ) {
+                call("__K2L_SingletonListOf", *args)
+            } else {
+                call("__K2L_ReadOnlyListOf", *args)
+            }
 
-            "kotlin/collections/listOfNotNull" -> LuaMethodCall(call("__K2L_ListOf", *args), "filterNotNull", emptyList())
+            "kotlin/collections/emptyList" -> call("__K2L_ReadOnlyListOf")
+
+            "kotlin/collections/mutableListOf", "kotlin/collections/arrayListOf" -> call("__K2L_ListOf", *args)
+
+            "kotlin/collections/listOfNotNull" -> LuaMethodCall(call("__K2L_ListOf", *args), "filterNotNull", emptyList()).let {
+                if (isSingleArgument(site)) LuaMethodCall(it, "toList", emptyList()) else it
+            }
 
             "kotlin/arrayOf", "kotlin/intArrayOf", "kotlin/longArrayOf", "kotlin/doubleArrayOf", "kotlin/floatArrayOf",
             "kotlin/booleanArrayOf", "kotlin/charArrayOf", "kotlin/shortArrayOf", "kotlin/byteArrayOf", "kotlin/emptyArray",
@@ -24,13 +41,22 @@ internal object FactoryMappings {
 
             "kotlin/arrayOfNulls" -> call("__K2L_ListOfSize", site.arg(0), LuaNil, LuaBool(true))
 
-            "kotlin/collections/setOf", "kotlin/collections/mutableSetOf", "kotlin/collections/linkedSetOf",
-            "kotlin/collections/emptySet",
-            -> call("__K2L_SetOf", *args)
+            "kotlin/collections/setOf", "kotlin/collections/emptySet" -> call("__K2L_ReadOnlySetOf", *args)
 
-            "kotlin/collections/mapOf", "kotlin/collections/mutableMapOf", "kotlin/collections/linkedMapOf",
-            "kotlin/collections/emptyMap",
-            -> call("__K2L_MapOf", *args)
+            "kotlin/collections/mutableSetOf", "kotlin/collections/linkedSetOf" -> call("__K2L_SetOf", *args)
+
+            "kotlin/collections/mapOf" -> if (isSingleArgument(
+                    site,
+                )
+            ) {
+                call("__K2L_SingletonMapOf", *args)
+            } else {
+                call("__K2L_ReadOnlyMapOf", *args)
+            }
+
+            "kotlin/collections/emptyMap" -> call("__K2L_ReadOnlyMapOf")
+
+            "kotlin/collections/mutableMapOf", "kotlin/collections/linkedMapOf" -> call("__K2L_MapOf", *args)
 
             "kotlin/collections/hashSetOf" -> call("__K2L_HashSetOf", *args)
 
@@ -46,6 +72,13 @@ internal object FactoryMappings {
 
             else -> comparators(callableId, site) ?: ranges(callableId, site) ?: misc(callableId, site)
         }
+    }
+
+    /** `listOf(x)`, `mapOf(pair)`: the one-element overload, not the vararg one called with a single `*spread` argument. */
+    private fun isSingleArgument(site: CallSite): Boolean {
+        val call = site.element as? KtCallExpression ?: (site.element as? KtQualifiedExpression)?.selectorExpression as? KtCallExpression
+        val argument = call?.valueArguments?.singleOrNull() ?: return false
+        return argument.getSpreadElement() == null
     }
 
     private fun comparators(callableId: String?, site: CallSite): LuaExpr? {
@@ -86,9 +119,12 @@ internal object FactoryMappings {
                 site.args.firstOrNull() ?: site.ref("Comparators", "__K2L_NaturalOrder"),
             )
 
-            "kotlin/Comparator" -> site.arg(0)
+            // SAM constructors: values of library SAM interfaces are Lua callables (see SamInterfaces.lua)
+            "kotlin/Comparator", "java/util/Comparator", "java/lang/Runnable", "java/util/concurrent/Callable" -> site.arg(0)
 
-            "kotlin/comparisons/compareValues" -> LuaCall(site.ref("Compare", "__K2L_Compare"), listOf(site.arg(0), site.arg(1)))
+            "java/util/Comparator.compare", "java/lang/Runnable.run", "java/util/concurrent/Callable.call" -> LuaCall(site.self, site.args)
+
+            "kotlin/comparisons/compareValues" -> LuaCall(site.ref("Compare", "__K2L_CompareValues"), listOf(site.arg(0), site.arg(1)))
 
             "kotlin/comparisons/compareValuesBy" ->
                 LuaCall(call("__K2L_CompareBy", *args.drop(2).toTypedArray()), listOf(site.arg(0), site.arg(1)))
@@ -196,13 +232,17 @@ internal object FactoryMappings {
             "java/util/HashMap", "kotlin/collections/HashMap" -> new("__K2L_HashMap", *site.args.take(1).toTypedArray())
 
             "java/util/LinkedHashSet", "kotlin/collections/LinkedHashSet" ->
-                if (firstIsCollection) LuaMethodCall(site.arg(0), "toSet", emptyList()) else new("__K2L_Set")
+                if (firstIsCollection) LuaMethodCall(site.arg(0), "toMutableSet", emptyList()) else new("__K2L_Set")
 
             "java/util/LinkedHashMap", "kotlin/collections/LinkedHashMap" ->
-                if (first != null && with(site.session) { first.collectionKind() } == CollectionKind.Map) {
-                    LuaMethodCall(site.arg(0), "toMap", emptyList())
-                } else {
-                    new("__K2L_Map")
+                when {
+                    first != null && with(site.session) { first.collectionKind() } == CollectionKind.Map ->
+                        LuaMethodCall(site.arg(0), "toMutableMap", emptyList())
+
+                    // LinkedHashMap(initialCapacity, loadFactor, accessOrder)
+                    site.args.size == LINKED_MAP_ACCESS_ORDER_ARITY -> new("__K2L_Map", LuaNil, site.arg(2))
+
+                    else -> new("__K2L_Map")
                 }
 
             "java/util/PriorityQueue" -> newPriorityQueue(site)

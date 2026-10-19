@@ -56,7 +56,7 @@ internal val LIBRARY_OBJECTS = setOf(
 internal fun FileTransformer.libraryObject(classId: String): LuaExpr = when (classId) {
     "kotlin/coroutines/EmptyCoroutineContext" -> lualibRef(COROUTINES_FEATURE, "__K2L_EmptyCoroutineContext")
 
-    "kotlin/Unit" -> LuaNil
+    "kotlin/Unit" -> unitObject()
 
     "kotlin/coroutines/ContinuationInterceptor", "kotlin/coroutines/ContinuationInterceptor.Key" ->
         lualibRef(COROUTINES_FEATURE, "__K2L_ContinuationInterceptor")
@@ -75,6 +75,15 @@ internal object CoroutineMappings {
     fun map(callableId: String?, site: CallSite): LuaExpr? = coroutine(callableId, site) ?: result(callableId, site)
 
     private fun CallSite.call(feature: String, name: String, vararg args: LuaExpr): LuaExpr = LuaCall(ref(feature, name), args.toList())
+
+    /** A coroutine body of type `suspend () -> Unit` returns nothing in Lua; the completion gets the Unit object. */
+    private fun CallSite.completingWithUnit(block: LuaExpr): LuaExpr {
+        val returnsUnit = with(session) { (receiverType as? KaFunctionType)?.returnType?.isUnitType == true }
+        // a lambda passed to `suspend { }` already returns it
+        if (!returnsUnit || block is LuaFunction) return block
+        val body = listOf(LuaCallStmt(LuaCall(block, listOf(LuaName("...")))), LuaReturn(listOf(ref("Unit", "__K2L_Unit"))))
+        return LuaFunction(emptyList(), body, isVararg = true)
+    }
 
     private fun CallSite.resultOf(kind: String, value: LuaExpr): LuaExpr =
         LuaCall(LuaIndex(ref(RESULT_FEATURE, "__K2L_Result"), LuaString(kind)), listOf(value))
@@ -104,7 +113,7 @@ internal object CoroutineMappings {
             // block.startCoroutine(completion) / block.startCoroutine(receiver, completion)
             "kotlin/coroutines/startCoroutine", "kotlin/coroutines/createCoroutine" -> {
                 val name = if (callableId.endsWith("startCoroutine")) "__K2L_StartCoroutine" else "__K2L_CreateCoroutine"
-                call(COROUTINES_FEATURE, name, self, args.last(), *args.dropLast(1).toTypedArray())
+                call(COROUTINES_FEATURE, name, completingWithUnit(self), args.last(), *args.dropLast(1).toTypedArray())
             }
 
             "kotlin/coroutines/suspendCoroutine" -> call(COROUTINES_FEATURE, "__K2L_SuspendCoroutine", arg(0))
@@ -119,7 +128,7 @@ internal object CoroutineMappings {
             -> {
                 val created = callableId.endsWith("createCoroutineUnintercepted")
                 val name = if (created) "CreateCoroutineUnintercepted" else "StartCoroutineUninterceptedOrReturn"
-                call(COROUTINES_FEATURE, "__K2L_$name", self, args.last(), *args.dropLast(1).toTypedArray())
+                call(COROUTINES_FEATURE, "__K2L_$name", completingWithUnit(self), args.last(), *args.dropLast(1).toTypedArray())
             }
 
             "kotlin/coroutines/intrinsics/intercepted" -> call(COROUTINES_FEATURE, "__K2L_Intercepted", self)

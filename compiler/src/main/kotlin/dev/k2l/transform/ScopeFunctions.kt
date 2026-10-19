@@ -8,6 +8,15 @@ import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.*
 
+/**
+ * `forEach` resolves to Kotlin's inline extension or, for (k, v) lambdas, to `java.util.Map.forEach`; those are expanded as a
+ * loop. The `forEach` of a stream is a method of the stream.
+ */
+private fun effectiveCallableId(callableId: String, simpleName: String?): String {
+    val isLibrary = callableId.startsWith("kotlin/") || (callableId.startsWith("java/") && !callableId.startsWith("java/util/stream/"))
+    return if (simpleName == "forEach" && isLibrary) "kotlin/collections/forEach" else callableId
+}
+
 /** Kotlin's inline scope functions and preconditions, expanded in place. */
 internal fun FileTransformer.scopeFunction(
     callableId: String?,
@@ -16,13 +25,7 @@ internal fun FileTransformer.scopeFunction(
     implicit: LuaExpr?,
 ): LuaExpr? = with(session) {
     if (callableId == null || call !is KaFunctionCall<*>) return null
-    // forEach resolves to Kotlin's inline extension or, for (k, v) lambdas, to java.util.Map.forEach.
-    val simpleName = symbol(call).callableId?.callableName?.asString()
-    val effectiveId = if (simpleName == "forEach" && (callableId.startsWith("kotlin/") || callableId.startsWith("java/"))) {
-        "kotlin/collections/forEach"
-    } else {
-        callableId
-    }
+    val effectiveId = effectiveCallableId(callableId, symbol(call).callableId?.callableName?.asString())
     inlinedResultCall(callableId, call, receiverExpr, implicit)?.let { return it }
     protectedBlock(callableId, call, receiverExpr, implicit)?.let { return it }
     if (effectiveId !in SCOPE_FUNCTIONS) return null
@@ -76,7 +79,14 @@ internal fun FileTransformer.scopeFunction(
 }
 
 private fun FileTransformer.letCall(receiver: LuaExpr, args: List<KtExpression?>): LuaExpr = with(session) {
-    inlineValue(args[0]!!, listOf(cache(receiver, "value")), null)
+    val value = cache(receiver, "value")
+    if (lambdaReturnsUnit(args[0]!!)) {
+        // a call of type Unit: where its value is used, that is the Unit object (see UnitValues.kt)
+        inlineLambda(args[0]!!, listOf(value), null, null)
+        LuaNil
+    } else {
+        inlineValue(args[0]!!, listOf(value), null)
+    }
 }
 
 private fun FileTransformer.alsoCall(receiver: LuaExpr, args: List<KtExpression?>): LuaExpr = with(session) {

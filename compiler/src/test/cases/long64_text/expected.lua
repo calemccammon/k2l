@@ -8,10 +8,11 @@ local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
-local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
@@ -55,11 +56,11 @@ local function main()
     ____builder:append(tostring(1))
     ____builder:append(tostring(max))
     print(____builder:toString())
-    print(__K2L_ListOf(big, max):joinToString(","))
-    print(__K2L_ListOf(big, max):joinToString(nil, nil, nil, nil, nil, function(it) return tostring(it) end))
-    print(__K2L_ListOf(big, max):joinToString(nil, nil, nil, nil, nil, function(it) return "<" .. it .. ">" end))
+    print(__K2L_ReadOnlyListOf(big, max):joinToString(","))
+    print(__K2L_ReadOnlyListOf(big, max):joinToString(nil, nil, nil, nil, nil, function(it) return tostring(it) end))
+    print(__K2L_ReadOnlyListOf(big, max):joinToString(nil, nil, nil, nil, nil, function(it) return "<" .. it .. ">" end))
     print(__K2L_Str(__K2L_Pair.new(big, max)))
-    print(__K2L_Str(__K2L_MapOf(__K2L_Pair.new(big, max), __K2L_Pair.new(1, 2))))
+    print(__K2L_Str(__K2L_ReadOnlyMapOf(__K2L_Pair.new(big, max), __K2L_Pair.new(1, 2))))
     print(__K2L_Str(P.new(big, nil)))
     print(__K2L_Str(P.new(big, max)))
     print(P.new(big, max):equals(P.new(big, max)))
@@ -77,14 +78,14 @@ local function main()
     local m = big > 0 and max or nil
     print((m or 0) + 1)
     print(__K2L_NotNull(m) - 1)
-    print(__K2L_Str(__K2L_ListOf(big, max, 5):average()))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(big, max, 5):average()))
     print(__K2L_Str(__K2L_ArrayOf(big, max):average()))
-    print(__K2L_Str(__K2L_ListOf(3, 1, 2):sortedBy(function(it) return -it end)))
-    print(__K2L_Str(__K2L_ListOf(big, max, 5):maxByOrNull(function(it) return math.fmod(it, 1000) end)))
-    print(__K2L_ListOf(big, max, 5):maxOf(function(it) return math.fmod(it, 1000) end))
-    print(__K2L_ListOf(big, max, 5):minOf(function(it) return it end))
-    print(__K2L_Str(__K2L_ListOf(big, 1):sortedByDescending(function(it) return it end)))
-    print(__K2L_Str(__K2L_ListOf(big, max):sumOf(function(it) return it + 0.0 end, 0.0)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1, 2):sortedBy(function(it) return -it end, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(big, max, 5):maxByOrNull(function(it) return math.fmod(it, 1000) end)))
+    print(__K2L_ReadOnlyListOf(big, max, 5):maxOf(function(it) return math.fmod(it, 1000) end))
+    print(__K2L_ReadOnlyListOf(big, max, 5):minOf(function(it) return it end))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(big, 1):sortedByDescending(function(it) return it end, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(big, max):sumOf(function(it) return it + 0.0 end, 0.0)))
     local ms = __K2L_Num.currentTimeMillis()
     local elapsed = __K2L_Num.currentTimeMillis() - ms
     print(elapsed >= 0)

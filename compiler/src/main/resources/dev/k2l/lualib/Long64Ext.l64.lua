@@ -67,27 +67,42 @@ function X.ustrRadix(a, radix)
     return unsignedDigits(a, radix)
 end
 
--- String.toLong(radix) / toULong(radix): the value, or nil when the text is not a number of that type
-function X.parse(s, radix, unsigned)
-    radix = radix or 10
+-- The sign and digit values of an integer literal (ASCII, or Unicode digits when Utf16Case.lua sets X.unicodeDigits)
+local function digitValues(s, radix)
     local sign, digits = s:match("^([+-]?)(%w+)$")
-    if digits == nil or (unsigned and sign == "-") then
+    if digits == nil then
+        if X.unicodeDigits ~= nil and s:find("[\128-\255]") then
+            return X.unicodeDigits(s, radix)
+        end
         return nil
     end
-    if radix == 10 and #digits <= 15 and digits:match("^%d+$") then
-        local n = tonumber(digits)
-        if sign == "-" and n ~= 0 then
-            return -n
-        end
-        return n
-    end
-    local hi, lo = 0, 0
+    local values = {}
     for i = 1, #digits do
         local d = tonumber(digits:sub(i, i), 36)
         if d == nil or d >= radix then
             return nil
         end
-        lo = lo * radix + d
+        values[i] = d
+    end
+    return sign, values
+end
+
+-- String.toLong(radix) / toULong(radix): the value, or nil when the text is not a number of that type
+function X.parse(s, radix, unsigned)
+    radix = radix or 10
+    if unsigned and (radix < 2 or radix > 36) then
+        error(__K2L_IllegalArgumentException.new("radix " .. radix .. " was not in valid range 2..36"))
+    end
+    if radix == 10 and #s <= 15 and s:match("^%d+$") then
+        return tonumber(s)
+    end
+    local sign, values = digitValues(s, radix)
+    if values == nil or (unsigned and sign == "-") then
+        return nil
+    end
+    local hi, lo = 0, 0
+    for i = 1, #values do
+        lo = lo * radix + values[i]
         local carry = floor(lo / T32)
         lo = lo - carry * T32
         hi = hi * radix + carry
@@ -111,6 +126,9 @@ end
 function X.parseOrThrow(s, radix, unsigned)
     local n = X.parse(s, radix, unsigned)
     if n == nil then
+        if unsigned then
+            error(__K2L_NumberFormatException.new("Invalid number format: '" .. s .. "'"))
+        end
         local suffix = (radix ~= nil and radix ~= 10) and " under radix " .. radix or ""
         error(__K2L_NumberFormatException.new("For input string: \"" .. s .. "\"" .. suffix))
     end

@@ -3,8 +3,8 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NumberFormatException = ____lualib.__K2L_NumberFormatException
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringContains = ____lualib.__K2L_StringContains
@@ -37,7 +37,7 @@ local function searching()
     print(s:sub(7 + 1, 7 + #"World") == "World")
     print(__K2L_StringEndsWith(s:lower(), ("HELLO"):lower()))
     print(__K2L_StringContains(s:lower(), ("world"):lower()))
-    print(__K2L_Text.indexOfAny(s, __K2L_ListOf("W", "l")))
+    print(__K2L_Text.indexOfAny(s, __K2L_ReadOnlyListOf("W", "l")))
     print(__K2L_Text.commonPrefixWith(s, "Help"))
     print(__K2L_Text.commonSuffixWith(s, "Yellow Hello"))
     print(__K2L_Text.regionMatches("abc", 1, "xbc", 1, 2))

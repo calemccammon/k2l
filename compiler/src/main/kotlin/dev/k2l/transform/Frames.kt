@@ -12,6 +12,9 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 internal typealias ValueSink = (LuaExpr) -> List<LuaStmt>
 
 internal class LoopFrame(val label: String?) {
+    /** The function or lambda the loop is written in (null at the top level): jumps from frames entered later leave them. */
+    var owner: FunctionFrame? = null
+
     var continueLabel: String? = null
     var breakLabel: String? = null
 
@@ -43,6 +46,49 @@ internal class FunctionFrame(val kind: Kind, val labels: Set<String>, val psi: P
 
     var sink: ValueSink? = null
     var endLabel: String? = null
+
+    /** For a lambda returning Unit whose result is used (`runCatching { }`): it returns the Unit object. */
+    var unitResult = false
+
+    /** The loops around the frame where it was entered, which a `break` or `continue` in a lambda may leave. */
+    var outerLoops: ArrayDeque<LoopFrame>? = null
+
+    /** For a lambda passed to an inline function that stays a Lua function: the call that makes the jumps out of it. */
+    var site: JumpSite? = null
+}
+
+/** Where a `return`, `break` or `continue` goes: a function or lambda, or a loop. */
+internal sealed interface JumpTarget {
+    class Return(val frame: FunctionFrame) : JumpTarget
+    class Break(val loop: LoopFrame) : JumpTarget
+    class Continue(val loop: LoopFrame) : JumpTarget
+}
+
+/**
+ * A call of an inline function whose lambda arguments ([lambdas]) stay Lua functions: a jump out of one of them raises the
+ * call's token (see `Jump.lua`) and the call, run in a pcall, makes the jump. [jumps] are the distinct jumps made, by code.
+ */
+internal class JumpSite(val lambdas: Set<KtLambdaExpression>) {
+    class Jump(val target: JumpTarget, val hasValue: Boolean)
+
+    /** The local holding the token, named when the first jump needs it. */
+    var token: String? = null
+
+    val jumps = mutableListOf<Jump>()
+
+    /** The code (1, 2, ...) of the jump to [target]. */
+    fun codeOf(target: JumpTarget, hasValue: Boolean): Int {
+        val index = jumps.indexOfFirst { it.hasValue == hasValue && sameTarget(it.target, target) }
+        if (index >= 0) return index + 1
+        jumps += Jump(target, hasValue)
+        return jumps.size
+    }
+
+    private fun sameTarget(a: JumpTarget, b: JumpTarget) = when (a) {
+        is JumpTarget.Return -> b is JumpTarget.Return && a.frame === b.frame
+        is JumpTarget.Break -> b is JumpTarget.Break && a.loop === b.loop
+        is JumpTarget.Continue -> b is JumpTarget.Continue && a.loop === b.loop
+    }
 }
 
 /**
@@ -55,6 +101,8 @@ internal class InlinedLambda(
     val fromParameter: Boolean,
     /** What `this` meant where the lambda was written: the receiver bindings before any inlined function was entered. */
     val callerBindings: Map<PsiElement, LuaExpr>,
+    /** The loops around the lambda where it was written, which a `break` or `continue` in it targets. */
+    val callerLoops: ArrayDeque<LoopFrame>,
 )
 
 /** Something assignable: a variable, or a property of an object (possibly with accessors). */
