@@ -32,7 +32,7 @@ internal fun FileTransformer.inlinedResultCall(
     val type = receiverExpr?.expressionType ?: call.extensionReceiver?.type
     if (type?.expandedSymbol?.classId?.asString() != "kotlin/Result") return null
     val args = callArguments(call).map { it!! }
-    if (args.mapNotNull(::lambdaLiteral).none { hasNonLocalReturn(it) }) return null
+    if (args.mapNotNull(::lambdaLiteral).none { hasNonLocalJump(it) }) return null
     val parts = ResultParts(cache(implicit ?: expression(receiverExpr ?: return null), "result"))
     return when (name) {
         "getOrElse", "fold" -> resultValue(parts, args)
@@ -44,7 +44,7 @@ internal fun FileTransformer.inlinedResultCall(
 /** What a lambda of a result does with [argument]: its value goes to [target], or it only runs when [target] is null. */
 private fun FileTransformer.resultBranch(lambda: KtExpression, argument: LuaExpr, target: LuaName?, wrap: (LuaExpr) -> LuaExpr = { it }) =
     collect {
-        if (target == null || lambdaReturnsUnit(lambda)) {
+        if (target == null) {
             inlineLambda(lambda, listOf(argument), null, null)
         } else {
             emit(assign(target.name, wrap(inlineValue(lambda, listOf(argument), null))))

@@ -1,0 +1,36 @@
+sam lambda
+sam lambda
+run t3
+run t3
+a bb
+[3, 2, 1] reverse true 5
+[b, c, aa]
+5:h:el:false:olleh:2 5:w:or:false:dlrow:3 true a
+3 2
+[z, y, x] true x 2
+Version(major=2, minor=0) [Version(major=0, minor=0), Version(major=0, minor=1)]
+[a, bb, ee, ccc, dddd]
+calls 8 1
+[dddd, ccc, bb, ee, a]
+[a, bb, ee, ccc, dddd]
+[a, ee, bb, ccc, dddd]
+dddd a
+[a, bb, ee, ccc, dddd]
+[a, bb, ccc, dddd]
+[ee, dddd, ccc, bb, a] 1 [a, bb, ccc, dddd, ee]
+[a, bb, ee, ccc, dddd]
+[Version(major=0, minor=9), Version(major=1, minor=0), Version(major=1, minor=2)] Version(major=1, minor=2) Version(major=0, minor=9) [Version(major=1, minor=2), Version(major=1, minor=0), Version(major=0, minor=9)]
+true true 0
+Version(major=2, minor=0) Version(major=1, minor=0) [Version(major=0, minor=9), Version(major=1, minor=0), Version(major=1, minor=2)]
+[Version(major=0, minor=9), Version(major=1, minor=0), Version(major=1, minor=2)]
+0 1 2 
+0 true [1, 2, 3]
+[0, 1, 4, 9, 16] [0, 2, 4] [0, 1, 2, 3, 4] 0-1-2-3-4 10 5
+total 20 0 4 true [4, 3, 2, 1, 0] [0, 1, 2, 3, 4] [(0, 1), (1, 2), (2, 3), (3, 4)]
+5 e el hello [hello] HELLO
+run t1
+run t2
+lambda runnable
+42
+8 [2, 4]
+true false

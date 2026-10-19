@@ -63,17 +63,23 @@ internal object Utf16Mappings {
     private val LOCALES = mapOf(
         "ROOT" to "", "US" to "en_US", "ENGLISH" to "en", "UK" to "en_GB", "GERMANY" to "de_DE", "GERMAN" to "de",
         "FRANCE" to "fr_FR", "FRENCH" to "fr", "ITALY" to "it_IT", "JAPAN" to "ja_JP", "CHINA" to "zh_CN", "CANADA" to "en_CA",
+        "CANADA_FRENCH" to "fr_CA", "ITALIAN" to "it", "JAPANESE" to "ja", "KOREA" to "ko_KR", "KOREAN" to "ko", "CHINESE" to "zh",
+        "SIMPLIFIED_CHINESE" to "zh_CN", "TRADITIONAL_CHINESE" to "zh_TW", "PRC" to "zh_CN", "TAIWAN" to "zh_TW",
     )
 
-    private val STREAM_METHODS = listOf(
-        "forEach", "filter", "map", "toArray", "boxed", "sum", "anyMatch", "allMatch", "noneMatch", "count", "toList",
+    /** `Locale.displayLanguage` and the other display names, with the Kotlin property name and the Java getter. */
+    private val DISPLAY_NAMES = mapOf(
+        "Language" to "language",
+        "Country" to "country",
+        "Script" to "script",
+        "Variant" to "variant",
+        "Name" to "name",
     )
 
     fun install(t: MappingTable) {
         locales(t)
         codePoints(t)
         characterStatics(t)
-        streams(t)
     }
 
     /**
@@ -92,6 +98,19 @@ internal object Utf16Mappings {
         t.def("java/util/Locale.language", "java/util/Locale.getLanguage") { locale("language", self) }
         t.def("java/util/Locale.country", "java/util/Locale.getCountry") { locale("country", self) }
         t.def("java/util/Locale.variant", "java/util/Locale.getVariant") { locale("variant", self) }
+        for ((suffix, member) in DISPLAY_NAMES) {
+            val property = "display$suffix"
+            t.def("java/util/Locale.$property", "java/util/Locale.getDisplay$suffix") { displayName(member) }
+        }
+    }
+
+    /** The English display names (`LocaleNames.lua`), for the default locale or an English one. */
+    private fun CallSite.displayName(member: String): LuaExpr {
+        val inLocale = (args.firstOrNull() as? LuaString)?.value
+        if (inLocale != null && inLocale.substringBefore('_') !in setOf("", "en")) {
+            return unsupported("Locale display names in a language other than English ('$inLocale')")
+        }
+        return LuaCall(LuaIndex(ref("LocaleNames", "__K2L_LocaleNames"), LuaString(member)), listOf(self) + args)
     }
 
     private fun CallSite.locale(member: String, vararg args: LuaExpr): LuaExpr =
@@ -104,20 +123,20 @@ internal object Utf16Mappings {
     private fun CallSite.utf16Only(what: String, mapping: CallSite.() -> LuaExpr): LuaExpr =
         if (utf16) mapping() else unsupported("'$what' $WITHOUT_UTF16")
 
+    /** `chars()` and `codePoints()` are `IntStream`s, which live in `Streams.lua`. */
+    private fun CallSite.streamOf(member: String): LuaExpr {
+        transformer.ctx.lualib += "Streams"
+        return u16(member, self)
+    }
+
     private fun codePoints(t: MappingTable) {
         t.def("kotlin/text/codePointAt") { utf16Only("codePointAt") { u16("codePointAt", self, arg(0)) } }
         t.def("kotlin/text/codePointBefore") { utf16Only("codePointBefore") { u16("codePointBefore", self, arg(0)) } }
         t.def("kotlin/text/codePointCount") { utf16Only("codePointCount") { u16("codePointCount", self, arg(0), arg(1)) } }
         t.def("kotlin/text/offsetByCodePoints") { utf16Only("offsetByCodePoints") { u16("offsetByCodePoints", self, arg(0), arg(1)) } }
-        t.def("kotlin/String.codePoints") { utf16Only("codePoints()") { u16("codePoints", self) } }
-        t.def("kotlin/String.chars") { utf16Only("chars()") { u16("chars16", self) } }
+        t.def("kotlin/String.codePoints") { utf16Only("codePoints()") { streamOf("codePoints") } }
+        t.def("kotlin/String.chars") { utf16Only("chars()") { streamOf("chars16") } }
         t.def("kotlin/text/intern") { self }
-    }
-
-    private fun streams(t: MappingTable) {
-        for (method in STREAM_METHODS) {
-            t.def("java/util/stream/IntStream.$method", "java/util/stream/Stream.$method") { LuaMethodCall(self, method, args) }
-        }
     }
 
     /** `Character.isLetter(c)` and friends take a Char or a code point. */
@@ -173,4 +192,5 @@ internal fun CallSite.u16CaseOf(member: String): LuaExpr {
     return LuaCall(LuaIndex(ref("Utf16Locale", "__K2L_Utf16Locale"), LuaString(member)), listOf(self, arg(0)))
 }
 
-private val LOCALE_SENSITIVE = setOf("tr", "az", "lt")
+/** The languages whose case mapping differs from `Locale.ROOT`. */
+internal val LOCALE_SENSITIVE = setOf("tr", "az", "lt")

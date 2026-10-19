@@ -64,7 +64,7 @@ private fun FileTransformer.sourceKind(name: String, inText: Boolean, type: KaTy
 
 /** Whether the call is expanded: always for the functions the lualib lacks, else when a lambda returns from the caller. */
 private fun FileTransformer.needsExpansion(name: String, args: List<KtExpression?>): Boolean =
-    name in EXPANDED_ALWAYS || args.mapNotNull(::lambdaLiteral).any { hasNonLocalReturn(it) }
+    name in EXPANDED_ALWAYS || args.mapNotNull(::lambdaLiteral).any { hasNonLocalJump(it) }
 
 /** What the loop walks: a collection the function exists for (or the list of chars of a String) and the receiver's elements. */
 private fun FileTransformer.loopSource(

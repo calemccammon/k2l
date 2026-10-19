@@ -13,12 +13,14 @@ local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Random = ____lualib.__K2L_Random
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_Unit = ____lualib.__K2L_Unit
 
 local function id(x)
     return x
@@ -98,7 +100,7 @@ local function main()
     t("windowed(0)", function() return __K2L_Text.windowed(s, id(0)) end)
     t("toInt", function() return __K2L_StringToInt("x") end)
     t("digitToInt", function() return __K2L_Num.digitToInt("x") end)
-    local list = __K2L_ListOf(1, 2, 3)
+    local list = __K2L_ReadOnlyListOf(1, 2, 3)
     local mlist = __K2L_ListOf(1, 2, 3)
     local arr = __K2L_ArrayOf(1, 2, 3)
     local ia = __K2L_ArrayOf(1, 2, 3)
@@ -112,25 +114,30 @@ local function main()
     t("mlist[3]=", function()
         local ____key = id(3)
         mlist:set(____key, 1)
+        return __K2L_Unit
     end)
     t("mlist[-1]=", function()
         local ____key_1 = id(-1)
         mlist:set(____key_1, 1)
+        return __K2L_Unit
     end)
     t("arr[3]=", function()
         local ____key_2 = id(3)
         arr:set(____key_2, 1)
+        return __K2L_Unit
     end)
     t("ia[5]=", function()
         local ____key_3 = id(5)
         ia:set(____key_3, 1)
+        return __K2L_Unit
     end)
     t("ia[3]+=", function()
         local ____key_4 = id(3)
         ia:set(____key_4, ia:get(____key_4) + 1)
+        return __K2L_Unit
     end)
-    t("list.first", function() return __K2L_ListOf():first() end)
-    t("list.last", function() return __K2L_ListOf():last() end)
+    t("list.first", function() return __K2L_ReadOnlyListOf():first() end)
+    t("list.last", function() return __K2L_ReadOnlyListOf():last() end)
     t("list.take(-1)", function() return list:take(id(-1)) end)
     t("list.drop(-1)", function() return list:drop(id(-1)) end)
     t("list.elementAt", function() return list:elementAt(id(7)) end)
@@ -139,18 +146,19 @@ local function main()
     t("mlist.removeAt", function() return mlist:removeAt(id(9)) end)
     t("mlist.add", function()
         mlist:addAt(id(9), 1)
+        return __K2L_Unit
     end)
     t("list.single", function() return list:single() end)
     t("list.chunked", function() return list:chunked(id(0)) end)
     t("list.windowed", function() return list:windowed(id(0)) end)
-    t("list.max", function() return __K2L_ListOf():max() end)
+    t("list.max", function() return __K2L_ReadOnlyListOf():max() end)
     t("list.reduce", function()
-        return __K2L_ListOf():reduce(function(a, b) return a + b end)
+        return __K2L_ReadOnlyListOf():reduce(function(a, b) return a + b end)
     end)
     t("list.random", function()
-        return __K2L_ListOf():random(__K2L_Random.default())
+        return __K2L_ReadOnlyListOf():random(__K2L_Random.default())
     end)
-    t("ints.avg", function() return __K2L_ListOf():average() end)
+    t("ints.avg", function() return __K2L_ReadOnlyListOf():average() end)
     t("div", function() return __K2L_IDiv(1, id(0)) end)
     t("rem", function() return __K2L_IRem(1, id(0)) end)
     t("rem fn", function() return __K2L_IRem(1, id(0)) end)
@@ -174,7 +182,7 @@ local function main()
     t("irem2", function() return __K2L_IRem(7, id(-3)) end)
     local data = __K2L_ArrayOf(5, 6, 7)
     local text = "abc"
-    local numbers = __K2L_ListOf(1, 2, 3)
+    local numbers = __K2L_ReadOnlyListOf(1, 2, 3)
     local total = 0
     for i = 0, data.size - 1 do
         total = total + data[i + 1]

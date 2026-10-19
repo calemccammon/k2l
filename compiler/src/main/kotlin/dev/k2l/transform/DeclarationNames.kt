@@ -40,7 +40,7 @@ internal class DeclarationNames(private val session: KaSession, private val clas
                 }
                 if (overridden != null) return@getOrPut function(overridden)
                 if (with(session) { (fn.symbol as? KaNamedFunctionSymbol)?.directlyOverriddenSymbols?.any() } == true) {
-                    return@getOrPut LuaNames.member(name) // overrides a library member such as toString
+                    return@getOrPut LuaNames.member(libraryMember(fn, name)) // overrides a library member such as toString
                 }
             }
             classes.hierarchy(owner).flatMap { c ->
@@ -132,6 +132,16 @@ internal class DeclarationNames(private val session: KaSession, private val clas
 
     /** Lua name of a destructuring entry; `_` stays `_`. */
     fun entry(entry: KtDestructuringDeclarationEntry): String = if (entry.name == "_") "_" else of(entry)
+}
+
+/**
+ * The lualib name of an overridden collection member: `add(index, element)` is `addAt`, `addAll(index, elements)`
+ * `addAllAt`, `listIterator(index)` `listIteratorAt`.
+ */
+private fun libraryMember(fn: KtNamedFunction, name: String): String = when {
+    (name == "add" || name == "addAll") && fn.valueParameters.size == 2 -> name + "At"
+    name == "listIterator" && fn.valueParameters.size == 1 -> "listIteratorAt"
+    else -> name
 }
 
 /**

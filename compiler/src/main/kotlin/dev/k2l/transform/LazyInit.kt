@@ -1,5 +1,6 @@
 package dev.k2l.transform
 
+import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
 import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
@@ -49,6 +50,7 @@ internal class LazyInit(private val session: KaSession, private val classes: Cla
         val info = classes.superInfo(c)
         return c.declarations.any { memberObservable(it, c) } ||
             info.baseCall?.valueArguments?.any { !pure(it.getArgumentExpression(), c) } == true ||
+            info.delegations.any { !pure(it.entry.delegateExpression, c) } ||
             info.base?.let(::isObservable) == true ||
             (c is KtClass && c.secondaryConstructors.any { !pureBody(it, c) })
     }
@@ -170,4 +172,26 @@ internal class LazyInit(private val session: KaSession, private val classes: Cla
                     PURE_LIBRARY_CALLS
         }
     }
+}
+
+/**
+ * Kotlin initializes objects, companions and enums on first access. Those whose initialization nobody could notice are
+ * initialized where they are declared; for the others this returns the initializers that wait for the first access, see LazyInit.
+ */
+internal fun FileTransformer.initialization(c: KtClassOrObject, ref: LuaExpr): List<String> {
+    val lazy = mutableListOf<String>()
+    if (c is KtClass && c.isEnum()) {
+        if (lazyInit.isObservable(c)) {
+            emitMethod(ref, INIT_ENUM, emptyList(), collect { enumEntries(c, ref) })
+            lazy += INIT_ENUM
+        } else {
+            enumEntries(c, ref)
+        }
+    }
+    c.companionObjects.forEach { if (companion(it, ref)) lazy += INIT_COMPANION }
+    if (c is KtObjectDeclaration && classes.initNeeded(c)) {
+        // an object expression is created where it is evaluated
+        if (lazyInit.isObservable(c) && !c.isObjectLiteral()) lazy += INIT else emit(LuaCallStmt(LuaMethodCall(ref, INIT, emptyList())))
+    }
+    return lazy
 }

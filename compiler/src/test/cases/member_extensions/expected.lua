@@ -150,7 +150,7 @@ function Outer:____init(tag)
     self.tag = tag
 end
 
-Outer.Inner = __K2L_Class("Inner")
+Outer.Inner = __K2L_Class("Outer$Inner")
 
 function Outer.Inner:____init(____outer, id)
     self.____outer = ____outer

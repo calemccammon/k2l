@@ -1,13 +1,13 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____shapes = require("model.shapes")
 local ____strings = require("util.strings")
 local ____even = require("parity.even")
-local Circle = __K2L_Class("Circle", ____shapes.Shape)
+local Circle = __K2L_Class("app.Circle", ____shapes.Shape)
 
 function Circle:____init(r)
     ____shapes.Shape.____init(self, "circle")
@@ -23,7 +23,7 @@ local function main()
     ____strings.counted()
     ____strings.counted()
     print(____strings.calls)
-    local shapes = __K2L_ListOf(____shapes.Square.new(2.0), Circle.new(1.0))
+    local shapes = __K2L_ReadOnlyListOf(____shapes.Square.new(2.0), Circle.new(1.0))
     for _, s in ipairs(shapes) do
         print(s.name .. ": " .. __K2L_Str(s:area()) .. " " .. s:describe())
     end
@@ -46,7 +46,7 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
-local Shape = __K2L_Class("Shape")
+local Shape = __K2L_Class("app.model.Shape")
 
 function Shape:____init(name)
     self.name = name
@@ -60,7 +60,7 @@ function Shape:describe()
     return "<" .. self.name .. ">"
 end
 
-local Square = __K2L_Class("Square", Shape)
+local Square = __K2L_Class("app.model.Square", Shape)
 
 function Square:____init(side)
     Shape.____init(self, "square")
@@ -71,7 +71,7 @@ function Square:area()
     return self.side * self.side
 end
 
-local Registry = __K2L_Class("Registry")
+local Registry = __K2L_Class("app.model.Registry")
 
 function Registry:____init()
     self.shapes = __K2L_ListOf()
@@ -86,7 +86,7 @@ function Registry:count()
 end
 
 Registry:____init()
-local Color = __K2L_Class("Color")
+local Color = __K2L_Class("app.model.Color")
 
 function Color:____init(name, ordinal)
     self.name = name
@@ -100,7 +100,7 @@ end
 Color.RED = Color.new("RED", 0)
 Color.GREEN = Color.new("GREEN", 1)
 Color.____values = {Color.RED, Color.GREEN}
-local Point = __K2L_Class("Point")
+local Point = __K2L_Class("app.model.Point")
 
 function Point:____init(x, y)
     self.x = x

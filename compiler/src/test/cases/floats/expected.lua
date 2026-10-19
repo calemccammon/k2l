@@ -4,7 +4,7 @@ local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_FloatSum = ____lualib.__K2L_FloatSum
 local __K2L_FloatToString = ____lualib.__K2L_FloatToString
 local __K2L_Fround = ____lualib.__K2L_Fround
-local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToDouble = ____lualib.__K2L_StringToDouble
 
@@ -13,7 +13,7 @@ local function main()
     print(__K2L_FloatToString(a))
     local d = 1.100000023841858
     print(__K2L_DoubleToString(d))
-    print(__K2L_Str(__K2L_ListOf(1.5, a)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(1.5, a)))
     print("v=" .. __K2L_FloatToString(a))
     local s = 0.0
     for i = 1, 10 do
@@ -44,7 +44,7 @@ local function main()
     print(__K2L_FloatToString(__K2L_Fround(__K2L_Fround(a * a) * a)))
     print(__K2L_FloatToString(__K2L_Fround(3.4028234663852886E38 * 2)))
     print(__K2L_DoubleToString(3.4028234663852886E38))
-    local xs = __K2L_ListOf(1.100000023841858, 2.200000047683716, 3.299999952316284)
+    local xs = __K2L_ReadOnlyListOf(1.100000023841858, 2.200000047683716, 3.299999952316284)
     print(__K2L_FloatToString(__K2L_FloatSum(xs)))
     print(__K2L_Str(xs:map(function(it) return __K2L_Fround(it * 2) end)))
     print(__K2L_FloatToString(a) .. "!")

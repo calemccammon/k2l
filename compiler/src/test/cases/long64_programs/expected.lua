@@ -4,10 +4,10 @@ local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IntRange = ____lualib.__K2L_IntRange
-local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
+local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
@@ -124,7 +124,7 @@ local function main()
     print(__K2L_Str(__K2L_IntRange.new(big, big - 3, -1):toList()))
     print(__K2L_Str(__K2L_IntRange.new(1, 3):reversed():toList()))
     print(__K2L_IntRange.new(big, big + 2):count())
-    print(__K2L_IDiv(__K2L_ListOf(1, 2, 3):sum(), 2))
+    print(__K2L_IDiv(__K2L_ReadOnlyListOf(1, 2, 3):sum(), 2))
     print(__K2L_Str(__K2L_GenerateSequence(big, function(it) return it - 1000000000000000000 end):takeWhile(function(it) return it >= 0 end):toList()))
     local seq = __K2L_SequenceBuilder(function(self)
         self:yield(big)
@@ -132,14 +132,14 @@ local function main()
     end)
     print(__K2L_Str(seq:toList()))
     print(seq:map(function(it) return __K2L_IDiv(it, 3) end):sum())
-    local ____pairs = __K2L_ListOf(__K2L_Pair.new(big, 1), __K2L_Pair.new(max, 2))
+    local ____pairs = __K2L_ReadOnlyListOf(__K2L_Pair.new(big, 1), __K2L_Pair.new(max, 2))
     print(__K2L_Str(____pairs:map(function(____destructured)
         local a, b = ____destructured.first, ____destructured.second
         return a + b
     end)))
     print(__K2L_Str(____pairs:toMap()))
     print(__K2L_Str(____pairs:maxByOrNull(function(it) return it.first end)))
-    local nested = __K2L_MapOf(__K2L_Pair.new(big, __K2L_MapOf(__K2L_Pair.new(max, __K2L_ListOf(1, big)))))
+    local nested = __K2L_SingletonMapOf(__K2L_Pair.new(big, __K2L_SingletonMapOf(__K2L_Pair.new(max, __K2L_ReadOnlyListOf(1, big)))))
     print(__K2L_Str(nested))
     local ____receiver = nested:get(big)
     local ____receiver_1 = ____receiver and ____receiver:get(max)

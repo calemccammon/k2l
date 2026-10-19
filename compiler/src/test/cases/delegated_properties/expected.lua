@@ -4,7 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_Str = ____lualib.__K2L_Str
 
-local Logged = __K2L_Class("Logged")
+local Logged = __K2L_Class("app.lib.Logged")
 
 function Logged:____init(value)
     self.value = value
@@ -31,18 +31,21 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_KProperty = ____lualib.__K2L_KProperty
 local __K2L_Lazy = ____lualib.__K2L_Lazy
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNullProperty = ____lualib.__K2L_NotNullProperty
 local __K2L_ObservableProperty = ____lualib.__K2L_ObservableProperty
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_VetoableProperty = ____lualib.__K2L_VetoableProperty
 
 local ____delegates = require("lib.delegates")
-local Tracking = __K2L_Class("Tracking")
+local Tracking = __K2L_Class("app.Tracking")
 
 function Tracking:____init(value)
     self.value = value
@@ -58,13 +61,13 @@ function Tracking:setValue(thisRef, property, newValue)
     self.value = newValue
 end
 
-local Uppercase = __K2L_Class("Uppercase")
+local Uppercase = __K2L_Class("app.Uppercase")
 
 function Uppercase:getValue(thisRef, property)
     return property.name:upper()
 end
 
-local Clamped = __K2L_Class("Clamped")
+local Clamped = __K2L_Class("app.Clamped")
 
 function Clamped:____init(max)
     self.max = max
@@ -86,7 +89,7 @@ end)
 local ____topObservable_delegate = __K2L_ObservableProperty(0, function(prop, old, new)
     print(prop.name .. ": " .. old .. " -> " .. new)
 end)
-local Settings = __K2L_Class("Settings")
+local Settings = __K2L_Class("app.Settings")
 
 function Settings:____init(source)
     self.source = source
@@ -111,7 +114,7 @@ function Settings:getGreeting()
     return self.____greeting_delegate:getValue()
 end
 
-Settings.____volume_property = {name = "volume"}
+Settings.____volume_property = __K2L_PropertyRef.new("volume", "app/Settings.volume")
 
 function Settings:getVolume()
     return self.____volume_delegate:getValue(self, Settings.____volume_property)
@@ -121,7 +124,7 @@ function Settings:setVolume(value)
     self.____volume_delegate:setValue(self, Settings.____volume_property, value)
 end
 
-Settings.____positive_property = {name = "positive"}
+Settings.____positive_property = __K2L_PropertyRef.new("positive", "app/Settings.positive")
 
 function Settings:getPositive()
     return self.____positive_delegate:getValue(self, Settings.____positive_property)
@@ -131,7 +134,7 @@ function Settings:setPositive(value)
     self.____positive_delegate:setValue(self, Settings.____positive_property, value)
 end
 
-Settings.____name_property = {name = "name"}
+Settings.____name_property = __K2L_PropertyRef.new("name", "app/Settings.name")
 
 function Settings:getName()
     return self.____name_delegate:getValue(self, Settings.____name_property)
@@ -141,7 +144,7 @@ function Settings:setName(value)
     self.____name_delegate:setValue(self, Settings.____name_property, value)
 end
 
-Settings.____tracked_property = {name = "tracked"}
+Settings.____tracked_property = __K2L_PropertyRef.new("tracked", "app/Settings.tracked")
 
 function Settings:getTracked()
     return self.____tracked_delegate:getValue(self, Settings.____tracked_property)
@@ -151,7 +154,7 @@ function Settings:setTracked(value)
     self.____tracked_delegate:setValue(self, Settings.____tracked_property, value)
 end
 
-Settings.____clamped_property = {name = "clamped"}
+Settings.____clamped_property = __K2L_PropertyRef.new("clamped", "app/Settings.clamped")
 
 function Settings:getClamped()
     return self.____clamped_delegate:getValue(self, Settings.____clamped_property)
@@ -161,7 +164,7 @@ function Settings:setClamped(value)
     self.____clamped_delegate:setValue(self, Settings.____clamped_property, value)
 end
 
-Settings.____upper_property = {name = "upper"}
+Settings.____upper_property = __K2L_PropertyRef.new("upper", "app/Settings.upper")
 
 function Settings:getUpper()
     return self.____upper_delegate:getValue(self, Settings.____upper_property)
@@ -172,7 +175,7 @@ function Settings:bump()
     self:setTracked(self:getTracked() + 1)
 end
 
-local Config = __K2L_Class("Config")
+local Config = __K2L_Class("app.Config")
 
 function Config:____init(map)
     self.____host_delegate = map
@@ -195,7 +198,7 @@ function Config:setPort(value)
     self.____port_delegate:set("port", value)
 end
 
-local User = __K2L_Class("User")
+local User = __K2L_Class("app.User")
 
 function User:____init(map)
     self.map = map
@@ -211,12 +214,12 @@ function User:getAge()
     return self.____age_delegate:getValue("age")
 end
 
-local Registry = __K2L_Class("Registry")
+local Registry = __K2L_Class("app.Registry")
 
 function Registry:____init()
     self.____items_delegate = __K2L_Lazy(function()
         print("loading registry")
-        return __K2L_ListOf("a", "b")
+        return __K2L_ReadOnlyListOf("a", "b")
     end)
     self.____hits_delegate = __K2L_ObservableProperty(0, function(_, _, new)
         print("hits=" .. new)
@@ -227,7 +230,7 @@ function Registry:getItems()
     return self.____items_delegate:getValue()
 end
 
-Registry.____hits_property = {name = "hits"}
+Registry.____hits_property = __K2L_PropertyRef.new("hits", "app/Registry.hits")
 
 function Registry:getHits()
     return self.____hits_delegate:getValue(self, Registry.____hits_property)
@@ -238,7 +241,7 @@ function Registry:setHits(value)
 end
 
 Registry:____init()
-local WithCompanion = __K2L_Class("WithCompanion")
+local WithCompanion = __K2L_Class("app.WithCompanion")
 
 function WithCompanion:getInstance()
     return self.____instance_delegate:getValue()
@@ -271,19 +274,19 @@ local function main()
     print("before topLazy")
     print(____topLazy_delegate:getValue())
     print(____topLazy_delegate:getValue())
-    ____topObservable_delegate:setValue(nil, {name = "topObservable"}, 3)
-    ____topObservable_delegate:setValue(nil, {name = "topObservable"}, ____topObservable_delegate:getValue(nil, {name = "topObservable"}) + 2)
-    print(____topObservable_delegate:getValue(nil, {name = "topObservable"}))
+    ____topObservable_delegate:setValue(nil, __K2L_KProperty("topObservable", "app/topObservable"), 3)
+    ____topObservable_delegate:setValue(nil, __K2L_KProperty("topObservable", "app/topObservable"), ____topObservable_delegate:getValue(nil, __K2L_KProperty("topObservable", "app/topObservable")) + 2)
+    print(____topObservable_delegate:getValue(nil, __K2L_KProperty("topObservable", "app/topObservable")))
     local ____counter_delegate = __K2L_ObservableProperty(10, function(p, o, n)
         print("local " .. p.name .. " " .. o .. " -> " .. n)
     end)
-    ____counter_delegate:setValue(nil, {name = "counter"}, ____counter_delegate:getValue(nil, {name = "counter"}) + 1)
-    ____counter_delegate:setValue(nil, {name = "counter"}, ____counter_delegate:getValue(nil, {name = "counter"}) * 2)
-    print(____counter_delegate:getValue(nil, {name = "counter"}))
+    ____counter_delegate:setValue(nil, __K2L_KProperty("counter", "counter@3261"), ____counter_delegate:getValue(nil, __K2L_KProperty("counter", "counter@3261")) + 1)
+    ____counter_delegate:setValue(nil, __K2L_KProperty("counter", "counter@3261"), ____counter_delegate:getValue(nil, __K2L_KProperty("counter", "counter@3261")) * 2)
+    print(____counter_delegate:getValue(nil, __K2L_KProperty("counter", "counter@3261")))
     local ____limited_delegate = __K2L_VetoableProperty(0, function(_, _, new) return new < 100 end)
-    ____limited_delegate:setValue(nil, {name = "limited"}, 50)
-    ____limited_delegate:setValue(nil, {name = "limited"}, 500)
-    print(____limited_delegate:getValue(nil, {name = "limited"}))
+    ____limited_delegate:setValue(nil, __K2L_KProperty("limited", "limited@3417"), 50)
+    ____limited_delegate:setValue(nil, __K2L_KProperty("limited", "limited@3417"), 500)
+    print(____limited_delegate:getValue(nil, __K2L_KProperty("limited", "limited@3417")))
     local s = Settings.new("test")
     print("settings created")
     print(s:getGreeting())
@@ -324,17 +327,17 @@ local function main()
     print(other:getGreeting())
     print(s:getGreeting())
     local ________local_delegate = Tracking.new(1)
-    print(________local_delegate:getValue(nil, {name = "local"}))
-    ________local_delegate:setValue(nil, {name = "local"}, 2)
-    print(________local_delegate:getValue(nil, {name = "local"}))
+    print(________local_delegate:getValue(nil, __K2L_KProperty("local", "local@4320")))
+    ________local_delegate:setValue(nil, __K2L_KProperty("local", "local@4320"), 2)
+    print(________local_delegate:getValue(nil, __K2L_KProperty("local", "local@4320")))
     local ____tag_delegate = Uppercase.new()
-    print(____tag_delegate:getValue(nil, {name = "tag"}))
+    print(____tag_delegate:getValue(nil, __K2L_KProperty("tag", "tag@4401")))
     local config = Config.new(__K2L_MapOf(__K2L_Pair.new("host", "localhost"), __K2L_Pair.new("port", 8080)))
     print(config:getHost() .. ":" .. config:getPort())
     config:setPort(9090)
     config:setHost("example.org")
     print(config:getHost() .. ":" .. config:getPort())
-    local user = User.new(__K2L_MapOf(__K2L_Pair.new("name", "Grace"), __K2L_Pair.new("age", 36)))
+    local user = User.new(__K2L_ReadOnlyMapOf(__K2L_Pair.new("name", "Grace"), __K2L_Pair.new("age", 36)))
     print(user:getName() .. " is " .. user:getAge())
     local backing = __K2L_MapOf(__K2L_Pair.new("title", "Dr"))
     local ____title_delegate = backing
@@ -351,9 +354,9 @@ local function main()
     print("before shared")
     print(____delegates.____shared_delegate:getValue())
     print(____delegates.____shared_delegate:getValue())
-    print(____delegates.____sharedLogged_delegate:getValue(nil, {name = "sharedLogged"}))
-    ____delegates.____sharedLogged_delegate:setValue(nil, {name = "sharedLogged"}, "changed")
-    print(____delegates.____sharedLogged_delegate:getValue(nil, {name = "sharedLogged"}))
+    print(____delegates.____sharedLogged_delegate:getValue(nil, __K2L_KProperty("sharedLogged", "app/lib/sharedLogged")))
+    ____delegates.____sharedLogged_delegate:setValue(nil, __K2L_KProperty("sharedLogged", "app/lib/sharedLogged"), "changed")
+    print(____delegates.____sharedLogged_delegate:getValue(nil, __K2L_KProperty("sharedLogged", "app/lib/sharedLogged")))
     local attempts = 0
     local ____flaky_delegate = __K2L_Lazy(function()
         attempts = attempts + 1

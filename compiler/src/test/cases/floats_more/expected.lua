@@ -8,11 +8,11 @@ local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_FloatToString = ____lualib.__K2L_FloatToString
 local __K2L_Fround = ____lualib.__K2L_Fround
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
-local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
@@ -83,7 +83,7 @@ local function main()
     print(__K2L_Compare(1.100000023841858, 1.2000000476837158))
     print(__K2L_StringFormat("%.3f", __K2L_Fround(1.0 / 3)))
     print(__K2L_StringFormat("%.1f", 2.25))
-    local m = __K2L_MapOf(__K2L_Pair.new("a", 0.10000000149011612), __K2L_Pair.new("b", __K2L_Fround(0.20000000298023224 + 0.10000000149011612)))
+    local m = __K2L_ReadOnlyMapOf(__K2L_Pair.new("a", 0.10000000149011612), __K2L_Pair.new("b", __K2L_Fround(0.20000000298023224 + 0.10000000149011612)))
     print(__K2L_Str(m))
     local p = __K2L_Fround(0.699999988079071 * 3)
     print(__K2L_Str(p))
@@ -111,11 +111,11 @@ local function main()
     print(__K2L_FloatToString(big))
     print(__K2L_FloatToString(__K2L_Fround(3 * 0.10000000149011612)))
     print(__K2L_Fround(0.10000000149011612 * 3) == 0.30000001192092896)
-    local total = __K2L_ListOf(0.10000000149011612, 0.20000000298023224, 0.30000001192092896):sumOf(function(it) return __K2L_Fround(it * 2) end, 0.0)
+    local total = __K2L_ReadOnlyListOf(0.10000000149011612, 0.20000000298023224, 0.30000001192092896):sumOf(function(it) return __K2L_Fround(it * 2) end, 0.0)
     print(__K2L_DoubleToString(total))
-    print(__K2L_DoubleToString(__K2L_ListOf(0.10000000149011612, 0.20000000298023224, 0.30000001192092896):average()))
-    print(__K2L_FloatToString(__K2L_ListOf(3.299999952316284, 1.100000023841858):max()))
-    print(__K2L_Str(__K2L_ListOf(3.299999952316284, 1.100000023841858):sorted()))
+    print(__K2L_DoubleToString(__K2L_ReadOnlyListOf(0.10000000149011612, 0.20000000298023224, 0.30000001192092896):average()))
+    print(__K2L_FloatToString(__K2L_ReadOnlyListOf(3.299999952316284, 1.100000023841858):max()))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3.299999952316284, 1.100000023841858):sorted()))
     print(__K2L_DoubleToString(1.401298464324817E-45))
     print(__K2L_DoubleToInt(100000.0))
     print(__K2L_FloatToString(__K2L_Fround(1.6777217E7)))

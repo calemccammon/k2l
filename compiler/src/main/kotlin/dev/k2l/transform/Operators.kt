@@ -11,6 +11,14 @@ import org.jetbrains.kotlin.psi.*
 internal fun FileTransformer.safeCall(e: KtSafeQualifiedExpression): LuaExpr = with(session) {
     val receiver = cache(expression(e.receiverExpression), "receiver")
     val (value, pre) = withPreceding { withOverride(e.receiverExpression, receiver) { selector(e) } }
+    if (e.selectorExpression?.expressionType?.isUnitType == true) {
+        // `x?.unitCall()` as a value: the Unit object when `x` is not null
+        val name = ctx.temp("result")
+        emit(LuaLocal(listOf(name)))
+        val call = listOfNotNull(if (value is LuaCall || value is LuaMethodCall) LuaCallStmt(value) else null)
+        emit(LuaIf(LuaBinary(LuaBinOp.Ne, receiver, LuaNil), pre + call + assign(name, unitObject())))
+        return LuaName(name)
+    }
     if (pre.isEmpty() && e.receiverExpression.expressionType?.isBooleanType != true) {
         return LuaBinary(LuaBinOp.And, receiver, value)
     }

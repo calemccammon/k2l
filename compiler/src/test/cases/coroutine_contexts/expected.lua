@@ -18,6 +18,7 @@ local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_SuspendCoroutine = ____lualib.__K2L_SuspendCoroutine
+local __K2L_Unit = ____lualib.__K2L_Unit
 
 local DispatchedContinuation
 local CoroutineName = __K2L_Class("CoroutineName", __K2L_AbstractCoroutineContextElement)
@@ -95,7 +96,10 @@ local function worker(label, steps)
 end
 
 local function launch(context, block)
-    __K2L_StartCoroutine(block, __K2L_Continuation.new(context, function(result)
+    __K2L_StartCoroutine(function(...)
+        block(...)
+        return __K2L_Unit
+    end, __K2L_Continuation.new(context, function(result)
         local ____receiver_2 = result:exceptionOrNull()
         if ____receiver_2 ~= nil then
             print("failed: " .. __K2L_Str(____receiver_2.message))
@@ -118,7 +122,7 @@ local function main()
         local ____next = waiting:toList()
         waiting:clear()
         for _, it in ipairs(____next) do
-            it:resumeWith(__K2L_Result.success(nil))
+            it:resumeWith(__K2L_Result.success(__K2L_Unit))
         end
         dispatcher:runAll()
     end
@@ -152,10 +156,11 @@ local function main()
     local creator = QueueDispatcher.new()
     local cont = __K2L_CreateCoroutine(function()
         print("created body in " .. nameNow())
+        return __K2L_Unit
     end, __K2L_Continuation.new(__K2L_ContextPlus(creator, CoroutineName.new("created")), function(it)
         finished = true
     end))
-    cont:resumeWith(__K2L_Result.success(nil))
+    cont:resumeWith(__K2L_Result.success(__K2L_Unit))
     print("queued=" .. creator.queue.size .. " finished=" .. tostring(finished))
     creator:runAll()
     print("finished=" .. tostring(finished))

@@ -1,0 +1,94 @@
+line1
+[160]line2
+
+line3
+[8195]a
+[8195][8195]b
+c
+x
+[12288]y
+a
+ b
+x
+[28]y
+a
+[8195]b
+
+a
+
+ b
+ a
+  b
+ c
+one
+two
+ three
+x
+y
+z
+w
+margin: IllegalArgumentException: marginPrefix must be non-blank string.
+marginNbsp: IllegalArgumentException: marginPrefix must be non-blank string.
+> a
+> 
+> 
+> b
+>>>a
+>>>
+>>>
+>>>a
+>>>
+>>>
+[160]
+b
+→héllo
+→  wörld
+ünï
+  cödé
+123
+-123
+45
+123
+123
+12
+123
+123
+333333333333
+null
+171
+171
+null
+35
+null
+255
+63
+null
+null
+null
+null
+null
+null
+7
+999
+null
+255
+null
+255
+1234567890123
+5
+5
+10
+10
+35
+null
+9
+null
+bad: NumberFormatException: For input string: "١٢x"
+badRadix: NumberFormatException: For input string: "ｚ" under radix 16
+empty: NumberFormatException: For input string: ""
+arabicMessage: NumberFormatException: For input string: "٣٤٥٦٧٨٩٠١٢٣"
+parseInt: 42
+parseLong: -420
+valueOf: 7
+43
+null

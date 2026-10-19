@@ -25,7 +25,7 @@ internal fun FileTransformer.protectedBlock(
     }
     val args = callArguments(call)
     val lambda = args.lastOrNull() ?: return null
-    if (kind.onlyNonLocal && lambdaLiteral(lambda)?.let { hasNonLocalReturn(it) } != true) return null
+    if (kind.onlyNonLocal && lambdaLiteral(lambda)?.let { hasNonLocalJump(it) } != true) return null
     return when (kind) {
         Block.Use -> using(cache(receiver ?: expression(receiverExpr ?: return null), "resource"), receiverExpr, lambda)
         Block.Synchronized -> synchronizing(args[0]!!, lambda)
@@ -92,6 +92,7 @@ private fun FileTransformer.catching(receiver: LuaExpr?, lambda: KtExpression): 
 private fun FileTransformer.using(resource: LuaExpr, receiverExpr: KtExpression?, lambda: KtExpression): LuaExpr = with(session) {
     val value = declare("result")
     val nullable = receiverExpr?.expressionType?.isMarkedNullable == true
+    val raised = jumpsRaised
     fun closing(statement: LuaStmt): LuaStmt =
         if (nullable) LuaIf(LuaBinary(LuaBinOp.Ne, resource, LuaNil), listOf(statement)) else statement
     lowerTry(
@@ -108,11 +109,16 @@ private fun FileTransformer.using(resource: LuaExpr, receiverExpr: KtExpression?
             },
             handler = { emptyList() },
             hasCatch = false,
-            finally = { ok ->
-                // an error of close() must not hide the error of the block
+            finally = { ok, outcome ->
+                // an error of close() must not hide the error of the block, but a jump out of a lambda in the block is no error
                 val quietly = LuaCallStmt(luaCall(LuaName("pcall"), LuaIndex(resource, LuaString("close")), resource))
                 val plain = LuaCallStmt(LuaMethodCall(resource, "close", emptyList()))
-                listOf(closing(LuaIf(LuaName(ok), listOf(plain), listOf(quietly))))
+                val closesPlainly = if (jumpsRaised > raised) {
+                    LuaBinary(LuaBinOp.Or, LuaName(ok), LuaCall(lualibRef("Jump", "__K2L_IsJump"), listOf(LuaName(outcome))))
+                } else {
+                    LuaName(ok)
+                }
+                listOf(closing(LuaIf(closesPlainly, listOf(plain), listOf(quietly))))
             },
         ),
     )

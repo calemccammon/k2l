@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Host = __K2L_Class("Host")
@@ -9,7 +9,7 @@ function Host:____init(name)
     self.name = name
 end
 
-Host.In = __K2L_Class("In")
+Host.In = __K2L_Class("Host$In")
 
 function Host.In:____init(____outer, n)
     self.____outer = ____outer
@@ -21,7 +21,7 @@ function Host.In:show()
 end
 
 function Host:refs()
-    return __K2L_ListOf(1, 2):map(function(...) return Host.In.new(self, ...) end):map(function(it) return it:show() end)
+    return __K2L_ReadOnlyListOf(1, 2):map(function(...) return Host.In.new(self, ...) end):map(function(it) return it:show() end)
 end
 
 function Host:bound()
@@ -34,7 +34,7 @@ function Pair2:____init(a)
     self.a = a
 end
 
-Pair2.Part = __K2L_Class("Part")
+Pair2.Part = __K2L_Class("Pair2$Part")
 
 function Pair2.Part:____init(____outer, b)
     self.____outer = ____outer
@@ -47,12 +47,12 @@ end
 
 local function localInner()
     local prefix = "p"
-    local Local = __K2L_Class("Local")
+    local Local = __K2L_Class("MainKt$localInner$Local")
     function Local:____init(label)
         self.label = label
         self.count = 0
     end
-    Local.Inner = __K2L_Class("Inner")
+    Local.Inner = __K2L_Class("MainKt$localInner$Local$Inner")
     function Local.Inner:____init(____outer, step)
         self.____outer = ____outer
         self.step = step
@@ -61,7 +61,7 @@ local function localInner()
         self.____outer.count = self.____outer.count + self.step
         return prefix .. ":" .. self.____outer.label .. ":" .. self.____outer.count
     end
-    Local.Inner.Deep = __K2L_Class("Deep")
+    Local.Inner.Deep = __K2L_Class("MainKt$localInner$Local$Inner$Deep")
     function Local.Inner.Deep:____init(____outer)
         self.____outer = ____outer
     end

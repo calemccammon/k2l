@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Builder = __K2L_Class("Builder")
@@ -23,11 +25,11 @@ function Builder:twice(____this_2)
 end
 
 function Builder:fromInside()
-    return __K2L_ListOf("x", "y"):map(function(it) return self:shout(it) end):plusAll(__K2L_ListOf("p"):map(function(s) return self:shout(s) end))
+    return __K2L_ReadOnlyListOf("x", "y"):map(function(it) return self:shout(it) end):plusAll(__K2L_SingletonListOf("p"):map(function(s) return self:shout(s) end))
 end
 
 function Builder:inside()
-    return __K2L_ListOf(1, 2):map(function(it) return self:twice(it) end)
+    return __K2L_ReadOnlyListOf(1, 2):map(function(it) return self:twice(it) end)
 end
 
 function Builder:deferred()
@@ -38,13 +40,13 @@ end
 local function main()
     local b = Builder.new("!")
     do
-        for _, it in ipairs(__K2L_ListOf("a", "b")) do
+        for _, it in ipairs(__K2L_ReadOnlyListOf("a", "b")) do
             b:unaryPlus(it)
         end
-        for _, it in ipairs(__K2L_ListOf("c")) do
+        for _, it in ipairs(__K2L_SingletonListOf("c")) do
             b:unaryPlus(it)
         end
-        print(__K2L_Str(__K2L_ListOf("m", "n"):map(function(it) return b:shout(it) end)))
+        print(__K2L_Str(__K2L_ReadOnlyListOf("m", "n"):map(function(it) return b:shout(it) end)))
         local f = function(it) return b:shout(it) end
         print(f("with"))
         local g = function(n) return b:twice(n) end

@@ -8,6 +8,7 @@ local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -86,7 +87,7 @@ local function main()
     end
     print()
     print(__K2L_Equals(view, backing))
-    print(__K2L_Equals(view, __K2L_ListOf(10, 3, 4)))
+    print(__K2L_Equals(view, __K2L_ReadOnlyListOf(10, 3, 4)))
     print(__K2L_Hash(view) == __K2L_Hash(backing))
     local copy = view:toMutableList()
     backing:add(5)
@@ -116,7 +117,7 @@ local function main()
     local outer = __K2L_JdkCollections.unmodifiableList(view)
     backing:clear()
     print(outer.size .. " " .. __K2L_Str(outer))
-    backing:addAll(__K2L_ListOf(7, 8))
+    backing:addAll(__K2L_ReadOnlyListOf(7, 8))
     print(outer.size .. " " .. __K2L_Str(outer))
     local nullable = __K2L_ListOf("a", nil)
     local nullView = __K2L_JdkCollections.unmodifiableList(nullable)

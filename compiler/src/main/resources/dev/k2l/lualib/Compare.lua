@@ -38,6 +38,23 @@ local function __K2L_Compare(a, b)
         return -1
     elseif a > b then
         return 1
+    elseif t == "number" and (a ~= a or b ~= b or (a == 0 and 1 / a ~= 1 / b)) then
+        -- Double.compareTo is a total order: -0.0 before 0.0, NaN after everything (and equal to itself)
+        if a ~= a then
+            return b ~= b and 0 or 1
+        elseif b ~= b then
+            return -1
+        end
+        return 1 / a < 0 and -1 or 1
     end
     return 0
+end
+
+-- compareValues(a, b), which compareBy and thenBy use: the same object is equal to itself without a call to compareTo
+-- (but 0.0 and -0.0, equal in Lua, are two boxes on the JVM).
+local function __K2L_CompareValues(a, b)
+    if rawequal(a, b) and a ~= 0 then
+        return 0
+    end
+    return __K2L_Compare(a, b)
 end

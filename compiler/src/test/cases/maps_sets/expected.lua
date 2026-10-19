@@ -3,9 +3,11 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
+local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
@@ -31,7 +33,7 @@ function Key:equals(other)
 end
 
 local function main()
-    local ages = __K2L_MapOf(__K2L_Pair.new("ann", 31), __K2L_Pair.new("bob", 25))
+    local ages = __K2L_ReadOnlyMapOf(__K2L_Pair.new("ann", 31), __K2L_Pair.new("bob", 25))
     print(__K2L_Str(ages))
     print(__K2L_Str(ages:get("ann")))
     print(__K2L_Str(ages:get("zed")))
@@ -88,19 +90,19 @@ local function main()
     s:remove(3)
     print(__K2L_Str(s))
     print(s:contains(2))
-    local t = __K2L_SetOf(2, 4, 6)
+    local t = __K2L_ReadOnlySetOf(2, 4, 6)
     print(__K2L_Str(s:intersect(t)))
     print(__K2L_Str(s:union(t)))
     print(__K2L_Str(s:subtract(t)))
-    print(__K2L_Equals(__K2L_SetOf(1, 2), __K2L_SetOf(2, 1)))
-    print(__K2L_Str(__K2L_ListOf(3, 3, 1):toSet()))
+    print(__K2L_Equals(__K2L_ReadOnlySetOf(1, 2), __K2L_ReadOnlySetOf(2, 1)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 3, 1):toSet()))
     local sum = 0
     for _, x in ipairs(s:toList()) do
         sum = sum + x
     end
     print(sum)
-    print(__K2L_Str(__K2L_ListOf("apple", "avocado", "banana"):groupBy(function(it) return __K2L_Text.first(it) end)))
-    print(__K2L_Str(__K2L_ListOf("a", "bb", "ccc"):associateWith(function(it) return #it end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf("apple", "avocado", "banana"):groupBy(function(it) return __K2L_Text.first(it) end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf("a", "bb", "ccc"):associateWith(function(it) return #it end)))
 end
 
 main()

@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Counter = __K2L_Class("Counter")
@@ -20,7 +21,7 @@ function Counter:history()
     return self.log
 end
 
-Counter.Handle = __K2L_Class("Handle")
+Counter.Handle = __K2L_Class("Counter$Handle")
 
 function Counter.Handle:____init(____outer, step)
     self.____outer = ____outer
@@ -47,7 +48,7 @@ function Counter.Handle:toString()
     return "Handle(" .. self.step .. ") of " .. self.____outer.name .. " uses=" .. self.uses .. " total=" .. self.____outer.total
 end
 
-Counter.Named = __K2L_Class("Named")
+Counter.Named = __K2L_Class("Counter$Named")
 
 function Counter.Named:____init(____outer, label)
     self.____outer = ____outer
@@ -99,7 +100,7 @@ function Outer:tagged(s)
     return self.tag .. "/" .. s
 end
 
-Outer.Middle = __K2L_Class("Middle")
+Outer.Middle = __K2L_Class("Outer$Middle")
 
 function Outer.Middle:____init(____outer, m)
     self.____outer = ____outer
@@ -110,7 +111,7 @@ function Outer.Middle:middleValue()
     return self.m * 2
 end
 
-Outer.Middle.Leaf = __K2L_Class("Leaf")
+Outer.Middle.Leaf = __K2L_Class("Outer$Middle$Leaf")
 
 function Outer.Middle.Leaf:____init(____outer, leaf)
     self.____outer = ____outer
@@ -148,7 +149,7 @@ function Shape:sides()
     return 0
 end
 
-Shape.Part = __K2L_Class("Part")
+Shape.Part = __K2L_Class("Shape$Part")
 
 function Shape.Part:____init(____outer, index)
     self.____outer = ____outer
@@ -159,7 +160,7 @@ function Shape.Part:label()
     return self.____outer.name .. " part " .. self.index
 end
 
-Shape.SpecialPart = __K2L_Class("SpecialPart", Shape.Part)
+Shape.SpecialPart = __K2L_Class("Shape$SpecialPart", Shape.Part)
 
 function Shape.SpecialPart:____init(____outer, index, extra)
     self.____outer = ____outer
@@ -171,7 +172,7 @@ function Shape.SpecialPart:label()
     return Shape.Part.label(self) .. " (" .. self.extra .. ")"
 end
 
-Shape.Marked = __K2L_Class("Marked", Shape.Part)
+Shape.Marked = __K2L_Class("Shape$Marked", Shape.Part)
 
 function Shape.Marked:____init(____outer)
     self.____outer = ____outer
@@ -182,7 +183,7 @@ function Shape.Marked:label()
     return "marked " .. Shape.Part.label(self)
 end
 
-Shape.Late = __K2L_Class("Late", Shape.Part)
+Shape.Late = __K2L_Class("Shape$Late", Shape.Part)
 
 function Shape.Late:____init1(____outer, i)
     self.____outer = ____outer
@@ -207,7 +208,7 @@ function Shape.Late.new2(____outer)
 end
 
 function Shape:parts()
-    return __K2L_ListOf(Shape.Part.new(self, 1), Shape.SpecialPart.new(self, 2, "x"), Shape.Marked.new(self), Shape.Late.new1(self, 3), Shape.Late.new2(self))
+    return __K2L_ReadOnlyListOf(Shape.Part.new(self, 1), Shape.SpecialPart.new(self, 2, "x"), Shape.Marked.new(self), Shape.Late.new1(self, 3), Shape.Late.new2(self))
 end
 
 local Square = __K2L_Class("Square", Shape)
@@ -224,7 +225,7 @@ function Square:squarePart()
     return Shape.Part.new(self, 7)
 end
 
-Square.Corner = __K2L_Class("Corner")
+Square.Corner = __K2L_Class("Square$Corner")
 
 function Square.Corner:____init(____outer, which)
     self.____outer = ____outer
@@ -241,7 +242,7 @@ function Wrapper:____init()
     self.items = 0
 end
 
-Wrapper.Counted = __K2L_Class("Counted")
+Wrapper.Counted = __K2L_Class("Wrapper$Counted")
 
 function Wrapper.Counted:____init(____outer)
     self.____outer = ____outer
@@ -249,7 +250,7 @@ function Wrapper.Counted:____init(____outer)
     self.id = self.____outer.items
 end
 
-Wrapper.Lazy = __K2L_Class("Lazy")
+Wrapper.Lazy = __K2L_Class("Wrapper$Lazy")
 
 function Wrapper.Lazy:____init(____outer, factor, tag)
     self.____outer = ____outer
@@ -320,7 +321,7 @@ local function main()
     print(Wrapper.Lazy.new(w):scaled())
     print(Wrapper.Lazy.new(w, 10):scaled())
     print(Wrapper.Lazy.new(w, 2, "z"):scaled())
-    local handles = __K2L_ListOf(1, 2, 3):map(function(it) return Counter.Handle.new(counter, it) end)
+    local handles = __K2L_ReadOnlyListOf(1, 2, 3):map(function(it) return Counter.Handle.new(counter, it) end)
     print(__K2L_Str(handles:map(function(it) return it:bump() end)))
     local total = handles:sumOf(function(it) return it.step end)
     print(total)

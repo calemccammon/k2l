@@ -57,7 +57,17 @@ internal object Long64Mappings {
     fun prepare(callableId: String?, site: CallSite): CallSite {
         if (callableId != "kotlin/text/format" || !site.transformer.emulatesLong) return site
         val args = site.args.mapIndexed { i, a -> if (site.wide(site.argTypes.getOrNull(i))) site.l64Member("boxed", a) else a }
-        return CallSite(site.session, site.transformer, site.element, site.name, site.receiver, site.receiverType, args, site.argTypes)
+        return CallSite(
+            site.session,
+            site.transformer,
+            site.element,
+            site.name,
+            site.receiver,
+            site.receiverType,
+            args,
+            site.argTypes,
+            site.parameterTypes,
+        )
     }
 
     private fun CallSite.anyWide() = wide(receiverType) || argTypes.any { wide(it) }
@@ -151,7 +161,8 @@ internal object Long64Mappings {
     }
 
     private fun javaStatics() {
-        def("java/lang/Long.parseLong") { x("parseOrThrow", arg(0), args.getOrElse(1) { LuaNil }) }
+        def("java/lang/Long.parseLong") { parseText("parseOrThrow", arg(0), false, 1) }
+        def("java/lang/Long.valueOf") { if (isTextual(argTypes.firstOrNull())) parseText("parseOrThrow", arg(0), false, 1) else null }
         def("java/lang/Long.toHexString") { x("ustrRadix", arg(0), LuaNumber("16")) }
         def("java/lang/Long.toBinaryString") { x("ustrRadix", arg(0), LuaNumber("2")) }
         def("java/lang/Long.toOctalString") { x("ustrRadix", arg(0), LuaNumber("8")) }
@@ -202,10 +213,18 @@ internal object Long64Mappings {
         libMember(feature, table, "parse", l64Member("str", value))
 
     private fun text() {
-        def("kotlin/text/toLong") { x("parseOrThrow", self, args.getOrElse(0) { LuaNil }) }
-        def("kotlin/text/toLongOrNull") { x("parse", self, args.getOrElse(0) { LuaNil }) }
-        def("kotlin/text/toULong") { x("parseOrThrow", self, args.getOrElse(0) { LuaNil }, LuaBool(true)) }
-        def("kotlin/text/toULongOrNull") { x("parse", self, args.getOrElse(0) { LuaNil }, LuaBool(true)) }
+        // with --strings utf16 the parsers take Unicode digits (Utf16Case.lua)
+        def("kotlin/text/toLong") { parseText("parseOrThrow", self, false) }
+        def("kotlin/text/toLongOrNull") { parseText("parse", self, false) }
+        def("kotlin/text/toULong") { parseText("parseOrThrow", self, true) }
+        def("kotlin/text/toULongOrNull") { parseText("parse", self, true) }
+    }
+
+    /** `text.toLong(radix)` and friends; the radix is the argument at [radixIndex]. */
+    private fun CallSite.parseText(member: String, text: LuaExpr, unsigned: Boolean, radixIndex: Int = 0): LuaExpr {
+        requireUtf16Case()
+        val radix = args.getOrElse(radixIndex) { LuaNil }
+        return if (unsigned) x(member, text, radix, LuaBool(true)) else x(member, text, radix)
     }
 
     private fun CallSite.wideElements(type: org.jetbrains.kotlin.analysis.api.types.KaType?): Boolean = with(session) {

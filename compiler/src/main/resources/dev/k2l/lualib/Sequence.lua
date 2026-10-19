@@ -482,7 +482,10 @@ function __K2L_Sequence:zip(other, transform)
             end
             local hasB, b = second()
             if hasB then
-                return true, transform and transform(a, b) or __K2L_Pair.new(a, b)
+                if transform ~= nil then
+                    return true, transform(a, b)
+                end
+                return true, __K2L_Pair.new(a, b)
             end
         end
     end)
@@ -504,7 +507,10 @@ function __K2L_Sequence:zipWithNext(transform)
             if has then
                 local a = previous
                 previous = value
-                return true, transform and transform(a, value) or __K2L_Pair.new(a, value)
+                if transform ~= nil then
+                    return true, transform(a, value)
+                end
+                return true, __K2L_Pair.new(a, value)
             end
         end
     end)
@@ -531,9 +537,9 @@ function __K2L_Sequence:windowed(size, step, partialWindows, transform)
             if buffer.size == 0 or (buffer.size < size and not partialWindows) then
                 return
             end
-            local window = buffer:toList()
+            local window = buffer:toMutableList()
             local dropped = math.min(step, buffer.size)
-            buffer = buffer:drop(dropped)
+            buffer = buffer:drop(dropped):toMutableList()
             -- With step > size, the elements between windows are skipped.
             for _ = dropped + 1, step do
                 if done or not gen() then
@@ -541,7 +547,10 @@ function __K2L_Sequence:windowed(size, step, partialWindows, transform)
                     break
                 end
             end
-            return true, transform and transform(window) or window
+            if transform ~= nil then
+                return true, transform(window)
+            end
+            return true, window
         end
     end)
 end
@@ -663,12 +672,12 @@ function __K2L_Sequence:sortedDescending()
     return sortedSequence(self, function(list) return list:sortedDescending() end)
 end
 
-function __K2L_Sequence:sortedBy(selector)
-    return sortedSequence(self, function(list) return list:sortedBy(selector) end)
+function __K2L_Sequence:sortedBy(selector, pure)
+    return sortedSequence(self, function(list) return list:sortedBy(selector, pure) end)
 end
 
-function __K2L_Sequence:sortedByDescending(selector)
-    return sortedSequence(self, function(list) return list:sortedByDescending(selector) end)
+function __K2L_Sequence:sortedByDescending(selector, pure)
+    return sortedSequence(self, function(list) return list:sortedByDescending(selector, pure) end)
 end
 
 function __K2L_Sequence:sortedWith(comparator)
@@ -697,7 +706,10 @@ function __K2L_Sequence:toSet()
 end
 
 __K2L_Sequence.toMutableSet = __K2L_Sequence.toSet
-__K2L_Sequence.toHashSet = __K2L_Sequence.toSet
+-- a HashSet, which iterates in the JVM's hash order
+function __K2L_Sequence:toHashSet()
+    return __K2L_HashSet.new(self:toList())
+end
 
 function __K2L_Sequence:forEach(action)
     for _, value in self:iter() do
@@ -915,7 +927,10 @@ end
 local function extreme(self, selector, sign)
     local found, best, bestKey = false, nil, nil
     for _, value in self:iter() do
-        local key = selector and selector(value) or value
+        local key = value
+        if selector ~= nil then
+            key = selector(value) -- may be false (a Boolean key)
+        end
         if not found or __K2L_Compare(key, bestKey) * sign > 0 then
             found, best, bestKey = true, value, key
         end
@@ -970,7 +985,10 @@ function __K2L_Sequence:groupBy(keySelector, valueTransform)
             group = __K2L_List.new()
             map:put(key, group)
         end
-        group:add(valueTransform and valueTransform(value) or value)
+        if valueTransform ~= nil then
+            value = valueTransform(value)
+        end
+        group:add(value)
     end
     return map
 end
@@ -986,7 +1004,11 @@ end
 
 function __K2L_Sequence:associateBy(keySelector, valueTransform)
     return self:associate(function(value)
-        return __K2L_Pair.new(keySelector(value), valueTransform and valueTransform(value) or value)
+        local key = keySelector(value)
+        if valueTransform ~= nil then
+            value = valueTransform(value)
+        end
+        return __K2L_Pair.new(key, value)
     end)
 end
 
@@ -1008,4 +1030,324 @@ function __K2L_Sequence:partition(predicate)
         end
     end
     return __K2L_Pair.new(yes, no)
+end
+
+------------------------------------------------------------------ more operations (each pulls one element at a time)
+function __K2L_Sequence:elementAtOrElse(index, defaultValue)
+    if index >= 0 then
+        local i = 0
+        for _, value in self:iter() do
+            if i == index then
+                return value
+            end
+            i = i + 1
+        end
+    end
+    return defaultValue(index)
+end
+
+function __K2L_Sequence:firstNotNullOfOrNull(transform)
+    for _, value in self:iter() do
+        local result = transform(value)
+        if result ~= nil then
+            return result
+        end
+    end
+    return nil
+end
+
+function __K2L_Sequence:firstNotNullOf(transform)
+    local result = self:firstNotNullOfOrNull(transform)
+    if result == nil then
+        error(__K2L_NoSuchElementException.new("No element of the sequence was transformed to a non-null value."))
+    end
+    return result
+end
+
+function __K2L_Sequence:indexOfLast(predicate)
+    local i, found = 0, -1
+    for _, value in self:iter() do
+        if predicate(value) then
+            found = i
+        end
+        i = i + 1
+    end
+    return found
+end
+
+function __K2L_Sequence:lastIndexOf(element)
+    return self:indexOfLast(function(value) return __K2L_Equals(value, element) end)
+end
+
+-- The ...To operations add to (or put into) `destination` and return it.
+function __K2L_Sequence:filterIndexedTo(destination, predicate)
+    local i = 0
+    for _, value in self:iter() do
+        if predicate(i, value) then
+            destination:add(value)
+        end
+        i = i + 1
+    end
+    return destination
+end
+
+function __K2L_Sequence:filterTo(destination, predicate)
+    return self:filterIndexedTo(destination, function(_, value) return predicate(value) end)
+end
+
+function __K2L_Sequence:filterNotTo(destination, predicate)
+    return self:filterIndexedTo(destination, function(_, value) return not predicate(value) end)
+end
+
+function __K2L_Sequence:filterNotNullTo(destination)
+    return self:filterIndexedTo(destination, function(_, value) return value ~= nil end)
+end
+
+function __K2L_Sequence:mapIndexedNotNullTo(destination, transform)
+    local i = 0
+    for _, value in self:iter() do
+        local result = transform(i, value)
+        if result ~= nil then
+            destination:add(result)
+        end
+        i = i + 1
+    end
+    return destination
+end
+
+function __K2L_Sequence:mapIndexedTo(destination, transform)
+    local i = 0
+    for _, value in self:iter() do
+        destination:add(transform(i, value))
+        i = i + 1
+    end
+    return destination
+end
+
+function __K2L_Sequence:mapTo(destination, transform)
+    for _, value in self:iter() do
+        destination:add(transform(value))
+    end
+    return destination
+end
+
+function __K2L_Sequence:mapNotNullTo(destination, transform)
+    return self:mapIndexedNotNullTo(destination, function(_, value) return transform(value) end)
+end
+
+function __K2L_Sequence:flatMapIndexedTo(destination, transform)
+    local i = 0
+    for _, value in self:iter() do
+        for _, element in __K2L_Generator(transform(i, value)) do
+            destination:add(element)
+        end
+        i = i + 1
+    end
+    return destination
+end
+
+function __K2L_Sequence:flatMapTo(destination, transform)
+    return self:flatMapIndexedTo(destination, function(_, value) return transform(value) end)
+end
+
+-- flatMapIndexed { index, x -> }: lazy, like flatMap.
+function __K2L_Sequence:flatMapIndexed(transform)
+    return __K2L_Sequence.new(function()
+        local i = -1
+        return self:flatMap(function(value)
+            i = i + 1
+            return transform(i, value)
+        end):iter()
+    end)
+end
+
+function __K2L_Sequence:associateTo(destination, transform)
+    for _, value in self:iter() do
+        local pair = transform(value)
+        destination:put(pair.first, pair.second)
+    end
+    return destination
+end
+
+function __K2L_Sequence:associateByTo(destination, keySelector, valueTransform)
+    for _, value in self:iter() do
+        local key = keySelector(value)
+        if valueTransform ~= nil then
+            value = valueTransform(value)
+        end
+        destination:put(key, value)
+    end
+    return destination
+end
+
+function __K2L_Sequence:associateWithTo(destination, valueSelector)
+    for _, value in self:iter() do
+        destination:put(value, valueSelector(value))
+    end
+    return destination
+end
+
+function __K2L_Sequence:groupByTo(destination, keySelector, valueTransform)
+    for _, value in self:iter() do
+        local key = keySelector(value)
+        local group = destination:get(key)
+        if group == nil then
+            group = __K2L_List.new()
+            destination:put(key, group)
+        end
+        if valueTransform ~= nil then
+            value = valueTransform(value)
+        end
+        group:add(value)
+    end
+    return destination
+end
+
+function __K2L_Sequence:groupingBy(keySelector)
+    return __K2L_Grouping.new(self, keySelector)
+end
+
+-- maxWith(comparator), maxOfWith(comparator, selector), ...: by the comparator; `selector` maps the elements first.
+local function extremeWith(self, comparator, selector, sign, orNull)
+    local found, best = false, nil
+    for _, value in self:iter() do
+        if selector ~= nil then
+            value = selector(value)
+        end
+        if not found or comparator(value, best) * sign > 0 then
+            found, best = true, value
+        end
+    end
+    if not found and not orNull then
+        error(__K2L_NoSuchElementException.new())
+    end
+    return best
+end
+
+function __K2L_Sequence:maxWith(comparator) return extremeWith(self, comparator, nil, 1, false) end
+function __K2L_Sequence:minWith(comparator) return extremeWith(self, comparator, nil, -1, false) end
+function __K2L_Sequence:maxWithOrNull(comparator) return extremeWith(self, comparator, nil, 1, true) end
+function __K2L_Sequence:minWithOrNull(comparator) return extremeWith(self, comparator, nil, -1, true) end
+function __K2L_Sequence:maxOfWith(comparator, selector) return extremeWith(self, comparator, selector, 1, false) end
+function __K2L_Sequence:minOfWith(comparator, selector) return extremeWith(self, comparator, selector, -1, false) end
+function __K2L_Sequence:maxOfWithOrNull(comparator, selector) return extremeWith(self, comparator, selector, 1, true) end
+function __K2L_Sequence:minOfWithOrNull(comparator, selector) return extremeWith(self, comparator, selector, -1, true) end
+
+-- reduceIndexed { index, acc, x -> } (`orNull`: null for an empty sequence instead of throwing).
+local function reduceIndexed(self, operation, orNull)
+    local gen = self:iter()
+    local has, acc = gen()
+    if not has then
+        if orNull then
+            return nil
+        end
+        error(__K2L_UnsupportedOperationException.new("Empty sequence can't be reduced."))
+    end
+    local i = 1
+    for _, value in gen do
+        acc = operation(i, acc, value)
+        i = i + 1
+    end
+    return acc
+end
+
+function __K2L_Sequence:reduceIndexed(operation) return reduceIndexed(self, operation, false) end
+function __K2L_Sequence:reduceIndexedOrNull(operation) return reduceIndexed(self, operation, true) end
+
+function __K2L_Sequence:reduceOrNull(operation)
+    return reduceIndexed(self, function(_, acc, value) return operation(acc, value) end, true)
+end
+
+function __K2L_Sequence:runningFoldIndexed(initial, operation)
+    return derive(self, function(gen)
+        local started, acc, i = false, initial, 0
+        return function()
+            if not started then
+                started = true
+                return true, acc
+            end
+            local has, value = gen()
+            if not has then
+                return
+            end
+            acc = operation(i, acc, value)
+            i = i + 1
+            return true, acc
+        end
+    end)
+end
+
+__K2L_Sequence.scanIndexed = __K2L_Sequence.runningFoldIndexed
+
+function __K2L_Sequence:runningReduceIndexed(operation)
+    return derive(self, function(gen)
+        local started, acc, i = false, nil, 1
+        return function()
+            local has, value = gen()
+            if not has then
+                return
+            end
+            if not started then
+                started, acc = true, value
+            else
+                acc = operation(i, acc, value)
+                i = i + 1
+            end
+            return true, acc
+        end
+    end)
+end
+
+function __K2L_Sequence:sumBy(selector)
+    return self:sumOf(selector)
+end
+
+function __K2L_Sequence:sumByDouble(selector)
+    return self:sumOf(selector, 0.0)
+end
+
+-- requireNoNulls(): lazy; a null element throws when it is reached.
+function __K2L_Sequence:requireNoNulls()
+    return derive(self, function(gen)
+        return function()
+            local has, value = gen()
+            if not has then
+                return
+            end
+            if value == nil then
+                error(__K2L_IllegalArgumentException.new("null element found in " .. __K2L_Str(self) .. "."))
+            end
+            return true, value
+        end
+    end)
+end
+
+function __K2L_Sequence:joinTo(buffer, separator, prefix, postfix, limit, truncated, transform)
+    buffer:append(self:joinToString(separator, prefix, postfix, limit, truncated, transform))
+    return buffer
+end
+
+-- shuffled(random): lazy; picks each element when it is reached, as kotlin.sequences.shuffled does.
+function __K2L_Sequence:shuffled(random)
+    return __K2L_Sequence.new(function()
+        local buffer
+        return function()
+            if buffer == nil then
+                buffer = self:toMutableList()
+            end
+            if buffer.size == 0 then
+                return
+            end
+            local j = random:nextInt(buffer.size)
+            local last = buffer:removeLast()
+            if j < buffer.size then
+                return true, buffer:set(j, last)
+            end
+            return true, last
+        end
+    end)
+end
+
+function __K2L_Sequence:toSortedSet(comparator)
+    return self:toList():toSortedSet(comparator)
 end

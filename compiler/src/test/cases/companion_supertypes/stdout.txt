@@ -1,0 +1,30 @@
+Foo(1)
+Foo(2)
+[Foo(3), Foo(4)]
+true
+true
+foo
+null
+14
+Foo(5)
+Foo(1)
+true
+factory
+before Bar
+Bar companion init
+Maker Registry[bar:x, bar:y] 2 bar:
+true
+before Baz
+Baz companion init
+Baz instance
+baz
+factory Foo(2)
+shapes Circle
+factory Inner(inner)
+factory Box(42)
+factory Circle
+[cba, ABC, cba]
+tagged true
+[foo, tagged, baz]
+<id> made
+Companion Maker

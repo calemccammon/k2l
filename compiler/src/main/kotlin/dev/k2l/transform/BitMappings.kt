@@ -25,8 +25,6 @@ internal object BitMappings {
 
     private fun CallSite.isFloat(type: KaType?) = type != null && with(session) { type.withoutFlexibility.isFloatType }
 
-    private fun CallSite.isUnsigned(type: KaType?) = with(session) { unsignedOf(type) } != null
-
     private fun exact(t: MappingTable) {
         val binary = mapOf("addExact" to "add", "subtractExact" to "sub", "multiplyExact" to "mul")
         for ((name, member) in binary) {
@@ -41,12 +39,15 @@ internal object BitMappings {
 
     private fun rotations(t: MappingTable) {
         for ((name, negate) in listOf("rotateLeft" to false, "rotateRight" to true)) {
-            t.def("kotlin/$name", "kotlin/UInt.$name", "kotlin/ULong.$name") {
+            t.def("kotlin/$name", "kotlin/UInt.$name", "kotlin/ULong.$name", "kotlin/UByte.$name", "kotlin/UShort.$name") {
                 val count = if (negate) LuaUnary(LuaUnOp.Neg, arg(0)) else arg(0)
                 val unsigned = with(session) { unsignedOf(receiverType) }
                 when {
                     unsigned == Unsigned.UInt -> transformer.wrapUnsigned(Unsigned.UInt, bits("rotl32", self, count))
+                    unsigned == Unsigned.UByte || unsigned == Unsigned.UShort -> smallRotation(count, unsigned.bits, false)
                     unsigned != null && unsigned != Unsigned.ULong -> null
+                    isByte(receiverType) -> smallRotation(count, Byte.SIZE_BITS, true)
+                    isShort(receiverType) -> smallRotation(count, Short.SIZE_BITS, true)
                     isLong(receiverType) -> bits("rotl64", self, count)
                     isIntLike(receiverType) -> bits("rotl32", self, count)
                     else -> null
@@ -102,3 +103,11 @@ internal object BitMappings {
         t.def("java/lang/Math.nextAfter") { bits(if (isFloat(argTypes[0])) "nextTowardsF" else "nextTowards", arg(0), arg(1)) }
     }
 }
+
+/** `Byte`, `Short`, `UByte` and `UShort` rotate within their own width (see `Numbers.lua`). */
+private fun CallSite.smallRotation(count: LuaExpr, bits: Int, signed: Boolean): LuaExpr =
+    libMember("Numbers", "__K2L_Num", "rotateSmall", self, count, LuaNumber("$bits"), LuaBool(signed))
+
+private fun CallSite.isByte(type: KaType?): Boolean = type != null && with(session) { type.withoutFlexibility.isByteType }
+
+private fun CallSite.isShort(type: KaType?): Boolean = type != null && with(session) { type.withoutFlexibility.isShortType }

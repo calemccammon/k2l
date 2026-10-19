@@ -8,6 +8,7 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -171,7 +172,7 @@ local function main()
     print(m1:equals(m1))
     print(m1:equals(m2))
     print(m1:equals(m3))
-    print(__K2L_SetOf(m1, m2, m3).size)
+    print(__K2L_ReadOnlySetOf(m1, m2, m3).size)
     local h = Hashed.new(1)
     print(__K2L_Str(h))
     print(h:hashCode() == h:hashCode())

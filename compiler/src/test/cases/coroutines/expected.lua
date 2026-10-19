@@ -11,6 +11,7 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
@@ -18,6 +19,7 @@ local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_SuspendCoroutine = ____lualib.__K2L_SuspendCoroutine
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_Unit = ____lualib.__K2L_Unit
 
 local ____exports = {}
 local sumOfImmediates, nested
@@ -65,8 +67,10 @@ local function completion(name)
     return __K2L_Continuation.new(__K2L_EmptyCoroutineContext, function(result)
         result:fold(function(it)
             print(name .. " -> success " .. __K2L_Str(it))
+            return __K2L_Unit
         end, function(it)
             print(name .. " -> failure " .. __K2L_Str(it.message))
+            return __K2L_Unit
         end)
     end)
 end
@@ -118,7 +122,7 @@ local function loopAndWhen(n)
         end
         out:add(____temp)
     end
-    for _, it in ipairs(__K2L_ListOf(10, 20)) do
+    for _, it in ipairs(__K2L_ReadOnlyListOf(10, 20)) do
         out:add("each:" .. immediate(it))
     end
     return out
@@ -162,9 +166,9 @@ local function main()
         return 42
     end, completion("created"))
     print("not started yet")
-    created:resumeWith(__K2L_Result.success(nil))
+    created:resumeWith(__K2L_Result.success(__K2L_Unit))
     local ____ok_2, ____result_2 = pcall(function()
-        created:resumeWith(__K2L_Result.success(nil))
+        created:resumeWith(__K2L_Result.success(__K2L_Unit))
     end)
     if not ____ok_2 then
         local ____error_2 = __K2L_ToThrowable(____result_2)

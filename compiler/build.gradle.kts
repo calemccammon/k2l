@@ -109,8 +109,9 @@ abstract class KotlinOracle @Inject constructor(private val exec: ExecOperations
             exec.javaexec {
                 classpath(classes, stdlib)
                 mainClass.set(if (pkg != null) "$pkg.MainKt" else "MainKt")
-                // Cases print non-ASCII text: do not depend on the locale of the machine
-                jvmArgs("-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8")
+                // Cases print non-ASCII text and Locale.getDefault(): do not depend on the locale of the machine
+                // (k2l's default locale is en_US)
+                jvmArgs("-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Duser.language=en", "-Duser.country=US")
                 standardOutput = stdout
             }
             val actual = stdout.toString(Charsets.UTF_8)

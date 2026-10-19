@@ -7,7 +7,9 @@ import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtConstantExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
+import org.jetbrains.kotlin.psi.KtSuperTypeListEntry
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
+import org.jetbrains.kotlin.psi.KtUserType
 
 /** The files of the module being compiled and how they reference each other. */
 class ModuleContext(
@@ -54,16 +56,37 @@ class ModuleContext(
     val usesFloat: Boolean by lazy { files.any(::mentionsFloat) }
 
     /**
-     * Whether some file calls `Collections.unmodifiableList` or `unmodifiableCollection`: their result is a view that has no
-     * array part, so loops over lists have to index it rather than use `ipairs`, which does not follow `__index` before Lua 5.3.
+     * Whether some file calls `Collections.unmodifiableList` or `unmodifiableCollection`, or declares a class extending
+     * `AbstractList` (or implementing `List`): such lists have no array part, so loops over lists have to index them rather
+     * than use `ipairs`, which does not follow `__index` before Lua 5.3.
      */
     val usesListViews: Boolean by lazy { files.any(::mentionsListViews) }
+
+    /** Whether some class implements `CharSequence`: then CharSequence values may be objects (see CharSequences.kt). */
+    val implementsCharSequence: Boolean by lazy { files.any { mentionsSuperType(it, "CharSequence") } }
+
+    private fun mentionsSuperType(file: KtFile, name: String): Boolean {
+        var found = false
+        file.accept(object : KtTreeVisitorVoid() {
+            override fun visitSuperTypeListEntry(specifier: KtSuperTypeListEntry) {
+                if ((specifier.typeReference?.typeElement as? KtUserType)?.referencedName == name) found = true
+                super.visitSuperTypeListEntry(specifier)
+            }
+        })
+        return found
+    }
 
     private fun mentionsListViews(file: KtFile): Boolean {
         var found = false
         file.accept(object : KtTreeVisitorVoid() {
             override fun visitSimpleNameExpression(expression: KtSimpleNameExpression) {
                 if (expression.getReferencedName() in VIEW_NAMES) found = true
+            }
+
+            override fun visitSuperTypeListEntry(specifier: KtSuperTypeListEntry) {
+                val type = specifier.typeReference?.typeElement as? KtUserType
+                if (type?.referencedName in LIST_BASES) found = true
+                super.visitSuperTypeListEntry(specifier)
             }
         })
         return found
@@ -104,6 +127,7 @@ class ModuleContext(
 
     companion object {
         private val VIEW_NAMES = setOf("unmodifiableList", "unmodifiableCollection")
+        private val LIST_BASES = setOf("AbstractList", "AbstractMutableList", "List", "MutableList")
         private val FLOAT_NAMES = setOf("Float", "FloatArray", "floatArrayOf", "toFloat", "toFloatOrNull", "toFloatArray")
 
         fun single(file: KtFile) = ModuleContext(setOf(file), { it.name.removeSuffix(".kt") })

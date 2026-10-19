@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassLikeSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaConstructorSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaPropertySymbol
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.*
@@ -44,8 +45,14 @@ internal fun FileTransformer.lambda(e: KtLambdaExpression): LuaExpr = with(sessi
     }
     if (literal.valueParameters.isEmpty() && type?.parameterTypes?.size == 1) params += "it"
     val returnsValue = type?.returnType?.let { !it.isUnitType } ?: true
-    val body = inFrame(FunctionFrame(FunctionFrame.Kind.Lambda, lambdaLabels(e), literal)) {
-        prologue + collect { lambdaBody(literal, if (returnsValue) ({ listOf(LuaReturn(listOf(it))) }) else null) }
+    val frame = FunctionFrame(FunctionFrame.Kind.Lambda, lambdaLabels(e), literal)
+    frame.site = jumpSites.lastOrNull { e in it.lambdas }
+    frame.unitResult = !returnsValue && resultExpected(e)
+    val body = inFrame(frame) {
+        prologue + collect {
+            lambdaBody(literal, if (returnsValue) ({ listOf(LuaReturn(listOf(it))) }) else null)
+            if (frame.unitResult && buffer.lastOrNull() !is LuaReturn) emit(LuaReturn(listOf(unitObject())))
+        }
     }
     return LuaFunction(params, body)
 }
@@ -105,7 +112,13 @@ internal fun FileTransformer.emitInlinedBody(body: List<LuaStmt>, frame: Functio
 
 private fun FileTransformer.isInlinableExpression(lambdaExpr: KtExpression, single: KtExpression, args: List<LuaExpr>) = with(session) {
     single !is KtDeclaration && !mayNeedStatements(single) && args.all(::isStable) &&
-        PsiTreeUtil.findChildOfType(lambdaExpr, KtReturnExpression::class.java) == null &&
+        PsiTreeUtil.findChildOfAnyType(
+            lambdaExpr,
+            KtReturnExpression::class.java,
+            KtBreakExpression::class.java,
+            KtContinueExpression::class.java,
+        ) ==
+        null &&
         single !is KtThrowExpression &&
         (KtPsiUtil.safeDeparenthesize(lambdaExpr) as? KtLambdaExpression)?.valueParameters?.none { it.destructuringDeclaration != null } !=
         false
@@ -146,8 +159,13 @@ private fun FileTransformer.jumpsToBreaks(body: List<LuaStmt>, end: String, flag
         }
         when (s) {
             is LuaGoto -> when {
+                // a label of a loop or of an enclosing inlined body, lowered there
+                s.label != end && s.label in jumpLabels -> listOf(s)
+
                 s.label != end -> listOf(s.also { ctx.error(at, "This jump out of an inlined lambda or function needs goto (Lua 5.1)") })
+
                 !inLoop -> listOf(LuaBreak)
+
                 else -> listOf(assign(flag, LuaBool(true)), LuaBreak).also { usesFlag = true }
             }
 
@@ -171,6 +189,10 @@ private fun FileTransformer.jumpsToBreaks(body: List<LuaStmt>, end: String, flag
 
 /** Inline-lambda result as a value: a temp assigned inside the inlined body. */
 internal fun FileTransformer.inlineValue(lambdaExpr: KtExpression, args: List<LuaExpr>, receiver: LuaExpr?): LuaExpr = with(session) {
+    if (lambdaReturnsUnit(lambdaExpr)) {
+        inlineLambda(lambdaExpr, args, receiver, null)
+        return unitObject()
+    }
     val single = (KtPsiUtil.safeDeparenthesize(lambdaExpr) as? KtLambdaExpression)?.bodyExpression?.statements?.singleOrNull()
     if (single != null && isInlinableExpression(lambdaExpr, single, args)) {
         // `x.let { it + 1 }` becomes `x + 1`.
@@ -191,11 +213,15 @@ internal fun FileTransformer.lambdaReturnsUnit(e: KtExpression): Boolean = with(
 
 internal fun FileTransformer.symbol(call: KaCallableMemberCall<*, *>) = call.partiallyAppliedSymbol.symbol
 
-/** `::Point`, `::Inner` or `outer::Inner`: the class's `new` function, bound to the outer instance for inner classes. */
+/**
+ * `::Point`, `::Inner` or `outer::Inner`: the class's `new` function, bound to the outer instance for inner classes. A library
+ * constructor (`::ArrayList`) becomes a function making the mapped call.
+ */
 private fun FileTransformer.constructorReference(e: KtCallableReferenceExpression, symbol: KaConstructorSymbol, psi: PsiElement?): LuaExpr {
     val cls = symbol.containingClassId?.let(classes::classInFile)
         ?: ((psi as? KtConstructor<*>)?.getContainingClassOrObject() ?: psi as? KtClassOrObject)?.takeIf { classes.isSource(it) }
-        ?: return unsupported(e, "Reference to a library constructor")
+        ?: return libraryConstructorReference(e, symbol)
+            ?: unsupported(e, "Reference to the library constructor '${symbol.containingClassId?.asString()}'")
     val constructor = LuaIndex(classRef(cls), LuaString("new" + constructorSuffix(psi)))
     return if (isInner(cls) && (e.receiverExpression == null || isBoundReference(e))) {
         innerConstructorReference(e, cls, constructor)
@@ -204,21 +230,27 @@ private fun FileTransformer.constructorReference(e: KtCallableReferenceExpressio
     }
 }
 
+/** A referenced callable as a Lua [function], and the value a bound reference closes over. */
+internal class ReferenceValue(val function: LuaExpr, val receiver: LuaExpr?)
+
 internal fun FileTransformer.callableReference(e: KtCallableReferenceExpression): LuaExpr = with(session) {
     val symbol = e.callableReference.mainReference.resolveToSymbol()
     val psi = symbol?.psi
-    val receiverExpr = e.receiverExpression
     return when {
-        symbol is KaConstructorSymbol -> named(e, constructorReference(e, symbol, psi))
+        symbol is KaConstructorSymbol -> named(e, symbol, constructorReference(e, symbol, psi))
 
         psi is KtNamedFunction && psi.isMemberExtension() -> unsupported(e, "Reference to a member extension function")
 
-        psi is KtNamedFunction && classes.isSource(psi) -> named(e, functionReference(e, psi))
+        psi is KtNamedFunction && classes.isSource(psi) && symbol is KaCallableSymbol ->
+            functionReference(e, psi).let { named(e, symbol, it.function, it.receiver) }
 
         (psi is KtProperty || psi is KtParameter) && classes.isSource(psi) ->
             propertyReference(e, psi as KtNamedDeclaration) ?: unsupported(e, "This property reference")
 
-        symbol is KaCallableSymbol -> libraryReference(e, symbol)?.let { named(e, it) } ?: unsupported(e, "This callable reference")
+        symbol is KaPropertySymbol -> libraryPropertyReference(e, symbol)
+
+        symbol is KaCallableSymbol ->
+            libraryReference(e, symbol)?.let { named(e, symbol, it.function, it.receiver) } ?: unsupported(e, "This callable reference")
 
         else -> unsupported(e, "This callable reference")
     }
@@ -242,26 +274,35 @@ private fun FileTransformer.innerConstructorReference(
     LuaFunction(emptyList(), listOf(LuaReturn(listOf(LuaCall(constructor, listOf(target, LuaName("...")))))), isVararg = true)
 }
 
-private fun FileTransformer.functionReference(e: KtCallableReferenceExpression, psi: KtNamedFunction): LuaExpr = with(session) {
+private fun FileTransformer.functionReference(e: KtCallableReferenceExpression, psi: KtNamedFunction): ReferenceValue = with(session) {
     val receiverExpr = e.receiverExpression
     val boundReceiver = receiverExpr?.takeIf { isBoundReference(e) }
     val rest = listOf(LuaName("..."))
     if (psi.containingClassOrObject == null) {
         val fn = if (psi.isTopLevel) topLevelRef(psi) else LuaName(naming.function(psi))
-        if (receiverExpr != null && psi.receiverTypeReference == null) unsupported(e, "Bound function reference")
-        // An extension function already takes its receiver first, so `String::shout` is just `shout`.
-        if (boundReceiver == null) return fn
+        // An extension function already takes its receiver first, so `String::shout` is just `shout`. Only extensions can
+        // have a receiver here: Kotlin rejects `x::f` and `pkg::f` for other top-level and local functions.
+        if (boundReceiver == null || psi.receiverTypeReference == null) return ReferenceValue(fn, null)
         val target = cache(expression(boundReceiver), "receiver")
-        return LuaFunction(emptyList(), listOf(LuaReturn(listOf(LuaCall(fn, listOf(target) + rest)))), isVararg = true)
+        return ReferenceValue(
+            LuaFunction(emptyList(), listOf(LuaReturn(listOf(LuaCall(fn, listOf(target) + rest)))), isVararg = true),
+            target,
+        )
     }
     val method = naming.function(psi)
     if (boundReceiver != null) {
         // obj::method
         val target = cache(expression(boundReceiver), "receiver")
-        return LuaFunction(emptyList(), listOf(LuaReturn(listOf(LuaMethodCall(target, method, rest)))), isVararg = true)
+        return ReferenceValue(
+            LuaFunction(emptyList(), listOf(LuaReturn(listOf(LuaMethodCall(target, method, rest)))), isVararg = true),
+            target,
+        )
     }
     // Class::method takes the instance first.
-    return LuaFunction(listOf("self"), listOf(LuaReturn(listOf(LuaMethodCall(LuaName("self"), method, rest)))), isVararg = true)
+    ReferenceValue(
+        LuaFunction(listOf("self"), listOf(LuaReturn(listOf(LuaMethodCall(LuaName("self"), method, rest)))), isVararg = true),
+        null,
+    )
 }
 
 /** `List<Int>` and `Map.Entry<K, V>` in `List<Int>::size` parse as calls with type arguments only. */

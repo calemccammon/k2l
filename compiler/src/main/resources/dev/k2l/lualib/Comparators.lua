@@ -1,11 +1,12 @@
 -- requires: Compare
--- Comparators are Lua functions (a, b) -> Int.
+-- Comparators are Lua functions (a, b) -> Int. Like Kotlin's, the ones built from selectors compare the selected values with
+-- compareValues.
 
 local function __K2L_CompareBy(...)
     local selectors = {...}
     return function(a, b)
         for _, selector in ipairs(selectors) do
-            local c = __K2L_Compare(selector(a), selector(b))
+            local c = __K2L_CompareValues(selector(a), selector(b))
             if c ~= 0 then
                 return c
             end
@@ -22,7 +23,7 @@ end
 
 local function __K2L_CompareByDescending(selector)
     return function(a, b)
-        return __K2L_Compare(selector(b), selector(a))
+        return __K2L_CompareValues(selector(b), selector(a))
     end
 end
 
@@ -32,7 +33,7 @@ local function __K2L_ThenBy(comparator, selector)
         if c ~= 0 then
             return c
         end
-        return __K2L_Compare(selector(a), selector(b))
+        return __K2L_CompareValues(selector(a), selector(b))
     end
 end
 
@@ -42,7 +43,7 @@ local function __K2L_ThenByDescending(comparator, selector)
         if c ~= 0 then
             return c
         end
-        return __K2L_Compare(selector(b), selector(a))
+        return __K2L_CompareValues(selector(b), selector(a))
     end
 end
 

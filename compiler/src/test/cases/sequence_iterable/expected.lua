@@ -6,12 +6,13 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
@@ -49,7 +50,7 @@ local function main()
         io.write(tostring(x))
     end
     print()
-    local back = __K2L_AsSequence(__K2L_ListOf(5, 6, 7):asIterable()):map(function(it) return it + 1 end):toList()
+    local back = __K2L_AsSequence(__K2L_ReadOnlyListOf(5, 6, 7):asIterable()):map(function(it) return it + 1 end):toList()
     print(__K2L_Str(back))
     local dest = __K2L_ListOf(0)
     s:filter(function(it) return math.fmod(it, 2) == 0 end):toCollection(dest)
@@ -70,7 +71,7 @@ local function main()
     print(it:joinToString("-"))
     print(s:asIterable():sum())
     print(__K2L_Str(s:asIterable():toList()))
-    local m = __K2L_AsSequence(__K2L_MapOf(__K2L_Pair.new(1, 2))):asIterable():toList()
+    local m = __K2L_AsSequence(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2))):asIterable():toList()
     print(__K2L_Str(m))
     print(__K2L_Str(__K2L_AsSequence("abc"):asIterable():toList()))
     print(__K2L_Str(it:sortedDescending()))

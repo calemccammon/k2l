@@ -9,7 +9,9 @@ local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
@@ -54,7 +56,7 @@ local function mapNotNullStop(xs)
     for _, it in ipairs(xs) do
         local ____result_3
         if it == "stop" then
-            return __K2L_ListOf()
+            return __K2L_ReadOnlyListOf()
         end
         ____result_3 = __K2L_StringToIntOrNull(it)
         local ____value = ____result_3
@@ -70,7 +72,7 @@ local function filtered(xs)
     for _, it in ipairs(xs) do
         local ____result_5
         if it < 0 then
-            return __K2L_ListOf(-1)
+            return __K2L_SingletonListOf(-1)
         end
         ____result_5 = math.fmod(it, 2) == 0
         if ____result_5 then
@@ -82,7 +84,7 @@ local function filtered(xs)
     for _, it in ipairs(xs) do
         local ____result_7
         if it == 7 then
-            return __K2L_ListOf(7)
+            return __K2L_SingletonListOf(7)
         end
         ____result_7 = math.fmod(it, 2) == 0
         if not ____result_7 then
@@ -273,7 +275,7 @@ local function takeWhileOrReturn(xs)
     for _, it in ipairs(xs) do
         local ____result_27
         if it == 100 then
-            return __K2L_ListOf(100)
+            return __K2L_SingletonListOf(100)
         end
         ____result_27 = it < 4
         if not ____result_27 then
@@ -396,7 +398,7 @@ local function labeled(xs)
                 goto ____inline_end
             end
             if it == 99 then
-                return __K2L_ListOf()
+                return __K2L_ReadOnlyListOf()
             end
             ____result_42 = it
             ::____inline_end::
@@ -435,7 +437,7 @@ local function nullable(xs)
         local it = xs[____i]
         local ____result_48
         if it == 0 then
-            return __K2L_ListOf()
+            return __K2L_ReadOnlyListOf()
         end
         ____result_48 = it or -1
         ____result_47:add(____result_48)
@@ -593,24 +595,24 @@ local function valueOfMapAsExpression(xs)
 end
 
 local function main()
-    print(firstBig(__K2L_ListOf(1, 2, 3)))
-    print(firstBig(__K2L_ListOf(1, 200, 3)))
-    print(__K2L_Str(mapNotNullStop(__K2L_ListOf("1", "a", "3"))))
-    print(__K2L_Str(mapNotNullStop(__K2L_ListOf("1", "stop", "3"))))
-    print(__K2L_Str(filtered(__K2L_ListOf(1, 2, 3, 4))))
-    print(__K2L_Str(filtered(__K2L_ListOf(1, -2, 3))))
-    print(__K2L_Str(filtered(__K2L_ListOf(1, 7))))
-    print(anyAllNone(__K2L_ListOf(1, 2, 3)))
-    print(anyAllNone(__K2L_ListOf(1, 99)))
-    print(anyAllNone(__K2L_ListOf(1, 98)))
-    print(anyAllNone(__K2L_ListOf(1, 97)))
-    print(firsts(__K2L_ListOf(1, 4, 5)))
-    print(firsts(__K2L_ListOf(1, 13, 5)))
-    print(firsts(__K2L_ListOf(1, 4, 14)))
-    print(firsts(__K2L_ListOf(1, 4, 15)))
-    print(noMatch(__K2L_ListOf(5, 0)))
+    print(firstBig(__K2L_ReadOnlyListOf(1, 2, 3)))
+    print(firstBig(__K2L_ReadOnlyListOf(1, 200, 3)))
+    print(__K2L_Str(mapNotNullStop(__K2L_ReadOnlyListOf("1", "a", "3"))))
+    print(__K2L_Str(mapNotNullStop(__K2L_ReadOnlyListOf("1", "stop", "3"))))
+    print(__K2L_Str(filtered(__K2L_ReadOnlyListOf(1, 2, 3, 4))))
+    print(__K2L_Str(filtered(__K2L_ReadOnlyListOf(1, -2, 3))))
+    print(__K2L_Str(filtered(__K2L_ReadOnlyListOf(1, 7))))
+    print(anyAllNone(__K2L_ReadOnlyListOf(1, 2, 3)))
+    print(anyAllNone(__K2L_ReadOnlyListOf(1, 99)))
+    print(anyAllNone(__K2L_ReadOnlyListOf(1, 98)))
+    print(anyAllNone(__K2L_ReadOnlyListOf(1, 97)))
+    print(firsts(__K2L_ReadOnlyListOf(1, 4, 5)))
+    print(firsts(__K2L_ReadOnlyListOf(1, 13, 5)))
+    print(firsts(__K2L_ReadOnlyListOf(1, 4, 14)))
+    print(firsts(__K2L_ReadOnlyListOf(1, 4, 15)))
+    print(noMatch(__K2L_ReadOnlyListOf(5, 0)))
     local ____ok_1, ____result_66 = pcall(function()
-        noMatch(__K2L_ListOf(5, 6))
+        noMatch(__K2L_ReadOnlyListOf(5, 6))
     end)
     if not ____ok_1 then
         local ____error_1 = __K2L_ToThrowable(____result_66)
@@ -621,43 +623,43 @@ local function main()
             error(____error_1, 0)
         end
     end
-    print(counting(__K2L_ListOf(1, 2, 3)))
-    print(counting(__K2L_ListOf(1, 0, 3)))
-    print(summing(__K2L_ListOf(1, 2, 3)))
-    print(summing(__K2L_ListOf(1, -2, 3)))
-    print(indexed(__K2L_ListOf("a", "x")))
-    print(indexed(__K2L_ListOf("a")))
-    print(__K2L_Str(each(__K2L_ListOf(1, 2, 4))))
-    print(__K2L_Str(each(__K2L_ListOf(1, 2, 3, 4))))
-    print(__K2L_Str(takeWhileOrReturn(__K2L_ListOf(1, 2, 5, 1))))
-    print(__K2L_Str(takeWhileOrReturn(__K2L_ListOf(1, 100))))
-    local items = __K2L_ListOf(Item.new("a", 1), Item.new("bb", 2))
+    print(counting(__K2L_ReadOnlyListOf(1, 2, 3)))
+    print(counting(__K2L_ReadOnlyListOf(1, 0, 3)))
+    print(summing(__K2L_ReadOnlyListOf(1, 2, 3)))
+    print(summing(__K2L_ReadOnlyListOf(1, -2, 3)))
+    print(indexed(__K2L_ReadOnlyListOf("a", "x")))
+    print(indexed(__K2L_SingletonListOf("a")))
+    print(__K2L_Str(each(__K2L_ReadOnlyListOf(1, 2, 4))))
+    print(__K2L_Str(each(__K2L_ReadOnlyListOf(1, 2, 3, 4))))
+    print(__K2L_Str(takeWhileOrReturn(__K2L_ReadOnlyListOf(1, 2, 5, 1))))
+    print(__K2L_Str(takeWhileOrReturn(__K2L_ReadOnlyListOf(1, 100))))
+    local items = __K2L_ReadOnlyListOf(Item.new("a", 1), Item.new("bb", 2))
     print(associating(items))
     print(associating(items:plus(Item.new("c", -1))))
-    print(grouping(__K2L_ListOf(1, 2, 3, 4, 5)))
-    print(grouping(__K2L_ListOf(1, 0)))
-    print(folding(__K2L_ListOf(1, 2, 3)))
-    print(folding(__K2L_ListOf(1, 2, -3, 4)))
-    print(__K2L_Str(labeled(__K2L_ListOf(1, 0, 2))))
-    print(__K2L_Str(labeled(__K2L_ListOf(1, 99, 2))))
-    print(nested(__K2L_ListOf(__K2L_ListOf(1), __K2L_ListOf(2, 3))))
-    print(nested(__K2L_ListOf(__K2L_ListOf(1), __K2L_ListOf(-2, 3))))
-    print(__K2L_Str(nullable(__K2L_ListOf(1, nil, 3))))
-    print(__K2L_Str(nullable(__K2L_ListOf(1, 0))))
-    print(overSet(__K2L_SetOf(1, 2, 3)))
-    print(overSet(__K2L_SetOf(1, 4)))
+    print(grouping(__K2L_ReadOnlyListOf(1, 2, 3, 4, 5)))
+    print(grouping(__K2L_ReadOnlyListOf(1, 0)))
+    print(folding(__K2L_ReadOnlyListOf(1, 2, 3)))
+    print(folding(__K2L_ReadOnlyListOf(1, 2, -3, 4)))
+    print(__K2L_Str(labeled(__K2L_ReadOnlyListOf(1, 0, 2))))
+    print(__K2L_Str(labeled(__K2L_ReadOnlyListOf(1, 99, 2))))
+    print(nested(__K2L_ReadOnlyListOf(__K2L_SingletonListOf(1), __K2L_ReadOnlyListOf(2, 3))))
+    print(nested(__K2L_ReadOnlyListOf(__K2L_SingletonListOf(1), __K2L_ReadOnlyListOf(-2, 3))))
+    print(__K2L_Str(nullable(__K2L_ReadOnlyListOf(1, nil, 3))))
+    print(__K2L_Str(nullable(__K2L_ReadOnlyListOf(1, 0))))
+    print(overSet(__K2L_ReadOnlySetOf(1, 2, 3)))
+    print(overSet(__K2L_ReadOnlySetOf(1, 4)))
     print(overMap(__K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2))))
     print(overMap(__K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", -2))))
     print(overMap(__K2L_MapOf(__K2L_Pair.new("a", 99))))
     print(overArray(__K2L_ArrayOf(1, 2, 3)))
     print(overArray(__K2L_ArrayOf(1, 0)))
     print(overRange())
-    print(inLoop(__K2L_ListOf(__K2L_ListOf(1, 2, 3), __K2L_ListOf(4, 0))))
-    print(inTry(__K2L_ListOf(2, 3)))
-    print(inTry(__K2L_ListOf(2, 0)))
-    print(inTry(__K2L_ListOf(1)))
-    print(valueOfMapAsExpression(__K2L_ListOf(1, 2)))
-    print(valueOfMapAsExpression(__K2L_ListOf(1, 20)))
+    print(inLoop(__K2L_ReadOnlyListOf(__K2L_ReadOnlyListOf(1, 2, 3), __K2L_ReadOnlyListOf(4, 0))))
+    print(inTry(__K2L_ReadOnlyListOf(2, 3)))
+    print(inTry(__K2L_ReadOnlyListOf(2, 0)))
+    print(inTry(__K2L_SingletonListOf(1)))
+    print(valueOfMapAsExpression(__K2L_ReadOnlyListOf(1, 2)))
+    print(valueOfMapAsExpression(__K2L_ReadOnlyListOf(1, 20)))
 end
 
 main()

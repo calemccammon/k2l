@@ -1,0 +1,27 @@
+[0, 10, 20, 30, 40] size=5 [2]=20 get=40 (7)
+contains true false indexOf 2 4 -1 (25)
+first 0 last 40 getOrNull null 10 isEmpty false (28)
+map [1, 11, 21, 31, 41] filter [20, 30, 40] sum 100 reversed [40, 30, 20, 10, 0] (48)
+join 0-10-20-30-40 sortedDesc [40, 30, 20, 10, 0] take [0, 10] drop [30, 40] (62)
+subList [10, 20] slice [0, 40] chunked [[0, 10], [20, 30], [40]] (71)
+equals true true true false (86)
+hashCode true (91)
+loops 300 (106)
+iterator 0 10 true (108)
+listIterator 30 2 (109)
+is true true false Tens (109)
+caught index 7 of 5
+as List: [0, 10, 20] 3 20 [0, 10, 20] [0, 11, 22] (109)
+Fixed [s0, s1, s2] [2, 2] [] (109)
+reads 109
+[1, 2, 3] add(0, 1) add(1, 3) add(1, 2)
+addAll [1, 2, 3, 4, 5] add(3, 4) add(4, 5)
+addAll(0) [-1, 0, 1, 2, 3, 4, 5] add(0, -1) add(1, 0)
+set and += [-2, 0, 1, 2, 3, 4, 5, 6] set(0, -2) add(7, 6)
+remove [-2, 0, 1, 2, 4, 5, 6] removeAt(4)
+removeAll [1, 5] removeAt(0) removeAt(0) removeAt(1) removeAt(1) removeAt(2)
+sort [1, 5, 7, 8, 9] set(0, 1) set(1, 5) set(2, 7) set(3, 8) set(4, 9)
+removeFirst/Last [5, 7, 8] removeAt(0) removeAt(3)
+iterator remove [7, 8] removeAt(0)
+retainAll [7, 8] 
+clear [] removeAt(0) removeAt(0) removeAt(0) removeAt(0) true

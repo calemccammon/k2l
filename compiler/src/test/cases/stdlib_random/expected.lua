@@ -5,9 +5,9 @@ local __K2L_HashSet = ____lualib.__K2L_HashSet
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Random = ____lualib.__K2L_Random
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringToList = ____lualib.__K2L_StringToList
@@ -57,7 +57,7 @@ local function main()
     print(__K2L_Equals(ml:sorted(), xs))
     print(xs:contains(xs:random(__K2L_Random.seeded(2))))
     print(xs:contains(xs:randomOrNull(__K2L_Random.seeded(2))))
-    print(__K2L_Str(__K2L_ListOf():randomOrNull(__K2L_Random.default())))
+    print(__K2L_Str(__K2L_ReadOnlyListOf():randomOrNull(__K2L_Random.default())))
     local ____value_1 = __K2L_IntRange.new(1, 5):random(__K2L_Random.seeded(1))
     print(____value_1 >= 1 and ____value_1 <= 5)
     local ____value_2 = __K2L_CharRange.new("a", "e"):random(__K2L_Random.seeded(1))
@@ -93,7 +93,7 @@ local function main()
         end
     end
     local ____ok_2, ____result_2 = pcall(function()
-        __K2L_ListOf():random(__K2L_Random.default())
+        __K2L_ReadOnlyListOf():random(__K2L_Random.default())
     end)
     if not ____ok_2 then
         local ____error_2 = __K2L_ToThrowable(____result_2)

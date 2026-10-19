@@ -1,0 +1,37 @@
+[0, 2, 4, 6, 8] 5 true false true true true
+[0, 1, 2, 3, 4] [4, 6, 8] 20 [8, 6, 4, 2, 0] true true
+loop 20 0 8 [0, 2, 4, 6, 8] 0|2|4|6|8
+bag [b, a, b] 3 true 2
+bag remove [a, b] false false
+bag clear [] true
+tags [red, green, blue] 3 true
+removeAll [red] removes=2
+retainAll [red, y] removes=4 true
+{k1=1, k2=4, k3=9} 3 4 null true true [k1, k2, k3] [1, 4, 9]
+true true false
+[k11, k24, k39] {k2=4, k3=9} {k1=2, k2=5, k3=10} k3
+k1:1 k2:4 k3:9 -1
+registry {a=1, b=2, c=3, d=4} 4 3 [put(a), put(b), put(c), put(d)]
+remove 2 null {a=1, c=3, d=4}
+getOrPut 5 1 [put(a), put(b), put(c), put(d), put(e)]
+clear {} true true
+true true 3 2
+rest [1, 0] false
+done NoSuchElementException
+[8, 6, 4, 2, 0]
+faulty 1
+faulty 1 IllegalStateException: boom
+faulty 2 IllegalArgumentException: hasNext called when the iterator is in the FAILED state.
+[3, 5, 5, 3] 4 the [brown, fox, quick, the] the+quick+brown+fox
+the.quick.brown.fox.
+true false true false
+Stack[1, 2, 3, 4, 5] 5 5 pushes=3 15 [5, 4, 3, 2, 1] Stack true
+Stack[20, 3, 5] 1 true true true
+Seeded.add(b)
+Seeded.add(a)
+seeded [a, b]
+[a, c, d] attempts=6 3
+ordered [1, 2, 3]
+default 1 0 1 {x=1}
+lru {a=1, c=3} [a, c]
+copied {p=1, q=2, r=3, s=4} puts=1

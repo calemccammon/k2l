@@ -13,7 +13,8 @@ internal fun isInner(c: KtClassOrObject?) = c is KtClass && c.isInner()
 
 /**
  * The instances the code being transformed can call members on, innermost first, with their Lua values:
- * `self`, then for inner classes the chain of enclosing instances (`self.____outer`, `self.____outer.____outer`, ...).
+ * `self`, then for inner classes the chain of enclosing instances (`self.____outer`, `self.____outer.____outer`, ...), and for
+ * local classes and object expressions the instances around their declaration.
  * An enum entry's body shares `self` with its enum class.
  */
 internal fun FileTransformer.enclosingInstances(): List<Pair<KtClassOrObject, LuaExpr>> {
@@ -23,7 +24,10 @@ internal fun FileTransformer.enclosingInstances(): List<Pair<KtClassOrObject, Lu
     while (cls != null) {
         result += cls to value
         if (cls is KtEnumEntry) cls.containingClassOrObject?.let { result += it to value }
-        if (!isInner(cls)) break
+        if (!isInner(cls)) {
+            lexicalOuters[cls]?.let(result::addAll)
+            break
+        }
         cls = cls.containingClassOrObject
         value = LuaIndex(value, LuaString(OUTER)).also { stable += it }
     }

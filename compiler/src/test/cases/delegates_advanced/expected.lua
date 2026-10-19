@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_KProperty = ____lualib.__K2L_KProperty
 local __K2L_Lazy = ____lualib.__K2L_Lazy
+local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 
 local Cell
 local Logged = __K2L_Class("Logged")
@@ -91,7 +93,7 @@ function Base:getTitle()
     return self.____title_delegate:getValue()
 end
 
-Base.____level_property = {name = "level"}
+Base.____level_property = __K2L_PropertyRef.new("level", "/Base.level")
 
 function Base:getLevel()
     return self.____level_delegate:getValue(self, Base.____level_property)
@@ -120,7 +122,7 @@ function Derived:getTitle()
     return self.____title_delegate__Derived:getValue()
 end
 
-Derived.____level_property__Derived = {name = "level"}
+Derived.____level_property__Derived = __K2L_PropertyRef.new("level", "/Derived.level")
 
 function Derived:getLevel()
     return self.____level_delegate__Derived:getValue(self, Derived.____level_property__Derived)
@@ -179,14 +181,14 @@ end
 local Members = __K2L_Class("Members")
 
 function Members:____init()
-    self.____tracked_delegate = Logged.new("member"):provideDelegate(self, {name = "tracked"})
+    self.____tracked_delegate = Logged.new("member"):provideDelegate(self, __K2L_KProperty("tracked", "/Members.tracked"))
     self.____bare_delegate = Bare.new("x")
     self.____settable_delegate = Bare.new("y")
     self.____counter_delegate = Counter.new(10)
-    self.____greeting_delegate = provideDelegate(Named.new("hi-"), self, {name = "greeting"})
+    self.____greeting_delegate = provideDelegate(Named.new("hi-"), self, __K2L_KProperty("greeting", "/Members.greeting"))
 end
 
-Members.____tracked_property = {name = "tracked"}
+Members.____tracked_property = __K2L_PropertyRef.new("tracked", "/Members.tracked")
 
 function Members:getTracked()
     return self.____tracked_delegate:getValue(self, Members.____tracked_property)
@@ -196,13 +198,13 @@ function Members:setTracked(value)
     self.____tracked_delegate:setValue(self, Members.____tracked_property, value)
 end
 
-Members.____bare_property = {name = "bare"}
+Members.____bare_property = __K2L_PropertyRef.new("bare", "/Members.bare")
 
 function Members:getBare()
     return getValue(self.____bare_delegate, self, Members.____bare_property)
 end
 
-Members.____settable_property = {name = "settable"}
+Members.____settable_property = __K2L_PropertyRef.new("settable", "/Members.settable")
 
 function Members:getSettable()
     return getValue(self.____settable_delegate, self, Members.____settable_property)
@@ -212,19 +214,19 @@ function Members:setSettable(value)
     setValue(self.____settable_delegate, self, Members.____settable_property, value)
 end
 
-Members.____counter_property = {name = "counter"}
+Members.____counter_property = __K2L_PropertyRef.new("counter", "/Members.counter")
 
 function Members:getCounter()
     return getValue__1(self.____counter_delegate, self, Members.____counter_property)
 end
 
-Members.____greeting_property = {name = "greeting"}
+Members.____greeting_property = __K2L_PropertyRef.new("greeting", "/Members.greeting")
 
 function Members:getGreeting()
     return self.____greeting_delegate:getValue(self, Members.____greeting_property)
 end
 
-local ____top_delegate = Logged.new("top"):provideDelegate(nil, {name = "top"})
+local ____top_delegate = Logged.new("top"):provideDelegate(nil, __K2L_KProperty("top", "/top"))
 local ____topBare_delegate = Bare.new("z")
 
 local function main()
@@ -238,15 +240,15 @@ local function main()
     print(m:getCounter())
     print(m:getCounter())
     print(m:getGreeting())
-    print(____top_delegate:getValue(nil, {name = "top"}))
-    print(getValue(____topBare_delegate, nil, {name = "topBare"}))
-    setValue(____topBare_delegate, nil, {name = "topBare"}, "q")
-    print(getValue(____topBare_delegate, nil, {name = "topBare"}))
-    local ________local_delegate = Logged.new("local"):provideDelegate(nil, {name = "local"})
-    ________local_delegate:setValue(nil, {name = "local"}, 3)
-    print(________local_delegate:getValue(nil, {name = "local"}))
+    print(____top_delegate:getValue(nil, __K2L_KProperty("top", "/top")))
+    print(getValue(____topBare_delegate, nil, __K2L_KProperty("topBare", "/topBare")))
+    setValue(____topBare_delegate, nil, __K2L_KProperty("topBare", "/topBare"), "q")
+    print(getValue(____topBare_delegate, nil, __K2L_KProperty("topBare", "/topBare")))
+    local ________local_delegate = Logged.new("local"):provideDelegate(nil, __K2L_KProperty("local", "local@3062"))
+    ________local_delegate:setValue(nil, __K2L_KProperty("local", "local@3062"), 3)
+    print(________local_delegate:getValue(nil, __K2L_KProperty("local", "local@3062")))
     local ____localBare_delegate = Bare.new("l")
-    print(getValue(____localBare_delegate, nil, {name = "localBare"}))
+    print(getValue(____localBare_delegate, nil, __K2L_KProperty("localBare", "localBare@3128")))
     local b = Base.new()
     print(b:describe())
     b:setLevel(2)

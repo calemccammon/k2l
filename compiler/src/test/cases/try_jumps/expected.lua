@@ -4,7 +4,9 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NumberFormatException = ____lualib.__K2L_NumberFormatException
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
+local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -77,7 +79,7 @@ local function breakWithFinally()
 end
 
 local function throwingThenContinue()
-    for _, s in ipairs(__K2L_ListOf("1", "x", "3", "stop", "5")) do
+    for _, s in ipairs(__K2L_ReadOnlyListOf("1", "x", "3", "stop", "5")) do
         do
             local ____ok_3, ____result_3 = pcall(function()
                 local n = __K2L_StringToInt(s)
@@ -458,9 +460,9 @@ local function inTry(xs)
 end
 
 local function main()
-    print(inTry(__K2L_ListOf(1, 2, 3)))
-    print(inTry(__K2L_ListOf(1, 9)))
-    print(inTry(__K2L_ListOf(1)))
+    print(inTry(__K2L_ReadOnlyListOf(1, 2, 3)))
+    print(inTry(__K2L_ReadOnlyListOf(1, 9)))
+    print(inTry(__K2L_SingletonListOf(1)))
     breakInTry()
     continueInTry()
     breakWithFinally()
@@ -474,7 +476,7 @@ local function main()
     finallyJumps()
     print(__K2L_Str(tryAsValue()))
     doWhile()
-    print(firstEven(__K2L_ListOf(1, 3, 4, 6)))
+    print(firstEven(__K2L_ReadOnlyListOf(1, 3, 4, 6)))
 end
 
 main()

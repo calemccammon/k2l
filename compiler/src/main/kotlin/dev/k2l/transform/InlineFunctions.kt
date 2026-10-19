@@ -23,13 +23,17 @@ internal fun FileTransformer.reifiedType(type: KaType): KaType = (type as? KaTyp
 /** Runs [block] with the receivers of the code that passed [lambda], which is where the lambda's `this` is resolved. */
 internal inline fun <T> FileTransformer.inCallerContext(lambda: InlinedLambda, block: () -> T): T {
     val inlined = HashMap(receiverBindings)
+    val inlinedLoops = loops
     receiverBindings.clear()
     receiverBindings.putAll(lambda.callerBindings)
+    // a `break` or `continue` in the lambda leaves the caller's loops, not those of the inlined body
+    loops = lambda.callerLoops
     try {
         return block()
     } finally {
         receiverBindings.clear()
         receiverBindings.putAll(inlined)
+        loops = inlinedLoops
     }
 }
 
@@ -99,7 +103,7 @@ internal fun FileTransformer.userInlineCall(call: KaCallableMemberCall<*, *>, fu
     val lambdas = fn.valueParameters.filter(::isInlinedParameter).mapNotNull { p ->
         provided[p]?.let(::lambdaArgument)?.let { p to it }
     }.toMap()
-    if (!fn.isReifiedInline() && lambdas.values.none { it.fromParameter || hasNonLocalReturn(it) }) return null
+    if (!fn.isReifiedInline() && lambdas.values.none { it.fromParameter || hasNonLocalJump(it) }) return null
     return inlineUserFunction(InlineSite(fn, call, full, lambdas, provided, varargArguments(fn, call)))
 }
 
@@ -123,23 +127,43 @@ internal fun FileTransformer.isInlinedParameter(p: KtParameter) = with(session) 
 
 /** A lambda literal, or a parameter of an enclosing inlined function that holds one. */
 private fun FileTransformer.lambdaArgument(arg: KtExpression): InlinedLambda? {
-    inlinedLambdaOf(arg)?.let { return InlinedLambda(it.expr, true, it.callerBindings) }
+    inlinedLambdaOf(arg)?.let { return InlinedLambda(it.expr, true, it.callerBindings, it.callerLoops) }
     val unwrapped = KtPsiUtil.safeDeparenthesize(arg).let { (it as? KtLabeledExpression)?.baseExpression ?: it }
-    return (unwrapped as? KtLambdaExpression)?.let { InlinedLambda(it, false, HashMap(receiverBindings)) }
+    return (unwrapped as? KtLambdaExpression)?.let { InlinedLambda(it, false, HashMap(receiverBindings), loops) }
 }
 
-/** Whether the lambda has a `return` that leaves the function it is written in. */
-private fun FileTransformer.hasNonLocalReturn(lambda: InlinedLambda): Boolean = hasNonLocalReturn(lambda.expr)
+/** Whether the lambda has a `return` that leaves the function it is written in, or a `break`/`continue` of a loop around it. */
+private fun FileTransformer.hasNonLocalJump(lambda: InlinedLambda): Boolean = hasNonLocalJump(lambda.expr)
 
-internal fun FileTransformer.hasNonLocalReturn(lambda: KtLambdaExpression): Boolean {
+internal fun FileTransformer.hasNonLocalJump(lambda: KtLambdaExpression): Boolean {
     var found = false
     lambda.accept(object : KtTreeVisitorVoid() {
         override fun visitReturnExpression(expression: KtReturnExpression) {
             super.visitReturnExpression(expression)
             if (leavesLambda(expression, lambda)) found = true
         }
+
+        override fun visitBreakExpression(expression: KtBreakExpression) {
+            if (leavesLambda(expression, lambda)) found = true
+        }
+
+        override fun visitContinueExpression(expression: KtContinueExpression) {
+            if (leavesLambda(expression, lambda)) found = true
+        }
     })
     return found
+}
+
+/** Whether a `break` or `continue` in [lambda] targets a loop around it (Kotlin allows that only in inlined lambdas). */
+private fun leavesLambda(jump: KtExpressionWithLabel, lambda: KtLambdaExpression): Boolean {
+    val label = jump.getLabelName()
+    var node: PsiElement? = jump.parent
+    while (node != null && node !== lambda) {
+        if (node is KtNamedFunction || node is KtPropertyAccessor || node is KtClassOrObject) return false
+        if (node is KtLoopExpression && (label == null || (node.parent as? KtLabeledExpression)?.getLabelName() == label)) return false
+        node = node.parent
+    }
+    return true
 }
 
 private fun FileTransformer.leavesLambda(ret: KtReturnExpression, lambda: KtLambdaExpression): Boolean {

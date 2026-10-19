@@ -2,8 +2,9 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Lazy = ____lualib.__K2L_Lazy
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ObservableProperty = ____lualib.__K2L_ObservableProperty
+local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Priced = __K2L_Class("Priced")
@@ -62,7 +63,7 @@ function Shop:____init(name)
     end)
 end
 
-Shop.____sales_property = {name = "sales"}
+Shop.____sales_property = __K2L_PropertyRef.new("sales", "/Shop.sales")
 
 function Shop:getSales()
     return self.____sales_delegate:getValue(self, Shop.____sales_property)
@@ -72,7 +73,7 @@ function Shop:setSales(value)
     self.____sales_delegate:setValue(self, Shop.____sales_property, value)
 end
 
-Shop.Till = __K2L_Class("Till")
+Shop.Till = __K2L_Class("Shop$Till")
 
 function Shop.Till:____init(____outer, id)
     self.____outer = ____outer
@@ -123,7 +124,7 @@ local function main()
     till:sell(Size.LARGE)
     print(getTag(till))
     print(__K2L_Str(__K2L_EnumValues(Size):map(function(it) return getLabel(it) end)))
-    local items = __K2L_ListOf(Item.new("plain"), Special.new("fancy"))
+    local items = __K2L_ReadOnlyListOf(Item.new("plain"), Special.new("fancy"))
     for _, item in ipairs(items) do
         print(item:getShown())
     end

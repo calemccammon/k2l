@@ -16,6 +16,8 @@ class CallSite(
     val receiverType: KaType?,
     val args: List<LuaExpr>,
     val argTypes: List<KaType?>,
+    /** The callee's parameter types as declared (`T` for `plus(element: T)`, `Iterable<T>` for `plus(elements)`), when known. */
+    val parameterTypes: List<KaType?> = emptyList(),
 ) {
     val self: LuaExpr get() = receiver ?: error("call has no receiver")
     fun arg(i: Int) = args[i]
@@ -26,7 +28,13 @@ class CallSite(
 
     /** The same call on another receiver, e.g. a map's entries. */
     fun withReceiver(newReceiver: LuaExpr, type: KaType? = null) =
-        CallSite(session, transformer, element, name, newReceiver, type, args, argTypes)
+        CallSite(session, transformer, element, name, newReceiver, type, args, argTypes, parameterTypes)
+
+    /**
+     * The type that tells which overload argument [i] is for: the declared parameter type of the resolved callee (so
+     * `lists += listOf(1)` on a `MutableList<List<Int>>` adds one element), else the argument's own type.
+     */
+    fun overloadType(i: Int): KaType? = parameterTypes.getOrNull(i) ?: argTypes.getOrNull(i)
 }
 
 /**
@@ -97,12 +105,8 @@ object StdlibMappings {
         def("kotlin/Throwable.message") { LuaIndex(self, LuaString("message")) }
         def("kotlin/Throwable.cause") { LuaIndex(self, LuaString("cause")) }
 
-        // Lazy values and the KProperty stand-in passed to delegates (a table with a `name`)
         def("kotlin/Lazy.value") { method(self, "getValue") }
         def("kotlin/Lazy.isInitialized") { method(self, "isInitialized") }
-        def("kotlin/reflect/KCallable.name", "kotlin/reflect/KProperty.name") {
-            referencedName(element) ?: LuaIndex(self, LuaString("name"))
-        }
         def("kotlin/Enum.name") { LuaIndex(self, LuaString("name")) }
         def("kotlin/Enum.ordinal") { LuaIndex(self, LuaString("ordinal")) }
     }
@@ -210,6 +214,7 @@ object StdlibMappings {
             ?: TypeTestMappings.map(callableId, site)
             ?: BigNumberMappings.map(callableId, site)
             ?: JdkCollectionsMappings.map(callableId, site)
+            ?: StreamMappings.map(callableId, site)
             ?: SequenceMappings.map(callableId, site)
             ?: CoroutineMappings.map(callableId, site)
             ?: CollectionMappings.map(callableId, site)

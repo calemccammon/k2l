@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____exports = {}
@@ -36,9 +36,9 @@ local function describe(p, who)
 end
 
 local function main()
-    local people = __K2L_ListOf(Person.new("ann", 30), Person.new("bob", 25))
-    local nameRef = __K2L_PropertyRef.new("name", function(receiver) return receiver.name end)
-    local ageRef = __K2L_PropertyRef.new("age", function(receiver) return receiver.age end, function(receiver, value)
+    local people = __K2L_ReadOnlyListOf(Person.new("ann", 30), Person.new("bob", 25))
+    local nameRef = __K2L_PropertyRef.new("name", "name@124", function(receiver) return receiver.name end)
+    local ageRef = __K2L_PropertyRef.new("age", "age@142", function(receiver) return receiver.age end, function(receiver, value)
         receiver.age = value
     end)
     print(nameRef.name)
@@ -48,41 +48,41 @@ local function main()
     print(ageRef:get(people:get(1)))
     ageRef:set(people:get(1), 26)
     print(people:get(1).age)
-    print(__K2L_Str(people:map(__K2L_PropertyRef.new("name", function(receiver) return receiver.name end))))
-    print(people:sumOf(__K2L_PropertyRef.new("age", function(receiver) return receiver.age end, function(receiver, value)
+    print(__K2L_Str(people:map(__K2L_PropertyRef.new("name", "name@124", function(receiver) return receiver.name end))))
+    print(people:sumOf(__K2L_PropertyRef.new("age", "age@142", function(receiver) return receiver.age end, function(receiver, value)
         receiver.age = value
     end)))
-    print(describe(__K2L_PropertyRef.new("name", function(receiver) return receiver.name end), people:get(0)))
-    print(describe(__K2L_PropertyRef.new("age", function(receiver) return receiver.age end, function(receiver, value)
+    print(describe(__K2L_PropertyRef.new("name", "name@124", function(receiver) return receiver.name end), people:get(0)))
+    print(describe(__K2L_PropertyRef.new("age", "age@142", function(receiver) return receiver.age end, function(receiver, value)
         receiver.age = value
     end), people:get(1)))
     local ____receiver = people:get(0)
-    local bound = __K2L_PropertyRef.new("name", function() return ____receiver.name end)
+    local bound = __K2L_PropertyRef.new("name", "name@124", function() return ____receiver.name end, nil, ____receiver)
     print(bound.name)
     print(bound:get())
     print(bound:get())
     local ____receiver_1 = people:get(0)
-    local boundAge = __K2L_PropertyRef.new("age", function() return ____receiver_1.age end, function(value)
+    local boundAge = __K2L_PropertyRef.new("age", "age@142", function() return ____receiver_1.age end, function(value)
         ____receiver_1.age = value
-    end)
+    end, ____receiver_1)
     boundAge:set(31)
     print(people:get(0).age)
     local ____receiver_2 = Config
     print("level")
     local ____receiver_3 = Config
-    print(__K2L_PropertyRef.new("level", function() return ____receiver_3.level end, function(value)
+    print(__K2L_PropertyRef.new("level", "/Config.level", function() return ____receiver_3.level end, function(value)
         ____receiver_3.level = value
-    end):get())
+    end, ____receiver_3):get())
     print("counter")
-    print(__K2L_PropertyRef.new("counter", function() return ____exports.counter end, function(value)
+    print(__K2L_PropertyRef.new("counter", "/counter", function() return ____exports.counter end, function(value)
         ____exports.counter = value
     end):get())
-    print(__K2L_PropertyRef.new("label", function() return label end):get())
+    print(__K2L_PropertyRef.new("label", "/label", function() return label end):get())
     print("twice")
     print("greet")
     local ____receiver_4 = people:get(0)
     print("greet")
-    print(__K2L_Str(__K2L_ListOf(1, 2):map(twice)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2):map(twice)))
 end
 
 ____exports.Person = Person

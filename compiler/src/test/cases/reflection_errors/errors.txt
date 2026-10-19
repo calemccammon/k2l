@@ -1,2 +1,2 @@
-4:13: Kotlin library API 'kotlin/reflect/KAnnotatedElement.annotations' is not supported yet
+4:13: Kotlin library API 'java/lang/Class.methods' is not supported yet
 5:13: Kotlin library API 'java/lang/Class.declaredFields' is not supported yet

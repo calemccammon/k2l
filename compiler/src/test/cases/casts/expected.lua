@@ -4,9 +4,9 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassCastException = ____lualib.__K2L_ClassCastException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_List = ____lualib.__K2L_List
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_NullPointerException = ____lualib.__K2L_NullPointerException
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -158,7 +158,7 @@ local function main()
         end
         return "x"
     end)
-    local list = __K2L_ListOf(1, 2, 3)
+    local list = __K2L_ReadOnlyListOf(1, 2, 3)
     if not __K2L_InstanceOf(list, __K2L_List) then
         __K2L_CastFail(list, "java.util.List", "kotlin.collections.List")
     end
@@ -190,13 +190,13 @@ local function main()
         __K2L_CastFail(anyD, "java.lang.Double", "kotlin.Double")
     end
     print(__K2L_Str(anyD))
-    print(__K2L_Str(__K2L_ListOf("a", 1):map(function(it) return type(it) == "string" and it or "n" end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf("a", 1):map(function(it) return type(it) == "string" and it or "n" end)))
     attempt("in args", function()
         local ____arg = 1 + 1
         if math.type(any) ~= "integer" then
             __K2L_CastFail(any, "java.lang.Integer", "kotlin.Int")
         end
-        return __K2L_ListOf(____arg, any + 1)
+        return __K2L_ReadOnlyListOf(____arg, any + 1)
     end)
     local ____ok_1, ____result_1 = pcall(function()
         if math.type(any) ~= "integer" then

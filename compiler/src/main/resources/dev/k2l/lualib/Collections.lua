@@ -1,4 +1,4 @@
--- requires: Class, Str, Equals, Hash, Compare, Pair, Exceptions, ToInt32, Bit
+-- requires: Class, Str, Equals, Hash, Compare, Pair, Exceptions, ToInt32, Bit, TimSort
 -- Kotlin collections. Lists keep elements in the array part (1-based) with an explicit `size`, so
 -- null elements are fine; maps and sets keep insertion order and honor equals()/hashCode() keys.
 
@@ -15,17 +15,33 @@ local __K2L_Array
 local __K2L_Set
 local __K2L_Map
 local __K2L_IntRange
+local __K2L_EmptyList
+local __K2L_SingletonList
+local __K2L_FixedSizeList
+local optimizedList
+local optimizedSet
+local optimizedMap
 
--- Whether `obj` is an instance of `cls` or one of its subclasses.
+-- Whether `obj` is an instance of `cls` or one of its subclasses, or of a class declaring `cls` an interface (a program's
+-- AbstractList is a List).
 local function inherits(obj, cls)
     local c = type(obj) == "table" and getmetatable(obj)
     while c do
-        if c == cls then
+        if c == cls or (rawget(c, "____interfaces") or {})[cls] then
             return true
         end
         c = rawget(c, "____super")
     end
     return false
+end
+
+-- A comparator is a Lua function, or an object of a class implementing Comparator (callable through __call).
+local function isComparator(value)
+    if type(value) == "function" then
+        return true
+    end
+    local mt = type(value) == "table" and getmetatable(value)
+    return mt and rawget(mt, "__call") ~= nil or false
 end
 
 local function newList(arr, n)
@@ -71,15 +87,15 @@ local function stableSort(arr, n, less)
     return newList(src, n)
 end
 
--- Whether `keys[1..n]` can be ordered with Lua's `<` and `>` exactly like __K2L_Compare: numbers (no NaN) or strings
--- without supplementary characters (those order by UTF-16 code unit).
+-- Whether `keys[1..n]` can be ordered with Lua's `<` and `>` exactly like __K2L_Compare: numbers (no NaN or -0.0) or
+-- strings without supplementary characters (those order by UTF-16 code unit).
 local function directlyOrdered(keys, n)
     local first = keys[1]
     local t = type(first)
     if t == "number" then
         for i = 1, n do
             local k = keys[i]
-            if type(k) ~= "number" or k ~= k then
+            if type(k) ~= "number" or k ~= k or (k == 0 and 1 / k < 0) then
                 return false
             end
         end
@@ -142,30 +158,51 @@ local function sortByKeys(arr, n, keys, descending)
     for i = 1, n do
         out[i] = arr[src[i]]
     end
-    return newList(out, n)
+    return out
 end
 
--- Sorts by `keys` (see sortByKeys); keys that are not plain numbers or strings go through __K2L_Compare.
-local function sortKeyed(arr, n, keys, descending)
-    if directlyOrdered(keys, n) then
-        return sortByKeys(arr, n, keys, descending)
-    end
-    local order = {}
-    for i = 1, n do
-        order[i] = i
-    end
-    local sorted = stableSort(order, n, function(a, b)
-        local c = __K2L_Compare(keys[a], keys[b])
-        if descending then
-            return c > 0
-        end
-        return c < 0
-    end)
+-- Sorting. On the JVM, sorted(), sortedWith(), sortedBy() and the sort functions of lists and arrays end in
+-- java.util.Arrays.sort, a TimSort (see TimSort.lua): ported, so comparators, compareTo and the selectors of compareBy run
+-- exactly as often and in the same order. Only elements whose comparison nobody can observe (numbers and strings in natural
+-- order, keys of a selector the compiler knows to be pure) keep a merge sort with Lua's `<`: any stable sort gives the
+-- same result. These return a sorted copy of arr[1..n] as a plain array.
+local function timSorted(arr, n, compare)
     local out = {}
     for i = 1, n do
-        out[i] = arr[sorted[i]]
+        out[i] = arr[i]
     end
-    return newList(out, n)
+    __K2L_TimSort(out, 1, n + 1, compare)
+    return out
+end
+
+local function reverseNatural(a, b)
+    return __K2L_Compare(b, a)
+end
+
+-- sorted(), sortedDescending(): compareTo, or Collections.reverseOrder() calling it with the arguments swapped
+local function sortNatural(arr, n, descending)
+    if directlyOrdered(arr, n) then
+        return sortByKeys(arr, n, arr, descending)
+    end
+    return timSorted(arr, n, descending and reverseNatural or __K2L_Compare)
+end
+
+-- sortedBy(selector) is sortedWith(compareBy(selector)): the selector runs for both elements of every comparison
+-- (b first for the descending order). `pure` (set by the compiler) allows computing each key once instead.
+local function sortSelected(arr, n, selector, descending, pure)
+    if pure then
+        local keys = {}
+        for i = 1, n do
+            keys[i] = selector(arr[i])
+        end
+        if directlyOrdered(keys, n) then
+            return sortByKeys(arr, n, keys, descending)
+        end
+    end
+    if descending then
+        return timSorted(arr, n, function(a, b) return __K2L_CompareValues(selector(b), selector(a)) end)
+    end
+    return timSorted(arr, n, function(a, b) return __K2L_CompareValues(selector(a), selector(b)) end)
 end
 
 local function illegalArgument(message)
@@ -176,7 +213,9 @@ local function noSuchElement(message)
     error(__K2L_NoSuchElementException.new(message))
 end
 
-function __K2L_Iterable:toList()
+-- Kotlin's toList(), and the functions ending in optimizeReadOnlyList() (take, drop, distinct, ...), return EmptyList
+-- for no elements and a Collections$SingletonList for one; toMutableList() always copies into an ArrayList.
+function __K2L_Iterable:toMutableList()
     local arr, n = self:____array()
     local out = {}
     for i = 1, n do
@@ -185,9 +224,16 @@ function __K2L_Iterable:toList()
     return newList(out, n)
 end
 
-__K2L_Iterable.toMutableList = __K2L_Iterable.toList
+function __K2L_Iterable:toList()
+    local arr, n = self:____array()
+    local out = {}
+    for i = 1, n do
+        out[i] = arr[i]
+    end
+    return optimizedList(out, n)
+end
 
-function __K2L_Iterable:toSet()
+function __K2L_Iterable:toMutableSet()
     local arr, n = self:____array()
     local set = __K2L_Set.new()
     for i = 1, n do
@@ -196,8 +242,16 @@ function __K2L_Iterable:toSet()
     return set
 end
 
-__K2L_Iterable.toMutableSet = __K2L_Iterable.toSet
-__K2L_Iterable.toHashSet = __K2L_Iterable.toSet
+-- toSet() is an EmptySet or a Collections$SingletonSet for up to one element, else a LinkedHashSet.
+function __K2L_Iterable:toSet()
+    local set = self:toMutableSet()
+    if set.size <= 1 then
+        return optimizedSet(set)
+    end
+    return set
+end
+
+__K2L_Iterable.toHashSet = __K2L_Iterable.toMutableSet
 
 function __K2L_Iterable:isEmpty()
     local _, n = self:____array()
@@ -268,10 +322,14 @@ function __K2L_Iterable:indexOfLast(predicate)
     return -1
 end
 
+-- A list's get(index), with its message; other collections have Kotlin's own.
 function __K2L_Iterable:elementAt(index)
+    if inherits(self, __K2L_List) then
+        return self:get(index)
+    end
     local arr, n = self:____array()
     if index < 0 or index >= n then
-        error(__K2L_IndexOutOfBoundsException.new("Index " .. index .. " out of bounds for length " .. n))
+        error(__K2L_IndexOutOfBoundsException.new("Collection doesn't contain element at index " .. index .. "."))
     end
     return arr[index + 1]
 end
@@ -540,10 +598,18 @@ local function extreme(self, selector, sign, orNull, what)
         end
         noSuchElement(what)
     end
-    local best, bestKey = arr[1], selector and selector(arr[1]) or arr[1]
+    -- a key may be false (a Boolean key), so `selector and selector(x) or x` would not do
+    local function keyOf(value)
+        if selector == nil then
+            return value
+        end
+        return selector(value)
+    end
+    local best, bestKey = arr[1], keyOf(arr[1])
     for i = 2, n do
-        local key = selector and selector(arr[i]) or arr[i]
-        if __K2L_Compare(key, bestKey) * sign > 0 then
+        local key = keyOf(arr[i])
+        -- Kotlin compares the best so far with the next one: maxValue < v
+        if __K2L_Compare(bestKey, key) * sign < 0 then
             best, bestKey = arr[i], key
         end
     end
@@ -563,39 +629,40 @@ function __K2L_Iterable:minOf(selector) return select(2, extreme(self, selector,
 function __K2L_Iterable:maxOfOrNull(selector) return select(2, extreme(self, selector, 1, true)) end
 function __K2L_Iterable:minOfOrNull(selector) return select(2, extreme(self, selector, -1, true)) end
 
+-- The list sorted() and the like return: toList() for at most one element (EmptyList, SingletonList), else the sorted array
+-- seen through asList(), an Arrays$ArrayList. Arrays always give the Arrays$ArrayList.
+local function sortedList(self, out, n)
+    if n <= 1 and not inherits(self, __K2L_Array) then
+        return optimizedList(out, n)
+    end
+    out.size = n
+    return setmetatable(out, __K2L_FixedSizeList)
+end
+
 function __K2L_Iterable:sorted()
     local arr, n = self:____array()
-    return sortKeyed(arr, n, arr, false)
+    return sortedList(self, sortNatural(arr, n, false), n)
 end
 
 function __K2L_Iterable:sortedDescending()
     local arr, n = self:____array()
-    return sortKeyed(arr, n, arr, true)
+    return sortedList(self, sortNatural(arr, n, true), n)
 end
 
--- The selector runs once per element (not once per comparison), and the sort compares plain keys directly.
-local function selectKeys(arr, n, selector)
-    local keys = {}
-    for i = 1, n do
-        keys[i] = selector(arr[i])
-    end
-    return keys
-end
-
-function __K2L_Iterable:sortedBy(selector)
+function __K2L_Iterable:sortedBy(selector, pure)
     local arr, n = self:____array()
-    return sortKeyed(arr, n, selectKeys(arr, n, selector), false)
+    return sortedList(self, sortSelected(arr, n, selector, false, pure), n)
 end
 
-function __K2L_Iterable:sortedByDescending(selector)
+function __K2L_Iterable:sortedByDescending(selector, pure)
     local arr, n = self:____array()
-    return sortKeyed(arr, n, selectKeys(arr, n, selector), true)
+    return sortedList(self, sortSelected(arr, n, selector, true, pure), n)
 end
 
 -- `comparator` is a Lua function (a, b) -> Int, from a Kotlin lambda or compareBy.
 function __K2L_Iterable:sortedWith(comparator)
     local arr, n = self:____array()
-    return stableSort(arr, n, function(a, b) return comparator(a, b) < 0 end)
+    return sortedList(self, timSorted(arr, n, comparator), n)
 end
 
 function __K2L_Iterable:reversed()
@@ -603,6 +670,9 @@ function __K2L_Iterable:reversed()
     local out = {}
     for i = 1, n do
         out[i] = arr[n - i + 1]
+    end
+    if n <= 1 then
+        return optimizedList(out, n)
     end
     return newList(out, n)
 end
@@ -638,7 +708,7 @@ function __K2L_Iterable:take(count)
     for i = 1, m do
         out[i] = arr[i]
     end
-    return newList(out, m)
+    return optimizedList(out, m)
 end
 
 function __K2L_Iterable:takeLast(count)
@@ -649,7 +719,7 @@ function __K2L_Iterable:takeLast(count)
     for i = 1, m do
         out[i] = arr[n - m + i]
     end
-    return newList(out, m)
+    return optimizedList(out, m)
 end
 
 function __K2L_Iterable:drop(count)
@@ -660,7 +730,7 @@ function __K2L_Iterable:drop(count)
         k = k + 1
         out[k] = arr[i]
     end
-    return newList(out, k)
+    return optimizedList(out, k)
 end
 
 function __K2L_Iterable:dropLast(count)
@@ -671,7 +741,7 @@ function __K2L_Iterable:dropLast(count)
     for i = 1, m do
         out[i] = arr[i]
     end
-    return newList(out, m)
+    return optimizedList(out, m)
 end
 
 function __K2L_Iterable:takeWhile(predicate)
@@ -851,7 +921,12 @@ function __K2L_Iterable:associateWith(valueSelector)
 end
 
 function __K2L_Iterable:toMap()
-    return self:associate(function(pair) return pair end)
+    local map = self:associate(function(pair) return pair end)
+    local _, n = self:____array()
+    if n <= 1 then
+        return optimizedMap(map)
+    end
+    return map
 end
 
 function __K2L_Iterable:forEach(action)
@@ -867,19 +942,19 @@ function __K2L_Iterable:onEach(action)
 end
 
 function __K2L_Iterable:plus(element)
-    local out = self:toList()
+    local out = self:toMutableList()
     out:add(element)
     return out
 end
 
 function __K2L_Iterable:plusAll(elements)
-    local out = self:toList()
+    local out = self:toMutableList()
     out:addAll(elements)
     return out
 end
 
 function __K2L_Iterable:minus(element)
-    local out = self:toList()
+    local out = self:toMutableList()
     out:remove(element)
     return out
 end
@@ -889,17 +964,17 @@ function __K2L_Iterable:minusAll(elements)
 end
 
 function __K2L_Iterable:intersect(other)
-    return self:toSet():filter(function(it) return other:contains(it) end):toSet()
+    return self:toMutableSet():filter(function(it) return other:contains(it) end):toMutableSet()
 end
 
 function __K2L_Iterable:union(other)
-    local set = self:toSet()
+    local set = self:toMutableSet()
     set:addAll(other)
     return set
 end
 
 function __K2L_Iterable:subtract(other)
-    return self:toSet():filter(function(it) return not other:contains(it) end):toSet()
+    return self:toMutableSet():filter(function(it) return not other:contains(it) end):toMutableSet()
 end
 
 function __K2L_Iterable:toTypedArray()
@@ -1078,7 +1153,7 @@ local function extremeWith(self, comparator, sign, orNull)
     end
     local best = arr[1]
     for i = 2, n do
-        if comparator(arr[i], best) * sign > 0 then
+        if comparator(best, arr[i]) * sign < 0 then
             best = arr[i]
         end
     end
@@ -1089,6 +1164,100 @@ function __K2L_Iterable:maxWith(comparator) return extremeWith(self, comparator,
 function __K2L_Iterable:minWith(comparator) return extremeWith(self, comparator, -1, false) end
 function __K2L_Iterable:maxWithOrNull(comparator) return extremeWith(self, comparator, 1, true) end
 function __K2L_Iterable:minWithOrNull(comparator) return extremeWith(self, comparator, -1, true) end
+
+-- maxOfWith(comparator, selector) and the like: the largest (sign 1) or smallest selected value by the comparator.
+local function extremeOfWith(self, comparator, selector, sign, orNull)
+    local arr, n = self:____array()
+    if n == 0 then
+        if orNull then
+            return nil
+        end
+        error(__K2L_NoSuchElementException.new())
+    end
+    local best = selector(arr[1])
+    for i = 2, n do
+        local value = selector(arr[i])
+        if comparator(value, best) * sign > 0 then
+            best = value
+        end
+    end
+    return best
+end
+
+function __K2L_Iterable:maxOfWith(comparator, selector) return extremeOfWith(self, comparator, selector, 1, false) end
+function __K2L_Iterable:minOfWith(comparator, selector) return extremeOfWith(self, comparator, selector, -1, false) end
+function __K2L_Iterable:maxOfWithOrNull(comparator, selector) return extremeOfWith(self, comparator, selector, 1, true) end
+function __K2L_Iterable:minOfWithOrNull(comparator, selector) return extremeOfWith(self, comparator, selector, -1, true) end
+
+function __K2L_Iterable:reduceIndexedOrNull(operation)
+    local _, n = self:____array()
+    if n == 0 then
+        return nil
+    end
+    return self:reduceIndexed(operation)
+end
+
+function __K2L_Iterable:runningFoldIndexed(initial, operation)
+    local arr, n = self:____array()
+    local out = {initial}
+    local acc = initial
+    for i = 1, n do
+        acc = operation(i - 1, acc, arr[i])
+        out[i + 1] = acc
+    end
+    return newList(out, n + 1)
+end
+
+__K2L_Iterable.scanIndexed = __K2L_Iterable.runningFoldIndexed
+
+function __K2L_Iterable:runningReduceIndexed(operation)
+    local arr, n = self:____array()
+    if n == 0 then
+        return newList({}, 0)
+    end
+    local out = {arr[1]}
+    local acc = arr[1]
+    for i = 2, n do
+        acc = operation(i - 1, acc, arr[i])
+        out[i] = acc
+    end
+    return newList(out, n)
+end
+
+function __K2L_Iterable:filterNotNullTo(destination)
+    local arr, n = self:____array()
+    for i = 1, n do
+        if arr[i] ~= nil then
+            destination:add(arr[i])
+        end
+    end
+    return destination
+end
+
+function __K2L_Iterable:mapIndexedNotNullTo(destination, transform)
+    local arr, n = self:____array()
+    for i = 1, n do
+        local value = transform(i - 1, arr[i])
+        if value ~= nil then
+            destination:add(value)
+        end
+    end
+    return destination
+end
+
+function __K2L_Iterable:flatMapIndexedTo(destination, transform)
+    local arr, n = self:____array()
+    for i = 1, n do
+        destination:addAll(transform(i - 1, arr[i]))
+    end
+    return destination
+end
+
+-- joinTo(buffer, ...): the joinToString text appended to a StringBuilder (or any Appendable with append).
+function __K2L_Iterable:joinTo(buffer, separator, prefix, postfix, limit, truncated, transform)
+    buffer:append(self:joinToString(separator, prefix, postfix, limit, truncated, transform))
+    return buffer
+end
 
 function __K2L_Iterable:takeLastWhile(predicate)
     local arr, n = self:____array()
@@ -1248,7 +1417,7 @@ function __K2L_Iterable:randomOrNull(random)
 end
 
 function __K2L_Iterable:shuffled(random)
-    local out = self:toList()
+    local out = self:toMutableList()
     out:shuffle(random)
     return out
 end
@@ -1264,18 +1433,27 @@ function __K2L_Iterable:requireNoNulls()
 end
 
 function __K2L_Iterable:asReversed()
-    return self:reversed()
+    local out = self:toMutableList()
+    out:reverse()
+    return out
 end
 
+-- Array.asList(): an Arrays$ArrayList (a copy here, not a view of the array)
 function __K2L_Iterable:asList()
-    return self:toList()
+    local arr, n = self:____array()
+    local out = {}
+    for i = 1, n do
+        out[i] = arr[i]
+    end
+    out.size = n
+    return setmetatable(out, __K2L_FixedSizeList)
 end
 
 -- Index of `element` in the sorted list, or -(insertion point) - 1.
 function __K2L_Iterable:binarySearch(element, comparatorOrFrom, from, to)
     local arr, n = self:____array()
     local comparator = __K2L_Compare
-    if type(comparatorOrFrom) == "function" then
+    if isComparator(comparatorOrFrom) then
         comparator = comparatorOrFrom
     else
         to, from = from, comparatorOrFrom
@@ -1316,16 +1494,30 @@ function __K2L_Iterable:binarySearchBy(key, selector)
 end
 
 function __K2L_Iterable:sortedArray()
-    local out = self:sorted()
+    local arr, n = self:____array()
+    local out = sortNatural(arr, n, false)
+    out.size = n
     return setmetatable(out, __K2L_Array)
 end
 
 function __K2L_Iterable:sortedArrayDescending()
-    return setmetatable(self:sortedDescending(), __K2L_Array)
+    local arr, n = self:____array()
+    local out = sortNatural(arr, n, true)
+    out.size = n
+    return setmetatable(out, __K2L_Array)
+end
+
+function __K2L_Iterable:sortedArrayWith(comparator)
+    local arr, n = self:____array()
+    local out = timSorted(arr, n, comparator)
+    out.size = n
+    return setmetatable(out, __K2L_Array)
 end
 
 function __K2L_Iterable:reversedArray()
-    return setmetatable(self:reversed(), __K2L_Array)
+    local out = self:toMutableList()
+    out:reverse()
+    return setmetatable(out, __K2L_Array)
 end
 
 function __K2L_Iterable:copyOfRange(from, to)
@@ -1380,55 +1572,66 @@ function __K2L_Grouping:____init(source, keySelector)
     self.keySelector = keySelector
 end
 
-function __K2L_Grouping:eachCount()
-    local arr, n = self.source:____array()
-    local counts = __K2L_Map.new()
-    for i = 1, n do
-        local key = self.keySelector(arr[i])
-        counts:put(key, (counts:get(key) or 0) + 1)
+-- Calls `action` with each element of the source, in order; a sequence (`seq.groupingBy { }`) is pulled one at a time.
+local function eachOf(grouping, action)
+    local source = grouping.source
+    if source.____isSequence then
+        for _, value in source:iter() do
+            action(value)
+        end
+        return
     end
+    local arr, n = source:____array()
+    for i = 1, n do
+        action(arr[i])
+    end
+end
+
+function __K2L_Grouping:eachCount()
+    local counts = __K2L_Map.new()
+    eachOf(self, function(element)
+        local key = self.keySelector(element)
+        counts:put(key, (counts:get(key) or 0) + 1)
+    end)
     return counts
 end
 
 -- fold(initialValue, operation(accumulator, element))
 function __K2L_Grouping:fold(initial, operation)
-    local arr, n = self.source:____array()
     local result = __K2L_Map.new()
-    for i = 1, n do
-        local key = self.keySelector(arr[i])
+    eachOf(self, function(element)
+        local key = self.keySelector(element)
         local acc = initial
         if result:containsKey(key) then
             acc = result:get(key)
         end
-        result:put(key, operation(acc, arr[i]))
-    end
+        result:put(key, operation(acc, element))
+    end)
     return result
 end
 
 -- reduce(operation(key, accumulator, element))
 function __K2L_Grouping:reduce(operation)
-    local arr, n = self.source:____array()
     local result = __K2L_Map.new()
-    for i = 1, n do
-        local key = self.keySelector(arr[i])
+    eachOf(self, function(element)
+        local key = self.keySelector(element)
         if result:containsKey(key) then
-            result:put(key, operation(key, result:get(key), arr[i]))
+            result:put(key, operation(key, result:get(key), element))
         else
-            result:put(key, arr[i])
+            result:put(key, element)
         end
-    end
+    end)
     return result
 end
 
 -- aggregate(operation(key, accumulator, element, isFirst))
 function __K2L_Grouping:aggregate(operation)
-    local arr, n = self.source:____array()
     local result = __K2L_Map.new()
-    for i = 1, n do
-        local key = self.keySelector(arr[i])
+    eachOf(self, function(element)
+        local key = self.keySelector(element)
         local first = not result:containsKey(key)
-        result:put(key, operation(key, result:get(key), arr[i], first))
-    end
+        result:put(key, operation(key, result:get(key), element, first))
+    end)
     return result
 end
 
@@ -1485,8 +1688,12 @@ end
 ------------------------------------------------------------------ List
 __K2L_List = __K2L_Class("java.util.ArrayList", __K2L_Iterable)
 
-function __K2L_List:____init()
+-- ArrayList(), ArrayList(capacity) and ArrayList(elements), as the constructor of a class extending ArrayList calls it
+function __K2L_List:____init(elements)
     self.size = 0
+    if type(elements) == "table" then
+        __K2L_List.addAll(self, elements)
+    end
 end
 
 function __K2L_List:____array()
@@ -1550,11 +1757,15 @@ function __K2L_List:addAt(index, value)
     self.size = self.size + 1
 end
 
+-- Like java.util.ArrayList, the bulk and convenience operations do not call add, addAt or removeAt, which a subclass may
+-- override.
 function __K2L_List:addAll(elements)
     local arr, n = elements:____array()
+    local size = self.size
     for i = 1, n do
-        self:add(arr[i])
+        self[size + i] = arr[i]
     end
+    self.size = size + n
     return n > 0
 end
 
@@ -1568,7 +1779,7 @@ function __K2L_List:addAllAt(index, elements)
         copy[i] = arr[i]
     end
     for i = 1, n do
-        self:addAt(index + i - 1, copy[i])
+        __K2L_List.addAt(self, index + i - 1, copy[i])
     end
     return n > 0
 end
@@ -1591,26 +1802,27 @@ function __K2L_List:removeAt(index)
 end
 
 function __K2L_List:remove(value)
-    local index = self:indexOf(value)
+    local index = __K2L_Iterable.indexOf(self, value)
     if index < 0 then
         return false
     end
-    self:removeAt(index)
+    __K2L_List.removeAt(self, index)
     return true
 end
 
+-- java.util.List.removeFirst/removeLast, which Kotlin 2.4 calls on JDK 21: the exception has no message
 function __K2L_List:removeFirst()
     if self.size == 0 then
-        noSuchElement("List is empty.")
+        noSuchElement()
     end
-    return self:removeAt(0)
+    return __K2L_List.removeAt(self, 0)
 end
 
 function __K2L_List:removeLast()
     if self.size == 0 then
-        noSuchElement("List is empty.")
+        noSuchElement()
     end
-    return self:removeAt(self.size - 1)
+    return __K2L_List.removeAt(self, self.size - 1)
 end
 
 function __K2L_List:removeAll(predicate)
@@ -1673,11 +1885,32 @@ local function sortInPlace(self, sorted)
     end
 end
 
-function __K2L_List:sort() sortInPlace(self, self:sorted()) end
-function __K2L_List:sortDescending() sortInPlace(self, self:sortedDescending()) end
-function __K2L_List:sortBy(selector) sortInPlace(self, self:sortedBy(selector)) end
-function __K2L_List:sortByDescending(selector) sortInPlace(self, self:sortedByDescending(selector)) end
-function __K2L_List:sortWith(comparator) sortInPlace(self, self:sortedWith(comparator)) end
+-- In place, as MutableList.sort*() do: Collections.sort, so the same comparisons as sorted*() (none for one element).
+function __K2L_List:sort()
+    local arr, n = self:____array()
+    sortInPlace(self, sortNatural(arr, n, false))
+end
+
+function __K2L_List:sortDescending()
+    local arr, n = self:____array()
+    sortInPlace(self, sortNatural(arr, n, true))
+end
+
+function __K2L_List:sortBy(selector, pure)
+    local arr, n = self:____array()
+    sortInPlace(self, sortSelected(arr, n, selector, false, pure))
+end
+
+function __K2L_List:sortByDescending(selector, pure)
+    local arr, n = self:____array()
+    sortInPlace(self, sortSelected(arr, n, selector, true, pure))
+end
+
+function __K2L_List:sortWith(comparator)
+    local arr, n = self:____array()
+    sortInPlace(self, timSorted(arr, n, comparator))
+end
+
 function __K2L_List:reverse() sortInPlace(self, self:reversed()) end
 
 function __K2L_List:fill(value, from, to)
@@ -1767,6 +2000,134 @@ end
 __K2L_Array.contentEquals = __K2L_List.equals
 __K2L_Array.contentToString = __K2L_List.toString
 __K2L_Array.contentHashCode = __K2L_Iterable.hashCode
+
+local function arrayIndex(index, size)
+    error(__K2L_ArrayIndexOutOfBoundsException.new("Index " .. index .. " out of bounds for length " .. size))
+end
+
+function __K2L_Array:get(index)
+    if index < 0 or index >= self.size then
+        arrayIndex(index, self.size)
+    end
+    return self[index + 1]
+end
+
+------------------------------------------------------------------ read-only lists
+-- listOf() and emptyList() are Kotlin's EmptyList, listOf(x) a Collections$SingletonList, listOf(a, b, ...) and asList()
+-- an Arrays$ArrayList (the sorted*() results too): the ArrayList representation with the JVM's classes, index messages
+-- and read-only behavior. Mutators throw UnsupportedOperationException, except where the JVM finds nothing to change
+-- first (removing an absent element, clearing an empty list). An Arrays$ArrayList can still be written by index.
+__K2L_EmptyList = __K2L_Class("kotlin.collections.EmptyList", __K2L_List)
+__K2L_SingletonList = __K2L_Class("java.util.Collections$SingletonList", __K2L_List)
+__K2L_FixedSizeList = __K2L_Class("java.util.Arrays$ArrayList", __K2L_List)
+
+local function unsupported()
+    error(__K2L_UnsupportedOperationException.new())
+end
+
+-- Makes the methods `names` of `cls` throw, and the removing ones throw when they would remove something; `removeMessage`
+-- is the message of remove(element).
+local function readOnly(cls, names, removeMessage)
+    for _, name in ipairs(names) do
+        cls[name] = unsupported
+    end
+    function cls:addAll(elements)
+        local _, n = elements:____array()
+        if n > 0 then
+            unsupported()
+        end
+        return false
+    end
+    function cls:remove(element)
+        if self:contains(element) then
+            error(__K2L_UnsupportedOperationException.new(removeMessage))
+        end
+        return false
+    end
+    function cls:removeAll(predicate)
+        if self:any(type(predicate) == "table" and function(it) return predicate:contains(it) end or predicate) then
+            unsupported()
+        end
+        return false
+    end
+    cls.removeIf = cls.removeAll
+    function cls:retainAll(predicate)
+        if not self:all(type(predicate) == "table" and function(it) return predicate:contains(it) end or predicate) then
+            unsupported()
+        end
+        return false
+    end
+    function cls:clear()
+        if self.size > 0 then
+            unsupported()
+        end
+    end
+end
+
+-- `fixedSize` keeps set and the in-place operations (sort, fill, ...) of an Arrays$ArrayList.
+local function readOnlyList(cls, fixedSize)
+    local names = {
+        "add", "addAt", "addAllAt", "removeAt", "addFirst", "addLast", "removeFirstOrNull", "removeLastOrNull", "push", "pop", "poll",
+        "pollFirst", "pollLast", "offer", "offerFirst", "offerLast",
+    }
+    if not fixedSize then
+        for _, name in ipairs({"set", "fill", "replaceAll"}) do
+            names[#names + 1] = name
+        end
+    end
+    readOnly(cls, names, fixedSize and "remove" or nil)
+    function cls:removeFirst()
+        if self.size == 0 then
+            noSuchElement()
+        end
+        unsupported()
+    end
+    cls.removeLast = cls.removeFirst
+end
+readOnlyList(__K2L_EmptyList, false)
+readOnlyList(__K2L_SingletonList, false)
+readOnlyList(__K2L_FixedSizeList, true)
+
+local EMPTY_LIST = setmetatable({size = 0}, __K2L_EmptyList)
+
+function __K2L_EmptyList:get(index)
+    error(__K2L_IndexOutOfBoundsException.new("Empty list doesn't contain element at index " .. index .. "."))
+end
+
+function __K2L_SingletonList:get(index)
+    if index ~= 0 then
+        error(__K2L_IndexOutOfBoundsException.new("Index: " .. index .. ", Size: 1"))
+    end
+    return self[1]
+end
+
+__K2L_FixedSizeList.get = __K2L_Array.get
+
+-- `arr[1..n]` (a fresh table) as the list Kotlin's optimizeReadOnlyList() gives: EmptyList, a SingletonList or an ArrayList.
+function optimizedList(arr, n)
+    if n == 0 then
+        return EMPTY_LIST
+    elseif n == 1 then
+        arr.size = 1
+        return setmetatable(arr, __K2L_SingletonList)
+    end
+    return newList(arr, n)
+end
+
+-- listOf(...) and emptyList(); listOf(x) with one argument is __K2L_SingletonListOf.
+local function __K2L_ReadOnlyListOf(...)
+    local n = select("#", ...)
+    if n == 0 then
+        return EMPTY_LIST
+    end
+    local arr = {...}
+    arr.size = n
+    return setmetatable(arr, __K2L_FixedSizeList)
+end
+
+local function __K2L_SingletonListOf(value)
+    return setmetatable({value, size = 1}, __K2L_SingletonList)
+end
 
 local function __K2L_ListOf(...)
     return newList({...}, select("#", ...))
@@ -1927,9 +2288,13 @@ end
 ------------------------------------------------------------------ Set
 __K2L_Set = __K2L_Class("java.util.LinkedHashSet", __K2L_Iterable)
 
-function __K2L_Set:____init()
+-- LinkedHashSet(), (capacity) and (elements): like the JVM's, the last calls add for each element (which a subclass may override).
+function __K2L_Set:____init(elements)
     self.size = 0
     self.____keys, self.____index, self.____buckets = {}, {}, {}
+    if type(elements) == "table" then
+        self:addAll(elements)
+    end
 end
 
 function __K2L_Set:____array()
@@ -2041,31 +2406,56 @@ function __K2L_Set:hashCode()
 end
 
 function __K2L_Set:plus(element)
-    local out = self:toSet()
+    local out = self:toMutableSet()
     out:add(element)
     return out
 end
 
 function __K2L_Set:plusAll(elements)
-    local out = self:toSet()
+    local out = self:toMutableSet()
     out:addAll(elements)
     return out
 end
 
 function __K2L_Set:minus(element)
-    local out = self:toSet()
+    local out = self:toMutableSet()
     out:remove(element)
     return out
 end
 
 function __K2L_Set:minusAll(elements)
-    return self:filter(function(it) return not elements:contains(it) end):toSet()
+    return self:filter(function(it) return not elements:contains(it) end):toMutableSet()
 end
 
 local function __K2L_SetOf(...)
     local set = __K2L_Set.new()
     for i = 1, select("#", ...) do
         set:add((select(i, ...)))
+    end
+    return set
+end
+
+-- setOf() and emptySet() are Kotlin's EmptySet, a set of one element from setOf or toSet() a Collections$SingletonSet,
+-- other sizes a LinkedHashSet. Read-only like the lists above.
+local __K2L_EmptySet = __K2L_Class("kotlin.collections.EmptySet", __K2L_Set)
+local __K2L_SingletonSet = __K2L_Class("java.util.Collections$SingletonSet", __K2L_Set)
+readOnly(__K2L_EmptySet, {"add"})
+readOnly(__K2L_SingletonSet, {"add"})
+local EMPTY_SET = setmetatable(__K2L_Set.new(), __K2L_EmptySet)
+
+-- `set` (a fresh LinkedHashSet of at most one element) as an EmptySet or a SingletonSet
+function optimizedSet(set)
+    if set.size == 0 then
+        return EMPTY_SET
+    end
+    return setmetatable(set, __K2L_SingletonSet)
+end
+
+-- setOf(...) and emptySet(): Kotlin's setOf(vararg) is elements.toSet(), so the number of arguments decides
+local function __K2L_ReadOnlySetOf(...)
+    local set = __K2L_SetOf(...)
+    if select("#", ...) <= 1 then
+        return optimizedSet(set)
     end
     return set
 end
@@ -2103,9 +2493,28 @@ end
 __K2L_Map = __K2L_Class("java.util.LinkedHashMap")
 __K2L_Map.__tostring = __K2L_Iterable.__tostring
 
-function __K2L_Map:____init()
+-- LinkedHashMap(), (capacity), (map) and (nil, accessOrder) for LinkedHashMap(capacity, loadFactor, accessOrder); copying a
+-- map does not call put, as on the JVM.
+function __K2L_Map:____init(map, accessOrder)
     self.size = 0
     self.____keys, self.____values, self.____index, self.____buckets = {}, {}, {}, {}
+    if type(map) == "table" then
+        __K2L_Map.putAll(self, map)
+    end
+    if accessOrder then
+        self.____accessOrder = true
+    end
+end
+
+-- A LinkedHashMap in access order moves an entry to the end when get, getOrDefault or put reach it.
+local function accessed(self, slot)
+    if slot ~= self.size then
+        local key, value = self.____keys[slot], self.____values[slot]
+        removeSlot(self, slot)
+        slot = addSlot(self, key)
+        self.____values[slot] = value
+    end
+    return slot
 end
 
 -- for k, v in map:iter() do ... end
@@ -2121,7 +2530,7 @@ end
 
 function __K2L_Map:get(key)
     local slot = findSlot(self, key)
-    return slot and self.____values[slot]
+    return slot and self.____values[self.____accessOrder and accessed(self, slot) or slot]
 end
 
 function __K2L_Map:getOrDefault(key, default)
@@ -2129,7 +2538,7 @@ function __K2L_Map:getOrDefault(key, default)
     if slot == nil then
         return default
     end
-    return self.____values[slot]
+    return self.____values[self.____accessOrder and accessed(self, slot) or slot]
 end
 
 function __K2L_Map:getOrElse(key, default)
@@ -2171,33 +2580,53 @@ function __K2L_Map:containsValue(value)
     return false
 end
 
+-- A new entry gives a subclass's removeEldestEntry(eldest) the chance to have the first entry removed, as LinkedHashMap does.
 function __K2L_Map:put(key, value)
     local slot = findSlot(self, key)
     if slot ~= nil then
+        if self.____accessOrder then
+            slot = accessed(self, slot)
+        end
         local old = self.____values[slot]
         self.____values[slot] = value
         return old
     end
     slot = addSlot(self, key)
     self.____values[slot] = value
+    if self.removeEldestEntry ~= nil then
+        local eldest = __K2L_Entry.new(self.____keys[1], self.____values[1])
+        eldest.____map = self
+        if self:removeEldestEntry(eldest) then
+            __K2L_Map.remove(self, eldest.key)
+        end
+    end
     return nil
 end
+
+__K2L_Map.____put = __K2L_Map.put
 
 function __K2L_Map:set(key, value)
     self:put(key, value)
 end
 
 -- Accepts another map or a list of pairs.
+-- `____put` is the class's own put: HashMap.putAll does not call put, which a subclass may override.
 function __K2L_Map:putAll(other)
+    if other.____isSequence then
+        for _, pair in other:iter() do
+            self:put(pair.first, pair.second)
+        end
+        return
+    end
     if other.iter == nil then
         local arr, n = other:____array()
         for i = 1, n do
-            self:put(arr[i].first, arr[i].second)
+            self:____put(arr[i].first, arr[i].second)
         end
         return
     end
     for k, v in other:iter() do
-        self:put(k, v)
+        self:____put(k, v)
     end
 end
 
@@ -2515,19 +2944,21 @@ function __K2L_Map:toList()
     for i = 1, self.size do
         out[i] = __K2L_Pair.new(self.____keys[i], self.____values[i])
     end
-    return newList(out, self.size)
+    return optimizedList(out, self.size)
 end
 
-function __K2L_Map:toMap()
+function __K2L_Map:toMutableMap()
     local out = __K2L_Map.new()
     out:putAll(self)
     return out
 end
 
-__K2L_Map.toMutableMap = __K2L_Map.toMap
+function __K2L_Map:toMap()
+    return optimizedMap(self:toMutableMap())
+end
 
 function __K2L_Map:plus(pair)
-    local out = self:toMap()
+    local out = self:toMutableMap()
     if getmetatable(pair) == __K2L_Pair then
         out:put(pair.first, pair.second)
     else
@@ -2537,14 +2968,14 @@ function __K2L_Map:plus(pair)
 end
 
 function __K2L_Map:minus(key)
-    local out = self:toMap()
+    local out = self:toMutableMap()
     out:remove(key)
     return out
 end
 
 -- map - keys
 function __K2L_Map:minusAll(keys)
-    local out = self:toMap()
+    local out = self:toMutableMap()
     local arr, n = keys:____array()
     for i = 1, n do
         out:remove(arr[i])
@@ -2559,6 +2990,66 @@ local function __K2L_MapOf(...)
         map:put(pair.first, pair.second)
     end
     return map
+end
+
+-- emptyMap() and mapOf() are Kotlin's EmptyMap, mapOf(pair) and toMap() of one entry a Collections$SingletonMap; their
+-- mutators throw (removing an absent key or clearing an empty map does nothing).
+local __K2L_EmptyMap = __K2L_Class("kotlin.collections.EmptyMap", __K2L_Map)
+local __K2L_SingletonMap = __K2L_Class("java.util.Collections$SingletonMap", __K2L_Map)
+local function readOnlyMap(cls)
+    for _, name in ipairs({
+        "put", "set", "putAll", "putIfAbsent", "merge", "compute", "computeIfAbsent", "computeIfPresent", "replaceAll", "getOrPut",
+    }) do
+        cls[name] = unsupported
+    end
+    function cls:remove(key)
+        if self:containsKey(key) then
+            unsupported()
+        end
+        return nil
+    end
+    function cls:clear()
+        if self.size > 0 then
+            unsupported()
+        end
+    end
+end
+readOnlyMap(__K2L_EmptyMap)
+readOnlyMap(__K2L_SingletonMap)
+local EMPTY_MAP = setmetatable(__K2L_Map.new(), __K2L_EmptyMap)
+
+-- `map` (a fresh LinkedHashMap) as Kotlin's toMap() returns it: EmptyMap, a SingletonMap, or the map itself
+function optimizedMap(map)
+    if map.size == 0 then
+        return EMPTY_MAP
+    elseif map.size == 1 then
+        return setmetatable(map, __K2L_SingletonMap)
+    end
+    return map
+end
+
+-- mapOf(...) and emptyMap(); mapOf(pair) with one argument is __K2L_SingletonMapOf.
+local function __K2L_ReadOnlyMapOf(...)
+    if select("#", ...) == 0 then
+        return EMPTY_MAP
+    end
+    return __K2L_MapOf(...)
+end
+
+local function __K2L_SingletonMapOf(pair)
+    return setmetatable(__K2L_MapOf(pair), __K2L_SingletonMap)
+end
+
+-- Makes a "list", "set" or "map" class read-only like the ones above (for java.util.Collections' own).
+local function __K2L_MakeReadOnly(cls, kind)
+    if kind == "list" then
+        readOnlyList(cls, false)
+    elseif kind == "set" then
+        readOnly(cls, {"add"})
+    else
+        readOnlyMap(cls)
+    end
+    return cls
 end
 
 ------------------------------------------------------------------ ranges
@@ -2712,7 +3203,7 @@ function __K2L_PriorityQueue:____init(comparatorOrElements)
     self.size = 0
     self.____heap = {}
     self.____compare = __K2L_Compare
-    if type(comparatorOrElements) == "function" then
+    if isComparator(comparatorOrElements) then
         self.____compare = comparatorOrElements
     elseif comparatorOrElements ~= nil then
         -- heapify, as PriorityQueue(Collection) does
@@ -2932,7 +3423,7 @@ __K2L_SortedMap = __K2L_Class("java.util.TreeMap", __K2L_Map)
 function __K2L_SortedMap:____init(comparatorOrMap)
     __K2L_Map.____init(self)
     self.____compare = __K2L_Compare
-    if type(comparatorOrMap) == "function" then
+    if isComparator(comparatorOrMap) then
         self.____compare = comparatorOrMap
     elseif comparatorOrMap ~= nil then
         self:putAll(comparatorOrMap)
@@ -2956,6 +3447,11 @@ function __K2L_SortedMap:put(key, value)
     end
     local keys, values, n = self.____keys, self.____values, self.size
     local at = lowerBound(keys, n, key, self.____compare)
+    if at <= n and self.____compare(keys[at], key) == 0 then
+        local old = values[at]
+        values[at] = value
+        return old
+    end
     shiftRight(keys, n, at)
     shiftRight(values, n, at)
     keys[at], values[at] = key, value
@@ -2963,6 +3459,8 @@ function __K2L_SortedMap:put(key, value)
     self.____values = values
     return nil
 end
+
+__K2L_SortedMap.____put = __K2L_SortedMap.put
 
 function __K2L_SortedMap:clear()
     local compare = self.____compare
@@ -3093,7 +3591,7 @@ __K2L_SortedSet = __K2L_Class("java.util.TreeSet", __K2L_Set)
 function __K2L_SortedSet:____init(comparatorOrElements)
     __K2L_Set.____init(self)
     self.____compare = __K2L_Compare
-    if type(comparatorOrElements) == "function" then
+    if isComparator(comparatorOrElements) then
         self.____compare = comparatorOrElements
     elseif comparatorOrElements ~= nil then
         self:addAll(comparatorOrElements)
@@ -3106,6 +3604,10 @@ function __K2L_SortedSet:add(value)
     end
     local keys, n = self.____keys, self.size
     local at = lowerBound(keys, n, value, self.____compare)
+    -- the comparator decides what is a duplicate, as in a java.util.TreeSet
+    if at <= n and self.____compare(keys[at], value) == 0 then
+        return false
+    end
     shiftRight(keys, n, at)
     keys[at] = value
     rebuild(self, keys, n + 1)
@@ -3311,7 +3813,7 @@ function __K2L_HashMap:____init(capacityOrMap, capacity)
         if capacityOrMap.size > 0 then
             self.____capacity = tableSizeFor(math.ceil(capacityOrMap.size / 0.75))
         end
-        self:putAll(capacityOrMap)
+        __K2L_Map.putAll(self, capacityOrMap)
     end
 end
 
@@ -3327,6 +3829,8 @@ function __K2L_HashMap:put(key, value)
     grow(self)
     return nil
 end
+
+__K2L_HashMap.____put = __K2L_HashMap.put
 
 function __K2L_HashMap:clear()
     local capacity = self.____capacity

@@ -6,5 +6,7 @@ local function __K2L_EnumValueOf(cls, name)
             return entry
         end
     end
-    error(__K2L_IllegalArgumentException.new("No enum constant " .. cls.____name .. "." .. tostring(name)))
+    -- the JVM names the canonical class name: `app.Outer.Color`, where the binary name is `app.Outer$Color`
+    local canonical = cls.____name:gsub("%$", ".")
+    error(__K2L_IllegalArgumentException.new("No enum constant " .. canonical .. "." .. tostring(name)))
 end

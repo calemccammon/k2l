@@ -587,7 +587,10 @@ do
         local out = __K2L_List.new()
         for i = 1, u.n, size do
             local chunk = encode(u, i, math.min(i + size - 1, u.n))
-            out:add(transform and transform(chunk) or chunk)
+            if transform ~= nil then
+                chunk = transform(chunk)
+            end
+            out:add(chunk)
         end
         return out
     end
@@ -606,7 +609,10 @@ do
         local i = 1
         while i <= u.n and (partial or i + size - 1 <= u.n) do
             local window = encode(u, i, math.min(i + size - 1, u.n))
-            out:add(transform and transform(window) or window)
+            if transform ~= nil then
+                window = transform(window)
+            end
+            out:add(window)
             i = i + step
         end
         return out
@@ -684,7 +690,9 @@ do
         local a, n = array(s)
         local b, m = array(part)
         local last = n - m
-        if from ~= nil and from < last then
+        if from == nil then
+            last = math.min(last, n - 1) -- the default start index is lastIndex
+        elseif from < last then
             last = from
         end
         for i = last, 0, -1 do
@@ -792,6 +800,83 @@ do
         return norm(concat(parts))
     end
 
+    ---------------------------------------------------------------- one half of a surrogate pair as the needle
+    -- A byte search cannot find one half of a pair inside the 4-byte character that the text holds. Searching a copy of
+    -- the text with its pairs written as two halves can (like the JVM's search by code units); `norm` joins the halves
+    -- that stay together in the result.
+    local function hasLoneHalf(part)
+        return type(part) == "string" and find(part, "\237[\160-\191]") ~= nil
+    end
+
+    local function halved(s)
+        if not find(s, "[\240-\244]") then
+            return s
+        end
+        return (gsub(s, "[\240-\244][\128-\191][\128-\191][\128-\191]", function(c)
+            local b1, b2, b3, b4 = byte(c, 1, 4)
+            local cp = (b1 - 0xF0) * 262144 + (b2 - 0x80) * 4096 + (b3 - 0x80) * 64 + (b4 - 0x80) - 0x10000
+            return unitChar(0xD800 + floor(cp / 1024)) .. unitChar(0xDC00 + cp % 1024)
+        end))
+    end
+
+    local function joined(result)
+        if type(result) == "string" then
+            return norm(result)
+        elseif type(result) == "table" and result.size ~= nil then
+            for i = 1, result.size do
+                result[i] = norm(result[i])
+            end
+        end
+        return result
+    end
+
+    -- a needle, or the delimiters of split (a plain Lua list)
+    local function anyLoneHalf(needle)
+        if type(needle) == "table" and needle.size == nil then
+            for _, delimiter in ipairs(needle) do
+                if hasLoneHalf(delimiter) then
+                    return true
+                end
+            end
+            return false
+        end
+        return hasLoneHalf(needle)
+    end
+
+    for _, name in ipairs({
+        "replace", "replaceFirst", "split", "removePrefix", "removeSuffix", "removeSurrounding", "substringBefore", "substringAfter",
+        "substringBeforeLast", "substringAfterLast",
+    }) do
+        local base = Text[name]
+        Text[name] = function(s, needle, second, ...)
+            if units(s) and (anyLoneHalf(needle) or (name == "removeSurrounding" and hasLoneHalf(second))) then
+                return joined(base(halved(s), needle, second, ...))
+            end
+            return base(s, needle, second, ...)
+        end
+    end
+
+    function Text.contains(s, part)
+        if hasLoneHalf(part) and units(s) then
+            s = halved(s)
+        end
+        return find(s, part, 1, true) ~= nil
+    end
+
+    function Text.startsWith(s, prefix)
+        if hasLoneHalf(prefix) and units(s) then
+            s = halved(s)
+        end
+        return sub(s, 1, #prefix) == prefix
+    end
+
+    function Text.endsWith(s, suffix)
+        if hasLoneHalf(suffix) and units(s) then
+            s = halved(s)
+        end
+        return suffix == "" or sub(s, -#suffix) == suffix
+    end
+
     ---------------------------------------------------------------- trimming
     -- Character.isWhitespace or isSpaceChar for a code unit.
     function U.isSpaceUnit(c)
@@ -854,6 +939,84 @@ do
             return default()
         end
         return s
+    end
+
+    -- trimIndent, trimMargin and prependIndent measure indents in chars by Char.isWhitespace (Unicode), not by the ASCII spaces
+    -- of the byte versions in Strings.lua.
+    local function indentWidth(line)
+        local u = units(line)
+        if not u then
+            return #line:match("^[\9-\13\28-\32]*")
+        end
+        for i = 1, u.n do
+            if not U.isSpaceUnit(u[i]) then
+                return i - 1
+            end
+        end
+        return u.n
+    end
+
+    -- the first and last line numbers kept: a blank first or last line is dropped
+    local function keptLines(lines)
+        local first, last = 1, lines.size
+        if first <= last and Text.isBlank(lines[first]) then
+            first = first + 1
+        end
+        if last >= first and Text.isBlank(lines[last]) then
+            last = last - 1
+        end
+        return first, last
+    end
+
+    function Text.trimIndent(s)
+        local lines = Text.lines(s)
+        local minIndent
+        for i = 1, lines.size do
+            if not Text.isBlank(lines[i]) then
+                local width = indentWidth(lines[i])
+                minIndent = minIndent and math.min(minIndent, width) or width
+            end
+        end
+        local first, last = keptLines(lines)
+        local out = {}
+        for i = first, last do
+            out[#out + 1] = Text.drop(lines[i], minIndent or 0)
+        end
+        return concat(out, "\n")
+    end
+
+    function Text.trimMargin(s, prefix)
+        prefix = prefix or "|"
+        if Text.isBlank(prefix) then
+            illegalArgument("marginPrefix must be non-blank string.")
+        end
+        local lines = Text.lines(s)
+        local first, last = keptLines(lines)
+        local out = {}
+        for i = first, last do
+            local line = lines[i]
+            local rest = Text.drop(line, indentWidth(line))
+            if rest ~= "" and sub(rest, 1, #prefix) == prefix then
+                out[#out + 1] = sub(rest, #prefix + 1)
+            else
+                out[#out + 1] = line
+            end
+        end
+        return concat(out, "\n")
+    end
+
+    function Text.prependIndent(s, indent)
+        local lines = Text.lines(s)
+        local out = {}
+        for i = 1, lines.size do
+            local line = lines[i]
+            if Text.isBlank(line) then
+                out[i] = length(line) < length(indent) and indent or line
+            else
+                out[i] = indent .. line
+            end
+        end
+        return norm(concat(out, "\n"))
     end
 
     local function trimByChars(s, mode, matches)
@@ -953,9 +1116,7 @@ do
         return i
     end
 
-    -- The Unicode scalar values of s as an IntStream-like list, see the class at the end
-    local IntStream = __K2L_Class("java.util.stream.IntStream", __K2L_List)
-
+    -- The Unicode scalar values of s as an IntStream (see Streams.lua)
     function U.codePoints(s)
         local a, n = array(s)
         local out, count, i = {}, 0, 0
@@ -966,7 +1127,9 @@ do
             i = i + (cp >= 0x10000 and 2 or 1)
         end
         out.size = count
-        return setmetatable(out, IntStream)
+        local stream = __K2L_Streams.of(__K2L_IntStream, setmetatable(out, __K2L_List))
+        stream.____size = nil -- codePoints() is not a SIZED stream
+        return stream
     end
 
     function U.chars16(s)
@@ -976,31 +1139,8 @@ do
             out[i] = a[i]
         end
         out.size = n
-        return setmetatable(out, IntStream)
+        return __K2L_Streams.of(__K2L_IntStream, setmetatable(out, __K2L_List))
     end
-
-    function IntStream:toArray()
-        local out = {}
-        for i = 1, self.size do
-            out[i] = self[i]
-        end
-        out.size = self.size
-        return setmetatable(out, __K2L_Array)
-    end
-
-    function IntStream:map(f) return setmetatable(__K2L_List.map(self, f), IntStream) end
-    function IntStream:filter(f) return setmetatable(__K2L_List.filter(self, f), IntStream) end
-    function IntStream:boxed() return self end
-    function IntStream:sum()
-        local total = 0
-        for i = 1, self.size do
-            total = total + self[i]
-        end
-        return total
-    end
-    function IntStream:anyMatch(p) return self:any(p) end
-    function IntStream:allMatch(p) return self:all(p) end
-    function IntStream:noneMatch(p) return self:none(p) end
 
     -- Character.toChars(cp), appendCodePoint, Character.charCount
     local function codePointString(cp)
@@ -1215,5 +1355,6 @@ do
     -- Regex match ranges and start indices count UTF-16 units too (Regex.lua loads before this file when it is used)
     if __K2L_Regex ~= nil then
         __K2L_Regex.____units = {len = length, toUnit = U.byteToUnit, toByte = U.unitToByte}
+        __K2L_Regex.____norm = norm
     end
 end

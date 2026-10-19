@@ -1,0 +1,18 @@
+01 02 11 12 21 22 31 
+[[0, 0, 0], [2, 4, 6]]
+returned with [[0, 0, 0], [2, 4, 6], [3, 6, 9]]
+00a 00b 02a 10a 10b 20a 20b 22a 
+134-1-3-5
+ac 1 
+00 01 20 21 
+[a][a]
+returned via trimWith
+returned via trimVia
+0 2 
+[]
+[1]
+end 
+outer 
+end x
+at 3
+none

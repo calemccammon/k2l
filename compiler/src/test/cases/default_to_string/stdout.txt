@@ -1,0 +1,15 @@
+app.P@<hex>
+app.P@<hex>
+[app.P@<hex>, app.Derived@<hex>]
+{k=app.Outer$Nested@<hex>}
+app.Outer$Inner@<hex>
+app.Singleton@<hex>
+app.Square@<hex>
+app.P@<hex>
+true
+true
+true
+true
+app.Hashed@3e app.Hashed@5d
+D(v=1) B app.Problem: boom
+app.P@<hex>

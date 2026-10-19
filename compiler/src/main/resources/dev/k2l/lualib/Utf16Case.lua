@@ -292,12 +292,48 @@ do
                 value = b - 55
             end
         elseif #c <= 3 then
-            value = Uni.digitValue(code(c))
+            local cp = code(c)
+            value = Uni.digitValue(cp)
+            if value == nil then
+                -- the fullwidth Latin letters count as digits above 9, like the ASCII ones
+                if cp >= 0xFF21 and cp <= 0xFF3A then
+                    value = cp - 0xFF21 + 10
+                elseif cp >= 0xFF41 and cp <= 0xFF5A then
+                    value = cp - 0xFF41 + 10
+                end
+            end
         end
         if value == nil or value >= (radix or 10) then
             return nil
         end
         return value
+    end
+
+    -- String.toInt(), toLong() and the unsigned conversions take Unicode digits too (Character.digit of each UTF-16 unit):
+    -- the sign and the digit values of a text with non-ASCII characters, or nil. Strings.lua calls this from its parsers.
+    local function unicodeDigits(s, radix)
+        local sign, start = "", 1
+        local first = s:sub(1, 1)
+        if first == "+" or first == "-" then
+            sign, start = first, 2
+        end
+        local values, n = {}, 0
+        for ch in gmatch(s:sub(start), UTF8_CHAR) do
+            local d = #ch <= 3 and digitOf(ch, radix)
+            if not d then
+                return nil
+            end
+            n = n + 1
+            values[n] = d
+        end
+        if n == 0 then
+            return nil
+        end
+        return sign, values
+    end
+    Text.unicodeDigits = unicodeDigits
+    if __K2L_Long64X ~= nil then
+        __K2L_Long64X.unicodeDigits = unicodeDigits
     end
 
     local Num = __K2L_Num

@@ -4,7 +4,7 @@ local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_JavaRandom = ____lualib.__K2L_JavaRandom
-local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Shl = ____lualib.__K2L_Shl
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
@@ -14,7 +14,7 @@ local function ints()
     print("-- nextInt")
     local r = __K2L_JavaRandom.new(42)
     print(__K2L_Str(__K2L_IntRange.new(1, 8):map(function(it) return r:nextInt() end)))
-    for _, bound in ipairs(__K2L_ListOf(2, 10, 16, 100, 1000, 1024, 65536, 1000000007, 1073741825, 2147483647)) do
+    for _, bound in ipairs(__K2L_ReadOnlyListOf(2, 10, 16, 100, 1000, 1024, 65536, 1000000007, 1073741825, 2147483647)) do
         print(bound .. ": " .. __K2L_Str(__K2L_IntRange.new(1, 6):map(function(it) return r:nextInt(bound) end)))
     end
     local negative = __K2L_JavaRandom.new(-12345)

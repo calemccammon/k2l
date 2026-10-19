@@ -1,0 +1,130 @@
+import java.util.Arrays
+import java.util.stream.Collectors
+import java.util.stream.DoubleStream
+import java.util.stream.IntStream
+import java.util.stream.Stream
+
+data class Person(val name: String, val age: Int, val city: String)
+
+fun sources() {
+    println(IntStream.range(0, 5).sum())
+    println(IntStream.rangeClosed(1, 5).sum())
+    println(IntStream.range(5, 5).count())
+    println(IntStream.range(5, 2).sum())
+    println(IntStream.of(5, 6, 7).boxed().collect(Collectors.toList()))
+    println(IntStream.of(9).sum())
+    println(IntStream.empty().sum())
+    println(Arrays.stream(intArrayOf(4, 8, 15, 16, 23, 42)).sum())
+    println(Arrays.stream(intArrayOf(4, 8, 15, 16, 23, 42), 1, 4).boxed().toList())
+    println(Arrays.stream(arrayOf("p", "q", "r")).map { it.uppercase() }.toList())
+    println(Arrays.stream(doubleArrayOf(1.5, 2.5, 4.0)).sum())
+    val list = listOf(3, 1, 2)
+    println(list.stream().map { it * 2 }.collect(Collectors.toList()))
+    println(setOf("x", "y").stream().count())
+    println(Stream.of("a", "b", "c").collect(Collectors.joining(", ")))
+    println(Stream.of(1, 2, 3).toList())
+    println(Stream.empty<String>().count())
+    println(Stream.concat(Stream.of(1, 2), Stream.of(3)).toList())
+    println(IntStream.concat(IntStream.range(0, 2), IntStream.range(10, 12)).boxed().toList())
+    println(Stream.iterate(1) { it * 2 }.limit(8).toList())
+    println(Stream.iterate(1, { it < 50 }, { it * 3 }).toList())
+    println(IntStream.iterate(10) { it - 3 }.limit(4).boxed().toList())
+    var seed = 0
+    println(Stream.generate { seed++ }.limit(4).toList())
+    println(DoubleStream.of(0.5, 1.5).sum())
+}
+
+fun intStreams() {
+    val numbers = intArrayOf(5, 3, 8, 1, 9, 2, 8)
+    println(Arrays.stream(numbers).max().asInt)
+    println(Arrays.stream(numbers).min().asInt)
+    println(Arrays.stream(numbers).max().isPresent)
+    println(IntStream.empty().max().isPresent)
+    println(IntStream.empty().max().isEmpty)
+    println(Arrays.stream(numbers).average().asDouble)
+    println(Arrays.stream(numbers).average())
+    println(IntStream.empty().average())
+    println(Arrays.stream(numbers).count())
+    println(Arrays.stream(numbers).filter { it > 4 }.count())
+    println(Arrays.stream(numbers).map { it * it }.sum())
+    println(Arrays.stream(numbers).sorted().boxed().toList())
+    println(Arrays.stream(numbers).distinct().sorted().boxed().toList())
+    println(Arrays.stream(numbers).limit(3).boxed().toList())
+    println(Arrays.stream(numbers).skip(4).boxed().toList())
+    println(Arrays.stream(numbers).skip(2).limit(3).sum())
+    println(Arrays.stream(numbers).toArray().toList())
+    println(Arrays.stream(numbers).map { it + 1 }.toArray().contentToString())
+    println(Arrays.stream(numbers).anyMatch { it == 9 })
+    println(Arrays.stream(numbers).allMatch { it > 0 })
+    println(Arrays.stream(numbers).noneMatch { it > 100 })
+    println(Arrays.stream(numbers).allMatch { it > 1 })
+    println(Arrays.stream(numbers).reduce(0) { a, b -> a + b })
+    println(Arrays.stream(numbers).reduce { a, b -> a * b })
+    println(IntStream.empty().reduce { a, b -> a + b })
+    println(Arrays.stream(numbers).findFirst())
+    println(IntStream.empty().findFirst())
+    println(Arrays.stream(numbers).takeWhile { it != 1 }.boxed().toList())
+    println(Arrays.stream(numbers).dropWhile { it != 1 }.boxed().toList())
+    println(IntStream.rangeClosed(1, 4).mapToObj { "n$it" }.collect(Collectors.joining("-", "<", ">")))
+    println(IntStream.rangeClosed(1, 4).asDoubleStream().sum())
+    println(IntStream.rangeClosed(1, 4).mapToDouble { it / 2.0 }.sum())
+    println(IntStream.range(0, 4).flatMap { IntStream.range(0, it) }.boxed().toList())
+    var total = 0
+    IntStream.range(0, 5).forEach { total += it }
+    println(total)
+    println(IntStream.of(Int.MAX_VALUE, 1).sum())
+    println(IntStream.range(0, 100).filter { it % 7 == 0 }.max().asInt)
+    println(IntStream.range(0, 10).boxed().map { it * 2 }.filter { it > 10 }.toList())
+}
+
+fun doubleStreams() {
+    val values = doubleArrayOf(0.1, 0.2, 0.3, 0.4, 1e10, -1e10)
+    println(Arrays.stream(values).sum())
+    println(Arrays.stream(doubleArrayOf(0.1, 0.2, 0.3)).sum())
+    println(Arrays.stream(doubleArrayOf(0.1, 0.2, 0.3)).average())
+    println(Arrays.stream(values).max().asDouble)
+    println(Arrays.stream(values).min().asDouble)
+    println(Arrays.stream(values).filter { it < 1 && it > 0 }.map { it * 2 }.boxed().toList())
+    println(Arrays.stream(values).filter { it > 0.25 }.count())
+    println(DoubleStream.empty().average().isPresent)
+    println(Arrays.stream(doubleArrayOf(0.5, 1.5)).mapToObj { "v$it" }.toList())
+    println(Arrays.stream(doubleArrayOf(2.5, 3.5)).mapToInt { it.toInt() }.sum())
+    println(Arrays.stream(doubleArrayOf(1.5, 2.5, 3.5)).toArray().toList())
+}
+
+fun objectStreams() {
+    val words = listOf("pear", "fig", "apple", "kiwi", "banana", "fig")
+    println(words.stream().filter { it.length > 3 }.collect(Collectors.toList()))
+    println(words.stream().map { it.length }.collect(Collectors.toList()))
+    println(words.stream().sorted().toList())
+    println(words.stream().sorted(reverseOrder()).toList())
+    println(words.stream().sorted { a, b -> a.length - b.length }.toList())
+    println(words.stream().distinct().toList())
+    println(words.stream().skip(2).limit(2).toList())
+    println(words.stream().mapToInt { it.length }.sum())
+    println(words.stream().mapToInt { it.length }.max().asInt)
+    println(words.stream().anyMatch { it == "kiwi" })
+    println(words.stream().allMatch { it.isNotEmpty() })
+    println(words.stream().noneMatch { it.startsWith("z") })
+    println(words.stream().findFirst().get())
+    println(words.stream().filter { it.startsWith("b") }.findFirst().orElse("none"))
+    println(words.stream().filter { it.startsWith("z") }.findFirst().orElse("none"))
+    println(words.stream().max(compareBy<String> { it.length }).get())
+    println(words.stream().min(compareBy<String> { it.length }).get())
+    println(words.stream().max { a, b -> a.compareTo(b) }.get())
+    println(words.stream().reduce("") { a, b -> a + b.first() })
+    println(words.stream().reduce { a, b -> if (a.length >= b.length) a else b })
+    println(words.stream().flatMap { Stream.of(it, it.uppercase()) }.limit(5).toList())
+    println(words.stream().count())
+    println(words.stream().toArray().size)
+    words.stream().limit(2).forEach { println("word " + it) }
+    println(words.stream().takeWhile { it != "apple" }.toList())
+    println(words.stream().dropWhile { it != "apple" }.toList())
+}
+
+fun main() {
+    sources()
+    intStreams()
+    doubleStreams()
+    objectStreams()
+}

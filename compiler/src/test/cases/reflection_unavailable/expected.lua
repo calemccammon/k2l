@@ -4,6 +4,7 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_NeedsReflect = ____lualib.__K2L_NeedsReflect
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
@@ -47,16 +48,16 @@ local function probe(name, f)
 end
 
 local function main()
-    probe("isData", function() return __K2L_KClassOf(D):____needsReflect() end)
-    probe("objectInstance", function() return __K2L_KClassOf(O):____needsReflect() end)
-    probe("sealedSubclasses", function() return __K2L_KClassOf(S):____needsReflect() end)
-    probe("isOpen", function() return __K2L_KClassOf(Op):____needsReflect() end)
-    probe("isAbstract", function() return __K2L_KClassOf(Ab):____needsReflect() end)
-    probe("isFinal", function() return __K2L_KClassOf(D):____needsReflect() end)
-    probe("isSealed", function() return __K2L_KClassOf(S):____needsReflect() end)
-    probe("isCompanion", function() return __K2L_KClassOf(D):____needsReflect() end)
-    probe("isInner", function() return __K2L_KClassOf(D):____needsReflect() end)
-    probe("supertypes", function() return __K2L_KClassOf(D):____needsReflect() end)
+    probe("isData", function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end)
+    probe("objectInstance", function() return __K2L_NeedsReflect(__K2L_KClassOf(O)) end)
+    probe("sealedSubclasses", function() return __K2L_NeedsReflect(__K2L_KClassOf(S)) end)
+    probe("isOpen", function() return __K2L_NeedsReflect(__K2L_KClassOf(Op)) end)
+    probe("isAbstract", function() return __K2L_NeedsReflect(__K2L_KClassOf(Ab)) end)
+    probe("isFinal", function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end)
+    probe("isSealed", function() return __K2L_NeedsReflect(__K2L_KClassOf(S)) end)
+    probe("isCompanion", function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end)
+    probe("isInner", function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end)
+    probe("supertypes", function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end)
 end
 
 main()

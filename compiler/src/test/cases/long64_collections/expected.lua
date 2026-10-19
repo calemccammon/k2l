@@ -10,6 +10,7 @@ local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_PriorityQueue = ____lualib.__K2L_PriorityQueue
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SortedSet = ____lualib.__K2L_SortedSet
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
@@ -28,12 +29,12 @@ local function main()
     print(__K2L_Str(list))
     list:sortDescending()
     print(__K2L_Str(list))
-    list:sortBy(function(it) return -it end)
+    list:sortBy(function(it) return -it end, true)
     print(__K2L_Str(list))
     list:sortWith(__K2L_CompareBy(function(it) return math.fmod(it, 10) end))
     print(__K2L_Str(list))
     print(__K2L_Str(list:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(function(it) return it end), function(it) return it end))))
-    print(__K2L_Str(list:sortedBy(function(it) return it end)))
+    print(__K2L_Str(list:sortedBy(function(it) return it end, true)))
     print(list:binarySearch(5))
     print(list:sorted():binarySearch(big))
     print(__K2L_JdkCollections.max(list))
@@ -101,7 +102,7 @@ local function main()
     print(__K2L_Str(arr:copyOfRange(1, 3):toList()))
     print(__K2L_Str(arr:reversedArray():toList()))
     local hm = __K2L_HashMap.new()
-    local ____list = __K2L_ListOf(big, max, 17, big + 1, min, 3, 1 << 40, 1 << 33, -(1 << 40))
+    local ____list = __K2L_ReadOnlyListOf(big, max, 17, big + 1, min, 3, 1 << 40, 1 << 33, -(1 << 40))
     for i = 0, ____list.size - 1 do
         local k = ____list[i + 1]
         hm:set(k, i)

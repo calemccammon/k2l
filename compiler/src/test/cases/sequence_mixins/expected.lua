@@ -4,7 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ContextGet = ____lualib.__K2L_ContextGet
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
-local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
@@ -73,7 +73,7 @@ function Sub:____init(label)
 end
 
 function Sub:iterator()
-    return __K2L_IteratorOf(__K2L_ListOf(self.label, self.label))
+    return __K2L_IteratorOf(__K2L_ReadOnlyListOf(self.label, self.label))
 end
 
 local Shape = __K2L_Class("Shape")

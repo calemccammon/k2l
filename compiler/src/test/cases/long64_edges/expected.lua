@@ -1,9 +1,10 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_CheckStep = ____lualib.__K2L_CheckStep
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
-local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
@@ -12,7 +13,7 @@ local function main()
     local min = -9223372036854775807 - 1
     local max = 9223372036854775807
     local big = 5000000000000000000
-    for _, n in ipairs(__K2L_ListOf(0, 1, 31, 32, 33, 62, 63, 64, 65, 127, 128, -1, -63)) do
+    for _, n in ipairs(__K2L_ReadOnlyListOf(0, 1, 31, 32, 33, 62, 63, 64, 65, 127, 128, -1, -63)) do
         print(n .. ": " .. (1 << n) .. " " .. min // (1 << n) .. " " .. (min >> n) .. " " .. -big // (1 << n) .. " " .. (big >> n) .. " " .. (max << n))
     end
     print(1 << 64)
@@ -30,7 +31,7 @@ local function main()
     end
     print()
     local ____ok, ____result = pcall(function()
-        for i = 1, 5, 0 do
+        for i = 1, 5, __K2L_CheckStep(0) do
             io.write(tostring(i))
         end
     end)

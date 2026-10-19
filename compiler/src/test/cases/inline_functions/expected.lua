@@ -6,6 +6,8 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -172,7 +174,7 @@ local function mapFirst()
 end
 
 local function sumTest()
-    local xs = __K2L_ListOf(1, 2, 3, 4, 5)
+    local xs = __K2L_ReadOnlyListOf(1, 2, 3, 4, 5)
     local skipped = -1
     local s = sumUntil(xs, 7, function(it)
         skipped = it
@@ -453,7 +455,7 @@ function Cat:____init(name)
 end
 
 local function reified()
-    local items = __K2L_ListOf(Dog.new("d"), Cat.new("c"), "s", 4, Dog.new("e"), true)
+    local items = __K2L_ReadOnlyListOf(Dog.new("d"), Cat.new("c"), "s", 4, Dog.new("e"), true)
     local out = __K2L_ListOf()
     local ____result_14
     do
@@ -646,7 +648,7 @@ local function elsewhere(stopAt)
     local d = ____result_31
     local seen = ""
     do
-        local items = __K2L_ListOf("a", "b", "c", "d")
+        local items = __K2L_ReadOnlyListOf("a", "b", "c", "d")
         local ____i_1 = 0
         for _, item in ipairs(items) do
             local ____result_33
@@ -666,7 +668,7 @@ local function elsewhere(stopAt)
     end
     local ____result_34
     do
-        local keys = __K2L_ListOf("x", "y", "x")
+        local keys = __K2L_ReadOnlyListOf("x", "y", "x")
         local counts = __K2L_MapOf()
         for _, k in ipairs(keys) do
             local ____result_35
@@ -808,7 +810,7 @@ local function whenUse(n)
     if n == 0 then
         local ____result_40
         do
-            local xs = __K2L_ListOf("a")
+            local xs = __K2L_SingletonListOf("a")
             for _, x in ipairs(xs) do
                 local ____result_41
                 if n == 0 then
@@ -827,15 +829,15 @@ local function whenUse(n)
         end
         v = ____result_40
     else
-        v = mapNotNullFirst(__K2L_ListOf("abc"), function(it) return #it end)
+        v = mapNotNullFirst(__K2L_SingletonListOf("abc"), function(it) return #it end)
     end
     return "v=" .. __K2L_Str(v)
 end
 
 local function main()
-    print(findBig(__K2L_ListOf(1, 2, 5, 9)))
-    print(findBig(__K2L_ListOf(1, 2, 3)))
-    print(findBig(__K2L_ListOf(1, 60, 3)))
+    print(findBig(__K2L_ReadOnlyListOf(1, 2, 5, 9)))
+    print(findBig(__K2L_ReadOnlyListOf(1, 2, 3)))
+    print(findBig(__K2L_ReadOnlyListOf(1, 60, 3)))
     print(counter())
     print(shadow())
     print(early(true))
@@ -852,14 +854,14 @@ local function main()
     print(guards(0))
     print(guards(1))
     print(guards(2))
-    print(order(__K2L_ListOf(1, 2, 3)))
-    print(order(__K2L_ListOf()))
+    print(order(__K2L_ReadOnlyListOf(1, 2, 3)))
+    print(order(__K2L_ReadOnlyListOf()))
     print(reified())
     print(Client.new("L"):run())
     print(Client.new("L"):plain())
-    print(labeled(__K2L_ListOf("skip", "abc")))
-    print(labeled(__K2L_ListOf("skip", "stop", "abc")))
-    print(labeled(__K2L_ListOf()))
+    print(labeled(__K2L_ReadOnlyListOf("skip", "abc")))
+    print(labeled(__K2L_ReadOnlyListOf("skip", "stop", "abc")))
+    print(labeled(__K2L_ReadOnlyListOf()))
     print(chain())
     print(whenUse(0))
     print(whenUse(1))

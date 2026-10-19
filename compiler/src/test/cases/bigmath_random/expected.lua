@@ -5,8 +5,8 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
-local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MathContext = ____lualib.__K2L_MathContext
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RoundingMode = ____lualib.__K2L_RoundingMode
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
@@ -69,7 +69,7 @@ end
 
 local function decimals()
     print("-- decimals")
-    local modes = __K2L_ListOf(__K2L_RoundingMode.UP, __K2L_RoundingMode.DOWN, __K2L_RoundingMode.CEILING, __K2L_RoundingMode.FLOOR, __K2L_RoundingMode.HALF_UP, __K2L_RoundingMode.HALF_DOWN, __K2L_RoundingMode.HALF_EVEN)
+    local modes = __K2L_ReadOnlyListOf(__K2L_RoundingMode.UP, __K2L_RoundingMode.DOWN, __K2L_RoundingMode.CEILING, __K2L_RoundingMode.FLOOR, __K2L_RoundingMode.HALF_UP, __K2L_RoundingMode.HALF_DOWN, __K2L_RoundingMode.HALF_EVEN)
     for i = 1, 120 do
         local a = __K2L_BigDecimal.fromBigInteger(randomInteger(), ____next(12) - 3)
         local b = __K2L_BigDecimal.fromBigInteger(randomInteger(), ____next(12) - 3)

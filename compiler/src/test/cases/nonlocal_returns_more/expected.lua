@@ -6,8 +6,12 @@ local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
 local __K2L_StringToList = ____lualib.__K2L_StringToList
@@ -85,7 +89,7 @@ local function toVariants(xs, which)
         if which == 4 and it == 3 then
             return "flatMapTo stopped, kept " .. __K2L_Str(flat)
         else
-            ____result_4 = __K2L_ListOf(it, it)
+            ____result_4 = __K2L_ReadOnlyListOf(it, it)
         end
         flat:addAll(____result_4)
     end
@@ -192,7 +196,7 @@ local function indexedAndRunning(xs, which)
         if which == 1 and x == 3 then
             return "flatMapIndexed stopped at " .. i
         else
-            ____result_14 = __K2L_ListOf(i, x)
+            ____result_14 = __K2L_ReadOnlyListOf(i, x)
         end
         ____result_13:addAll(____result_14)
     end
@@ -358,8 +362,8 @@ local function lookups(m, xs, key, i)
         ____value_9 = xs
     end
     local d = ____value_9
-    local e = __K2L_MapOf():ifEmpty(function()
-        return __K2L_MapOf(__K2L_Pair.new("fallback", 1))
+    local e = __K2L_ReadOnlyMapOf():ifEmpty(function()
+        return __K2L_SingletonMapOf(__K2L_Pair.new("fallback", 1))
     end)
     return "a=" .. a .. " b=" .. b .. " c=" .. c .. " d=" .. __K2L_Str(d) .. " e=" .. __K2L_Str(e) .. " m=" .. __K2L_Str(m)
 end
@@ -662,24 +666,24 @@ local function timed(early)
 end
 
 local function main()
-    local xs = __K2L_ListOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+    local xs = __K2L_ReadOnlyListOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
     print(toVariants(xs, 99))
     for which = 0, 10 do
         print(toVariants(xs, which))
     end
-    print(toVariants(__K2L_ListOf(), 0))
+    print(toVariants(__K2L_ReadOnlyListOf(), 0))
     print(indexedAndRunning(xs, 99))
     for which = 0, 7 do
         print(indexedAndRunning(xs, which))
     end
     local m = __K2L_MapOf(__K2L_Pair.new("x", 1))
-    print(lookups(m, __K2L_ListOf(5, 6), "abc", 1))
-    print(lookups(m, __K2L_ListOf(5, 6), "abc", 7))
-    print(lookups(m, __K2L_ListOf(500, 600), "abc", -1))
-    print(lookups(m, __K2L_ListOf(500, 600), "abc", 5))
-    print(lookups(m, __K2L_ListOf(), "abc", 0))
-    print(lookups(m, __K2L_ListOf(1), "boom", 0))
-    print(lookups(m, __K2L_ListOf(1), "bang", 0))
+    print(lookups(m, __K2L_ReadOnlyListOf(5, 6), "abc", 1))
+    print(lookups(m, __K2L_ReadOnlyListOf(5, 6), "abc", 7))
+    print(lookups(m, __K2L_ReadOnlyListOf(500, 600), "abc", -1))
+    print(lookups(m, __K2L_ReadOnlyListOf(500, 600), "abc", 5))
+    print(lookups(m, __K2L_ReadOnlyListOf(), "abc", 0))
+    print(lookups(m, __K2L_SingletonListOf(1), "boom", 0))
+    print(lookups(m, __K2L_SingletonListOf(1), "bang", 0))
     print(__K2L_Str(m))
     print(texts("bcad", 99))
     for which = 0, 9 do
