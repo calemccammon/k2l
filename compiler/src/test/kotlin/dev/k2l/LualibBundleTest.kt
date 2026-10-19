@@ -25,18 +25,22 @@ class LualibBundleTest {
     }
 
     @TestFactory
-    fun everyFeatureLoadsTogether(): List<DynamicTest> = INTERPRETERS.map { (target, names) ->
-        DynamicTest.dynamicTest("all features on ${target.id}") {
-            val interpreter = names.firstOrNull(::onPath)
-            assumeTrue(interpreter != null, "${names.first()} not found")
-            val bundle = dir.resolve("bundle_${target.name}.lua")
-            // Features that exist only as another target's variant (e.g. IMul.float) are left out.
-            val available = features.filter { runCatching { Lualib.feature(it, target) }.isSuccess }
-            Files.writeString(bundle, Lualib.bundle(available, target))
-            val process = ProcessBuilder(interpreter, bundle.toString()).redirectErrorStream(true).start()
-            check(process.waitFor(30, TimeUnit.SECONDS)) { "lua timed out" }
-            val output = process.inputStream.bufferedReader().readText()
-            assertEquals(0, process.exitValue(), "bundle of all features failed to load:\n$output")
+    fun everyFeatureLoadsTogether(): List<DynamicTest> = INTERPRETERS.flatMap { (target, names) ->
+        // --long64 emulate has its own variants of the runtime on the targets without integers
+        listOf(false, true).filter { !it || !target.hasIntegers }.map { emulate ->
+            val label = if (emulate) "all features on ${target.id} with long64=emulate" else "all features on ${target.id}"
+            DynamicTest.dynamicTest(label) {
+                val interpreter = names.firstOrNull(::onPath)
+                assumeTrue(interpreter != null, "${names.first()} not found")
+                val bundle = dir.resolve("bundle_${target.name}_$emulate.lua")
+                // Features that exist only as another target's variant (e.g. IMul.float) are left out.
+                val available = features.filter { runCatching { Lualib.feature(it, target, emulate) }.isSuccess }
+                Files.writeString(bundle, Lualib.bundle(available, target, emulate))
+                val process = ProcessBuilder(interpreter, bundle.toString()).redirectErrorStream(true).start()
+                check(process.waitFor(30, TimeUnit.SECONDS)) { "lua timed out" }
+                val output = process.inputStream.bufferedReader().readText()
+                assertEquals(0, process.exitValue(), "bundle of all features failed to load:\n$output")
+            }
         }
     }
 

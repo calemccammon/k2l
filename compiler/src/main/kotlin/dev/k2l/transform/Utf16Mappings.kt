@@ -76,15 +76,30 @@ internal object Utf16Mappings {
         streams(t)
     }
 
-    /** A `Locale` is its tag string. Locale-specific rules are not applied: everything behaves like `Locale.ROOT`. */
+    /**
+     * A `Locale` is its string form (`tr_TR`, see `Locale.lua`). The default locale is `en_US`. Only with `--strings utf16`
+     * does the language change anything: Turkish, Azeri and Lithuanian case mapping (see `Utf16Locale.lua`).
+     */
     private fun locales(t: MappingTable) {
         for ((name, tag) in LOCALES) {
             t.def("java/util/Locale.$name") { LuaString(tag) }
         }
         t.def("java/util/Locale.getDefault") { LuaString("en_US") }
-        t.def("java/util/Locale.forLanguageTag") { arg(0) }
-        t.def("java/util/Locale.toString", "java/util/Locale.toLanguageTag") { self }
+        t.def("java/util/Locale.forLanguageTag") { locale("forLanguageTag", arg(0)) }
+        t.def("java/util/Locale.of") { locale("of", *args.toTypedArray()) }
+        t.def("java/util/Locale.toString") { self }
+        t.def("java/util/Locale.toLanguageTag") { locale("languageTag", self) }
+        t.def("java/util/Locale.language", "java/util/Locale.getLanguage") { locale("language", self) }
+        t.def("java/util/Locale.country", "java/util/Locale.getCountry") { locale("country", self) }
+        t.def("java/util/Locale.variant", "java/util/Locale.getVariant") { locale("variant", self) }
     }
+
+    private fun CallSite.locale(member: String, vararg args: LuaExpr): LuaExpr =
+        LuaCall(LuaIndex(ref("Locale", "__K2L_Locale"), LuaString(member)), args.toList())
+
+    /** `Locale(language)`, `Locale(language, country)` and `Locale(language, country, variant)`. */
+    fun construct(classId: String?, site: CallSite): LuaExpr? =
+        if (classId == "java/util/Locale") site.locale("of", *site.args.toTypedArray()) else null
 
     private fun CallSite.utf16Only(what: String, mapping: CallSite.() -> LuaExpr): LuaExpr =
         if (utf16) mapping() else unsupported("'$what' $WITHOUT_UTF16")
@@ -147,3 +162,15 @@ internal object Utf16Mappings {
 
     private fun le(e: LuaExpr, n: String): LuaExpr = LuaBinary(LuaBinOp.Le, e, num(n))
 }
+
+/**
+ * `uppercase`, `lowercase` and `titlecase` with or without a `Locale`: the Unicode mapping, or the locale's rules. A constant
+ * locale of another language than Turkish, Azeri or Lithuanian (`Locale.US`, `Locale.ROOT`) maps like no locale at all.
+ */
+internal fun CallSite.u16CaseOf(member: String): LuaExpr {
+    val tag = (args.firstOrNull() as? LuaString)?.value
+    if (args.isEmpty() || (tag != null && tag.substringBefore('_') !in LOCALE_SENSITIVE)) return u16Case(member, self)
+    return LuaCall(LuaIndex(ref("Utf16Locale", "__K2L_Utf16Locale"), LuaString(member)), listOf(self, arg(0)))
+}
+
+private val LOCALE_SENSITIVE = setOf("tr", "az", "lt")

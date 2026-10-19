@@ -1,0 +1,22 @@
+twice
+42
+8
+[2, 4, 6]
+[2, 4, 6]
+[-1, -2, -3]
+shout -> HEY!
+whisper -> loud...
+greet -> Hello, Kotlin
+greet -> Hello, Lua
+isEmpty: false
+isBlank -> true
+function twice
+[twice, shout, greet]
+twice 10
+negate
+<init>
+Hi, there
+a: twice 20
+b: negate -10
+[shout, twice]
+twice

@@ -25,13 +25,14 @@ internal fun KaSession.classifySupertypes(
 ): SuperInfo {
     val found = SuperEntries()
     c.superTypeListEntries.forEach { entry -> add(found, entry, isSource) }
-    // A class that extends a source class or a library class gets its Sequence operations only through that.
-    val ownSequence = found.sequence != null && found.base == null && found.libraryBase == null
+    // A class that implements Sequence next to a source class, a library class or the context element base gets the Sequence
+    // operations as a mixin: its table lists the lualib Sequence among its interfaces.
+    val ownSequence = found.sequence != null && found.base == null && found.libraryBase == null && found.element == null
     val inheritsSequence = found.base?.let(isSequenceClass) ?: false
-    if (found.sequence != null && !ownSequence && !inheritsSequence) found.bad = found.bad ?: found.sequence
+    val sequenceMixin = found.sequence != null && !ownSequence && !inheritsSequence
     if (found.element != null && (found.base != null || found.libraryBase != null)) found.bad = found.bad ?: found.element
     val elementBase = found.element != null && found.bad == null
-    return SuperInfo(found.base, found.baseCall, found.interfaces, found.bad, found.libraryBase, ownSequence, elementBase)
+    return SuperInfo(found.base, found.baseCall, found.interfaces, found.bad, found.libraryBase, ownSequence, elementBase, sequenceMixin)
 }
 
 private fun KaSession.add(found: SuperEntries, entry: KtSuperTypeListEntry, isSource: (KtClassOrObject) -> Boolean) {

@@ -11,7 +11,11 @@ internal object RegexMappings {
 
     fun install(t: MappingTable) {
         for (option in OPTIONS) {
-            t.def("kotlin/text/RegexOption.$option") { LuaString(option) }
+            t.def("kotlin/text/RegexOption.$option") {
+                // with --strings utf16, IGNORE_CASE compares by the Unicode case folding
+                if (option == "IGNORE_CASE") requireUtf16Case()
+                LuaString(option)
+            }
         }
         t.def("kotlin/text/Regex.Companion.escape") {
             LuaCall(LuaIndex(ref("Regex", "__K2L_Regex"), LuaString("escape")), listOf(arg(0)))

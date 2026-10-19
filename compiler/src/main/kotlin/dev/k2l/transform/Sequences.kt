@@ -20,6 +20,7 @@ internal object SequenceMappings {
         "elementAtOrNull", "indexOf", "indexOfFirst", "contains", "any", "all", "none", "count", "average", "max", "min",
         "maxOrNull", "minOrNull", "maxBy", "minBy", "maxByOrNull", "minByOrNull", "maxOf", "minOf", "maxOfOrNull",
         "minOfOrNull", "joinToString", "groupBy", "associate", "associateBy", "associateWith", "toMap", "partition", "iterator",
+        "asIterable", "toCollection",
     )
 
     private val ASSEQUENCE_IDS = setOf("kotlin/collections/asSequence", "kotlin/sequences/asSequence", "kotlin/text/asSequence")

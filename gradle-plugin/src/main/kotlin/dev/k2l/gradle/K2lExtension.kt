@@ -27,6 +27,9 @@ abstract class K2lExtension {
     /** `bytes` (default) or `utf16`: make `String` and `Char` behave like the JVM's UTF-16 strings. */
     abstract val strings: Property<String>
 
+    /** `double` (default) or `emulate`: exact 64-bit `Long` and `ULong` on Lua 5.1, 5.2 and LuaJIT (slower). */
+    abstract val long64: Property<String>
+
     /** Write Source Map v3 files and make Lua errors show Kotlin positions. */
     abstract val sourceMap: Property<Boolean>
 

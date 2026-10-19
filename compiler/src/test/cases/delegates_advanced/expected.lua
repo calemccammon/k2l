@@ -91,12 +91,14 @@ function Base:getTitle()
     return self.____title_delegate:getValue()
 end
 
+Base.____level_property = {name = "level"}
+
 function Base:getLevel()
-    return self.____level_delegate:getValue(self, {name = "level"})
+    return self.____level_delegate:getValue(self, Base.____level_property)
 end
 
 function Base:setLevel(value)
-    self.____level_delegate:setValue(self, {name = "level"}, value)
+    self.____level_delegate:setValue(self, Base.____level_property, value)
 end
 
 function Base:describe()
@@ -118,12 +120,14 @@ function Derived:getTitle()
     return self.____title_delegate__Derived:getValue()
 end
 
+Derived.____level_property__Derived = {name = "level"}
+
 function Derived:getLevel()
-    return self.____level_delegate__Derived:getValue(self, {name = "level"})
+    return self.____level_delegate__Derived:getValue(self, Derived.____level_property__Derived)
 end
 
 function Derived:setLevel(value)
-    self.____level_delegate__Derived:setValue(self, {name = "level"}, value)
+    self.____level_delegate__Derived:setValue(self, Derived.____level_property__Derived, value)
 end
 
 function Derived:superTitle()
@@ -182,32 +186,42 @@ function Members:____init()
     self.____greeting_delegate = provideDelegate(Named.new("hi-"), self, {name = "greeting"})
 end
 
+Members.____tracked_property = {name = "tracked"}
+
 function Members:getTracked()
-    return self.____tracked_delegate:getValue(self, {name = "tracked"})
+    return self.____tracked_delegate:getValue(self, Members.____tracked_property)
 end
 
 function Members:setTracked(value)
-    self.____tracked_delegate:setValue(self, {name = "tracked"}, value)
+    self.____tracked_delegate:setValue(self, Members.____tracked_property, value)
 end
+
+Members.____bare_property = {name = "bare"}
 
 function Members:getBare()
-    return getValue(self.____bare_delegate, self, {name = "bare"})
+    return getValue(self.____bare_delegate, self, Members.____bare_property)
 end
 
+Members.____settable_property = {name = "settable"}
+
 function Members:getSettable()
-    return getValue(self.____settable_delegate, self, {name = "settable"})
+    return getValue(self.____settable_delegate, self, Members.____settable_property)
 end
 
 function Members:setSettable(value)
-    setValue(self.____settable_delegate, self, {name = "settable"}, value)
+    setValue(self.____settable_delegate, self, Members.____settable_property, value)
 end
+
+Members.____counter_property = {name = "counter"}
 
 function Members:getCounter()
-    return getValue__1(self.____counter_delegate, self, {name = "counter"})
+    return getValue__1(self.____counter_delegate, self, Members.____counter_property)
 end
 
+Members.____greeting_property = {name = "greeting"}
+
 function Members:getGreeting()
-    return self.____greeting_delegate:getValue(self, {name = "greeting"})
+    return self.____greeting_delegate:getValue(self, Members.____greeting_property)
 end
 
 local ____top_delegate = Logged.new("top"):provideDelegate(nil, {name = "top"})

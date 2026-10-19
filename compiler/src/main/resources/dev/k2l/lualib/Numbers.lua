@@ -200,10 +200,15 @@ function __K2L_Num.toRadix(n, radix)
         return "0"
     end
     local negative = n < 0
-    if negative then
+    local out = {}
+    if negative and n == MIN_LONG then
+        -- -n would overflow: take the last place first
+        local place = -math.fmod(n, radix)
+        out[1] = DIGITS:sub(place + 1, place + 1)
+        n = -__K2L_FloorDiv(n + place, radix)
+    elseif negative then
         n = -n
     end
-    local out = {}
     while n > 0 do
         local digit = n % radix
         out[#out + 1] = DIGITS:sub(digit + 1, digit + 1)

@@ -1,1 +1,1 @@
-14:13: Kotlin library API 'kotlin/sequences/asIterable' is not supported yet
+14:13: Kotlin library API 'kotlin/sequences/lastIndexOf' is not supported yet

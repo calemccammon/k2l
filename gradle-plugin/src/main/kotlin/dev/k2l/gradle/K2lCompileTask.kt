@@ -16,6 +16,7 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.toolchain.JavaLauncher
 import org.gradle.process.ExecOperations
+import org.gradle.work.DisableCachingByDefault
 import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.inject.Inject
@@ -25,6 +26,7 @@ import javax.inject.Inject
  * (large) Analysis API dependencies never reach the build's own classpath. The task is up to date while neither the
  * sources, the options nor the compiler change, and the build fails with the compiler's diagnostics on a Kotlin error.
  */
+@DisableCachingByDefault(because = "Generated Lua embeds absolute paths in diagnostics and source maps; not worth sharing")
 abstract class K2lCompileTask @Inject constructor(private val exec: ExecOperations) : DefaultTask() {
     @get:InputFiles
     @get:IgnoreEmptyDirectories
@@ -50,6 +52,9 @@ abstract class K2lCompileTask @Inject constructor(private val exec: ExecOperatio
 
     @get:Input
     abstract val strings: Property<String>
+
+    @get:Input
+    abstract val long64: Property<String>
 
     @get:Input
     abstract val sourceMap: Property<Boolean>
@@ -85,6 +90,8 @@ abstract class K2lCompileTask @Inject constructor(private val exec: ExecOperatio
                 intOverflow.get(),
                 "--strings",
                 strings.get(),
+                "--long64",
+                long64.get(),
             )
         if (sourceMap.get()) args += "--source-map"
         val extra = classpath.files.filter { it.exists() }

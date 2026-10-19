@@ -62,12 +62,14 @@ function Shop:____init(name)
     end)
 end
 
+Shop.____sales_property = {name = "sales"}
+
 function Shop:getSales()
-    return self.____sales_delegate:getValue(self, {name = "sales"})
+    return self.____sales_delegate:getValue(self, Shop.____sales_property)
 end
 
 function Shop:setSales(value)
-    self.____sales_delegate:setValue(self, {name = "sales"}, value)
+    self.____sales_delegate:setValue(self, Shop.____sales_property, value)
 end
 
 Shop.Till = __K2L_Class("Till")

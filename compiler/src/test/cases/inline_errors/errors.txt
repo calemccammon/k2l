@@ -1,1 +1,1 @@
-24:62: Non-local return out of a lambda passed to 'mapTo' is not supported yet
+24:48: Non-local return out of a lambda passed to 'trim' is not supported yet

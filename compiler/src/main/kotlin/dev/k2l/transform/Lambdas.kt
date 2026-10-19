@@ -106,6 +106,7 @@ internal fun FileTransformer.emitInlinedBody(body: List<LuaStmt>, frame: Functio
 private fun FileTransformer.isInlinableExpression(lambdaExpr: KtExpression, single: KtExpression, args: List<LuaExpr>) = with(session) {
     single !is KtDeclaration && !mayNeedStatements(single) && args.all(::isStable) &&
         PsiTreeUtil.findChildOfType(lambdaExpr, KtReturnExpression::class.java) == null &&
+        single !is KtThrowExpression &&
         (KtPsiUtil.safeDeparenthesize(lambdaExpr) as? KtLambdaExpression)?.valueParameters?.none { it.destructuringDeclaration != null } !=
         false
 }
@@ -208,16 +209,16 @@ internal fun FileTransformer.callableReference(e: KtCallableReferenceExpression)
     val psi = symbol?.psi
     val receiverExpr = e.receiverExpression
     return when {
-        symbol is KaConstructorSymbol -> constructorReference(e, symbol, psi)
+        symbol is KaConstructorSymbol -> named(e, constructorReference(e, symbol, psi))
 
         psi is KtNamedFunction && psi.isMemberExtension() -> unsupported(e, "Reference to a member extension function")
 
-        psi is KtNamedFunction && classes.isSource(psi) -> functionReference(e, psi)
+        psi is KtNamedFunction && classes.isSource(psi) -> named(e, functionReference(e, psi))
 
         (psi is KtProperty || psi is KtParameter) && classes.isSource(psi) ->
             propertyReference(e, psi as KtNamedDeclaration) ?: unsupported(e, "This property reference")
 
-        symbol is KaCallableSymbol -> libraryReference(e, symbol) ?: unsupported(e, "This callable reference")
+        symbol is KaCallableSymbol -> libraryReference(e, symbol)?.let { named(e, it) } ?: unsupported(e, "This callable reference")
 
         else -> unsupported(e, "This callable reference")
     }

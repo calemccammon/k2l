@@ -3,6 +3,7 @@ import java.time.Duration
 plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-gradle-plugin`
+    alias(libs.plugins.plugin.publish)
 }
 
 kotlin {
@@ -10,12 +11,17 @@ kotlin {
 }
 
 gradlePlugin {
+    // Gradle Plugin Portal metadata; the API key comes from -Pgradle.publish.key/secret or
+    // ORG_GRADLE_PROJECT_gradle.publish.key / ...secret (see RELEASING.md).
+    website.set("https://github.com/calemccammon/k2l")
+    vcsUrl.set("https://github.com/calemccammon/k2l.git")
     plugins {
         create("k2l") {
             id = "dev.k2l"
             implementationClass = "dev.k2l.gradle.K2lPlugin"
             displayName = "k2l: Kotlin to Lua"
             description = "Transpiles Kotlin sources to Lua with the k2l compiler."
+            tags.set(listOf("kotlin", "lua", "transpiler", "k2l"))
         }
     }
 }

@@ -1,0 +1,6 @@
+p[0-9]*/
+p[0-9]*.err
+runtime/*/out*/
+runtime/*/*.stdout
+runtime/*/*.stderr
+runtime/*/compile.err

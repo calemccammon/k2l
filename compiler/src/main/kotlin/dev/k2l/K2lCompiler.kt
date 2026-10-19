@@ -30,35 +30,44 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
     private companion object {
         const val REGISTER_NAME = "__K2L_SourceMapRegister"
         const val REGISTER_LINES = 1
+        const val NANOS_PER_MILLI = 1_000_000
     }
 
     fun compile(session: SourceSession, module: SourceModule): CompileResult {
-        val outputs = mutableListOf<LuaOutput>()
-        val diagnostics = mutableListOf<Diagnostic>()
-        val usedFeatures = sortedSetOf<String>()
         val files = session.files(module.name)
-        val moduleContext = moduleContext(module, files)
-        for (file in files) {
-            analyze(file) {
-                val kotlinErrors = file.collectDiagnostics(KaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS)
-                    .filter { it.severity == KaSeverity.ERROR }
-                if (kotlinErrors.isNotEmpty()) {
-                    // Don't transpile code the Kotlin compiler would reject.
-                    diagnostics += kotlinErrors.map { Diagnostic.at(it.psi, Severity.Error, it.defaultMessage) }
-                    return@analyze
-                }
-                val ctx = TransformContext(options)
-                val chunk = FileTransformer(this, file, ctx, moduleContext).transformFile()
-                diagnostics += ctx.diagnostics
-                // A file of only external declarations (Lua bindings) produces no Lua.
-                if (chunk.body.isNotEmpty()) outputs += render(chunk, ctx, outputPath(module, file), Paths.get(file.virtualFile.path))
-                usedFeatures += ctx.lualib
-            }
+        val profile = System.getenv("K2L_PROFILE") != null
+        var t0 = System.nanoTime()
+        fun lap(what: String) {
+            if (profile) System.err.println("[profile] $what ${(System.nanoTime() - t0) / NANOS_PER_MILLI} ms")
+            t0 = System.nanoTime()
         }
+        val moduleContext = moduleContext(module, files)
+        lap("module references")
+        val results = files.map { file -> compileFile(file, module, moduleContext) }
+        lap("files")
+        val outputs = results.mapNotNullTo(mutableListOf()) { it.output }
+        val diagnostics = results.flatMap { it.diagnostics }
+        val usedFeatures = results.flatMapTo(sortedSetOf()) { it.features }
         if (options.luaLibImport == LuaLibImport.Require && usedFeatures.isNotEmpty()) {
-            outputs += LuaOutput("${Lualib.BUNDLE_MODULE}.lua", Lualib.bundle(usedFeatures, options.luaTarget))
+            outputs += LuaOutput("${Lualib.BUNDLE_MODULE}.lua", Lualib.bundle(usedFeatures, options.luaTarget, options.emulatesLong64))
         }
         return CompileResult(outputs, diagnostics)
+    }
+
+    private class FileResult(val diagnostics: List<Diagnostic>, val output: LuaOutput?, val features: Set<String>)
+
+    private fun compileFile(file: KtFile, module: SourceModule, moduleContext: ModuleContext): FileResult = analyze(file) {
+        val kotlinErrors = file.collectDiagnostics(KaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS)
+            .filter { it.severity == KaSeverity.ERROR }
+        if (kotlinErrors.isNotEmpty()) {
+            // Don't transpile code the Kotlin compiler would reject.
+            return@analyze FileResult(kotlinErrors.map { Diagnostic.at(it.psi, Severity.Error, it.defaultMessage) }, null, emptySet())
+        }
+        val ctx = TransformContext(options)
+        val chunk = FileTransformer(this, file, ctx, moduleContext).transformFile()
+        // A file of only external declarations (Lua bindings) produces no Lua.
+        val output = if (chunk.body.isNotEmpty()) render(chunk, ctx, outputPath(module, file), Paths.get(file.virtualFile.path)) else null
+        FileResult(ctx.diagnostics.toList(), output, ctx.lualib.toSet())
     }
 
     private fun render(chunk: LuaChunk, ctx: TransformContext, luaPath: String, sourcePath: Path): LuaOutput {
@@ -69,7 +78,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         ctx.lualibNames += REGISTER_NAME
         // The runtime table is one line, so the code starts after the lines of the header plus that line.
         val top = when (options.luaLibImport) {
-            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget)
+            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget, options.emulatesLong64)
 
             LuaLibImport.Require -> buildString {
                 append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")
@@ -87,7 +96,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val code = LuaPrinter().print(chunk)
         if (ctx.lualib.isEmpty()) return code
         return when (options.luaLibImport) {
-            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget) + "\n" + code
+            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget, options.emulatesLong64) + "\n" + code
 
             LuaLibImport.Require -> buildString {
                 append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")

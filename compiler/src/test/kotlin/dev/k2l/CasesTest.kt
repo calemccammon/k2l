@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
  * - `main.kt`: the Kotlin input
  * - `expected.lua`: the exact transpiler output (regenerate with `-PupdateGolden`)
  * - `stdout.txt`: what the program prints, produced by the Kotlin/JVM oracle (`kotlinOracle` task)
- * - `options.txt` (optional): compiler options for the case, one `name=value` per line (`intOverflow=wrap`, `strings=utf16`)
+ * - `options.txt` (optional): compiler options for the case, one `name=value` per line (`intOverflow=wrap`, `strings=utf16`, `long64=emulate`)
  * - `errors.txt` (instead of the other two): expected diagnostics, one `line:column: message` per line
  */
 class CasesTest {
@@ -49,6 +49,8 @@ class CasesTest {
                     },
                     DynamicTest.dynamicTest("runs") {
                         assumeTrue(luaAvailable, "$lua not found")
+                        val skip = skippedTargets(dir)["5.4"]
+                        assumeTrue(skip == null, "skipped on 5.4: $skip")
                         assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
                         assertEquals(File(dir, "stdout.txt").readText(), runLua(lua, result.outputs, dir.toPath()))
                     },
@@ -72,7 +74,7 @@ class CasesTest {
         val values = lines.associate { it.substringBefore('=').trim() to it.substringAfter('=').trim() }
         require(
             values.keys.all {
-                it == "intOverflow" || it == "luaLibImport" || it == "strings"
+                it == "intOverflow" || it == "luaLibImport" || it == "strings" || it == "long64"
             },
         ) { "unknown option in ${dir.name}/options.txt: ${values.keys}" }
         return CompilerOptions(
@@ -80,6 +82,7 @@ class CasesTest {
             values["luaLibImport"]?.let { if (it == "inline") LuaLibImport.Inline else LuaLibImport.Require } ?: LuaLibImport.Require,
             intOverflow = values["intOverflow"]?.let(IntOverflow::parse) ?: IntOverflow.Unchecked,
             strings = values["strings"]?.let(StringSemantics::parse) ?: StringSemantics.Bytes,
+            long64 = values["long64"]?.let(Long64::parse) ?: Long64.AsDouble,
         )
     }
 
@@ -99,7 +102,7 @@ class CasesTest {
         throw AssertionFailedError(message, expected, actual)
     }
 
-    /** `targets-skip.txt`: lines of `5.1: reason` for known, documented differences on a target. */
+    /** `targets-skip.txt`: lines of `5.1: reason` (or `5.4: reason`, which skips the run of the golden Lua) for known, documented differences on a target. */
     private fun skippedTargets(dir: File): Map<String, String> = File(dir, "targets-skip.txt").takeIf { it.isFile }?.readLines().orEmpty()
         .filter { ':' in it }.associate { it.substringBefore(':').trim() to it.substringAfter(':').trim() }
 

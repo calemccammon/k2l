@@ -1,0 +1,1 @@
+5.3: a numeric for loop whose limit is math.maxinteger never ends in Lua 5.3

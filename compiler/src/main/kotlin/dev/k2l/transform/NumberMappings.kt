@@ -230,6 +230,7 @@ internal object NumberMappings {
         t.def("java/lang/System.currentTimeMillis") { n("currentTimeMillis") }
         t.def("java/lang/System.nanoTime") { n("nanoTime") }
         t.def("java/lang/System.lineSeparator") { LuaString("\n") }
+        t.def("java/io/Closeable.close", "java/lang/AutoCloseable.close") { method(self, "close") }
         t.def("kotlin/system/measureTimeMillis") { n("measureTimeMillis", arg(0)) }
         t.def("kotlin/system/measureNanoTime") { n("measureNanoTime", arg(0)) }
     }

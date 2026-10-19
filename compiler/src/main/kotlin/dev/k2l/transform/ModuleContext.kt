@@ -1,7 +1,9 @@
 package dev.k2l.transform
 
 import org.jetbrains.kotlin.KtNodeTypes
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.psi.KtClassLiteralExpression
+import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtConstantExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
@@ -17,6 +19,31 @@ class ModuleContext(
     /** Files required by another file; `main()` is only called in files nobody requires. */
     val imported: Set<KtFile> = emptySet(),
 ) {
+    private val classesByFile = HashMap<KtFile, Map<ClassId, KtClassOrObject>>()
+
+    private fun classesOf(file: KtFile): Map<ClassId, KtClassOrObject> = classesByFile.getOrPut(file) {
+        val result = LinkedHashMap<ClassId, KtClassOrObject>()
+        file.accept(object : KtTreeVisitorVoid() {
+            override fun visitClassOrObject(classOrObject: KtClassOrObject) {
+                classOrObject.getClassId()?.let { result.putIfAbsent(it, classOrObject) }
+                super.visitClassOrObject(classOrObject)
+            }
+        })
+        result
+    }
+
+    private val classIndex: Map<ClassId, KtClassOrObject> by lazy {
+        val result = HashMap<ClassId, KtClassOrObject>()
+        files.forEach { f -> classesOf(f).forEach { (id, c) -> result.putIfAbsent(id, c) } }
+        result
+    }
+
+    /** The source class with [id], looked up in [preferred] first; indexes are built once per module, not per query. */
+    fun classInFile(id: ClassId, preferred: KtFile): KtClassOrObject? = classesOf(preferred)[id] ?: classIndex[id]
+
+    /** Per-module results that need an analysis session to compute but only hold PSI (see `PropertyFamilies`). */
+    val shared = HashMap<String, Any>()
+
     /** Whether some file uses `::class` or `javaClass`: then classes record their qualified names (see Reflection.kt). */
     val usesReflection: Boolean by lazy { files.any(::mentionsReflection) }
 
@@ -25,6 +52,27 @@ class ModuleContext(
      * typed `Double` is printed by `__K2L_DoubleToString` rather than through the untyped printer.
      */
     val usesFloat: Boolean by lazy { files.any(::mentionsFloat) }
+
+    /**
+     * Whether some file calls `Collections.unmodifiableList` or `unmodifiableCollection`: their result is a view that has no
+     * array part, so loops over lists have to index it rather than use `ipairs`, which does not follow `__index` before Lua 5.3.
+     */
+    val usesListViews: Boolean by lazy { files.any(::mentionsListViews) }
+
+    private fun mentionsListViews(file: KtFile): Boolean {
+        var found = false
+        file.accept(object : KtTreeVisitorVoid() {
+            override fun visitSimpleNameExpression(expression: KtSimpleNameExpression) {
+                if (expression.getReferencedName() in VIEW_NAMES) found = true
+            }
+        })
+        return found
+    }
+
+    private var functionNames: Boolean? = null
+
+    /** Whether some file reads the `name` of a function reference held in a value; computed once with [scan]. */
+    fun usesFunctionNames(scan: (Set<KtFile>) -> Boolean): Boolean = functionNames ?: scan(files).also { functionNames = it }
 
     private fun mentionsFloat(file: KtFile): Boolean {
         var found = false
@@ -55,6 +103,7 @@ class ModuleContext(
     }
 
     companion object {
+        private val VIEW_NAMES = setOf("unmodifiableList", "unmodifiableCollection")
         private val FLOAT_NAMES = setOf("Float", "FloatArray", "floatArrayOf", "toFloat", "toFloatOrNull", "toFloatArray")
 
         fun single(file: KtFile) = ModuleContext(setOf(file), { it.name.removeSuffix(".kt") })

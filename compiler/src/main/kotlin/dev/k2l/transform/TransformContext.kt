@@ -17,6 +17,9 @@ class TransformContext(val options: CompilerOptions) {
     val lualib = sortedSetOf<String>()
     val lualibNames = sortedSetOf<String>()
 
+    /** `Long` constants beyond 2^53 that are boxes in Lua (--long64 emulate on 5.1/5.2): (hi, lo) halves to the local holding the box. */
+    val longLiterals = LinkedHashMap<Pair<Long, Long>, String>()
+
     /** Other files of the module this file requires: Lua module name -> local name. */
     val imports = LinkedHashMap<String, String>()
 

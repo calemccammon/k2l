@@ -75,8 +75,9 @@ private fun FileTransformer.emitClassTable(c: KtClassOrObject, ref: LuaExpr, inf
             info.elementBase -> lualibRef(COROUTINES_FEATURE, "__K2L_AbstractCoroutineContextElement")
             else -> null
         }
-    if (baseRef != null || info.interfaces.isNotEmpty()) classArgs += baseRef ?: LuaNil
+    if (baseRef != null || info.interfaces.isNotEmpty() || info.sequenceMixin) classArgs += baseRef ?: LuaNil
     info.interfaces.mapTo(classArgs) { classRef(it) }
+    if (info.sequenceMixin) classArgs += lualibRef(SEQUENCE_FEATURE, "__K2L_Sequence")
     val create = lualibCall("Class", *classArgs.toTypedArray())
     emit(if (isLocal) LuaLocal(listOf(naming.of(c)), listOf(create)) else assign(ref, create))
     classInfo(c, ref)

@@ -14,6 +14,9 @@ local function __K2L_Str(value)
         return (__K2L_StrHooks.floatPrinter or __K2L_DoubleToString)(value)
     elseif t == "table" and value.toString then
         return value:toString()
+    elseif t == "cdata" then
+        -- an int64_t of --long64 emulate
+        return (tostring(value):gsub("U?LL$", ""))
     end
     return tostring(value)
 end

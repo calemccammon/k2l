@@ -46,7 +46,7 @@ internal fun FileTransformer.loop(e: KtLoopExpression, label: String?): Unit = w
     emitAll(frame.checksAfter)
 }
 
-private fun FileTransformer.loopBody(frame: LoopFrame, body: KtExpression?): List<LuaStmt> = with(session) {
+internal fun FileTransformer.loopBody(frame: LoopFrame, body: KtExpression?): List<LuaStmt> = with(session) {
     loops.addLast(frame)
     val stmts = try {
         collect { body?.let { block(it) } }
@@ -106,6 +106,11 @@ private fun FileTransformer.rangeLoop(
         unsupported(rangeExpr, "Iterating over '${rangeExpr.expressionType.pretty()}'")
         return
     }
+    val wide = if (emulatesLong) wideRangeType(range) else null
+    if (wide != null) {
+        long64RangeLoop(e, frame, param, range, wide)
+        return
+    }
     val values = ordered(listOfNotNull(range.first, range.last, range.step))
         .map { if (isChar) charCode(it) else it }
     val limit = if (range.inclusive) values[1] else plusConstant(values[1], -1)
@@ -145,18 +150,7 @@ private fun FileTransformer.iterationLoop(e: KtForExpression, frame: LoopFrame, 
 
             kind == CollectionKind.Map -> mapLoop(e, frame, rangeExpr, param)
 
-            kind == CollectionKind.Range && destructuring == null -> {
-                val r = cache(expression(rangeExpr), "range")
-                emit(
-                    LuaNumericFor(
-                        naming.of(param),
-                        LuaIndex(r, LuaString("first")),
-                        LuaIndex(r, LuaString("last")),
-                        LuaIndex(r, LuaString("step")),
-                        loopBody(frame, e.body),
-                    ),
-                )
-            }
+            kind == CollectionKind.Range && destructuring == null -> rangeObjectLoop(e, frame, rangeExpr, param)
 
             kind == CollectionKind.Sequence || kind == CollectionKind.Iterator -> sequenceLoop(e, frame, rangeExpr, param, kind)
 
@@ -169,6 +163,25 @@ private fun FileTransformer.iterationLoop(e: KtForExpression, frame: LoopFrame, 
 
             else -> unsupported(rangeExpr, "Iterating over '${type.pretty()}'")
         }
+    }
+
+/** `for (i in range)` over a range held in a value: a numeric `for` over its `first`, `last` and `step`. */
+private fun FileTransformer.rangeObjectLoop(e: KtForExpression, frame: LoopFrame, rangeExpr: KtExpression, param: KtParameter): Unit =
+    with(session) {
+        if (emulatesLong && isWideRange(rangeExpr.expressionType)) {
+            long64RangeObjectLoop(e, frame, param, expression(rangeExpr))
+            return
+        }
+        val r = cache(expression(rangeExpr), "range")
+        emit(
+            LuaNumericFor(
+                naming.of(param),
+                LuaIndex(r, LuaString("first")),
+                LuaIndex(r, LuaString("last")),
+                LuaIndex(r, LuaString("step")),
+                loopBody(frame, e.body),
+            ),
+        )
     }
 
 /** `for (i in xs.indices)` */
@@ -219,9 +232,9 @@ private fun FileTransformer.collectionLoop(
     val list = asList(kind, collection)
     val variable = if (destructuring != null) ctx.temp("item") else naming.of(param)
     val prologue = destructuring?.let { listOf(destructure(it.entries, LuaName(variable).also { v -> stable += v })) }.orEmpty()
-    val nullable = rangeExpr.expressionType?.elementType?.isMarkedNullable != false
+    val nullable = rangeExpr.expressionType?.elementType?.isMarkedNullable != false || usesListViews
     if (!nullable) {
-        // ipairs stops at the first nil, so it is only used when elements can't be null.
+        // ipairs stops at the first nil, so it is only used when elements can't be null (and no list is a view, see ModuleContext).
         emit(LuaGenericFor(listOf("_", variable), listOf(luaCall(LuaName("ipairs"), list)), prologue + loopBody(frame, e.body)))
     } else {
         val items = cache(list, "list")
@@ -248,7 +261,7 @@ private fun FileTransformer.sequenceLoop(
 }
 
 /** A Lua generator (`true, element` per call) for a sequence, or for any iterator via its hasNext()/next(). */
-private fun FileTransformer.generator(kind: CollectionKind, source: LuaExpr): LuaExpr = if (kind == CollectionKind.Sequence) {
+internal fun FileTransformer.generator(kind: CollectionKind, source: LuaExpr): LuaExpr = if (kind == CollectionKind.Sequence) {
     LuaMethodCall(source, "iter", emptyList())
 } else {
     LuaCall(LuaIndex(lualibRef(SEQUENCE_FEATURE, "__K2L_Iterator"), LuaString("iter")), listOf(source))
@@ -337,86 +350,12 @@ internal fun FileTransformer.rangeContains(value: LuaExpr, range: KRange, elemen
     val x = cache(value, "value")
     val lo = if (range.descending) last else first
     val hi = if (range.descending) first else last
-    val upper = LuaBinary(if (range.inclusive) LuaBinOp.Le else LuaBinOp.Lt, x, hi)
+    val upperOp = if (range.inclusive) LuaBinOp.Le else LuaBinOp.Lt
+    val wide = if (emulatesLong) wideRangeType(range) else null
+    if (wide != null) {
+        val upper = long64Comparison(upperOp, x, wide, hi, wide)!!
+        return LuaBinary(LuaBinOp.And, long64Comparison(LuaBinOp.Ge, x, wide, lo, wide)!!, upper)
+    }
+    val upper = LuaBinary(upperOp, x, hi)
     return LuaBinary(LuaBinOp.And, LuaBinary(LuaBinOp.Ge, x, lo), upper)
-}
-
-/** `xs.forEach { ... }` as a loop with the lambda inlined, so `return` and `return@forEach` work. */
-internal fun FileTransformer.forEachLoop(collection: LuaExpr, type: KaType?, lambda: KtExpression, indexed: Boolean): Unit = with(session) {
-    val literal = (KtPsiUtil.safeDeparenthesize(lambda) as? KtLambdaExpression)?.functionLiteral
-    val params = literal?.valueParameters.orEmpty()
-    fun varName(i: Int, default: String) = forEachVar(params, i, default)
-    fun body(vararg vars: String) = forEachBody(lambda, *vars)
-    val kind = type?.collectionKind()
-    when {
-        kind == CollectionKind.LuaTable -> {
-            val k = varName(0, "key")
-            val v = varName(1, "value")
-            emit(LuaGenericFor(listOf(k, v), listOf(luaCall(LuaName("pairs"), collection)), body(k, v)))
-        }
-
-        kind == CollectionKind.Map && params.size == 2 -> {
-            val k = varName(0, "key")
-            val v = varName(1, "value")
-            emit(LuaGenericFor(listOf(k, v), listOf(LuaMethodCall(collection, "iter", emptyList())), body(k, v)))
-        }
-
-        kind == CollectionKind.Map -> {
-            val entry = varName(0, "entry")
-            val entries = LuaMethodCall(collection, "getEntries", emptyList())
-            emit(LuaGenericFor(listOf("_", entry), listOf(luaCall(LuaName("ipairs"), entries)), body(entry)))
-        }
-
-        (kind == CollectionKind.Sequence || kind == CollectionKind.Iterator) && !indexed -> {
-            val item = if (params.isEmpty()) "it" else varName(0, "it")
-            emit(LuaGenericFor(listOf("_", item), listOf(generator(kind, collection)), body(item)))
-        }
-
-        type?.isStringType == true -> {
-            val c = varName(0, "char")
-            emit(LuaGenericFor(listOf(c), listOf(stringChars(collection)), body(c)))
-        }
-
-        else -> forEachList(collection, type, lambda, indexed, params)
-    }
-}
-
-internal fun FileTransformer.forEachVar(params: List<KtParameter>, i: Int, default: String): String = with(session) {
-    params.getOrNull(i)?.takeIf { it.destructuringDeclaration == null && it.name != null }?.let { naming.of(it) } ?: ctx.temp(default)
-}
-
-private fun FileTransformer.forEachBody(lambda: KtExpression, vararg vars: String) = collect {
-    inlineLambda(lambda, vars.map { LuaName(it).also { v -> stable += v } }, null, null)
-}
-
-/** `forEach` over a list-like value, with an index when [indexed] (`forEachIndexed`). */
-private fun FileTransformer.forEachList(
-    collection: LuaExpr,
-    type: KaType?,
-    lambda: KtExpression,
-    indexed: Boolean,
-    params: List<KtParameter>,
-): Unit = with(session) {
-    val kind = type?.collectionKind()
-    fun varName(i: Int, default: String) = forEachVar(params, i, default)
-    fun body(vararg vars: String) = forEachBody(lambda, *vars)
-    if (indexed) {
-        val list = cache(asList(kind, collection), "list")
-        val index = varName(0, "index")
-        val value = varName(1, "value")
-        val element = LuaLocal(listOf(value), listOf(CollectionMappings.index(list, LuaName(index))))
-        val last = lastIndex(list)
-        emit(LuaNumericFor(index, LuaNumber("0"), last, null, listOf(element) + body(index, value)))
-        return
-    }
-    val list = asList(kind, collection)
-    val item = varName(0, "it").let { if (params.isEmpty()) "it" else it }
-    if (type?.elementType?.isMarkedNullable == false) {
-        emit(LuaGenericFor(listOf("_", item), listOf(luaCall(LuaName("ipairs"), list)), body(item)))
-    } else {
-        val items = cache(list, "list")
-        val i = ctx.temp("i")
-        val element = LuaLocal(listOf(item), listOf(LuaIndex(items, LuaName(i))))
-        emit(LuaNumericFor(i, LuaNumber("1"), LuaIndex(items, LuaString("size")), null, listOf(element) + body(item)))
-    }
 }

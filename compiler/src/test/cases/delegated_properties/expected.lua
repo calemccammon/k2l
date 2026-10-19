@@ -111,48 +111,60 @@ function Settings:getGreeting()
     return self.____greeting_delegate:getValue()
 end
 
+Settings.____volume_property = {name = "volume"}
+
 function Settings:getVolume()
-    return self.____volume_delegate:getValue(self, {name = "volume"})
+    return self.____volume_delegate:getValue(self, Settings.____volume_property)
 end
 
 function Settings:setVolume(value)
-    self.____volume_delegate:setValue(self, {name = "volume"}, value)
+    self.____volume_delegate:setValue(self, Settings.____volume_property, value)
 end
 
+Settings.____positive_property = {name = "positive"}
+
 function Settings:getPositive()
-    return self.____positive_delegate:getValue(self, {name = "positive"})
+    return self.____positive_delegate:getValue(self, Settings.____positive_property)
 end
 
 function Settings:setPositive(value)
-    self.____positive_delegate:setValue(self, {name = "positive"}, value)
+    self.____positive_delegate:setValue(self, Settings.____positive_property, value)
 end
 
+Settings.____name_property = {name = "name"}
+
 function Settings:getName()
-    return self.____name_delegate:getValue(self, {name = "name"})
+    return self.____name_delegate:getValue(self, Settings.____name_property)
 end
 
 function Settings:setName(value)
-    self.____name_delegate:setValue(self, {name = "name"}, value)
+    self.____name_delegate:setValue(self, Settings.____name_property, value)
 end
 
+Settings.____tracked_property = {name = "tracked"}
+
 function Settings:getTracked()
-    return self.____tracked_delegate:getValue(self, {name = "tracked"})
+    return self.____tracked_delegate:getValue(self, Settings.____tracked_property)
 end
 
 function Settings:setTracked(value)
-    self.____tracked_delegate:setValue(self, {name = "tracked"}, value)
+    self.____tracked_delegate:setValue(self, Settings.____tracked_property, value)
 end
 
+Settings.____clamped_property = {name = "clamped"}
+
 function Settings:getClamped()
-    return self.____clamped_delegate:getValue(self, {name = "clamped"})
+    return self.____clamped_delegate:getValue(self, Settings.____clamped_property)
 end
 
 function Settings:setClamped(value)
-    self.____clamped_delegate:setValue(self, {name = "clamped"}, value)
+    self.____clamped_delegate:setValue(self, Settings.____clamped_property, value)
 end
 
+Settings.____upper_property = {name = "upper"}
+
 function Settings:getUpper()
-    return self.____upper_delegate:getValue(self, {name = "upper"})
+    return self.____upper_delegate:getValue(self, Settings.____upper_property)
 end
 
 function Settings:bump()
@@ -215,12 +227,14 @@ function Registry:getItems()
     return self.____items_delegate:getValue()
 end
 
+Registry.____hits_property = {name = "hits"}
+
 function Registry:getHits()
-    return self.____hits_delegate:getValue(self, {name = "hits"})
+    return self.____hits_delegate:getValue(self, Registry.____hits_property)
 end
 
 function Registry:setHits(value)
-    self.____hits_delegate:setValue(self, {name = "hits"}, value)
+    self.____hits_delegate:setValue(self, Registry.____hits_property, value)
 end
 
 Registry:____init()

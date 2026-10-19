@@ -1,6 +1,7 @@
 package dev.k2l.transform
 
 import dev.k2l.codegen.*
+import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.psi.KtExpression
 
 /** Collection functions that pick, order or split elements by a lambda; see [selecting]. */
@@ -95,12 +96,27 @@ private fun FileTransformer.distinctBy(source: Source, lambda: KtExpression): Lu
     return result
 }
 
-/** `filterIndexed { index, e -> }` and `mapIndexed { index, e -> }`. */
-private fun FileTransformer.indexed(name: String, source: Source, lambda: KtExpression): LuaExpr {
-    val result = declare("result", newList())
+/** `filterIndexed { index, e -> }`, `mapIndexed { index, e -> }` and their relatives; the result goes to [into] if given. */
+internal fun FileTransformer.indexed(name: String, source: Source, lambda: KtExpression, into: LuaExpr? = null): LuaExpr = with(session) {
+    val result = into ?: declare("result", newList())
+    val flatKind = (lambdaLiteral(lambda)?.expressionType as? KaFunctionType)?.returnType?.collectionKind()
     eachElement(source, lambda, 1, indexParam = 0) { item, index ->
         val value = inlineValue(lambda, listOf(index!!, item), null)
-        emit(if (name == "mapIndexed") add(result, value) else LuaIf(value, listOf(add(result, item))))
+        when (name) {
+            "mapIndexed", "mapIndexedTo" -> emit(add(result, value))
+
+            "mapIndexedNotNull" -> {
+                val cached = cache(value, "value")
+                emit(LuaIf(LuaBinary(LuaBinOp.Ne, cached, LuaNil), listOf(add(result, cached))))
+            }
+
+            "flatMapIndexed" -> {
+                val elements = if (flatKind == CollectionKind.Sequence) LuaMethodCall(value, "toList", emptyList()) else value
+                emit(LuaCallStmt(LuaMethodCall(result, "addAll", listOf(elements))))
+            }
+
+            else -> emit(LuaIf(value, listOf(add(result, item))))
+        }
     }
     return result
 }
@@ -191,12 +207,12 @@ private fun FileTransformer.zipping(source: Source, args: List<KtExpression?>, f
 }
 
 /** The `Map` functions that produce a map: `filter`, `mapValues`, ...; the loop runs over the entries. */
-internal fun FileTransformer.mapResult(name: String, source: Source, lambda: KtExpression): LuaExpr {
+internal fun FileTransformer.mapResult(name: String, source: Source, lambda: KtExpression, into: LuaExpr? = null): LuaExpr {
     if (name == "onEach") {
         eachElement(source, lambda, 0) { entry, _ -> inlineLambda(lambda, listOf(entry), null, null) }
         return source.collection
     }
-    val result = declare("result", newMap())
+    val result = into ?: declare("result", newMap())
     // filterKeys and filterValues take the key or the value, so the entry needs a name of its own.
     val byPart = name == "filterKeys" || name == "filterValues"
     eachElement(source, lambda, 0, itemName = if (byPart) ctx.temp("entry") else null) { entry, _ ->
