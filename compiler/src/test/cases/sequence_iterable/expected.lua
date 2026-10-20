@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -102,7 +104,7 @@ local function main()
     print(__K2L_Str(bySeq))
     local once = __K2L_SequenceOf(1, 2, 3):constrainOnce():asIterable()
     print(__K2L_Str(once:toList()))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(__K2L_Str(once:toList()))
     end)
     if not ____ok then
@@ -130,7 +132,7 @@ local function main()
     end):asIterable()
     counting:first(____lambda_12)
     print("pulled " .. seen)
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         __K2L_SequenceOf():asIterable():first()
     end)
     if not ____ok_1 then
@@ -144,5 +146,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {CountdownIterator = CountdownIterator, Countdown = Countdown}

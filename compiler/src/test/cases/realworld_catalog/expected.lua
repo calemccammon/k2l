@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
@@ -565,7 +567,7 @@ local function main()
             break
         end
     end
-    local ____ok, ____result_10 = pcall(function()
+    local ____ok, ____result_10 = __K2L_DeepPcall(function()
         lib:add(Book.new("978-6", "Dup", "X", 2000, __K2L_ReadOnlySetOf()))
     end)
     if not ____ok then
@@ -614,7 +616,7 @@ local function main()
     for ____i_28 = 1, actions.size do
         local ____item = actions[____i_28]
         local isbn, member, day = ____item.first, ____item.second, ____item.third
-        local ____ok_1, ____result_11 = pcall(function()
+        local ____ok_1, ____result_11 = __K2L_DeepPcall(function()
             local loan = lib:lend(isbn, member, day)
             print("day " .. day .. ": lent " .. isbn .. " to " .. member .. ", due day " .. loan.due)
         end)
@@ -646,5 +648,5 @@ local function main()
     print(toJson(__K2L_ReadOnlyMapOf(__K2L_Pair.new("escaped", "quote \" backslash \\ newline \n tab\t"), __K2L_Pair.new("empty", __K2L_ReadOnlyMapOf()), __K2L_Pair.new("nested", __K2L_ReadOnlyListOf(__K2L_ReadOnlyListOf(1, 2), __K2L_ReadOnlyListOf())))))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Genre = Genre, Book = Book, Member = Member, Loan = Loan, LibraryException = LibraryException, Library = Library, toJson = toJson}

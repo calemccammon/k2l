@@ -3,11 +3,14 @@ local __K2L_Bits = ____lualib.__K2L_Bits
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -407,7 +410,7 @@ end
 local function stripComment(line)
     local inStr = nil
     local ____collection = __K2L_Text.toList(line):withIndex()
-    local ____items, ____n = ____collection:____array()
+    local ____items, ____n = __K2L_LoopItems(____collection)
     local ____mod = ____collection.____modCount
     for ____i = 1, ____n do
         local ____item = ____items[____i]
@@ -650,7 +653,7 @@ local function main()
     local ____mod_6 = broken.____modCount
     for ____i_8 = 1, broken.size do
         local b = broken[____i_8]
-        local ____ok, ____result_5 = pcall(function()
+        local ____ok, ____result_5 = __K2L_DeepPcall(function()
             parseConfig(b)
             print(__K2L_Utf16.out("accepted: " .. __K2L_StringReplace(b, "\n", "\\n")))
         end)
@@ -669,5 +672,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {ConfigError = ConfigError, TValue = TValue, TStr = TStr, TInt = TInt, TFloat = TFloat, TBool = TBool, TArr = TArr, TTable = TTable, ValueReader = ValueReader, stripComment = stripComment, parseConfig = parseConfig, lookup = lookup, render = render, serialize = serialize, CONFIG = CONFIG}

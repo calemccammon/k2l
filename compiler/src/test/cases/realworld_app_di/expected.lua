@@ -4,6 +4,7 @@ local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -156,7 +157,7 @@ function Container:resolve(____type, qualifier)
         error(ResolutionException.new("cycle: " .. chain:joinToString(" -> "), chain))
     end
     self.resolving:addLast(key)
-    local ____ok, ____result, ____returned = pcall(function()
+    local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
         local ____value = self:lookup(key, self)
         if ____value == nil then
             local ____arg_1 = "no binding for " .. __K2L_Str(key) .. " in " .. self.name
@@ -270,6 +271,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunctionMixin = ____lualib.__K2L_FunctionMixin
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -489,7 +491,7 @@ function EventBus:publish(event)
     local ____mod = targets.____modCount
     for ____i = 1, targets.size do
         local h = targets[____i]
-        local ____ok, ____result = pcall(function()
+        local ____ok, ____result = __K2L_DeepPcall(function()
             h(event)
         end)
         if not ____ok then
@@ -524,6 +526,8 @@ return {Event = Event, UserCreated = UserCreated, UserDeleted = UserDeleted, Ord
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -743,20 +747,20 @@ local function main()
     local ____arg_6 = ____result_16
     local ____result_17
     ____result_17 = root:resolve(__K2L_KClassOf(____Services.Logger), nil)
-    local ____arg_8 = ____arg_6 == ____result_17
+    local ____arg_8 = tostring(____arg_6 == ____result_17)
     local ____result_18
     ____result_18 = root:resolve(__K2L_KClassOf(____Services.Logger), nil)
     local ____arg_7 = ____result_18
     local ____result_19
     ____result_19 = root:resolve(__K2L_KClassOf(____Services.Logger), "audit")
-    print("same logger: " .. tostring(____arg_8) .. ", audit logger differs: " .. tostring(____arg_7 ~= ____result_19))
+    print("same logger: " .. ____arg_8 .. ", audit logger differs: " .. tostring(____arg_7 ~= ____result_19))
     print("== users")
     local ____list_2 = __K2L_ReadOnlyListOf("ada", "grace", "linus")
     for ____i_2 = 1, ____list_2.size do
         local name = ____list_2[____i_2]
         print("  " .. name .. " -> " .. users:create(name))
     end
-    local ____ok, ____result_20 = pcall(function()
+    local ____ok, ____result_20 = __K2L_DeepPcall(function()
         users:create("ada")
     end)
     if not ____ok then
@@ -780,7 +784,7 @@ local function main()
     local bus = ____result_22
     print("  " .. orders:place(9.5, 20.25))
     print("  " .. orders:place(999.0, 1.5))
-    local ____ok_1, ____result_23 = pcall(function()
+    local ____ok_1, ____result_23 = __K2L_DeepPcall(function()
         orders:place()
     end)
     if not ____ok_1 then
@@ -799,10 +803,10 @@ local function main()
     print("  after stop: " .. describe(bus:publish(____EventBus.UserCreated.new("x", "y"))))
     local ____result_24
     ____result_24 = bus:getDead():filter(____lambda_5)
-    local ____arg_9 = ____result_24
+    local ____arg_9 = __K2L_Str(____result_24)
     local ____result_25
     ____result_25 = bus:getDead():filter(____lambda_6)
-    print("  dead users: " .. __K2L_Str(____arg_9) .. ", dead events: " .. ____result_25.size)
+    print("  dead users: " .. ____arg_9 .. ", dead events: " .. ____result_25.size)
     print("  counts: " .. __K2L_Str(bus:subscriberCounts()))
     local ____list_3 = audit.entries
     for ____i_3 = 1, ____list_3.size do
@@ -824,25 +828,26 @@ local function main()
     local ____result_26
     ____result_26 = req1:resolve(__K2L_KClassOf(____Services.Session), nil)
     local s1 = ____result_26
+    local ____arg_11 = __K2L_Str(s1)
     local ____result_27
     ____result_27 = req1:resolve(__K2L_KClassOf(____Services.Session), nil)
-    local ____arg_11 = s1 == ____result_27
+    local ____arg_12 = tostring(s1 == ____result_27)
     local ____result_28
     ____result_28 = req2:resolve(__K2L_KClassOf(____Services.Session), nil)
-    local ____arg_12 = ____result_28
+    local ____arg_13 = __K2L_Str(____result_28)
     local ____result_29
     ____result_29 = req2:resolve(__K2L_KClassOf(____Services.Session), nil)
     local ____arg_10 = ____result_29
     local ____result_30
     ____result_30 = req2:resolve(__K2L_KClassOf(____Services.Session), nil)
-    print("  " .. __K2L_Str(s1) .. " same=" .. tostring(____arg_11) .. " " .. __K2L_Str(____arg_12) .. " " .. tostring(____arg_10 == ____result_30))
-    local ____arg_13 = ____Services.RequestId:getIssued()
+    print("  " .. ____arg_11 .. " same=" .. ____arg_12 .. " " .. ____arg_13 .. " " .. tostring(____arg_10 == ____result_30))
+    local ____arg_14 = ____Services.RequestId:getIssued()
     local ____result_31
     ____result_31 = req1:resolve(__K2L_KClassOf(____Services.RequestId), nil)
-    local ____arg_14 = ____result_31
+    local ____arg_15 = __K2L_Str(____result_31)
     local ____result_32
     ____result_32 = req2:resolve(__K2L_KClassOf(____Services.RequestId), nil)
-    print("  request ids issued: " .. ____arg_13 .. ", fresh: " .. __K2L_Str(____arg_14) .. " " .. __K2L_Str(____result_32))
+    print("  request ids issued: " .. ____arg_14 .. ", fresh: " .. ____arg_15 .. " " .. __K2L_Str(____result_32))
     local ____list_4 = req1:describe()
     for ____i_4 = 1, ____list_4.size do
         local it = ____list_4[____i_4]
@@ -851,7 +856,7 @@ local function main()
     print("== failures")
     local ____result_33
     do
-        local ____ok_2, ____result_34 = pcall(function()
+        local ____ok_2, ____result_34 = __K2L_DeepPcall(function()
             local ____result_35
             ____result_35 = root:resolve(__K2L_KClassNamed("kotlin.String"), nil)
             ____result_33 = ____result_35
@@ -869,7 +874,7 @@ local function main()
     end
     local ____result_36
     do
-        local ____ok_3, ____result_37 = pcall(function()
+        local ____ok_3, ____result_37 = __K2L_DeepPcall(function()
             local ____result_38
             ____result_38 = req2:resolve(__K2L_KClassNamed("kotlin.collections.Map"), nil)
             ____result_36 = ____result_38
@@ -907,7 +912,7 @@ local function main()
         ____value_2:register(__K2L_KClassOf(B), ____Container.Scope.SINGLETON, nil, factory)
     end
     local cyclic = ____value_2
-    local ____ok_4, ____result_42 = pcall(function()
+    local ____ok_4, ____result_42 = __K2L_DeepPcall(function()
         local ____result_43
         ____result_43 = cyclic:resolve(__K2L_KClassOf(A), nil)
     end)
@@ -946,7 +951,7 @@ local function main()
     ____result_47 = lazyOk:resolve(__K2L_KClassOf(B), nil)
     local b = ____result_47
     print("  lazy cycle ok: " .. tostring(b.a:get().b == b))
-    local ____ok_5, ____result_48 = pcall(function()
+    local ____ok_5, ____result_48 = __K2L_DeepPcall(function()
         do
             local factory = ____lambda_9
             root:register(__K2L_KClassOf(____EventBus.EventBus), ____Container.Scope.SINGLETON, nil, factory)
@@ -992,7 +997,7 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {A = A, B = B, Audit = Audit, describe = describe, buildContainer = buildContainer}
 -- ==== services/Services.lua ====
 local ____lualib = require("lualib_bundle")

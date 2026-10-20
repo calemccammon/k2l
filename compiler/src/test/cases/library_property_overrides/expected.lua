@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -59,7 +61,7 @@ local function main()
     print(__K2L_Str(f))
     local asThrowable = f
     print(__K2L_Str(asThrowable.message))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         error(f)
     end)
     if not ____ok then
@@ -81,5 +83,5 @@ local function main()
     print(__K2L_Str(leaf))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Failure = Failure, Wrapped = Wrapped, Base = Base, Leaf = Leaf}

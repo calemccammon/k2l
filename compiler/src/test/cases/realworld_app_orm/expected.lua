@@ -1,5 +1,7 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
@@ -28,7 +30,7 @@ local function main()
     local db = ____Database.Database.new()
     db:create(__K2L_TouchObject(____Model.Authors))
     db:create(__K2L_TouchObject(____Model.Posts))
-    local ____arg = ____Model.Authors:getAllColumns()
+    local ____arg = __K2L_Str(____Model.Authors:getAllColumns())
     local ____list = ____Model.Posts:getAllColumns()
     local ____out = {}
     local ____count = 0
@@ -38,7 +40,7 @@ local function main()
         ____count = ____count + 1
         ____out[____count] = it.name
     end
-    print("columns: " .. __K2L_Str(____arg) .. " " .. __K2L_Str(__K2L_ListWrap(____out, ____count)))
+    print("columns: " .. ____arg .. " " .. __K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(__K2L_Str(____Model.Authors:getId()) .. " " .. __K2L_Str(____Model.Authors:getRole().default) .. " " .. ____Model.Posts:getLikes():ddl())
     local authors = ____Model.AuthorDao.new(db)
     local posts = ____Model.PostDao.new(db)
@@ -48,7 +50,7 @@ local function main()
     posts:save(____Model.Post.new(10, 1, "Notes on the engine", true, 42))
     posts:save(____Model.Post.new(11, 1, "Draft"))
     posts:save(____Model.Post.new(12, 2, "Hello", true))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         authors:save(____Model.Author.new(1, "Impostor"))
     end)
     if not ____ok then
@@ -70,7 +72,7 @@ local function main()
         ____count_1 = ____count_1 + 1
         ____out_1[____count_1] = it.title
     end
-    local ____arg_1 = __K2L_ListWrap(____out_1, ____count_1)
+    local ____arg_1 = __K2L_Str(__K2L_ListWrap(____out_1, ____count_1))
     local ____list_2 = posts:publishedBy(ada)
     local ____out_2 = {}
     local ____count_2 = 0
@@ -80,7 +82,7 @@ local function main()
         ____count_2 = ____count_2 + 1
         ____out_2[____count_2] = it.title
     end
-    print("ada's posts: " .. __K2L_Str(____arg_1) .. ", published: " .. __K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
+    print("ada's posts: " .. ____arg_1 .. ", published: " .. __K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
     print("all authors: " .. __K2L_Str(authors:all()))
     print("same object: " .. tostring(authors:all():first() == ada) .. ", cached " .. authors:getCached())
     authors:rename(bob, "Robert")
@@ -89,7 +91,7 @@ local function main()
     print("bob: " .. __K2L_Str(bob) .. " changes=" .. __K2L_Str(bob.changes) .. " reloaded=" .. __K2L_Str(authors:find(____lambda_1)))
     local moved = db:transaction(____lambda_2)
     print("moved " .. moved .. " posts")
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         db:transaction(function(____this_1)
             ____this_1:insert(__K2L_TouchObject(____Model.Posts), ____Model.Post.new(13, 3, "ok"))
             ____this_1:insert(__K2L_TouchObject(____Model.Posts), ____Model.Post.new(13, 3, "duplicate"))
@@ -106,7 +108,7 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
         db:transaction(____lambda_4)
     end)
     if not ____ok_2 then
@@ -147,7 +149,7 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 -- ==== model/Model.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
@@ -391,6 +393,7 @@ return {Role = Role, Author = Author, Post = Post, Authors = Authors, Posts = Po
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -602,13 +605,13 @@ function Database:transaction(block)
         return __K2L_ListWrap(____out_2, ____count_2)
     end)
     self.statements:add("BEGIN")
-    local ____ok, ____result_7, ____returned = pcall(function()
+    local ____ok, ____result_7, ____returned = __K2L_DeepPcall(function()
         local ____value_2 = block(self)
         self.statements:add("COMMIT")
         return true, ____value_2
     end)
     if not ____ok then
-        ____ok, ____result_7, ____returned = pcall(function()
+        ____ok, ____result_7, ____returned = __K2L_DeepPcall(function()
             local ____error = __K2L_ToThrowable(____result_7)
             if getmetatable(____error) == DatabaseException then
                 local e = ____error

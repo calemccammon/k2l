@@ -1,0 +1,54 @@
+%f Int: IllegalFormatConversionException f != java.lang.Integer
+%e Int: IllegalFormatConversionException e != java.lang.Integer
+%g Long: IllegalFormatConversionException g != java.lang.Long
+%c Long: IllegalFormatConversionException c != java.lang.Long
+%d Double: IllegalFormatConversionException d != java.lang.Double
+%x Double: IllegalFormatConversionException x != java.lang.Double
+%c Double: IllegalFormatConversionException c != java.lang.Double
+%d Float: IllegalFormatConversionException d != java.lang.Float
+%x Char: IllegalFormatConversionException x != java.lang.Character
+%f Char: IllegalFormatConversionException f != java.lang.Character
+%c String: IllegalFormatConversionException c != java.lang.String
+%d String: IllegalFormatConversionException d != java.lang.String
+%c Boolean: IllegalFormatConversionException c != java.lang.Boolean
+%e Short: IllegalFormatConversionException e != java.lang.Short
+%f Byte: IllegalFormatConversionException f != java.lang.Byte
+%d BigDecimal: IllegalFormatConversionException d != java.math.BigDecimal
+%f BigInteger: IllegalFormatConversionException f != java.math.BigInteger
+%d UInt: IllegalFormatConversionException d != kotlin.UInt
+%d Point: IllegalFormatConversionException d != Point
+%f null: null
+%f Int?: IllegalFormatConversionException f != java.lang.Integer
+%X Int?: 6
+taken: 5 y x 2.0 4  A 1.500000e+00 7
+BigDecimal: 1234.500000|1234.5|1,234.500|        1235|(1234.50)
+BigInteger: 10 a 10,000
+strings: 5 2.0 x true 79
+locale: IllegalFormatConversionException f != java.lang.Integer
+locale ok: 1.234,50 5
+second: IllegalFormatConversionException f != java.lang.Integer
+indexed: IllegalFormatConversionException f != java.lang.Integer
+previous: IllegalFormatConversionException f != java.lang.Integer
+before missing: IllegalFormatConversionException f != java.lang.Integer
+missing before: MissingFormatArgumentException Format specifier '%f'
+dynamic %f Int: IllegalFormatConversionException f != java.lang.Integer
+dynamic %f Double: 2.000000
+dynamic %f Char: IllegalFormatConversionException f != java.lang.Character
+dynamic %d Int: 5
+dynamic %d Double: IllegalFormatConversionException d != java.lang.Double
+dynamic %d Char: IllegalFormatConversionException d != java.lang.Character
+dynamic %c Int: 
+dynamic %c Double: IllegalFormatConversionException c != java.lang.Double
+dynamic %c Char: x
+Any %c true: IllegalFormatConversionException c != java.lang.Boolean
+Any %c Point(1): IllegalFormatConversionException c != Point
+Any %c 1234.5: IllegalFormatConversionException c != java.math.BigDecimal
+Any %c 10: IllegalFormatConversionException c != java.math.BigInteger
+Any %c 2.5: IllegalFormatConversionException c != java.lang.Double
+Any %c text: IllegalFormatConversionException c != java.lang.String
+Any %d true: IllegalFormatConversionException d != java.lang.Boolean
+Any %d Point(1): IllegalFormatConversionException d != Point
+Any %d 1234.5: IllegalFormatConversionException d != java.math.BigDecimal
+Any %d 10: 10
+Any %d 2.5: IllegalFormatConversionException d != java.lang.Double
+Any %d text: IllegalFormatConversionException d != java.lang.String

@@ -27,6 +27,17 @@ internal fun FileTransformer.renameHidingLocals(): Unit = with(session) {
     })
 }
 
+/** A local or parameter named like a top-level function of the file would hide the function in its scope: it gets a fresh Lua name. */
+internal fun FileTransformer.renameFunctionShadows() {
+    val functions = file.declarations.filterIsInstance<KtNamedFunction>().mapTo(HashSet()) { naming.function(it) }
+    if (functions.isEmpty()) return
+    val locals = PsiTreeUtil.collectElements(file) { it is KtProperty || it is KtParameter || it is KtDestructuringDeclarationEntry }
+    for (d in locals.filterIsInstance<KtNamedDeclaration>()) {
+        val raw: String = d.name ?: continue
+        if (isPlainLocal(d) && naming.renamed(d) == null && LuaNames.of(raw) in functions) naming.renames[d] = ctx.temp(LuaNames.of(raw))
+    }
+}
+
 private fun FileTransformer.isLocalInline(fn: KtNamedFunction) =
     fn.hasModifier(KtTokens.INLINE_KEYWORD) && fn.containingFile == file && classes.isSource(fn) && fn.bodyExpression != null
 

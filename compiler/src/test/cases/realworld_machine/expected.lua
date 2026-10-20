@@ -3,6 +3,8 @@ local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Bits = ____lualib.__K2L_Bits
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
@@ -501,7 +503,7 @@ local function main()
     print("a=" .. m.registers:getValue("a") .. " z=" .. m.registers:getValue("z"))
     local looping = parseProgram("set a 1\njnz a 0")
     print("looping steps: " .. Machine.new(looping):run(50).steps)
-    local ____ok, ____result_2 = pcall(function()
+    local ____ok, ____result_2 = __K2L_DeepPcall(function()
         parseProgram("set a\nfoo")
     end)
     if not ____ok then
@@ -513,7 +515,7 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_3 = pcall(function()
+    local ____ok_1, ____result_3 = __K2L_DeepPcall(function()
         parseProgram("set a 1\nfoo bar baz qux")
     end)
     if not ____ok_1 then
@@ -525,7 +527,7 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_4 = pcall(function()
+    local ____ok_2, ____result_4 = __K2L_DeepPcall(function()
         parseProgram("xyz a 1")
     end)
     if not ____ok_2 then
@@ -555,5 +557,5 @@ local function main()
     print(__K2L_Str(__K2L_RunCatching(function() return circuit:signal("zz") end):exceptionOrNull()))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Instr = Instr, Operand = Operand, parseOperand = parseOperand, parseProgram = parseProgram, Machine = Machine, PROGRAM = PROGRAM, applyMask = applyMask, floatingAddresses = floatingAddresses, MEMORY = MEMORY, runMemory = runMemory, CIRCUIT = CIRCUIT, Circuit = Circuit}

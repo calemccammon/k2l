@@ -1,4 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -36,7 +38,7 @@ local function ints()
     print(__K2L_Str(__K2L_IntRange.new(1, 4):map(function(it)
         return ranged:nextInt(-2000000000, 2000000000)
     end)))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         ranged:nextInt(0)
     end)
     if not ____ok then
@@ -48,7 +50,7 @@ local function ints()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         ranged:nextInt(5, 5)
     end)
     if not ____ok_1 then
@@ -99,5 +101,5 @@ local function main()
     others()
 end
 
-main()
+__K2L_DeepMain(main)
 return {ints = ints, others = others}

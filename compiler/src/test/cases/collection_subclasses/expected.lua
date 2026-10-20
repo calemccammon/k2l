@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_AbstractList = ____lualib.__K2L_AbstractList
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
@@ -122,7 +124,7 @@ local function readOnlyList()
     local li = __K2L_JdkCollections.listIterator(t, 4)
     print("listIterator " .. li:previous() .. " " .. li:previousIndex() .. " (" .. t.reads .. ")")
     print("is " .. tostring(__K2L_InstanceOf(t, __K2L_List)) .. " " .. tostring(__K2L_InstanceOf(t, __K2L_Iterable) and t.size ~= nil) .. " " .. tostring(__K2L_InstanceOf(t, __K2L_Set)) .. " " .. __K2L_Str(__K2L_KClassOfValue(t).simpleName) .. " (" .. t.reads .. ")")
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         t:get(7)
     end)
     if not ____ok then
@@ -187,5 +189,5 @@ local function main()
     mutableList()
 end
 
-main()
+__K2L_DeepMain(main)
 return {Tens = Tens, Fixed = Fixed, Logged = Logged, readOnlyList = readOnlyList, mutableList = mutableList}

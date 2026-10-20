@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -1177,12 +1179,12 @@ function Interpreter:call(e, env)
                 break
             end
         end
-        local ____ok, ____result_2, ____returned = pcall(function()
+        local ____ok, ____result_2, ____returned = __K2L_DeepPcall(function()
             self:execBlock(callee.decl.body, ____local)
             return true, Value.Nil
         end)
         if not ____ok then
-            ____ok, ____result_2, ____returned = pcall(function()
+            ____ok, ____result_2, ____returned = __K2L_DeepPcall(function()
                 local ____error = __K2L_ToThrowable(____result_2)
                 if getmetatable(____error) == ReturnSignal then
                     local r = ____error
@@ -1210,12 +1212,12 @@ local function runSource(name, src)
     local interp = Interpreter.new(function(it)
         output:add(it)
     end)
-    local ____ok_1, ____result_3 = pcall(function()
+    local ____ok_1, ____result_3 = __K2L_DeepPcall(function()
         local program = Parser.new(Lexer.new(src):tokens()):program()
         interp:run(program)
     end)
     if not ____ok_1 then
-        ____ok_1, ____result_3 = pcall(function()
+        ____ok_1, ____result_3 = __K2L_DeepPcall(function()
             local ____error_1 = __K2L_ToThrowable(____result_3)
             if getmetatable(____error_1) == SyntaxError then
                 local e = ____error_1
@@ -1266,5 +1268,5 @@ local function main()
     print(__K2L_Str(wrapped.message) .. " <- " .. __K2L_Str(____receiver_11 and ____receiver_11.message) .. " " .. tostring(__K2L_InstanceOf(____value_15, __K2L_IllegalStateException)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {LangException = LangException, SyntaxError = SyntaxError, RuntimeError = RuntimeError, TokenType = TokenType, Token = Token, Lexer = Lexer, Expr = Expr, Stmt = Stmt, Parser = Parser, Value = Value, Env = Env, Interpreter = Interpreter, runSource = runSource}

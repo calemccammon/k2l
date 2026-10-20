@@ -82,8 +82,8 @@ internal fun FileTransformer.collectionSuperInit(call: KtCallElement?, lua: Stri
         // LinkedHashMap(initialCapacity, loadFactor, accessOrder) keeps the access order
         lua == "__K2L_Map" && values.size == LINKED_MAP_ACCESS_ORDER_ARITY -> listOf(LuaNil, values[2])
 
-        // PriorityQueue(initialCapacity, comparator), ArrayDeque(numElements): the capacity is not passed on
-        lua == "__K2L_PriorityQueue" || lua == "__K2L_Deque" ->
+        // PriorityQueue(initialCapacity, comparator): the capacity is not passed on (ArrayDeque(numElements)'s is)
+        lua == "__K2L_PriorityQueue" ->
             values.zip(types).filter { (_, type) -> type?.isIntegral != true }.map { it.first }.take(1)
 
         else -> values.take(1)

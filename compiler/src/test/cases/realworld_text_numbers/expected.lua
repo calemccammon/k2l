@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
@@ -107,7 +109,7 @@ local function roundTo(x, places)
 end
 
 local function significant(x, digits)
-    return __K2L_StringFormat("%." .. digits .. "g", x)
+    return __K2L_StringFormat("%." .. digits .. "g", __K2L_Text.typed(x, nil, "java.lang.Double"))
 end
 
 local function bar(fraction, width)
@@ -252,7 +254,7 @@ local function main()
     local ____list_4 = __K2L_ReadOnlyListOf("512", "1.5k", "10 MB", "2GiB", "0.5 TiB", " 7 kib ", "12 parsecs", "-3k")
     for ____i_5 = 1, ____list_4.size do
         local s = ____list_4[____i_5]
-        local ____ok, ____result_1 = pcall(function()
+        local ____ok, ____result_1 = __K2L_DeepPcall(function()
             print(s .. " -> " .. parseSize(s) .. " (" .. humanBytes(parseSize(s)) .. ")")
         end)
         if not ____ok then
@@ -268,7 +270,7 @@ local function main()
     local ____list_5 = __K2L_ReadOnlyListOf("1h 30m", "2d4h", "45s 500ms", "90m", "soon", "3 h")
     for ____i_6 = 1, ____list_5.size do
         local s = ____list_5[____i_6]
-        local ____ok_1, ____result_2 = pcall(function()
+        local ____ok_1, ____result_2 = __K2L_DeepPcall(function()
             local ms = parseDuration(s)
             print(s .. " -> " .. ms .. "ms = " .. duration(ms >= 0 and ms // 1000 or (ms + 999) // 1000))
         end)
@@ -331,5 +333,5 @@ local function main()
     print(#__K2L_Num.toRadix(2147483647, 2) .. " " .. __K2L_Num.toRadix(-255, 16) .. " " .. __K2L_StringPadStart(__K2L_Num.toRadix(255, 2), 16, "0") .. " " .. __K2L_StringToInt("11111111", 2) .. " " .. __K2L_StringToInt("zz", 36, true) .. " " .. __K2L_StringToInt("-7f", 16))
 end
 
-main()
+__K2L_DeepMain(main)
 return {humanBytes = humanBytes, duration = duration, ordinal = ordinal, group = group, roundTo = roundTo, significant = significant, bar = bar, ParseError = ParseError, parseSize = parseSize, parseDuration = parseDuration, Money = Money}

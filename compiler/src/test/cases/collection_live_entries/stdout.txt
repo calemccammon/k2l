@@ -1,0 +1,40 @@
+HashMap: 1=z z [1=z, 2=y, 3=c!] true java.util.HashMap$Node
+HashMap setValue: {1=w, 2=y, 3=c!} w
+HashMap removed: w w 1=q {1=n, 2=y, 3=c!}
+HashMap after remove: 3=three+ [2=y, 3=three+]
+HashMap replaceAll: 3=THREE+3 {2=y2, 3=THREE+3}
+HashMap cleared: 3=THREE+3 3=fresh
+LinkedHashMap: 1=z z [1=z, 2=y, 3=c!] true java.util.LinkedHashMap$Entry
+LinkedHashMap setValue: {1=w, 2=y, 3=c!} w
+LinkedHashMap removed: w w 1=q {2=y, 3=c!, 1=n}
+LinkedHashMap after remove: 3=three+ [2=y, 3=three+]
+LinkedHashMap replaceAll: 3=THREE+3 {2=y2, 3=THREE+3}
+LinkedHashMap cleared: 3=THREE+3 3=fresh
+TreeMap: 1=z z [1=z, 2=y, 3=c!] true java.util.TreeMap$Entry
+TreeMap setValue: {1=w, 2=y, 3=c!} w
+TreeMap removed: w w 1=q {1=n, 2=y, 3=c!}
+TreeMap after remove: 3=three+ [2=y, 3=three+]
+TreeMap replaceAll: 3=THREE+3 {2=y2, 3=THREE+3}
+TreeMap cleared: 3=THREE+3 3=fresh
+mutableMapOf: 1=z z [1=z, 2=y, 3=c!] true java.util.LinkedHashMap$Entry
+mutableMapOf setValue: {1=w, 2=y, 3=c!} w
+mutableMapOf removed: w w 1=q {2=y, 3=c!, 1=n}
+mutableMapOf after remove: 3=three+ [2=y, 3=three+]
+mutableMapOf replaceAll: 3=THREE+3 {2=y2, 3=THREE+3}
+mutableMapOf cleared: 3=THREE+3 3=fresh
+grown: 1=y true
+tree: 50=FIFTY 50=FIFTY true
+loops: [ann=10, bob=20, ann=10, bob=20]
+iterator: ann=100
+ann=100 bob=20 
+lru: a=5 {b=2, a=5} a=5
+lru evicted: {a=5, c=3} b=2 2
+lru eldest live: b=2
+buildMap: 1=b {1=b}
+built setValue: UnsupportedOperationException null
+copies: 1=a 2=b java.util.AbstractMap$SimpleImmutableEntry java.util.TreeMap$Entry
+firstEntry setValue: UnsupportedOperationException null
+pollFirstEntry: 1=z java.util.AbstractMap$SimpleImmutableEntry {2=y, 3=c}
+lastEntry equals: true
+hash: true true 1
+descending: 2=w {1=a, 2=w}

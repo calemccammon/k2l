@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArithmeticException = ____lualib.__K2L_ArithmeticException
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_FloorDiv = ____lualib.__K2L_FloorDiv
 local __K2L_IDiv = ____lualib.__K2L_IDiv
@@ -28,7 +30,7 @@ local function id(x)
 end
 
 local function t(label, f)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(label .. " = " .. __K2L_Str(f()))
     end)
     if not ____ok then
@@ -248,5 +250,5 @@ local function main()
     end)
 end
 
-main()
+__K2L_DeepMain(main)
 return {id = id, t = t}

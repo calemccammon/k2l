@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.KtSuperTypeListEntry
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
+import org.jetbrains.kotlin.psi.KtTryExpression
 import org.jetbrains.kotlin.psi.KtUserType
 
 /** The files of the module being compiled and how they reference each other. */
@@ -79,6 +80,12 @@ class ModuleContext(
     /** Whether some class implements `ClosedRange`: then `start` of a ClosedRange value may be its own property. */
     val implementsClosedRange: Boolean by lazy { files.any { mentionsSuperType(it, setOf("ClosedRange")) } }
 
+    /** Casts whose results are checked where they are used (see UncheckedCasts.kt). */
+    internal val uncheckedCasts: UncheckedCasts by lazy { UncheckedCasts.scan(files) }
+
+    /** Whether some file has a `try` or calls `use` or `runCatching`, which run their blocks in protected calls. */
+    val usesTry: Boolean by lazy { files.any(::mentionsTry) }
+
     /** Whether some class implements `CharSequence`: then CharSequence values may be objects (see CharSequences.kt). */
     val implementsCharSequence: Boolean by lazy { files.any { mentionsSuperType(it, setOf("CharSequence")) } }
 
@@ -94,6 +101,20 @@ class ModuleContext(
             override fun visitSuperTypeListEntry(specifier: KtSuperTypeListEntry) {
                 if ((specifier.typeReference?.typeElement as? KtUserType)?.referencedName in names) found = true
                 super.visitSuperTypeListEntry(specifier)
+            }
+        })
+        return found
+    }
+
+    private fun mentionsTry(file: KtFile): Boolean {
+        var found = false
+        file.accept(object : KtTreeVisitorVoid() {
+            override fun visitTryExpression(expression: KtTryExpression) {
+                found = true
+            }
+
+            override fun visitSimpleNameExpression(expression: KtSimpleNameExpression) {
+                if (expression.getReferencedName() in PROTECTING_NAMES) found = true
             }
         })
         return found
@@ -149,6 +170,7 @@ class ModuleContext(
     }
 
     companion object {
+        private val PROTECTING_NAMES = setOf("use", "runCatching", "synchronized")
         private val VIEW_NAMES = setOf("unmodifiableList", "unmodifiableCollection", "subList", "asList")
         private val LIST_BASES = setOf("AbstractList", "AbstractMutableList", "List", "MutableList")
         private val COLLECTION_TYPES = listOf("Iterable", "Collection", "List", "Set", "Map").flatMap {

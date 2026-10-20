@@ -4,6 +4,8 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClosedRange = ____lualib.__K2L_ClosedRange
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
@@ -429,8 +431,8 @@ local ____lambda_7 = function() return __K2L_ReadOnlySetOf("-") end
 local function main()
     local versions = __K2L_ReadOnlyListOf("1.0.0", "1.0.0-alpha", "1.0.0-beta", "0.9", "1.2", "1.10.0", "1.2.3", "2"):map(toVersion)
     print("sorted: " .. __K2L_Str(versions:sorted()))
-    local ____arg_1 = versions:max()
-    local ____arg_2 = versions:min()
+    local ____arg_1 = __K2L_Str(versions:max())
+    local ____arg_2 = __K2L_Str(versions:min())
     local ____out_1 = {}
     local ____count_1 = 0
     local ____items_3, ____n_4 = versions:____array()
@@ -439,7 +441,7 @@ local function main()
         ____count_1 = ____count_1 + 1
         ____out_1[____count_1] = it.major
     end
-    print("max=" .. __K2L_Str(____arg_1) .. " min=" .. __K2L_Str(____arg_2) .. " distinct majors=" .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1):toSortedSet()))
+    print("max=" .. ____arg_1 .. " min=" .. ____arg_2 .. " distinct majors=" .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1):toSortedSet()))
     local ____bound = toVersion("1.0")
     local ____bound_1 = toVersion("2.0")
     local ____value_9 = toVersion("1.2.3")
@@ -474,7 +476,7 @@ local function main()
     reg:publish("json", "2.4.0-rc.1")
     reg:publish("http", "0.4.2", __K2L_Pair.new("log", ">=1.3"), __K2L_Pair.new("json", "2.1.0 - 2.9.9"))
     reg:publish("http", "0.5.0", __K2L_Pair.new("log", "^2.0"))
-    local ____ok, ____result_3 = pcall(function()
+    local ____ok, ____result_3 = __K2L_DeepPcall(function()
         reg:publish("log", "1.2")
     end)
     if not ____ok then
@@ -535,5 +537,5 @@ local function main()
     print("grouped: " .. __K2L_Str(grouped:toSortedMap()))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Version = Version, toVersion = toVersion, Constraint = Constraint, Registry = Registry, ResolutionException = ResolutionException, Resolver = Resolver, lockFile = lockFile}

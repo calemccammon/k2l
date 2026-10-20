@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Iterator = ____lualib.__K2L_Iterator
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
@@ -103,5 +104,5 @@ local function main()
     print()
 end
 
-main()
+__K2L_DeepMain(main)
 return {Countdown = Countdown, Fib = Fib, Buffer = Buffer}

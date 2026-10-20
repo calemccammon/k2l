@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Continuation = ____lualib.__K2L_Continuation
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -134,7 +136,7 @@ local function blink(name, times, every)
 end
 
 local function guardedWait()
-    local ____ok, ____result, ____returned = pcall(function()
+    local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
         print("[" .. scheduler.frame .. "] guard: waiting inside try")
         scheduler:waitFrames(2)
         print("[" .. scheduler.frame .. "] guard: woke inside try")
@@ -142,7 +144,7 @@ local function guardedWait()
         return true, "unreachable"
     end)
     if not ____ok then
-        ____ok, ____result, ____returned = pcall(function()
+        ____ok, ____result, ____returned = __K2L_DeepPcall(function()
             local ____error = __K2L_ToThrowable(____result)
             if __K2L_InstanceOf(____error, __K2L_IllegalStateException) then
                 local e = ____error
@@ -206,5 +208,5 @@ local function main()
     print("done at frame " .. scheduler.frame)
 end
 
-main()
+__K2L_DeepMain(main)
 return {Scheduler = Scheduler, Mailbox = Mailbox, scheduler = scheduler, blink = blink, guardedWait = guardedWait}

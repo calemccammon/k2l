@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AnyToString = ____lualib.__K2L_AnyToString
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IdentityHash = ____lualib.__K2L_IdentityHash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -196,7 +198,7 @@ local function main()
     print(__K2L_Str(e))
     print(__K2L_Str(e.message))
     print(e.code)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         error(MyException.new(1))
     end)
     if not ____ok then
@@ -219,5 +221,5 @@ local function main()
     print(__K2L_Str(Singleton))
 end
 
-main()
+__K2L_DeepMain(main)
 return {shape = shape, Plain = Plain, Derived = Derived, Identity = Identity, Mixed = Mixed, Hashed = Hashed, MyException = MyException, Wrapping = Wrapping, Base = Base, Leaf = Leaf, Color = Color, Singleton = Singleton}

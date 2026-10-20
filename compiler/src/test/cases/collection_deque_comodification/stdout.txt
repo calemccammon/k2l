@@ -1,0 +1,62 @@
+kd addLast: ConcurrentModificationException null
+kd addFirst: ConcurrentModificationException null
+kd removeFirst: ConcurrentModificationException null
+kd removeLast at the end: [1, 2]
+kd set: [3, 2, 3]
+kd add(i): ConcurrentModificationException null
+kd remove absent: [1, 2, 3]
+kd clear: ConcurrentModificationException null
+kd addAll: ConcurrentModificationException null
+kd addAll empty: [1, 2, 3]
+kd addAll(i) empty: [1, 2, 3]
+kd removeAll none: [1, 2, 3]
+kd retainAll: ConcurrentModificationException null
+kd sort: [1, 2, 3]
+kd sortWith: [3, 2, 1]
+kd sortBy: [3, 2, 1]
+kd replaceAll: [10, 20, 30]
+kd reverse shuffle fill: [4, 4, 4]
+kd removeFirstOrNull: ConcurrentModificationException null
+kd removeFirstOrNull empty: false
+kd iterator after clear of empty: NoSuchElementException java.lang.IndexOutOfBoundsException: index: 0, size: 0
+kd iterator after add: ConcurrentModificationException null
+kd iterator remove: [1, 3]
+kd forEach: ConcurrentModificationException null
+kd subList: ConcurrentModificationException null
+kd subList after sort: [3, 2]
+kd add(i) index: IndexOutOfBoundsException index: 4, size: 3
+kd addAll(i) index: IndexOutOfBoundsException index: -1, size: 3
+jd addLast: [1, 2, 3] [1, 2, 3]
+jd addLast grows: ConcurrentModificationException null
+jd addLast at the end: [1, 2, 3] [1, 2, 3, 9]
+jd addFirst grows: [1, 2, 3] [9, 1, 2, 3]
+jd removeFirst: [1, 2, 3] [2, 3]
+jd poll: [1, 2, 3] [2, 3]
+jd removeLast: ConcurrentModificationException null
+jd pollLast at the end: [1, 2, 3] [1, 2]
+jd clear: ConcurrentModificationException null
+jd remove middle: ConcurrentModificationException null
+jd remove first: [1, 2, 3] [2, 3]
+jd removeIf: ConcurrentModificationException null
+jd push pop: [1, 2, 3] [1, 2, 3]
+jd roomy addLast: [1, 2, 3] [1, 2, 3, 10, 20]
+jd roomy addFirst: [1, 2, 3] [0, 1, 2, 3]
+jd capacity: [1, 2, 3] [1, 2, 3, 4]
+jd wrapped: ConcurrentModificationException null
+jd wrapped grows: ConcurrentModificationException null
+jd many: 35 40
+jd iterator remove: [2]
+jd iterator remove all: []
+jd iterator twice: IllegalStateException null
+jd iterator class: java.util.ArrayDeque$DeqIterator java.util.ArrayDeque$DescendingIterator
+jd iterator end: NoSuchElementException null
+jd descending: [6, 5, 4, 3, 2, 1] [1, 3, 5]
+jd descending pollLast: 2
+jd descending pollFirst: 2 true
+jd forEach: ConcurrentModificationException null
+jd forEachIndexed: [1, 1, 2, 3]
+Deque: ConcurrentModificationException null
+Queue: [2, 3]
+Queue of a LinkedList: [2, 3]
+Queue of a PriorityQueue: ConcurrentModificationException null
+subclass: ConcurrentModificationException null

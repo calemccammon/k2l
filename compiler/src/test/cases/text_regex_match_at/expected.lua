@@ -1,4 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
@@ -82,7 +84,7 @@ local function main()
     local ____list_2 = __K2L_ReadOnlyListOf(-1, 12)
     for ____i_2 = 1, ____list_2.size do
         local bad = ____list_2[____i_2]
-        local ____ok, ____result_2 = pcall(function()
+        local ____ok, ____result_2 = __K2L_DeepPcall(function()
             word:matchAt(text, bad)
         end)
         if not ____ok then
@@ -102,5 +104,5 @@ local function main()
     print(tostring(__K2L_Sequence.new(__K2L_Regex.new("\\p{Z}"):findAllFactory("a b\tc")):count()) .. " " .. __K2L_Sequence.new(__K2L_Regex.new("\\p{IsWhite_Space}"):findAllFactory("a b\tc\nd")):count() .. " " .. __K2L_Str(__K2L_Regex.new("\\p{javaWhitespace}+"):split("a \t b\031c")))
 end
 
-main()
+__K2L_DeepMain(main)
 return {tokens = tokens}

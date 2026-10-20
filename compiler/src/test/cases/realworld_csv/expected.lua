@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -187,7 +189,7 @@ function RowResult.Bad:equals(other)
 end
 
 local function parseRow(lineNo, header, line)
-    local ____ok, ____result_1, ____returned = pcall(function()
+    local ____ok, ____result_1, ____returned = __K2L_DeepPcall(function()
         local cols = header:zip(parseCsvLine(line)):toMap()
         local function col(name)
             local ____receiver = cols:get(name)
@@ -577,5 +579,5 @@ local function main()
     print("big orders: " .. __K2L_Str(__K2L_ListWrap(____out_11, ____count_11)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Region = Region, Sale = Sale, RAW = RAW, parseCsvLine = parseCsvLine, RowResult = RowResult, parseRow = parseRow, Stats = Stats, stats = stats, money = money, ____table = ____table}

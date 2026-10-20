@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IRem = ____lualib.__K2L_IRem
@@ -133,12 +135,12 @@ end
 
 local function guarded()
     return __K2L_SequenceBuilder(function(____this_6)
-        local ____ok, ____result_1 = pcall(function()
+        local ____ok, ____result_1 = __K2L_DeepPcall(function()
             ____this_6:yield("inside try")
             error(__K2L_IllegalArgumentException.new("oops"))
         end)
         if not ____ok then
-            ____ok, ____result_1 = pcall(function()
+            ____ok, ____result_1 = __K2L_DeepPcall(function()
                 local ____error = __K2L_ToThrowable(____result_1)
                 if __K2L_InstanceOf(____error, __K2L_IllegalArgumentException) then
                     local e = ____error
@@ -153,7 +155,7 @@ local function guarded()
             error(____result_1, 0)
         end
         local label
-        local ____ok_1, ____result_2 = pcall(function()
+        local ____ok_1, ____result_2 = __K2L_DeepPcall(function()
             ____this_6:yield("before")
             label = "value"
         end)
@@ -242,7 +244,7 @@ local function main()
     while it:hasNext() do
         print("got " .. it:next())
     end
-    local ____ok_2, ____result_3 = pcall(function()
+    local ____ok_2, ____result_3 = __K2L_DeepPcall(function()
         it:next()
     end)
     if not ____ok_2 then
@@ -258,7 +260,7 @@ local function main()
         print("loop " .. n)
     end
     print("-- exceptions")
-    local ____ok_3, ____result_4 = pcall(function()
+    local ____ok_3, ____result_4 = __K2L_DeepPcall(function()
         for _, x in failing():iter() do
             print("value " .. x)
         end
@@ -306,5 +308,5 @@ local function main()
     print(__K2L_Str(early:toList()))
 end
 
-main()
+__K2L_DeepMain(main)
 return {fibonacci = fibonacci, primes = primes, emitPair = emitPair, classify = classify, Tree = Tree, countdown = countdown, failing = failing, guarded = guarded, Repeater = Repeater}

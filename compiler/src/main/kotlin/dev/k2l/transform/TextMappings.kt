@@ -114,12 +114,12 @@ internal object TextMappings {
     private fun CallSite.formatArguments(format: LuaExpr?, values: List<LuaExpr>, types: List<KaType?>): List<LuaExpr> {
         val formatText = ((format ?: values.firstOrNull()) as? LuaString)?.value
         if (formatText == null || HASH_CONVERSION.containsMatchIn(formatText)) transformer.ctx.lualib += "FormatHash"
-        return sizedIntegers(values, types, firstArgument = if (format == null) 1 else 0, formatText)
+        return typedArguments(values, types, firstArgument = if (format == null) 1 else 0, formatText)
     }
 
-    /** The (1-based) arguments that a literal format prints with `%x`, `%X` or `%o`, as java.util.Formatter picks them. */
-    private fun radixArguments(format: String): Set<Int> {
-        val used = HashSet<Int>()
+    /** The (1-based) argument and the conversion of each specifier of a literal format, as java.util.Formatter picks them. */
+    private fun formatSpecifiers(format: String): List<Pair<Int, Char>> {
+        val used = mutableListOf<Pair<Int, Char>>()
         var ordinary = 0
         var last = 0
         for (m in SPECIFIER.findAll(format)) {
@@ -131,28 +131,74 @@ internal object TextMappings {
                 else -> ++ordinary
             }
             last = arg
-            if (conversion == "x" || conversion == "X" || conversion == "o") used += arg
+            used += arg to conversion[0]
         }
         return used
     }
 
     /**
-     * Format arguments of static type `Byte`, `Short` or `Long` that a `%x` or `%o` prints (all of them when the format is not a
-     * literal) as `__K2L_Text.sized(x, bits)`, so a negative value gives the two's complement of the type's width
-     * (`(-1).toByte()` is `ff`, `-1L` sixteen `f`s), as on the JVM. [firstArgument] is the index of the first argument after
-     * the format in [values].
+     * Format arguments as the formatter needs to see them, which their Lua value cannot tell:
+     * - of static type `Byte`, `Short` or `Long` that a `%x` or `%o` prints, `__K2L_Text.sized(x, bits)`, so a negative value
+     *   gives the two's complement of the type's width (`(-1).toByte()` is `ff`, `-1L` sixteen `f`s), as on the JVM;
+     * - that a conversion rejects by the JVM class of their static type (`%f` of an `Int`, `%d` of a `Double`, `%c` of a
+     *   `String`), `__K2L_Text.typed(x, bits, class)`, so it throws `IllegalFormatConversionException` there.
+     *
+     * Arguments of a literal format that no conversion rejects stay as they are; with a format that is not a literal, every
+     * argument of such a type is wrapped. [firstArgument] is the index of the first argument after the format in [values].
      */
-    private fun CallSite.sizedIntegers(values: List<LuaExpr>, types: List<KaType?>, firstArgument: Int, format: String?): List<LuaExpr> {
+    private fun CallSite.typedArguments(values: List<LuaExpr>, types: List<KaType?>, firstArgument: Int, format: String?): List<LuaExpr> {
         if (values.size != types.size) return values
-        val radix = format?.let(::radixArguments)
-        if (radix?.isEmpty() == true) return values
+        val specifiers = format?.let(::formatSpecifiers)
         return values.mapIndexed { i, v ->
+            val arg = i - firstArgument + 1
             val classId = with(session) { (types[i]?.withoutFlexibility as? KaClassType)?.classId?.asString() }
-            val bits = SIZED_BITS[classId]
-            val printedInRadix = i >= firstArgument && (radix == null || (i - firstArgument + 1) in radix)
-            if (bits == null || !printedInRadix) v else text("sized", v, LuaNumber(bits.toString()))
+            if (arg < 1 || classId == null) return@mapIndexed v
+            val conversions = specifiers?.filter { it.first == arg }?.map { it.second }
+            // only printed with %s: the text of its static type (a Double `2.0`, which a Lua number cannot tell from `2`)
+            if (classId in FLOATING && onlyAsString(conversions)) {
+                return@mapIndexed str(v, types[i])
+            }
+            val bits = SIZED_BITS[classId]?.takeIf { conversions == null || conversions.any { it in "xXo" } }
+            val boxed = BOXED_CLASSES[classId]
+            val rejected = boxed?.takeIf {
+                if (conversions == null) classId !in RUNTIME_CHECKED else conversions.any { c -> rejects(c, boxed) }
+            }
+            when {
+                rejected != null -> text("typed", v, bits?.let { LuaNumber(it.toString()) } ?: LuaNil, LuaString(rejected))
+                bits != null -> text("sized", v, LuaNumber(bits.toString()))
+                else -> v
+            }
         }
     }
+
+    private fun onlyAsString(conversions: List<Char>?) = !conversions.isNullOrEmpty() && conversions.all { it == 's' || it == 'S' }
+
+    /** Whether java.util.Formatter's [conversion] rejects an argument of the JVM class [boxed]. */
+    private fun rejects(conversion: Char, boxed: String): Boolean = when (conversion.lowercaseChar()) {
+        'd', 'o', 'x' -> boxed !in INTEGRAL_ARGUMENTS
+        'e', 'f', 'g' -> boxed !in FLOAT_ARGUMENTS
+        'c' -> boxed !in CHAR_ARGUMENTS
+        else -> false
+    }
+
+    /** The JVM classes of the boxed values of the types the formatter checks, by the Kotlin class. */
+    private val BOXED_CLASSES = mapOf(
+        "kotlin/Int" to "java.lang.Integer", "kotlin/Long" to "java.lang.Long", "kotlin/Short" to "java.lang.Short",
+        "kotlin/Byte" to "java.lang.Byte", "kotlin/Double" to "java.lang.Double", "kotlin/Float" to "java.lang.Float",
+        "kotlin/Char" to "java.lang.Character", "kotlin/String" to "java.lang.String", "kotlin/Boolean" to "java.lang.Boolean",
+        "java/math/BigInteger" to "java.math.BigInteger", "java/math/BigDecimal" to "java.math.BigDecimal",
+        "kotlin/UInt" to "kotlin.UInt", "kotlin/ULong" to "kotlin.ULong", "kotlin/UShort" to "kotlin.UShort",
+        "kotlin/UByte" to "kotlin.UByte",
+    )
+
+    private val FLOATING = setOf("kotlin/Double", "kotlin/Float")
+
+    /** Types whose Lua values the formatter tells apart itself (booleans, `BigInteger`/`BigDecimal` objects). */
+    private val RUNTIME_CHECKED = setOf("kotlin/Boolean", "java/math/BigInteger", "java/math/BigDecimal")
+    private val INTEGRAL_ARGUMENTS =
+        setOf("java.lang.Integer", "java.lang.Long", "java.lang.Short", "java.lang.Byte", "java.math.BigInteger")
+    private val FLOAT_ARGUMENTS = setOf("java.lang.Double", "java.lang.Float", "java.math.BigDecimal")
+    private val CHAR_ARGUMENTS = setOf("java.lang.Character", "java.lang.Integer", "java.lang.Short", "java.lang.Byte")
 
     /** With `--strings utf16`, these helpers are members of `__K2L_Text` that count UTF-16 units. */
     private val UTF16_HELPERS = mapOf(

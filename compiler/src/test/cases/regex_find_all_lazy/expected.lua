@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
@@ -44,4 +45,4 @@ local function main()
     print(__K2L_Sequence.new(__K2L_Regex.new("[aeiou]"):findAllFactory("sequence")):joinToString("", nil, nil, nil, nil, ____lambda_5))
 end
 
-main()
+__K2L_DeepMain(main)

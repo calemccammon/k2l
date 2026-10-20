@@ -43,6 +43,9 @@ local __K2L_IllegalFormatPrecisionException = __K2L_Class("java.util.IllegalForm
 local __K2L_FormatFlagsConversionMismatchException =
     __K2L_Class("java.util.FormatFlagsConversionMismatchException", __K2L_IllegalFormatException)
 local __K2L_NotImplementedError = __K2L_Class("kotlin.NotImplementedError", __K2L_Error)
+local __K2L_VirtualMachineError = __K2L_Class("java.lang.VirtualMachineError", __K2L_Error)
+-- Lua's "stack overflow" and "C stack overflow" errors (see ToThrowable.lua and DeepPcall.lua)
+local __K2L_StackOverflowError = __K2L_Class("java.lang.StackOverflowError", __K2L_VirtualMachineError)
 local __K2L_UninitializedPropertyAccessException = __K2L_Class("kotlin.UninitializedPropertyAccessException", __K2L_RuntimeException)
 local __K2L_KotlinReflectionNotSupportedError = __K2L_Class("kotlin.jvm.KotlinReflectionNotSupportedError", __K2L_Error)
 

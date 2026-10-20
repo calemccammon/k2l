@@ -9,6 +9,7 @@ local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -49,7 +50,7 @@ local function kmpSearch(text, p)
     local hits = __K2L_ListOf()
     local k = 0
     local ____collection = __K2L_StringToList(text):withIndex()
-    local ____items, ____n = ____collection:____array()
+    local ____items, ____n = __K2L_LoopItems(____collection)
     local ____mod = ____collection.____modCount
     for ____i = 1, ____n do
         local ____item = ____items[____i]

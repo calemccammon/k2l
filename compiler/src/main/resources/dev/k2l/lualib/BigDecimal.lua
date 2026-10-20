@@ -748,6 +748,14 @@ function __K2L_BigDecimal:toPlainString()
     return plain(self)
 end
 
+-- The digits of %f with `precision` decimals (rounded HALF_UP, as java.util.Formatter does): the integer part and the
+-- fraction of the magnitude
+function __K2L_BigDecimal:____fixed(precision)
+    local text = plain(self:abs():setScale(precision, HALF_UP))
+    local int, frac = text:match("^(%d+)%.?(%d*)$")
+    return int, frac
+end
+
 function __K2L_BigDecimal:toBigInteger()
     if self.s <= 0 then
         return scaleUp(self.u, -self.s)

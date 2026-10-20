@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -543,7 +545,7 @@ local function main()
     local ____mod_1 = broken.____modCount
     for ____i_2 = 1, broken.size do
         local src = broken[____i_2]
-        local ____ok, ____result = pcall(function()
+        local ____ok, ____result = __K2L_DeepPcall(function()
             local v = eval(Pratt.new(tokenize(src)):parseAll(), env)
             print(__K2L_Utf16.out(src .. " = " .. __K2L_Str(v)))
         end)
@@ -569,5 +571,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {Kind = Kind, Token = Token, ParseError = ParseError, tokenize = tokenize, Expr = Expr, Num = Num, Var = Var, Unary = Unary, Binary = Binary, Call = Call, Cond = Cond, Pratt = Pratt, show = show, functions = functions, eval = eval, caret = caret}

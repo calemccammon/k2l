@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -24,7 +26,7 @@ local __K2L_Unit = ____lualib.__K2L_Unit
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
 local function attempt(label, block)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(label .. ": " .. __K2L_Str(block()))
     end)
     if not ____ok then
@@ -192,7 +194,7 @@ local function arrays()
     local part = __K2L_TypedArrayOf("[I", 9, 8, 7, 6, 5, 4)
     __K2L_JdkCollections.sort_array(part, 1, 4)
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(part)))
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         __K2L_JdkCollections.sort_array(part, 4, 9)
     end)
     if not ____ok_1 then
@@ -266,5 +268,5 @@ local function main()
     arrays()
 end
 
-main()
+__K2L_DeepMain(main)
 return {attempt = attempt, sorting = sorting, queries = queries, mutations = mutations, factories = factories, arrays = arrays}

@@ -3,6 +3,8 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -416,7 +418,7 @@ local function main()
     local b = Matrix.new(2, 3, ____lambda_15)
     print("B * B^T =\n" .. __K2L_Str(b:times(b:transpose())))
     print("-B + B is zero: " .. tostring(b:unaryMinus():plus(b):equals(Matrix.new(2, 3))))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         b:times(b)
     end)
     if not ____ok then
@@ -465,5 +467,5 @@ local function main()
     print("zero: " .. __K2L_Str(Poly.new(__K2L_ReadOnlyListOf(0, 0))) .. " " .. __K2L_Str(p:plus(Poly.new(__K2L_ReadOnlyListOf(1, 0, -1)))))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Matrix = Matrix, Meters = Meters, Seconds = Seconds, div = div, getM = getM, getKm = getKm, Vec = Vec, fmt = fmt, convexHull = convexHull, polygonArea = polygonArea, Poly = Poly}

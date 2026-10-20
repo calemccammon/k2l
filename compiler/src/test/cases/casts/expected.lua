@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassCastException = ____lualib.__K2L_ClassCastException
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
@@ -43,7 +45,7 @@ local Square = __K2L_Class("Square", nil, Shape)
 local Single = __K2L_Class("Single")
 
 local function attempt(label, block)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(label .. ": " .. __K2L_Str(block()))
     end)
     if not ____ok then
@@ -215,7 +217,7 @@ local function main()
         end
         return __K2L_ReadOnlyListOf(____arg, any + 1)
     end)
-    local ____ok_1, ____result_2 = pcall(function()
+    local ____ok_1, ____result_2 = __K2L_DeepPcall(function()
         if math.type(any) ~= "integer" then
             __K2L_CastFail(any, "java.lang.Integer", "kotlin.Int")
         end
@@ -229,7 +231,7 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_3 = pcall(function()
+    local ____ok_2, ____result_3 = __K2L_DeepPcall(function()
         if getmetatable(animal) ~= Cat then
             __K2L_CastFail(animal, "Cat", "Cat")
         end
@@ -246,5 +248,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {Animal = Animal, Dog = Dog, Cat = Cat, Shape = Shape, Square = Square, Single = Single, attempt = attempt, unchecked = unchecked, describe = describe}

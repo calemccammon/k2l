@@ -229,6 +229,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -237,6 +239,7 @@ local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -302,7 +305,7 @@ local function printAll(title, items, show)
         show = ____lambda_1
     end
     print(title .. " (" .. items.size .. "):")
-    local ____items, ____n = items:____array()
+    local ____items, ____n = __K2L_LoopItems(items)
     local ____mod = items.____modCount
     for ____i = 1, ____n do
         local it = ____items[____i]
@@ -357,7 +360,7 @@ local function main()
         end
     end
     print(__K2L_Str(products))
-    local ____ok, ____result_1 = pcall(function()
+    local ____ok, ____result_1 = __K2L_DeepPcall(function()
         products:save(____Entities.Product.new(____Entities.Sku.new("XX0000"), "free", 0))
     end)
     if not ____ok then
@@ -369,7 +372,7 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_2 = pcall(function()
+    local ____ok_1, ____result_2 = __K2L_DeepPcall(function()
         products:save(____Entities.Product.new(____Entities.Sku.new("KB0001"), "keyboard", 5499, 1))
     end)
     if not ____ok_1 then
@@ -382,7 +385,7 @@ local function main()
         end
     end
     products:save(____Entities.Product.new(____Entities.Sku.new("KB0001"), "keyboard", 5499, 2))
-    local ____ok_2, ____result_3 = pcall(function()
+    local ____ok_2, ____result_3 = __K2L_DeepPcall(function()
         ____Entities.Sku.new("bad")
     end)
     if not ____ok_2 then
@@ -446,7 +449,7 @@ local function main()
     printAll("orders", orders:all(), function(it)
         return "#" .. it.id .. " " .. __K2L_Str(it.customer) .. " qty=" .. it:quantity() .. " total=" .. __K2L_Str(pricing:total(it))
     end)
-    local ____ok_3, ____result_4 = pcall(function()
+    local ____ok_3, ____result_4 = __K2L_DeepPcall(function()
         pricing:total(____Entities.Order.new(9, ____Entities.CustomerId.new("eu", 7), __K2L_SingletonListOf(__K2L_Pair.new(____Entities.Sku.new("ZZ9999"), 1))))
     end)
     if not ____ok_3 then
@@ -530,7 +533,7 @@ local function main()
     print("found " .. __K2L_Str(____receiver_1 and (getmetatable(first) == ____Entities.Product and first or nil).name) .. " " .. tostring(__K2L_InstanceOf(first, ____Entities.Named)) .. " " .. tostring(__K2L_IsComparable(first)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {ProductRepository = ProductRepository, AuditLog = AuditLog, Pricing = Pricing, printAll = printAll, countNamed = countNamed}
 -- ==== query/Query.lua ====
 local ____lualib = require("lualib_bundle")
@@ -543,6 +546,7 @@ local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReverseComparator = ____lualib.__K2L_ReverseComparator
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
@@ -641,7 +645,7 @@ end
 
 local function maxValue(____this_2, selector)
     local best = nil
-    local ____items_2, ____n_2 = ____this_2:____array()
+    local ____items_2, ____n_2 = __K2L_LoopItems(____this_2)
     local ____mod = ____this_2.____modCount
     for ____i_2 = 1, ____n_2 do
         local item = ____items_2[____i_2]
@@ -664,7 +668,7 @@ end
 local ____lambda_1 = function() return __K2L_ListOf() end
 local function bucket(____this_4, key)
     local result = __K2L_SortedMapOf()
-    local ____items_3, ____n_3 = ____this_4:____array()
+    local ____items_3, ____n_3 = __K2L_LoopItems(____this_4)
     local ____mod_1 = ____this_4.____modCount
     for ____i_3 = 1, ____n_3 do
         local item = ____items_3[____i_3]

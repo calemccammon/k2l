@@ -46,7 +46,7 @@ local function main()
     end
     print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     local text = __K2L_StringBuilder.new():appendLine("alpha"):appendLine("beta"):append("gamma")
-    print(__K2L_Str(__K2L_StringLines(text:toString())) .. " " .. #__K2L_StringPadStart(text:toString(), 20, ".") .. " " .. text:indexOf("beta") .. " " .. __K2L_Str(__K2L_Text.filter(text:toString(), ____lambda_3)))
+    print(__K2L_Str(__K2L_StringLines(text:toString())) .. " " .. __K2L_Text.charsLength(__K2L_StringPadStart(text:toString(), 20, ".")) .. " " .. text:indexOf("beta") .. " " .. __K2L_Str(__K2L_Text.filter(text:toString(), ____lambda_3)))
     print(__K2L_Text.first(text:toString()) .. " " .. __K2L_Text.last(text:toString()) .. " " .. __K2L_Str(text:substring(0, 5)) .. " " .. __K2L_Str(text:toString():reverse()) .. " " .. text:toString():upper())
 end
 

@@ -11,15 +11,21 @@ import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.psi.*
 
 /**
- * The function that runs a `try` block: `pcall`, or on Lua 5.1 (which cannot yield across pcall)
+ * The function that runs a `try` block: [deepPcall], or on Lua 5.1 (which cannot yield across pcall)
  * `__K2L_CoPcall` when the block contains a suspension point, so the enclosing coroutine can still
  * suspend inside it.
  */
 internal fun FileTransformer.protectedCall(e: KtTryExpression): LuaExpr {
-    if (target != LuaTarget.Lua51) return LuaName("pcall")
+    if (target != LuaTarget.Lua51) return deepPcall()
     val protected = listOf(e.tryBlock) + e.catchClauses
-    return if (protected.any { containsSuspensionPoint(it) }) lualibRef("CoPcall", "__K2L_CoPcall") else LuaName("pcall")
+    return if (protected.any { containsSuspensionPoint(it) }) lualibRef("CoPcall", "__K2L_CoPcall") else deepPcall()
 }
+
+/**
+ * `pcall` for the protected blocks of the program, which may nest as deeply as the recursion through them: on Lua 5.2+
+ * every hundredth nested one runs in a coroutine of its own (see DeepPcall.lua), as Lua allows only some 200 nested C calls.
+ */
+internal fun FileTransformer.deepPcall(): LuaExpr = lualibRef("DeepPcall", "__K2L_DeepPcall")
 
 /** Whether [element] calls a suspend function (including `yield` in a sequence builder) anywhere inside it. */
 internal fun FileTransformer.containsSuspensionPoint(element: KtElement): Boolean = with(session) {

@@ -6,6 +6,16 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
 ## [Unreleased] (0.2.0)
 
 ### Added
+- `for (c in s)` over a `CharSequence` (a parameter, a property, a `StringBuilder` typed as one) or a `StringBuilder`, with
+  bytes and `--strings utf16`: the chars of a string, or the value's `get(i)` while `i < length`, like the JVM's iterator;
+  `length`, `s[i]`, `lastIndex` and `indices` of a `CharSequence` call the members of a `StringBuilder` or a class of the program.
+- Recursion through `try` blocks on Lua 5.2 to 5.4 goes some 20000 levels deep instead of failing with "C stack overflow" after
+  about 190: every hundredth nested protected call runs in a coroutine resumed by a driver around `main` (`DeepPcall.lua`). An
+  overflow of the Lua or the C stack is caught as `StackOverflowError` (an `Error`) rather than `RuntimeException`.
+- Unchecked casts are checked where the JVM's CHECKCAST would throw: results of functions and getters of the program that cast to
+  a type parameter, and reads through a local `val` cast to a generic type, when they meet a concrete type (`ClassCastException`
+  with the JVM's message, `java.lang.Number` for numbers).
+- Regex `\p{S}`/`\p{IsS}`, Unicode's symbol category.
 - A benchmark harness for the generated code: `./gradlew :compiler:bench` runs 17 programs (`compiler/src/bench/programs`,
   checked against Kotlin/JVM) on every Lua found and compares them with a committed baseline; `-PbenchProfile` reports the
   hottest functions per program with a sampling profiler (count hook on PUC Lua, `jit.profile` on LuaJIT), mapped back to
@@ -156,6 +166,11 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   test the class itself.
 
 ### Changed
+- `for` loops and `forEach` over a value that may be a `java.util.ArrayDeque` (one, or a `Deque`, `Queue`, `Collection` or
+  `Iterable`) whose body may change a collection read it through `__K2L_LoopItems`, which walks a `java.util.ArrayDeque`
+  through its iterator; `java.util.ArrayDeque(numElements)` passes the capacity on, as it decides when the deque's array grows.
+- A map keeps the entries of its `entries` (one per key, made when first read) instead of making them for every read, and a
+  TreeMap's or TreeSet's `headMap`/`headSet` and the like hold their range instead of copying it.
 - Faster generated code and runtime (benchmark geomean vs the 0.1 baseline, lower is faster: 5.1 0.51, 5.2 0.63,
   5.3 0.62, 5.4 0.60, LuaJIT 0.56). Generated code: `is`/`when` on final classes compares metatables; `map`/`filter`/
   `sumOf`/`any`/... with a lambda literal on lists, arrays and sets compile to loops; `entries[i]` and loops over
@@ -212,6 +227,41 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   an `operator fun compareTo` is not.
 
 ### Fixed
+- A string template turns each entry into text where the JVM appends it: a later entry with a safe call
+  (`"$list ${list.removeLastOrNull()?.x}"`) no longer changes what an earlier object prints.
+- A local or parameter named like a top-level function (`val total = total(xs)`) no longer hides the function in its scope, and a
+  top-level function named like a top-level property (`val label`, `fun label(n)`) is `label__1` instead of overwriting it.
+- Map entries are live, as the JVM's nodes: an entry from `map.entries` (a loop, `entries.first()`, `toList()`, an iterator,
+  `removeEldestEntry`'s argument) sees a later `put`, `merge`, `compute` or `replaceAll` of its key in a `HashMap`,
+  `LinkedHashMap` (also in access order), `TreeMap` or `buildMap`, two reads give the same entry, and a removed key's entry keeps
+  its last value while its `setValue` no longer writes to the map. `TreeMap.firstEntry()`, `floorEntry()`,
+  `pollFirstEntry()` and the like return `AbstractMap$SimpleImmutableEntry` copies whose `setValue` throws
+  `UnsupportedOperationException`.
+- `TreeMap.headMap`, `tailMap`, `subMap` (also with inclusive flags) and `TreeSet.headSet`, `tailSet`, `subSet` and
+  `descendingSet()` are live views (`TreeMap$AscendingSubMap`, `TreeMap$DescendingSubMap`, `TreeSet`) instead of copies: they
+  see later changes, write through, count their `size` live, throw `IllegalArgumentException("key out of range")` for a write
+  outside their range, narrow it for views of views (`fromKey out of range`, `toKey out of range`, `fromKey > toKey`) and throw
+  `ConcurrentModificationException` in loops after a change of the map or set. `descendingMap().descendingMap()` is an
+  `AscendingSubMap`, the views' `keys`, `values`, `entries` and iterators have the JVM's classes, `navigableKeySet().headSet()`
+  and the like work, and `TreeSet.descendingIterator()` is the descending set's iterator.
+- `ArrayDeque` and `ConcurrentModificationException` as on the JVM: `kotlin.collections.ArrayDeque` no longer counts adding
+  no elements, clearing an empty deque, sorting or `replaceAll` as a change, and its iterator's `next()` past the end has the
+  JVM's message; `java.util.ArrayDeque`'s iterators, descending iterator, `for` loops and `forEach` throw exactly where the
+  JDK's do (on reaching an emptied slot of its circular array, e.g. after `removeLast()` or an `addLast` that grows the array)
+  and read the right elements after `poll()` or `addFirst` while iterating, instead of never throwing.
+- `String.format` throws `IllegalFormatConversionException` (`f != java.lang.Integer`, `d != java.lang.Double`, `c != java.lang.Long`,
+  `c != java.lang.String`, `x != java.lang.Character`, `d != kotlin.UInt`, ...) by the class of an argument's static type, as
+  `java.util.Formatter`; arguments held in an `Any` are checked by their value where it tells (booleans, objects, `BigInteger`/
+  `BigDecimal`, fractional numbers). Only the arguments a literal format rejects are wrapped, so correct formats run as before.
+  `%f` of a `BigDecimal` is exact (it failed), and `%s` of a `Double` prints `2.0` on Lua 5.1, 5.2 and LuaJIT.
+- Regex `\p{P}` and `\p{IsPunctuation}` are Unicode's punctuation category, with non-ASCII characters under `--strings utf16`
+  (they were POSIX `\p{Punct}`, which also holds the ASCII symbols `` $+<=>^`|~ ``).
+- `length`, `s[i]` and the String functions of a `StringBuilder` held as a `CharSequence` (they read the table as a string), and a
+  `StringBuilder` passed to a String function taking a `CharSequence` (`"abc".contains(sb)`).
+- An object of a class implementing `CharSequence` stays an object where a library parameter is not text (`listOf(letters)` made
+  a list of its `toString()`); the String functions read its chars through `length` and `get`, as the JVM does.
+- `StringBuilder` is `Comparable` (`is Comparable<*>`, natural order), as since Java 11.
+- `null as T` of a reified `T` and `null as String` say `null cannot be cast to non-null type kotlin.String`, with the Kotlin name.
 - Int division by a constant on Lua 5.1 no longer prints `-0` for a zero quotient of a negative dividend.
 - `"%s %s".format(null, x)` and `"%s".format(null)` resolve to the `Locale` overload, as in Kotlin, so they throw
   `MissingFormatArgumentException` like the JVM instead of printing `null`.

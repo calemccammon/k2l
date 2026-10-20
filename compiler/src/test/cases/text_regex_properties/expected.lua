@@ -1,4 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
@@ -28,7 +30,7 @@ local function main()
     local ____list = __K2L_ReadOnlyListOf("\\p{L}+", "\\p{Lu}", "\\p{Ll}+", "\\p{Lt}", "\\p{N}+", "\\p{Nd}+", "\\p{IsDigit}+", "\\p{M}", "\\p{IsLetter}+", "\\p{javaUpperCase}", "\\p{Alpha}+", "\\p{Upper}", "\\p{Digit}+", "[\\p{L}\\p{M}]+", "[^\\p{L}\\s]+", "\\P{L}+", "[\\p{Lu}\\d]+", "\\p{IsAlphabetic}{3,}", "\\p{javaLetterOrDigit}+", "[\\P{L}&&[^ ]]")
     for ____i = 1, ____list.size do
         local p = ____list[____i]
-        local ____ok, ____result = pcall(function()
+        local ____ok, ____result = __K2L_DeepPcall(function()
             show(p, text)
         end)
         if not ____ok then
@@ -54,5 +56,5 @@ local function main()
     print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[\\p{L}&&[^aeiou]]+"):findAllFactory("crème brûlée")):map(____lambda_5):toList())))
 end
 
-main()
+__K2L_DeepMain(main)
 return {show = show}

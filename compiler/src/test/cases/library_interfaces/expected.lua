@@ -23,7 +23,6 @@ local __K2L_ReverseComparator = ____lualib.__K2L_ReverseComparator
 local __K2L_RunnableMixin = ____lualib.__K2L_RunnableMixin
 local __K2L_SortedSet = ____lualib.__K2L_SortedSet
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
 local __K2L_Text = ____lualib.__K2L_Text
@@ -293,7 +292,7 @@ function Backwards:previousIndex()
 end
 
 local function describe(cs)
-    return #__K2L_CharSequenceText(cs) .. ":" .. __K2L_StringCharAt(__K2L_CharSequenceText(cs), 0) .. ":" .. __K2L_Str(__K2L_Text.substring(__K2L_CharSequenceText(cs), 1, 3)) .. ":" .. tostring(#__K2L_CharSequenceText(cs) == 0) .. ":" .. __K2L_Str(__K2L_CharSequenceText(cs):reverse()) .. ":" .. __K2L_StringIndexOf(__K2L_CharSequenceText(cs), "l")
+    return __K2L_Text.charsLength(cs) .. ":" .. __K2L_Text.charsGet(cs, 0) .. ":" .. __K2L_Str(__K2L_Text.substring(__K2L_CharSequenceText(cs), 1, 3)) .. ":" .. tostring(#__K2L_CharSequenceText(cs) == 0) .. ":" .. __K2L_Str(__K2L_CharSequenceText(cs):reverse()) .. ":" .. __K2L_StringIndexOf(__K2L_CharSequenceText(cs), "l")
 end
 
 local function countMatching(xs, check)

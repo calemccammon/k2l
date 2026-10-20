@@ -5,6 +5,8 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashSetOf = ____lualib.__K2L_HashSetOf
@@ -17,6 +19,7 @@ local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
@@ -399,7 +402,7 @@ function Bank:transfer(from, to, amount)
         error(__K2L_NoSuchElementException.new("unknown account " .. to))
     end
     local target = ____value_2
-    local ____ok, ____result_1 = pcall(function()
+    local ____ok, ____result_1 = __K2L_DeepPcall(function()
         source:withdraw(amount)
     end)
     if not ____ok then
@@ -418,7 +421,7 @@ end
 local ____lambda_3 = function(self, ...) return self:monthEnd(...) end
 function Bank:monthEnd()
     local ____collection = self.accounts:getValues()
-    local ____items_1, ____n_1 = ____collection:____array()
+    local ____items_1, ____n_1 = __K2L_LoopItems(____collection)
     local ____mod = ____collection.____modCount
     for ____i_1 = 1, ____n_1 do
         local it = ____items_1[____i_1];
@@ -472,7 +475,7 @@ local function main()
     local alice = Customer.new("Alice  van Dyke", "ALICE@example.com")
     local bob = Customer.new("bob", "bob@example.com")
     print("initials: " .. alice:getInitials() .. " " .. alice:getInitials())
-    local ____ok_1, ____result_3 = pcall(function()
+    local ____ok_1, ____result_3 = __K2L_DeepPcall(function()
         bob:setEmail("not-an-email")
     end)
     if not ____ok_1 then
@@ -497,7 +500,7 @@ local function main()
     b1:deposit(Money:of("15.25"))
     bank:transfer(a2.id, b1.id, getDollars(200))
     b1:withdraw(getDollars(240))
-    local ____ok_2, ____result_4 = pcall(function()
+    local ____ok_2, ____result_4 = __K2L_DeepPcall(function()
         bank:transfer(b1.id, a1.id, getDollars(100))
     end)
     if not ____ok_2 then
@@ -527,7 +530,7 @@ local function main()
     for ____i_4 = 1, ____list_3.size do
         local op = ____list_3[____i_4]
         do
-            local ____ok_3, ____result_5 = pcall(function()
+            local ____ok_3, ____result_5 = __K2L_DeepPcall(function()
                 op()
             end)
             if not ____ok_3 then
@@ -593,5 +596,5 @@ local function main()
     print(Money:of("7.5"):times(3):equals(Money:of("22.50")))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Money = Money, getDollars = getDollars, InsufficientFunds = InsufficientFunds, TransferFailed = TransferFailed, Auditable = Auditable, AuditTrail = AuditTrail, Kind = Kind, Account = Account, Checking = Checking, Savings = Savings, Customer = Customer, Bank = Bank}

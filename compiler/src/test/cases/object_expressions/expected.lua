@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
@@ -198,5 +199,5 @@ local function main()
     print(__K2L_StringStartsWith(__K2L_Str(point), "app.MainKt$main$point$1@"))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Greeter = Greeter, Counter = Counter, Animal = Animal, Ticker = Ticker, Shop = Shop, makeCounter = makeCounter, use = use}

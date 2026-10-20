@@ -4,6 +4,8 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMapOf = ____lualib.__K2L_HashMapOf
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -461,7 +463,7 @@ local function main()
     local built = times(plus(Formula.Const.new(2.0), Formula.Cell.new(Ref:parse("A1"))), Formula.Const.new(3.0))
     print(__K2L_Str(built) .. " refs=" .. __K2L_Str(built:refs()))
     s:set("A1", "C3")
-    local ____ok, ____result_2 = pcall(function()
+    local ____ok, ____result_2 = __K2L_DeepPcall(function()
         s:recalc()
     end)
     if not ____ok then
@@ -481,5 +483,5 @@ local function main()
     print(__K2L_Str(____receiver_7 and (____receiver_7.simpleName or "")))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Col = Col, Ref = Ref, Area = Area, component1 = component1, component2 = component2, Formula = Formula, CycleException = CycleException, plus = plus, times = times, parseFormula = parseFormula, Sheet = Sheet}

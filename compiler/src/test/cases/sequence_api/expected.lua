@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -455,5 +456,5 @@ local function main()
     interleaving()
 end
 
-main()
+__K2L_DeepMain(main)
 return {seq = seq, nullableSeq = nullableSeq, sequenceFunctions = sequenceFunctions, list = list, nullableList = nullableList, iterableFunctions = iterableFunctions, interleaving = interleaving, falseValues = falseValues}

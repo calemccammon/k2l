@@ -320,6 +320,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -368,7 +370,7 @@ function Host.Run:execute()
     for ____i = 1, ____n do
         local p = ____items[____i]
         local out
-        local ____ok, ____result = pcall(function()
+        local ____ok, ____result = __K2L_DeepPcall(function()
             out = p:handle(current)
         end)
         if not ____ok then
@@ -420,7 +422,7 @@ function Host:load(...)
         local plugin, settings = ____item.first, ____item.second
         do
             local p
-            local ____ok_1, ____result_1 = pcall(function()
+            local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
                 p = ____Plugin.Registry:create(plugin, settings)
             end)
             if not ____ok_1 then
@@ -597,7 +599,7 @@ local function main()
     end
     print("report:\n" .. __K2L_Str(host:report()))
     print("lookups: " .. ____Plugin.Registry.lookups .. ", registered: " .. __K2L_Str(____Plugin.Registry:getNames()))
-    local ____ok_2, ____result_3 = pcall(function()
+    local ____ok_2, ____result_3 = __K2L_DeepPcall(function()
         ____Plugin.Registry:register("upper", ____lambda_2)
     end)
     if not ____ok_2 then
@@ -617,5 +619,5 @@ local function main()
     print("comparables: " .. comparables.size)
 end
 
-main()
+__K2L_DeepMain(main)
 return {Host = Host, Version = Version, Level = Level, Both = Both, check = check}

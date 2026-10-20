@@ -145,7 +145,7 @@ local function fmt(____this, decimals)
     if decimals == nil then
         decimals = 2
     end
-    return __K2L_StringFormat("%." .. decimals .. "f", ____this)
+    return __K2L_StringFormat("%." .. decimals .. "f", __K2L_Text.typed(____this, nil, "java.lang.Double"))
 end
 
 local ____lambda_6 = function(it) return collatz(it):count() end

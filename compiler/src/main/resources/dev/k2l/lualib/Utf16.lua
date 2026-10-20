@@ -224,6 +224,11 @@ do
             end
         end
     end
+    Text.eachChar = U.each
+
+    function Text.joinChars(chars)
+        return U.norm(concat(chars))
+    end
 
     -- The chars of s as a Lua array, and their count
     local function chars(s)

@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -35,7 +37,7 @@ end
 local function main()
     local s = Service.new()
     print(tostring(s:ready()) .. " " .. s:cacheSize())
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(s.name or __K2L_Uninitialized("name"))
     end)
     if not ____ok then
@@ -71,5 +73,5 @@ local function main()
 end
 
 ____exports.Service = Service
-main()
+__K2L_DeepMain(main)
 return ____exports

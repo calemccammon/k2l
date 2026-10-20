@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -10,6 +12,7 @@ local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -498,7 +501,7 @@ local function stats(j, depth, acc)
         end
     elseif ____mt_3 == Json.Obj then
         local ____collection = j.fields:getValues()
-        local ____items, ____n = ____collection:____array()
+        local ____items, ____n = __K2L_LoopItems(____collection)
         local ____mod_1 = ____collection.____modCount
         for ____i_3 = 1, ____n do
             local it = ____items[____i_3]
@@ -533,7 +536,7 @@ local function main()
     local ____mod_3 = bad.____modCount
     for ____i_6 = 1, bad.size do
         local b = bad[____i_6]
-        local ____ok, ____result_1 = pcall(function()
+        local ____ok, ____result_1 = __K2L_DeepPcall(function()
             Parser.new(b):parse()
             print("parsed?! " .. b)
         end)
@@ -618,5 +621,5 @@ local function main()
     print(__K2L_StringFormat("average age %.3f, %e, %g", avg, avg, avg))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Json = Json, JsonError = JsonError, Parser = Parser, quote = quote, formatNumber = formatNumber, compact = compact, pretty = pretty, pointer = pointer, stats = stats, DOC = DOC}

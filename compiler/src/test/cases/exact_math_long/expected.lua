@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArithmeticException = ____lualib.__K2L_ArithmeticException
 local __K2L_Bits = ____lualib.__K2L_Bits
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exact = ____lualib.__K2L_Exact
 local __K2L_FloorDiv = ____lualib.__K2L_FloorDiv
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -9,7 +11,7 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local function attempt(label, block)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(label .. " = " .. __K2L_Str(block()))
     end)
     if not ____ok then
@@ -78,5 +80,5 @@ local function main()
     print(__K2L_Str(__K2L_Bits.doubleFromBits(1)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {attempt = attempt}

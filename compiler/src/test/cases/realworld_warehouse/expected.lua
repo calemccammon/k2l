@@ -3,6 +3,7 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -438,5 +439,5 @@ local function main()
     print(__K2L_Str(__K2L_ListWrap(____out_5, ____count_5)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Priced = Priced, Discounted = Discounted, Taxed = Taxed, Product = Product, Tool = Tool, Glassware = Glassware, PowerTool = PowerTool, Slot = Slot, Grid = Grid, Order = Order, route = route}

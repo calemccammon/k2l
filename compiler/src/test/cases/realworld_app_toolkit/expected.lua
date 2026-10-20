@@ -3,6 +3,8 @@ local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -90,7 +92,7 @@ Clock:____init()
 
 local function timed(label, log, block)
     local start = Clock.now
-    local ____ok, ____result, ____returned = pcall(function()
+    local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
         return true, block()
     end)
     log:add(label .. " took " .. Clock.now - start)
@@ -119,7 +121,7 @@ end
 function ResourceScope:closeAll()
     local failures = __K2L_ListOf()
     while self.closers:isNotEmpty() do
-        local ____ok_1, ____result_1 = pcall(function()
+        local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
             self.closers:removeFirst()()
         end)
         if not ____ok_1 then
@@ -138,7 +140,7 @@ end
 local function resourceScope(block)
     local scope = ResourceScope.new()
     local result
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
         result = block(scope)
     end)
     if not ____ok_2 then
@@ -344,7 +346,7 @@ local function main()
         local delay = 10
         for attempt = 0, 4 - 1 - 1 do
             do
-                local ____ok_3, ____result_5 = pcall(function()
+                local ____ok_3, ____result_5 = __K2L_DeepPcall(function()
                     local ____result_6
                     do
                         local attempt = attempt + 1
@@ -383,12 +385,12 @@ local function main()
     end
     local value = ____result_4
     print(value .. " after " .. calls .. " calls, delays " .. __K2L_Str(delays))
-    local ____ok_4, ____result_8 = pcall(function()
+    local ____ok_4, ____result_8 = __K2L_DeepPcall(function()
         do
             local delay = 10
             for attempt = 0, 3 - 1 - 1 do
                 do
-                    local ____ok_5, ____result_9 = pcall(function()
+                    local ____ok_5, ____result_9 = __K2L_DeepPcall(function()
                         do
                             local it = attempt + 1
                             error(__K2L_IllegalArgumentException.new("not retried"))
@@ -431,7 +433,7 @@ local function main()
     local function earlyExit()
         do
             local start = Clock.now
-            local ____ok_6, ____result_10, ____returned_6 = pcall(function()
+            local ____ok_6, ____result_10, ____returned_6 = __K2L_DeepPcall(function()
                 local ____result_11
                 Clock:advance(3)
                 do return true, "left early" end
@@ -482,7 +484,7 @@ local function main()
         ____result_12 = nil
         ::____inline_end_4::
     end
-    local ____arg = ____result_12
+    local ____arg = __K2L_Str(____result_12)
     local ____result_13
     do
         local ____mod_5 = mixed.____modCount
@@ -499,7 +501,7 @@ local function main()
         ____result_13 = nil
         ::____inline_end_5::
     end
-    local ____arg_1 = ____result_13
+    local ____arg_1 = __K2L_Str(____result_13)
     local ____result_14
     do
         local ____mod_6 = mixed.____modCount
@@ -516,7 +518,7 @@ local function main()
         ____result_14 = nil
         ::____inline_end_6::
     end
-    local ____arg_2 = ____result_14
+    local ____arg_2 = __K2L_Str(____result_14)
     local ____result_15
     do
         local ____mod_7 = mixed.____modCount
@@ -533,7 +535,7 @@ local function main()
         ____result_15 = nil
         ::____inline_end_7::
     end
-    print(__K2L_Str(____arg) .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(____arg_2) .. " " .. __K2L_Str(____result_15))
+    print(____arg .. " " .. ____arg_1 .. " " .. ____arg_2 .. " " .. __K2L_Str(____result_15))
     local ____result_16
     ____result_16 = __K2L_KClassOf(User).simpleName or "anonymous"
     local ____arg_3 = ____result_16
@@ -549,19 +551,19 @@ local function main()
         local ____cast = registry:get(__K2L_KClassNamed("kotlin.String"))
         ____result_19 = type(____cast) == "string" and ____cast or nil
     end
-    local ____arg_5 = ____result_19
+    local ____arg_5 = __K2L_Str(____result_19)
     local ____result_20
     do
         local ____cast_1 = registry:get(__K2L_KClassNamed("kotlin.Int"))
         ____result_20 = math.type(____cast_1) == "integer" and ____cast_1 or nil
     end
-    local ____arg_6 = ____result_20
+    local ____arg_6 = __K2L_Str(____result_20)
     local ____result_21
     do
         local ____cast_2 = registry:get(__K2L_KClassOf(Machine))
         ____result_21 = getmetatable(____cast_2) == Machine and ____cast_2 or nil
     end
-    print(__K2L_Str(____arg_5) .. " " .. __K2L_Str(____arg_6) .. " " .. __K2L_Str(____result_21))
+    print(____arg_5 .. " " .. ____arg_6 .. " " .. __K2L_Str(____result_21))
     local extra = __K2L_ArrayOf(4, "five", 6)
     local ____result_22
     do
@@ -628,15 +630,15 @@ local function main()
     local outcome = __K2L_RunCatching(function()
         fatal("disk full")
     end)
-    local ____arg_7 = outcome:isFailure()
+    local ____arg_7 = tostring(outcome:isFailure())
     local ____receiver = outcome:exceptionOrNull()
-    print(tostring(____arg_7) .. " " .. __K2L_Str(____receiver and ____receiver.message))
+    print(____arg_7 .. " " .. __K2L_Str(____receiver and ____receiver.message))
     local lazyTodo = __K2L_RunCatching(function()
         error(__K2L_NotImplementedError.new("An operation is not implemented: " .. "parse config"))
     end)
     local ____receiver_1 = lazyTodo:exceptionOrNull()
     print(__K2L_Str(____receiver_1 and __K2L_Str(__K2L_KClassOfValue(____receiver_1).simpleName) .. ": " .. __K2L_Str(____receiver_1.message)))
-    local ____ok_7, ____result_28 = pcall(function()
+    local ____ok_7, ____result_28 = __K2L_DeepPcall(function()
         if not (users.size > 5) then
             error(__K2L_IllegalArgumentException.new("need more than 5 users, got " .. users.size))
         end
@@ -654,5 +656,5 @@ local function main()
     print(e.field .. " " .. __K2L_Str(e.message) .. " " .. tostring(__K2L_InstanceOf(e, __K2L_IllegalArgumentException)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {ValidationException = ValidationException, Validator = Validator, validate = validate, Clock = Clock, timed = timed, ResourceScope = ResourceScope, resourceScope = resourceScope, fatal = fatal, Machine = Machine, findIndex = findIndex, firstNegativeSums = firstNegativeSums, makeCounters = makeCounters, fib = fib}

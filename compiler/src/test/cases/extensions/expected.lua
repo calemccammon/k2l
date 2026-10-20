@@ -46,8 +46,8 @@ local function main()
     local v = Vec.new(3, 4)
     print(length2(v))
     print(describe(scaled(v, 2)))
-    local shout = shout
-    print(shout("ref"))
+    local ____shout = shout
+    print(____shout("ref"))
 end
 
 main()

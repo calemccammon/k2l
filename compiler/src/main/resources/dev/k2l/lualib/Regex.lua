@@ -114,7 +114,13 @@ PROPERTIES.IsWhite_Space = unicodeProperty(function(b) return b == 32 or (b >= 9
 PROPERTIES.javaWhitespace = unicodeProperty(function(b) return b == 32 or (b >= 9 and b <= 13) or (b >= 28 and b <= 31) end,
     function(u, cp) return u.space(cp) and cp ~= 0xA0 and cp ~= 0x2007 and cp ~= 0x202F end)
 PROPERTIES.javaLetterOrDigit = unicodeProperty(PROPERTIES.Alnum, function(u, cp) return u.letter(cp) or u.digit(cp) end)
-PROPERTIES.P, PROPERTIES.IsPunctuation = PROPERTIES.Punct, PROPERTIES.Punct
+-- The categories P and S, which split ASCII's POSIX Punct: $+<=>^`|~ are symbols
+local function asciiSymbol(b) return b == 36 or b == 43 or b == 60 or b == 61 or b == 62 or b == 94 or b == 96 or b == 124 or b == 126 end
+local punctuation = unicodeProperty(function(b) return PROPERTIES.Punct(b) and not asciiSymbol(b) end,
+    function(u, cp) return u.punct(cp) end)
+local symbol = unicodeProperty(asciiSymbol, function(u, cp) return u.symbol(cp) end)
+PROPERTIES.P, PROPERTIES.IsP, PROPERTIES.IsPunctuation = punctuation, punctuation, punctuation
+PROPERTIES.S, PROPERTIES.IsS = symbol, symbol
 
 ------------------------------------------------------------------ parser
 -- Nodes: char, any, set, seq, alt, group, rep, bol, eol, wordb, look, backref, atomic

@@ -3,6 +3,7 @@ local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Bits = ____lualib.__K2L_Bits
 local __K2L_CheckStep = ____lualib.__K2L_CheckStep
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
@@ -378,5 +379,5 @@ local function main()
     print("primes ≤ 200: " .. sieve:primes().size .. ", count()=" .. sieve:count() .. ", last " .. __K2L_Str(sieve:primes():takeLast(3)) .. ", 97 prime? " .. tostring(not sieve:get(97)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Sudoku = Sudoku, tsp = tsp, gray = gray, fromGray = fromGray, subsetsWithSum = subsetsWithSum, BitSieve = BitSieve}

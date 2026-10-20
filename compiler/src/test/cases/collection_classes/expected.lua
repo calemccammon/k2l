@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayIndexOutOfBoundsException = ____lualib.__K2L_ArrayIndexOutOfBoundsException
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
@@ -33,7 +35,7 @@ local function show(label, x)
 end
 
 local function tryIt(label, f)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(label .. " = " .. __K2L_Str(f()))
     end)
     if not ____ok then
@@ -258,7 +260,7 @@ local function indexes()
     tryIt("elementAt set", ____lambda_23)
     tryIt("elementAt set -1", ____lambda_24)
     tryIt("catch IndexOutOfBounds", function()
-        local ____ok_1, ____result_1, ____returned_1 = pcall(____lambda_25)
+        local ____ok_1, ____result_1, ____returned_1 = __K2L_DeepPcall(____lambda_25)
         if ____ok_1 then
             if ____result_1 then
                 return ____returned_1
@@ -274,7 +276,7 @@ local function indexes()
         end
     end)
     tryIt("catch for an array", function()
-        local ____ok_2, ____result_2, ____returned_2 = pcall(____lambda_26)
+        local ____ok_2, ____result_2, ____returned_2 = __K2L_DeepPcall(____lambda_26)
         if ____ok_2 then
             if ____result_2 then
                 return ____returned_2
@@ -290,7 +292,7 @@ local function indexes()
         end
     end)
     tryIt("catch ArrayIndexOutOfBounds", function()
-        local ____ok_3, ____result_3, ____returned_3 = pcall(____lambda_27)
+        local ____ok_3, ____result_3, ____returned_3 = __K2L_DeepPcall(____lambda_27)
         if ____ok_3 then
             if ____result_3 then
                 return ____returned_3
@@ -306,7 +308,7 @@ local function indexes()
         end
     end)
     tryIt("not caught as ArrayIndexOutOfBounds", function()
-        local ____ok_4, ____result_4, ____returned_4 = pcall(____lambda_28)
+        local ____ok_4, ____result_4, ____returned_4 = __K2L_DeepPcall(____lambda_28)
         if ____ok_4 then
             if ____result_4 then
                 return ____returned_4
@@ -619,7 +621,7 @@ local function equality()
         ____count_6 = ____count_6 + 1
         ____out_6[____count_6] = it * 2
     end
-    local ____arg_1 = __K2L_ListWrap(____out_6, ____count_6)
+    local ____arg_1 = __K2L_Str(__K2L_ListWrap(____out_6, ____count_6))
     local ____list_1 = __K2L_ReadOnlySetOf(3)
     local ____out_7 = {}
     local ____count_7 = 0
@@ -629,7 +631,7 @@ local function equality()
         ____count_7 = ____count_7 + 1
         ____out_7[____count_7] = it
     end
-    print("loops " .. ____arg .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(__K2L_ListWrap(____out_7, ____count_7)) .. " " .. __K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):map(____lambda_42)))
+    print("loops " .. ____arg .. " " .. ____arg_1 .. " " .. __K2L_Str(__K2L_ListWrap(____out_7, ____count_7)) .. " " .. __K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):map(____lambda_42)))
 end
 
 local function main()
@@ -640,5 +642,5 @@ local function main()
     equality()
 end
 
-main()
+__K2L_DeepMain(main)
 return {show = show, tryIt = tryIt, factories = factories, operations = operations, indexes = indexes, mutation = mutation, equality = equality}

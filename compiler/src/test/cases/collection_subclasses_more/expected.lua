@@ -6,6 +6,8 @@ local __K2L_AbstractSet = ____lualib.__K2L_AbstractSet
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -367,11 +369,11 @@ local function maps()
     local sq = Squares.new(3)
     print(__K2L_Str(sq) .. " " .. sq.size .. " " .. __K2L_Str(sq:get("k2")) .. " " .. __K2L_Str(sq:get("x")) .. " " .. tostring(sq:containsKey("k3")) .. " " .. tostring(sq:containsValue(9)) .. " " .. __K2L_Str(sq:getKeys()) .. " " .. __K2L_Str(sq:getValues()))
     print(tostring(sq:equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("k1", 1), __K2L_Pair.new("k2", 4), __K2L_Pair.new("k3", 9)))) .. " " .. tostring(__K2L_Equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("k1", 1), __K2L_Pair.new("k2", 4), __K2L_Pair.new("k3", 9)), sq)) .. " " .. tostring(sq:isEmpty()))
-    local ____arg = sq:map(____lambda_5)
-    local ____arg_1 = sq:filter(____lambda_6)
-    local ____arg_2 = sq:mapValues(____lambda_7)
+    local ____arg = __K2L_Str(sq:map(____lambda_5))
+    local ____arg_1 = __K2L_Str(sq:filter(____lambda_6))
+    local ____arg_2 = __K2L_Str(sq:mapValues(____lambda_7))
     local ____receiver = sq:maxByOrNull(____lambda_8)
-    print(__K2L_Str(____arg) .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(____arg_2) .. " " .. __K2L_Str(____receiver and ____receiver.key))
+    print(____arg .. " " .. ____arg_1 .. " " .. ____arg_2 .. " " .. __K2L_Str(____receiver and ____receiver.key))
     local ____keys, ____values, ____n_1 = sq:____arrays()
     for ____i_1 = 1, ____n_1 do
         local k, v = ____keys[____i_1], ____values[____i_1]
@@ -400,7 +402,7 @@ local function iterators()
         rest:add(x)
     end
     print("rest " .. __K2L_Str(rest) .. " " .. tostring(c:hasNext()))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         c:next()
     end)
     if not ____ok then
@@ -416,7 +418,7 @@ local function iterators()
     local f = Faulty.new()
     print("faulty " .. f:next())
     for step = 1, 2 do
-        local ____ok_1, ____result_1 = pcall(function()
+        local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
             f:hasNext()
         end)
         if not ____ok_1 then
@@ -481,5 +483,5 @@ local function main()
     concrete()
 end
 
-main()
+__K2L_DeepMain(main)
 return {Evens = Evens, Bag = Bag, Tags = Tags, CountingIterator = CountingIterator, Pair2 = Pair2, Squares = Squares, Registry = Registry, Countdown = Countdown, Faulty = Faulty, Words = Words, Stack = Stack, Seeded = Seeded, InstrumentedSet = InstrumentedSet, Ordered = Ordered, DefaultMap = DefaultMap, Lru = Lru, Copied = Copied, sets = sets, maps = maps, iterators = iterators, concrete = concrete}

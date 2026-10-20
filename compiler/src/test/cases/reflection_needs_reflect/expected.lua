@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_KProperty = ____lualib.__K2L_KProperty
@@ -39,7 +41,7 @@ ____exports.counter = 1
 local LIMIT = 3
 
 local function probe(what, f)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(what .. " = " .. __K2L_Str(f()))
     end)
     if not ____ok then
@@ -284,5 +286,5 @@ ____exports.person = person
 ____exports.Logged = Logged
 ____exports.Holder = Holder
 ____exports.____top_delegate = ____top_delegate
-main()
+__K2L_DeepMain(main)
 return ____exports

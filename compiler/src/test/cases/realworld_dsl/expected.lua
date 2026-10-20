@@ -544,13 +544,13 @@ local function main()
         __K2L_CastFail(____cast, "dsl.Body", "dsl.Body")
     end
     local body = ____cast
-    local ____arg_1 = getCssClass(body)
+    local ____arg_1 = __K2L_Str(getCssClass(body))
     local ____arg_2 = getDepth(page)
     local ____cast_1 = body.children:get(1)
     if not __K2L_InstanceOf(____cast_1, Tag) then
         __K2L_CastFail(____cast_1, "dsl.Tag", "dsl.Tag")
     end
-    print("body class=" .. __K2L_Str(____arg_1) .. " depth=" .. ____arg_2 .. " p=" .. __K2L_Str(____cast_1:get("data-id")))
+    print("body class=" .. ____arg_1 .. " depth=" .. ____arg_2 .. " p=" .. __K2L_Str(____cast_1:get("data-id")))
     setCssClass(body, nil)
     print("after: " .. __K2L_Str(getCssClass(body)) .. " " .. __K2L_Str(body.attributes))
     local link = body.children:filter(____lambda_2):single()

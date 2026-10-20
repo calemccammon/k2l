@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -597,5 +598,5 @@ local function main()
     print(__K2L_Str(__K2L_ReadOnlyListOf("n", "go west", "take", "hit", "   ", "walk e"):map(parseCommand)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Direction = Direction, Item = Item, Monster = Monster, Room = Room, Player = Player, Command = Command, parseCommand = parseCommand, Game = Game}

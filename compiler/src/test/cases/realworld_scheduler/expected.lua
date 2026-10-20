@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -466,7 +468,7 @@ local function main()
         ctx:log("about to fail")
         ctx:lastReceived()
     end)
-    local ____ok, ____result_2 = pcall(function()
+    local ____ok, ____result_2 = __K2L_DeepPcall(function()
         failing:run()
     end)
     if not ____ok then
@@ -480,5 +482,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {Effect = Effect, Mailbox = Mailbox, Task = Task, TaskContext = TaskContext, Scheduler = Scheduler, fibonacci = fibonacci, primes = primes, chunkedBy = chunkedBy, tree = tree}

@@ -49,9 +49,7 @@ internal class DeclarationNames(private val session: KaSession, private val clas
             }
         }
         val base = if (owner == null) LuaNames.of(name) else LuaNames.member(name)
-        // a method named like a property (`private val items` and `fun items()`) would be hidden by the instance's field
-        val shift = if (owner != null && name in classes.fieldNames(owner)) 1 else 0
-        val index = overloads.indexOf(fn).coerceAtLeast(0) + shift
+        val index = overloads.indexOf(fn).coerceAtLeast(0) + if (hiddenByProperty(fn, name, classes)) 1 else 0
         if (index == 0) base else "${base}__$index"
     }
 
@@ -135,6 +133,17 @@ internal class DeclarationNames(private val session: KaSession, private val clas
 
     /** Lua name of a destructuring entry; `_` stays `_`. */
     fun entry(entry: KtDestructuringDeclarationEntry): String = if (entry.name == "_") "_" else of(entry)
+}
+
+/**
+ * Whether a method is named like a property (`private val items` and `fun items()`), which the instance's field would hide,
+ * or a top-level function like a top-level property (`val label` and `fun label(n)`), which the property's local would.
+ */
+private fun hiddenByProperty(fn: KtNamedFunction, name: String, classes: ClassHierarchy): Boolean {
+    val owner = fn.containingClassOrObject ?: return fn.parent.children.any {
+        it is KtProperty && it.name == name && !it.hasAccessorFunctions() && it.delegate == null
+    }
+    return name in classes.fieldNames(owner)
 }
 
 /**

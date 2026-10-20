@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Jump = ____lualib.__K2L_Jump
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NewJump = ____lualib.__K2L_NewJump
@@ -202,7 +203,7 @@ local function passedOn(s)
     do
         local ____jump = __K2L_NewJump()
         local ____value_2
-        local ____ok, ____result_5 = pcall(function()
+        local ____ok, ____result_5 = __K2L_DeepPcall(function()
             ____value_2 = __K2L_Text.trimWith(s, 3, function(it)
                 if it == "!" then
                     __K2L_Jump(____jump, 1, "returned via trimWith")
@@ -224,7 +225,7 @@ local function passedOn(s)
     do
         local ____jump_1 = __K2L_NewJump()
         local ____value_3
-        local ____ok_1, ____result_8 = pcall(function()
+        local ____ok_1, ____result_8 = __K2L_DeepPcall(function()
             ____value_3 = __K2L_Text.trimWith(s, 3, function(it)
                 local ____result_7
                 if it == "?" then
@@ -255,7 +256,7 @@ local function passedOnJumps()
             do
                 local ____jump_2 = __K2L_NewJump()
                 local ____value_4
-                local ____ok_2, ____result_11 = pcall(function()
+                local ____ok_2, ____result_11 = __K2L_DeepPcall(function()
                     ____value_4 = __K2L_Text.trimWith("ab", 3, function(it)
                         local ____result_10
                         if k == 1 then
@@ -299,7 +300,7 @@ local function viaTrim(s)
             local it = 1 + i
             local ____jump_3 = __K2L_NewJump()
             local ____value_5
-            local ____ok_3, ____result_12 = pcall(function()
+            local ____ok_3, ____result_12 = __K2L_DeepPcall(function()
                 ____value_5 = __K2L_Text.trimWith(s, 3, function(c)
                     if c:byte() > it then
                         __K2L_Jump(____jump_3, 1, __K2L_ReadOnlyListOf())

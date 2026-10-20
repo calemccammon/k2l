@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CheckStep = ____lualib.__K2L_CheckStep
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -32,7 +34,7 @@ local function main()
         io.write(__K2L_Unsigned.toString(i) .. " ")
     end
     print()
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         for i = 1, 5, __K2L_CheckStep(0) do
             io.write(tostring(i))
         end
@@ -71,4 +73,4 @@ local function main()
     print()
 end
 
-main()
+__K2L_DeepMain(main)

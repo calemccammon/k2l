@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Deque = ____lualib.__K2L_Deque
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -30,7 +32,7 @@ local log = __K2L_ListOf()
 local function op(name, f)
     log:clear()
     local r
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         r = f()
     end)
     if not ____ok then
@@ -303,5 +305,5 @@ local function main()
     op("PQ peek", function() return pq:peek() end)
 end
 
-main()
+__K2L_DeepMain(main)
 return {log = log, op = op, LL = LL, TS = TS, LS = LS, PQ = PQ, JD = JD, LM = LM, TM = TM, coll = coll, maps = maps}

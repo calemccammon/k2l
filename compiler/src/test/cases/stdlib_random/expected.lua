@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CharRange = ____lualib.__K2L_CharRange
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_HashSet = ____lualib.__K2L_HashSet
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -68,7 +70,7 @@ local function main()
     local ____value_4 = __K2L_Random.default():nextInt(1, 3)
     print(____value_4 >= 1 and ____value_4 <= 2)
     print(__K2L_Random.default():nextDouble() < 1.0)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         __K2L_Random.seeded(1):nextInt(0)
     end)
     if not ____ok then
@@ -80,7 +82,7 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         __K2L_Random.seeded(1):nextInt(5, 5)
     end)
     if not ____ok_1 then
@@ -92,7 +94,7 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
         __K2L_ReadOnlyListOf():random(__K2L_Random.default())
     end)
     if not ____ok_2 then
@@ -106,4 +108,4 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
