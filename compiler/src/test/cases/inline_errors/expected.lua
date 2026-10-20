@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -8,7 +10,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function tryFirst(xs, f)
-    local ____ok, ____result, ____returned = pcall(function()
+    local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
         local ____mod = xs.____modCount
         for ____i = 1, xs.size do
             local x = xs[____i]
@@ -40,7 +42,7 @@ local function inTry()
     local ____result_1
     do
         local xs = __K2L_ReadOnlyListOf(1, 2)
-        local ____ok_1, ____result_2, ____returned_1 = pcall(function()
+        local ____ok_1, ____result_2, ____returned_1 = __K2L_DeepPcall(function()
             local ____mod_1 = xs.____modCount
             for ____i_1 = 1, xs.size do
                 local x = xs[____i_1]
@@ -115,5 +117,5 @@ local function main()
     print(inTry() + spreadFirst(__K2L_TypedArrayOf("[I", 1)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {tryFirst = tryFirst, inTry = inTry, total = total, spreadFirst = spreadFirst}

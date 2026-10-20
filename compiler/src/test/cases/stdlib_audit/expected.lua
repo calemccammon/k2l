@@ -1,4 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -13,7 +15,7 @@ local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local function t(label, f)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(label .. " = " .. __K2L_Str(f()))
     end)
     if not ____ok then
@@ -60,5 +62,5 @@ local function main()
     t("repeat", ____lambda_10)
 end
 
-main()
+__K2L_DeepMain(main)
 return {t = t}

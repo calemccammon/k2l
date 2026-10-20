@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -311,7 +313,7 @@ end
 local function failures()
     print("-- failures")
     local function attempt(label, block)
-        local ____ok, ____result = pcall(function()
+        local ____ok, ____result = __K2L_DeepPcall(function()
             print(label .. ": " .. __K2L_Str(block()))
         end)
         if not ____ok then
@@ -356,5 +358,5 @@ local function main()
     failures()
 end
 
-main()
+__K2L_DeepMain(main)
 return {factorial = factorial, fibonacci = fibonacci, construction = construction, big = big, divisions = divisions, bits = bits, conversions = conversions, numberTheory = numberTheory, comparisons = comparisons, operators = operators, failures = failures}

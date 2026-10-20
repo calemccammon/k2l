@@ -2,12 +2,14 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClosedRangeMixin = ____lualib.__K2L_ClosedRangeMixin
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Num = ____lualib.__K2L_Num
@@ -224,7 +226,7 @@ function Minutes:getHours()
 end
 
 function Minutes:toString()
-    return __K2L_StringFormat((self.total >= 0 and self.total // 60 or 0 - -self.total // 60) .. "h%02d", self.total >= 0 and self.total % 60 or 0 - -self.total % 60)
+    return __K2L_StringFormat((self.total >= 0 and self.total // 60 or 0 - -self.total // 60) .. "h%02d", __K2L_Text.typed(self.total >= 0 and self.total % 60 or 0 - -self.total % 60, nil, "java.lang.Integer"))
 end
 
 function Minutes:hashCode()
@@ -313,7 +315,7 @@ function Payroll:pay(shifts)
         local ____dividend_6 = it.date:getEpochDay() + 3
         return ____dividend_6 >= 0 and ____dividend_6 // 7 or 0 - -____dividend_6 // 7
     end):getValues()
-    local ____items, ____n = ____collection:____array()
+    local ____items, ____n = __K2L_LoopItems(____collection)
     local ____mod_1 = ____collection.____modCount
     for ____i_1 = 1, ____n do
         local week = ____items[____i_1]
@@ -350,8 +352,8 @@ function Payroll:pay(shifts)
     return __K2L_MapOf(__K2L_Pair.new("regularMin", regular), __K2L_Pair.new("overtimeMin", overtime), __K2L_Pair.new("weekendMin", weekend), __K2L_Pair.new("gross", gross), __K2L_Pair.new("tax", self:tax(gross)))
 end
 
-function Payroll:tax(cents)
-    local remaining = cents
+function Payroll:tax(____cents)
+    local remaining = ____cents
     local tax = 0.0
     while remaining > 0 do
         local ____destructured_2 = self.brackets:floorEntry(__K2L_ToInt32(remaining))
@@ -439,5 +441,5 @@ local function main()
     print("rate " .. 2850 .. " cents/h, sorted durations " .. __K2L_Str(shifts:map(____lambda_20):sorted():take(3)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Date = Date, DateRange = DateRange, Weekday = Weekday, Minutes = Minutes, Shift = Shift, parseShifts = parseShifts, Payroll = Payroll, cents = cents, SHIFTS = SHIFTS}

@@ -228,6 +228,7 @@ return {Method = Method, Request = Request, Response = Response, Handler = Handl
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -427,13 +428,14 @@ local function main()
     print(__K2L_Str(requestsByMethod))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Router = Router, UserStore = UserStore, routes = routes, andThen = andThen, curry = curry}
 -- ==== middleware/Middleware.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
@@ -507,7 +509,7 @@ end
 
 local errors = function(____next)
     return __K2L_FunInterface(____Http.Handler, "handle", function(req)
-        local ____ok, ____result_1, ____returned = pcall(function()
+        local ____ok, ____result_1, ____returned = __K2L_DeepPcall(function()
             return true, ____next:handle(req)
         end)
         if ____ok then

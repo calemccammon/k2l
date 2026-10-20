@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_HashMap = ____lualib.__K2L_HashMap
@@ -27,7 +29,7 @@ local log = __K2L_ListOf()
 local function op(name, f)
     log:clear()
     local r
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         r = f()
     end)
     if not ____ok then
@@ -366,5 +368,5 @@ local function main()
     op("m computeIfAbsent", ____lambda_18)
 end
 
-main()
+__K2L_DeepMain(main)
 return {log = log, op = op, L = L, S = S, M = M}

@@ -4,6 +4,8 @@ local __K2L_BigDecimal = ____lualib.__K2L_BigDecimal
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_IDiv = ____lualib.__K2L_IDiv
@@ -286,7 +288,7 @@ local function main()
     print("1/3 + 1/6 = " .. __K2L_Str(third:plus(Rational:of(1, 6))) .. ", -(2/4) = " .. __K2L_Str(Rational:of(2, 4):unaryMinus()) .. ", (3/4)/(1/8) = " .. __K2L_Str(Rational:of(3, 4):div(Rational:of(1, 8))))
     print("sorted: " .. __K2L_Str(__K2L_ReadOnlyListOf(Rational:of(3, 7), Rational:of(1, 2), Rational:of(-2, 5), r(1)):sorted()))
     print("set: " .. __K2L_ReadOnlySetOf(Rational:of(2, 4), Rational:of(1, 2), Rational:of(3, 6)).size)
-    local ____ok, ____result_1 = pcall(function()
+    local ____ok, ____result_1 = __K2L_DeepPcall(function()
         third:div(Rational.ZERO)
     end)
     if not ____ok then
@@ -320,7 +322,7 @@ local function main()
         ____count = ____count + 1
         ____out[____count] = __K2L_Num.roundToLong(it)
     end
-    local ____arg = __K2L_ListWrap(____out, ____count)
+    local ____arg = __K2L_Str(__K2L_ListWrap(____out, ____count))
     local ____list_2 = __K2L_ReadOnlyListOf(1.005, 2.675)
     local ____out_1 = {}
     local ____count_1 = 0
@@ -330,7 +332,7 @@ local function main()
         ____count_1 = ____count_1 + 1
         ____out_1[____count_1] = __K2L_StringFormat("%.2f", it)
     end
-    print("rounding: " .. __K2L_Str(____arg) .. " " .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
+    print("rounding: " .. ____arg .. " " .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     local bd = __K2L_BigDecimal.parse("10"):divide(__K2L_BigDecimal.parse("3"), 20, __K2L_RoundingMode.HALF_UP)
     print("10/3 = " .. __K2L_Str(bd) .. ", scaled " .. __K2L_Str(bd:setScale(4, __K2L_RoundingMode.DOWN)) .. ", money " .. __K2L_Str(__K2L_BigDecimal.parse("19.99"):multiply(__K2L_BigDecimal.fromLong(3))))
     local compound = __K2L_IntRange.new(1, 10):fold(__K2L_BigDecimal.parse("1000.00"), ____lambda_13)
@@ -338,5 +340,5 @@ local function main()
     print("Int ops: " .. 2147483647 + 1 .. " " .. (((1 << 30) + 0x80000000 & 0xFFFFFFFF) - 0x80000000) * 2 .. " " .. __K2L_Str(__K2L_Num.toRadixUnsigned(255, 16)) .. " " .. __K2L_StringToInt("ff", 16) .. " " .. 11 .. " " .. -9223372036854775807 - 1)
 end
 
-main()
+__K2L_DeepMain(main)
 return {factorial = factorial, binomial = binomial, bigFib = bigFib, gcd = gcd, lcm = lcm, modPow = modPow, isPrime = isPrime, primeFactors = primeFactors, Rational = Rational, r = r, harmonic = harmonic, bernoulli = bernoulli, integrate = integrate, sqrtNewton = sqrtNewton}

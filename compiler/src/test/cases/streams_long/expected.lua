@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Collectors = ____lualib.__K2L_Collectors
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_DoubleStream = ____lualib.__K2L_DoubleStream
 local __K2L_DoubleSummaryStatistics = ____lualib.__K2L_DoubleSummaryStatistics
 local __K2L_Equals = ____lualib.__K2L_Equals
@@ -116,7 +118,7 @@ local function iterators()
     print()
     local ints = __K2L_Streams.of(__K2L_IntStream, __K2L_ListOf(4, 5)):iterator()
     print(ints:nextInt() .. " " .. __K2L_Str(ints:next()) .. " " .. tostring(ints:hasNext()))
-    local ____ok, ____result_1 = pcall(function()
+    local ____ok, ____result_1 = __K2L_DeepPcall(function()
         ints:next()
     end)
     if not ____ok then
@@ -175,5 +177,5 @@ local function main()
     statistics()
 end
 
-main()
+__K2L_DeepMain(main)
 return {longStreams = longStreams, parallel = parallel, iterators = iterators, statistics = statistics}

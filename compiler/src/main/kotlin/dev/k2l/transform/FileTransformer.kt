@@ -58,6 +58,7 @@ class FileTransformer(
     internal val implementsCharSequence get() = module.implementsCharSequence
     internal val implementsClosedRange get() = module.implementsClosedRange
     internal val implementsCollections get() = module.implementsCollections
+    internal val uncheckedCasts get() = module.uncheckedCasts
     internal fun usesFunctionNames(scan: (Set<KtFile>) -> Boolean) = module.usesFunctionNames(scan)
 
     /** `local ____strings = require("util.strings")` for another file of the module. */
@@ -114,6 +115,7 @@ class FileTransformer(
 
     private fun KaSession.transformChunk(): LuaChunk {
         renameHidingLocals()
+        renameFunctionShadows()
         val topLevel = file.declarations.filter { isTransformedTopLevel(it) }
         val forward = forwardReferenced(topLevel.filterNot { tableMode && isExportedVar(it) }.toSet())
         val main = topLevel.filterIsInstance<KtNamedFunction>().firstOrNull(::isMain)
@@ -180,6 +182,10 @@ class FileTransformer(
             return LuaCallStmt(LuaCall(run, call + args))
         }
         if (suspend) return LuaCallStmt(LuaCall(lualibRef(COROUTINES_FEATURE, "__K2L_RunSuspend"), listOf(name) + args))
+        // protected calls nested deeper than Lua's C stack allows run in coroutines the driver resumes (DeepPcall.lua)
+        if (module.usesTry && target.hasGoto && target != LuaTarget.LuaJIT) {
+            return LuaCallStmt(LuaCall(lualibRef("DeepPcall", "__K2L_DeepMain"), listOf(name) + args))
+        }
         return LuaCallStmt(LuaCall(name, args))
     }
 
@@ -712,7 +718,8 @@ class FileTransformer(
     }
 
     private fun KaSession.mayExpandOrCheck(element: PsiElement) =
-        (element is KtCallExpression && mayExpandInline(element)) || (element is KtBinaryExpressionWithTypeRHS && mayCheckCast(element))
+        (element is KtCallExpression && mayExpandInline(element)) || (element is KtBinaryExpressionWithTypeRHS && mayCheckCast(element)) ||
+            (element is KtExpression && mayCheckUnchecked(element))
 
     private fun needsStatements(element: PsiElement) = when (element) {
         is KtIfExpression, is KtWhenExpression, is KtTryExpression, is KtSafeQualifiedExpression, is KtLambdaExpression,
@@ -979,13 +986,16 @@ class FileTransformer(
 
         is KtPostfixExpression -> postfix(e)
 
-        is KtCallExpression -> call(e, e)
+        is KtCallExpression -> uncheckedResult(e, call(e, e))
 
-        is KtDotQualifiedExpression -> when (val selector = e.selectorExpression) {
-            is KtCallExpression -> call(selector, e)
-            is KtNameReferenceExpression -> reference(selector, e)
-            else -> unsupported(e, "This qualified expression")
-        }
+        is KtDotQualifiedExpression -> uncheckedResult(
+            e,
+            when (val selector = e.selectorExpression) {
+                is KtCallExpression -> call(selector, e)
+                is KtNameReferenceExpression -> reference(selector, e)
+                else -> unsupported(e, "This qualified expression")
+            },
+        )
 
         is KtIfExpression -> if (canTernary(e)) ternary(e) else branchingValue(e)
 
@@ -1004,9 +1014,9 @@ class FileTransformer(
         // anonymous function
         is KtCallableReferenceExpression -> callableReference(e)
 
-        is KtArrayAccessExpression -> arrayAccess(e)
+        is KtArrayAccessExpression -> uncheckedResult(e, arrayAccess(e))
 
-        is KtSafeQualifiedExpression -> safeCall(e)
+        is KtSafeQualifiedExpression -> uncheckedResult(e, safeCall(e))
 
         is KtThrowExpression -> {
             throwStatement(e)
@@ -1091,8 +1101,9 @@ class FileTransformer(
             pending.clear()
         }
         // A later entry that needs statements (an expanded inline call) must not run before the earlier entries.
-        val values = ordered(e.entries.mapNotNull { (it as? KtStringTemplateEntryWithExpression)?.expression }, unlessReads = true)
-            .iterator()
+        val exprs = e.entries.mapNotNull { (it as? KtStringTemplateEntryWithExpression)?.expression }
+        val texts = if (exprs.size > 1) orderedTexts(exprs) else null
+        val values = (texts ?: ordered(exprs, unlessReads = true)).iterator()
         for (entry in e.entries) {
             when (entry) {
                 is KtLiteralStringTemplateEntry -> pending.append(entry.text)
@@ -1105,12 +1116,25 @@ class FileTransformer(
                     val value = values.next()
                     lone = expr to value
                     if (expr.expressionType?.isCharType == true && expr.evaluate() == null) hasChar = true
-                    parts += str(value, templateType(expr), forConcat = true)
+                    parts += if (texts != null) value else str(value, templateType(expr), forConcat = true)
                 }
             }
         }
         flush()
         return joined(templateParts(parts, lone), hasChar)
+    }
+
+    /**
+     * The text of each template entry, ordered like [ordered]; an entry is turned into text where the JVM appends it, so a later
+     * entry that is computed first (`"$list ${list.removeLastOrNull()?.x}"`) can't change what an earlier object prints.
+     */
+    private fun KaSession.orderedTexts(exprs: List<KtExpression>): List<LuaExpr> {
+        val results = exprs.map { expr -> withPreceding { str(expression(expr), templateType(expr), forConcat = true) } }
+        val last = results.indexOfLast { (_, pre) -> pre.any { !isLocalRead(it) } }
+        return results.mapIndexed { i, (text, pre) ->
+            emitAll(pre)
+            if (i < last) cache(text, "arg") else text
+        }
     }
 
     /**
@@ -1749,8 +1773,9 @@ class FileTransformer(
         val receiverType = receiverExpr?.expressionType ?: receiverValueType
         val argTypes = args.map { it?.expressionType }
         // an object implementing CharSequence is passed to the String functions as its text (its toString() is its own)
-        val textReceiver = hasReceiver && name != "toString" && isCharSequenceObject(receiverType)
-        val argValues = (if (hasReceiver) values.drop(1) else values).mapIndexed { i, v -> charSequenceText(v, argTypes.getOrNull(i)) }
+        val textReceiver = hasReceiver && isTextReceiver(name, receiverType)
+        val argValues = charSequenceArguments(if (hasReceiver) values.drop(1) else values, argTypes, parameterTypes)
+        if (textReceiver) charSequenceMember(callableId, values[0], argValues)?.let { return it }
         val site = CallSite(
             session = this,
             transformer = this@FileTransformer,

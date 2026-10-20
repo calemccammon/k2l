@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_NumberFormatException = ____lualib.__K2L_NumberFormatException
@@ -175,7 +177,7 @@ local function conversions()
     print(__K2L_StringFormat("%e", 12345.678))
     print(__K2L_StringFormat("%b %s %10.4s|", true, nil, "truncated"))
     print(__K2L_StringFormat("%+d % d", 5, 5))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         __K2L_StringToInt("abc")
     end)
     if not ____ok then
@@ -187,7 +189,7 @@ local function conversions()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         __K2L_StringToDouble("")
     end)
     if not ____ok_1 then
@@ -236,5 +238,5 @@ local function main()
     builders()
 end
 
-main()
+__K2L_DeepMain(main)
 return {searching = searching, splitting = splitting, substrings = substrings, trimming = trimming, transforming = transforming, conversions = conversions, builders = builders}

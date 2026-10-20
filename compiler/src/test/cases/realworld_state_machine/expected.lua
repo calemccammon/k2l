@@ -4,6 +4,8 @@ local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
@@ -418,7 +420,7 @@ function Processor:handle(event)
     if getmetatable(event) == Event.Placed then
         return
     end
-    local ____ok, ____result_2 = pcall(function()
+    local ____ok, ____result_2 = __K2L_DeepPcall(function()
         OrderRegistry:get(event.orderId):apply(event)
         self:count(__K2L_NotNull(__K2L_KClassOfValue(event).simpleName):lower())
     end)
@@ -565,5 +567,5 @@ local function main()
     print(__K2L_Str(script:take(5):map(describe):distinct()))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Event = Event, OrderState = OrderState, Listener = Listener, IllegalTransition = IllegalTransition, EventBus = EventBus, Order = Order, OrderRegistry = OrderRegistry, Metrics = Metrics, Processor = Processor}

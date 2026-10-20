@@ -6,6 +6,8 @@ local __K2L_ContextGet = ____lualib.__K2L_ContextGet
 local __K2L_ContextMinusKey = ____lualib.__K2L_ContextMinusKey
 local __K2L_ContextPlus = ____lualib.__K2L_ContextPlus
 local __K2L_CoroutineContext = ____lualib.__K2L_CoroutineContext
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
@@ -143,7 +145,7 @@ local function main()
     print(e:getMessage())
     local ____receiver_5 = e:getCause()
     print(__K2L_Str(____receiver_5 and ____receiver_5.message))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         error(MyError.new(1))
     end)
     if not ____ok then
@@ -167,5 +169,5 @@ local function main()
     print(__K2L_Str(log))
 end
 
-main()
+__K2L_DeepMain(main)
 return {RequestKey = RequestKey, RequestId = RequestId, Tagged = Tagged, Counter = Counter, MyError = MyError, Parent = Parent, Child = Child, Receiver = Receiver, tag = tag}

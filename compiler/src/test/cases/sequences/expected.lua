@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_GenerateSequenceLazy = ____lualib.__K2L_GenerateSequenceLazy
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -142,7 +144,7 @@ local function infinite()
         end
     end)
     print(__K2L_Str(countdown:toList()))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         countdown:toList()
     end)
     if not ____ok then
@@ -323,7 +325,7 @@ local function sources()
     print()
     local once = __K2L_AsSequence(__K2L_IteratorOf(__K2L_ReadOnlyListOf(7, 8)))
     print(__K2L_Str(once:toList()))
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         once:toList()
     end)
     if not ____ok_1 then
@@ -378,7 +380,7 @@ end
 local ____lambda_73 = function(a, b) return a + b end
 local function errors()
     print("-- errors")
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
         __K2L_SequenceOf():first()
     end)
     if not ____ok_2 then
@@ -390,7 +392,7 @@ local function errors()
             error(____error_2, 0)
         end
     end
-    local ____ok_3, ____result_3 = pcall(function()
+    local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
         __K2L_SequenceOf(1, 2):single()
     end)
     if not ____ok_3 then
@@ -402,7 +404,7 @@ local function errors()
             error(____error_3, 0)
         end
     end
-    local ____ok_4, ____result_4 = pcall(function()
+    local ____ok_4, ____result_4 = __K2L_DeepPcall(function()
         naturals():take(3):elementAt(5)
     end)
     if not ____ok_4 then
@@ -414,7 +416,7 @@ local function errors()
             error(____error_4, 0)
         end
     end
-    local ____ok_5, ____result_5 = pcall(function()
+    local ____ok_5, ____result_5 = __K2L_DeepPcall(function()
         __K2L_SequenceOf():reduce(____lambda_73)
     end)
     if not ____ok_5 then
@@ -426,7 +428,7 @@ local function errors()
             error(____error_5, 0)
         end
     end
-    local ____ok_6, ____result_6 = pcall(function()
+    local ____ok_6, ____result_6 = __K2L_DeepPcall(function()
         naturals():take(-1)
     end)
     if not ____ok_6 then
@@ -438,7 +440,7 @@ local function errors()
             error(____error_6, 0)
         end
     end
-    local ____ok_7, ____result_7 = pcall(function()
+    local ____ok_7, ____result_7 = __K2L_DeepPcall(function()
         for _, it in __K2L_SequenceOf(1, 2, 3):map(function(it)
             if it == 2 then
                 error(__K2L_IllegalStateException.new("bad " .. it))
@@ -468,5 +470,5 @@ local function main()
     errors()
 end
 
-main()
+__K2L_DeepMain(main)
 return {Item = Item, naturals = naturals, fibonacci = fibonacci, laziness = laziness, infinite = infinite, operations = operations, sources = sources, Countdown = Countdown, errors = errors}

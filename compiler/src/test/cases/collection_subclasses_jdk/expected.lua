@@ -3,6 +3,8 @@ local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Deque = ____lualib.__K2L_Deque
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
@@ -37,7 +39,7 @@ end
 local function show(what, f)
     log:clear()
     local r
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         r = f()
     end)
     if not ____ok then
@@ -562,9 +564,10 @@ local function main()
     print("PQ(coll) " .. __K2L_Str(pqFrom) .. " " .. __K2L_Str(log))
     local ____value = ByLength.new()
     ____value:addAll(__K2L_ReadOnlyListOf("ccc", "a", "bb", "dd"))
+    local ____arg = __K2L_Str(____value)
     local ____value_1 = MaxFirst.new()
     ____value_1:addAll(__K2L_ReadOnlyListOf(1, 5, 3))
-    print(__K2L_Str(____value) .. " " .. __K2L_Str(____value_1:poll()))
+    print(____arg .. " " .. __K2L_Str(____value_1:poll()))
     local ____object_3 = __K2L_Class("MainKt$main$dq$1", __K2L_Deque)
     __K2L_ClassInfo(____object_3, nil, "MainKt$main$dq$1", "class", false)
     function ____object_3:____init()
@@ -594,5 +597,5 @@ function MaxFirst:____init()
     __K2L_PriorityQueue.____init(self, __K2L_ReverseOrder)
 end
 
-main()
+__K2L_DeepMain(main)
 return {log = log, l = l, show = show, PQ = PQ, AD = AD, LL = LL, TM = TM, TS = TS, ByLength = ByLength, MaxFirst = MaxFirst}

@@ -1,4 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalFormatException = ____lualib.__K2L_IllegalFormatException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -10,7 +12,7 @@ local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local function t(f)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(f())
     end)
     if not ____ok then
@@ -62,9 +64,15 @@ local ____lambda_15 = function() return __K2L_StringFormat("abc %") end
 local ____lambda_16 = function() return __K2L_StringFormat("%5%|%-5%|%n|") end
 local ____lambda_17 = function() return __K2L_StringFormat("%-d", 1) end
 local ____lambda_18 = function() return __K2L_StringFormat("%0s", "x") end
-local ____lambda_19 = function() return __K2L_StringFormat("%d", "s") end
-local ____lambda_20 = function() return __K2L_StringFormat("%f", "s") end
-local ____lambda_21 = function() return __K2L_StringFormat("%x", true) end
+local ____lambda_19 = function()
+    return __K2L_StringFormat("%d", __K2L_Text.typed("s", nil, "java.lang.String"))
+end
+local ____lambda_20 = function()
+    return __K2L_StringFormat("%f", __K2L_Text.typed("s", nil, "java.lang.String"))
+end
+local ____lambda_21 = function()
+    return __K2L_StringFormat("%x", __K2L_Text.typed(true, nil, "java.lang.Boolean"))
+end
 local ____lambda_22 = function() return __K2L_StringFormat("%.2d", 1) end
 local ____lambda_23 = function() return __K2L_StringFormat("%.2x", 1) end
 local ____lambda_24 = function() return __K2L_StringFormat("%<s", 1) end
@@ -110,7 +118,7 @@ local function main()
     t(____lambda_24)
     t(____lambda_25)
     t(____lambda_26)
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         __K2L_StringFormat("%s %s %s", "only one")
     end)
     if not ____ok_1 then
@@ -122,7 +130,7 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
         __K2L_StringFormat("%z")
     end)
     if not ____ok_2 then
@@ -136,5 +144,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {t = t}

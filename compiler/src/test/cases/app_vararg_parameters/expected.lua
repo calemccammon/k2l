@@ -76,19 +76,19 @@ end
 
 local function total(f, ...)
     local xs = __K2L_ArrayOf(...)
-    local sum = 0
+    local ____sum = 0
     for ____i = 1, xs.size do
         local x = xs[____i]
-        sum = sum + f(x)
+        ____sum = ____sum + f(x)
     end
-    return sum
+    return ____sum
 end
 
 local function spreadFirst(xs)
     local ____result
     do
         local ____xs = __K2L_ArrayOf(__K2L_Spread("s.", xs, 1))
-        local sum = 0
+        local ____sum = 0
         for ____i_1 = 1, ____xs.size do
             local x = ____xs[____i_1]
             local ____result_1
@@ -97,9 +97,9 @@ local function spreadFirst(xs)
             else
                 ____result_1 = x
             end
-            sum = sum + ____result_1
+            ____sum = ____sum + ____result_1
         end
-        ____result = sum
+        ____result = ____sum
     end
     return ____result
 end

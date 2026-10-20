@@ -1,4 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
@@ -112,7 +114,7 @@ local function main()
     print(__K2L_Str(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3)):flatMap(____lambda_10):limit(3):toList()))
     local once = __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3))
     print(once:count())
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         once:forEach(function(it)
             print(__K2L_NotNull(it))
         end)
@@ -128,7 +130,7 @@ local function main()
     end
     local filtered = __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3)):filter(____lambda_11)
     print(__K2L_Str(filtered:toList()))
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         filtered:map(____lambda_12)
     end)
     if not ____ok_1 then
@@ -142,7 +144,7 @@ local function main()
     end
     local ints = __K2L_Streams.range(0, 3)
     local mapped = ints:map(____lambda_13)
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
         ints:sum()
     end)
     if not ____ok_2 then
@@ -155,7 +157,7 @@ local function main()
         end
     end
     print(mapped:sum())
-    local ____ok_3, ____result_3 = pcall(function()
+    local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
         __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1)):limit(-1)
     end)
     if not ____ok_3 then
@@ -167,7 +169,7 @@ local function main()
             error(____error_3, 0)
         end
     end
-    local ____ok_4, ____result_4 = pcall(function()
+    local ____ok_4, ____result_4 = __K2L_DeepPcall(function()
         __K2L_Streams.empty(__K2L_IntStream):max():getAsInt()
     end)
     if not ____ok_4 then
@@ -179,7 +181,7 @@ local function main()
             error(____error_4, 0)
         end
     end
-    local ____ok_5, ____result_5 = pcall(function()
+    local ____ok_5, ____result_5 = __K2L_DeepPcall(function()
         __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2)):findFirst():orElseThrow(____lambda_14)
         __K2L_Streams.empty(__K2L_Stream):findFirst():orElseThrow(____lambda_15)
     end)
@@ -194,4 +196,4 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)

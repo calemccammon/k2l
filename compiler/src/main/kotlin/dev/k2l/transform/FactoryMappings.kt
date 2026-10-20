@@ -256,10 +256,11 @@ internal object FactoryMappings {
             "java/util/ArrayList", "kotlin/collections/ArrayList" ->
                 if (firstIsCollection) LuaMethodCall(site.arg(0), "toMutableList", emptyList()) else new("__K2L_List")
 
-            // ArrayDeque(elements), LinkedList(elements); a capacity is not passed on
+            // ArrayDeque(elements), LinkedList(elements); a capacity is not passed on, except to a java.util.ArrayDeque, whose
+            // iterators depend on its array (see Deques.lua)
             "kotlin/collections/ArrayDeque" -> new("__K2L_ArrayDeque", *elements)
 
-            "java/util/ArrayDeque" -> new("__K2L_Deque", *elements)
+            "java/util/ArrayDeque" -> new("__K2L_Deque", *site.args.take(1).toTypedArray())
 
             "java/util/LinkedList" -> new("__K2L_LinkedList", *site.args.take(1).toTypedArray())
 

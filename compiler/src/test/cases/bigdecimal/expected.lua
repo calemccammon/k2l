@@ -3,6 +3,8 @@ local __K2L_ArithmeticException = ____lualib.__K2L_ArithmeticException
 local __K2L_BigDecimal = ____lualib.__K2L_BigDecimal
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -137,7 +139,7 @@ local function scaling()
     print(__K2L_Str(__K2L_BigDecimal.parse("1E+3"):setScale(0)))
     print(__K2L_Str(__K2L_BigDecimal.parse("12345"):setScale(-2, __K2L_RoundingMode.HALF_UP)))
     print(__K2L_Str(__K2L_BigDecimal.parse("12355"):setScale(-1, __K2L_RoundingMode.HALF_EVEN)))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(__K2L_Str(__K2L_BigDecimal.parse("2.55"):setScale(1, __K2L_RoundingMode.UNNECESSARY)))
     end)
     if not ____ok then
@@ -321,7 +323,7 @@ local ____lambda_22 = function() return __K2L_RoundingMode.valueOf("SIDEWAYS") e
 local function failures()
     print("-- failures")
     local function attempt(label, block)
-        local ____ok_1, ____result_1 = pcall(function()
+        local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
             print(label .. ": " .. __K2L_Str(block()))
         end)
         if not ____ok_1 then
@@ -367,5 +369,5 @@ local function main()
     failures()
 end
 
-main()
+__K2L_DeepMain(main)
 return {MODES = MODES, construction = construction, arithmetic = arithmetic, scaling = scaling, division = division, formatting = formatting, comparisons = comparisons, conversions = conversions, failures = failures}

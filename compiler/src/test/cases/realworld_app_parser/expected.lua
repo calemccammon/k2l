@@ -3,6 +3,8 @@ local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -657,7 +659,7 @@ local function main()
     for ____i_1 = 1, inputs.size do
         local text = inputs[____i_1]
         local line = parseAll(expr, text):fold(function(e, _)
-            local ____ok, ____result, ____returned = pcall(function()
+            local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
                 return true, show(e) .. " = " .. __K2L_Str(eval(e, env))
             end)
             if ____ok then
@@ -721,5 +723,5 @@ local function main()
     print(__K2L_Str(many(____or(char("a"), char("b"))):parse(Input.new("abbac"))))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Input = Input, ParseResult = ParseResult, Parser = Parser, map = map, flatMap = flatMap, ____or = ____or, ____then = ____then, skipThen = skipThen, thenSkip = thenSkip, many = many, many1 = many1, optional = optional, sepBy = sepBy, named = named, lazyParser = lazyParser, satisfy = satisfy, char = char, ws = ws, token = token, symbol = symbol, digit = digit, number = number, identifier = identifier, Expr = Expr, chainLeft = chainLeft, expr = expr, term = term, factor = factor, EvalException = EvalException, eval = eval, show = show, parseAll = parseAll, Json = Json, jsonString = jsonString, json = json}

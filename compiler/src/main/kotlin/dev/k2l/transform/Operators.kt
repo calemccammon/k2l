@@ -139,7 +139,7 @@ private val JVM_NAMES = mapOf(
     "kotlin/collections/MutableMap" to "java.util.Map", "kotlin/Throwable" to "java.lang.Throwable",
 )
 
-private fun FileTransformer.jvmClassName(type: KaType): String = with(session) {
+internal fun FileTransformer.jvmClassName(type: KaType): String = with(session) {
     val symbol = type.expandedSymbol
     val psi = symbol?.psi as? KtClassOrObject
     val id = symbol?.classId?.asString()
@@ -151,6 +151,6 @@ private fun FileTransformer.jvmClassName(type: KaType): String = with(session) {
     }
 }
 
-private fun FileTransformer.kotlinClassName(type: KaType): String = with(session) {
+internal fun FileTransformer.kotlinClassName(type: KaType): String = with(session) {
     type.expandedSymbol?.classId?.asString()?.replace('/', '.') ?: type.pretty()
 }

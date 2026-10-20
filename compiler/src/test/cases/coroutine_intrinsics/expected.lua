@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_COROUTINE_SUSPENDED = ____lualib.__K2L_COROUTINE_SUSPENDED
 local __K2L_Continuation = ____lualib.__K2L_Continuation
 local __K2L_CreateCoroutineUnintercepted = ____lualib.__K2L_CreateCoroutineUnintercepted
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -78,7 +80,7 @@ local function main()
         print("park " .. park())
         print("nestedSync " .. nestedSync())
         print("nested " .. nested())
-        local ____ok, ____result = pcall(function()
+        local ____ok, ____result = __K2L_DeepPcall(function()
             failing()
         end)
         if not ____ok then
@@ -108,5 +110,5 @@ local function main()
     created:resumeWith(__K2L_Result.success(__K2L_Unit))
 end
 
-main()
+__K2L_DeepMain(main)
 return {parked = parked, immediate = immediate, park = park, resumedBeforeSuspend = resumedBeforeSuspend, failing = failing, run = run, nested = nested, nestedSync = nestedSync}

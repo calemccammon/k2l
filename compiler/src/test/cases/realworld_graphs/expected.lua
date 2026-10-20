@@ -4,6 +4,8 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_HashMap = ____lualib.__K2L_HashMap
@@ -435,7 +437,7 @@ local function main()
     print("tasks: " .. __K2L_Str(tasks))
     print("order: " .. __K2L_Str(topoSort(tasks)))
     tasks:addEdge("commute", "wake")
-    local ____ok, ____result_4 = pcall(function()
+    local ____ok, ____result_4 = __K2L_DeepPcall(function()
         topoSort(tasks)
     end)
     if not ____ok then
@@ -496,6 +498,7 @@ local function main()
     print("reachable counts: " .. __K2L_Str(reachable))
     local sccEdges = __K2L_ReadOnlyListOf(__K2L_Pair.new(0, 1), __K2L_Pair.new(1, 2), __K2L_Pair.new(2, 0), __K2L_Pair.new(2, 3), __K2L_Pair.new(3, 4), __K2L_Pair.new(4, 5), __K2L_Pair.new(5, 3), __K2L_Pair.new(6, 5), __K2L_Pair.new(6, 7), __K2L_Pair.new(7, 6), __K2L_Pair.new(8, 8))
     local sccs = tarjan(9, sccEdges)
+    local ____arg_1 = __K2L_Str(sccs)
     local ____result_5 = 0
     local ____items_8, ____n_9 = sccs:____array()
     for ____i_16 = 1, ____n_9 do
@@ -504,7 +507,7 @@ local function main()
             ____result_5 = ____result_5 + 1
         end
     end
-    print("sccs: " .. __K2L_Str(sccs) .. " (" .. ____result_5 .. " non-trivial)")
+    print("sccs: " .. ____arg_1 .. " (" .. ____result_5 .. " non-trivial)")
     local uf = UnionFind.new(10)
     local ____list_9 = __K2L_ReadOnlyListOf(__K2L_Pair.new(1, 2), __K2L_Pair.new(3, 4), __K2L_Pair.new(2, 3), __K2L_Pair.new(5, 6), __K2L_Pair.new(7, 7), __K2L_Pair.new(9, 0), __K2L_Pair.new(4, 1))
     local ____mod_8 = ____list_9.____modCount
@@ -572,5 +575,5 @@ local function main()
     print("nodes by degree: " .. __K2L_Str(degrees))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Graph = Graph, CycleException = CycleException, topoSort = topoSort, UnionFind = UnionFind, kruskal = kruskal, dijkstra = dijkstra, floydWarshall = floydWarshall, tarjan = tarjan, TASKS = TASKS, ROADS = ROADS}

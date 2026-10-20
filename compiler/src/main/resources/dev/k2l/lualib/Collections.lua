@@ -29,6 +29,17 @@ function __K2L_Iterable:____comodified(i, n)
     return true
 end
 
+-- What a `for` loop over a value that may be a java.util.ArrayDeque (one, or a Deque, Queue, Collection or Iterable)
+-- reads, as items and their count: a java.util.ArrayDeque's elements through its iterator (its ____loopArray, see
+-- Deques.lua), the elements of anything else as they are (____array()).
+local function __K2L_LoopItems(collection)
+    local items = collection.____loopArray
+    if items ~= nil then
+        return items(collection)
+    end
+    return collection:____array()
+end
+
 local __K2L_List
 local __K2L_Array
 local __K2L_ArrayClassOf
@@ -2723,6 +2734,18 @@ end
 local function removeSlot(self, slot)
     local n = self.size
     self.____modCount = self.____modCount + 1
+    local entries = self.____entries
+    if entries then
+        -- a map's entries move down with their slots, into a new array (one handed out before keeps its elements)
+        local moved = {}
+        for i = 1, slot - 1 do
+            moved[i] = entries[i]
+        end
+        for i = slot, n - 1 do
+            moved[i] = entries[i + 1]
+        end
+        self.____entries = moved
+    end
     local keys, values, index, buckets = self.____keys, self.____values, self.____index, self.____buckets
     local removed = keys[slot]
     local stale = false
@@ -3003,13 +3026,14 @@ function __K2L_Entry:toString()
     return __K2L_Str(self.key) .. "=" .. __K2L_Str(self.value)
 end
 
--- Entries of a map write back to it.
+-- Entries of a map write back to it while it holds them (see "live entries" below).
 function __K2L_Entry:setValue(value)
     local old = self.value
-    self.value = value
-    if self.____map ~= nil then
-        self.____map:____setValue(self.key, value)
+    local map = self.____map
+    if map ~= nil then
+        map:____setValue(self.key, value, self)
     end
+    self.value = value
     return old
 end
 
@@ -3021,16 +3045,27 @@ function __K2L_Entry:equals(other)
     return inherits(other, __K2L_Entry) and __K2L_Equals(self.key, other.key) and __K2L_Equals(self.value, other.value)
 end
 
+-- What TreeMap's firstEntry(), pollFirstEntry() and the like return: a copy of the entry, which cannot be set.
+local SimpleImmutableEntry = __K2L_Class("java.util.AbstractMap$SimpleImmutableEntry", __K2L_Entry)
+SimpleImmutableEntry.setValue = unsupported
+
 __K2L_Map = __K2L_Class("java.util.LinkedHashMap")
 __K2L_Map.__tostring = __K2L_Iterable.__tostring
 __K2L_Map.____modCount = 0
 __K2L_Map.____comodified = __K2L_Iterable.____comodified
+-- Live entries: like the JDK's nodes, the entries of a map's `entries` are made once per key and kept, slot by slot, in
+-- ____entries (false until the first one is made). put and the other writes of a key's value also set its entry's
+-- `value`, so an entry sees later changes of its key; removing the key detaches its entry, which keeps its last value
+-- (its setValue no longer writes to the map). Removals and reorderings make a new ____entries array, so an array handed
+-- out before (to a loop) keeps its elements.
+__K2L_Map.____entries = false
 
 -- LinkedHashMap(), (capacity), (map) and (nil, accessOrder) for LinkedHashMap(capacity, loadFactor, accessOrder); copying a
 -- map does not call put, as on the JVM.
 function __K2L_Map:____init(map, accessOrder)
     self.size = 0
     self.____keys, self.____values, self.____index, self.____buckets = {}, {}, {}, {}
+    self.____entries = false
     if type(map) == "table" then
         __K2L_Map.putAll(self, map)
     end
@@ -3043,11 +3078,30 @@ end
 local function accessed(self, slot)
     if slot ~= self.size then
         local key, value = self.____keys[slot], self.____values[slot]
+        local entry = self.____entries and self.____entries[slot]
         removeSlot(self, slot)
         slot = addSlot(self, key)
         self.____values[slot] = value
+        if entry then
+            self.____entries[slot] = entry
+        end
     end
     return slot
+end
+
+-- The live entry of `slot`, made when it has none.
+local function liveEntry(self, slot)
+    local entries = self.____entries
+    if not entries then
+        entries = {}
+        self.____entries = entries
+    end
+    local entry = entries[slot]
+    if entry == nil then
+        entry = setmetatable({key = self.____keys[slot], value = self.____values[slot], ____map = self}, self.____views.entry)
+        entries[slot] = entry
+    end
+    return entry
 end
 
 -- for k, v in map:iter() do ... end, over the entries in order. Like the JDK's entry iterators it knew at each entry
@@ -3083,7 +3137,7 @@ function __K2L_Map:iter(whole)
 end
 
 -- The keys, values and entries in iteration order, as an array and its length: what the views and loops read. The keys
--- and values are the map's own arrays; the entries are made for each call, and write back to the map (setValue).
+-- and values are the map's own arrays, the entries its live entries (made for the keys that have none yet).
 function __K2L_Map:____keyArray()
     return self.____keys, self.size
 end
@@ -3098,13 +3152,18 @@ function __K2L_Map:____arrays()
 end
 
 function __K2L_Map:____entryArray()
-    local out, n = {}, self.size
-    local keys, values = self.____keys, self.____values
-    local cls = self.____views.entry
-    for i = 1, n do
-        out[i] = setmetatable({key = keys[i], value = values[i], ____map = self}, cls)
+    local n, entries = self.size, self.____entries
+    if not entries then
+        entries = {}
+        self.____entries = entries
     end
-    return out, n
+    local keys, values, cls = self.____keys, self.____values, self.____views.entry
+    for i = 1, n do
+        if entries[i] == nil then
+            entries[i] = setmetatable({key = keys[i], value = values[i], ____map = self}, cls)
+        end
+    end
+    return entries, n
 end
 
 -- what the views read: the map's own arrays, which a subclass overriding `entries` and the like does not change (the
@@ -3131,11 +3190,20 @@ function __K2L_Map:____lookup(key)
     return true, self.____values[slot]
 end
 
--- Entry.setValue: the value of the key in place, without calling put
-function __K2L_Map:____setValue(key, value)
+-- Entry.setValue: the value of the key in place, without calling put; `entry` (the entry being set) only while the map
+-- holds it
+function __K2L_Map:____setValue(key, value, entry)
     local slot = findSlot(self, key)
-    if slot ~= nil then
-        self.____values[slot] = value
+    if slot == nil then
+        return
+    end
+    local own = self.____entries and self.____entries[slot]
+    if entry ~= nil and own ~= entry then
+        return
+    end
+    self.____values[slot] = value
+    if own then
+        own.value = value
     end
 end
 
@@ -3210,13 +3278,19 @@ function __K2L_Map:put(key, value)
         end
         local old = self.____values[slot]
         self.____values[slot] = value
+        local entries = self.____entries
+        if entries then
+            local entry = entries[slot]
+            if entry ~= nil then
+                entry.value = value
+            end
+        end
         return old
     end
     slot = addSlot(self, key)
     self.____values[slot] = value
     if self.removeEldestEntry ~= nil then
-        local eldest = __K2L_Entry.new(self.____keys[1], self.____values[1])
-        eldest.____map = self
+        local eldest = liveEntry(self, 1)
         if self:removeEldestEntry(eldest) then
             __K2L_Map.remove(self, eldest.key)
         end
@@ -3331,8 +3405,14 @@ function __K2L_Map:computeIfPresent(key, remapping)
 end
 
 function __K2L_Map:replaceAll(operator)
+    local entries = self.____entries
     for i = 1, self.size do
-        self.____values[i] = operator(self.____keys[i], self.____values[i])
+        local value = operator(self.____keys[i], self.____values[i])
+        self.____values[i] = value
+        local entry = entries and entries[i]
+        if entry then
+            entry.value = value
+        end
     end
 end
 
@@ -4128,23 +4208,41 @@ local function rebuild(self, keys, count)
     end
 end
 
+-- the value of an existing key (its slot), seen by its live entry
+local function replaceValue(self, slot, value)
+    local old = self.____values[slot]
+    self.____values[slot] = value
+    local entry = self.____entries and self.____entries[slot]
+    if entry then
+        entry.value = value
+    end
+    return old
+end
+
 function __K2L_SortedMap:put(key, value)
     local slot = findSlot(self, key)
     if slot ~= nil then
-        local old = self.____values[slot]
-        self.____values[slot] = value
-        return old
+        return replaceValue(self, slot, value)
     end
     local keys, values, n = self.____keys, self.____values, self.size
     local at = lowerBound(keys, n, key, self.____compare)
     if at <= n and self.____compare(keys[at], key) == 0 then
-        local old = values[at]
-        values[at] = value
-        return old
+        return replaceValue(self, at, value)
     end
     shiftRight(keys, n, at)
     shiftRight(values, n, at)
     keys[at], values[at] = key, value
+    local entries = self.____entries
+    if entries then
+        local moved = {}
+        for i = 1, at - 1 do
+            moved[i] = entries[i]
+        end
+        for i = at, n do
+            moved[i + 1] = entries[i]
+        end
+        self.____entries = moved
+    end
     rebuild(self, keys, n + 1)
     self.____values = values
     return nil
@@ -4255,13 +4353,12 @@ local function sortedCopy(self, keepFrom, keepTo)
     return out
 end
 
+-- firstEntry() and the like: a copy (an AbstractMap$SimpleImmutableEntry)
 local function entryAt(self, i)
     if i < 1 or i > self.size then
         return nil
     end
-    local entry = __K2L_Entry.new(self.____keys[i], self.____values[i])
-    entry.____map = self
-    return entry
+    return SimpleImmutableEntry.new(self.____keys[i], self.____values[i])
 end
 
 local function keyAt(self, i)
@@ -4301,7 +4398,6 @@ function __K2L_SortedMap:higherEntry(key) return entryAt(self, upperBound(self._
 function __K2L_SortedMap:pollFirstEntry()
     local entry = entryAt(self, 1)
     if entry ~= nil then
-        entry.____map = nil
         __K2L_Map.remove(self, entry.key)
     end
     return entry
@@ -4310,109 +4406,355 @@ end
 function __K2L_SortedMap:pollLastEntry()
     local entry = entryAt(self, self.size)
     if entry ~= nil then
-        entry.____map = nil
         __K2L_Map.remove(self, entry.key)
     end
     return entry
 end
 
--- headMap(to, inclusive = false)
-function __K2L_SortedMap:headMap(to, inclusive)
-    local bound = inclusive and upperBound or lowerBound
-    return sortedCopy(self, 1, bound(self.____keys, self.size, to, self.____compare) - 1)
+------------------------------------------------------------------ navigable views
+-- A TreeMap's headMap, tailMap, subMap and descendingMap (TreeMap$AscendingSubMap, TreeMap$DescendingSubMap) and a
+-- TreeSet's headSet, tailSet, subSet and descendingSet (TreeSets over those) are live views: they hold the TreeMap or
+-- TreeSet (____root) and the range of its keys they show (____range: each bound in the root's order, inclusive or not, or
+-- open), in the root's order or in the reverse one (their class's ____descending). Their size is counted in the root when
+-- it is read and their ____modCount is the root's, so loops and iterators over them notice any change of the root. Reading
+-- or writing one key goes to the root (a key outside the range reads as missing, and writing it throws
+-- IllegalArgumentException("key out of range")); the other methods run on a copy of the range (a TreeMap or TreeSet in
+-- the view's order, rebuilt from the root for each call) whose writes go to the root, and a map view's entries are the
+-- root's live entries. A view's headMap and the like narrow its range, and throw as the JDK's do for a bound outside it.
+local ALL = {}
+
+local function tooLow(compare, range, key)
+    if range.hasLo then
+        local c = compare(key, range.lo)
+        return c < 0 or (c == 0 and not range.loInc)
+    end
+    return false
 end
 
--- tailMap(from, inclusive = true)
-function __K2L_SortedMap:tailMap(from, inclusive)
-    local bound = (inclusive == false) and upperBound or lowerBound
-    return sortedCopy(self, bound(self.____keys, self.size, from, self.____compare), self.size)
+local function tooHigh(compare, range, key)
+    if range.hasHi then
+        local c = compare(key, range.hi)
+        return c > 0 or (c == 0 and not range.hiInc)
+    end
+    return false
 end
 
-function __K2L_SortedMap:subMap(from, to)
-    return sortedCopy(self, lowerBound(self.____keys, self.size, from, self.____compare),
-        lowerBound(self.____keys, self.size, to, self.____compare) - 1)
+local function inRange(compare, range, key)
+    return not tooLow(compare, range, key) and not tooHigh(compare, range, key)
 end
 
--- descendingMap() is a live view of the map in reverse order (TreeMap$DescendingSubMap): its methods run on a reversed
--- copy (a TreeMap ordered the other way, rebuilt from the map for each call), whose writes go to the map. Its size and
--- ____modCount are the map's, and its keys, values and entries are views of the view.
-local DescendingMap = __K2L_Class("java.util.TreeMap$DescendingSubMap", __K2L_SortedMap)
-local ReversedCopy = __K2L_Class("java.util.TreeMap", __K2L_SortedMap)
-local DESCENDING_OWN = {
-    getKeys = true, getValues = true, getEntries = true, navigableKeySet = true, descendingKeySet = true, descendingMap = true,
-}
+-- NavigableSubMap.inRange(key, inclusive): an exclusive new bound may also be an exclusive bound of the range
+local function inBounds(compare, range, key, inclusive)
+    if inclusive then
+        return inRange(compare, range, key)
+    end
+    return (not range.hasLo or compare(key, range.lo) >= 0) and (not range.hasHi or compare(range.hi, key) >= 0)
+end
 
-local function reversedCopy(view)
-    local root = rawget(view, "____root")
+local function checkKey(root, range, key)
+    if not inRange(root.____compare, range, key) then
+        illegalArgument("key out of range")
+    end
+end
+
+-- The slots of the root's keys in `range`: from and to (to < from when it has none).
+local function rangeSlots(root, range)
+    local keys, n, compare = root.____keys, root.size, root.____compare
+    local from, to = 1, n
+    if range.hasLo then
+        from = (range.loInc and lowerBound or upperBound)(keys, n, range.lo, compare)
+    end
+    if range.hasHi then
+        to = (range.hiInc and upperBound or lowerBound)(keys, n, range.hi, compare) - 1
+    end
+    return from, to
+end
+
+-- The root of a TreeMap, TreeSet or view, the range the view shows (ALL for the root itself) and whether it is reversed.
+local function rangeOf(self)
+    local root = rawget(self, "____root")
+    if root == nil then
+        return self, ALL, false
+    end
+    return root, rawget(self, "____range"), getmetatable(self).____descending == true
+end
+
+-- The range of headMap, tailMap and subMap: `from` and `to` (absent for an open end) are in the view's order; as the JDK's
+-- NavigableSubMap, a bound outside the view's range throws, and so does a range whose lower bound is above its upper one.
+local function narrow(compare, range, descending, hasFrom, from, fromInc, hasTo, to, toInc)
+    if hasFrom and not inBounds(compare, range, from, fromInc) then
+        illegalArgument("fromKey out of range")
+    end
+    if hasTo and not inBounds(compare, range, to, toInc) then
+        illegalArgument("toKey out of range")
+    end
+    local out = {hasLo = range.hasLo, lo = range.lo, loInc = range.loInc, hasHi = range.hasHi, hi = range.hi, hiInc = range.hiInc}
+    if descending then
+        hasFrom, from, fromInc, hasTo, to, toInc = hasTo, to, toInc, hasFrom, from, fromInc
+    end
+    if hasFrom then
+        out.hasLo, out.lo, out.loInc = true, from, fromInc
+    end
+    if hasTo then
+        out.hasHi, out.hi, out.hiInc = true, to, toInc
+    end
+    if out.hasLo and out.hasHi and compare(out.lo, out.hi) > 0 then
+        illegalArgument("fromKey > toKey")
+    end
+    return out
+end
+
+-- headMap(to, inclusive = false), tailMap(from, inclusive = true), subMap(from, to) and subMap(from, fromInclusive, to,
+-- toInclusive), and the same for sets, as the bounds narrow() takes
+local function headBounds(to, inclusive)
+    return false, nil, false, true, to, inclusive == true
+end
+
+local function tailBounds(from, inclusive)
+    return true, from, inclusive ~= false, false, nil, false
+end
+
+local function subBounds(from, a, b, c)
+    if b == nil and c == nil then
+        return true, from, true, true, a, false
+    end
+    return true, from, a, true, b, c
+end
+
+-- A view class: `own` names the methods it runs itself; the others run on copyOf(view), the view's refreshed copy (a
+-- result that is the copy is the view).
+local function navigableView(cls, own, copyOf)
+    local forwards = {}
+    cls.__index = function(self, key)
+        if key == "size" then
+            local from, to = rangeSlots(rawget(self, "____root"), rawget(self, "____range"))
+            return to >= from and to - from + 1 or 0
+        elseif key == "____modCount" then
+            return rawget(self, "____root").____modCount
+        end
+        local member = cls[key]
+        if type(member) ~= "function" or own[key] then
+            return member
+        end
+        local forward = forwards[key]
+        if forward == nil then
+            forward = function(view, ...)
+                local copy = copyOf(view)
+                local a, b, c = copy[key](copy, ...)
+                if rawequal(a, copy) then
+                    a = view
+                end
+                return a, b, c
+            end
+            forwards[key] = forward
+        end
+        return forward
+    end
+end
+
+-- The copy of `view` (of class `cls`), made once and refilled for each call: init(copy) empties it and fill(copy, keys,
+-- values, first, last, step) adds the root's keys (and values) of the range in the view's order.
+local function refreshed(view, cls, init, fill)
+    local root, range, descending = rangeOf(view)
     local copy = rawget(view, "____copy")
     if copy == nil then
         local compare = root.____compare
-        copy = setmetatable({____root = root}, ReversedCopy)
-        copy.____compare = function(a, b) return compare(b, a) end
+        copy = setmetatable({____root = root, ____range = range, ____descending = descending}, cls)
+        copy.____compare = descending and function(a, b) return compare(b, a) end or compare
         rawset(view, "____copy", copy)
     end
-    __K2L_Map.____init(copy)
-    local keys, values, n = root.____keys, root.____values, root.size
-    for i = n, 1, -1 do
-        copy.____values[addSlot(copy, keys[i])] = values[i]
+    init(copy)
+    local from, to = rangeSlots(root, range)
+    copy.____from, copy.____to = from, to
+    if descending then
+        fill(copy, root.____keys, root.____values, to, from, -1)
+    else
+        fill(copy, root.____keys, root.____values, from, to, 1)
     end
     return copy
 end
 
-local wrapped = {}
+local AscendingSubMap = __K2L_Class("java.util.TreeMap$AscendingSubMap", __K2L_SortedMap)
+local DescendingSubMap = __K2L_Class("java.util.TreeMap$DescendingSubMap", __K2L_SortedMap)
+DescendingSubMap.____descending = true
+local MapCopy = __K2L_Class("java.util.TreeMap", __K2L_SortedMap)
+-- for the views' keys, values and entries (see "map views" below)
+__K2L_SortedMap.____subMaps = {ascending = AscendingSubMap, descending = DescendingSubMap}
 
-DescendingMap.__index = function(self, key)
-    if key == "size" then
-        return rawget(self, "____root").size
-    elseif key == "____modCount" then
-        return rawget(self, "____root").____modCount
-    end
-    local member = DescendingMap[key]
-    if type(member) ~= "function" or DESCENDING_OWN[key] then
-        return member
-    end
-    local forward = wrapped[key]
-    if forward == nil then
-        forward = function(view, ...)
-            local copy = reversedCopy(view)
-            return copy[key](copy, ...)
-        end
-        wrapped[key] = forward
-    end
-    return forward
+local function mapView(self, ...)
+    local root, range, descending = rangeOf(self)
+    range = narrow(root.____compare, range, descending, ...)
+    return setmetatable({____root = root, ____range = range}, descending and DescendingSubMap or AscendingSubMap)
 end
 
--- the copy's writes go to the map (pollFirstEntry of the reversed order is the map's pollLastEntry)
-for _, name in ipairs({
-    "put", "set", "remove", "clear", "putAll", "putIfAbsent", "merge", "compute", "computeIfAbsent", "computeIfPresent",
-    "replaceAll", "____removeKey", "____setValue",
-}) do
-    ReversedCopy[name] = function(copy, ...)
-        local root = copy.____root
-        return root[name](root, ...)
-    end
+function __K2L_SortedMap:headMap(to, inclusive)
+    return mapView(self, headBounds(to, inclusive))
 end
 
-function ReversedCopy:pollFirstEntry()
-    return self.____root:pollLastEntry()
+function __K2L_SortedMap:tailMap(from, inclusive)
+    return mapView(self, tailBounds(from, inclusive))
 end
 
-function ReversedCopy:pollLastEntry()
-    return self.____root:pollFirstEntry()
+function __K2L_SortedMap:subMap(from, a, b, c)
+    return mapView(self, subBounds(from, a, b, c))
 end
 
+-- the reverse of a descending view is an AscendingSubMap (not the map)
 function __K2L_SortedMap:descendingMap()
-    return setmetatable({____root = self}, DescendingMap)
-end
-
--- the reverse of the reverse order is the map's
-function DescendingMap:descendingMap()
-    return self.____root
+    local root, range, descending = rangeOf(self)
+    return setmetatable({____root = root, ____range = range}, descending and AscendingSubMap or DescendingSubMap)
 end
 
 function __K2L_SortedMap:descendingKeySet()
     return self:descendingMap():getKeys()
 end
+
+-- NavigableSubMap's own: a key outside the range is missing, and cannot be put. The copies write with them too.
+local MapViewOps = {}
+
+function MapViewOps:get(key)
+    local root = rawget(self, "____root")
+    if not inRange(root.____compare, rawget(self, "____range"), key) then
+        return nil
+    end
+    return root:get(key)
+end
+
+function MapViewOps:containsKey(key)
+    local root = rawget(self, "____root")
+    return inRange(root.____compare, rawget(self, "____range"), key) and root:containsKey(key)
+end
+
+function MapViewOps:put(key, value)
+    local root = rawget(self, "____root")
+    checkKey(root, rawget(self, "____range"), key)
+    return root:put(key, value)
+end
+
+function MapViewOps:set(key, value)
+    self:put(key, value)
+end
+
+function MapViewOps:remove(key, value)
+    local root = rawget(self, "____root")
+    if not inRange(root.____compare, rawget(self, "____range"), key) then
+        if value ~= nil then
+            return false
+        end
+        return nil
+    end
+    return root:remove(key, value)
+end
+
+function MapViewOps:isEmpty()
+    return self.size == 0
+end
+
+local MAP_VIEW_OWN = {
+    "getKeys", "getValues", "getEntries", "navigableKeySet", "descendingKeySet", "descendingMap", "headMap", "tailMap", "subMap",
+    "iterator", "asIterable", "isNotEmpty",
+}
+
+local function fillMap(copy, keys, values, first, last, step)
+    for i = first, last, step do
+        copy.____values[addSlot(copy, keys[i])] = values[i]
+    end
+end
+
+local function mapCopy(view)
+    return refreshed(view, MapCopy, __K2L_Map.____init, fillMap)
+end
+
+for _, view in ipairs({AscendingSubMap, DescendingSubMap}) do
+    local own = {____comodified = true}
+    for _, name in ipairs(MAP_VIEW_OWN) do
+        view[name], own[name] = __K2L_SortedMap[name], true
+    end
+    for name, fn in pairs(MapViewOps) do
+        view[name], own[name] = fn, true
+    end
+    view.____comodified = __K2L_Iterable.____comodified
+    navigableView(view, own, mapCopy)
+end
+
+-- The copy's writes go to the root: puts check the range, as NavigableSubMap's do, and removals take the keys of the range.
+for _, name in ipairs({"putIfAbsent", "merge", "compute", "computeIfAbsent", "computeIfPresent"}) do
+    MapCopy[name] = function(copy, key, ...)
+        local root = copy.____root
+        checkKey(root, copy.____range, key)
+        return root[name](root, key, ...)
+    end
+end
+
+MapCopy.put, MapCopy.remove = MapViewOps.put, MapViewOps.remove
+
+function MapCopy:____removeKey(key)
+    return __K2L_Map.____removeKey(self.____root, key)
+end
+
+function MapCopy:____setValue(key, value, entry)
+    return __K2L_Map.____setValue(self.____root, key, value, entry)
+end
+
+-- AbstractMap.putAll: put for each entry
+function MapCopy:putAll(other)
+    __K2L_Map.putAll(self, other)
+end
+
+-- AbstractMap.clear removes the entries of the range one by one, without calling the root's remove or clear
+function MapCopy:clear()
+    local root = self.____root
+    if self.____range == ALL then
+        __K2L_SortedMap.clear(root)
+        return
+    end
+    for i = 1, self.size do
+        __K2L_Map.____removeKey(root, self.____keys[i])
+    end
+end
+
+-- Map.replaceAll sets each entry of the view, in its order
+function MapCopy:replaceAll(operator)
+    local root = self.____root
+    for i = 1, self.size do
+        local key = self.____keys[i]
+        __K2L_Map.____setValue(root, key, operator(key, self.____values[i]))
+    end
+end
+
+function MapCopy:pollFirstEntry()
+    local entry = entryAt(self, 1)
+    if entry ~= nil then
+        __K2L_Map.____removeKey(self.____root, entry.key)
+    end
+    return entry
+end
+
+function MapCopy:pollLastEntry()
+    local entry = entryAt(self, self.size)
+    if entry ~= nil then
+        __K2L_Map.____removeKey(self.____root, entry.key)
+    end
+    return entry
+end
+
+-- the root's live entries of the range, in the view's order
+function MapCopy:____entryArray()
+    local entries = __K2L_Map.____entryArray(self.____root)
+    local out, n, from, to = {}, self.size, self.____from, self.____to
+    if self.____descending then
+        for i = 1, n do
+            out[i] = entries[to - i + 1]
+        end
+    else
+        for i = 1, n do
+            out[i] = entries[from + i - 1]
+        end
+    end
+    return out, n
+end
+
+MapCopy.____viewEntries = MapCopy.____entryArray
 
 function __K2L_SortedMap:toSortedMap()
     return sortedCopy(self, 1, self.size)
@@ -4481,14 +4823,6 @@ function __K2L_SortedSet:clear()
     self.____modCount = self.____modCount + 1
 end
 
-local function sortedSetCopy(self, keepFrom, keepTo)
-    local out = __K2L_SortedSet.new(self.____compare)
-    for i = keepFrom, keepTo do
-        out:add(self.____keys[i])
-    end
-    return out
-end
-
 function __K2L_SortedSet:first()
     if self.size == 0 then
         noSuchElement()
@@ -4524,29 +4858,158 @@ function __K2L_SortedSet:pollLast()
     return value
 end
 
+-- The views of a TreeSet (see "navigable views" above): TreeSets themselves on the JVM.
+local SetView = __K2L_Class("java.util.TreeSet", __K2L_SortedSet)
+local DescendingSetView = __K2L_Class("java.util.TreeSet", __K2L_SortedSet)
+DescendingSetView.____descending = true
+local SetCopy = __K2L_Class("java.util.TreeSet", __K2L_SortedSet)
+SetView.____iteratorClass = __K2L_Class("java.util.TreeMap$NavigableSubMap$SubMapKeyIterator", __K2L_CollectionIterator)
+DescendingSetView.____iteratorClass =
+    __K2L_Class("java.util.TreeMap$NavigableSubMap$DescendingSubMapKeyIterator", __K2L_CollectionIterator)
+
+local function setView(self, ...)
+    local root, range, descending = rangeOf(self)
+    range = narrow(root.____compare, range, descending, ...)
+    return setmetatable({____root = root, ____range = range}, descending and DescendingSetView or SetView)
+end
+
 function __K2L_SortedSet:headSet(to, inclusive)
-    local bound = inclusive and upperBound or lowerBound
-    return sortedSetCopy(self, 1, bound(self.____keys, self.size, to, self.____compare) - 1)
+    return setView(self, headBounds(to, inclusive))
 end
 
 function __K2L_SortedSet:tailSet(from, inclusive)
-    local bound = (inclusive == false) and upperBound or lowerBound
-    return sortedSetCopy(self, bound(self.____keys, self.size, from, self.____compare), self.size)
+    return setView(self, tailBounds(from, inclusive))
 end
 
-function __K2L_SortedSet:subSet(from, to)
-    return sortedSetCopy(self, lowerBound(self.____keys, self.size, from, self.____compare),
-        lowerBound(self.____keys, self.size, to, self.____compare) - 1)
+function __K2L_SortedSet:subSet(from, a, b, c)
+    return setView(self, subBounds(from, a, b, c))
 end
 
--- a TreeSet in the reverse order (a copy; the JVM's is a view of the set)
 function __K2L_SortedSet:descendingSet()
-    local compare = self.____compare
-    local out = __K2L_SortedSet.new(function(a, b) return compare(b, a) end)
-    for i = self.size, 1, -1 do
-        addSlot(out, self.____keys[i])
+    local root, range, descending = rangeOf(self)
+    return setmetatable({____root = root, ____range = range}, descending and SetView or DescendingSetView)
+end
+
+function __K2L_SortedSet:descendingIterator()
+    return self:descendingSet():iterator()
+end
+
+-- A view's elements are the root's keys: TreeSet's add, remove and contains are the root map's put, remove and
+-- containsKey (not the root TreeSet's own methods, which a subclass may override), limited to the range.
+local SetViewOps = {}
+
+function SetViewOps:contains(value)
+    local root = rawget(self, "____root")
+    return inRange(root.____compare, rawget(self, "____range"), value) and findSlot(root, value) ~= nil
+end
+
+function SetViewOps:add(value)
+    local root = rawget(self, "____root")
+    checkKey(root, rawget(self, "____range"), value)
+    return __K2L_SortedSet.add(root, value)
+end
+
+function SetViewOps:remove(value)
+    local root = rawget(self, "____root")
+    if not inRange(root.____compare, rawget(self, "____range"), value) then
+        return false
     end
-    return out
+    return __K2L_Set.remove(root, value)
+end
+
+function SetViewOps:isEmpty()
+    return self.size == 0
+end
+
+local function fillSet(copy, keys, _, first, last, step)
+    for i = first, last, step do
+        addSlot(copy, keys[i])
+    end
+end
+
+local function setCopy(view)
+    return refreshed(view, SetCopy, __K2L_Set.____init, fillSet)
+end
+
+for _, view in ipairs({SetView, DescendingSetView}) do
+    local own = {____comodified = true}
+    for _, name in ipairs({"headSet", "tailSet", "subSet", "descendingSet", "descendingIterator", "iterator", "isNotEmpty"}) do
+        view[name], own[name] = __K2L_SortedSet[name], true
+    end
+    for name, fn in pairs(SetViewOps) do
+        view[name], own[name] = fn, true
+    end
+    view.____comodified = __K2L_Iterable.____comodified
+    navigableView(view, own, setCopy)
+end
+
+-- The copy's writes go to the root.
+SetCopy.add, SetCopy.remove = SetViewOps.add, SetViewOps.remove
+
+-- AbstractCollection.addAll: add for each element
+function SetCopy:addAll(elements)
+    return __K2L_Set.addAll(self, elements)
+end
+
+-- removes the elements of the range matching `predicate` from the root
+local function removeWhere(copy, predicate)
+    local keys, root, changed = copy.____keys, copy.____root, false
+    for i = 1, copy.size do
+        if predicate(keys[i]) then
+            __K2L_Set.remove(root, keys[i])
+            changed = true
+        end
+    end
+    return changed
+end
+
+-- AbstractSet.removeAll: the other collection's elements with remove() when that is smaller
+function SetCopy:removeAll(elements)
+    if type(elements) == "function" then
+        return removeWhere(self, elements)
+    end
+    if elements.size ~= nil and self.size > elements.size then
+        local arr, m = elements:____array()
+        local changed = false
+        for i = 1, m do
+            changed = self:remove(arr[i]) or changed
+        end
+        return changed
+    end
+    return removeWhere(self, function(it) return elements:contains(it) end)
+end
+
+SetCopy.removeIf = removeWhere
+
+function SetCopy:retainAll(elements)
+    if type(elements) == "function" then
+        return removeWhere(self, function(it) return not elements(it) end)
+    end
+    return removeWhere(self, function(it) return not elements:contains(it) end)
+end
+
+function SetCopy:clear()
+    if self.____range == ALL then
+        __K2L_SortedSet.clear(self.____root)
+        return
+    end
+    removeWhere(self, function() return true end)
+end
+
+function SetCopy:pollFirst()
+    local value = keyAt(self, 1)
+    if value ~= nil then
+        __K2L_Set.remove(self.____root, value)
+    end
+    return value
+end
+
+function SetCopy:pollLast()
+    local value = keyAt(self, self.size)
+    if value ~= nil then
+        __K2L_Set.remove(self.____root, value)
+    end
+    return value
 end
 
 function __K2L_Iterable:toSortedSet(comparator)
@@ -4676,6 +5139,8 @@ local function normalize(self)
         end
     end
     local newKeys, newValues = {}, values and {} or nil
+    local entries = self.____entries
+    local newEntries = entries and {}
     for i = 1, n do
         local b = bucket[i]
         local at = count[b]
@@ -4684,8 +5149,14 @@ local function normalize(self)
         if values ~= nil then
             newValues[at] = values[i]
         end
+        if entries then
+            newEntries[at] = entries[i]
+        end
     end
     self.____keys, self.____values = newKeys, newValues
+    if entries then
+        self.____entries = newEntries
+    end
     if next(self.____buckets) == nil then
         -- only plain keys: their slots are renumbered in place
         local index = self.____index
@@ -4748,6 +5219,13 @@ function __K2L_HashMap:put(key, value)
     if slot ~= nil then
         local old = self.____values[slot]
         self.____values[slot] = value
+        local entries = self.____entries
+        if entries then
+            local entry = entries[slot]
+            if entry ~= nil then
+                entry.value = value
+            end
+        end
         return old
     end
     slot = addSlot(self, key)
@@ -5089,10 +5567,35 @@ for set, map in pairs({pollFirst = "pollFirstEntry", pollLast = "pollLastEntry"}
     end
 end
 
+-- headSet and the like: the keys of the map's headMap and the like
+for set, map in pairs({headSet = "headMap", tailSet = "tailMap", subSet = "subMap"}) do
+    treeKeys[set] = function(self, ...)
+        return self.____map[map](self.____map, ...):getKeys()
+    end
+end
+
+-- The keys, values and entries of a TreeMap's views (headMap, descendingMap, ...): NavigableSets, AbstractMap's values and
+-- entry sets of their own, with the JDK's iterator classes; their entries are the map's.
+local function subMapViews(map, entries, iteratorPrefix)
+    local keys = __K2L_Class("java.util.TreeMap$KeySet", treeKeys)
+    local values = __K2L_Class("java.util.AbstractMap$2", ValuesView)
+    local entrySet = __K2L_Class(entries, EntriesView)
+    for _, cls in ipairs({keys, values, entrySet}) do
+        viewIndex(cls)
+    end
+    iterators(keys, iteratorPrefix .. "KeyIterator")
+    iterators(values, "java.util.AbstractMap$2$1")
+    iterators(entrySet, iteratorPrefix .. "EntryIterator")
+    map.____views = {keys = keys, values = values, entries = entrySet, entry = __K2L_SortedMap.____views.entry}
+end
+
+subMapViews(__K2L_SortedMap.____subMaps.ascending, "java.util.TreeMap$AscendingSubMap$AscendingEntrySetView",
+    "java.util.TreeMap$NavigableSubMap$SubMap")
+subMapViews(__K2L_SortedMap.____subMaps.descending, "java.util.TreeMap$DescendingSubMap$DescendingEntrySetView",
+    "java.util.TreeMap$NavigableSubMap$DescendingSubMap")
+
 -- The views of a Collections$SingletonMap are singleton sets, Collections.singleton(key) and the like (its entry an
 -- AbstractMap$SimpleImmutableEntry); those of Kotlin's EmptyMap are EmptySet and EmptyList.
-local SimpleImmutableEntry = __K2L_Class("java.util.AbstractMap$SimpleImmutableEntry", __K2L_Entry)
-SimpleImmutableEntry.setValue = unsupported
 __K2L_SingletonMap.____views = {entry = SimpleImmutableEntry}
 
 function __K2L_SingletonMap:getKeys()

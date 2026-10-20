@@ -37,7 +37,6 @@ local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_SortedSet = ____lualib.__K2L_SortedSet
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 local __K2L_StringToList = ____lualib.__K2L_StringToList
@@ -536,7 +535,7 @@ local function others()
     end
     print()
     local n = Name.new("hello")
-    print(#__K2L_CharSequenceText(n) .. " " .. __K2L_StringCharAt(__K2L_CharSequenceText(n), 1) .. " " .. __K2L_Str(__K2L_Text.substring(__K2L_CharSequenceText(n), 1, 3)) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(n), "Name@")) .. " " .. tostring(__K2L_StringStartsWith(__K2L_CharSequenceText(n), "he")) .. " " .. tostring(__K2L_StringContains(__K2L_CharSequenceText(n), "l")) .. " " .. __K2L_StringToList(__K2L_CharSequenceText(n)):count(____lambda_13))
+    print(__K2L_Text.charsLength(n) .. " " .. __K2L_Text.charsGet(n, 1) .. " " .. __K2L_Str(__K2L_Text.substring(__K2L_CharSequenceText(n), 1, 3)) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(n), "Name@")) .. " " .. tostring(__K2L_StringStartsWith(__K2L_CharSequenceText(n), "he")) .. " " .. tostring(__K2L_StringContains(__K2L_CharSequenceText(n), "l")) .. " " .. __K2L_StringToList(__K2L_CharSequenceText(n)):count(____lambda_13))
     local j = Job.new(function()
         print("job ran")
     end)

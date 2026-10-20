@@ -261,6 +261,8 @@ return {Command = Command, Insert = Insert, Delete = Delete, Batch = Batch, Noop
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -377,7 +379,7 @@ local function main()
     print("clamp: " .. __K2L_Str(doc:clamp(____Document.Pos.new(99, 99))) .. " " .. __K2L_Str(doc:clamp(____Document.Pos.new(-3, 2))))
     print(__K2L_Str(__K2L_ReadOnlyListOf(____Commands.Insert.new(____Document.Pos.new(0, 0), "x"), ____Commands.Delete.new(sel), ____Commands.Batch.new("b", __K2L_ReadOnlyListOf()), ____Commands.Noop):map(describe)))
     print(____Commands.Insert.new(____Document.Pos.new(1, 1), "ab"):equals(____Commands.Insert.new(____Document.Pos.new(1, 1), "ab")))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         ____Commands.Delete.new(sel):revert(doc)
     end)
     if not ____ok then
@@ -392,10 +394,11 @@ local function main()
     print(__K2L_Str(__K2L_ReadOnlyListOf(____Document.Pos.new(2, 1), ____Document.Pos.new(0, 9), ____Document.Pos.new(2, 0)):sorted()))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Macro = Macro, describe = describe, show = show}
 -- ==== text/Document.lua ====
 local ____lualib = require("lualib_bundle")
+local __K2L_CharSequenceText = ____lualib.__K2L_CharSequenceText
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -553,7 +556,7 @@ function Editable:extract(start, ____end)
         local ____builder = __K2L_StringBuilder.new()
         ____builder:append(__K2L_Str(self.lines:get(start.line):substring(start.col)))
         for l = start.line + 1, ____end.line - 1 do
-            ____builder:append("\n"):append(__K2L_Str(self.lines:get(l)))
+            ____builder:append("\n"):append(__K2L_Str(__K2L_CharSequenceText(self.lines:get(l))))
         end
         ____builder:append("\n"):append(__K2L_Str(self.lines:get(____end.line):substring(0, ____end.col)))
         return ____builder:toString()

@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_HashMapOf = ____lualib.__K2L_HashMapOf
@@ -26,7 +28,7 @@ local __K2L_Unit = ____lualib.__K2L_Unit
 
 local function t(name, f)
     local r
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         r = f()
     end)
     if not ____ok then
@@ -731,5 +733,5 @@ local function main()
     end)
 end
 
-main()
+__K2L_DeepMain(main)
 return {t = t}

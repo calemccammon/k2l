@@ -343,9 +343,10 @@ local function subclasses()
     print("shuffle " .. __K2L_Str(shelf:sorted()) .. " " .. shelf:getSize())
     shelf:removeIf(____lambda_6)
     shelf:addAt(0, "Z")
+    local ____arg = __K2L_Str(shelf)
     local ____value = shelf:toMutableList()
     ____value:add("!")
-    print("removeIf/add " .. __K2L_Str(shelf) .. " " .. __K2L_Str(____value) .. " " .. __K2L_Str(shelf:getIndices()))
+    print("removeIf/add " .. ____arg .. " " .. __K2L_Str(____value) .. " " .. __K2L_Str(shelf:getIndices()))
     for i = 0, shelf.size - 1 do
         shelf:set(i, shelf:get(i) .. i)
     end

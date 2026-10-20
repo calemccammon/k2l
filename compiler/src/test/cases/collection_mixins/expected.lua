@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CollectionBase = ____lualib.__K2L_CollectionBase
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -259,18 +261,18 @@ local function main()
     print("loop " .. total .. " " .. tostring(__K2L_InstanceOf(m, __K2L_Iterable)) .. " " .. tostring(__K2L_InstanceOf(m, Named)))
     local w = Wrapped.new()
     print(__K2L_Str(w.message) .. " " .. w:getSize() .. " " .. tostring(w:contains(4)) .. " " .. __K2L_Str(w:toList()) .. " " .. w:joinToString("+") .. " " .. tostring(__K2L_InstanceOf(w, __K2L_Iterable) and w.size ~= nil) .. " " .. tostring(__K2L_InstanceOf(w, __K2L_Throwable)))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         error(w)
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result)
         if __K2L_InstanceOf(____error, __K2L_Exception) then
             local e = ____error
-            local ____arg = e.message
+            local ____arg = __K2L_Str(e.message)
             if getmetatable(e) ~= Wrapped then
                 __K2L_CastFail(e, "Wrapped", "Wrapped")
             end
-            print("caught " .. __K2L_Str(____arg) .. " " .. e:getSize())
+            print("caught " .. ____arg .. " " .. e:getSize())
         else
             error(____error, 0)
         end
@@ -301,5 +303,5 @@ local function main()
     print()
 end
 
-main()
+__K2L_DeepMain(main)
 return {Named = Named, Mixed = Mixed, Wrapped = Wrapped, Row = Row, Scores = Scores, Settings = Settings}

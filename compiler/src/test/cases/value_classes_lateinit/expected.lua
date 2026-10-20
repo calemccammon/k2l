@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -132,7 +134,7 @@ local function main()
     print(__K2L_Str(__K2L_ReadOnlyListOf(UserId.new(3), UserId.new(1)):sortedBy(____lambda_2, true)))
     local s = Session.new()
     print(s:status())
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(__K2L_Str(s.user or __K2L_Uninitialized("user")))
     end)
     if not ____ok then
@@ -170,5 +172,5 @@ ____exports.UserId = UserId
 ____exports.Email = Email
 ____exports.Account = Account
 ____exports.Session = Session
-main()
+__K2L_DeepMain(main)
 return ____exports

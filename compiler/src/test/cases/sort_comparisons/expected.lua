@@ -4,6 +4,8 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -304,7 +306,7 @@ local function brokenComparators()
         local values = __K2L_ListOfSize(400, function(it) return rnd:next(100) end)
         local coin = Lcg.new(seed * 13)
         local result
-        local ____ok, ____result_2 = pcall(function()
+        local ____ok, ____result_2 = __K2L_DeepPcall(function()
             values:sortedWith(function(_, _) return coin:next(3) - 1 end)
             result = "sorted"
         end)
@@ -434,5 +436,5 @@ local function main()
     brokenComparators()
 end
 
-main()
+__K2L_DeepMain(main)
 return {Item = Item, Log = Log, Lcg = Lcg, shapes = shapes, byValue = byValue, smallSequence = smallSequence, counts = counts, selectors = selectors, comparables = comparables, javaSorts = javaSorts, brokenComparators = brokenComparators, Counted = Counted, Suit = Suit, pureSelectors = pureSelectors}

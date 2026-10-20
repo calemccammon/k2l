@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_NeedsReflect = ____lualib.__K2L_NeedsReflect
@@ -40,7 +42,7 @@ local Ab = __K2L_Class("Ab")
 __K2L_ClassInfo(Ab, "Ab", "Ab", "class")
 
 local function probe(name, f)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(name .. " = " .. __K2L_Str(f()))
     end)
     if not ____ok then
@@ -73,5 +75,5 @@ local function main()
     probe("supertypes", ____lambda_10)
 end
 
-main()
+__K2L_DeepMain(main)
 return {D = D, O = O, S = S, Op = Op, Ab = Ab, probe = probe}

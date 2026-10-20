@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_GenerateSequenceLazy = ____lualib.__K2L_GenerateSequenceLazy
@@ -443,7 +445,7 @@ local function main()
     end
     print("elevator: " .. elevator.trace:joinToString(" "))
     print("ended at " .. elevator.floor .. " " .. __K2L_Str(elevator.motion))
-    local ____ok, ____result_5 = pcall(function()
+    local ____ok, ____result_5 = __K2L_DeepPcall(function()
         elevator:call(12)
     end)
     if not ____ok then
@@ -461,5 +463,5 @@ local function main()
     end)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {SimEvent = SimEvent, Customer = Customer, BankStats = BankStats, Bank = Bank, customers = customers, Life = Life, Motion = Motion, Elevator = Elevator}

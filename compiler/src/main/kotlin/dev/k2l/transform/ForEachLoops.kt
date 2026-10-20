@@ -82,6 +82,7 @@ private fun FileTransformer.forEachList(
     val checked = mayChangeCollections(lambdaBody(lambda))
     val source = when {
         kind == CollectionKind.Array -> listSource(collection, false)
+        checked && type?.mayBeJavaArrayDeque() == true -> dequeSource(collection)
         kind?.isIndexable == true -> listSource(collection, checked)
         else -> arraySource(collection, checked = checked)
     }

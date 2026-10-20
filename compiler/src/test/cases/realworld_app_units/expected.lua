@@ -1,6 +1,8 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsComparable = ____lualib.__K2L_IsComparable
@@ -26,12 +28,12 @@ local function main()
     local t = ____Quantities.getMin(12):plus(____Quantities.getS(30))
     print(__K2L_Str(d) .. " " .. __K2L_Str(t) .. " " .. __K2L_Str(____Quantities.div(d, t)) .. " " .. __K2L_Str(____Quantities.times(____Quantities.div(d, t), ____Quantities.getH(2))) .. " " .. __K2L_Str(____Quantities.times__2(2, d)) .. " " .. __K2L_Str(____Quantities.times__1(0.5, d)) .. " " .. __K2L_Str(d:unaryMinus()) .. " " .. __K2L_Str(d:div__1(____Quantities.getM(250))))
     print(tostring(__K2L_Compare(d, ____Quantities.getKm__1(3)) > 0) .. " " .. tostring(d:equals(____Quantities.Meters.new(3250.0))) .. " " .. d:compareTo(____Quantities.getKm__1(4)) .. " " .. __K2L_ReadOnlySetOf(____Quantities.getKm__1(1), ____Quantities.getM(1000), ____Quantities.getKm__1(2)).size .. " " .. __K2L_Str(t:getHours()))
-    local ____arg_1 = ____Quantities.Speed.new(10.0)
-    local ____arg_2 = ____Quantities.Speed.new(10.0):getKmh()
-    local ____arg_3 = ____Quantities.Kilograms.new(2.25)
+    local ____arg_1 = __K2L_Str(____Quantities.Speed.new(10.0))
+    local ____arg_2 = __K2L_Str(____Quantities.Speed.new(10.0):getKmh())
+    local ____arg_3 = __K2L_Str(____Quantities.Kilograms.new(2.25))
     local ____arg = ____Quantities.getKg(80)
     local ____value = ____Quantities.getKm(2.5):getSi()
-    print(__K2L_Str(____arg_1) .. " " .. __K2L_Str(____arg_2) .. " " .. __K2L_Str(____arg_3) .. " " .. __K2L_Str(____arg:minus(____Quantities.Kilograms.new(____value / 1000))))
+    print(____arg_1 .. " " .. ____arg_2 .. " " .. ____arg_3 .. " " .. __K2L_Str(____arg:minus(____Quantities.Kilograms.new(____value / 1000))))
     describe("distances", __K2L_ReadOnlyListOf(____Quantities.getKm__1(5), ____Quantities.getM(120), ____Quantities.getKm(2.5), ____Quantities.getM(900)), ____Quantities.Meters.new(0.0))
     describe("times", __K2L_ReadOnlyListOf(____Quantities.getH(1), ____Quantities.getMin(45), ____Quantities.getS(90), ____Quantities.getH(3):plus(____Quantities.getMin(5))), ____Quantities.Seconds.new(0.0))
     local trip = ____Trip.commute()
@@ -46,9 +48,9 @@ local function main()
     end
     print("by mode: " .. __K2L_Str(trip:byMode()))
     local ____receiver = trip:fastest()
-    local ____arg_4 = ____receiver and ____receiver.mode
+    local ____arg_4 = __K2L_Str(____receiver and ____receiver.mode)
     local ____receiver_1 = trip:fastest()
-    print("fastest: " .. __K2L_Str(____arg_4) .. " at " .. __K2L_Str(____receiver_1 and ____receiver_1:getSpeed()) .. ", average leg " .. __K2L_Str(trip:averageLeg()))
+    print("fastest: " .. ____arg_4 .. " at " .. __K2L_Str(____receiver_1 and ____receiver_1:getSpeed()) .. ", average leg " .. __K2L_Str(trip:averageLeg()))
     local weekend = ____Trip.Trip.new("weekend"):leg(____Trip.Mode.CAR, ____Quantities.getKm__1(42), ____Quantities.getMin(40)):leg(____Trip.Mode.BIKE, ____Quantities.getKm__1(12), ____Quantities.getMin(50))
     local ____list_1 = weekend:summary()
     local ____mod_1 = ____list_1.____modCount
@@ -59,7 +61,7 @@ local function main()
             break
         end
     end
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         ____Trip.Trip.new("reckless"):leg(____Trip.Mode.BIKE, ____Quantities.getKm__1(30), ____Quantities.getMin(20))
     end)
     if not ____ok then
@@ -71,7 +73,7 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         ____Trip.Trip.new("empty"):leg(____Trip.Mode.WALK, ____Quantities.getM(0), ____Quantities.getMin(1))
     end)
     if not ____ok_1 then
@@ -83,7 +85,7 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
         ____Quantities.average(__K2L_ReadOnlyListOf(), ____Quantities.Seconds.new(0.0))
     end)
     if not ____ok_2 then
@@ -104,7 +106,7 @@ local function main()
         ____count = ____count + 1
         ____out[____count] = it:getCo2()
     end
-    local ____arg_5 = ____Quantities.total(__K2L_ListWrap(____out, ____count), ____Quantities.Kilograms.new(0.0))
+    local ____arg_5 = __K2L_Str(____Quantities.total(__K2L_ListWrap(____out, ____count), ____Quantities.Kilograms.new(0.0)))
     local ____out_1 = {}
     local ____count_1 = 0
     local ____items_1, ____n_1 = all:____array()
@@ -113,7 +115,7 @@ local function main()
         ____count_1 = ____count_1 + 1
         ____out_1[____count_1] = it:getDistance()
     end
-    print("total co2 " .. __K2L_Str(____arg_5) .. ", distance " .. __K2L_Str(____Quantities.total(__K2L_ListWrap(____out_1, ____count_1), ____Quantities.getM(0))))
+    print("total co2 " .. ____arg_5 .. ", distance " .. __K2L_Str(____Quantities.total(__K2L_ListWrap(____out_1, ____count_1), ____Quantities.getM(0))))
     local ____values = ____Trip.Mode.____values
     local ____out_2 = {}
     local ____count_2 = 0
@@ -128,7 +130,7 @@ local function main()
     print(q:format(0) .. " " .. q:getSymbol() .. " " .. tostring(__K2L_InstanceOf(anyQ, ____Quantities.Quantity)) .. " " .. tostring(__K2L_IsComparable(anyQ)) .. " " .. tostring(getmetatable(anyQ) == ____Quantities.Meters) .. " " .. tostring(getmetatable(anyQ) == ____Quantities.Seconds))
 end
 
-main()
+__K2L_DeepMain(main)
 return {describe = describe}
 -- ==== trip/Trip.lua ====
 local ____lualib = require("lualib_bundle")
@@ -470,11 +472,11 @@ function Seconds:getHours()
 end
 
 function Seconds:toString()
-    local total = __K2L_Num.roundToLong(self:getSi())
-    local h = total >= 0 and total // 3600 or (total + 3599) // 3600
-    local ____dividend = total >= 0 and total % 3600 or (total % 3600 - 3600) % (-3600)
+    local ____total = __K2L_Num.roundToLong(self:getSi())
+    local h = ____total >= 0 and ____total // 3600 or (____total + 3599) // 3600
+    local ____dividend = ____total >= 0 and ____total % 3600 or (____total % 3600 - 3600) % (-3600)
     local m = ____dividend >= 0 and ____dividend // 60 or (____dividend + 59) // 60
-    local s = total >= 0 and total % 60 or (total % 60 - 60) % (-60)
+    local s = ____total >= 0 and ____total % 60 or (____total % 60 - 60) % (-60)
     return h > 0 and h .. "h" .. __K2L_StringPadStart(tostring(m), 2, "0") .. "m" or m .. "m" .. __K2L_StringPadStart(tostring(s), 2, "0") .. "s"
 end
 

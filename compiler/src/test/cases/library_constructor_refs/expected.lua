@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_HashSet = ____lualib.__K2L_HashSet
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -138,7 +140,7 @@ local function main()
     print(__K2L_Str(wrapped.message) .. " " .. __K2L_Str(____receiver and ____receiver.message))
     local noMessage = ____lambda_15
     print(__K2L_Str(noMessage().message))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         error(apply("from a reference", ____lambda_16))
     end)
     if not ____ok then
@@ -166,5 +168,5 @@ local function main()
     print(ref("X*", "IGNORE_CASE"):matches("xxx"))
 end
 
-main()
+__K2L_DeepMain(main)
 return {build = build, apply = apply, Holder = Holder}

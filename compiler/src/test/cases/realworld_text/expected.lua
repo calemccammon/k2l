@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
@@ -173,13 +174,13 @@ local function wrap(text, width)
 end
 
 local function justify(line, width)
-    local words = __K2L_StringSplit(line, " ")
-    if words.size == 1 then
+    local ____words = __K2L_StringSplit(line, " ")
+    if ____words.size == 1 then
         return __K2L_StringPadEnd(line, width)
     end
-    local gaps = words.size - 1
+    local gaps = ____words.size - 1
     local ____sum = 0
-    local ____items_2, ____n_2 = words:____array()
+    local ____items_2, ____n_2 = ____words:____array()
     for ____i_4 = 1, ____n_2 do
         local it = ____items_2[____i_4]
         ____sum = ____sum + #it
@@ -187,7 +188,7 @@ local function justify(line, width)
     local spaces = width - ____sum
     local ____out_2 = {}
     local ____count_2 = 0
-    local ____items_3, ____n_3 = words:____array()
+    local ____items_3, ____n_3 = ____words:____array()
     for ____i_5 = 1, ____n_3 do
         local w = ____items_3[____i_5]
         local i = ____i_5 - 1
@@ -321,13 +322,13 @@ local ____lambda_23 = function(it)
     return (it.index >= 0 and it.index % 2 or 0 - -it.index % 2) == 0
 end
 local function main()
-    local words = words(TEXT)
-    print("words=" .. words.size .. " distinct=" .. words:toSet().size .. " chars=" .. #TEXT .. " lines=" .. __K2L_StringLines(TEXT).size)
-    local freq = words:groupingBy(____lambda_6):eachCount()
+    local ____words_1 = words(TEXT)
+    print("words=" .. ____words_1.size .. " distinct=" .. ____words_1:toSet().size .. " chars=" .. #TEXT .. " lines=" .. __K2L_StringLines(TEXT).size)
+    local freq = ____words_1:groupingBy(____lambda_6):eachCount()
     local top = freq:getEntries():sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_7), ____lambda_8)):take(5)
     print("top: " .. top:joinToString(nil, nil, nil, nil, nil, ____lambda_9))
-    print("longest words: " .. __K2L_Str(words:distinct():sortedByDescending(____lambda_10, true):take(3)))
-    local ____list_4 = words:distinct()
+    print("longest words: " .. __K2L_Str(____words_1:distinct():sortedByDescending(____lambda_10, true):take(3)))
+    local ____list_4 = ____words_1:distinct()
     local ____result_5 = __K2L_Map.new()
     local ____items_5, ____n_5 = ____list_4:____array()
     for ____i_7 = 1, ____n_5 do
@@ -505,7 +506,7 @@ local function main()
         ____out_10[____count_10] = ____result_9
     end
     print("snake: " .. ____arg .. " camel: " .. __K2L_ListWrap(____out_10, ____count_10):joinToString(""))
-    local ____arg_1 = __K2L_StringToList("Hello"):map(____lambda_22)
+    local ____arg_1 = __K2L_Str(__K2L_StringToList("Hello"):map(____lambda_22))
     local ____list_11 = __K2L_StringToList("Kotlin"):withIndex():filter(____lambda_23)
     local ____out_11 = {}
     local ____count_11 = 0
@@ -515,8 +516,8 @@ local function main()
         ____count_11 = ____count_11 + 1
         ____out_11[____count_11] = it.value
     end
-    print("chars: " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(__K2L_ListWrap(____out_11, ____count_11)) .. " " .. __K2L_Str(__K2L_Text.split("a-b-c", {"-"}, 2)))
+    print("chars: " .. ____arg_1 .. " " .. __K2L_Str(__K2L_ListWrap(____out_11, ____count_11)) .. " " .. __K2L_Str(__K2L_Text.split("a-b-c", {"-"}, 2)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {TEXT = TEXT, words = words, caesar = caesar, vigenere = vigenere, runLength = runLength, unRunLength = unRunLength, isPalindrome = isPalindrome, longestPalindrome = longestPalindrome, wrap = wrap, justify = justify, render = render, LogEntry = LogEntry, LOG = LOG, parseLog = parseLog}

@@ -4,6 +4,8 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
@@ -480,9 +482,9 @@ local function order(id, block)
     return ____value_3:build()
 end
 
-local function fulfil(____this_2, order)
+local function fulfil(____this_2, ____order)
     return __K2L_RunCatching(function(____this_3)
-        local ____list_4 = order.lines
+        local ____list_4 = ____order.lines
         local ____mod_1 = ____list_4.____modCount
         for ____i_5 = 1, ____list_4.size do
             local line = ____list_4[____i_5]
@@ -496,21 +498,21 @@ local function fulfil(____this_2, order)
                 break
             end
         end
-        local ____list_5 = order.lines
+        local ____list_5 = ____order.lines
         local ____out_1 = {}
         local ____count_1 = 0
         local ____items_4, ____n_4 = ____list_5:____array()
         for ____i_6 = 1, ____n_4 do
             local line = ____items_4[____i_6]
             local ____result_3
-            ____this_3:apply(Event.Shipped.new(line.sku, line.qty, order.id))
+            ____this_3:apply(Event.Shipped.new(line.sku, line.qty, ____order.id))
             ____result_3 = ____this_3:product(line.sku).price:times(line.qty)
             ____count_1 = ____count_1 + 1
             ____out_1[____count_1] = ____result_3
         end
         local ____value_4 = sum(__K2L_ListWrap(____out_1, ____count_1))
         local ____result_4
-        ____result_4 = order.express and ____value_4:plus(getDollars(15)) or ____value_4
+        ____result_4 = ____order.express and ____value_4:plus(getDollars(15)) or ____value_4
         return ____result_4
     end, ____this_2)
 end
@@ -540,7 +542,7 @@ local function main()
     local ____list_7 = __K2L_ReadOnlyListOf(Product.new("A100", "Dup", Category.BOOKS, getDollars(1)), Product.new("Z1", "Free", Category.BOOKS, Money.ZERO))
     for ____i_8 = 1, ____list_7.size do
         local attempt = ____list_7[____i_8]
-        local ____ok, ____result_5 = pcall(function()
+        local ____ok, ____result_5 = __K2L_DeepPcall(function()
             inv:register(attempt)
         end)
         if not ____ok then
@@ -693,6 +695,7 @@ local function main()
         end
     end
     local prices = __K2L_ListWrap(____out_6, ____count_6)
+    local ____arg_3 = __K2L_Str(prices)
     local ____list_13 = __K2L_ReadOnlyListOf("A100", "H300", "B400")
     local ____out_7 = {}
     local ____count_7 = 0
@@ -702,7 +705,7 @@ local function main()
         ____count_7 = ____count_7 + 1
         ____out_7[____count_7] = inv:product(it).price
     end
-    print("price changes: " .. __K2L_Str(prices) .. ", max product price " .. __K2L_Str(__K2L_ListWrap(____out_7, ____count_7):maxOrNull()))
+    print("price changes: " .. ____arg_3 .. ", max product price " .. __K2L_Str(__K2L_ListWrap(____out_7, ____count_7):maxOrNull()))
     print("money math: " .. __K2L_Str(getDollars(10):div(3)) .. " " .. __K2L_Str(Money.new(-250)) .. " " .. __K2L_Str(Money:parse("0.5"):times(3)) .. " " .. __K2L_Str(sum(__K2L_IntRange.new(1, 4):map(____lambda_10))))
     local ____destructured_2 = inv:product("B400")
     local sku, name, category = ____destructured_2.sku, ____destructured_2.name, ____destructured_2.category
@@ -723,5 +726,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {Money = Money, getDollars = getDollars, sum = sum, Category = Category, Product = Product, OutOfStockException = OutOfStockException, Event = Event, Inventory = Inventory, OrderLine = OrderLine, OrderBuilder = OrderBuilder, Order = Order, order = order, fulfil = fulfil}

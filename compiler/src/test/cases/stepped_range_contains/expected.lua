@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CheckStep = ____lualib.__K2L_CheckStep
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -141,16 +143,16 @@ local function main()
     print(____value_6 >= ____bound_12 and ____value_6 <= ____bound_11 and (____bound_11 - ____value_6) % ____step_3 == 0)
     local ____first_4 = ("a"):byte()
     local ____value_7 = ("e"):byte()
-    local ____arg = ____value_7 >= ____first_4 and ____value_7 <= ("z"):byte() and (____value_7 - ____first_4) % 4 == 0
+    local ____arg = tostring(____value_7 >= ____first_4 and ____value_7 <= ("z"):byte() and (____value_7 - ____first_4) % 4 == 0)
     local ____first_5 = ("a"):byte()
     local ____value_8 = ("f"):byte()
-    local ____arg_1 = ____value_8 >= ____first_5 and ____value_8 <= ("z"):byte() and (____value_8 - ____first_5) % 4 == 0
+    local ____arg_1 = tostring(____value_8 >= ____first_5 and ____value_8 <= ("z"):byte() and (____value_8 - ____first_5) % 4 == 0)
     local ____first_6 = ("z"):byte()
     local ____value_9 = ("y"):byte()
-    local ____arg_2 = ____value_9 >= ("a"):byte() and ____value_9 <= ____first_6 and (____first_6 - ____value_9) % 3 == 0
+    local ____arg_2 = tostring(____value_9 >= ("a"):byte() and ____value_9 <= ____first_6 and (____first_6 - ____value_9) % 3 == 0)
     local ____first_7 = ("z"):byte()
     local ____value_10 = ("w"):byte()
-    print(tostring(____arg) .. " " .. tostring(____arg_1) .. " " .. tostring(____arg_2) .. " " .. tostring(____value_10 >= ("a"):byte() and ____value_10 <= ____first_7 and (____first_7 - ____value_10) % 3 == 0))
+    print(____arg .. " " .. ____arg_1 .. " " .. ____arg_2 .. " " .. tostring(____value_10 >= ("a"):byte() and ____value_10 <= ____first_7 and (____first_7 - ____value_10) % 3 == 0))
     print(charKind("c") .. " " .. charKind("d") .. " " .. charKind("#"))
     local big = 3000000000
     local ____value_11 = big + 1
@@ -164,7 +166,7 @@ local function main()
     local ____list_1 = __K2L_ReadOnlyListOf(2, 0, -3)
     for ____i_1 = 1, ____list_1.size do
         local s = ____list_1[____i_1]
-        local ____ok, ____result = pcall(function()
+        local ____ok, ____result = __K2L_DeepPcall(function()
             local ____step_4 = __K2L_CheckStep(s)
             print(5 >= 1 and 5 <= 10 and (5 - 1) % ____step_4 == 0)
         end)
@@ -178,7 +180,7 @@ local function main()
             end
         end
     end
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         for i = 0, 4, __K2L_CheckStep(lo - 3) do
             io.write(tostring(i))
         end
@@ -208,5 +210,5 @@ ____exports.traced = traced
 ____exports.t = t
 ____exports.classify = classify
 ____exports.charKind = charKind
-main()
+__K2L_DeepMain(main)
 return ____exports

@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Continuation = ____lualib.__K2L_Continuation
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -46,7 +47,7 @@ local function main()
         end
     end
     print(__K2L_Str(results))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         local ____value = double(1)
         if ____value ~= 3 then
             error(__K2L_IllegalStateException.new("two is not three"))

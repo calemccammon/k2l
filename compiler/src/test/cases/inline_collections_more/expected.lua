@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -310,7 +312,7 @@ local function reduces(xs, stopAt)
 end
 
 local function emptyReduce()
-    local ____ok, ____result_12, ____returned = pcall(function()
+    local ____ok, ____result_12, ____returned = __K2L_DeepPcall(function()
         local ____list_9 = __K2L_ReadOnlyListOf()
         local ____acc_3
         local ____started_3 = false
@@ -511,7 +513,7 @@ local function lasts(xs, stopAt)
 end
 
 local function lastNone(xs)
-    local ____ok_1, ____result_29, ____returned_1 = pcall(function()
+    local ____ok_1, ____result_29, ____returned_1 = __K2L_DeepPcall(function()
         local ____result_30
         local ____found_3 = false
         for ____i_8 = xs.size, 1, -1 do
@@ -618,7 +620,7 @@ end
 
 local function singleErrors(xs)
     local r = __K2L_StringBuilder.new()
-    local ____ok_2, ____result_38, ____returned_2 = pcall(function()
+    local ____ok_2, ____result_38, ____returned_2 = __K2L_DeepPcall(function()
         local ____result_39
         local ____found_7 = false
         for _, it in ipairs(xs) do
@@ -652,7 +654,7 @@ local function singleErrors(xs)
             error(____error_2, 0)
         end
     end
-    local ____ok_3, ____result_41, ____returned_3 = pcall(function()
+    local ____ok_3, ____result_41, ____returned_3 = __K2L_DeepPcall(function()
         local ____result_42
         local ____found_8 = false
         for _, it in ipairs(xs) do
@@ -1129,5 +1131,5 @@ local function main()
     print(sets(15))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Item = Item, items = items, partitions = partitions, maxBys = maxBys, extremes = extremes, reduces = reduces, emptyReduce = emptyReduce, distincts = distincts, indexedOps = indexedOps, indexSearch = indexSearch, lasts = lasts, lastNone = lastNone, singles = singles, singleErrors = singleErrors, trims = trims, zips = zips, maps = maps, mapExtremes = mapExtremes, flatMaps = flatMaps, builders = builders, arrays = arrays, sets = sets}

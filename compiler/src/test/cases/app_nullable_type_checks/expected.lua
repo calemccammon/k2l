@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassCastException = ____lualib.__K2L_ClassCastException
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -49,22 +51,22 @@ local function main()
     print(kind(nil) .. " " .. kind("s") .. " " .. kind(1) .. " " .. kind(Person.new("p")))
     local ____result
     ____result = nil == nil or type(nil) == "string"
-    local ____arg = ____result
+    local ____arg = tostring(____result)
     local ____result_1
     ____result_1 = type(nil) == "string"
-    local ____arg_1 = ____result_1
+    local ____arg_1 = tostring(____result_1)
     local ____result_2
     ____result_2 = "s" == nil or type("s") == "string"
-    local ____arg_2 = ____result_2
+    local ____arg_2 = tostring(____result_2)
     local ____result_3
     ____result_3 = 1 == nil or type(1) == "string"
-    local ____arg_3 = ____result_3
+    local ____arg_3 = tostring(____result_3)
     local ____result_4
     do
         local ____this = Person.new("a")
         ____result_4 = ____this == nil or getmetatable(____this) == Person
     end
-    print(tostring(____arg) .. " " .. tostring(____arg_1) .. " " .. tostring(____arg_2) .. " " .. tostring(____arg_3) .. " " .. tostring(____result_4))
+    print(____arg .. " " .. ____arg_1 .. " " .. ____arg_2 .. " " .. ____arg_3 .. " " .. tostring(____result_4))
     local ____result_5
     do
         local ____this_1 = __K2L_ReadOnlyListOf(1, "x", Person.new("p"))
@@ -82,7 +84,7 @@ local function main()
         end
         ____result_5 = ____result_6
     end
-    local ____arg_4 = ____result_5
+    local ____arg_4 = __K2L_Str(____result_5)
     local ____result_7
     do
         local ____this_2 = __K2L_SingletonListOf(1)
@@ -100,7 +102,7 @@ local function main()
         end
         ____result_7 = ____result_8
     end
-    local ____arg_5 = ____result_7
+    local ____arg_5 = __K2L_Str(____result_7)
     local ____result_9
     do
         local ____this_3 = __K2L_ReadOnlyListOf(nil, 2)
@@ -118,7 +120,7 @@ local function main()
         end
         ____result_9 = ____result_10
     end
-    print(__K2L_Str(____arg_4) .. " " .. __K2L_Str(____arg_5) .. " " .. __K2L_Str(____result_9))
+    print(____arg_4 .. " " .. ____arg_5 .. " " .. __K2L_Str(____result_9))
     local ____result_11
     do
         local ____this_4 = __K2L_ReadOnlyListOf(nil, "a", 1, nil)
@@ -153,7 +155,7 @@ local function main()
     local s = none
     local p = (text == nil or math.type(text) == "integer") and text or nil
     print(__K2L_Str(s) .. " " .. __K2L_Str(p) .. " " .. __K2L_Str((num == nil or math.type(num) == "integer") and num or nil))
-    local ____ok, ____result_15 = pcall(function()
+    local ____ok, ____result_15 = __K2L_DeepPcall(function()
         if not (num == nil or type(num) == "string") then
             __K2L_CastFail(num, "java.lang.String", "kotlin.String")
         end
@@ -170,5 +172,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {Person = Person, kind = kind}

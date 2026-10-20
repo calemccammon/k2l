@@ -3,6 +3,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -212,18 +213,18 @@ local function main()
     local v = Version.new(1, 4)
     local ____bound = Version.new(1, 0)
     local ____bound_1 = Version.new(2, 0)
-    local ____arg = __K2L_Compare(v, ____bound) >= 0 and __K2L_Compare(v, ____bound_1) <= 0
+    local ____arg = tostring(__K2L_Compare(v, ____bound) >= 0 and __K2L_Compare(v, ____bound_1) <= 0)
     local ____bound_2 = Version.new(1, 5)
     local ____bound_3 = Version.new(2, 0)
-    local ____arg_1 = __K2L_Compare(v, ____bound_2) >= 0 and __K2L_Compare(v, ____bound_3) <= 0
+    local ____arg_1 = tostring(__K2L_Compare(v, ____bound_2) >= 0 and __K2L_Compare(v, ____bound_3) <= 0)
     local ____bound_4 = Version.new(1, 0)
     local ____bound_5 = Version.new(2, 0)
     local ____value = Version.new(2, 0)
-    print(tostring(____arg) .. " " .. tostring(____arg_1) .. " " .. tostring(__K2L_Compare(____value, ____bound_4) >= 0 and __K2L_Compare(____value, ____bound_5) <= 0))
+    print(____arg .. " " .. ____arg_1 .. " " .. tostring(__K2L_Compare(____value, ____bound_4) >= 0 and __K2L_Compare(____value, ____bound_5) <= 0))
     print(tostring("b" >= "a" and "b" <= "c") .. " " .. tostring("d" >= "a" and "d" <= "c") .. " " .. tostring(2.5 >= 1.0 and 2.5 <= 3.0))
     print(__K2L_Str(Shape:byCorners(3)) .. " " .. __K2L_Str(Shape:byCorners(5)) .. " " .. __K2L_Str(Shape:all()) .. " " .. __K2L_Str(Shape:named("square")))
     print(__K2L_Str(__K2L_RunCatching(____lambda_11):exceptionOrNull()))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Level = Level, Shape = Shape, Task = Task, Version = Version, largest = largest}

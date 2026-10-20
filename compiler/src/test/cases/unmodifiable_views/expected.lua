@@ -1,4 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
@@ -18,7 +20,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
 
 local function attempt(label, block)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         block()
         print(label .. ": ok")
     end)
@@ -275,5 +277,5 @@ local function main()
     print(cs.size .. " " .. tostring(cs:contains(77)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {attempt = attempt, total = total}

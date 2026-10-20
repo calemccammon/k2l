@@ -3,7 +3,7 @@
 -- Kotlin name of T: a read-only collection cast to a mutable one fails with the message of Kotlin's TypeIntrinsics.
 local function __K2L_CastFail(value, target, kotlinName)
     if value == nil then
-        error(__K2L_NullPointerException.new("null cannot be cast to non-null type " .. target))
+        error(__K2L_NullPointerException.new("null cannot be cast to non-null type " .. (kotlinName or target)))
     end
     local actual
     local kind = type(value)

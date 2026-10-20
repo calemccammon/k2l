@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Continuation = ____lualib.__K2L_Continuation
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -356,5 +357,5 @@ ____exports.Box = Box
 ____exports.Hooks = Hooks
 ____exports.pick = pick
 ____exports.convertedReferences = convertedReferences
-main()
+__K2L_DeepMain(main)
 return ____exports

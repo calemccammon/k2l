@@ -1082,6 +1082,22 @@ local function pad(text, width, left)
 end
 
 local function formatFloat(conv, value, flags, width, precision)
+    if type(value) == "table" then
+        -- a BigDecimal: %f exactly; %e and %g of its double value
+        if conv ~= "f" then
+            value = value:toDouble()
+        else
+            local int, frac = value:____fixed(precision)
+            if flags.comma then
+                int = groupThousands(int)
+            end
+            local body = precision > 0 and int .. "." .. frac or int
+            if flags.alt and precision == 0 then
+                body = body .. "."
+            end
+            return finishNumber(localize(body), value:signum() < 0, flags, width)
+        end
+    end
     if value ~= value then
         return pad("NaN", width, flags.left)
     elseif value == math.huge or value == -math.huge then
@@ -1249,15 +1265,38 @@ local function formatError(kind, message)
     error(FormatErrors[kind].new(message))
 end
 
--- The JVM class of a format argument that a numeric conversion rejects, or nil when it takes it.
-local function rejectedClass(value, integral)
-    local kind = type(value)
-    if kind == "string" then
-        return "java.lang.String"
-    elseif kind == "boolean" then
+-- The classes each kind of conversion takes: %d, %o and %x integral numbers, %e, %f and %g floating point ones, %c chars
+-- and the integers that are code points.
+local ACCEPTED = {
+    integral = {["java.lang.Integer"] = true, ["java.lang.Long"] = true, ["java.lang.Short"] = true, ["java.lang.Byte"] = true,
+        ["java.math.BigInteger"] = true},
+    float = {["java.lang.Double"] = true, ["java.lang.Float"] = true, ["java.math.BigDecimal"] = true},
+    char = {["java.lang.Character"] = true, ["java.lang.Integer"] = true, ["java.lang.Short"] = true, ["java.lang.Byte"] = true},
+}
+
+-- The JVM class of a format argument that a conversion of `kind` rejects, or nil when it takes it. `class` is the class of
+-- the argument's static type, when the compiler passed it (__K2L_Text.typed); else the value tells what it can.
+local function rejectedClass(value, kind, class)
+    if class ~= nil then
+        return not ACCEPTED[kind][class] and class or nil
+    end
+    local t = type(value)
+    if t == "string" then
+        -- a Char is the UTF-8 of one code point (or unit): a longer string is a String
+        if kind ~= "char" or select(2, value:gsub("[^\128-\191]", "")) ~= 1 then
+            return "java.lang.String"
+        end
+    elseif t == "boolean" then
         return "java.lang.Boolean"
-    elseif integral and kind == "number" and math.type and math.type(value) == "float" then
-        return "java.lang.Double"
+    elseif t == "number" then
+        if kind ~= "float" and ((math.type and math.type(value) == "float") or value % 1 ~= 0) then
+            return "java.lang.Double"
+        end
+    elseif t == "table" then
+        local cls = rawget(value, "____name") ~= nil and value or getmetatable(value)
+        local name = cls and (rawget(cls, "____binaryName") or rawget(cls, "____qualifiedName") or rawget(cls, "____name"))
+        name = name or (value.____isNumber and "java.lang.Long") or "java.lang.Object"
+        return not ACCEPTED[kind][name] and name or nil
     end
     return nil
 end
@@ -1282,11 +1321,17 @@ function __K2L_Text.sized(value, bits)
     return setmetatable({value = value, bits = bits}, Sized)
 end
 
+-- An argument with the JVM class of its static type, which a conversion may reject (`"%f".format(1)`: the value alone is
+-- an integral number either way).
+function __K2L_Text.typed(value, bits, class)
+    return setmetatable({value = value, bits = bits, class = class}, Sized)
+end
+
 -- the flags only numbers take, in the order the JDK checks them
 local NUMERIC_FLAGS = {{"alt", "#"}, {"plus", "+"}, {"space", " "}, {"zero", "0"}, {"comma", ","}, {"paren", "("}}
 
 -- One conversion of an argument (anything but %% and %n).
-local function convert(spec, conv, value, bits, flags, width, precision)
+local function convert(spec, conv, value, bits, class, flags, width, precision)
     local lower = conv:lower()
     local numeric = lower == "d" or lower == "x" or lower == "o" or lower == "f" or lower == "e" or lower == "g"
     if (flags.left or (numeric and flags.zero)) and width == nil then
@@ -1308,7 +1353,7 @@ local function convert(spec, conv, value, bits, flags, width, precision)
             return pad("null", width, flags.left)
         end
         local integral = lower == "d" or lower == "x" or lower == "o"
-        local rejected = rejectedClass(value, integral)
+        local rejected = rejectedClass(value, integral and "integral" or "float", class)
         if rejected then
             formatError("IllegalFormatConversion", conv .. " != " .. rejected)
         end
@@ -1327,6 +1372,10 @@ local function convert(spec, conv, value, bits, flags, width, precision)
         if value == nil then
             text = "null"
         else
+            local rejected = rejectedClass(value, "char", class)
+            if rejected then
+                formatError("IllegalFormatConversion", conv .. " != " .. rejected)
+            end
             text = type(value) == "number" and codePointText(value) or __K2L_Str(value)
         end
     elseif lower == "b" or lower == "h" then
@@ -1443,11 +1492,11 @@ local function formatText(format, ...)
                     formatError("MissingFormatArgument", "Format specifier '" .. piece.spec .. "'")
                 end
                 lastArg = argIndex
-                local value, bits = args[argIndex], nil
+                local value, bits, class = args[argIndex], nil, nil
                 if getmetatable(value) == Sized then
-                    value, bits = value.value, value.bits
+                    value, bits, class = value.value, value.bits, value.class
                 end
-                out[i] = convert(piece.spec, conv, value, bits, piece.flags, piece.width, piece.precision)
+                out[i] = convert(piece.spec, conv, value, bits, class, piece.flags, piece.width, piece.precision)
             end
         end
     end
@@ -1613,3 +1662,60 @@ function __K2L_StringBuilder:lastIndexOf(part, from)
 end
 
 __K2L_StringBuilder.__tostring = __K2L_StringBuilder.toString
+
+-- its text, for __K2L_CharSequenceText
+function __K2L_StringBuilder:____text()
+    return self:toString()
+end
+
+-- Comparable since Java 11: by the chars of the texts, as String.compareTo
+__K2L_StringBuilder.____comparable = true
+
+function __K2L_StringBuilder:compareTo(other)
+    return __K2L_Text.compare(self:toString(), other:toString())
+end
+
+------------------------------------------------------------------ CharSequence values
+-- A value typed CharSequence: a string, a StringBuilder or an object of a class of the program implementing CharSequence.
+-- length, get and loops call the object's own members, as on the JVM.
+function __K2L_Text.charsLength(s)
+    if type(s) == "string" then
+        return __K2L_Text.len(s)
+    end
+    local getLength = s.getLength
+    if getLength ~= nil then
+        return getLength(s)
+    end
+    return s.length
+end
+
+function __K2L_Text.charsGet(s, index)
+    if type(s) == "string" then
+        return __K2L_Text.get(s, index)
+    end
+    return s:get(index)
+end
+
+-- A string of chars (Utf16.lua joins surrogate halves)
+function __K2L_Text.joinChars(chars)
+    return table.concat(chars)
+end
+
+-- The chars of a string (Utf16.lua replaces it with the UTF-16 units)
+function __K2L_Text.eachChar(s)
+    return string.gmatch(s, ".")
+end
+
+-- for (c in s): an object's get(i) while i < length, both read at each step like the JVM's CharSequence iterator
+function __K2L_Text.chars(s)
+    if type(s) == "string" then
+        return __K2L_Text.eachChar(s)
+    end
+    local i = 0
+    return function()
+        if i < __K2L_Text.charsLength(s) then
+            i = i + 1
+            return s:get(i - 1)
+        end
+    end
+end

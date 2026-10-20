@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Collectors = ____lualib.__K2L_Collectors
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
@@ -114,7 +116,7 @@ local function collectors(people)
     end)))
     print(__K2L_Str(__K2L_Streams.empty(__K2L_Stream):collect(__K2L_Collectors.joining(","))))
     print(__K2L_Str(__K2L_Streams.empty(__K2L_Stream):collect(__K2L_Collectors.groupingBy(____lambda_33))))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 1)):collect(__K2L_Collectors.toMap(____lambda_34, ____lambda_35))
     end)
     if not ____ok then
@@ -170,7 +172,7 @@ local function optionals()
     print(__K2L_Equals(present, __K2L_Optional.of("value")))
     print(__K2L_Equals(present, empty))
     print(__K2L_Str(present:flatMap(____lambda_41)))
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         empty:get()
     end)
     if not ____ok_1 then
@@ -202,5 +204,5 @@ local function main()
     optionals()
 end
 
-main()
+__K2L_DeepMain(main)
 return {Person = Person, collectors = collectors, optionals = optionals}

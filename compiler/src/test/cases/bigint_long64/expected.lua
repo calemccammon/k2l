@@ -1,6 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArithmeticException = ____lualib.__K2L_ArithmeticException
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -29,7 +31,7 @@ local function main()
 end
 
 function longValueExactOrNull(self)
-    local ____ok, ____result, ____returned = pcall(function()
+    local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
         return true, self:longValueExact()
     end)
     if ____ok then
@@ -47,5 +49,5 @@ function longValueExactOrNull(self)
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {longValueExactOrNull = longValueExactOrNull}

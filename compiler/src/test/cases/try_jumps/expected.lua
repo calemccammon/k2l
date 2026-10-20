@@ -1,4 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -13,7 +15,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local function breakInTry()
     for i = 1, 5 do
-        local ____ok, ____result = pcall(function()
+        local ____ok, ____result = __K2L_DeepPcall(function()
             if i == 3 then
                 return 1
             end
@@ -39,7 +41,7 @@ end
 local function continueInTry()
     for i = 1, 5 do
         do
-            local ____ok_1, ____result_1 = pcall(function()
+            local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
                 if (i >= 0 and i % 2 or 0 - -i % 2) == 0 then
                     return 1
                 end
@@ -61,7 +63,7 @@ local function breakWithFinally()
     local i = 0
     while true do
         i = i + 1
-        local ____ok_2, ____result_2 = pcall(function()
+        local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
             if i > 2 then
                 return 1
             end
@@ -83,7 +85,7 @@ local function throwingThenContinue()
     for ____i = 1, ____list.size do
         local s = ____list[____i]
         do
-            local ____ok_3, ____result_3 = pcall(function()
+            local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
                 local n = __K2L_StringToInt(s)
                 print("number " .. n)
             end)
@@ -108,14 +110,14 @@ end
 
 local function catchBreaks()
     for i = 0, 4 do
-        local ____ok_4, ____result_4 = pcall(function()
+        local ____ok_4, ____result_4 = __K2L_DeepPcall(function()
             if i == 2 then
                 error(__K2L_IllegalStateException.new("boom " .. i))
             end
             print("fine " .. i)
         end)
         if not ____ok_4 then
-            ____ok_4, ____result_4 = pcall(function()
+            ____ok_4, ____result_4 = __K2L_DeepPcall(function()
                 local ____error_4 = __K2L_ToThrowable(____result_4)
                 if __K2L_InstanceOf(____error_4, __K2L_IllegalStateException) then
                     local e = ____error_4
@@ -140,7 +142,7 @@ local function labeled()
     for i = 1, 3 do
         do
             for j = 1, 3 do
-                local ____ok_5, ____result_5 = pcall(function()
+                local ____ok_5, ____result_5 = __K2L_DeepPcall(function()
                     if j == 2 then
                         return 1
                     end
@@ -170,8 +172,8 @@ end
 local function nestedTry()
     for i = 1, 4 do
         do
-            local ____ok_6, ____result_6 = pcall(function()
-                local ____ok_7, ____result_7 = pcall(function()
+            local ____ok_6, ____result_6 = __K2L_DeepPcall(function()
+                local ____ok_7, ____result_7 = __K2L_DeepPcall(function()
                     if i == 2 then
                         return 1
                     end
@@ -209,10 +211,10 @@ end
 
 local function tryInLoopInTry()
     local total = 0
-    local ____ok_8, ____result_8, ____returned_8 = pcall(function()
+    local ____ok_8, ____result_8, ____returned_8 = __K2L_DeepPcall(function()
         for i = 1, 5 do
             do
-                local ____ok_9, ____result_9, ____returned_9 = pcall(function()
+                local ____ok_9, ____result_9, ____returned_9 = __K2L_DeepPcall(function()
                     if i == 2 then
                         return 1
                     end
@@ -248,7 +250,7 @@ end
 local function jumpsAndReturn(limit)
     for i = 1, 10 do
         do
-            local ____ok_10, ____result_10, ____returned_10 = pcall(function()
+            local ____ok_10, ____result_10, ____returned_10 = __K2L_DeepPcall(function()
                 if i == 2 then
                     return 1
                 end
@@ -281,7 +283,7 @@ end
 local function finallyJumps()
     for i = 1, 4 do
         do
-            local ____ok_11, ____result_11 = pcall(function()
+            local ____ok_11, ____result_11 = __K2L_DeepPcall(function()
                 if i == 2 then
                     error(__K2L_RuntimeException.new("swallowed"))
                 end
@@ -308,7 +310,7 @@ local function tryAsValue()
     for i = 1, 5 do
         do
             local v
-            local ____ok_12, ____result_12 = pcall(function()
+            local ____ok_12, ____result_12 = __K2L_DeepPcall(function()
                 if i == 2 then
                     return 1
                 end
@@ -345,7 +347,7 @@ local function doWhile()
     repeat
         do
             i = i + 1
-            local ____ok_13, ____result_13 = pcall(function()
+            local ____ok_13, ____result_13 = __K2L_DeepPcall(function()
                 if i == 2 then
                     return 1
                 end
@@ -373,7 +375,7 @@ local function firstEven(xs)
     local ____mod = xs.____modCount
     for ____i_1 = 1, xs.size do
         local x = xs[____i_1]
-        local ____ok_14, ____result_14, ____returned_14 = pcall(function()
+        local ____ok_14, ____result_14, ____returned_14 = __K2L_DeepPcall(function()
             if (x >= 0 and x % 2 or 0 - -x % 2) == 0 then
                 return true, x
             end
@@ -393,7 +395,7 @@ local function firstEven(xs)
 end
 
 local function tryFirst(xs, f)
-    local ____ok_15, ____result_15, ____returned_15 = pcall(function()
+    local ____ok_15, ____result_15, ____returned_15 = __K2L_DeepPcall(function()
         local ____mod_1 = xs.____modCount
         for ____i_2 = 1, xs.size do
             local x = xs[____i_2]
@@ -406,7 +408,7 @@ local function tryFirst(xs, f)
         end
     end)
     if not ____ok_15 then
-        ____ok_15, ____result_15, ____returned_15 = pcall(function()
+        ____ok_15, ____result_15, ____returned_15 = __K2L_DeepPcall(function()
             local ____error_15 = __K2L_ToThrowable(____result_15)
             if __K2L_InstanceOf(____error_15, __K2L_Exception) then
                 local e = ____error_15
@@ -429,7 +431,7 @@ end
 local function inTry(xs)
     local ____result_16
     do
-        local ____ok_16, ____result_17, ____returned_16 = pcall(function()
+        local ____ok_16, ____result_17, ____returned_16 = __K2L_DeepPcall(function()
             local ____mod_2 = xs.____modCount
             for ____i_3 = 1, xs.size do
                 local x = xs[____i_3]
@@ -449,7 +451,7 @@ local function inTry(xs)
             end
         end)
         if not ____ok_16 then
-            ____ok_16, ____result_17, ____returned_16 = pcall(function()
+            ____ok_16, ____result_17, ____returned_16 = __K2L_DeepPcall(function()
                 local ____error_16 = __K2L_ToThrowable(____result_17)
                 if __K2L_InstanceOf(____error_16, __K2L_Exception) then
                     local e = ____error_16
@@ -496,5 +498,5 @@ local function main()
     print(firstEven(__K2L_ReadOnlyListOf(1, 3, 4, 6)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {breakInTry = breakInTry, continueInTry = continueInTry, breakWithFinally = breakWithFinally, throwingThenContinue = throwingThenContinue, catchBreaks = catchBreaks, labeled = labeled, nestedTry = nestedTry, tryInLoopInTry = tryInLoopInTry, jumpsAndReturn = jumpsAndReturn, finallyJumps = finallyJumps, tryAsValue = tryAsValue, doWhile = doWhile, firstEven = firstEven, tryFirst = tryFirst, inTry = inTry}

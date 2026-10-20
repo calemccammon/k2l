@@ -1,7 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_CastFail = ____lualib.__K2L_CastFail
-local __K2L_CharSequenceText = ____lualib.__K2L_CharSequenceText
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IsCharSequence = ____lualib.__K2L_IsCharSequence
@@ -96,7 +95,7 @@ local function kind(x)
     elseif __K2L_IsNumber(x) then
         return "number"
     elseif __K2L_IsCharSequence(x) then
-        return "text(" .. #__K2L_CharSequenceText(x) .. ")"
+        return "text(" .. __K2L_Text.charsLength(x) .. ")"
     elseif __K2L_IsComparable(x) then
         return "comparable"
     else
@@ -108,7 +107,7 @@ local ____lambda_1 = function(x) return __K2L_IsComparable(x) end
 local ____lambda_2 = function(x) return __K2L_IsCharSequence(x) end
 local ____lambda_3 = function(x) return __K2L_IsNumber(x) end
 local function main()
-    local values = __K2L_ReadOnlyListOf(1, 2.5, 3, "abc", __K2L_StringBuilder.new("xy"), __K2L_CharSequenceText(Name.new("name")), Score.new(1), Dir.S, true, __K2L_SingletonListOf(1), __K2L_Pair.new(1, 2), nil, __K2L_BigInteger.TEN)
+    local values = __K2L_ReadOnlyListOf(1, 2.5, 3, "abc", __K2L_StringBuilder.new("xy"), Name.new("name"), Score.new(1), Dir.S, true, __K2L_SingletonListOf(1), __K2L_Pair.new(1, 2), nil, __K2L_BigInteger.TEN)
     print(__K2L_Str(values:map(kind)))
     print(values:filter(____lambda_1).size)
     print(values:filter(____lambda_2):joinToString("|"))
@@ -125,7 +124,7 @@ local function main()
         __K2L_CastFail(any, "java.lang.CharSequence", "kotlin.CharSequence")
     end
     local cs = any
-    print(#__K2L_CharSequenceText(cs))
+    print(__K2L_Text.charsLength(cs))
     local ____cast = Score.new(2)
     print((__K2L_IsComparable(____cast) and ____cast or nil) ~= nil)
     local ____cast_1 = __K2L_SingletonListOf(1)

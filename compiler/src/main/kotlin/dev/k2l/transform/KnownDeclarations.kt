@@ -36,7 +36,7 @@ internal val FORMATTER_EXCEPTIONS = listOf(
 internal val LIBRARY_CLASSES = listOf(
     "Throwable", "Exception", "Error", "RuntimeException", "IllegalArgumentException", "IllegalStateException",
     "NullPointerException", "IndexOutOfBoundsException", "ArithmeticException", "UnsupportedOperationException",
-    "ClassCastException", "NumberFormatException",
+    "ClassCastException", "NumberFormatException", "VirtualMachineError", "StackOverflowError",
 ).flatMap { listOf("java/lang/$it" to "__K2L_$it", "kotlin/$it" to "__K2L_$it") }.toMap() + mapOf(
     "kotlin/Throwable" to "__K2L_Throwable",
     "java/util/NoSuchElementException" to "__K2L_NoSuchElementException",
@@ -52,7 +52,7 @@ internal val LIBRARY_CLASSES = listOf(
 internal val MARKER_INTERFACES = setOf(
     "kotlin/Any",
     "kotlin/Comparable",
-    // its members are the class's own; library text functions read its toString() (see CharSequences.kt)
+    // its members are the class's own; library text functions read its chars (see CharSequences.kt)
     "kotlin/CharSequence",
     "java/lang/Comparable",
     "java/io/Serializable",

@@ -3,6 +3,8 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Continuation = ____lualib.__K2L_Continuation
 local __K2L_CoroutineContext = ____lualib.__K2L_CoroutineContext
 local __K2L_CreateCoroutine = ____lualib.__K2L_CreateCoroutine
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -78,9 +80,9 @@ local ____lambda_1 = function()
     return true, failLater()
 end
 local function recovering()
-    local ____ok, ____result, ____returned = pcall(____lambda_1)
+    local ____ok, ____result, ____returned = __K2L_DeepPcall(____lambda_1)
     if not ____ok then
-        ____ok, ____result, ____returned = pcall(function()
+        ____ok, ____result, ____returned = __K2L_DeepPcall(function()
             local ____error = __K2L_ToThrowable(____result)
             if __K2L_InstanceOf(____error, __K2L_IllegalStateException) then
                 local e = ____error
@@ -156,7 +158,7 @@ local function main()
     cont:resumeWith(__K2L_Result.success(5))
     print("main: after resume")
     print("-- resume twice")
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         cont:resumeWith(__K2L_Result.success(6))
     end)
     if not ____ok_1 then
@@ -185,7 +187,7 @@ local function main()
     end, completion("created"))
     print("not started yet")
     created:resumeWith(__K2L_Result.success(__K2L_Unit))
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
         created:resumeWith(__K2L_Result.success(__K2L_Unit))
     end)
     if not ____ok_2 then
@@ -211,10 +213,10 @@ local function main()
     local bad = __K2L_Result.failure(__K2L_IllegalStateException.new("nope"))
     print(__K2L_Str(ok) .. " " .. __K2L_Str(bad))
     print(tostring(ok:isSuccess()) .. " " .. tostring(ok:isFailure()) .. " " .. tostring(bad:isSuccess()) .. " " .. tostring(bad:isFailure()))
-    local ____arg = ok:getOrNull()
-    local ____arg_1 = bad:getOrNull()
+    local ____arg = __K2L_Str(ok:getOrNull())
+    local ____arg_1 = __K2L_Str(bad:getOrNull())
     local ____receiver = bad:exceptionOrNull()
-    print(__K2L_Str(____arg) .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(____receiver and ____receiver.message))
+    print(____arg .. " " .. ____arg_1 .. " " .. __K2L_Str(____receiver and ____receiver.message))
     print(ok:getOrDefault(0) .. " " .. bad:getOrDefault(0) .. " " .. bad:getOrElse(____lambda_9))
     print(__K2L_Str(ok:map(____lambda_10)))
     print(bad:recover(____lambda_11):getOrThrow())
@@ -231,7 +233,7 @@ local function main()
         error(__K2L_IllegalStateException.new("broken"))
     end):exceptionOrNull()))
     print(__K2L_Equals(ok, __K2L_Result.success(3)))
-    local ____ok_3, ____result_3 = pcall(function()
+    local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
         bad:getOrThrow()
     end)
     if not ____ok_3 then
@@ -320,5 +322,5 @@ ____exports.shout = shout
 ____exports.Source = Source
 ____exports.Parked = Parked
 ____exports.nested = nested
-main()
+__K2L_DeepMain(main)
 return ____exports

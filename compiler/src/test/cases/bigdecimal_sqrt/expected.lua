@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArithmeticException = ____lualib.__K2L_ArithmeticException
 local __K2L_BigDecimal = ____lualib.__K2L_BigDecimal
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_JavaRandom = ____lualib.__K2L_JavaRandom
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
@@ -14,7 +16,7 @@ local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local function root(value, mc)
-    local ____ok, ____result, ____returned = pcall(function()
+    local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
         return true, __K2L_BigDecimal.parse(value):sqrt(mc):toString()
     end)
     if ____ok then
@@ -111,5 +113,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {root = root}

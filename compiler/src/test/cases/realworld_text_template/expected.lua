@@ -2,6 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -377,7 +379,7 @@ end), __K2L_Pair.new("trim", function(v, _) return __K2L_StringTrim(__K2L_Str(v)
     if not __K2L_IsNumber(v) then
         __K2L_CastFail(v, "java.lang.Number", "kotlin.Number")
     end
-    return "$" .. __K2L_StringFormat(____arg, __K2L_NumberTo(v, "toDouble"))
+    return "$" .. __K2L_StringFormat(____arg, __K2L_Text.typed(__K2L_NumberTo(v, "toDouble"), nil, "java.lang.Double"))
 end), __K2L_Pair.new("pad", function(v, a)
     return __K2L_StringPadStart(__K2L_Str(v), __K2L_StringToInt(a:get(0)), __K2L_Text.first(a:getOrElse(1, ____lambda_3)))
 end), __K2L_Pair.new("rpad", function(v, a)
@@ -533,7 +535,7 @@ local function main()
     local ____list_4 = __K2L_ReadOnlyListOf("{{#each x}}oops", "{{#if a}}{{/each}}", "{{x | shout}}", "{{> nope}}")
     for ____i_8 = 1, ____list_4.size do
         local bad = ____list_4[____i_8]
-        local ____ok, ____result_4 = pcall(function()
+        local ____ok, ____result_4 = __K2L_DeepPcall(function()
             print(r:render__1(bad, __K2L_SingletonMapOf(__K2L_Pair.new("x", 1))))
         end)
         if not ____ok then
@@ -548,5 +550,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {Node = Node, Text = Text, Value = Value, Each = Each, If = If, Partial = Partial, TemplateError = TemplateError, parseTemplate = parseTemplate, Scope = Scope, truthy = truthy, html = html, FILTERS = FILTERS, Renderer = Renderer, INVOICE = INVOICE}

@@ -6,6 +6,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
@@ -164,7 +165,7 @@ function World:step(dt)
         local e = ____list_1[____i_3]
         if self.alive:remove(e.id) then
             local ____collection = self.stores:getValues()
-            local ____items, ____n = ____collection:____array()
+            local ____items, ____n = __K2L_LoopItems(____collection)
             local ____mod_1 = ____collection.____modCount
             for ____i_2 = 1, ____n do
                 local it = ____items[____i_2]
@@ -860,17 +861,17 @@ local function main()
         ____result_6 = world:store(__K2L_KClassOf(____Systems.Player)):get(hero)
         ____result_5 = ____result_6 ~= nil
     end
-    local ____arg = ____result_5
+    local ____arg = tostring(____result_5)
     local ____result_7
     do
         local ____result_8
         ____result_8 = world:store(__K2L_KClassOf(____Systems.Player)):get(orc)
         ____result_7 = ____result_8 ~= nil
     end
-    local ____arg_1 = ____result_7
+    local ____arg_1 = tostring(____result_7)
     local ____result_9
     ____result_9 = world:store(__K2L_KClassOf(____Systems.Position)):get(ghost)
-    print("hero has player: " .. tostring(____arg) .. ", orc: " .. tostring(____arg_1) .. ", ghost pos: " .. __K2L_Str(____result_9))
+    print("hero has player: " .. ____arg .. ", orc: " .. ____arg_1 .. ", ghost pos: " .. __K2L_Str(____result_9))
     for t = 1, 8 do
         world:step()
         print("-- tick " .. world.tick .. ": population " .. world:getPopulation())
@@ -919,11 +920,11 @@ local function main()
         end)
     end
     print(____result_10)
-    local ____arg_2 = world:isAlive(bat.id)
-    local ____arg_3 = world:isAlive(orc.id)
+    local ____arg_2 = tostring(world:isAlive(bat.id))
+    local ____arg_3 = tostring(world:isAlive(orc.id))
     local ____result_12
     ____result_12 = world:store(__K2L_KClassOf(____Systems.Health)):get(orc)
-    print("bat alive: " .. tostring(____arg_2) .. ", orc alive: " .. tostring(____arg_3) .. ", orc health: " .. __K2L_Str(____result_12))
+    print("bat alive: " .. ____arg_2 .. ", orc alive: " .. ____arg_3 .. ", orc health: " .. __K2L_Str(____result_12))
     print("systems: " .. __K2L_Str(world:systems__1()))
     print("counter: " .. __K2L_Str(counter.seen:toSortedMap()))
     world:add(ghost, ____Systems.Position.new(0, 0))

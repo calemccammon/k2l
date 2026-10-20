@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaLocalVariableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaPropertySymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaValueParameterSymbol
+import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
@@ -36,6 +37,39 @@ internal fun FileTransformer.listSource(list: LuaExpr, checked: Boolean): LoopSo
     val items = cache(list, "list")
     return LoopSource(items, LuaIndex(items, LuaString("size")), if (checked) items else null, null)
 }
+
+/**
+ * The elements of [collection], which may be a `java.util.ArrayDeque`: `local items, n = __K2L_LoopItems(c)`, which reads
+ * a java.util.ArrayDeque through its iterator as the JVM's loop does (it fails on reaching the slot of an element removed
+ * under it, not on any change, see `Deques.lua`), and other collections like [arraySource].
+ */
+internal fun FileTransformer.dequeSource(collection: LuaExpr): LoopSource {
+    val owner = cache(collection, "collection")
+    val items = ctx.temp("items")
+    val count = ctx.temp("n")
+    emit(LuaLocal(listOf(items, count), listOf(LuaCall(lualibRef("Collections", "__K2L_LoopItems"), listOf(owner)))))
+    return LoopSource(LuaName(items), LuaName(count), owner, LuaName(count))
+}
+
+/** Whether a value of this type may be a `java.util.ArrayDeque`: one (or a subclass), a `Deque`, `Queue`, `Collection` or `Iterable`. */
+context(s: KaSession)
+internal fun KaType.mayBeJavaArrayDeque(): Boolean = with(s) {
+    val type = withoutFlexibility
+    type.expandedSymbol?.classId?.asString() in ARRAY_DEQUE_TYPES ||
+        type.allSupertypes.any { it.expandedSymbol?.classId?.asString() == JAVA_ARRAY_DEQUE }
+}
+
+private const val JAVA_ARRAY_DEQUE = "java/util/ArrayDeque"
+private val ARRAY_DEQUE_TYPES = setOf(
+    JAVA_ARRAY_DEQUE,
+    "java/util/Deque",
+    "java/util/Queue",
+    "java/util/AbstractCollection",
+    "kotlin/collections/Collection",
+    "kotlin/collections/MutableCollection",
+    "kotlin/collections/Iterable",
+    "kotlin/collections/MutableIterable",
+)
 
 /**
  * The elements of [collection] (a set, collection, iterable, or a map with [arrayMethod] `____keyArray`,

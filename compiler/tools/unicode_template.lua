@@ -100,6 +100,9 @@
     -- A "cased" letter, as the final-sigma rule of String.lowercase() sees it.
     function __K2L_Unicode.isCased(cp) return find("cased", cp) ~= nil end
     function __K2L_Unicode.isMark(cp) return find("mark", cp) ~= nil end
+    -- The general categories P (Pc, Pd, Ps, Pe, Pi, Pf, Po) and S (Sm, Sc, Sk, So)
+    function __K2L_Unicode.isPunctuation(cp) return find("punct", cp) ~= nil end
+    function __K2L_Unicode.isSymbol(cp) return find("symbol", cp) ~= nil end
 
     -- The value of a decimal digit (Nd blocks start at a zero digit), or nil.
     function __K2L_Unicode.digitValue(cp)

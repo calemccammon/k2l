@@ -33,6 +33,8 @@ return {Logged = Logged, ____shared_delegate = ____shared_delegate, ____sharedLo
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KProperty = ____lualib.__K2L_KProperty
@@ -311,7 +313,7 @@ local function main()
     print(s:getPositive())
     s:setPositive(s:getPositive() + 10)
     print(s:getPositive())
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(s:getName())
     end)
     if not ____ok then
@@ -376,7 +378,7 @@ local function main()
         end
         return "ok after " .. attempts
     end)
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         print(____flaky_delegate:getValue())
     end)
     if not ____ok_1 then
@@ -392,5 +394,5 @@ local function main()
     print(____flaky_delegate:getValue())
 end
 
-main()
+__K2L_DeepMain(main)
 return {Tracking = Tracking, Uppercase = Uppercase, Clamped = Clamped, ____topLazy_delegate = ____topLazy_delegate, ____topObservable_delegate = ____topObservable_delegate, Settings = Settings, Config = Config, User = User, Registry = Registry, WithCompanion = WithCompanion}

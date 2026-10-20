@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -559,7 +561,7 @@ local function inLoop(xss)
 end
 
 local function inTry(xs)
-    local ____ok, ____result_61, ____returned = pcall(function()
+    local ____ok, ____result_61, ____returned = __K2L_DeepPcall(function()
         local ____result_62 = __K2L_ListOf()
         for _, it in ipairs(xs) do
             local ____result_63
@@ -576,7 +578,7 @@ local function inTry(xs)
         return true, "ok " .. __K2L_Str(r)
     end)
     if not ____ok then
-        ____ok, ____result_61, ____returned = pcall(function()
+        ____ok, ____result_61, ____returned = __K2L_DeepPcall(function()
             local ____error = __K2L_ToThrowable(____result_61)
             if __K2L_InstanceOf(____error, __K2L_IllegalStateException) then
                 local e = ____error
@@ -625,7 +627,7 @@ local function main()
     print(firsts(__K2L_ReadOnlyListOf(1, 4, 14)))
     print(firsts(__K2L_ReadOnlyListOf(1, 4, 15)))
     print(noMatch(__K2L_ReadOnlyListOf(5, 0)))
-    local ____ok_1, ____result_66 = pcall(function()
+    local ____ok_1, ____result_66 = __K2L_DeepPcall(function()
         noMatch(__K2L_ReadOnlyListOf(5, 6))
     end)
     if not ____ok_1 then
@@ -676,5 +678,5 @@ local function main()
     print(valueOfMapAsExpression(__K2L_ReadOnlyListOf(1, 20)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Item = Item, firstBig = firstBig, mapNotNullStop = mapNotNullStop, filtered = filtered, anyAllNone = anyAllNone, firsts = firsts, noMatch = noMatch, counting = counting, summing = summing, indexed = indexed, each = each, takeWhileOrReturn = takeWhileOrReturn, associating = associating, grouping = grouping, folding = folding, labeled = labeled, nested = nested, nullable = nullable, overSet = overSet, overMap = overMap, overArray = overArray, overRange = overRange, inLoop = inLoop, inTry = inTry, valueOfMapAsExpression = valueOfMapAsExpression}

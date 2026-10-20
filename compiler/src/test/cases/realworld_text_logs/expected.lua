@@ -154,9 +154,9 @@ local function main()
         local ____receiver_5 = first.groups:getNamed(it)
         return it .. "=" .. __K2L_Str(____receiver_5 and ____receiver_5.value)
     end))
-    local ____arg_8 = first.range
+    local ____arg_8 = __K2L_Str(first.range)
     local ____receiver_6 = first.groups:getNamed("path")
-    print("group 0 range " .. __K2L_Str(____arg_8) .. ", path range " .. __K2L_Str(____receiver_6 and ____receiver_6.range))
+    print("group 0 range " .. ____arg_8 .. ", path range " .. __K2L_Str(____receiver_6 and ____receiver_6.range))
     print("-- by status --")
     local ____collection = accesses:groupingBy(____lambda_4):eachCount():toSortedMap()
     local ____items_1, ____n_1 = ____collection:____entryArray()
@@ -324,6 +324,7 @@ local function main()
         end
     end
     local durations = __K2L_Sequence.new(__K2L_Regex.new("(\\d+)ms"):findAllFactory(LOG)):map(____lambda_9):toList()
+    local ____arg_10 = __K2L_Str(durations)
     local ____out_4 = {}
     local ____count_4 = 0
     local ____items_13, ____n_13 = durations:____array()
@@ -334,7 +335,7 @@ local function main()
             ____out_4[____count_4] = it
         end
     end
-    print("all durations: " .. __K2L_Str(durations) .. ", slow (>1s): " .. __K2L_Str(__K2L_ListWrap(____out_4, ____count_4)))
+    print("all durations: " .. ____arg_10 .. ", slow (>1s): " .. __K2L_Str(__K2L_ListWrap(____out_4, ____count_4)))
     print("-- redaction --")
     local ____list_2 = __K2L_StringLines(LOG)
     local ____out_5 = {}

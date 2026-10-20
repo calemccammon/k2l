@@ -4,6 +4,8 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
@@ -18,6 +20,7 @@ local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NaturalOrder = ____lualib.__K2L_NaturalOrder
@@ -160,7 +163,7 @@ function Vec:of(...)
 end
 
 local function putAll(self, items)
-    local ____items_1, ____n_1 = items:____array()
+    local ____items_1, ____n_1 = __K2L_LoopItems(items)
     local ____mod_1 = items.____modCount
     for ____i_2 = 1, ____n_1 do
         local it = ____items_1[____i_2]
@@ -411,7 +414,7 @@ local function main()
     print(__K2L_Str(v) .. " size=" .. v.size .. " growths=" .. v.growths .. " max=" .. __K2L_Str(maxOrNull(v)) .. " has8=" .. tostring(v:contains(8)) .. " has4=" .. tostring(v:contains(4)))
     v:set(1, 30)
     print("removed " .. v:removeAt(0) .. " -> " .. __K2L_Str(v) .. ", doubled " .. __K2L_Str(v:mapTo(____lambda_9)))
-    local ____ok, ____result_1 = pcall(function()
+    local ____ok, ____result_1 = __K2L_DeepPcall(function()
         v:get(10)
     end)
     if not ____ok then
@@ -434,13 +437,13 @@ local function main()
     local ____arg_2 = src.size
     local ____result_2
     ____result_2 = anything:filter(____lambda_10)
-    local ____arg_3 = ____result_2
+    local ____arg_3 = __K2L_Str(____result_2)
     local ____result_3
     ____result_3 = anything:filter(____lambda_11)
-    local ____arg_4 = ____result_3
+    local ____arg_4 = __K2L_Str(____result_3)
     local ____result_4
     ____result_4 = src:count(____lambda_12)
-    print(____arg_2 .. " ints=" .. __K2L_Str(____arg_3) .. " texts=" .. __K2L_Str(____arg_4) .. " strings=" .. ____result_4)
+    print(____arg_2 .. " ints=" .. ____arg_3 .. " texts=" .. ____arg_4 .. " strings=" .. ____result_4)
     print(__K2L_Str(maxOrNull(Vec:of(Version.new(1, 2), Version.new(1, 10), Version.new(0, 9)))))
     print(Vec.new():isEmpty() and maxOrNull(Vec.new()) == nil)
     local m = Matrix.new(2, 3, ____lambda_13)
@@ -487,5 +490,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {Source = Source, Sink = Sink, Vec = Vec, putAll = putAll, maxOrNull = maxOrNull, copy = copy, Matrix = Matrix, Cache = Cache, Graph = Graph, Version = Version}

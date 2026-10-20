@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
@@ -53,7 +55,7 @@ local function main()
                 __K2L_RuntimeException.____init(self, "oops " .. s)
                 self.code = code
             end
-            local ____ok, ____result_2 = pcall(function()
+            local ____ok, ____result_2 = __K2L_DeepPcall(function()
                 error(Oops.new(#s))
             end)
             if not ____ok then
@@ -95,5 +97,5 @@ local function main()
     print(____value_1 ~= nil)
 end
 
-main()
+__K2L_DeepMain(main)
 return {Greeter = Greeter}

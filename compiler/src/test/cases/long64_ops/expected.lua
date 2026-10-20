@@ -5,6 +5,8 @@ local __K2L_Bits = ____lualib.__K2L_Bits
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_Equals = ____lualib.__K2L_Equals
@@ -173,7 +175,7 @@ local function main()
     w = w - 1
     print(w)
     print(-w)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(__K2L_IDiv(big, big - big))
     end)
     if not ____ok then
@@ -185,7 +187,7 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         print(__K2L_IRem(big, 0))
     end)
     if not ____ok_1 then
@@ -251,7 +253,7 @@ local function main()
     print(__K2L_StringToInt("+77", nil, true))
     print(__K2L_StringToInt("ff", 16, true))
     print(__K2L_StringToInt("7fffffffffffffff", 16, true))
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
         __K2L_StringToInt("9223372036854775808", nil, true)
     end)
     if not ____ok_2 then
@@ -504,5 +506,5 @@ local function main()
     print(__K2L_Str(m))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Account = Account, fib = fib, collatz = collatz, larger = larger, describe = describe, classify = classify}

@@ -67,7 +67,7 @@ private fun FileTransformer.measuring(lambda: KtExpression, scale: String): LuaE
 /** The `pcall` to use: the coroutine-aware one on Lua 5.1 when the block can suspend. */
 private fun FileTransformer.pcallFor(lambda: KtExpression): LuaExpr = with(session) {
     val suspends = target == LuaTarget.Lua51 && lambdaLiteral(lambda)?.let { containsSuspensionPoint(it) } == true
-    if (suspends) lualibRef("CoPcall", "__K2L_CoPcall") else LuaName("pcall")
+    if (suspends) lualibRef("CoPcall", "__K2L_CoPcall") else deepPcall()
 }
 
 /** `runCatching { }`: the block runs in a protected call; the error, if any, becomes a failure. */

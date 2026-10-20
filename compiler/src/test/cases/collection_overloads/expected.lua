@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CharRange = ____lualib.__K2L_CharRange
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_Iterable = ____lualib.__K2L_Iterable
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
@@ -140,5 +141,5 @@ local function main()
     ranges()
 end
 
-main()
+__K2L_DeepMain(main)
 return {nestedLists = nestedLists, nestedSets = nestedSets, maps = maps, sequences = sequences, addTo = addTo, ranges = ranges}

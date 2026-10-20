@@ -1,4 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
@@ -10,7 +12,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 
 local function attempt(label, block)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         print(label .. ": " .. __K2L_Str(block()))
     end)
     if not ____ok then
@@ -96,5 +98,5 @@ local function main()
     print(__K2L_Num.toRadix(0, 2))
 end
 
-main()
+__K2L_DeepMain(main)
 return {attempt = attempt}

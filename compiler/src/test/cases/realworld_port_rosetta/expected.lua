@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
@@ -8,6 +10,7 @@ local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -123,7 +126,7 @@ local function balanced(s)
     local ____pairs = __K2L_ReadOnlyMapOf(__K2L_Pair.new(")", "("), __K2L_Pair.new("]", "["), __K2L_Pair.new("}", "{"), __K2L_Pair.new(">", "<"))
     local stack = __K2L_ArrayDeque.new()
     local ____collection = __K2L_StringToList(s):withIndex()
-    local ____items, ____n = ____collection:____array()
+    local ____items, ____n = __K2L_LoopItems(____collection)
     local ____mod_1 = ____collection.____modCount
     for ____i_1 = 1, ____n do
         local ____item_1 = ____items[____i_1]
@@ -267,7 +270,7 @@ local function main()
     end
     print(____result_3)
     print(__K2L_Str(__K2L_ReadOnlyListOf("mcmxc", "MMXXIV", "iv", "MDCLXVI"):map(fromRoman)))
-    local ____ok, ____result_4 = pcall(function()
+    local ____ok, ____result_4 = __K2L_DeepPcall(function()
         fromRoman("MXQ")
     end)
     if not ____ok then
@@ -279,7 +282,7 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_5 = pcall(function()
+    local ____ok_1, ____result_5 = __K2L_DeepPcall(function()
         toRoman(0)
     end)
     if not ____ok_1 then
@@ -388,5 +391,5 @@ local function main()
     end))
 end
 
-main()
+__K2L_DeepMain(main)
 return {toRoman = toRoman, fromRoman = fromRoman, spell = spell, lookAndSay = lookAndSay, balanced = balanced, luhn = luhn, isbn13 = isbn13, rle = rle, unrle = unrle, dayOfWeek = dayOfWeek, isLeap = isLeap, calendar = calendar, isoDate = isoDate}

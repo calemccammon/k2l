@@ -1,4 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
@@ -49,6 +51,7 @@ local function main()
     print(__K2L_DoubleToString(none))
     print(__K2L_DoubleToString(maybe) .. " " .. __K2L_DoubleToString(none) .. " " .. __K2L_DoubleToString(maybe) .. " " .. __K2L_DoubleToString(none))
     local f = 1.5
+    local ____arg = __K2L_FloatToString(f)
     local ____list_1 = __K2L_ReadOnlyListOf(maybe, none, 3.0)
     local ____out_1 = {}
     local ____count_1 = 0
@@ -58,7 +61,7 @@ local function main()
         ____count_1 = ____count_1 + 1
         ____out_1[____count_1] = __K2L_DoubleToString(it)
     end
-    print(__K2L_FloatToString(f) .. " " .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
+    print(____arg .. " " .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     local ____list_2 = __K2L_ReadOnlyListOf(__K2L_Pair.new("a", "A"), __K2L_Pair.new("b", "b"), __K2L_Pair.new("c", "D"), __K2L_Pair.new("1", "1"))
     local ____out_2 = {}
     local ____count_2 = 0
@@ -81,7 +84,7 @@ local function main()
     local k = m:higherKey(50)
     print(__K2L_Str(k))
     print("key " .. __K2L_Str(m:higherKey(50)))
-    local ____ok, ____result_1 = pcall(function()
+    local ____ok, ____result_1 = __K2L_DeepPcall(function()
         print(__K2L_NotNull(m:higherKey(50)))
     end)
     if not ____ok then
@@ -93,7 +96,7 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_2 = pcall(function()
+    local ____ok_1, ____result_2 = __K2L_DeepPcall(function()
         local x = m:higherKey(50)
         io.write(__K2L_Str(__K2L_NotNull(x)))
         print()
@@ -129,5 +132,5 @@ local function main()
     print(__K2L_Str(__K2L_ListWrap(____out_3, ____count_3)))
 end
 
-main()
+__K2L_DeepMain(main)
 return {same = same}

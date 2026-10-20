@@ -166,12 +166,24 @@ private fun FileTransformer.iterationLoop(e: KtForExpression, frame: LoopFrame, 
 
             kind != null && kind in ITERATED_KINDS -> collectionLoop(e, frame, rangeExpr, param, kind)
 
-            type?.isStringType == true && destructuring == null -> {
-                val text = expression(rangeExpr)
-                eachChar(text, naming.of(param), loopBody(frame, e.body))
-            }
+            destructuring == null && isTextLoop(type, kind) -> textLoop(e, frame, rangeExpr, param)
 
             else -> unsupported(rangeExpr, "Iterating over '${type.pretty()}'")
+        }
+    }
+
+private fun FileTransformer.isTextLoop(type: KaType?, kind: CollectionKind?): Boolean = with(session) {
+    type?.isStringType == true || kind == CollectionKind.StringBuilder || isCharSequenceObject(type)
+}
+
+/** `for (c in s)` over a string, or over a value that may be another `CharSequence` (see [charSequenceLoop]). */
+private fun FileTransformer.textLoop(e: KtForExpression, frame: LoopFrame, rangeExpr: KtExpression, param: KtParameter): Unit =
+    with(session) {
+        val text = expression(rangeExpr)
+        if (rangeExpr.expressionType?.isStringType == true) {
+            eachChar(text, naming.of(param), loopBody(frame, e.body))
+        } else {
+            charSequenceLoop(text, naming.of(param), loopBody(frame, e.body))
         }
     }
 
@@ -255,12 +267,14 @@ private fun FileTransformer.collectionLoop(
         val collection = expression(rangeExpr)
         when {
             kind == CollectionKind.Array -> listSource(collection, false)
+            checked && rangeExpr.expressionType?.mayBeJavaArrayDeque() == true -> dequeSource(collection)
             kind.isIndexable -> listSource(collection, checked)
             else -> arraySource(collection, checked = checked)
         }
     }
     val variable = if (destructuring != null) ctx.temp("item") else naming.of(param)
-    val prologue = destructuring?.let { listOf(destructure(it.entries, LuaName(variable).also { v -> stable += v })) }.orEmpty()
+    val prologue = destructuring?.let { listOf(destructure(it.entries, LuaName(variable).also { v -> stable += v })) }
+        ?: uncheckedElementCheck(rangeExpr, param, variable)
     elementsLoop(source, variable, null, prologue + loopBody(frame, e.body))
 }
 

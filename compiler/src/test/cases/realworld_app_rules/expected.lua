@@ -5,6 +5,7 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_NumberTo = ____lualib.__K2L_NumberTo
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -217,7 +218,7 @@ function RuleSetBuilder:rule(name, block)
 end
 
 function RuleSetBuilder:each(items, block)
-    local ____items, ____n = items:____array()
+    local ____items, ____n = __K2L_LoopItems(items)
     local ____mod = items.____modCount
     for ____i = 1, ____n do
         local item = ____items[____i]
@@ -239,6 +240,7 @@ return {Condition = Condition, FactRef = FactRef, ConditionScope = ConditionScop
 -- ==== engine/Engine.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -289,7 +291,7 @@ function Engine:run(facts, trace)
                     goto ____continue
                 end
                 local holds
-                local ____ok, ____result = pcall(function()
+                local ____ok, ____result = __K2L_DeepPcall(function()
                     holds = rule.condition.test(facts)
                 end)
                 if not ____ok then
@@ -525,6 +527,8 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_ClosedRange = ____lualib.__K2L_ClosedRange
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -688,7 +692,7 @@ local function main()
             end)
         end)
     end)
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         ____Engine.Engine.new(looping, 4):run(____Facts.Facts.new(__K2L_SingletonMapOf(__K2L_Pair.new("x", ____Facts.toValue(0)))))
     end)
     if not ____ok then
@@ -700,7 +704,7 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
         ____RuleDsl.ruleSet(function(____this_29)
             ____this_29:rule("broken", function(____this_30)
                 ____this_30:whenever(____lambda_9)
@@ -716,7 +720,7 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
         ____RuleDsl.ruleSet(function(____this_32)
             ____this_32:rule("no condition", function(____this_33)
                 ____this_33:____then(function(____this_34)
@@ -742,7 +746,7 @@ local function main()
     print(__K2L_Str(f) .. " " .. tostring(f:contains("a")) .. " " .. __K2L_Str(f:get("c")) .. " " .. tostring(__K2L_Compare(f:get("a"), f:get("a"):plus(____Facts.toValue(1))) < 0) .. " " .. __K2L_Str(____Facts.Value.Missing))
     print(__K2L_Str(__K2L_ReadOnlyListOf(____Facts.toValue(3), ____Facts.toValue__1(1.5), ____Facts.toValue(-2)):sorted()))
     print(__K2L_Str(__K2L_ReadOnlyListOf(____Facts.toValue__2("pear"), ____Facts.toValue__2("apple")):maxOrNull()))
-    local ____ok_3, ____result_3 = pcall(function()
+    local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
         __K2L_ReadOnlyListOf(____Facts.toValue(1), ____Facts.toValue__2("x")):sorted()
     end)
     if not ____ok_3 then
@@ -756,5 +760,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {tiers = tiers, quoteRules = quoteRules, quote = quote}

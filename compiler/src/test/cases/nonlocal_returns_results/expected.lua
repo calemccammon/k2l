@@ -1,4 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -232,7 +234,7 @@ local function folds(xs, arr, which)
 end
 
 local function emptyFolds(which)
-    local ____ok, ____result_15, ____returned = pcall(function()
+    local ____ok, ____result_15, ____returned = __K2L_DeepPcall(function()
         if which == 0 then
             local ____list = __K2L_ReadOnlyListOf()
             local ____acc_4
@@ -476,5 +478,5 @@ local function main()
     end
 end
 
-main()
+__K2L_DeepMain(main)
 return {results = results, notNull = notNull, folds = folds, emptyFolds = emptyFolds, maps = maps}

@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -530,7 +532,7 @@ end
 local function resources(fail, early)
     local ____resource = Res.new("a")
     local ____result_45
-    local ____ok, ____result_46, ____returned = pcall(function()
+    local ____ok, ____result_46, ____returned = __K2L_DeepPcall(function()
         local ____result_47
         if early then
             return true, "early from " .. ____resource.name
@@ -559,11 +561,11 @@ end
 local function nested(early)
     local ____resource_1 = Res.new("outer")
     local ____result_48
-    local ____ok_1, ____result_49, ____returned_1 = pcall(function()
+    local ____ok_1, ____result_49, ____returned_1 = __K2L_DeepPcall(function()
         do
             local ____resource_2 = Res.new("inner")
             local ____result_50
-            local ____ok_2, ____result_51, ____returned_2 = pcall(function()
+            local ____ok_2, ____result_51, ____returned_2 = __K2L_DeepPcall(function()
                 if early then
                     return true, "early from " .. ____resource_2.name .. " in " .. ____resource_1.name
                 end
@@ -596,10 +598,10 @@ local function nested(early)
 end
 
 local function fussy()
-    local ____ok_3, ____result_52 = pcall(function()
+    local ____ok_3, ____result_52 = __K2L_DeepPcall(function()
         local ____resource_3 = Fussy.new()
         local ____result_53
-        local ____ok_4, ____result_54 = pcall(function()
+        local ____ok_4, ____result_54 = __K2L_DeepPcall(function()
             local ____result_55
             error(__K2L_IllegalArgumentException.new("body failed"))
             ____result_53 = ____result_55
@@ -638,7 +640,7 @@ end
 
 local function caught(early)
     local ____outcome
-    local ____ok_5, ____result_57, ____returned_5 = pcall(function()
+    local ____ok_5, ____result_57, ____returned_5 = __K2L_DeepPcall(function()
         local ____result_58
         if early == 0 then
             return true, "returned from runCatching"
@@ -657,10 +659,10 @@ local function caught(early)
         ____outcome = __K2L_Result.failure(__K2L_ToThrowable(____result_57))
     end
     local r = ____outcome
-    local ____arg = r:isSuccess()
-    local ____arg_1 = r:getOrNull()
+    local ____arg = tostring(r:isSuccess())
+    local ____arg_1 = __K2L_Str(r:getOrNull())
     local ____receiver = r:exceptionOrNull()
-    return "result " .. tostring(____arg) .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(____receiver and ____receiver.message)
+    return "result " .. ____arg .. " " .. ____arg_1 .. " " .. __K2L_Str(____receiver and ____receiver.message)
 end
 
 local function timed(early)
@@ -698,7 +700,7 @@ local function main()
     end
     print(resources(false, false))
     print(resources(false, true))
-    local ____ok_6, ____result_59 = pcall(function()
+    local ____ok_6, ____result_59 = __K2L_DeepPcall(function()
         resources(true, false)
     end)
     if not ____ok_6 then
@@ -722,5 +724,5 @@ local function main()
     print(timed(false))
 end
 
-main()
+__K2L_DeepMain(main)
 return {Res = Res, Fussy = Fussy, toVariants = toVariants, indexedAndRunning = indexedAndRunning, lookups = lookups, texts = texts, resources = resources, nested = nested, fussy = fussy, locked = locked, caught = caught, timed = timed}

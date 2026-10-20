@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -26,7 +28,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local function t(name, f)
     local r
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         r = f()
     end)
     if not ____ok then
@@ -100,7 +102,7 @@ local function views(label, m)
     t(label .. " keys add", function() return keys:add("x") end)
     t(label .. " values add", function() return values:add(1) end)
     t(label .. " entries contains", function()
-        local ____arg = entries:contains(m:getEntries():first())
+        local ____arg = tostring(entries:contains(m:getEntries():first()))
         local ____result_1 = false
         local ____items_1, ____n_1 = entries:____array()
         for ____i_1 = 1, ____n_1 do
@@ -110,7 +112,7 @@ local function views(label, m)
                 break
             end
         end
-        return tostring(____arg) .. " " .. tostring(____result_1)
+        return ____arg .. " " .. tostring(____result_1)
     end)
     t(label .. " keys eq", function()
         return tostring(__K2L_Equals(keys, m:getKeys():toSet())) .. " " .. tostring(__K2L_Hash(keys) == __K2L_Hash(m:getKeys():toSet())) .. " " .. tostring(__K2L_Equals(values, values))
@@ -140,7 +142,7 @@ local function views(label, m)
     end)
     t(label .. " values ops", function()
         local ____arg_1 = values:sum()
-        local ____arg_2 = values:maxOrNull()
+        local ____arg_2 = __K2L_Str(values:maxOrNull())
         local ____out_1 = {}
         local ____count_1 = 0
         local ____items_3, ____n_3 = values:____array()
@@ -151,7 +153,7 @@ local function views(label, m)
                 ____out_1[____count_1] = it
             end
         end
-        return ____arg_1 .. " " .. __K2L_Str(____arg_2) .. " " .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)) .. " " .. tostring(values:contains(80))
+        return ____arg_1 .. " " .. ____arg_2 .. " " .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)) .. " " .. tostring(values:contains(80))
     end)
     t(label .. " keys retainAll", function()
         return tostring(keys:retainAll(__K2L_ReadOnlyListOf("h", "e"))) .. " " .. __K2L_Str(m)
@@ -224,11 +226,11 @@ local function main()
     end)
     local sm = __K2L_SingletonMapOf(__K2L_Pair.new("x", 1))
     t("single views", function()
-        local ____arg_3 = sm:getKeys()
-        local ____arg_4 = sm:getValues()
-        local ____arg_5 = sm:getEntries()
+        local ____arg_3 = __K2L_Str(sm:getKeys())
+        local ____arg_4 = __K2L_Str(sm:getValues())
+        local ____arg_5 = __K2L_Str(sm:getEntries())
         local ____value = sm:getValues()
-        return __K2L_Str(____arg_3) .. " " .. __K2L_Str(____arg_4) .. " " .. __K2L_Str(____arg_5) .. " " .. tostring(__K2L_InstanceOf(____value, __K2L_Set)) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(sm:getValues())).name)
+        return ____arg_3 .. " " .. ____arg_4 .. " " .. ____arg_5 .. " " .. tostring(__K2L_InstanceOf(____value, __K2L_Set)) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(sm:getValues())).name)
     end)
     t("single remove", function()
         local ____cast = sm:getKeys()
@@ -239,11 +241,11 @@ local function main()
     end)
     local em = __K2L_ReadOnlyMapOf()
     t("empty views", function()
-        local ____arg_6 = em:getKeys()
-        local ____arg_7 = em:getValues()
-        local ____arg_8 = em:getEntries()
+        local ____arg_6 = __K2L_Str(em:getKeys())
+        local ____arg_7 = __K2L_Str(em:getValues())
+        local ____arg_8 = __K2L_Str(em:getEntries())
         local ____value_1 = em:getValues()
-        return __K2L_Str(____arg_6) .. " " .. __K2L_Str(____arg_7) .. " " .. __K2L_Str(____arg_8) .. " " .. tostring(__K2L_InstanceOf(____value_1, __K2L_List)) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(em:getKeys())).name)
+        return ____arg_6 .. " " .. ____arg_7 .. " " .. ____arg_8 .. " " .. tostring(__K2L_InstanceOf(____value_1, __K2L_List)) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(em:getKeys())).name)
     end)
     local um = __K2L_JdkCollections.unmodifiableMap(__K2L_MapOf(__K2L_Pair.new("a", 1)))
     t("unmodifiable keys", function()
@@ -305,5 +307,5 @@ local function main()
     end)
 end
 
-main()
+__K2L_DeepMain(main)
 return {t = t, views = views}

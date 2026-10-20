@@ -3,6 +3,8 @@ local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_HashMapOf = ____lualib.__K2L_HashMapOf
@@ -40,7 +42,7 @@ local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function t(name, f)
     local r
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result = __K2L_DeepPcall(function()
         r = f()
     end)
     if not ____ok then
@@ -413,9 +415,9 @@ local function readOnly()
     end)
     t("range is", function()
         local ____value_4 = __K2L_IntRange.new(1, 3)
-        local ____arg = __K2L_InstanceOf(____value_4, __K2L_Iterable) and not ____value_4.____readOnly
+        local ____arg = tostring(__K2L_InstanceOf(____value_4, __K2L_Iterable) and not ____value_4.____readOnly)
         local ____value_5 = __K2L_IntRange.new(1, 3)
-        return tostring(____arg) .. " " .. tostring(__K2L_InstanceOf(____value_5, __K2L_Iterable))
+        return ____arg .. " " .. tostring(__K2L_InstanceOf(____value_5, __K2L_Iterable))
     end)
     t("listOf2 as", function()
         local ____cast_4 = __K2L_ReadOnlyListOf(1, 2)
@@ -448,10 +450,10 @@ local function readOnly()
     end)
     local fixed = Fixed.new(__K2L_SingletonListOf("a"))
     t("delegating is", function()
-        local ____arg_1 = __K2L_InstanceOf(fixed, __K2L_List)
-        local ____arg_2 = __K2L_InstanceOf(fixed, __K2L_List) and not fixed.____readOnly
+        local ____arg_1 = tostring(__K2L_InstanceOf(fixed, __K2L_List))
+        local ____arg_2 = tostring(__K2L_InstanceOf(fixed, __K2L_List) and not fixed.____readOnly)
         local ____value_6 = Growing.new(__K2L_ListOf())
-        return tostring(____arg_1) .. " " .. tostring(____arg_2) .. " " .. tostring(__K2L_InstanceOf(____value_6, __K2L_List) and not ____value_6.____readOnly)
+        return ____arg_1 .. " " .. ____arg_2 .. " " .. tostring(__K2L_InstanceOf(____value_6, __K2L_List) and not ____value_6.____readOnly)
     end)
     t("delegating as", function()
         if not (__K2L_InstanceOf(fixed, __K2L_List) and not fixed.____readOnly) then
@@ -490,27 +492,27 @@ local function classNames()
     local objects = __K2L_ListOfSize(1, nil, true)
     print(__K2L_Str(__K2L_KClassOfArray("[I", "IntArray", "int[]", "kotlin.IntArray").simpleName) .. " " .. __K2L_Str(__K2L_KClassOfArray("[I", "IntArray", "int[]", "kotlin.IntArray").qualifiedName) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[I", "IntArray", "int[]", "kotlin.IntArray")).name) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[I", "IntArray", "int[]", "kotlin.IntArray")).simpleName or "") .. " " .. __K2L_Str(__K2L_KClassOfArray("[I", "IntArray", "int[]", "kotlin.IntArray")))
     print(__K2L_Str(__K2L_KClassOfArray("[Ljava.lang.String;", "Array", "String[]", "kotlin.Array").simpleName) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[Ljava.lang.String;", "Array", "String[]", "kotlin.Array")).name) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[Ljava.lang.String;", "Array", "String[]", "kotlin.Array")).simpleName or "") .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[Ljava.lang.String;", "Array", "String[]", "kotlin.Array"))))
-    local ____arg_3 = __K2L_JavaClass(__K2L_KClassOfArray("[[I", "Array", "int[][]", "kotlin.Array")).name
-    local ____arg_4 = __K2L_JavaClass(__K2L_KClassOfArray("[[I", "Array", "int[][]", "kotlin.Array")).simpleName or ""
-    local ____arg_5 = __K2L_JavaClass(__K2L_KClassOfArray("[Ljava.lang.Object;", "Array", "Object[]", "kotlin.Array")).name
+    local ____arg_3 = __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[[I", "Array", "int[][]", "kotlin.Array")).name)
+    local ____arg_4 = __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[[I", "Array", "int[][]", "kotlin.Array")).simpleName or "")
+    local ____arg_5 = __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[Ljava.lang.Object;", "Array", "Object[]", "kotlin.Array")).name)
     local ____unused = __K2L_TypedArrayOf("[D", 1.0)
-    print(__K2L_Str(____arg_3) .. " " .. __K2L_Str(____arg_4) .. " " .. __K2L_Str(____arg_5) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[D", "DoubleArray", "double[]", "kotlin.DoubleArray")).name))
+    print(____arg_3 .. " " .. ____arg_4 .. " " .. ____arg_5 .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[D", "DoubleArray", "double[]", "kotlin.DoubleArray")).name))
     local ____arg_6 = __K2L_KClassOfArray("[I", "IntArray", "int[]", "kotlin.IntArray")
     local ____unused_1 = __K2L_ListOfSize(2, 0, "[I")
-    local ____arg_8 = __K2L_Equals(____arg_6, __K2L_KClassOfArray("[I", "IntArray", "int[]", "kotlin.IntArray"))
+    local ____arg_8 = tostring(__K2L_Equals(____arg_6, __K2L_KClassOfArray("[I", "IntArray", "int[]", "kotlin.IntArray")))
     local ____arg_7 = __K2L_KClassOfArray("[Ljava.lang.String;", "Array", "String[]", "kotlin.Array")
     local ____unused_2 = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1)
-    local ____arg_9 = __K2L_Equals(____arg_7, __K2L_KClassOfArray("[Ljava.lang.Integer;", "Array", "Integer[]", "kotlin.Array"))
+    local ____arg_9 = tostring(__K2L_Equals(____arg_7, __K2L_KClassOfArray("[Ljava.lang.Integer;", "Array", "Integer[]", "kotlin.Array")))
     local ____unused_3 = __K2L_SingletonListOf("a"):toTypedArray("[Ljava.lang.String;")
-    print(tostring(____arg_8) .. " " .. tostring(____arg_9) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[Ljava.lang.String;", "Array", "String[]", "kotlin.Array")).name))
+    print(____arg_8 .. " " .. ____arg_9 .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[Ljava.lang.String;", "Array", "String[]", "kotlin.Array")).name))
     local ____unused_4 = __K2L_TypedArrayOf("[Z")
-    local ____arg_10 = __K2L_JavaClass(__K2L_KClassOfArray("[Z", "BooleanArray", "boolean[]", "kotlin.BooleanArray")).name
+    local ____arg_10 = __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[Z", "BooleanArray", "boolean[]", "kotlin.BooleanArray")).name)
     local ____unused_5 = __K2L_TypedArrayOf("[J")
-    local ____arg_11 = __K2L_JavaClass(__K2L_KClassOfArray("[J", "LongArray", "long[]", "kotlin.LongArray")).name
+    local ____arg_11 = __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[J", "LongArray", "long[]", "kotlin.LongArray")).name)
     local ____unused_6 = __K2L_TypedArrayOf("[C")
-    local ____arg_12 = __K2L_JavaClass(__K2L_KClassOfArray("[C", "CharArray", "char[]", "kotlin.CharArray")).name
+    local ____arg_12 = __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[C", "CharArray", "char[]", "kotlin.CharArray")).name)
     local ____unused_7 = __K2L_TypedArrayOf("[Ljava.util.List;", __K2L_SingletonListOf(1))
-    print(__K2L_Str(____arg_10) .. " " .. __K2L_Str(____arg_11) .. " " .. __K2L_Str(____arg_12) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[Ljava.util.List;", "Array", "List[]", "kotlin.Array")).name))
+    print(____arg_10 .. " " .. ____arg_11 .. " " .. ____arg_12 .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfArray("[Ljava.util.List;", "Array", "List[]", "kotlin.Array")).name))
 end
 
 local function main()
@@ -520,5 +522,5 @@ local function main()
     classNames()
 end
 
-main()
+__K2L_DeepMain(main)
 return {t = t, Logged = Logged, Fixed = Fixed, Growing = Growing, subLists = subLists, arrayViews = arrayViews, readOnly = readOnly, classNames = classNames}

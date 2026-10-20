@@ -1,6 +1,8 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -391,7 +393,7 @@ local function mixed()
 end
 
 local function guarded(f)
-    local ____ok, ____result_9 = pcall(function()
+    local ____ok, ____result_9 = __K2L_DeepPcall(function()
         f()
     end)
     if not ____ok then
@@ -409,7 +411,7 @@ end
 local function guards(mode)
     local ____result_10
     do
-        local ____ok_1, ____result_11, ____returned_1 = pcall(function()
+        local ____ok_1, ____result_11, ____returned_1 = __K2L_DeepPcall(function()
             if mode == 1 then
                 return true, "early"
             end
@@ -993,7 +995,7 @@ local function main()
     print(elsewhere("zzz"))
 end
 
-main()
+__K2L_DeepMain(main)
 return {firstOr = firstOr, twice = twice, withLog = withLog, findBig = findBig, counter = counter, shadow = shadow, early = early, Box = Box, sumUntil = sumUntil, boxes = boxes, mapFirst = mapFirst, sumTest = sumTest, outer = outer, inner = inner, nested = nested, swap = swap, swaps = swaps, hygiene = hygiene, loopWith = loopWith, loops = loops, runAll = runAll, mixed = mixed, guarded = guarded, guards = guards, order = order, withBang = withBang, letIf = letIf, receivers = receivers, Animal = Animal, Dog = Dog, Cat = Cat, reified = reified, elsewhere = elsewhere, Tracker = Tracker, Client = Client, tap = tap, mapNotNullFirst = mapNotNullFirst, labeled = labeled, chain = chain, whenUse = whenUse}
 -- ==== tools/tools.lua ====
 local ____lualib = require("lualib_bundle")

@@ -2,6 +2,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
@@ -145,7 +147,7 @@ local function main()
     for ____i_4 = 1, attempts.size do
         local ____item = attempts[____i_4]
         local id, member = ____item.first, ____item.second
-        local ____ok, ____result_1 = pcall(function()
+        local ____ok, ____result_1 = __K2L_DeepPcall(function()
             local loan = desk:checkout(member, id)
             print(member.name .. " borrows " .. loan.media.title .. ", due d" .. loan:getDue())
         end)
@@ -175,7 +177,7 @@ local function main()
     end
     print("overdue at d" .. ____arg_1 .. ": " .. __K2L_Str(__K2L_ListWrap(____out_3, ____count_3)))
     local ____result_2
-    local ____ok_1, ____result_3 = pcall(function()
+    local ____ok_1, ____result_3 = __K2L_DeepPcall(function()
         print("fees: " .. __K2L_Str(__K2L_ReadOnlyListOf("D1", "d2"):map(function(...) return desk:checkin(...) end)))
         clock:advance(20)
         print("fee B3: " .. desk:checkin("B3"))
@@ -294,7 +296,7 @@ local function main()
     print(summary)
 end
 
-main()
+__K2L_DeepMain(main)
 return {SimClock = SimClock, Rule = Rule, rules = rules, announce = announce}
 -- ==== model/Catalog.lua ====
 local ____lualib = require("lualib_bundle")
@@ -507,6 +509,7 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_ListBuilderOf = ____lualib.__K2L_ListBuilderOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -698,7 +701,7 @@ function Desk.Report:lines()
     do
         ____builder:add("== " .. self.title .. " (day " .. self.____outer.clock.today .. ")")
         local ____collection = self.____outer.shelf:getValues()
-        local ____items_5, ____n_5 = ____collection:____array()
+        local ____items_5, ____n_5 = __K2L_LoopItems(____collection)
         local ____mod_1 = ____collection.____modCount
         for ____i_8 = 1, ____n_5 do
             local m = ____items_5[____i_8]
