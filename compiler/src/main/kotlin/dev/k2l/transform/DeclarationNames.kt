@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 /** Lua names of Kotlin declarations. */
 internal class DeclarationNames(private val session: KaSession, private val classes: ClassHierarchy) {
     fun of(decl: KtNamedDeclaration): String =
-        renames[decl] ?: if (decl is KtNamedFunction) function(decl) else LuaNames.of(decl.name ?: "_")
+        renames[decl] ?: if (decl is KtNamedFunction) function(decl) else luaNameOf(decl) ?: LuaNames.of(decl.name ?: "_")
 
     /**
      * Declarations of an inlined function body whose Lua names were changed to avoid capturing a name used by the
@@ -28,6 +28,7 @@ internal class DeclarationNames(private val session: KaSession, private val clas
      * numbering spans the class hierarchy, and an override reuses the name of what it overrides.
      */
     fun function(fn: KtNamedFunction): String = functionNames.getOrPut(fn) {
+        luaNameOf(fn)?.let { return@getOrPut it }
         val name = fn.name ?: "_"
         val owner = fn.containingClassOrObject
         val overloads: List<Any> = if (owner == null) {
@@ -133,6 +134,19 @@ internal class DeclarationNames(private val session: KaSession, private val clas
 
     /** Lua name of a destructuring entry; `_` stays `_`. */
     fun entry(entry: KtDestructuringDeclarationEntry): String = if (entry.name == "_") "_" else of(entry)
+}
+
+/**
+ * `@LuaName("on_load")` on a top-level function or plain property of the program: its local and the field Lua code reads
+ * it from in the module table. Only a name k2l would not rename itself (no Lua keyword, no global it relies on) is used.
+ */
+private fun luaNameOf(decl: KtNamedDeclaration): String? {
+    if (decl.parent !is KtFile || (decl !is KtNamedFunction && decl !is KtProperty)) return null
+    if (decl is KtProperty && (decl.hasAccessorFunctions() || decl.delegate != null)) return null
+    val entry = decl.annotationEntries.firstOrNull { it.shortName?.asString() == "LuaName" } ?: return null
+    val text = entry.valueArguments.firstOrNull()?.getArgumentExpression() as? KtStringTemplateExpression ?: return null
+    val name = text.entries.joinToString("") { it.text }
+    return name.takeIf { LuaNames.of(it) == it && !it.startsWith("____") }
 }
 
 /**

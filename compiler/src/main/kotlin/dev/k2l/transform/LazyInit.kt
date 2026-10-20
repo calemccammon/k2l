@@ -33,6 +33,9 @@ internal class LazyInit(private val session: KaSession, private val classes: Cla
     private val cache = HashMap<KtClassOrObject, Boolean>()
     private val inProgress = HashSet<KtClassOrObject>()
 
+    /** Whether a file's top-level properties wait for its first use, see [FileInit]. */
+    var deferredFile: (KtFile) -> Boolean = { false }
+
     /**
      * Whether initializing [c] can have an effect other than setting its own fields to constants: `init` blocks, property
      * initializers that call code or read mutable state, constructors with bodies, or a superclass that does any of that.
@@ -56,7 +59,7 @@ internal class LazyInit(private val session: KaSession, private val classes: Cla
             (c is KtClass && c.secondaryConstructors.any { !pureBody(it, c) })
     }
 
-    private fun KaSession.memberObservable(decl: KtDeclaration, owner: KtClassOrObject): Boolean = when (decl) {
+    private fun KaSession.memberObservable(decl: KtDeclaration, owner: KtClassOrObject?): Boolean = when (decl) {
         is KtAnonymousInitializer -> (decl.body as? KtBlockExpression)?.statements?.all { assignsPure(it, owner) } != true
 
         is KtProperty -> !pure(decl.initializer, owner) || !pure(decl.delegateExpression, owner)
@@ -69,7 +72,7 @@ internal class LazyInit(private val session: KaSession, private val classes: Cla
     }
 
     /** Whether evaluating [e] has no effect and gives the same value whenever it runs (as far as k2l can tell). */
-    private fun KaSession.pure(e: KtExpression?, owner: KtClassOrObject): Boolean {
+    internal fun KaSession.pure(e: KtExpression?, owner: KtClassOrObject?): Boolean {
         if (e == null || e.evaluate() != null) return true
         return when (e) {
             is KtConstantExpression, is KtLambdaExpression, is KtCallableReferenceExpression, is KtThisExpression -> true
@@ -95,11 +98,11 @@ internal class LazyInit(private val session: KaSession, private val classes: Cla
         }
     }
 
-    private fun KaSession.pureBody(ctor: KtSecondaryConstructor, owner: KtClassOrObject) =
+    private fun KaSession.pureBody(ctor: KtSecondaryConstructor, owner: KtClassOrObject?) =
         ctor.bodyExpression?.statements?.all { assignsPure(it, owner) } != false
 
     /** `x = <pure>` or `this.x = <pure>`: an `init` block made only of these has no effect beyond setting fields. */
-    private fun KaSession.assignsPure(statement: KtExpression, owner: KtClassOrObject): Boolean {
+    private fun KaSession.assignsPure(statement: KtExpression, owner: KtClassOrObject?): Boolean {
         val assignment = statement as? KtBinaryExpression ?: return false
         if (assignment.operationToken != KtTokens.EQ) return false
         val target = assignment.left
@@ -108,20 +111,20 @@ internal class LazyInit(private val session: KaSession, private val classes: Cla
         return isField && pure(assignment.right, owner)
     }
 
-    private fun KaSession.pureBinary(e: KtBinaryExpression, owner: KtClassOrObject): Boolean {
+    private fun KaSession.pureBinary(e: KtBinaryExpression, owner: KtClassOrObject?): Boolean {
         val isInfixTo = e.operationReference.getReferencedName() == "to"
         if (e.operationToken !in PURE_OPERATORS && !isInfixTo) return false
         val callee = e.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>()?.symbol?.psi
         return (callee == null || !classes.isSource(callee)) && pure(e.left, owner) && pure(e.right, owner)
     }
 
-    private fun KaSession.pureSelector(selector: KtExpression?, owner: KtClassOrObject): Boolean = when (selector) {
+    private fun KaSession.pureSelector(selector: KtExpression?, owner: KtClassOrObject?): Boolean = when (selector) {
         is KtNameReferenceExpression -> pureReference(selector, owner)
         is KtCallExpression -> pureCall(selector, owner)
         else -> false
     }
 
-    private fun KaSession.pureReference(ref: KtNameReferenceExpression, owner: KtClassOrObject): Boolean {
+    private fun KaSession.pureReference(ref: KtNameReferenceExpression, owner: KtClassOrObject?): Boolean {
         val symbol = ref.mainReference.resolveToSymbol()
         val psi = symbol?.psi
         return when {
@@ -137,7 +140,8 @@ internal class LazyInit(private val session: KaSession, private val classes: Cla
 
             psi is KtProperty && psi.getter?.hasBody() == true -> false
 
-            psi is KtProperty && psi.isTopLevel -> !psi.isVar
+            // reading a top-level property of a file initialized on first use (see FileInit) runs its initializers
+            psi is KtProperty && psi.isTopLevel -> !psi.isVar && !deferredFile(psi.containingKtFile)
 
             psi is KtProperty || psi is KtParameter -> pureMemberRead(psi as KtDeclaration, owner)
 
@@ -145,13 +149,13 @@ internal class LazyInit(private val session: KaSession, private val classes: Cla
         }
     }
 
-    private fun pureMemberRead(psi: KtDeclaration, owner: KtClassOrObject): Boolean {
+    private fun pureMemberRead(psi: KtDeclaration, owner: KtClassOrObject?): Boolean {
         val container = psi.containingClassOrObject
-        return container == owner || (container != null && container in classes.hierarchy(owner)) ||
+        return container == owner || (container != null && owner != null && container in classes.hierarchy(owner)) ||
             (container is KtObjectDeclaration && !isObservable(container) && !(psi is KtProperty && psi.isVar))
     }
 
-    private fun KaSession.pureCall(call: KtCallExpression, owner: KtClassOrObject): Boolean {
+    private fun KaSession.pureCall(call: KtCallExpression, owner: KtClassOrObject?): Boolean {
         val resolved = call.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>() ?: return false
         val symbol = resolved.symbol
         val psi = symbol.psi

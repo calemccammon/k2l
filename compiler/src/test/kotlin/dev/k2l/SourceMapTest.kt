@@ -130,6 +130,46 @@ class SourceMapTest {
         }
     }
 
+    @Test
+    fun `an uncaught Lua error through the try driver shows the traceback of its site`() {
+        val interpreters = interpreters()
+        assumeTrue(interpreters.isNotEmpty(), "no Lua interpreter found")
+        val source = """
+            |import dev.k2l.lua.*
+            |
+            |fun fail(n: Int): Int {
+            |    if (n == 0) Lua.error("raw failure")
+            |    return n
+            |}
+            |
+            |fun guarded(n: Int): Int = try { fail(n) } catch (e: IllegalStateException) { -1 }
+            |
+            |fun process(n: Int): Int = fail(n) + 1
+            |
+            |fun main() {
+            |    println(guarded(1))
+            |    println(process(0))
+            |}
+            |
+        """.trimMargin()
+        for ((lua, target) in interpreters) {
+            val out = dir.resolve("out-deep-${target.id}")
+            val result = compile(CompilerOptions(luaTarget = target), source)
+            assertEquals("", result.diagnostics.joinToString("\n"))
+            result.writeTo(out)
+            val code = Files.readAllLines(out.resolve("main.lua"))
+            if (target != LuaTarget.Lua51 && target != LuaTarget.LuaJIT) {
+                assertTrue(code.any { "__K2L_DeepMain" in it }, "$lua: main does not run in the driver")
+            }
+            // the frame of process(), which called fail(): the driver re-raises the error, but with the failing stack
+            val processLine = code.indexOfFirst { it.trim() == "return fail(n) + 1" } + 1
+            val (status, output) = run(lua, out)
+            assertEquals(1, status, output)
+            assertTrue(output.contains("raw failure"), "$lua: $output")
+            assertTrue(output.contains("main.lua:$processLine:"), "$lua: no frame of process() in\n$output")
+        }
+    }
+
     private fun run(lua: String, out: Path): Pair<Int, String> {
         val process = ProcessBuilder(lua, "main.lua").directory(out.toFile()).redirectErrorStream(true).start()
         val output = process.inputStream.readBytes().toString(Charsets.UTF_8)

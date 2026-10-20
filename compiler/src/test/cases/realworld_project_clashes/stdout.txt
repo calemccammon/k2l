@@ -1,0 +1,22 @@
+geo(1.5, 2.0)
+text@3:7
+main:main.Point(here)
+title...|
+point at x=1.5 y=2.0
+line 3, column 7
+[3:1, 3:7, 4:2]
+[3:7, 3:1]
+counts geo=1 text=101
+counts geo=7 text=120
+[geo:circle, text:label, text:caption]
+text.print: hello
+type=text-format
+plain **loud**
+**now bold**
+shadowed
+7
+Point draw.geometry.Point
+draw.text.Point draw.Point
+[Point, Point, Point]
+true
+true false

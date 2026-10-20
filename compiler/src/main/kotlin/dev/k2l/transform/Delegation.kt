@@ -220,7 +220,7 @@ internal fun FileTransformer.delegatedAccessors(p: KtProperty, ref: LuaExpr) {
 
 // ---- library delegate factories ----
 
-/** `lazy { }`, `Delegates.observable(...)`, `Delegates.vetoable(...)` and `Delegates.notNull()`. */
+/** `lazy { }`, `Delegates.observable(...)`, `Delegates.vetoable(...)`, `Delegates.notNull()` and `ReadOnlyProperty { }`. */
 internal fun FileTransformer.delegateFactory(callableId: String?, call: KaCallableMemberCall<*, *>): LuaExpr? = with(session) {
     if (callableId == null || call !is KaFunctionCall<*>) return null
     val args = callArguments(call)
@@ -236,6 +236,9 @@ internal fun FileTransformer.delegateFactory(callableId: String?, call: KaCallab
         "kotlin/properties/Delegates.vetoable" -> LuaCall(lualibRef("Delegates", "__K2L_VetoableProperty"), arguments(emptyList(), args))
 
         "kotlin/properties/Delegates.notNull" -> LuaCall(lualibRef("Delegates", "__K2L_NotNullProperty"), emptyList())
+
+        // the SAM constructor `ReadOnlyProperty { thisRef, property -> }`
+        "kotlin/properties/ReadOnlyProperty" -> LuaCall(lualibRef("Delegates", "__K2L_ReadOnlyProperty"), arguments(emptyList(), args))
 
         else -> null
     }

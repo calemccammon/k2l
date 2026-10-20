@@ -1,0 +1,22 @@
+== users
+count=3 ids=[1, 2, 3] exists(4)=false
+devs=[alice]
+update=User(id=1, name=ALICE, role=dev) missing=null
+require(3)=carol again=admin
+error: no entity with id 42
+delete(2)=true delete(2)=false ids=[1, 3]
+base reads=12
+  audit: update 2
+  audit: update 1
+  audit: delete 2 -> true
+  audit: delete 2 -> false
+== products
+hits=3 ids=[cable, kb, mouse] middle=kb
+view=[cable, kb, mouse] kb=49.5
+most stocked=cable empty=null
+in stock by price band={low=1, high=1}
+== delegated list
+  [tags] add b
+  [tags] add c
+tags[b, c, d, e] size=4 middle=d contains(c)=true sorted=[e, d, c, b]
+empty middle=null

@@ -23,7 +23,8 @@ import java.util.concurrent.TimeUnit
  * - `expected.lua`: the exact transpiler output (regenerate with `-PupdateGolden`)
  * - `stdout.txt`: what the program prints, produced by the Kotlin/JVM oracle (`kotlinOracle` task)
  * - `options.txt` (optional): compiler options for the case, one `name=value` per line (`intOverflow=wrap`, `strings=utf16`, `long64=emulate`)
- * - `errors.txt` (instead of the other two): expected diagnostics, one `line:column: message` per line
+ * - `errors.txt` (instead of the other two): expected diagnostics, one `line:column: message` per line, each followed by its
+ *   `  hint: ...` line if it has one
  */
 class CasesTest {
     @TestFactory
@@ -34,7 +35,9 @@ class CasesTest {
         val errors = File(dir, "errors.txt")
         if (errors.isFile) {
             DynamicTest.dynamicTest(module.name) {
-                val actual = result.diagnostics.joinToString("") { "${it.line}:${it.column}: ${it.message}\n" }
+                val actual = result.diagnostics.joinToString("") { d ->
+                    "${d.line}:${d.column}: ${d.message}\n" + d.hint?.let { "  hint: $it\n" }.orEmpty()
+                }
                 if (update) errors.writeText(actual) else assertEquals(errors.readText(), actual)
             }
         } else {

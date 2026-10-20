@@ -1,0 +1,20 @@
+== search tree
+inOrder=[20, 30, 40, 50, 60, 65, 70, 80] height=4 size=8
+render=(50 (30 20 40) (70 (60 . 65) 80))
+contains 65=true 66=false sum=415
+labels=[n20, n30, n40] any height=4 empty=[] 0
+words=[apple, banana, fig, kiwi, pear] max=pear render=(pear (apple . (fig banana kiwi)) .)
+equal=true false empty=Empty
+== rose tree
+flatten=[ceo, cto, dev1, dev2, cfo, acct, coo]
+paths=[ceo/cto/dev1, ceo/cto/dev2, ceo/cfo/acct, ceo/coo]
+lengths=24
+depth=3 leaves=4
+upper=[CTO, CFO, COO]
+== expressions
+((x * 3) + -y) = 7 vars=[x, y]
+F T F F 
+((ab * v) + -xyz) = a1a2b1b2|zyx
+reused=[z, 1, a] vars=[z]
+error: unbound variable y
+error: operator /

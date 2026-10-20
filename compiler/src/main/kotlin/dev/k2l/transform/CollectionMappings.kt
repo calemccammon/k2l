@@ -86,6 +86,7 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "java/util/TreeSet",
         "java/util/SortedSet",
         "java/util/NavigableSet",
+        "java/util/EnumSet",
         "kotlin/collections/AbstractSet",
         "kotlin/collections/AbstractMutableSet",
         "java/util/AbstractSet",
@@ -102,6 +103,7 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "java/util/TreeMap",
         "java/util/SortedMap",
         "java/util/NavigableMap",
+        "java/util/EnumMap",
         "kotlin/collections/AbstractMap",
         "kotlin/collections/AbstractMutableMap",
         "java/util/AbstractMap",
@@ -229,6 +231,8 @@ fun featureOf(luaName: String) = when {
 
     luaName in DEQUE_CLASSES || luaName in DEQUE_INTERFACES -> DEQUES_FEATURE
 
+    luaName.startsWith("__K2L_Enum") -> ENUM_COLLECTIONS_FEATURE
+
     luaName.startsWith("__K2L_Compare") || luaName.startsWith("__K2L_Then") || luaName.startsWith("__K2L_Nulls") ||
         luaName == "__K2L_ReverseComparator" ||
         luaName == "__K2L_NaturalOrder" || luaName == "__K2L_ReverseOrder" -> "Comparators"
@@ -250,6 +254,9 @@ private val PRIMITIVE_AS_LIST = mapOf(
 
 /** lualib feature with ArrayDeque and LinkedList, see `Deques.lua`. */
 internal const val DEQUES_FEATURE = "Deques"
+
+/** lualib feature with EnumMap and EnumSet, see `EnumCollections.lua`. */
+internal const val ENUM_COLLECTIONS_FEATURE = "EnumCollections"
 
 /** The lualib classes of `kotlin.collections.ArrayDeque`, `java.util.ArrayDeque` and `java.util.LinkedList`. */
 internal val DEQUE_CLASSES = setOf("__K2L_ArrayDeque", "__K2L_Deque", "__K2L_LinkedList")
@@ -274,6 +281,8 @@ val SPECIFIC_COLLECTION_CLASSES = mapOf(
     "java/util/TreeMap" to "__K2L_SortedMap",
     "java/util/SortedMap" to "__K2L_SortedMap",
     "java/util/NavigableMap" to "__K2L_SortedMap",
+    "java/util/EnumSet" to "__K2L_EnumSet",
+    "java/util/EnumMap" to "__K2L_EnumMap",
 )
 
 /** Collection, string and pair functions of the Kotlin stdlib. */

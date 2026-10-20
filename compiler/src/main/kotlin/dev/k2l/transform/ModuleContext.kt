@@ -2,6 +2,7 @@ package dev.k2l.transform
 
 import org.jetbrains.kotlin.KtNodeTypes
 import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtClassLiteralExpression
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtConstantExpression
@@ -61,7 +62,7 @@ class ModuleContext(
     /** Per-module results that need an analysis session to compute but only hold PSI (see `PropertyFamilies`). */
     val shared = HashMap<String, Any>()
 
-    /** Whether some file uses `::class` or `javaClass`: then classes record their qualified names (see Reflection.kt). */
+    /** Whether some file uses `::class`, `javaClass` or `typeOf`: then classes record their qualified names (see Reflection.kt). */
     val usesReflection: Boolean by lazy { files.any(::mentionsReflection) }
 
     /**
@@ -163,7 +164,12 @@ class ModuleContext(
             }
 
             override fun visitSimpleNameExpression(expression: KtSimpleNameExpression) {
-                if (expression.getReferencedName() == "javaClass") found = true
+                val name = expression.getReferencedName()
+                if (name == "javaClass" ||
+                    (name == "typeOf" && (expression.parent as? KtCallExpression)?.typeArgumentList != null)
+                ) {
+                    found = true
+                }
             }
         })
         return found

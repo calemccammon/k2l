@@ -5254,6 +5254,18 @@ end
 
 __K2L_HashMap.____put = __K2L_HashMap.put
 
+-- A HashMap holds nine fields once it has a key (with ____entries and ____modCount): set one by one, they rehash the
+-- table at each power of two, the last time from 8 to 16 slots. A table constructor sizes it once for all of them
+-- (____init then only replaces their values). Subclasses keep the plain `new` of their class.
+function __K2L_HashMap.new(...)
+    local self = setmetatable({
+        size = 0, ____keys = false, ____values = false, ____index = false, ____buckets = false, ____entries = false,
+        ____capacity = 16, ____dirty = false, ____modCount = 0,
+    }, __K2L_HashMap)
+    __K2L_HashMap.____init(self, ...)
+    return self
+end
+
 function __K2L_HashMap:clear()
     local capacity = self.____capacity
     __K2L_Map.____init(self)

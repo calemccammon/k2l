@@ -85,7 +85,7 @@ fun registerOracle(name: String, description: String, cases: Directory, work: St
         systemProperty("k2l.oracle.work", layout.buildDirectory.dir(work).get().asFile.absolutePath)
         systemProperty("k2l.oracle.update", providers.gradleProperty("updateOracle").isPresent)
         systemProperty("k2l.oracle.only", providers.gradleProperty(onlyProperty).orNull.orEmpty())
-        // -PoracleThreads=1 compiles and runs the cases one at a time.
+        // -PoracleThreads=N compiles and runs N cases at a time (default: the processors, at most 4).
         providers.gradleProperty("oracleThreads").orNull?.let { systemProperty("k2l.oracle.threads", it) }
         outputs.upToDateWhen { false }
     }

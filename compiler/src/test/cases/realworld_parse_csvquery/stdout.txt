@@ -1,0 +1,53 @@
+record 3, column 5: quote inside unquoted field
+[name, dept, salary, city] 7 rows
+Smith, Anna | Eng | 120000 | New York
+Bob "Bobby" Jones | Ops | 85000 | Austin
+Chen "CJ" Li | Eng | 135000.50 | Seattle
+Dana | Sales | 70000 | Austin
+Émile | Eng | 99000 | Montréal
+Multi\nLine | Ops | 60000 | ∅
+Fay | Sales | 91000 | Seattle
+> SELECT name, city WHERE dept = 'Eng' AND salary > 100000
+  name	city
+  Smith, Anna	New York
+  Chen "CJ" Li	Seattle
+> select dept, count(name), sum(salary), avg(salary) group by dept order by sum(salary) desc
+  dept	count(name)	sum(salary)	avg(salary)
+  Eng	3	354000.50	118000.17
+  Sales	2	161000	80500
+  Ops	2	145000	72500
+> SELECT city, max(salary) GROUP BY city ORDER BY city
+  city	max(salary)
+  	60000
+  Austin	85000
+  Montréal	99000
+  New York	120000
+  Seattle	135000.50
+> SELECT name WHERE city = 'Austin' OR (dept = 'Sales' AND salary >= 91000) ORDER BY name DESC LIMIT 2
+  name
+  Fay
+  Dana
+> SELECT * WHERE salary < 70000
+  *
+  Multi
+Line|Ops|60000|
+> SELECT name WHERE name = 'Bob "Bobby" Jones'
+  name
+  Bob "Bobby" Jones
+> SELECT name, bogus
+  error: no column 'bogus' in [name, dept, salary, city]
+> SELECT name WHERE salary ~ 3
+  error: bad operator '3'
+> SELECT name ORDER BY city
+  error: ORDER BY city is not selected
+> SELECT name LIMIT
+  error: unexpected end of query
+> SELECT name, frob(salary) GROUP BY dept
+  error: unknown aggregate frob
+> UPDATE x
+  error: expected select near token 0
+CsvError: record 1, column 6: unterminated quoted field
+CsvError: record 1, column 6: unexpected 'x' after closing quote
+IllegalArgumentException: row 2 has 3 fields, expected 2
+[[a, b, c;d], [, , ]]
+[one, two]

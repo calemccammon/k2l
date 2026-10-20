@@ -1,3 +1,6 @@
-4:37: Reference to the library constructor 'java/util/concurrent/atomic/AtomicInteger' is not supported yet
+4:37: Reference to the library constructor 'java.util.concurrent.atomic.AtomicInteger' is not supported yet
+  hint: use a lambda instead of the reference, e.g. { AtomicInteger() }
 5:47: This callable reference is not supported yet
+  hint: use a lambda instead of the reference
 6:19: Reference to library property 'options' is not supported yet
+  hint: use a lambda instead of the reference, e.g. { it.options } (or { x.options })

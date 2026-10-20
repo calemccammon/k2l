@@ -1,3 +1,4 @@
+-- requires: Str
 -- Instances look keys up in their class (`cls.__index = cls`), except when the class (or a base) needs more:
 -- * it overrides a library property such as Throwable.message with a custom getter: the field is not set on instances
 --   (what the Throwable constructor stores goes to `____message`), so reading it reaches `__index`, which calls the getter;
@@ -75,13 +76,19 @@ local function __K2L_ElementAccess(cls, at, atPut)
     installIndex(cls)
 end
 
+-- Lua code calling tostring() or print() on an object of the program (a Lua host of Kotlin modules) sees its toString().
+local function instanceToString(self)
+    return __K2L_Str(self)
+end
+
 -- Creates a class (or interface) table. Instances use it as their metatable; methods missing from
 -- the class are looked up in the base class, then in interface default methods.
 local function __K2L_Class(name, base, ...)
     local cls = {____name = name, ____super = base, ____interfaces = {}}
     cls.__index = cls
+    cls.__tostring = instanceToString
     if base ~= nil then
-        cls.__tostring = rawget(base, "__tostring")
+        cls.__tostring = rawget(base, "__tostring") or instanceToString
         cls.__call = rawget(base, "__call")
     end
     local interfaces = {...}

@@ -51,6 +51,7 @@ internal fun FileTransformer.lambda(e: KtLambdaExpression): LuaExpr = with(sessi
     frame.unitResult = !returnsValue && resultExpected(e)
     val body = inFrame(frame) {
         prologue + collect {
+            checkUncheckedLambdaClosure(e, params)
             lambdaBody(literal, if (returnsValue) ({ listOf(LuaReturn(listOf(it))) }) else null)
             if (frame.unitResult && buffer.lastOrNull() !is LuaReturn) emit(LuaReturn(listOf(unitObject())))
         }
@@ -88,6 +89,7 @@ internal fun FileTransformer.inlineLambda(lambdaExpr: KtExpression, args: List<L
         val frame = FunctionFrame(FunctionFrame.Kind.Inline, lambdaLabels(lambda), literal).also { it.sink = sink }
         val body = collect {
             bindLambdaParameters(literal, names, args)
+            checkUncheckedLambdaParameters(lambda, names.map { lambdaBindings[literal to it] ?: LuaNil })
             if (receiver != null) receiverBindings[literal] = receiver
             inFrame(frame) { lambdaBody(literal, sink) }
         }
@@ -240,7 +242,7 @@ private fun FileTransformer.constructorReference(e: KtCallableReferenceExpressio
     val cls = symbol.containingClassId?.let(classes::classInFile)
         ?: ((psi as? KtConstructor<*>)?.getContainingClassOrObject() ?: psi as? KtClassOrObject)?.takeIf { classes.isSource(it) }
         ?: return libraryConstructorReference(e, symbol)
-            ?: unsupported(e, "Reference to the library constructor '${symbol.containingClassId?.asString()}'")
+            ?: unsupported(e, "Reference to the library constructor '${symbol.containingClassId?.asSingleFqName()}'")
     val constructor = LuaIndex(classRef(cls), LuaString("new" + constructorSuffix(psi)))
     val params = (psi as? KtConstructor<*>)?.valueParameters ?: (cls as? KtClass)?.primaryConstructorParameters.orEmpty()
     return if (isInner(cls) && (e.receiverExpression == null || isBoundReference(e))) {

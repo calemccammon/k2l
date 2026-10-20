@@ -12,7 +12,7 @@ local __K2L_MatchGroups = __K2L_Class("kotlin.text.MatchGroupCollection", __K2L_
 do
 
 local function patternError(message, pattern)
-    error(__K2L_IllegalArgumentException.new(message .. " near index in pattern " .. pattern))
+    error(__K2L_PatternSyntaxException.new(message .. " near index in pattern " .. pattern))
 end
 
 local function isWordByte(b)
@@ -88,26 +88,13 @@ local lower = unicodeProperty(PROPERTIES.Lower, function(u, cp) return u.lower(c
 local digit = unicodeProperty(PROPERTIES.Digit, function(u, cp) return u.digit(cp) end)
 -- Character.isSpaceChar (Zs, Zl, Zp): no control characters
 local separator = unicodeProperty(function(b) return b == 32 end, function(u, cp) return u.space(cp) end)
-for _, name in ipairs({"L", "IsL", "IsLetter", "IsAlphabetic", "javaLetter", "javaAlphabetic"}) do
-    PROPERTIES[name] = letter
-end
-for _, name in ipairs({"Lu", "IsLu", "IsUppercase", "javaUpperCase"}) do
-    PROPERTIES[name] = upper
-end
-for _, name in ipairs({"Ll", "IsLl", "IsLowercase", "javaLowerCase"}) do
-    PROPERTIES[name] = lower
-end
-for _, name in ipairs({"N", "Nd", "IsN", "IsNd", "IsDigit", "javaDigit"}) do
-    PROPERTIES[name] = digit
-end
-for _, name in ipairs({"Z", "IsZ", "javaSpaceChar"}) do
-    PROPERTIES[name] = separator
-end
-PROPERTIES.Lt = unicodeProperty(none, function(u, cp) return u.title(cp) end)
-PROPERTIES.IsTitlecase, PROPERTIES.javaTitleCase = PROPERTIES.Lt, PROPERTIES.Lt
-PROPERTIES.M = unicodeProperty(none, function(u, cp) return u.mark(cp) end)
-PROPERTIES.IsM = PROPERTIES.M
-PROPERTIES.Zs = unicodeProperty(function(b) return b == 32 end, function(u, cp) return u.space(cp) and cp ~= 0x2028 and cp ~= 0x2029 end)
+PROPERTIES.IsLetter, PROPERTIES.IsAlphabetic, PROPERTIES.javaLetter, PROPERTIES.javaAlphabetic = letter, letter, letter, letter
+PROPERTIES.IsUppercase, PROPERTIES.javaUpperCase = upper, upper
+PROPERTIES.IsLowercase, PROPERTIES.javaLowerCase = lower, lower
+PROPERTIES.IsDigit, PROPERTIES.javaDigit = digit, digit
+PROPERTIES.javaSpaceChar = separator
+PROPERTIES.IsTitlecase = unicodeProperty(none, function(u, cp) return u.title(cp) end)
+PROPERTIES.javaTitleCase = PROPERTIES.IsTitlecase
 PROPERTIES.IsWhite_Space = unicodeProperty(function(b) return b == 32 or (b >= 9 and b <= 13) end,
     function(u, cp) return cp == 0x85 or u.space(cp) end)
 -- Character.isWhitespace: not the no-break spaces
@@ -116,11 +103,89 @@ PROPERTIES.javaWhitespace = unicodeProperty(function(b) return b == 32 or (b >= 
 PROPERTIES.javaLetterOrDigit = unicodeProperty(PROPERTIES.Alnum, function(u, cp) return u.letter(cp) or u.digit(cp) end)
 -- The categories P and S, which split ASCII's POSIX Punct: $+<=>^`|~ are symbols
 local function asciiSymbol(b) return b == 36 or b == 43 or b == 60 or b == 61 or b == 62 or b == 94 or b == 96 or b == 124 or b == 126 end
-local punctuation = unicodeProperty(function(b) return PROPERTIES.Punct(b) and not asciiSymbol(b) end,
+PROPERTIES.IsPunctuation = unicodeProperty(function(b) return PROPERTIES.Punct(b) and not asciiSymbol(b) end,
     function(u, cp) return u.punct(cp) end)
-local symbol = unicodeProperty(asciiSymbol, function(u, cp) return u.symbol(cp) end)
-PROPERTIES.P, PROPERTIES.IsP, PROPERTIES.IsPunctuation = punctuation, punctuation, punctuation
-PROPERTIES.S, PROPERTIES.IsS = symbol, symbol
+-- \p{IsName} of a binary property: the name in any case
+local BINARY = {
+    ALPHABETIC = "IsAlphabetic", LETTER = "IsLetter", UPPERCASE = "IsUppercase", LOWERCASE = "IsLowercase",
+    TITLECASE = "IsTitlecase", DIGIT = "IsDigit", PUNCTUATION = "IsPunctuation", WHITE_SPACE = "IsWhite_Space",
+    WHITESPACE = "IsWhite_Space",
+}
+
+-- The general categories (\p{Lu}, \p{Nd}, \p{P}, ...): Character.getType of a code point, whose value (0 to 30) is the
+-- index of its letter in CATEGORY_LETTERS. ASCII characters have theirs in ASCII_CATEGORIES; the others are looked up by
+-- __K2L_Regex.____category, which UnicodeCategories.lua sets with --strings utf16 (without it, non-ASCII characters are in
+-- no category, as for the properties above).
+local CATEGORY_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_+*/="
+__K2L_Regex.____categoryLetters = CATEGORY_LETTERS
+local ASCII_CATEGORIES = {}
+do
+    local ascii = "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPMYYY_YYYVWYZYUYYJJJJJJJJJJYYZZZYYBBBBBBBBBBBBBBBBBBBBBBBBBBVYW+X+CCCCCCCCCCCCCCCCCCCCCCCCCCVZWZP"
+    for cp = 0, 127 do
+        ASCII_CATEGORIES[cp] = CATEGORY_LETTERS:find(ascii:sub(cp + 1, cp + 1), 1, true) - 1
+    end
+end
+local CATEGORY_TYPES = {
+    Cn = 0, Lu = 1, Ll = 2, Lt = 3, Lm = 4, Lo = 5, Mn = 6, Me = 7, Mc = 8, Nd = 9, Nl = 10, No = 11, Zs = 12, Zl = 13, Zp = 14,
+    Cc = 15, Cf = 16, Co = 18, Cs = 19, Pd = 20, Ps = 21, Pe = 22, Pc = 23, Po = 24, Sm = 25, Sc = 26, Sk = 27, So = 28, Pi = 29,
+    Pf = 30,
+}
+local CATEGORY_GROUPS = {
+    L = {"Lu", "Ll", "Lt", "Lm", "Lo"}, LC = {"Lu", "Ll", "Lt"}, M = {"Mn", "Me", "Mc"}, N = {"Nd", "Nl", "No"},
+    Z = {"Zs", "Zl", "Zp"}, C = {"Cc", "Cf", "Co", "Cs", "Cn"}, P = {"Pd", "Ps", "Pe", "Pc", "Po", "Pi", "Pf"},
+    S = {"Sm", "Sc", "Sk", "So"},
+}
+local categoryClasses = {}
+
+local function categoryOf(cp)
+    if cp < 128 then
+        return ASCII_CATEGORIES[cp]
+    end
+    local category = __K2L_Regex.____category
+    return category and category(cp)
+end
+
+-- The class of a category or group of categories (Lu, L, LC, ...), or nil. As in Java, Lu, Ll and Lt are all three of
+-- them with CASE_INSENSITIVE.
+local function categoryClass(name, ci)
+    if ci and (name == "Lu" or name == "Ll" or name == "Lt") then
+        name = "LC"
+    end
+    local class = categoryClasses[name]
+    if class == nil then
+        local names = CATEGORY_GROUPS[name] or (CATEGORY_TYPES[name] and {name})
+        if names == nil then
+            return nil
+        end
+        local member = {}
+        for _, n in ipairs(names) do
+            member[CATEGORY_TYPES[n]] = true
+        end
+        class = function(cp) return member[categoryOf(cp)] == true end
+        categoryClasses[name] = class
+    end
+    return class
+end
+
+-- The class of \p{name}, or nil with the message of Java's PatternSyntaxException. As in Java, IsName is a binary property
+-- (in any case), a category or a POSIX class (scripts are not supported, nor are blocks: InName), and gc=Name (or
+-- general_category=Name) a category or a POSIX class.
+local function propertyClass(name, ci)
+    local key, value = name:match("^([^=]*)=(.*)$")
+    if key ~= nil then
+        key = key:lower()
+        local class = (key == "gc" or key == "general_category") and (categoryClass(value, ci) or PROPERTIES[value]) or nil
+        return class, class == nil and "Unknown Unicode property {name=<" .. key .. ">, value=<" .. value .. ">}"
+    elseif name:sub(1, 2) == "Is" then
+        local rest = name:sub(3)
+        local class = PROPERTIES[BINARY[rest:upper()]] or categoryClass(rest, ci) or PROPERTIES[rest]
+        return class, class == nil and "Unknown character script name {" .. rest .. "}"
+    elseif name:sub(1, 2) == "In" then
+        return PROPERTIES[name], "Unknown character block name {" .. name:sub(3) .. "}"
+    end
+    local class = categoryClass(name, ci) or PROPERTIES[name]
+    return class, class == nil and "Unknown character property name {" .. name .. "}"
+end
 
 ------------------------------------------------------------------ parser
 -- Nodes: char, any, set, seq, alt, group, rep, bol, eol, wordb, look, backref, atomic
@@ -208,9 +273,9 @@ local function parse(pattern, options)
             name = peek()
             pos = pos + 1
         end
-        local fn = PROPERTIES[name]
+        local fn, message = propertyClass(name, flags.ci)
         if fn == nil then
-            fail("Unknown character property name {" .. name .. "}")
+            fail(message)
         end
         local set = newSet()
         set.classes[1] = fn
@@ -433,6 +498,9 @@ local function parse(pattern, options)
             local name = pattern:match("^<([%a][%w]*)>", pos)
             if name == nil then
                 fail("Named capturing group is missing trailing '>'")
+            end
+            if names[name] ~= nil then
+                fail("Named capturing group <" .. name .. "> is already defined")
             end
             pos = pos + #name + 2
             groupCount = groupCount + 1

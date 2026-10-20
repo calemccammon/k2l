@@ -1,0 +1,20 @@
+== delegates
+  changed false -> true
+  changed [] -> [a, b]
+api[prod] threads=16 debug=true tags=[a, b]
+  error: threads: must be positive, was 0
+  error: threads: must be at most 64, was 100
+  error: name: must not be blank
+  error: mode: must be one of [dev, prod], was test
+== fun interfaces
+[<9>, <144>, <25>]
+[must not be blank, valid, too long]
+== typed ids
+values=[Silmarillion, The Hobbit (2nd ed.)] get=Silmarillion missing=null
+log=[added #20 The Hobbit, added #10 Silmarillion, replaced #20 The Hobbit (2nd ed.)]
+ids=[#1, #2, #3] max=#3 raw sum=6 equal=true
+by author={#1=[#10, #20]}
+== arrays and aliases
+[0, 1, 4, 9, 16] L0, L1, L2 8
+ints=[1, 2] sum=3 strs=[a, b]
+{a=[apple, avocado], b=[banana, blueberry], c=[cherry]}

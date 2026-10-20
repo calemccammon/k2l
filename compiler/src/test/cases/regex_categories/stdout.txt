@@ -1,0 +1,73 @@
+Lu  ABCDEFGHIJKLMNOPQRSTUVWXYZ
+Ll  abcdefghijklmnopqrstuvwxyz
+Lt  
+Lm  
+Lo  
+Mn  
+Mc  
+Me  
+Nd  0123456789
+Nl  
+No  
+Zs   
+Zl  
+Zp  
+Cc  ^@^A^B^C^D^E^F^G^H^I^J^K^L^M^N^O^P^Q^R^S^T^U^V^W^X^Y^Z^[^\^]^^^_DEL
+Cf  
+Co  
+Cs  
+Cn  
+Pd  -
+Ps  ([{
+Pe  )]}
+Pc  _
+Po  !"#%&'*,./:;?@\
+Pi  
+Pf  
+Sm  +<=>|~
+Sc  $
+Sk  ^`
+So  
+L   ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+LC  ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+M   
+N   0123456789
+P   !"#%&'()*,-./:;?@[\]_{}
+S   $+<=>^`|~
+Z    
+C   ^@^A^B^C^D^E^F^G^H^I^J^K^L^M^N^O^P^Q^R^S^T^U^V^W^X^Y^Z^[^\^]^^^_DEL
+\p{IsLu}               ABCDEFGHIJKLMNOPQRSTUVWXYZ
+\p{gc=Lu}              ABCDEFGHIJKLMNOPQRSTUVWXYZ
+\p{general_category=Nd} 0123456789
+\p{GC=Ps}              ([{
+\pL                    ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+\pN                    0123456789
+\P{L}                  ^@^A^B^C^D^E^F^G^H^I^J^K^L^M^N^O^P^Q^R^S^T^U^V^W^X^Y^Z^[^\^]^^^_ !"#$%&'()*+,-./0123456789:;<=>?@[\]^_`{|}~DEL
+\PL                    ^@^A^B^C^D^E^F^G^H^I^J^K^L^M^N^O^P^Q^R^S^T^U^V^W^X^Y^Z^[^\^]^^^_ !"#$%&'()*+,-./0123456789:;<=>?@[\]^_`{|}~DEL
+\P{IsN}                ^@^A^B^C^D^E^F^G^H^I^J^K^L^M^N^O^P^Q^R^S^T^U^V^W^X^Y^Z^[^\^]^^^_ !"#$%&'()*+,-./:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~DEL
+[\p{Lu}\p{Nd}]         0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ
+[^\p{Ll}\p{Cc}]         !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`{|}~
+[\P{L}&&[a-f0-5]]      012345
+[\p{Sm}\p{Sc}]         $+<=>|~
+\p{IsAlphabetic}       ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+\p{IsUPPERCASE}        ABCDEFGHIJKLMNOPQRSTUVWXYZ
+\p{Isuppercase}        ABCDEFGHIJKLMNOPQRSTUVWXYZ
+\p{IsWhite_Space}      ^I^J^K^L^M 
+\p{IsPunctuation}      !"#%&'()*,-./:;?@[\]_{}
+\p{IsAlpha}            ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+\p{gc=Alnum}           0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+(?i)\p{Lu}             ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+(?i)\p{Ll}             ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+(?i)\p{Lt}             ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+(?i)\p{L}              ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+(?i)\P{Lu}             ^@^A^B^C^D^E^F^G^H^I^J^K^L^M^N^O^P^Q^R^S^T^U^V^W^X^Y^Z^[^\^]^^^_ !"#$%&'()*+,-./0123456789:;<=>?@[\]^_`{|}~DEL
+_ello, _orld! 42 (x+y)
+[Camel, Parse, Request, Now]
+[a, b, c, d, e, f, ]
+(true, false)
+\p{Xx} -> rejected
+\p{lu} -> rejected
+\p{IsGreekish} -> rejected
+\p{InNoSuchBlock} -> rejected
+\p{gc=Xx} -> rejected
+\p{foo=Lu} -> rejected

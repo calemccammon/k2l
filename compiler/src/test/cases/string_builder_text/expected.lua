@@ -49,6 +49,15 @@ local function main()
     local text = __K2L_StringBuilder.new():appendLine("alpha"):appendLine("beta"):append("gamma")
     print(__K2L_Str(__K2L_StringLines(text:toString())) .. " " .. __K2L_Text.charsLength(__K2L_StringPadStart(text:toString(), 20, ".")) .. " " .. text:indexOf("beta") .. " " .. __K2L_Str(__K2L_Text.filter(text:toString(), ____lambda_3)))
     print(__K2L_Text.first(text:toString()) .. " " .. __K2L_Text.last(text:toString()) .. " " .. __K2L_Str(text:substring(0, 5)) .. " " .. __K2L_Str(text:toString():reverse()) .. " " .. text:toString():upper())
+    local ____builder = __K2L_StringBuilder.new()
+    ____builder:append("cap")
+    ____builder:append(tostring(4))
+    for it = 0, 2 do
+        ____builder:append("!")
+    end
+    local ____arg = ____builder:toString()
+    local ____builder_1 = __K2L_StringBuilder.new()
+    print(____arg .. ____builder_1:toString())
 end
 
 main()

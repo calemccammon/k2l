@@ -71,7 +71,7 @@ internal fun FileTransformer.loopBody(frame: LoopFrame, body: KtExpression?): Li
             } else if (s.label in jumpLabels && s.label != cont) {
                 listOf(s) // an enclosing loop's or inlined body's, lowered there
             } else {
-                ctx.error(file, "continue to an outer loop needs goto, which Lua 5.1 lacks")
+                ctx.error(body ?: file, "continue to an outer loop needs goto, which Lua 5.1 lacks")
                 listOf(s)
             }
 

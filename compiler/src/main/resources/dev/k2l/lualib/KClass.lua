@@ -162,7 +162,8 @@ local jvmNames = {
     ["kotlin.Float"] = "float", ["kotlin.Boolean"] = "boolean", ["kotlin.Char"] = "char", ["kotlin.Throwable"] = "class java.lang.Throwable",
     ["kotlin.collections.List"] = "interface java.util.List", ["kotlin.collections.Set"] = "interface java.util.Set",
     ["kotlin.collections.Map"] = "interface java.util.Map", ["kotlin.collections.Collection"] = "interface java.util.Collection",
-    ["kotlin.collections.Iterable"] = "interface java.lang.Iterable",
+    ["kotlin.collections.Iterable"] = "interface java.lang.Iterable", ["kotlin.collections.Iterator"] = "interface java.util.Iterator",
+    ["kotlin.collections.Map.Entry"] = "interface java.util.Map$Entry", ["kotlin.Comparable"] = "interface java.lang.Comparable",
 }
 
 -- `class app.Outer$Inner`, like java.lang.Class.toString()
@@ -170,6 +171,10 @@ local function jvmString(k)
     local known = k.____cls == nil and jvmNames[k.qualifiedName]
     if known then
         return known
+    end
+    local arity = k.____cls == nil and k.qualifiedName and k.qualifiedName:match("^kotlin%.Function(%d+)$")
+    if arity then
+        return "interface kotlin.jvm.functions.Function" .. arity
     end
     return (k.____kind == "interface" and "interface " or "class ") .. (k.name or "")
 end

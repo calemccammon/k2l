@@ -1,0 +1,20 @@
+== producers and consumers
+[animal: rex says woof, animal: fido says woof, animal: rex says woof]
+[any: Dog(fido), any: Dog(rex), any: Cat(tom)]
+== projections
+[keeper, Dog(rex), Dog(fido), Cat(kit)]
+animal a, comparable 3, comparable s, null, comparable 2.5, other SingletonList
+{dogs=2, mixed=3, none=0}
+first=z sound=meow sorted=[Dog(y), Cat(z)]
+== recursive bounds
+max3=9 pear Cat(c)
+sorted=[0.9.9, 1.2.3, 1.2.10, 1.10.0, 2.0.0] isSorted=false true
+in=[1.10.0, 1.2.3, 1.2.10] clamp=1.10.0
+intersect=[1.5.0, 1.10.0] none=null
+error: empty range z..a
+largest=Square(1.5)
+== where
+[c, a, b]
+[1, 2]
+5:alpha+4:beta+5:gamma
+1:x+2:yy

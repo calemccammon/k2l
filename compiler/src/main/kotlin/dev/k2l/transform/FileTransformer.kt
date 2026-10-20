@@ -67,8 +67,15 @@ class FileTransformer(
 
     /** Exported top-level `var`s live in `____exports` so other files see updates. */
     private val tableMode: Boolean by lazy {
-        file in module.cyclic || file.declarations.any(::isExportedVar)
+        file in module.cyclic || file.declarations.any(::isExportedVar) || deferredInit
     }
+
+    /** The file's plain properties are initialized on first use, see [FileInit]. */
+    private val deferredInit: Boolean by lazy { fileInit.isDeferred(file) }
+
+    /** A top-level property kept in `____exports`: an exported `var`, or any plain property of a deferred file. */
+    private fun isFileField(decl: PsiElement?) =
+        isExportedVar(decl) || (deferredInit && decl is KtProperty && FileInit.isField(decl) && !interop.isExternalDeclaration(decl))
 
     private fun isExportedVar(decl: PsiElement?) = decl is KtProperty && decl.isTopLevel && decl.isVar && !decl.isPrivate() &&
         !decl.hasAccessorFunctions() && decl.delegate == null
@@ -76,7 +83,7 @@ class FileTransformer(
     /** A top-level declaration as a Lua value: a local of this file or a field of another file's module. */
     internal fun topLevelRef(decl: KtNamedDeclaration, name: String = naming.of(decl)): LuaExpr = when {
         decl.containingFile != file -> LuaIndex(moduleRef(decl.containingKtFile), LuaString(name))
-        tableMode && isExportedVar(decl) -> LuaIndex(LuaName(EXPORTS), LuaString(name))
+        tableMode && isFileField(decl) -> LuaIndex(LuaName(EXPORTS), LuaString(name))
         else -> LuaName(name)
     }
 
@@ -89,11 +96,13 @@ class FileTransformer(
     internal val interop = LuaInterop(session, ctx)
     internal val classes = ClassHierarchy(session, file, module)
     internal val lazyInit = LazyInit(session, classes)
+    private val fileInit = FileInit(session, lazyInit)
     internal val naming = DeclarationNames(session, classes)
     internal val props = PropertyFamilies(session, module, classes) { interop.isExternalDeclaration(it) }
 
     init {
         naming.plainAccessors = { props.usesAccessors(it) || it.delegate != null }
+        lazyInit.deferredFile = fileInit::isDeferred
     }
 
     internal val target get() = ctx.options.luaTarget
@@ -117,7 +126,7 @@ class FileTransformer(
         renameHidingLocals()
         renameFunctionShadows()
         val topLevel = file.declarations.filter { isTransformedTopLevel(it) }
-        val forward = forwardReferenced(topLevel.filterNot { tableMode && isExportedVar(it) }.toSet())
+        val forward = forwardReferenced(topLevel.filterNot { tableMode && isFileField(it) }.toSet())
         val main = topLevel.filterIsInstance<KtNamedFunction>().firstOrNull(::isMain)
         val exported = topLevel.filter { !it.isPrivate() && it != main }
         val body = exportsTableSetup().toMutableList()
@@ -126,12 +135,23 @@ class FileTransformer(
         if (forward.isNotEmpty()) body += LuaLocal(forward.flatMap { naming.topLevel(it) })
 
         val emitted = HashSet<KtDeclaration>()
-        file.declarations.forEach { emitDeclaration(it, emitted, body, forward, exported) }
-        if (tableMode && file !in module.cyclic) {
-            exported.filterNot { isExportedVar(it) }.forEach { body += exportStatements(it) }
+        val initializers = mutableListOf<LuaStmt>()
+        for (decl in file.declarations) {
+            val target = if (deferredInit && isFileField(decl)) initializers else body
+            emitDeclaration(decl, emitted, target, forward, exported)
         }
+        if (tableMode && file !in module.cyclic) {
+            exported.filterNot { isFileField(it) }.forEach { body += exportStatements(it) }
+        }
+        if (deferredInit) body += lazyFileSetup(topLevel.filter(::isFileField), initializers)
 
-        if (main != null && file !in module.imported) body += mainInvocation(main)
+        if (main != null) {
+            // Another file requires this one (an import cycle through the entry file): `require` passes the chunk its
+            // module name, a script its command-line arguments, so `main` runs only when the file is the script.
+            val run = mainInvocation(main)
+            val asScript = LuaBinary(LuaBinOp.Ne, LuaName("..."), LuaString(module.modulePath(file)))
+            body += if (file !in module.imported) run else LuaIf(asScript, listOf(run))
+        }
 
         val requires = ctx.imports.map { (path, name) -> LuaLocal(listOf(name), listOf(luaCall(LuaName("require"), LuaString(path)))) }
         body.addAll(requiresAt, requires)
@@ -155,7 +175,7 @@ class FileTransformer(
         }
         body += collect { withOrigin(decl) { topLevelDeclaration(decl, decl in forward) } }
         // In an import cycle, other files may run before this one finishes, so export as we go.
-        if (file in module.cyclic && decl in exported && !isExportedVar(decl)) body += exportStatements(decl)
+        if (file in module.cyclic && decl in exported && !isFileField(decl)) body += exportStatements(decl)
     }
 
     private fun isTransformedTopLevel(decl: KtDeclaration) =
@@ -170,9 +190,15 @@ class FileTransformer(
         return listOf(table, assign(LuaIndex(luaPath("package", "loaded"), LuaString(module.modulePath(file))), LuaName(EXPORTS)))
     }
 
-    /** Runs `main`, passing the command-line arguments as a table when it takes them. */
+    /** Runs `main`, passing the command-line arguments as an `Array<String>` when it takes them. */
     private fun mainInvocation(main: KtNamedFunction): LuaStmt {
-        val args = if (main.valueParameters.isEmpty()) emptyList() else listOf(LuaTable(listOf(LuaField.Positional(LuaName("...")))))
+        val args = if (main.valueParameters.isEmpty()) {
+            emptyList()
+        } else {
+            listOf(
+                LuaCall(lualibRef("Collections", "__K2L_ArrayOf"), listOf(LuaName("..."))),
+            )
+        }
         val name = LuaName(naming.of(main))
         val suspend = main.hasModifier(KtTokens.SUSPEND_KEYWORD)
         if (ctx.options.sourceMap) {
@@ -201,6 +227,12 @@ class FileTransformer(
 
     private fun exportStatements(decl: KtDeclaration): List<LuaStmt> =
         naming.topLevel(decl).map { name -> assign(LuaIndex(LuaName(EXPORTS), LuaString(name)), LuaName(name)) }
+
+    /** `__K2L_LazyFile(____exports, function() <initializers> end, {"names", ...})`: the first use of a field runs them. */
+    private fun lazyFileSetup(fields: List<KtDeclaration>, initializers: List<LuaStmt>): LuaStmt {
+        val names = LuaTable(fields.flatMap { naming.topLevel(it) }.map { LuaField.Positional(LuaString(it)) })
+        return LuaCallStmt(lualibCall("LazyFile", LuaName(EXPORTS), LuaFunction(emptyList(), initializers), names))
+    }
 
     private fun isMain(fn: KtNamedFunction) = fn.name == "main" && fn.receiverTypeReference == null && fn.valueParameters.size <= 1
 
@@ -234,7 +266,7 @@ class FileTransformer(
                 extensionPropertyDeclaration(decl, forwardDeclared)
             } else if (decl.hasAccessorFunctions()) {
                 accessorPropertyDeclaration(decl, forwardDeclared)
-            } else if (tableMode && isExportedVar(decl)) {
+            } else if (tableMode && isFileField(decl)) {
                 val field = topLevelRef(decl)
                 decl.initializer?.let { init -> emitAll(valueInto(init) { listOf(assign(field, it)) }) }
             } else {
@@ -282,6 +314,9 @@ class FileTransformer(
 
     /** Lambda parameters of inlined lambdas, keyed by (function literal, parameter name). */
     internal val lambdaBindings = HashMap<Pair<PsiElement, String>, LuaExpr>()
+
+    /** The temps holding values checked against their static type (see UncheckedCasts.kt), which need no second check. */
+    internal val checkedValues = HashSet<LuaName>()
 
     /** A name for a receiver parameter; `self` unless that would hide a class instance or another receiver. */
     internal fun receiverName(): String {
@@ -1166,16 +1201,9 @@ class FileTransformer(
      * Lua's `..` already formats identically are left alone.
      */
     fun KaSession.str(value: LuaExpr, type: KaType?, forConcat: Boolean = false): LuaExpr {
-        val t = type?.takeUnless { it.isMarkedNullable || isPlatformNullable(it) }
-        // a `Double?` or `Float?` prints by its static type too (the lualib functions print nil as "null")
-        val floating = (type?.withoutFlexibility as? KaClassType)?.classId?.asString()
+        if (!target.hasIntegers && type?.holdsOnlyDoubles() == true) return lualibCall("StrDoubles", value)
+        val t = type?.takeUnless { it.isMarkedNullable || isPlatformNullable(it) } ?: return nullableStr(value, type)
         return when {
-            t == null && floating == "kotlin/Float" -> lualibCall("FloatToString", value)
-
-            t == null && floating == "kotlin/Double" && (!target.hasIntegers || usesFloat) -> lualibCall("DoubleToString", value)
-
-            t == null -> lualibCall("Str", value)
-
             t.withoutFlexibility.isFloatType -> lualibCall("FloatToString", value)
 
             // At runtime 2.0 and 2 look the same without integers, so use the static type.
@@ -1199,6 +1227,14 @@ class FileTransformer(
             else -> lualibCall("Str", value)
         }
     }
+
+    /** A `Double?` or `Float?` prints by its static type too (the lualib functions print nil as "null"). */
+    private fun KaSession.nullableStr(value: LuaExpr, type: KaType?): LuaExpr =
+        when ((type?.withoutFlexibility as? KaClassType)?.classId?.asString()) {
+            "kotlin/Float" -> lualibCall("FloatToString", value)
+            "kotlin/Double" if !target.hasIntegers || usesFloat -> lualibCall("DoubleToString", value)
+            else -> lualibCall("Str", value)
+        }
 
     /**
      * A platform type from a Java method (`treeMap.higherKey(k)` is `Int!`) may be null; Java strings, and the floating-point
@@ -1676,7 +1712,7 @@ class FileTransformer(
         val site =
             CallSite(this, this@FileTransformer, full, null, null, null, arguments(emptyList(), args), args.map { it?.expressionType })
         return FactoryMappings.construct(classId?.asString(), site)
-            ?: unsupported(full, "Constructing library class '${classId?.asString()}'")
+            ?: unsupported(full, "Constructing library class '${classId?.asSingleFqName()}'")
     }
 
     /** The class a constructor of a local class belongs to: local classes have no class id to look up. */
@@ -1793,7 +1829,7 @@ class FileTransformer(
             parameterTypes = parameterTypes,
         )
         StdlibMappings.map(callableId, site)?.let { return it }
-        return unsupported(full, "Kotlin library API '${callableId ?: full.text}'")
+        return unsupported(full, "Library API '${callableId?.replace('/', '.') ?: full.text}'")
     }
 
     /** A receiver as an operand: either an explicit expression (transformed later, in order) or an implicit `this`. */
@@ -2029,7 +2065,11 @@ class FileTransformer(
         val values = arguments(listOf(receiver), args)
         if (!isFunction) return LuaIndex(values[0], LuaString(name))
         val noSelf = (symbol as? KaAnnotated)?.annotations?.contains(NO_SELF) == true || container.annotations.contains(NO_SELF)
-        return if (noSelf) LuaCall(LuaIndex(values[0], LuaString(name)), values.drop(1)) else LuaMethodCall(values[0], name, values.drop(1))
+        if (noSelf) return LuaCall(LuaIndex(values[0], LuaString(name)), values.drop(1))
+        if (LuaPrinter.isIdentifier(name)) return LuaMethodCall(values[0], name, values.drop(1))
+        // `@LuaName("repeat")`: `s:repeat(n)` is not Lua, `s["repeat"](s, n)` is
+        val self = cache(values[0], "self")
+        return LuaCall(LuaIndex(self, LuaString(name)), listOf(self) + values.drop(1))
     }
 
     private fun KaSession.externalConstructor(symbol: KaConstructorSymbol, args: List<KtExpression?>, element: KtExpression): LuaExpr {

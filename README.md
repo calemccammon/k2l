@@ -102,11 +102,15 @@ k2l [options] [SOURCE_DIR...]
       --long64 MODE       double (default) or emulate: exact 64-bit Long and ULong on Lua 5.1, 5.2 and LuaJIT (slower)
       --classpath PATHS   extra jars or class directories, e.g. Lua bindings
       --source-map        write main.lua.map files and make Lua errors and tracebacks show Kotlin positions
+                          (on by default with --watch)
+      --no-source-map     no source maps, also with --watch
+      --check             report errors and unsupported constructs without writing any files
       --watch             rebuild whenever a source file or the project file changes (Ctrl-C to stop)
 ```
 
 With no arguments, k2l reads `./k2l.json`. Paths in it are relative to the file, and command-line
-options override it:
+options override it. Comments and trailing commas are allowed. An unknown key is an error that names the nearest valid
+key, and so is a value of the wrong type:
 
 ```json
 {
@@ -132,23 +136,60 @@ options override it:
 | `strings` | `bytes` or `utf16` (see [Strings](#strings)) | `--strings` |
 | `long64` | `double` or `emulate` (see [Lua targets](#lua-targets)) | `--long64` |
 | `classpath` | extra jars or class directories | `--classpath` |
-| `sourceMap` | source maps and Kotlin positions in errors | `--source-map` |
+| `sourceMap` | source maps and Kotlin positions in errors (default: on with `--watch`, off otherwise) | `--source-map`, `--no-source-map` |
 
 Each `.kt` file becomes a `.lua` file at the same relative path. The runtime support code (the
 "lualib") is written once as `lualib_bundle.lua`; each file imports only what it uses. With
 `--lualib inline`, each file carries its own copy instead.
 
+## Diagnostics and `k2l --check`
+
 Kotlin compile errors are reported and stop the build. Kotlin features k2l can't translate yet are
-reported as `error: ... is not supported yet`, with file and line; k2l never silently miscompiles a
-construct it doesn't understand.
+reported as `error: ... is not supported yet`; k2l never silently miscompiles a construct it doesn't understand.
+Like kotlinc, k2l prints each diagnostic with its position, the source line and the problem underlined. Where a cheap
+and correct workaround exists, it adds a one-line hint:
+
+```
+src/main.kt:5:8: error: 'appendCodePoint' without --strings utf16 is not supported yet
+    sb.appendCodePoint(0x1F600)
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+  hint: compile with --strings utf16 (k2l.json: "strings": "utf16") to get the JVM's UTF-16 strings
+src/main.kt:9:37: error: Reference to the library constructor 'java.util.concurrent.atomic.AtomicInteger' is not supported yet
+    val make: () -> AtomicInteger = ::AtomicInteger
+                                    ^^^^^^^^^^^^^^^
+  hint: use a lambda instead of the reference, e.g. { AtomicInteger() }
+k2l: 2 errors, 0 warnings; no files written
+```
+
+A hint shared by several diagnostics is printed under the first one only, and a construct that the compiler reaches
+more than once is reported once. A build with errors writes nothing.
+
+To see everything k2l would reject without writing any Lua (for example, before porting an existing code base, or
+in CI), run a check:
+
+```sh
+k2l --check                # the project in ./k2l.json
+k2l --check -t 5.1 src     # the same options as a build; they decide what is supported
+```
+
+It analyzes and transforms every file exactly as a build does, prints every diagnostic, and ends with
+`k2l: checked 12 file(s): 2 errors, 0 warnings`. It exits with status 1 when there are errors, 2 for a bad command
+line or k2l.json, and 0 otherwise. It skips printing Lua and writing files, but most of a build's time goes to the Kotlin
+analysis, which a check still does, so it saves only a little time. In the Gradle plugin the same check is the
+`k2lCheck` task.
 
 ## Source maps and Kotlin tracebacks
 
-With `--source-map` (or `"sourceMap": true`), k2l records the Kotlin position of every statement it
-generates and writes a standard [Source Map v3](https://sourcemaps.info/spec.html) file next to each Lua
+With `--source-map` (or `"sourceMap": true`), and by default in [watch mode](#watch-mode), k2l records the
+Kotlin position of every statement it generates and writes a standard [Source Map v3](https://sourcemaps.info/spec.html) file next to each Lua
 file (`main.lua.map`, `sources` relative to the map, VLQ `mappings`). Statements are mapped with line and
 column; expressions inside a statement share its position. The Lua file ends with a
-`--# sourceMappingURL=main.lua.map` comment. Without the option the generated Lua is unchanged.
+`--# sourceMappingURL=main.lua.map` comment. Without source maps the generated Lua is unchanged.
+
+Source maps are a debugging aid, so they are on by default only with `--watch`, the development loop. A one-off build
+(`k2l`, the Gradle plugin's `compileKotlinToLua`) produces the plain Lua you would ship. Explicit settings win:
+`--source-map` or `"sourceMap": true` turns them on for any build, and `--no-source-map` or `"sourceMap": false` turns
+them off in watch mode too.
 
 The same information is embedded in each Lua file as a compact line table, and a small runtime helper
 rewrites Lua positions to Kotlin ones in error messages and tracebacks (Lua 5.1 to 5.4 and LuaJIT).
@@ -170,8 +211,8 @@ before it.
 
 ## Watch mode
 
-`k2l --watch` builds once and then rebuilds whenever a `.kt` file under the source directories (or the
-`k2l.json`) is created, changed or deleted, printing the diagnostics each time. Changes within 150 ms
+`k2l --watch` builds once (with [source maps](#source-maps-and-kotlin-tracebacks) unless they are turned off) and
+then rebuilds whenever a `.kt` file under the source directories (or the `k2l.json`) is created, changed or deleted, printing the diagnostics each time. Changes within 150 ms
 are batched. It re-reads `k2l.json` on every rebuild, so editing source directories or options takes
 effect without a restart. A new analysis session is created for each build: once the JVM is warm that costs
 about 250 ms for a small project (the first build takes about 2 s), so sessions are not reused. Stop with Ctrl-C.
@@ -206,6 +247,13 @@ k2l {
     classpath.from(files("libs/bindings.jar"))   // extra Lua bindings
 }
 ```
+
+`./gradlew k2lCheck` runs [`k2l --check`](#diagnostics-and-k2l---check): it reports every error and unsupported
+construct, writes no Lua and fails the build if there are errors. It is up to date while the sources and options are
+unchanged, and it is not part of `check`, so `build` does not analyze the sources twice. Add
+`tasks.check { dependsOn("k2lCheck") }` if you want it there. Source maps stay off unless `sourceMap` is set, as in a
+one-off CLI build. To turn them on for development only, pass a property, for example
+`sourceMap.set(providers.gradleProperty("k2l.debug").map { true }.orElse(false))` with `./gradlew compileKotlinToLua -Pk2l.debug`.
 
 `./gradlew compileKotlinToLua` writes the `.lua` files (and `.lua.map` files) to `build/lua`; `assemble` runs it.
 The task is up to date while sources, options and compiler are unchanged, is compatible with the configuration
@@ -262,7 +310,7 @@ classes of the program, compares with `compareTo`). The range's operands are eva
 | extension functions and properties declared in a class | methods taking the extension receiver as their first argument: `function Builder:unaryPlus(____this)`, `builder:unaryPlus("x")`; `this` is `____this` and `this@Builder` is `self`. Properties are `builder:getTag(s)` / `builder:setTag(s, v)` (same-named ones, `val String.x` and `val Int.x`, are `getX` and `getX__1`); operators such as `+"x"` work, also inside `with(builder) { }` |
 | `super.toString()`, `super.equals(o)`, `super.hashCode()` | `__K2L_AnyToString(self)` (`Name@hex`, as on the JVM), `self == o` (identity), `__K2L_IdentityHash(self)` (the hash `Map`/`Set` give objects without `hashCode()`); on exceptions `super.toString()` is `Throwable.toString` and `super.message`/`super.cause` are fields |
 | delegated properties (`by`) | `provideDelegate` is called once when the delegate is stored, `getValue`/`setValue` may be extensions, open and overriding ones are accessor families with a delegate slot per class; the delegate lives in `self.____x_delegate` (a local `____x_delegate` outside classes); reads and writes call its `getValue`/`setValue` |
-| `by lazy { }`, `Delegates.observable`/`vetoable`/`notNull`, `by map`, your own `getValue`/`setValue` | lualib objects with the same methods; `by map` reads `map:getValue("x")` |
+| `by lazy { }`, `Delegates.observable`/`vetoable`/`notNull`, `ReadOnlyProperty { }`, `by map`, your own `getValue`/`setValue` | lualib objects with the same methods; `by map` reads `map:getValue("x")` |
 | default and named arguments | `if x == nil then x = default end` in the callee; callers pass `nil` for omitted ones. An override applies the defaults it inherits (`override fun render(indent: String)` of `fun render(indent: String = "")`), with the overridden function's parameter names mapped to its own |
 | overloads | `describe`, `describe__1`, ... (overrides keep their parent's name); a method named like a property of its class, a superclass or a subclass (`private val items` and `fun items()`) is `items__1`, as Lua tables hold fields and methods in one namespace |
 | `vararg`, `*spread` | Lua varargs packed into an array (also for constructors); `table.unpack`. A spread that is not last (`listOf(*xs, y)`, `f(*a, *b)`) makes the rest of the arguments one `__K2L_Spread("s.", xs, y)`, which returns all the elements. A `vararg` parameter that is not the last one still comes last in Lua (`fun row(vararg cells: String, width: Int = 5)` is `function row(width, ...)`, called `row(3, "a", "b")`). A reference to a function with a `vararg` used as a function taking the `Array` (`val f: (IntArray) -> Int = ::sum`) unpacks it: `function(____p1) return sum(__K2L_Unpack(____p1)) end` |
@@ -300,7 +348,7 @@ classes of the program, compares with `compareTo`). The range's operands are eva
 | `startCoroutine`, `suspendCoroutine`, `cont.resume(x)` | `__K2L_StartCoroutine(block, completion)`, `__K2L_SuspendCoroutine(function(cont) ... end)`, `cont:resumeWith(__K2L_Result.success(x))` |
 | `Result`, `runCatching` | a lualib class: `result:getOrThrow()`, `__K2L_RunCatching(f)` |
 | `Unit` as a value | a call of a function returning Unit returns nothing in Lua, and is a plain call as a statement. Where a Unit expression is used as a value (an argument, an initializer, an element, a string template, `Any`/`T`, `x?.unitCall()`), it runs as a statement and the value is the runtime object `__K2L_Unit`, which prints as `kotlin.Unit` (identity `equals`/`hashCode`, `is Unit` is `x == __K2L_Unit`). A lambda returning Unit passed where a function with a result is expected (`runCatching { }`, `map { }`, `() -> T`, `() -> Any`) returns it, a function reference or variable returning Unit passed as such an argument (`runCatching(::work)`) is wrapped to return it, and so does the body of a `suspend () -> Unit` coroutine for its completion |
-| multiple files | `local ____util = require("util")`, `____util.helper(...)` |
+| multiple files | `local ____util = require("util")`, `____util.helper(...)`; a file's module is its path (`ui/Style.common.kt` is `ui.Style_common`). Files on an import cycle register their table in `package.loaded` first and export as they go, and an entry file that other files import runs `main` only as the script (`if ... ~= "main" then main() end`) |
 
 By default `Int` arithmetic is not wrapped to 32 bits (Lua integers are 64-bit, or doubles before 5.3);
 explicit conversions like `Long.toInt()` and bitwise operations do wrap. With `--int-overflow wrap`
@@ -330,6 +378,15 @@ object as a value, `__K2L_TouchObject(Config)`) restores them and runs the initi
 table lookups. A companion arms its outer class (its first use is a member access or construction; a companion with
 supertypes is armed itself as well, as it can be used as a value); an enum arms
 `____initEnum`, which creates the entries. Nested classes and the `____name`/metamethod keys stay available.
+
+The top-level properties of a file work the same way, as the JVM initializes a file's facade class (`StoreKt`) on its first
+use. A file without `main` whose plain top-level properties (no custom accessors, no delegate, not `const`) have an
+initializer that calls code or reads mutable state, its own `val`s aside, keeps them all, private ones included, in its exports
+table. `__K2L_LazyFile(____exports, init, {"stock", "opened"})` runs their initializers, in declaration order, on the
+first read or write of one of them, from any file. This happens neither at startup nor when another file is `require`d
+first in an import cycle. So `val header = "== ${Config.user} =="` sees what `main` set before, and a cycle whose
+initializers read each other in an order the JVM accepts works. A file stays initialized when it loads if one of its
+properties with accessors or a delegate has such an initializer.
 
 Properties read during construction before their initializer ran behave like the JVM, which zeroes fields first: open or
 abstract properties that a constructor reads (directly or through the functions it calls) and a subclass overrides with its
@@ -383,7 +440,8 @@ val (ok, err) = Lua.pcall { error("boom") }
 
 - `@LuaExternal` marks a declaration (or a whole class, interface or object) as implemented in Lua.
   Kotlin's `external` keyword works for functions.
-- `@LuaName("name")` uses a different Lua name. An object named `_G` maps its members to globals.
+- `@LuaName("name")` uses a different Lua name. An object named `_G` maps its members to globals. A keyword works as
+  a name (`@LuaName("end")` is `M["end"](...)`, a method `s["repeat"](s, n)`).
 - `@LuaRequire("module")` on a file makes its external top-level declarations fields of that module;
   on a class or object, the module is the class or object.
 - Members of external objects are called with `.`, instance members with `:` unless `@NoSelf`.
@@ -393,6 +451,36 @@ val (ok, err) = Lua.pcall { error("boom") }
 
 Kotlin lists are Lua sequences (1-based, with a `size` field), so they can be passed to Lua functions
 that expect arrays; Kotlin lambdas are Lua functions.
+
+### Calling Kotlin from Lua
+
+Every file is a Lua module whose table holds its public top-level declarations, so hand-written Lua can
+`require("mods.Greeter")` (the file's path under the source directory) and call into Kotlin:
+
+```kotlin
+package mods.mods
+
+@LuaName("on_load")               // the field Lua reads; the Kotlin name stays loadGreeter
+fun loadGreeter(host: Host): String = ...
+
+@LuaName("greeting_style")
+var style = "plain"               // Lua reads and writes mod.greeting_style; Kotlin sees the change
+```
+
+```lua
+local mod = require("mods.Greeter")
+mod.on_load(host)
+mod.greeting_style = "loud"
+local v = require("shared.Events").Version:parse("2.10")   -- companion and object members take `:`
+print(tostring(v), v.major, v:compareTo(other))             -- tostring() of an object is its toString()
+```
+
+Top-level functions are fields called with `.`, members of objects, companions and instances with `:`, and constructors are
+`Class.new(...)`. Plain properties are fields, while properties with custom getters are methods (`e:getAlive()`). `@LuaName`
+on a top-level function or plain property gives it a Lua-style name, when the name is a Lua identifier that is neither a
+keyword nor a global the generated code uses. Parameters typed `LuaTable` or as an external interface take Lua tables, and
+function types take Lua functions. A plain Lua array is not a Kotlin `List`. Kotlin exceptions reach Lua's `pcall` as
+objects with a `message` field, and Lua errors reach Kotlin as `RuntimeException`.
 
 ## Coroutines
 
@@ -474,6 +562,12 @@ around them, as the Kotlin/JVM compiler does), `null` as `simpleName` of an obje
 enum entries with bodies are classes named after the entry, and a companion object's value has the companion's class (`Outer.Companion`, `simpleName` `Companion`).
 A `KClass` prints like the JVM's without kotlin-reflect (`class app.Dog (Kotlin reflection is not available)`), a `Class` like
 `java.lang.Class` (`class app.Dog`, `interface app.Shape`).
+
+`typeOf<T>()` (of a concrete or reified type) is a `KType` like the JVM's without kotlin-reflect: it prints with JVM names
+(`java.util.List<java.lang.Integer> (Kotlin reflection is not available)`, `int` for a non-null `Int` on its own), is `==` to
+another `KType` of the same type (so it can key a map), and has `isMarkedNullable`, `classifier` and `arguments` (`KTypeProjection`s
+with `type`, printing `*`, `in ...` and `out ...`). The `classifier` of a nullable primitive (`typeOf<Int?>()`) prints as `Int::class`
+does (`int`), where the JVM prints `class java.lang.Integer`; `KTypeProjection.variance` is not supported.
 
 Property references are values with `name`, `get`, `set` and `invoke` (also called like a function): `Person::name`,
 `person::age` (bound), `Config::level` (an `object`'s property), `::counter`, extension properties (`String::lastChar`,
@@ -557,8 +651,10 @@ that print and concatenate normally (`"😀".length == 2`, `s[i]` is a UTF-16 co
   (`ß` becomes `SS`), `titlecase()`, `String.uppercase()/lowercase()`, `equals(ignoreCase)` and the other `ignoreCase`
   functions, and `digitToInt()` use Unicode tables generated from the JDK (`compiler/tools/GenUnicode.java`, about 23 KB of
   range lists in `Unicode.lua`, loaded only by programs that use them). Regex `\w \d \s` and the POSIX classes (`\p{Alpha}`,
-  `\p{Digit}`, ...) stay ASCII, as in Java, while `\p{L}`, `\p{Lu}`, `\p{Ll}`, `\p{Lt}`, `\p{N}`, `\p{Nd}`, `\p{M}`, `\p{Z}`,
-  `\p{IsWhite_Space}`, `\p{javaWhitespace}` and their aliases use the same tables (a pattern that is not a literal loads them too).
+  `\p{Digit}`, ...) stay ASCII, as in Java, while the binary properties (`\p{IsAlphabetic}`, `\p{IsUppercase}`,
+  `\p{IsWhite_Space}`, `\p{javaWhitespace}`, ...) use the same tables and the general categories (`\p{Lu}`, `\p{L}`, ...) a
+  table of every code point's `Character.getType` (`UnicodeCategories.lua`, about 7 KB, also generated by `GenUnicode.java`).
+  A regex whose pattern has `\p` or `\P`, or is not a literal, loads them.
 - Code points: `codePointAt/Before/Count`, `offsetByCodePoints`, `codePoints()` and `chars()` (an `IntStream`,
   see [Streams](#streams)), `Character.toChars`,
   `isSupplementaryCodePoint`, `charCount`, `toCodePoint`, `isSurrogate`..., `StringBuilder.appendCodePoint`, and the
@@ -779,7 +875,8 @@ and checks them against the JVM (see the `stdlib_*` test cases):
 - `kotlin.collections`: the usual `List`/`Set`/`Map`/`Array` operations (sorting with comparators, grouping,
   `windowed`/`chunked`/`zipWithNext`, folds and running folds, slicing, set operations, `buildList` ...),
   iterator `remove()`, `HashMap`/`HashSet` with the JVM's iteration order, `TreeMap`/`TreeSet`, `ArrayDeque`,
-  `PriorityQueue`, `filterIsInstance<T>()`/`filterIsInstanceTo`, `maxOfWith`/`minOfWith`(`OrNull`). Sorting with a comparator or `compareTo` (`sortedWith`, `sortBy`, `sorted()` of
+  `PriorityQueue`, `java.util.EnumMap` and `EnumSet` (`noneOf`, `allOf`, `of`, `copyOf`, `range`, `complementOf`; a `TreeMap`
+  and `TreeSet` in ordinal order with the JDK's classes and messages), `filterIsInstance<T>()`/`filterIsInstanceTo`, `maxOfWith`/`minOfWith`(`OrNull`). Sorting with a comparator or `compareTo` (`sortedWith`, `sortBy`, `sorted()` of
   objects, `Collections.sort`, `Arrays.sort(array, comparator)`, ...) is a port of the JDK's TimSort, so comparators,
   `compareTo` and the selectors of `sortedBy`/`compareBy` run as often and in the same order as on the JVM (a comparator that
   breaks its contract gets "Comparison method violates its general contract!" where the JDK detects it). Numbers and strings in
@@ -809,11 +906,15 @@ and checks them against the JVM (see the `stdlib_*` test cases):
   named groups, back-references, lazy and possessive quantifiers, lookahead, `IGNORE_CASE`/`MULTILINE`/
   `DOT_MATCHES_ALL`); `find`, `findAll` (a lazy `Sequence`, as in Kotlin), `matches`, `replace` (with `$1` and lambdas), `split`,
   `destructured`, `matchAt`/`matchesAt`, class intersection (`[a-z&&[^aeiou]]`).
-  Match indices are bytes (UTF-16 units with `--strings utf16`); classes such as `\w` are ASCII only, as in Java. The Unicode
-  properties (`\p{L}`, `\p{Lu}`, `\p{Nd}`, `\p{Z}`, ...) test non-ASCII characters with `--strings utf16` (see [Strings](#strings));
-  without it they are ASCII only. That includes `\p{P}`/`\p{IsPunctuation}` and `\p{S}`, Unicode's punctuation and symbol
-  categories (in ASCII, `` $+<=>^`|~ `` are symbols), while `\p{Punct}` is POSIX's ASCII punctuation, as in Java. The other
-  two-letter categories (`\p{Pd}`, `\p{Sc}`, ...), scripts and blocks (`\p{IsLatin}`, `\p{InGreek}`) are not supported.
+  Match indices are bytes (UTF-16 units with `--strings utf16`); classes such as `\w` are ASCII only, as in Java. Every general
+  category Java accepts works, in each of Java's spellings: `\p{Lu}`, `\p{IsLu}`, `\p{gc=Lu}`, `\p{general_category=Lu}`,
+  `\pL`, the groups `\p{L}`, `\p{LC}`, `\p{M}`, `\p{N}`, `\p{P}`, `\p{S}`, `\p{Z}` and `\p{C}`, negated as `\P{..}` or in
+  classes (`[^\p{Lu}\p{Nd}]`); with `IGNORE_CASE` (or `(?i)`) `\p{Lu}`, `\p{Ll}` and `\p{Lt}` match all three, as in Java. So do
+  the binary properties (`\p{IsAlphabetic}`, `\p{IsUppercase}`, in any case). They test non-ASCII characters with
+  `--strings utf16` (see [Strings](#strings)); without it they are ASCII only: a non-ASCII character is in no category (and
+  matches every `\P{..}`). In ASCII, `` $+<=>^`|~ `` are symbols and the other POSIX punctuation is `\p{P}`, while `\p{Punct}`
+  is POSIX's ASCII punctuation, as in Java. Scripts and blocks (`\p{IsLatin}`, `\p{InGreek}`, `\p{sc=Greek}`) are not
+  supported: such a pattern throws `PatternSyntaxException`'s message as an `IllegalArgumentException`.
 
 - Numbers: `Float` (single precision), `UByte`/`UShort`/`UInt`/`ULong` with literals, arithmetic, comparison, shifts, bit
   operations, conversions, ranges and `UIntArray`s, `Math.addExact`/`subtractExact`/`multiplyExact`/`negateExact`/
@@ -858,7 +959,10 @@ code points without `--strings utf16`, `Stream.spliterator()`, `mapMulti` and th
 Known differences: `Int` overflow is not wrapped unless `--int-overflow wrap` is given (`UInt` always wraps);
 a `Float` or `ULong` among untyped values (a collection, `Any`, nullable) loses its static type: a number that is exactly a float
 and has a long double representation prints as a `Float`, so a `Double` equal to `0.1f.toDouble()` in a list prints `0.1`, and a `ULong`
-from 2^63 prints as a negative number; on Lua 5.1, 5.2 and LuaJIT `ULong` and `Long` are exact only up to 2^53 (unless
+from 2^63 prints as a negative number; on Lua 5.1, 5.2 and LuaJIT an integral `Double` among untyped values prints like an
+`Int` (`3` for `3.0`), except in a collection, map or pair whose static type makes every number in it a `Double`
+(`List<Double>`, `Map<String, Double>`, `Pair<String, Double>`: these print `[3.0]`; a `Map<Int, Double>` or a `List<Any>` does not),
+and `ULong` and `Long` are exact only up to 2^53 (unless
 `--long64 emulate`, see [above](#exact-64-bit-long-and-ulong---long64-emulate)) and
 `Double.toBits()` keeps 53 bits (`Float.toBits()` is exact); `Math.*Exact` of `Long` checks ±2^63 on doubles;
 `x in a..b step s` over a `Long` range wider than `Long.MAX_VALUE` can be wrong, as `x - a` wraps;
@@ -879,15 +983,15 @@ in an `Any` is 32-bit while it fits an `Int`.
 #### Other semantic differences
 
 Other semantic differences to be aware of: strings are byte strings (unless `--strings utf16`), so `length` and indexing count
-UTF-8 bytes; top-level properties of a file are
-initialized when the file loads (the JVM does it when the file's facade class is first used), so a side effect in the
-initializer of a top-level property of another file of a multi-file program happens at startup; Lua runtime errors are caught as
+UTF-8 bytes; a file's top-level properties whose initializers can be noticed wait for the first read or write of one of
+them (see [Lazy initialization](#lazy-initialization)), while the JVM initializes the file's facade class on any first use,
+so calling one of its functions that prints before it touches a property prints earlier on the JVM; Lua runtime errors are caught as
 `RuntimeException`, except that an overflow of the Lua or the C stack is a `StackOverflowError` (so `catch (e: Exception)` lets
 it through); a Unit returned by Lua code called through `@LuaExternal` is `nil`, so it prints as `null`. Each `try`
 (and `use`, `runCatching`, ...) runs its block in a protected call (`__K2L_DeepPcall`), and Lua 5.1 to 5.4 allow only about 200
 nested C calls, a `pcall` being one: on Lua 5.2 to 5.4 every hundredth nested protected call runs in a coroutine of its own,
 resumed by a driver around `main` (`__K2L_DeepMain`) from the bottom of the C stack, so a recursion through `try` blocks goes some
-20000 levels deep before it ends in a `StackOverflowError`. That needs the driver: the protected calls of `try` blocks inside a
+20000 levels deep before it ends in a `StackOverflowError`. An uncaught Lua error (a string, such as "stack overflow" or a `Lua.error`) that ends `main` under the driver is raised again with the traceback of the stack where it happened, followed by the driver's own traceback that the standalone interpreter adds; an uncaught exception prints as it does without the driver (on PUC Lua its `toString()` only). That needs the driver: the protected calls of `try` blocks inside a
 Kotlin coroutine or a `sequence { }` (which run in coroutines of their own), of top-level property initializers, of functions
 called from Lua through `@LuaExternal` exports and of programs built with `--source-map` stay plain `pcall`s, and so do all of them
 on Lua 5.1, where a recursion through a `try` block at every level fails with "C stack overflow" after roughly 190 levels (LuaJIT
@@ -899,13 +1003,18 @@ callback. Running every `try` body as a coroutine of a driver would need to know
 and the driver, which Lua 5.1 has no way to test without a `pcall` (`debug.getinfo` cannot tell a metamethod frame or a call
 after a tail call from a plain call), and would make every `try` cost a coroutine (some eight times a `pcall`). Unchecked casts (`x as T` of an erased `T`, `x as List<String>`) check nothing, as on
 the JVM, whose erased generic code throws `ClassCastException` later, where Kotlin emits a CHECKCAST: k2l checks there the values
-of the two common sources, calls of functions and property getters of the program whose body casts to a type parameter and
-returns it (`val s: String = unsafeCast(5)`, `box.get().length`, `slots[0]` with an `operator fun get`), and reads through a local
-`val` initialized by such a cast to a generic type (`l[0].length`, `l.first()`, `m["a"]!!`, `for (s in l)`), when they meet a
-concrete type (a variable, a parameter, a receiver of a member, a branch of an `if` of that type) and not when they meet `Any` or a
-type parameter (`println(x)`, a template, `==`). An unchecked value that reaches a concrete type another way (an element passed to
-the lambda of `l.map { }` or `l.forEach { }`, a value stored in a field) flows on unchecked, and a `Double` read from an unchecked
-`Int` stays an integral number.
+of the common sources, calls of functions and property getters of the program whose body casts to a type parameter and
+returns it (`val s: String = unsafeCast(5)`, `box.get().length`, `slots[0]` with an `operator fun get`), and reads through a cast
+to a generic type, a local `val` it initializes, or a property it initializes or is passed to (`l[0].length`, `l.first()`,
+`m["a"]!!`, `for (s in l)`, `(x as List<String>)[0]`, `Box(l).items[0]` for `class Box(val items: List<String>)`, a property
+assigned `l`), when they meet a concrete type (a variable, a parameter, a receiver of a member, a branch of an `if` of that type)
+and not when they meet `Any` or a type parameter (`println(x)`, a template, `==`). A lambda literal passed to a call on such a
+value or on a chain of calls from one (`l.map { it }`, `l.filter { true }`, `l.asSequence().map { }`) checks its arguments
+against its concrete parameter types as it starts, used or not, as the JVM does. An unchecked value that reaches a concrete type
+another way flows on unchecked: an element passed to a function value not written at the call (`l.map(f)`; the JVM checks in
+`f`'s class, and checking every lambda's arguments would cost every call of every lambda), a value passed through a parameter
+(`l.let { it.map { } }`, `fun f(xs: List<String>)`) or from one property to another (k2l follows only the cast's own local or
+property). A `Double` read from an unchecked `Int` stays an integral number.
 
 ## Development
 

@@ -24,7 +24,8 @@ fun main() {
     val workDir = File(System.getProperty("k2l.oracle.work"))
     val update = System.getProperty("k2l.oracle.update").toBoolean()
     val only = System.getProperty("k2l.oracle.only").orEmpty().split(',').filter { it.isNotEmpty() }
-    val threads = System.getProperty("k2l.oracle.threads")?.toIntOrNull() ?: Runtime.getRuntime().availableProcessors()
+    // Each thread holds a Kotlin compiler run in memory: more than a few at once can exhaust a laptop's RAM.
+    val threads = System.getProperty("k2l.oracle.threads")?.toIntOrNull() ?: Runtime.getRuntime().availableProcessors().coerceAtMost(4)
     val cases = casesDir.listFiles().orEmpty().filter {
         File(it, "main.kt").isFile && !File(it, "errors.txt").isFile && (only.isEmpty() || it.name in only)
     }.sortedBy { it.name }

@@ -1,0 +1,22 @@
+before registry
+registry ready
+registered [scoring, combat, movement]
+duplicate plugin combat
+installed before boot: []
+installed [movement, combat, scoring], lookups 5
+building damage table
+finished after 5 ticks: archer(4@3)
+  install movement
+  install combat after movement
+  install scoring after combat
+  Died(unit=mage) -> scoring
+  Died(unit=knight) -> scoring
+  Died(unit=brute) -> scoring
+  movement made 10 moves
+  RoundOver -> nobody
+  mage killed by knight, teams left [A, B]
+  knight killed by brute, teams left [A, B]
+  brute killed by archer, teams left [A]
+kills {archer=1, brute=1, knight=1}
+java.lang.IllegalArgumentException: unknown plugin teleport needed by broken
+cleared [] []
