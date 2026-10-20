@@ -1,2 +1,2 @@
-4:13: Kotlin library API 'java/lang/Class.methods' is not supported yet
-5:13: Kotlin library API 'java/lang/Class.declaredFields' is not supported yet
+4:31: Library API 'java.lang.Class.methods' is not supported yet
+5:31: Library API 'java.lang.Class.declaredFields' is not supported yet

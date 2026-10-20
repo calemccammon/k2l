@@ -248,6 +248,7 @@ object StdlibMappings {
         ?: Long64Mappings.map(callableId, site)
         ?: callableId?.let { mappings[it] }?.invoke(site)
         ?: TypeTestMappings.map(callableId, site)
+        ?: TypeOfMappings.map(callableId, site)
         ?: BigNumberMappings.map(callableId, site)
         ?: JdkCollectionsMappings.map(callableId, site)
         ?: StreamMappings.map(callableId, site)

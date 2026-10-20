@@ -8,7 +8,10 @@ package dev.k2l.lua
 @Retention(AnnotationRetention.BINARY)
 annotation class LuaExternal
 
-/** The Lua name of an external declaration, when it differs from the Kotlin name. */
+/**
+ * The Lua name of an external declaration, when it differs from the Kotlin name. On a top-level function or property of
+ * the program, the name Lua code finds it under in the file's module table (`require("game.api").on_load(...)`).
+ */
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.BINARY)
 annotation class LuaName(val name: String)

@@ -1,0 +1,26 @@
+int (Kotlin reflection is not available) | false | int (Kotlin reflection is not available) | [] | []
+java.lang.Integer? (Kotlin reflection is not available) true
+java.lang.String (Kotlin reflection is not available) | false | class java.lang.String (Kotlin reflection is not available) | [] | []
+java.lang.Object (Kotlin reflection is not available) | false | class java.lang.Object (Kotlin reflection is not available) | [] | []
+java.util.List<java.lang.Integer> (Kotlin reflection is not available) | false | interface java.util.List (Kotlin reflection is not available) | [int (Kotlin reflection is not available)] | [int (Kotlin reflection is not available)]
+java.util.List<java.lang.String?> (Kotlin reflection is not available) | false | interface java.util.List (Kotlin reflection is not available) | [java.lang.String? (Kotlin reflection is not available)] | [java.lang.String? (Kotlin reflection is not available)]
+java.util.Map<java.lang.String, java.util.List<Box<java.lang.Integer>>> (Kotlin reflection is not available) | false | interface java.util.Map (Kotlin reflection is not available) | [java.lang.String (Kotlin reflection is not available), java.util.List<Box<java.lang.Integer>> (Kotlin reflection is not available)] | [java.lang.String (Kotlin reflection is not available), java.util.List<Box<java.lang.Integer>> (Kotlin reflection is not available)]
+kotlin.Array<java.lang.String> (Kotlin reflection is not available) | false | class [Ljava.lang.String; (Kotlin reflection is not available) | [java.lang.String (Kotlin reflection is not available)] | [java.lang.String (Kotlin reflection is not available)]
+kotlin.IntArray (Kotlin reflection is not available) | false | class [I (Kotlin reflection is not available) | [] | []
+Outer$Nested (Kotlin reflection is not available) | false | class Outer$Nested (Kotlin reflection is not available) | [] | []
+Box<*> (Kotlin reflection is not available) | false | class Box (Kotlin reflection is not available) | [*] | [null]
+Box<out java.lang.Number> (Kotlin reflection is not available) | false | class Box (Kotlin reflection is not available) | [out java.lang.Number (Kotlin reflection is not available)] | [java.lang.Number (Kotlin reflection is not available)]
+Box<in java.lang.Integer> (Kotlin reflection is not available) | false | class Box (Kotlin reflection is not available) | [in int (Kotlin reflection is not available)] | [int (Kotlin reflection is not available)]
+java.util.Map$Entry<java.lang.String, java.lang.Integer> (Kotlin reflection is not available) | false | interface java.util.Map$Entry (Kotlin reflection is not available) | [java.lang.String (Kotlin reflection is not available), int (Kotlin reflection is not available)] | [java.lang.String (Kotlin reflection is not available), int (Kotlin reflection is not available)]
+kotlin.jvm.functions.Function1<java.lang.Integer, java.lang.String> (Kotlin reflection is not available) | false | interface kotlin.jvm.functions.Function1 (Kotlin reflection is not available) | [int (Kotlin reflection is not available), java.lang.String (Kotlin reflection is not available)] | [int (Kotlin reflection is not available), java.lang.String (Kotlin reflection is not available)]
+kotlin.Unit (Kotlin reflection is not available) | false | class kotlin.Unit (Kotlin reflection is not available) | [] | []
+long (Kotlin reflection is not available) | false | long (Kotlin reflection is not available) | [] | []
+double (Kotlin reflection is not available) | false | double (Kotlin reflection is not available) | [] | []
+char (Kotlin reflection is not available) | false | char (Kotlin reflection is not available) | [] | []
+boolean (Kotlin reflection is not available) | false | boolean (Kotlin reflection is not available) | [] | []
+java.util.Set<Outer> (Kotlin reflection is not available) | false | interface java.util.Set (Kotlin reflection is not available) | [Outer (Kotlin reflection is not available)] | [Outer (Kotlin reflection is not available)]
+int
+list of string
+null
+false
+true

@@ -31,6 +31,7 @@ local __K2L_ArithmeticException = __K2L_Class("java.lang.ArithmeticException", _
 local __K2L_UnsupportedOperationException = __K2L_Class("java.lang.UnsupportedOperationException", __K2L_RuntimeException)
 local __K2L_ClassCastException = __K2L_Class("java.lang.ClassCastException", __K2L_RuntimeException)
 local __K2L_NumberFormatException = __K2L_Class("java.lang.NumberFormatException", __K2L_IllegalArgumentException)
+local __K2L_PatternSyntaxException = __K2L_Class("java.util.regex.PatternSyntaxException", __K2L_IllegalArgumentException)
 local __K2L_NoSuchElementException = __K2L_Class("java.util.NoSuchElementException", __K2L_RuntimeException)
 local __K2L_ConcurrentModificationException = __K2L_Class("java.util.ConcurrentModificationException", __K2L_RuntimeException)
 -- java.util.Formatter's exceptions (String.format), with the JDK's messages

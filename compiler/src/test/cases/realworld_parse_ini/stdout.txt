@@ -1,0 +1,31 @@
+sections: [general, database, server, paths]
+[general]
+  app = shop
+  version = 2.3.1
+  home = /srv/shop
+[database]
+  host = db.internal
+  port = 5432
+  url = postgres://app@db.internal:5432/shop
+  user = app
+  password = s3cr$t "quoted"
+[server]
+  host = 0.0.0.0
+  port = 9090
+  debug = YES
+  timeouts = 1.5, 3, 10.25
+  banner = Welcome to shop v2.3.1
+  logdir = /srv/shop/logs
+Server(0.0.0.0:9090 debug=true timeouts=[1.5, 3.0, 10.25])
+timeout total = 14.75
+interpolation cycle: paths.a -> paths.b -> paths.c -> paths.a
+missing key 'database.nope'
+line 1: environment variable NOPE is not set
+port must be 1..65535, was '70000'
+not a boolean: maybe
+[bad header => ConfigError(line 1: bad section header '[bad header')
+novalue => ConfigError(line 1: expected key = value, got 'novalue')
+k ey = 1 => ConfigError(line 1: invalid key 'k ey')
+s = "bad \q" => ConfigError(line 1: unknown escape \q)
+[ok]|| = 3 => ConfigError(line 3: expected key = value, got '= 3')
+r = ${} => ConfigError(line 1: empty reference)

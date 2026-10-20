@@ -288,6 +288,9 @@ internal object FactoryMappings {
 
             "java/util/TreeSet" -> new("__K2L_SortedSet", *site.args.take(1).toTypedArray())
 
+            // EnumMap(Class), EnumMap(map); see EnumCollections.lua
+            "java/util/EnumMap" -> new("__K2L_EnumMap", site.arg(0))
+
             "java/lang/StringBuilder", "kotlin/text/StringBuilder", "java/lang/StringBuffer" ->
                 new("__K2L_StringBuilder", *site.args.take(1).map { site.str(it, first) }.toTypedArray())
 

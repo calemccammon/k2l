@@ -1,0 +1,34 @@
+client: ended in CLOSED (terminal), sent 1536 bytes
+  path: CLOSED -> SYN_SENT -> ESTABLISHED -> FIN_WAIT_1 -> FIN_WAIT_2 -> TIME_WAIT -> CLOSED
+  visited [CLOSED, SYN_SENT, ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2, TIME_WAIT] counts {CLOSED=2, SYN_SENT=1, ESTABLISHED=1, FIN_WAIT_1=1, FIN_WAIT_2=1, TIME_WAIT=1}
+server: ended in CLOSED (terminal), sent 72 bytes
+  path: CLOSED -> LISTEN -> SYN_RECEIVED -> ESTABLISHED -> CLOSE_WAIT -> LAST_ACK -> CLOSED
+  visited [CLOSED, LISTEN, SYN_RECEIVED, ESTABLISHED, CLOSE_WAIT, LAST_ACK] counts {CLOSED=2, LISTEN=1, SYN_RECEIVED=1, ESTABLISHED=1, CLOSE_WAIT=1, LAST_ACK=1}
+simultaneous: ended in CLOSED (terminal), sent 0 bytes
+  path: CLOSED -> SYN_SENT -> ESTABLISHED -> FIN_WAIT_1 -> CLOSING -> TIME_WAIT -> CLOSED
+  visited [CLOSED, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSING, TIME_WAIT] counts {CLOSED=2, SYN_SENT=1, ESTABLISHED=1, FIN_WAIT_1=1, CLOSING=1, TIME_WAIT=1}
+early-send: no transition from LISTEN on Send(bytes=10); last good state LISTEN after 1 steps
+  path: CLOSED -> LISTEN
+  visited [CLOSED, LISTEN] counts {CLOSED=1, LISTEN=1}
+bad-ack: no transition from SYN_SENT on Ack; last good state SYN_SENT after 1 steps
+  path: CLOSED -> SYN_SENT
+  visited [CLOSED, SYN_SENT] counts {CLOSED=1, SYN_SENT=1}
+reset: ended in CLOSED (terminal), sent 0 bytes
+  path: CLOSED -> SYN_SENT -> ESTABLISHED -> CLOSED -> LISTEN -> CLOSED
+  visited [CLOSED, LISTEN, SYN_SENT, ESTABLISHED] counts {CLOSED=3, LISTEN=1, SYN_SENT=1, ESTABLISHED=1}
+typo: bad script: unknown event 'synak'
+  visited [CLOSED] counts {CLOSED=1}
+tick: bad script: tick needs a number, got 'soon'
+  visited [CLOSED] counts {CLOSED=1}
+(1, 2)
+IllegalArgumentException
+{SYN=[SYN_SENT, SYN_RECEIVED], FIN=[FIN_WAIT_1, FIN_WAIT_2]}
+cola -> insert 75c more for cola  [HasCredit(cents=50)]
+cola -> vend cola, change 1xQUARTER, 2xDIME  [Idle]
+gum -> gum sold out  [SoldOut(item=gum)]
+chips -> insert 65c more for chips  [SoldOut(item=gum)]
+chips -> vend chips, change 1xQUARTER, 1xDIME, 1xNICKEL  [Idle]
+chips -> chips sold out  [SoldOut(item=chips)]
+nachos -> unknown item 'nachos'  [HasCredit(cents=25)]
+refund -> refunded 25c  [Idle]
++quarter +quarter +dime +dime +dime +dime +dime +dime +dime +dime +dime +dime +dime +dime [cola] +dollar +nickel [chips] +quarter

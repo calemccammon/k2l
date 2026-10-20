@@ -24,7 +24,9 @@ internal fun binaryName(c: KtClassOrObject): String {
 /** `MainKt` for `main.kt`: the class holding a file's top-level functions. */
 private fun facadeName(file: KtFile): String {
     val pkg = file.packageFqName.asString()
-    val name = file.name.removeSuffix(".kt").replaceFirstChar { it.uppercaseChar() } + "Kt"
+    // like kotlinc, `Style.common.kt` is `Style_commonKt`
+    val base = file.name.removeSuffix(".kt").map { if (Character.isJavaIdentifierPart(it)) it else '_' }.joinToString("")
+    val name = base.replaceFirstChar { it.uppercaseChar() } + "Kt"
     return if (pkg.isEmpty()) name else "$pkg.$name"
 }
 

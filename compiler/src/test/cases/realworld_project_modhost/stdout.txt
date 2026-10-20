@@ -1,0 +1,23 @@
+kotlin main starts
+[host] greeter loaded into luahost 1.4
+loaded mods.Greeter as greeter
+counter: initializing its top-level state
+loaded mods.Counter as counter
+click_count before 0
+[host] clicked 5, total 15
+[host] clicked 1, total 16
+click 15 16
+true	false
+hello ann!	hello bob?
+2	HELLO CY.	HELLO DI.	[HELLO CY., HELLO DI.]
+[host] HELLO EVE!
+join listeners 1
+[host] clicked 3, total 19
+click listeners 1
+nobody listens 0
+2.10	2	10	1
+[host] greeter: delayed hello
+booted 2 mods
+kotlin sees style=loud clicks=19
+counter ready after 0 events; 19 clicks
+fired [join, click, quit]

@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
 /** The lualib tables of `--strings utf16` (see `Utf16.lua` and `Utf16Case.lua`). */
 private const val UTF16 = "Utf16"
 private const val UTF16_CASE = "Utf16Case"
+private const val UNICODE_CATEGORIES = "UnicodeCategories"
 
 /** `--strings utf16`: lengths, indices and `Char`s count UTF-16 code units, and Char classification is Unicode-aware. */
 internal val FileTransformer.utf16: Boolean get() = ctx.options.strings == StringSemantics.Utf16
@@ -41,11 +42,15 @@ internal fun CallSite.requireUtf16Case() {
 
 /**
  * With `--strings utf16`, a regex whose pattern may use Unicode properties (`\p{L}`, `\p{Lu}`, `\P{Nd}`, ...) loads the
- * Unicode tables they test non-ASCII characters with: when the pattern is not a literal, or a literal that has `\p` or `\P`.
+ * Unicode tables they test non-ASCII characters with (and the general categories, `UnicodeCategories.lua`): when the
+ * pattern is not a literal, or a literal that has `\p` or `\P`.
  */
 internal fun CallSite.requireRegexProperties(pattern: LuaExpr) {
     val text = (pattern as? LuaString)?.value
-    if (text == null || "\\p" in text || "\\P" in text) requireUtf16Case()
+    if (text == null || "\\p" in text || "\\P" in text) {
+        requireUtf16Case()
+        if (utf16) transformer.ctx.lualib += UNICODE_CATEGORIES
+    }
 }
 
 /** Wraps [text] so that surrogate halves joined by concatenation become one character. */

@@ -1,0 +1,30 @@
+== casts
+[1, null, null, null, null, null, null]
+[-, two, -, -, -, -, -]
+strings=1 numbers=2 lists=1
+firstEnum=LOW firstBoolean=true firstPoint=null
+names: Point Level String
+== registry
+types=[Point, Color, Level, Int]
+3,-4 #ff8000 high
+decoded Point(x=7, y=8) 15 #0a0b0c 11 1 256
+list=44 empty=[]
+Point:1,1 Level:low Int:ff <String?> Color:#010203
+error: no codec for String
+error: codec for Point already registered
+== bag
+points=[Point(x=0, y=0), Point(x=2, y=2)] level=MID int=84 any=5
+error: expected one Point, found 2
+== dispatcher
+counts=[2, 2, 1, 2]
+click 10,20@1
+any@1
+key Q@2
+any@2
+any@3
+click 0,0@4
+any@4
+== defaults by type
+int=1 strings=[x] ints=3
+nullable=null type=java.util.Map<java.lang.String, java.util.List<generics.reified.Point>> (Kotlin reflection is not available)
+error: no default for java.util.List<generics.reified.Level> (Kotlin reflection is not available)

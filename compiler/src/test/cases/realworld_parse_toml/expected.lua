@@ -1,0 +1,770 @@
+local ____lualib = require("lualib_bundle")
+local __K2L_CastFail = ____lualib.__K2L_CastFail
+local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DeepMain = ____lualib.__K2L_DeepMain
+local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
+local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
+local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_LoopItems = ____lualib.__K2L_LoopItems
+local __K2L_Map = ____lualib.__K2L_Map
+local __K2L_NotNull = ____lualib.__K2L_NotNull
+local __K2L_Num = ____lualib.__K2L_Num
+local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
+local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
+local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
+local __K2L_StringReplace = ____lualib.__K2L_StringReplace
+local __K2L_StringToDoubleOrNull = ____lualib.__K2L_StringToDoubleOrNull
+local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
+local __K2L_Text = ____lualib.__K2L_Text
+local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_Utf16 = ____lualib.__K2L_Utf16
+local __K2L_Utf16Case = ____lualib.__K2L_Utf16Case
+
+local TValue = __K2L_Class("TValue")
+__K2L_ClassInfo(TValue, "TValue", "TValue", "interface")
+local TStr = __K2L_Class("TStr", nil, TValue)
+__K2L_ClassInfo(TStr, "TStr", "TStr", "class")
+
+function TStr:____init(s)
+    self.s = s
+end
+
+function TStr.new(s)
+    return setmetatable({s = s}, TStr)
+end
+
+function TStr:toString()
+    return "TStr(s=" .. self.s .. ")"
+end
+
+function TStr:hashCode()
+    return __K2L_Hash(self.s)
+end
+
+function TStr:equals(other)
+    return getmetatable(other) == TStr and self.s == other.s
+end
+
+local TInt = __K2L_Class("TInt", nil, TValue)
+__K2L_ClassInfo(TInt, "TInt", "TInt", "class")
+
+function TInt:____init(v)
+    self.v = v
+end
+
+function TInt.new(v)
+    return setmetatable({v = v}, TInt)
+end
+
+function TInt:toString()
+    return "TInt(v=" .. self.v .. ")"
+end
+
+function TInt:hashCode()
+    return __K2L_Hash(self.v)
+end
+
+function TInt:equals(other)
+    return getmetatable(other) == TInt and self.v == other.v
+end
+
+local TFloat = __K2L_Class("TFloat", nil, TValue)
+__K2L_ClassInfo(TFloat, "TFloat", "TFloat", "class")
+
+function TFloat:____init(v)
+    self.v = v
+end
+
+function TFloat.new(v)
+    return setmetatable({v = v}, TFloat)
+end
+
+function TFloat:toString()
+    return "TFloat(v=" .. __K2L_Str(self.v) .. ")"
+end
+
+function TFloat:hashCode()
+    return __K2L_Hash(self.v)
+end
+
+function TFloat:equals(other)
+    return getmetatable(other) == TFloat and self.v == other.v
+end
+
+local TBool = __K2L_Class("TBool", nil, TValue)
+__K2L_ClassInfo(TBool, "TBool", "TBool", "class")
+
+function TBool:____init(v)
+    self.v = v
+end
+
+function TBool.new(v)
+    return setmetatable({v = v}, TBool)
+end
+
+function TBool:toString()
+    return "TBool(v=" .. tostring(self.v) .. ")"
+end
+
+function TBool:hashCode()
+    return self.v and 1231 or 1237
+end
+
+function TBool:equals(other)
+    return getmetatable(other) == TBool and self.v == other.v
+end
+
+local TArr = __K2L_Class("TArr", nil, TValue)
+__K2L_ClassInfo(TArr, "TArr", "TArr", "class")
+
+function TArr:____init(items)
+    if items == nil then
+        items = __K2L_ListOf()
+    end
+    self.items = items
+end
+
+function TArr:toString()
+    return "TArr(items=" .. __K2L_Str(self.items) .. ")"
+end
+
+function TArr:hashCode()
+    return __K2L_Hash(self.items)
+end
+
+function TArr:equals(other)
+    return getmetatable(other) == TArr and __K2L_Equals(self.items, other.items)
+end
+
+local TTable = __K2L_Class("TTable", nil, TValue)
+__K2L_ClassInfo(TTable, "TTable", "TTable", "class")
+
+function TTable:____init(map, inline)
+    if map == nil then
+        map = __K2L_Map.new()
+    end
+    if inline == nil then
+        inline = false
+    end
+    self.map = map
+    self.inline = inline
+end
+
+function TTable:toString()
+    return "TTable(map=" .. __K2L_Str(self.map) .. ", inline=" .. tostring(self.inline) .. ")"
+end
+
+function TTable:hashCode()
+    return (31 * __K2L_Hash(self.map) + (self.inline and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+end
+
+function TTable:equals(other)
+    return getmetatable(other) == TTable and __K2L_Equals(self.map, other.map) and self.inline == other.inline
+end
+
+local TomlError = __K2L_Class("TomlError", __K2L_IllegalArgumentException)
+__K2L_ClassInfo(TomlError, "TomlError", "TomlError", "class")
+
+function TomlError:____init(line, msg)
+    __K2L_IllegalArgumentException.____init(self, "line " .. line .. ": " .. msg)
+    self.line = line
+end
+
+local TomlParser = __K2L_Class("TomlParser")
+__K2L_ClassInfo(TomlParser, "TomlParser", "TomlParser", "class")
+
+function TomlParser:____init(text)
+    self.src = text
+    self.i = 0
+    self.line = 1
+    self.root = TTable.new()
+    self.current = self.root
+end
+
+function TomlParser:fail(msg)
+    error(TomlError.new(self.line, msg))
+end
+
+function TomlParser:peek()
+    return __K2L_Text.getOrNull(self.src, self.i)
+end
+
+function TomlParser:skipSpaces()
+    while self:peek() == " " or self:peek() == "\t" do
+        self.i = self.i + 1
+    end
+end
+
+function TomlParser:skipToEol()
+    self:skipSpaces()
+    if self:peek() == "#" then
+        while self:peek() ~= nil and self:peek() ~= "\n" do
+            self.i = self.i + 1
+        end
+    end
+    local ____subject = self:peek()
+    if ____subject == nil then
+    elseif ____subject == "\n" then
+        self.i = self.i + 1
+        self.line = self.line + 1
+    elseif ____subject == "\r" then
+        if __K2L_Text.getOrNull(self.src, self.i + 1) == "\n" then
+            self.i = self.i + 2
+            self.line = self.line + 1
+        else
+            self:fail("stray carriage return")
+        end
+    else
+        self:fail(__K2L_Utf16.norm("expected end of line, found '" .. __K2L_Str(self:peek()) .. "'"))
+    end
+end
+
+function TomlParser:parse()
+    while self.i < __K2L_Utf16.len(self.src) do
+        self:skipSpaces()
+        local ____subject_1 = self:peek()
+        if ____subject_1 == "#" or ____subject_1 == "\n" or ____subject_1 == "\r" then
+            self:skipToEol()
+        elseif ____subject_1 == "[" then
+            self:header()
+        elseif ____subject_1 == nil then
+        else
+            self:keyValue(self.current)
+            self:skipToEol()
+        end
+    end
+    return self.root
+end
+
+local ____lambda_1 = function() return TArr.new() end
+function TomlParser:header()
+    local array = __K2L_Text.startsWithAt(self.src, "[[", self.i)
+    self.i = self.i + (array and 2 or 1)
+    local path = self:key()
+    if array then
+        if not __K2L_Text.startsWithAt(self.src, "]]", self.i) then
+            self:fail("expected ']]'")
+        end
+        self.i = self.i + 2
+        local parent = self:descend(self.root, path:dropLast(1))
+        local ____cast = parent.map:getOrPut(path:last(), ____lambda_1)
+        local ____value = getmetatable(____cast) == TArr and ____cast or nil
+        if ____value == nil then
+            self:fail("'" .. path:last() .. "' is not an array of tables")
+        end
+        local arr = ____value
+        local ____value_1 = TTable.new()
+        arr.items:add(____value_1)
+        self.current = ____value_1
+    else
+        if self:peek() ~= "]" then
+            self:fail("expected ']'")
+        end
+        self.i = self.i + 1
+        self.current = self:descend(self.root, path)
+    end
+    self:skipToEol()
+end
+
+local ____lambda_2 = function() return TTable.new() end
+function TomlParser:descend(start, path)
+    return path:fold(start, function(t, k)
+        local v = t.map:getOrPut(k, ____lambda_2)
+        local ____mt = getmetatable(v)
+        if ____mt == TTable then
+            if v.inline then
+                self:fail("cannot extend inline table '" .. k .. "'")
+            else
+                return v
+            end
+        elseif ____mt == TArr then
+            local ____cast_1 = v.items:lastOrNull()
+            local ____value_2 = getmetatable(____cast_1) == TTable and ____cast_1 or nil
+            if ____value_2 == nil then
+                self:fail("'" .. k .. "' is not a table")
+            end
+            return ____value_2
+        else
+            self:fail("key '" .. k .. "' already holds a " .. __K2L_Str(__K2L_KClassOfValue(v).simpleName))
+        end
+    end)
+end
+
+function TomlParser:key()
+    local parts = __K2L_ListOf()
+    repeat
+        self:skipSpaces()
+        local ____temp
+        local ____subject_2 = self:peek()
+        if ____subject_2 == "\"" then
+            ____temp = self:basicString()
+        elseif ____subject_2 == "'" then
+            ____temp = self:literalString()
+        else
+            local start = self.i
+            while true do
+                local ____receiver = self:peek()
+                if (____receiver and (__K2L_Utf16Case.isLetterOrDigit(____receiver) or ____receiver == "_" or ____receiver == "-")) ~= true then
+                    break
+                end
+                self.i = self.i + 1
+            end
+            if start == self.i then
+                self:fail("expected a key")
+            end
+            ____temp = __K2L_Text.substring(self.src, start, self.i)
+        end
+        parts:add(____temp)
+        self:skipSpaces()
+        local ____cond = self:peek() == "."
+        if ____cond then
+            local ____old = self.i
+            self.i = self.i + 1
+            ____cond = ____old >= 0
+        end
+    until not ____cond
+    return parts
+end
+
+function TomlParser:keyValue(into)
+    local path = self:key()
+    if self:peek() ~= "=" then
+        self:fail("expected '=' after key '" .. __K2L_Utf16.norm(path:joinToString(".")) .. "'")
+    end
+    self.i = self.i + 1
+    self:skipSpaces()
+    local target = self:descend(into, path:dropLast(1))
+    if target.map:containsKey(path:last()) then
+        self:fail("duplicate key '" .. __K2L_Utf16.norm(path:joinToString(".")) .. "'")
+    end
+    local ____object = target.map
+    local ____key = path:last()
+    ____object:set(____key, self:value())
+end
+
+function TomlParser:value()
+    local c = self:peek()
+    if c == "\"" then
+        return TStr.new(self:basicString())
+    elseif c == "'" then
+        return TStr.new(self:literalString())
+    elseif c == "[" then
+        return self:array()
+    elseif c == "{" then
+        return self:inlineTable()
+    elseif c == "t" or c == "f" then
+        return self:word()
+    elseif c == nil then
+        self:fail("expected a value")
+    elseif __K2L_Utf16Case.isDigit(c) or __K2L_Text.contains("+-i", c) then
+        return self:number()
+    else
+        self:fail(__K2L_Utf16.norm("unexpected '" .. c .. "'"))
+    end
+end
+
+function TomlParser:word()
+    local ____list = __K2L_ReadOnlyListOf(__K2L_Pair.new("true", true), __K2L_Pair.new("false", false))
+    for ____i = 1, ____list.size do
+        local ____item = ____list[____i]
+        local w, v = ____item.first, ____item.second
+        if __K2L_Text.startsWithAt(self.src, w, self.i) then
+            self.i = self.i + __K2L_Utf16.len(w)
+            return TBool.new(v)
+        end
+    end
+    self:fail("bad literal")
+end
+
+local ____lambda_3 = function(it) return __K2L_Text.contains(".eE", it) end
+function TomlParser:number()
+    local start = self.i
+    while true do
+        local ____receiver_1 = self:peek()
+        if (____receiver_1 and (__K2L_Utf16Case.isLetterOrDigit(____receiver_1) or __K2L_Text.contains("+-._", ____receiver_1))) ~= true then
+            break
+        end
+        self.i = self.i + 1
+    end
+    local raw = __K2L_Text.substring(self.src, start, self.i)
+    if __K2L_Text.startsWith(raw, "_") or __K2L_Text.endsWith(raw, "_") or __K2L_Text.contains(raw, "__") then
+        self:fail("misplaced underscore in '" .. raw .. "'")
+    end
+    local t = __K2L_StringReplace(raw, "_", "")
+    local radix
+    if __K2L_Text.startsWith(t, "0x") then
+        radix = 16
+    elseif __K2L_Text.startsWith(t, "0o") then
+        radix = 8
+    elseif __K2L_Text.startsWith(t, "0b") then
+        radix = 2
+    else
+        radix = 10
+    end
+    if radix ~= 10 then
+        local ____value_3 = __K2L_StringToIntOrNull(__K2L_Text.substring(t, 2), radix, true)
+        if ____value_3 == nil then
+            self:fail("bad integer '" .. raw .. "'")
+        end
+        return TInt.new(____value_3)
+    end
+    if t == "inf" or t == "+inf" then
+        return TFloat.new(math.huge)
+    elseif t == "-inf" then
+        return TFloat.new(-math.huge)
+    end
+    if __K2L_Text.toList(t):any(____lambda_3) then
+        local ____value_4 = __K2L_StringToDoubleOrNull(t)
+        if ____value_4 == nil then
+            self:fail("bad float '" .. raw .. "'")
+        end
+        return TFloat.new(____value_4)
+    end
+    local ____value_5 = __K2L_StringToIntOrNull(t, nil, true)
+    if ____value_5 == nil then
+        self:fail("bad integer '" .. raw .. "'")
+    end
+    return TInt.new(____value_5)
+end
+
+function TomlParser:array()
+    self.i = self.i + 1
+    local arr = TArr.new()
+    while true do
+        self:skipWsAndComments()
+        if self:peek() == "]" then
+            self.i = self.i + 1
+            return arr
+        end
+        arr.items:add(self:value())
+        self:skipWsAndComments()
+        local ____subject_3 = self:peek()
+        if ____subject_3 == "," then
+            self.i = self.i + 1
+        elseif ____subject_3 == "]" then
+            self.i = self.i + 1
+            return arr
+        else
+            self:fail("expected ',' or ']' in array")
+        end
+    end
+end
+
+function TomlParser:skipWsAndComments()
+    while true do
+        local ____subject_4 = self:peek()
+        if ____subject_4 == " " or ____subject_4 == "\t" or ____subject_4 == "\r" then
+            self.i = self.i + 1
+        elseif ____subject_4 == "\n" then
+            self.i = self.i + 1
+            self.line = self.line + 1
+        elseif ____subject_4 == "#" then
+            while self:peek() ~= nil and self:peek() ~= "\n" do
+                self.i = self.i + 1
+            end
+        else
+            return
+        end
+    end
+end
+
+function TomlParser:inlineTable()
+    self.i = self.i + 1
+    local t = TTable.new()
+    self:skipSpaces()
+    if self:peek() == "}" then
+        self.i = self.i + 1
+        t.inline = true
+        return t
+    end
+    while true do
+        self:keyValue(t)
+        self:skipSpaces()
+        local ____subject_5 = self:peek()
+        if ____subject_5 == "," then
+            self.i = self.i + 1
+        elseif ____subject_5 == "}" then
+            self.i = self.i + 1
+            t.inline = true
+            return t
+        else
+            self:fail("expected ',' or '}' in inline table")
+        end
+    end
+end
+
+function TomlParser:literalString()
+    local ____end = __K2L_StringIndexOf(self.src, "'", self.i + 1)
+    if ____end < 0 or __K2L_Text.contains(__K2L_Text.substring(self.src, self.i, ____end), "\n") then
+        self:fail("unterminated literal string")
+    end
+    local ____value_6 = __K2L_Text.substring(self.src, self.i + 1, ____end)
+    self.i = ____end + 1
+    return ____value_6
+end
+
+function TomlParser:basicString()
+    self.i = self.i + 1
+    local sb = __K2L_StringBuilder.new()
+    while true do
+        local ____value_7 = self:peek()
+        if ____value_7 == nil then
+            self:fail("unterminated string")
+        end
+        local c = ____value_7
+        self.i = self.i + 1
+        if c == "\"" then
+            return sb:toString()
+        elseif c == "\n" then
+            self:fail("newline in string")
+        elseif c == "\\" then
+            self:escape(sb)
+        else
+            sb:append(c)
+        end
+    end
+end
+
+function TomlParser:escape(sb)
+    local ____value_8 = self:peek()
+    if ____value_8 == nil then
+        self:fail("unterminated escape")
+    end
+    local e = ____value_8
+    self.i = self.i + 1
+    if e == "b" then
+        sb:append("\008")
+    elseif e == "t" then
+        sb:append("\t")
+    elseif e == "n" then
+        sb:append("\n")
+    elseif e == "f" then
+        sb:append("\012")
+    elseif e == "r" then
+        sb:append("\r")
+    elseif e == "\"" or e == "\\" then
+        sb:append(e)
+    elseif e == "u" or e == "U" then
+        local n = e == "u" and 4 or 8
+        local hex = __K2L_Text.substring(self.src, self.i, math.min(self.i + n, __K2L_Utf16.len(self.src)))
+        local ____receiver_2 = __K2L_Utf16.len(hex) == n and hex or nil
+        local ____value_9 = ____receiver_2 and __K2L_StringToIntOrNull(____receiver_2, 16)
+        if ____value_9 == nil then
+            self:fail(__K2L_Utf16.norm("bad unicode escape '\\" .. e .. hex .. "'"))
+        end
+        local cp = ____value_9
+        if cp >= 55296 and cp <= 57343 or cp > 1114111 then
+            self:fail("invalid code point U+" .. __K2L_Utf16Case.uppercase(hex))
+        end
+        sb:appendCodePoint(cp)
+        self.i = self.i + n
+    else
+        self:fail(__K2L_Utf16.norm("unknown escape '\\" .. e .. "'"))
+    end
+end
+
+local function jsonString(s)
+    local ____builder = __K2L_StringBuilder.new()
+    ____builder:append("\"")
+    for ch in __K2L_Utf16.each(s) do
+        if ch == "\"" then
+            ____builder:append("\\\"")
+        elseif ch == "\\" then
+            ____builder:append("\\\\")
+        elseif ch == "\n" then
+            ____builder:append("\\n")
+        elseif ch == "\t" then
+            ____builder:append("\\t")
+        elseif ch < " " or __K2L_Utf16.code(ch) > 126 then
+            ____builder:append("\\u"):append(__K2L_Text.padStart(__K2L_Num.toRadix(__K2L_Utf16.code(ch), 16), 4, "0"))
+        else
+            ____builder:append(ch)
+        end
+    end
+    ____builder:append("\"")
+    return ____builder:toString()
+end
+
+local function toJson(v, indent, out)
+    if indent == nil then
+        indent = ""
+    end
+    if out == nil then
+        out = __K2L_StringBuilder.new()
+    end
+    local inner = indent .. "  "
+    local ____mt_1 = getmetatable(v)
+    if ____mt_1 == TStr then
+        out:append(jsonString(v.s))
+    elseif ____mt_1 == TInt then
+        out:append(tostring(v.v))
+    elseif ____mt_1 == TFloat then
+        out:append(__K2L_Num.isInfinite(v.v) and jsonString(__K2L_Str(v.v)) or __K2L_Str(v.v))
+    elseif ____mt_1 == TBool then
+        out:append(tostring(v.v))
+    elseif ____mt_1 == TArr then
+        if v.items:isEmpty() then
+            out:append("[]")
+        else
+            out:append("[\n")
+            local ____list_1 = v.items
+            local ____mod_1 = ____list_1.____modCount
+            for ____i_2 = 1, ____list_1.size do
+                local item = ____list_1[____i_2]
+                local k = ____i_2 - 1
+                out:append(inner)
+                toJson(item, inner, out)
+                out:append(k < v.items.size - 1 and ",\n" or "\n")
+                if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_2) then
+                    break
+                end
+            end
+            out:append(indent):append("]")
+        end
+    elseif ____mt_1 == TTable then
+        if v.map:isEmpty() then
+            out:append("{}")
+        else
+            out:append("{\n")
+            local last = v.map:getKeys():last()
+            local ____map = v.map
+            local ____keys, ____values, ____n = ____map:____arrays()
+            local ____mod = ____map.____modCount
+            for ____i_1 = 1, ____n do
+                local k, item = ____keys[____i_1], ____values[____i_1]
+                out:append(inner):append(jsonString(k)):append(": ")
+                toJson(item, inner, out)
+                out:append(k == last and "\n" or ",\n")
+                if ____map.____modCount ~= ____mod and ____map:____comodified(____i_1, ____n) then
+                    break
+                end
+            end
+            out:append(indent):append("}")
+        end
+    end
+    return out
+end
+
+local ____lambda_4 = function(____p1, ____p2) return ____p1 + ____p2 end
+local function stats(v)
+    local counts = __K2L_SortedMapOf()
+    local function walk(x)
+        counts:merge(__K2L_NotNull(__K2L_KClassOfValue(x).simpleName), 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_4))
+        local ____mt_2 = getmetatable(x)
+        if ____mt_2 == TArr then
+            local ____list_2 = x.items
+            local ____mod_3 = ____list_2.____modCount
+            for ____i_4 = 1, ____list_2.size do
+                local it = ____list_2[____i_4]
+                walk(it)
+                if ____list_2.____modCount ~= ____mod_3 and ____list_2:____comodified(____i_4) then
+                    break
+                end
+            end
+        elseif ____mt_2 == TTable then
+            local ____collection = x.map:getValues()
+            local ____items, ____n_1 = __K2L_LoopItems(____collection)
+            local ____mod_2 = ____collection.____modCount
+            for ____i_3 = 1, ____n_1 do
+                local it = ____items[____i_3]
+                walk(it)
+                if ____collection.____modCount ~= ____mod_2 and ____collection:____comodified(____i_3, ____n_1) then
+                    break
+                end
+            end
+        end
+    end
+    walk(v)
+    return counts
+end
+
+local doc = __K2L_Text.trimStart("\n# Service configuration\ntitle = \"TOML \\u2192 JSON\"\nowner.name = \"Zoë \\\"zed\\\" Ångström\"\nowner.emoji = \"\\U0001F680 launch\"\npath = 'C:\\Users\\cfg'\n\n[server]\nhost = \"0.0.0.0\"\nports = [ 8000, 8_001, 0x1F90 ]   # three listeners\ntimeout = 2.5e1\nratio = -0.125\ndebug = false\nmasks = [0o755, 0b1010_1010]\n\n[server.limits]\nmax-body = 1_048_576\nrates = { burst = 20, sustained = 5.0 }\n\n[[plugin]]\nname = \"auth\"\ntags = [\"core\", 'sec', ]\n\n[[plugin]]\nname = \"metrics\"\noptions = { interval = 15, sinks = [ \"stdout\", \"statsd\" ] }\nnested = [ [1, 2], [], [\"a\\tb\"] ]\n\n[empty]\n\"quoted key\" = \"tab\\there\"\nbounds = [ inf, -inf ]\n")
+
+local ____lambda_5 = function(it) return "0x" .. __K2L_Num.toRadix(it, 16) end
+local ____lambda_6 = function(x) return getmetatable(x) == TTable end
+local function main()
+    local ____table = TomlParser.new(doc):parse()
+    print(__K2L_Utf16.out(__K2L_Str(toJson(____table))))
+    print(__K2L_Utf16.out(__K2L_Str(stats(____table))))
+    local ____cast_2 = ____table.map:get("server")
+    if getmetatable(____cast_2) ~= TTable then
+        __K2L_CastFail(____cast_2, "TTable", "TTable")
+    end
+    local server = ____cast_2
+    local ____cast_3 = server.map:get("ports")
+    if getmetatable(____cast_3) ~= TArr then
+        __K2L_CastFail(____cast_3, "TArr", "TArr")
+    end
+    local ____list_3 = ____cast_3.items
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_2 = ____list_3:____array()
+    for ____i_5 = 1, ____n_2 do
+        local it = ____items_1[____i_5]
+        local ____result
+        if getmetatable(it) ~= TInt then
+            __K2L_CastFail(it, "TInt", "TInt")
+        end
+        ____result = it.v
+        ____count = ____count + 1
+        ____out[____count] = ____result
+    end
+    local ports = __K2L_ListWrap(____out, ____count)
+    print(__K2L_Utf16.out("ports sum=" .. ports:sum() .. " max=" .. ports:max() .. " hex=" .. __K2L_Utf16.norm(ports:joinToString(nil, nil, nil, nil, nil, ____lambda_5))))
+    local ____cast_4 = ____table.map:get("plugin")
+    if getmetatable(____cast_4) ~= TArr then
+        __K2L_CastFail(____cast_4, "TArr", "TArr")
+    end
+    local plugins = ____cast_4.items:filter(____lambda_6)
+    print(__K2L_Utf16.out("plugins: " .. __K2L_Utf16.norm(plugins:joinToString(nil, nil, nil, nil, nil, function(it)
+        local ____cast_5 = it.map:get("name")
+        if getmetatable(____cast_5) ~= TStr then
+            __K2L_CastFail(____cast_5, "TStr", "TStr")
+        end
+        return ____cast_5.s
+    end))))
+    local ____cast_6 = ____table.map:get("owner")
+    if getmetatable(____cast_6) ~= TTable then
+        __K2L_CastFail(____cast_6, "TTable", "TTable")
+    end
+    local ____cast_7 = ____cast_6.map:get("name")
+    if getmetatable(____cast_7) ~= TStr then
+        __K2L_CastFail(____cast_7, "TStr", "TStr")
+    end
+    local owner = ____cast_7
+    print(__K2L_Utf16.out("owner length=" .. __K2L_Utf16.len(owner.s) .. " codepoints=" .. __K2L_Utf16.codePointCount(owner.s, 0, __K2L_Utf16.len(owner.s)) .. " upper=" .. __K2L_Utf16Case.uppercase(owner.s)))
+    print(__K2L_Utf16.out(__K2L_Equals(____table.map:get("title"), TStr.new("TOML → JSON"))))
+    local bad = __K2L_ReadOnlyListOf("a = 1\na = 2", "x = [1, 2", "s = \"abc", "n = 1__000", "e = \"\\uD800\"", "e = \"\\q\"", "[t]\nk = 1\n[t.k]\n", "t = { a = 1 }\n[t]\nb = 2", "v = 0xZZ", "k = 1 junk", "[[arr]]\n[arr.x]\ny=1\n[arr]", "f = 1.2.3", "= 3")
+    local ____mod_4 = bad.____modCount
+    for ____i_6 = 1, bad.size do
+        local src = bad[____i_6]
+        local ____ok, ____result_1 = __K2L_DeepPcall(function()
+            TomlParser.new(src):parse()
+            print(__K2L_Utf16.out("ok?? " .. __K2L_StringReplace(src, "\n", "\\n")))
+        end)
+        if not ____ok then
+            local ____error = __K2L_ToThrowable(____result_1)
+            if getmetatable(____error) == TomlError then
+                local e = ____error
+                print(__K2L_Utf16.out("error " .. __K2L_Str(e.message)))
+            else
+                error(____error, 0)
+            end
+        end
+        if bad.____modCount ~= ____mod_4 and bad:____comodified(____i_6) then
+            break
+        end
+    end
+end
+
+__K2L_DeepMain(main)
+return {TValue = TValue, TStr = TStr, TInt = TInt, TFloat = TFloat, TBool = TBool, TArr = TArr, TTable = TTable, TomlError = TomlError, TomlParser = TomlParser, jsonString = jsonString, toJson = toJson, stats = stats, doc = doc}

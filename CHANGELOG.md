@@ -5,6 +5,106 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+### Added
+- `k2l --check` analyzes the sources and reports every Kotlin error and every construct k2l cannot translate, without
+  writing any files. It ends with a count (`k2l: checked 4 file(s): 2 errors, 0 warnings`) and exits with status 1 when
+  there are errors. The Gradle plugin has a matching `k2lCheck` task.
+- Diagnostics show the source line with the problem underlined, as kotlinc does. Where a cheap and correct workaround
+  exists they add a one-line hint, such as `--strings utf16`, a newer Lua target for `goto`, or a lambda in place of a
+  callable reference k2l can't translate. When several diagnostics share a hint, only the first one prints it.
+- `--watch` turns on source maps by default, so Lua errors in the development loop show Kotlin positions.
+  `--no-source-map` or `"sourceMap": false` in k2l.json turns them off. Builds without `--watch`, the Gradle plugin and
+  the golden tests are unchanged.
+- `--no-source-map`, and examples in `--help`.
+
+### Changed
+- The Kotlin/JVM oracle runs at most 4 cases at a time by default (it used one per processor, which could exhaust the
+  memory of a large machine); `-PoracleThreads=N` still sets it.
+- A diagnostic on a call in a chain points at the call's name: for `list.stream().spliterator()` it points at
+  `spliterator`, not at `list`. Kotlin compile errors use the position kotlinc reports. For
+  example, a mistyped `val` initializer is reported at the initializer rather than at `val`.
+- Library names in diagnostics are written with dots (`Library API 'java.util.stream.Stream.spliterator'`, previously
+  `Kotlin library API 'java/util/stream/Stream.spliterator'`).
+- Two diagnostics with the same position and message are reported once. Before, a compound index assignment such as
+  `x[1] += 2` through a member-extension operator reported its error twice.
+- A failed build ends with a count (`k2l: 3 errors, 0 warnings; no files written`). Argument and k2l.json errors print a
+  pointer to `--help` instead of the whole usage text.
+- k2l.json: an unknown key suggests the nearest valid one (`'srcDir' (did you mean 'srcDirs'?)`). A value of the wrong
+  type is an error; before, `"sourceMap": "yes"` or `"luaTarget": 5.4` was silently ignored. Comments and trailing
+  commas are allowed, and invalid JSON is reported in one line.
+- A source directory that doesn't exist is an error, and a build that finds no `.kt` files prints a warning. Before,
+  both reported `wrote 0 file(s)` and succeeded.
+- An unknown option suggests the nearest valid one (`--sourcemap` gives `did you mean --source-map?`), and `--out=x`
+  explains that the value goes after a space.
+- `java.util.EnumMap` and `java.util.EnumSet` (`noneOf`, `allOf`, `of`, `copyOf`, `range`, `complementOf`): ordinal order,
+  the JDK's class names, `is` tests and `IllegalArgumentException` messages for empty copies and reversed ranges. Found by
+  the `realworld_parse_connection` state machine; tested by `jdk_enum_collections`.
+- The top-level properties of a file are initialized on its first use, as the JVM initializes a file's facade class, when
+  their initializers can be noticed (they call code or read mutable state) and the file has no `main`. These properties
+  live in the file's exports table, and `__K2L_LazyFile` runs their initializers on the first read or write of one of them.
+  Before, they ran when the program started. Files whose initializers are constants or collection factories, and the
+  entry file, are unchanged.
+- **Faster `HashMap` creation.** A `HashMap` holds nine fields once it has a key; set one by one, the ninth (the live
+  entries added in 0.2.0) made Lua rehash the object from 8 to 16 slots, on top of the rehashes at 1, 2 and 4.
+  `HashMap()` now builds the object with one table constructor that has room for all of them. Creating a map is about
+  3x faster on LuaJIT and 25% faster on Lua 5.4, and `oop_interpreter` (a `HashMap` per scope) is back to its speed
+  before 0.2.0, or slightly faster.
+
+### Fixed
+- `main(args: Array<String>)` receives an `Array` (`args.isEmpty()`, `args.size`, `in args` work); it was a plain Lua table.
+- An invalid regex pattern threw a plain `IllegalArgumentException`; it is now a `java.util.regex.PatternSyntaxException`
+  (a subclass, so existing catches still work), which `catch` and `is` can name. A pattern defining the same group name
+  twice (`(?<n>x)(?<n>y)`) is now rejected, as by `java.util.regex`. Found by `realworld_parse_logs`.
+- On Lua 5.1, 5.2 and LuaJIT, printing a `List<Double>`, `Set<Double>`, `Map<String, Double>`, `Pair<String, Double>` (or
+  nestings of them) showed integral elements as Ints (`[1.5, 3]`); where the static type makes every number a `Double`, they
+  now print as on the JVM (`[1.5, 3.0]`). Found by `realworld_parse_ini`; tested by `collection_double_strings`.
+- `buildString(capacity) { ... }` called the capacity as the builder function and dropped the lambda ("attempt to call a
+  number value"); the capacity is now a hint, as for `buildList`. Found by `realworld_parse_markdown`; tested by
+  `string_builder_text`.
+- `typeOf<T>()`: a `KType` that prints like the JVM's without kotlin-reflect, compares by type (usable as a map key), and has
+  `isMarkedNullable`, `classifier` and `arguments`. `Map.Entry::class`, `Iterator::class`, `Comparable::class` and the
+  function types' classes print their JVM names.
+- Unchecked casts: the elements of an unchecked `x as List<String>` passed to a lambda literal (`l.map { it }`,
+  `l.filter { true }`, `l.asSequence().map { }`, a lambda of a function of the program) are checked against the lambda's
+  parameter types as it starts, and throw `ClassCastException` where the JVM does. So are reads through a cast used in
+  place (`(x as List<String>)[0].length`) and through a property the cast initializes, is passed to as a constructor
+  argument or is assigned to (`Box(l).items[0].length`).
+- The SAM constructor `ReadOnlyProperty { thisRef, property -> }` was rejected as an unsupported library API; it makes a
+  delegate object now.
+- `@LuaName("on_load")` on a top-level function or plain property of the program names its local and its field in the
+  module table, so a Lua host calls `require("mods.Greeter").on_load(host)`. Before, the annotation only applied to
+  external declarations and was ignored elsewhere.
+- Lua's `tostring()` and `print()` of an object of a class of the program give its Kotlin `toString()`. Before, Lua code
+  printing a Kotlin object got `table: 0x...`.
+- Six multi-file test programs (`realworld_project_*`): a five-package inventory tool with cross-file state and init order,
+  an import cycle through `main.kt`, name clashes across packages and aliases, a plugin host, and two interop programs
+  where hand-written Lua and Kotlin call each other. There is also a Gradle plugin functional test of a multi-package
+  project.
+- `main` did not run when another file imported the entry file (an import cycle through `main.kt`). It now runs unless the
+  chunk is loaded with `require`.
+- A top-level initializer on an import cycle that read another file of the cycle could find that file half loaded
+  (`attempt to index a nil value`), depending on the order of the `require`s, even where the JVM's order was fine.
+- A file whose name has a dot (`Style.common.kt`, as in multiplatform projects) was written as `Style.common.lua`, which
+  `require("ui.Style.common")` cannot find. It is now `Style_common.lua`, and its facade class name in reflection output
+  is `Style_commonKt`, as with kotlinc.
+- A member of an external interface or class with a Lua keyword as its `@LuaName` (`@LuaName("repeat")`) was called as
+  `s:repeat(n)`, which is a Lua syntax error. It is now `s["repeat"](s, n)`.
+- **Every Unicode general category in regexes.** `\p{Lu}`, `\p{Ll}`, `\p{Lt}`, `\p{Lm}`, `\p{Lo}`, `\p{Mn}`, `\p{Mc}`,
+  `\p{Me}`, `\p{Nd}`, `\p{Nl}`, `\p{No}`, `\p{Pd}`, `\p{Ps}`, `\p{Pe}`, `\p{Pc}`, `\p{Po}`, `\p{Pi}`, `\p{Pf}`, `\p{Sm}`,
+  `\p{Sc}`, `\p{Sk}`, `\p{So}`, `\p{Zs}`, `\p{Zl}`, `\p{Zp}`, `\p{Cc}`, `\p{Cf}`, `\p{Co}`, `\p{Cs}`, `\p{Cn}` and the groups
+  `\p{L}`, `\p{LC}`, `\p{M}`, `\p{N}`, `\p{P}`, `\p{S}`, `\p{Z}`, `\p{C}`, also spelled `\p{IsLu}`, `\p{gc=Lu}` and
+  `\p{general_category=Lu}`, and negated with `\P`. With `--strings utf16` they test non-ASCII characters by a table of
+  the JDK's `Character.getType` (`UnicodeCategories.lua`, 7 KB, loaded only by a regex that may use `\p`); in the default
+  bytes mode they are ASCII only, like the other properties. Binary properties (`\p{IsUppercase}`, ...) accept any case, and
+  with `IGNORE_CASE` `\p{Lu}`, `\p{Ll}` and `\p{Lt}` match all three cased categories, as in Java.
+- **`\p{Lu}`, `\p{Ll}` and `\p{N}` with `--strings utf16`.** `\p{Lu}` and `\p{Ll}` were `Character.isUpperCase` and
+  `isLowerCase` (so `Ⓐ`, a symbol, was in `\p{Lu}`), and `\p{N}` was `\p{Nd}` (without `Ⅻ` or `½`); they are now the general
+  categories, as in Java (`\p{IsUppercase}` and `\p{IsLowercase}` keep the old meaning).
+- **Tracebacks of uncaught Lua errors in programs with a `try`.** On Lua 5.2 to 5.4 such a program runs `main` in the
+  deep-try driver (`__K2L_DeepMain`), which raised an uncaught Lua error again from the driver, so the traceback showed
+  only the driver. It now raises it with the traceback of the coroutine where it happened (the driver's frames follow).
+  Uncaught exceptions print as before, as without a `try`, and the exit status stays 1.
+
 ## [0.2.0] - YYYY-MM-DD
 
 The first tagged release. It covers pull requests #8 to #14; earlier work, built as the untagged version 0.1.0, is

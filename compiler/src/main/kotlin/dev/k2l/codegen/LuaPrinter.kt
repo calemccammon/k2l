@@ -328,7 +328,7 @@ class LuaPrinter(
             "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while",
         )
 
-        private fun isIdentifier(s: String) = s.isNotEmpty() && (s[0].isLetter() || s[0] == '_') && s[0].code < ASCII_LIMIT &&
+        fun isIdentifier(s: String) = s.isNotEmpty() && (s[0].isLetter() || s[0] == '_') && s[0].code < ASCII_LIMIT &&
             s.all { (it.isLetterOrDigit() || it == '_') && it.code < ASCII_LIMIT } && s !in KEYWORDS
 
         private const val BYTE_MASK = 0xFF

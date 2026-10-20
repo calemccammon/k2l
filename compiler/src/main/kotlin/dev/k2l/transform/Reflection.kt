@@ -61,7 +61,7 @@ internal fun FileTransformer.classLiteral(e: KtClassLiteralExpression): LuaExpr 
     return classOfType(type, e)
 }
 
-private fun FileTransformer.classOfType(declared: KaType, element: KtElement): LuaExpr = with(session) {
+internal fun FileTransformer.classOfType(declared: KaType, element: KtElement): LuaExpr = with(session) {
     val type = reifiedType(declared)
     val source = (type.expandedSymbol?.psi as? KtClassOrObject)?.takeIf { classes.isSource(it) }
     val classId = type.expandedSymbol?.classId
@@ -124,6 +124,11 @@ private val NEEDS_REFLECT = listOf(
 internal object ReflectionMappings {
     fun install(table: MappingTable) {
         table.def("kotlin/reflect/KClass.simpleName") { LuaIndex(self, LuaString("simpleName")) }
+        // `typeOf<T>()` (see TypeOf.kt)
+        table.def("kotlin/reflect/KType.isMarkedNullable") { LuaIndex(self, LuaString("isMarkedNullable")) }
+        table.def("kotlin/reflect/KType.classifier") { LuaIndex(self, LuaString("classifier")) }
+        table.def("kotlin/reflect/KType.arguments") { LuaIndex(self, LuaString("arguments")) }
+        table.def("kotlin/reflect/KTypeProjection.type") { LuaIndex(self, LuaString("type")) }
         // the Java name of an anonymous class is "" where Kotlin's is null
         table.def("java/lang/Class.simpleName", "java/lang/Class.getSimpleName") {
             LuaBinary(LuaBinOp.Or, LuaIndex(self, LuaString("simpleName")), LuaString(""))

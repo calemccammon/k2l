@@ -1,0 +1,45 @@
+13:55:36     INFO  http       /api/users/{id}
+    fields ip=<127.0.0.1>, status=<200>, bytes=<2326>
+13:55:37     INFO  http       /api/users
+    fields ip=<10.0.0.7>, status=<201>, bytes=<512>
+13:55:38     INFO  http       /api/users/{id}/orders/{id}
+    fields ip=<10.0.0.7>, status=<200>, bytes=<9001>
+13:55:39.120 INFO  app.Server started port=8080 workers=4 mode="blue green"
+    fields port=<8080>, workers=<4>, mode=<blue green>
+13:55:40     WARN  app.Auth   login failed user=b…@example.com token=*** attempts=3
+    fields user=<b…@example.com>, token=<***>, attempts=<3>
+13:55:41     INFO  http       /health
+    fields ip=<192.168.1.20>, status=<204>, bytes=<0>
+13:55:42.5   ERROR app.Db$Pool query failed sql="select * from \"users\"" elapsed=1500
+    fields sql=<select * from "users">, elapsed=<1500>
+    | run@Db.kt:88
+    | load@Service.kt:12
+    | cause: java.net.SocketTimeoutException: Read timed out
+    | read@Socket.java:204
+13:55:43     ERROR http       /api/users/{id}
+    fields ip=<10.0.0.9>, status=<500>, bytes=<87>
+13:55:44     DEBUG app.Cache  evicted keys=17 password=*** contact=O…@corp.example.org
+    fields keys=<17>, password=<***>, contact=<O…@corp.example.org>
+13:55:45     INFO  http       /api/users/{id}
+    fields ip=<10.0.0.9>, status=<304>, bytes=<0>
+unparsed: #13 'garbage line with no', #16 '13:55:46 [fatal] app', #17 '    at app.Main.main'
+status classes: {200=4, 300=1, 500=1}
+  DELETE /api/users/{id}       n=1 p50=230 p90=230 max=230 avg=230.0
+  GET /api/users/{id}          n=2 p50=3 p90=12 max=12 avg=7.5
+  GET /api/users/{id}/orders/{id} n=1 p50=33 p90=33 max=33 avg=33.0
+  GET /health                  n=1 p50=1 p90=1 max=1 avg=1.0
+  POST /api/users              n=1 p50=48 p90=48 max=48 avg=48.0
+[(INFO, 6), (ERROR, 2), (WARN, 1), (DEBUG, 1)]
+[a, b, c, , d, e]
+[a, b, c ;; d,e]
+[Camel, Case, HTTP, Server, Name]
+[one, two, four]
+ranges 1+2+3+4+5, 10+11+12 and 7
+10/10/2024 true
+2..6 flag '' 7..6
+0: 1:xx 3: 4:
+7
+PatternSyntaxException
+bad pattern: true
+bad pattern: true
+compiled ok+

@@ -1,0 +1,29 @@
+scripts scripts/1.0
+loaded 2
+hook total 30, calls [1:guard, 2:healer]
+  spawn orc
+  spawn imp
+  hit orc 5 survives
+  hit imp 20 falls
+  listeners 2 seen 1 tick 1
+  names orc,imp count 2
+  snapshot 2 1 7 0
+  imp alive false orc hp 7 tags 2
+  world 2 tick 2
+  fail caught false no mana
+  nil entity false string
+[Entity(orc, hp=7, tags=[big, green]), Entity(imp, hp=0)]
+tick 2
+script guard (priority 2) gg: guard blocks 3
+  on spawn: ignored
+script healer (priority none) hhh: healer heals after hit at tick 2
+  on spawn: healer heals after spawn at tick 2
+stats 3 9 5.0
+summary needs a tick
+ended at tick 2 with 2 scripts
+string: RuntimeException script exploded
+table: RuntimeException true
+index: RuntimeException true
+true true 2 zap@1.0
+false 2 zap@1.0
+Vec(x=4, y=6)

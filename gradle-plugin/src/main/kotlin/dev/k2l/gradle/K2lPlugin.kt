@@ -3,6 +3,7 @@ package dev.k2l.gradle
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE
 import org.gradle.api.attributes.Usage
 import org.gradle.api.plugins.BasePlugin
@@ -11,7 +12,8 @@ import org.gradle.jvm.toolchain.JavaToolchainService
 import java.util.Properties
 
 /**
- * Plugin `dev.k2l`: adds the `k2l { }` extension and the `compileKotlinToLua` task (wired into `assemble`).
+ * Plugin `dev.k2l`: adds the `k2l { }` extension, the `compileKotlinToLua` task (wired into `assemble`) and the `k2lCheck`
+ * task (`k2l --check`, which writes no Lua).
  *
  * The compiler comes from the `k2lCompiler` configuration, which defaults to `dev.k2l:compiler:<plugin version>`;
  * that dependency resolves to a directory with the compiler's complete runtime classpath (see `k2lCompilerRuntime`
@@ -51,32 +53,43 @@ class K2lPlugin : Plugin<Project> {
         val compile = project.tasks.register("compileKotlinToLua", K2lCompileTask::class.java) { task ->
             task.description = "Transpiles the Kotlin sources to Lua with k2l."
             task.group = "build"
-            task.sourceDirs.from(extension.sourceDirs)
-            task.classpath.from(extension.classpath)
-            // A published compiler is a zip of jars (unpacked by UnzipTransform); in a composite build it is a directory;
-            // a hand-made dependency (files(...)) is used as it is.
-            val unpacked = compiler.incoming.artifactView { it.attributes.attribute(ARTIFACT_TYPE_ATTRIBUTE, "directory") }.files
-            task.compilerClasspath.from((unpacked + compiler.incoming.files).asFileTree.matching { it.include("**/*.jar") })
-            task.luaTarget.set(extension.luaTarget)
-            task.luaLibImport.set(extension.luaLibImport)
-            task.intOverflow.set(extension.intOverflow)
-            task.strings.set(extension.strings)
-            task.long64.set(extension.long64)
+            configureCommon(project, task, extension, compiler)
             task.sourceMap.set(extension.sourceMap)
             task.outputDir.set(extension.outputDir)
-            // The Analysis API needs JDK 21+; fall back to a toolchain when Gradle itself runs on something older.
-            if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_21)) {
-                task.javaLauncher.set(
-                    project.extensions.getByType(JavaToolchainService::class.java)
-                        .launcherFor { it.languageVersion.set(JavaLanguageVersion.of(MIN_JAVA)) },
-                )
-            }
+        }
+        project.tasks.register("k2lCheck", K2lCheckTask::class.java) { task ->
+            task.description = "Reports Kotlin errors and constructs k2l cannot translate, without writing Lua."
+            task.group = "verification"
+            configureCommon(project, task, extension, compiler)
+            task.report.set(project.layout.buildDirectory.file("k2l/check.txt"))
         }
         project.tasks.named(BasePlugin.ASSEMBLE_TASK_NAME).configure { it.dependsOn(compile) }
 
         // With the Kotlin plugin, @LuaExternal and friends should also resolve in the IDE and in compileKotlin.
         project.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
             project.dependencies.add("compileOnly", "dev.k2l:lua-api:$version")
+        }
+    }
+
+    /** The sources, options and compiler of [task] come from the `k2l { }` block and the `k2lCompiler` configuration. */
+    private fun configureCommon(project: Project, task: K2lTask, extension: K2lExtension, compiler: Configuration) {
+        task.sourceDirs.from(extension.sourceDirs)
+        task.classpath.from(extension.classpath)
+        // A published compiler is a zip of jars (unpacked by UnzipTransform); in a composite build it is a directory;
+        // a hand-made dependency (files(...)) is used as it is.
+        val unpacked = compiler.incoming.artifactView { it.attributes.attribute(ARTIFACT_TYPE_ATTRIBUTE, "directory") }.files
+        task.compilerClasspath.from((unpacked + compiler.incoming.files).asFileTree.matching { it.include("**/*.jar") })
+        task.luaTarget.set(extension.luaTarget)
+        task.luaLibImport.set(extension.luaLibImport)
+        task.intOverflow.set(extension.intOverflow)
+        task.strings.set(extension.strings)
+        task.long64.set(extension.long64)
+        // The Analysis API needs JDK 21+; fall back to a toolchain when Gradle itself runs on something older.
+        if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_21)) {
+            task.javaLauncher.set(
+                project.extensions.getByType(JavaToolchainService::class.java)
+                    .launcherFor { it.languageVersion.set(JavaLanguageVersion.of(MIN_JAVA)) },
+            )
         }
     }
 

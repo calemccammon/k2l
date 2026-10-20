@@ -58,3 +58,17 @@ end
 local function __K2L_NotNullProperty()
     return NotNullVar.new()
 end
+
+local ReadOnlyProperty = __K2L_Class("kotlin.properties.ReadOnlyProperty")
+
+function ReadOnlyProperty:____init(getter)
+    self.getter = getter
+end
+
+function ReadOnlyProperty:getValue(thisRef, property)
+    return self.getter(thisRef, property)
+end
+
+local function __K2L_ReadOnlyProperty(getter)
+    return ReadOnlyProperty.new(getter)
+end

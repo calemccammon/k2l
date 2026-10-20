@@ -9,4 +9,6 @@ fun main() {
     val text = StringBuilder().appendLine("alpha").appendLine("beta").append("gamma")
     println("${text.lines()} ${text.padStart(20, '.').length} ${text.indexOf("beta")} ${text.filter { it != 'a' }}")
     println("${text.first()} ${text.last()} ${text.substring(0, 5)} ${text.reversed()} ${text.toString().uppercase()}")
+    // buildString with a capacity hint
+    println(buildString(4) { append("cap"); append(4); repeat(3) { append('!') } } + buildString(0) {})
 }

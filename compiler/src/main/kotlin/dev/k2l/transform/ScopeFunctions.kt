@@ -159,9 +159,10 @@ private fun FileTransformer.errorCall(args: List<KtExpression?>): LuaExpr = with
     return LuaNil
 }
 
+/** `buildString { }` and `buildString(capacity) { }`, whose capacity is only a hint, as for `buildList`. */
 private fun FileTransformer.buildStringCall(args: List<KtExpression?>): LuaExpr = with(session) {
     val builder = cache(LuaCall(LuaIndex(lualibRef("Strings", "__K2L_StringBuilder"), LuaString("new")), emptyList()), "builder")
-    inlineLambda(args[0]!!, emptyList(), builder, null)
+    inlineLambda(args.last()!!, emptyList(), builder, null)
     return LuaMethodCall(builder, "toString", emptyList())
 }
 

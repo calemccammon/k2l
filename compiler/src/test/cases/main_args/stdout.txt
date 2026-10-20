@@ -1,0 +1,6 @@
+true
+0
+[]
+[]
+no arguments
+false

@@ -1,0 +1,26 @@
+<html lang="en">
+  <body class="doc" id="7">
+    <h1>Generics</h1>
+    <p>Kotlin has *declaration-site* variance.</p>
+    <ul>
+      <li>in</li>
+      <li><out></li>
+      <li><star></li>
+      <li>1</li>
+      <li>2</li>
+    </ul>
+  </body>
+</html>
+name    | moons | radius (km) | rings | vs earth
+--------+-------+-------------+-------+---------
+Mercury |     0 |      2439.7 | no    |     0.38
+Earth   |     1 |      6371.0 | no    |     1.00
+Jupiter |    95 |     69911.0 | yes   |    10.97
+Saturn  |   146 |     58232.0 | yes   |     9.14
+len | upper
+----+------
+  1 | A
+  3 | BBB
+  2 | CC
+workers=32 verbose=true name=API ratio=0.5
+errors=[ratio: ratio out of range: 1.5, verbose: The string doesn't represent a boolean value: yes]

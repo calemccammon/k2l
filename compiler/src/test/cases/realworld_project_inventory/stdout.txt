@@ -1,0 +1,33 @@
+start inventory
+inventory v=1 cur=EUR profile=<unset>
+inventory v=2 cur=EUR profile=warehouse
+bumped to 3 then 6; main sees 6
+verbosity now 5
+journal size before objects: 0, sequence 0
+[log] computing startupToken
+token 100 again 100
+[log] Settings object init
+[log] Settings[region] = south
+keys [region]
+[log] Store object init, region=south
+opened at 4
+[log] Item companion init (tax 8%)
+[log] Store.kt top-level init
+[log] received T-100 x2
+[log] received F-7 x1
+[log] received T-100 x3
+[log] received X-1 x4
+created 5 items; last parsed 'X-1, mystery, 99, 4'
+stock [T-100, F-7, X-1] ops 4
+true
+false
+true
+false
+stock [T-100:1, X-1:4] ops 7
+{TOOLS=[T-100], MISC=[X-1]}
+value 18.29 USD
+Item(sku=T-9, name=nails, cents=5, qty=30) 1.50 USD 3.24 USD
+-12.34 USD
+[log] done
+journal from 11: 11 done
+journal head: 1 computing startupToken | 2 Settings object init | 3 Settin

@@ -36,7 +36,11 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         const val NANOS_PER_MILLI = 1_000_000
     }
 
-    fun compile(session: SourceSession, module: SourceModule): CompileResult {
+    /**
+     * Transpiles every file of [module]. With [emit] false (`k2l --check`) the files are only analyzed and transformed, to
+     * find every diagnostic: no Lua is printed and the result has no outputs.
+     */
+    fun compile(session: SourceSession, module: SourceModule, emit: Boolean = true): CompileResult {
         val files = session.files(module.name)
         val profile = System.getenv("K2L_PROFILE") != null
         var t0 = System.nanoTime()
@@ -46,12 +50,13 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         }
         val moduleContext = moduleContext(module, files)
         lap("module references")
-        val results = files.map { file -> compileFile(file, module, moduleContext) }
+        val results = files.map { file -> compileFile(file, module, moduleContext, emit) }
         lap("files")
         val outputs = results.mapNotNullTo(mutableListOf()) { it.output }
-        val diagnostics = results.flatMap { it.diagnostics }
+        // A construct reached more than once (an inline function expanded at several call sites, say) is reported once.
+        val diagnostics = results.flatMap { it.diagnostics }.distinctBy { listOf(it.file, it.line, it.column, it.message) }
         val usedFeatures = results.flatMapTo(sortedSetOf()) { it.features }
-        if (options.luaLibImport == LuaLibImport.Require && usedFeatures.isNotEmpty()) {
+        if (emit && options.luaLibImport == LuaLibImport.Require && usedFeatures.isNotEmpty()) {
             outputs += LuaOutput("${Lualib.BUNDLE_MODULE}.lua", Lualib.bundle(usedFeatures, options.luaTarget, options.emulatesLong64))
         }
         return CompileResult(outputs, diagnostics)
@@ -59,17 +64,25 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
 
     private class FileResult(val diagnostics: List<Diagnostic>, val output: LuaOutput?, val features: Set<String>)
 
-    private fun compileFile(file: KtFile, module: SourceModule, moduleContext: ModuleContext): FileResult = analyze(file) {
+    private fun compileFile(file: KtFile, module: SourceModule, moduleContext: ModuleContext, emit: Boolean): FileResult = analyze(file) {
         val kotlinErrors = file.collectDiagnostics(KaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS)
             .filter { it.severity == KaSeverity.ERROR }
         if (kotlinErrors.isNotEmpty()) {
             // Don't transpile code the Kotlin compiler would reject.
-            return@analyze FileResult(kotlinErrors.map { Diagnostic.at(it.psi, Severity.Error, it.defaultMessage) }, null, emptySet())
+            // The first text range is where kotlinc puts its caret (the initializer of a mistyped `val`, not the `val`).
+            val diagnostics = kotlinErrors.map { Diagnostic.at(it.psi, Severity.Error, it.defaultMessage, it.textRanges.first()) }
+            return@analyze FileResult(diagnostics, null, emptySet())
         }
         val ctx = TransformContext(options)
         val chunk = FileTransformer(this, file, ctx, moduleContext).transformFile()
         // A file of only external declarations (Lua bindings) produces no Lua.
-        val output = if (chunk.body.isNotEmpty()) render(chunk, ctx, outputPath(module, file), Paths.get(file.virtualFile.path)) else null
+        val output = if (emit &&
+            chunk.body.isNotEmpty()
+        ) {
+            render(chunk, ctx, outputPath(module, file), Paths.get(file.virtualFile.path))
+        } else {
+            null
+        }
         FileResult(ctx.diagnostics.toList(), output, ctx.lualib.toSet())
     }
 
@@ -164,6 +177,8 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val path = Paths.get(file.virtualFile.path)
         val root = module.roots.map(Path::toAbsolutePath).firstOrNull { path.startsWith(it) }
         val relative = root?.relativize(path) ?: path.fileName
-        return relative.toString().removeSuffix(".kt") + ".lua"
+        // `require("text.Style.common")` would look for text/Style/common.lua: dots of a file name (Style.common.kt) become `_`
+        val name = relative.fileName.toString().removeSuffix(".kt").replace('.', '_') + ".lua"
+        return relative.parent?.resolve(name)?.toString() ?: name
     }
 }

@@ -1,0 +1,24 @@
+== typed map
+port=8080 host=null size=0
+host length=9 tags=web|api
+retries=4 then 40
+contains HOST=true contains Key(host)=false
+{host=localhost, tags=[web, api], port=9000, retries=40}
+error: missing Key(timeout)
+== lru
+LRU[dog:3, the:3, end:3] hits=1 misses=10
+evicted: [the=3, quick=5, brown=5, fox=3, jumps=5, over=4, lazy=4]
+keys=[dog, the, end] get(the)=3 get(fox)=null
+error: capacity must be positive, was 0
+== bounded queue
+deploy:+ lint:+ test:+ docs:+ bench:+ release:+ audit:-
+peek=test ordered=[test, deploy, release]
+drained=[release(5), deploy(5), test(4)] empty=null
+longest=[reified, generic, variance, projection]
+== trie
+size=7 car=-1 ca=null dog=50
+car*: [(car, -1), (card, 10), (care, 20), (cart, 30)]
+d*: [do/60, dog/50]
+x*: []
+longest prefix of 'cartography'=cart of 'dots'=do
+trigrams: abr@[0, 7], aca@[3], ada@[5], bra@[1, 8], cad@[4], dab@[6], rac@[2]

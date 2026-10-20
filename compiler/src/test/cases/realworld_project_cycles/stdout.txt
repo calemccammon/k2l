@@ -1,0 +1,20 @@
+keywords [let, if, quote] reserved [let, if, quote, def]
+[+, *, -, max] operators [+, *, -]
+15
+3
+'Call(items=[Sym(name=a, builtin=false), Sym(name=b, builtin=false)])
+report#1 nodes=22 evals=13 depth=3 traces=3
+81
+11
+'let' is reserved
+no builtin nope
+report#2 nodes=41 evals=24 depth=3 traces=8
+traces 8:
+  parsed '(+ 1 2 (* 3 4))' into 8 nodes
+  parsed '(let x 5 (- x 1 1))' into 9 nodes
+  parsed '(quote (a b))' into 5 nodes
+  defined sq
+  parsed '(sq (max 3 9 4))' into 7 nodes
+  parsed '(eval [+_2_[sq_3]])' into 3 nodes
+  parsed '(+ 2 (sq 3))' into 6 nodes
+  parsed '(nope 1)' into 3 nodes

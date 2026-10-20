@@ -5,13 +5,16 @@ import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 
 /**
- * `java.util.Collections`, `java.util.Arrays` and `java.util.Random` (see `JdkCollections.lua` and `JavaRandom.lua`), plus
- * `Map.withDefault` and `List.listIterator` of the Kotlin stdlib.
+ * `java.util.Collections`, `java.util.Arrays`, `java.util.Random` and the `EnumSet` factories (see `JdkCollections.lua`,
+ * `JavaRandom.lua` and `EnumCollections.lua`), plus `Map.withDefault` and `List.listIterator` of the Kotlin stdlib.
  */
 internal object JdkCollectionsMappings {
     private const val COLLECTIONS = "java/util/Collections."
     private const val ARRAYS = "java/util/Arrays."
     private const val RANDOM = "java/util/Random"
+    private const val ENUM_SET = "java/util/EnumSet."
+
+    private val ENUM_SET_FUNCTIONS = setOf("noneOf", "allOf", "of", "copyOf", "range", "complementOf")
 
     /** `Collections.x(...)` is the Lua function of the same name, unless listed here. */
     private val COLLECTIONS_RENAMED = mapOf(
@@ -51,6 +54,9 @@ internal object JdkCollectionsMappings {
             callableId.startsWith(COLLECTIONS) && name in COLLECTIONS_FUNCTIONS -> lib(site, COLLECTIONS_RENAMED[name] ?: name, site.args)
 
             callableId.startsWith(ARRAYS) && name in ARRAYS_FUNCTIONS -> arrays(site, name)
+
+            callableId.startsWith(ENUM_SET) && name in ENUM_SET_FUNCTIONS && site.receiver == null ->
+                site.libMember(ENUM_COLLECTIONS_FEATURE, "__K2L_EnumSets", name, *site.args.toTypedArray())
 
             (callableId.startsWith("$RANDOM.") || callableId.startsWith("java/util/random/RandomGenerator.")) &&
                 name in RANDOM_METHODS && site.receiver != null ->

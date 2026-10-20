@@ -46,6 +46,7 @@ internal val LIBRARY_CLASSES = listOf(
     "kotlin/NotImplementedError" to "__K2L_NotImplementedError",
     "kotlin/UninitializedPropertyAccessException" to "__K2L_UninitializedPropertyAccessException",
     "java/lang/ArrayIndexOutOfBoundsException" to "__K2L_ArrayIndexOutOfBoundsException",
+    "java/util/regex/PatternSyntaxException" to "__K2L_PatternSyntaxException",
 ) + FORMATTER_EXCEPTIONS.associate { "java/util/$it" to "__K2L_$it" }
 
 /** Library supertypes that need no runtime support (Comparable is honored via compareTo). */
