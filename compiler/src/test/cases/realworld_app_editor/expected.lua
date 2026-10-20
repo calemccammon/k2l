@@ -55,7 +55,7 @@ function Insert:toString()
 end
 
 function Insert:hashCode()
-    return (31 * __K2L_Hash(self.at) + __K2L_Hash(self.text) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    return (31 * self.at:hashCode() + __K2L_Hash(self.text) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Insert:equals(other)
@@ -401,7 +401,6 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CharSequenceText = ____lualib.__K2L_CharSequenceText
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Str = ____lualib.__K2L_Str
@@ -467,7 +466,7 @@ function Selection:toString()
 end
 
 function Selection:hashCode()
-    return (31 * __K2L_Hash(self.anchor) + __K2L_Hash(self.head) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    return (31 * self.anchor:hashCode() + self.head:hashCode() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Selection:equals(other)

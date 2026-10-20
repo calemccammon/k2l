@@ -1,11 +1,12 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayIndexOutOfBoundsException = ____lualib.__K2L_ArrayIndexOutOfBoundsException
 local __K2L_CastFail = ____lualib.__K2L_CastFail
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
@@ -82,7 +83,13 @@ local function factories()
 end
 
 local ____lambda_1 = function(it) return it.key == 1 end
-local ____lambda_2 = function(it) return -it end
+local ____lambda_2 = function(____a, ____b)
+    local ____x, ____y = -____a, -____b
+    if ____x ~= ____y then
+        return ____x < ____y and -1 or 1
+    end
+    return 0
+end
 local ____lambda_3 = function(it) return -it end
 local function operations()
     local xs = __K2L_ReadOnlyListOf(1, 2, 3)
@@ -140,7 +147,7 @@ local function operations()
     show("map.toList", __K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):toList())
     show("sorted", __K2L_ReadOnlyListOf(2, 1):sorted())
     show("sorted1", __K2L_SingletonListOf(2):sorted())
-    show("sortedWith", xs:sortedWith(__K2L_CompareBy(____lambda_2)))
+    show("sortedWith", xs:sortedWith(____lambda_2))
     show("sortedBy", xs:sortedBy(____lambda_3, true))
     show("sortedDescending", xs:sortedDescending())
     show("array.sorted", __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1):sorted())
@@ -242,7 +249,10 @@ local function indexes()
     tryIt("intarr[2]", ____lambda_10)
     tryIt("arr set", function()
         local a = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1)
-        a:set(3, 4)
+        if 3 < 0 or 3 >= a.size then
+            __K2L_IndexError(3, a.size, "array")
+        end
+        a[4] = 4
         return __K2L_Unit
     end)
     tryIt("mutable[2]", ____lambda_11)

@@ -3,6 +3,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_Num = ____lualib.__K2L_Num
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
@@ -23,8 +24,8 @@ end
 local function hash(s)
     local h = 7
     for ____i = 1, #s do
-        local c = s:sub(____i, ____i)
-        h = (31 * h + c:byte() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+        local c = __K2L_StrByte(s, ____i)
+        h = (31 * h + c + 0x80000000 & 0xFFFFFFFF) - 0x80000000
     end
     return h
 end

@@ -4,9 +4,11 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -212,7 +214,7 @@ function Matrix:____init(rows, cols, init)
     self.rows = rows
     self.cols = cols
     self.data = __K2L_ListOfSize(self.rows * self.cols, function(it)
-        return init(__K2L_IDiv(it, self.cols), __K2L_IRem(it, self.cols))
+        return init(__K2L_IDiv(it, self.cols), self.cols ~= 0 and __K2L_Fmod(it, self.cols) + 0 or __K2L_IRem(it, self.cols))
     end, "[D")
 end
 
@@ -406,7 +408,13 @@ local ____lambda_11 = function(x) return __K2L_IsCharSequence(x) end
 local ____lambda_12 = function(it) return type(it) == "string" end
 local ____lambda_13 = function(r, c) return r * 3 + c + 0.0 end
 local ____lambda_14 = function(r, c) return r == c and 1.0 or 0.0 end
-local ____lambda_15 = function(it) return it.minor end
+local ____lambda_15 = function(____a, ____b)
+    local ____x, ____y = ____a.minor, ____b.minor
+    if ____x ~= ____y then
+        return ____x < ____y and -1 or 1
+    end
+    return 0
+end
 local function main()
     local v = Vec.new(1)
     putAll(v, __K2L_ReadOnlyListOf(5, 3, 8, 1))
@@ -478,7 +486,7 @@ local function main()
     g:edge("jacket", "shirt")
     local ____receiver_2 = __K2L_RunCatching(function() return g:topo() end):exceptionOrNull()
     print(__K2L_Str(____receiver_2 and ____receiver_2.message))
-    local comparators = __K2L_ReadOnlyListOf(__K2L_NaturalOrder, __K2L_ReverseOrder, __K2L_CompareBy(____lambda_15))
+    local comparators = __K2L_ReadOnlyListOf(__K2L_NaturalOrder, __K2L_ReverseOrder, ____lambda_15)
     local versions = __K2L_ReadOnlyListOf(Version.new(2, 0), Version.new(1, 5), Version.new(1, 12))
     local ____mod_8 = comparators.____modCount
     for ____i_9 = 1, comparators.size do

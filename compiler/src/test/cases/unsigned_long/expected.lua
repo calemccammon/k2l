@@ -2,14 +2,15 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 
 local function fnv(s)
     local h = 0xcbf29ce484222325
     for ____i = 1, #s do
-        local c = s:sub(____i, ____i)
-        h = h ~ c:byte()
+        local c = __K2L_StrByte(s, ____i)
+        h = h ~ c
         h = h * 1099511628211
     end
     return h

@@ -13,6 +13,7 @@ local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringPadEnd = ____lualib.__K2L_StringPadEnd
@@ -24,14 +25,14 @@ local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local function editDistance(a, b)
     local dp = __K2L_ListOfSize(#a + 1, function(it) return __K2L_ListOfSize(#b + 1, 0, "[I") end, "[[I")
     for i = 0, #a do
-        local ____object = dp:get(i)
+        local ____object = dp[i + 1] or __K2L_IndexError(i, dp.size, "array")
         if 0 < 0 or 0 >= ____object.size then
             __K2L_IndexError(0, ____object.size, "array")
         end
         ____object[1] = i
     end
     for j = 0, #b do
-        local ____object_1 = dp:get(0)
+        local ____object_1 = dp[1] or __K2L_IndexError(0, dp.size, "array")
         if j < 0 or j >= ____object_1.size then
             __K2L_IndexError(j, ____object_1.size, "array")
         end
@@ -40,8 +41,8 @@ local function editDistance(a, b)
     for i = 1, #a do
         for j = 1, #b do
             local cost = (i - 1 >= 0 and i - 1 < #a and a:sub(i - 1 + 1, i - 1 + 1) or __K2L_IndexError(i - 1, #a, "string")) == (j - 1 >= 0 and j - 1 < #b and b:sub(j - 1 + 1, j - 1 + 1) or __K2L_IndexError(j - 1, #b, "string")) and 0 or 1
-            local ____object_2 = dp:get(i)
-            local ____value = math.min(dp:get(i - 1):get(j) + 1, dp:get(i):get(j - 1) + 1, dp:get(i - 1):get(j - 1) + cost)
+            local ____object_2 = dp[i + 1] or __K2L_IndexError(i, dp.size, "array")
+            local ____value = math.min((dp[i] or __K2L_IndexError(i - 1, dp.size, "array")):get(j) + 1, (dp[i + 1] or __K2L_IndexError(i, dp.size, "array")):get(j - 1) + 1, (dp[i] or __K2L_IndexError(i - 1, dp.size, "array")):get(j - 1) + cost)
             if j < 0 or j >= ____object_2.size then
                 __K2L_IndexError(j, ____object_2.size, "array")
             end
@@ -57,8 +58,8 @@ local function longestCommonSubsequence(a, b)
     for i = ____range.first, ____range.last, ____range.step do
         local ____range_1 = __K2L_IntRange.new(0, #b - 1):reversed()
         for j = ____range_1.first, ____range_1.last, ____range_1.step do
-            local ____object_3 = dp:get(i)
-            local ____value_1 = (i >= 0 and i < #a and a:sub(i + 1, i + 1) or __K2L_IndexError(i, #a, "string")) == (j >= 0 and j < #b and b:sub(j + 1, j + 1) or __K2L_IndexError(j, #b, "string")) and dp:get(i + 1):get(j + 1) + 1 or math.max(dp:get(i + 1):get(j), dp:get(i):get(j + 1))
+            local ____object_3 = dp[i + 1] or __K2L_IndexError(i, dp.size, "array")
+            local ____value_1 = (i >= 0 and i < #a and a:sub(i + 1, i + 1) or __K2L_IndexError(i, #a, "string")) == (j >= 0 and j < #b and b:sub(j + 1, j + 1) or __K2L_IndexError(j, #b, "string")) and (dp[i + 1 + 1] or __K2L_IndexError(i + 1, dp.size, "array")):get(j + 1) + 1 or math.max((dp[i + 1 + 1] or __K2L_IndexError(i + 1, dp.size, "array")):get(j), (dp[i + 1] or __K2L_IndexError(i, dp.size, "array")):get(j + 1))
             if j < 0 or j >= ____object_3.size then
                 __K2L_IndexError(j, ____object_3.size, "array")
             end
@@ -74,7 +75,7 @@ local function longestCommonSubsequence(a, b)
                 ____builder:append(i >= 0 and i < #a and a:sub(i + 1, i + 1) or __K2L_IndexError(i, #a, "string"))
                 i = i + 1
                 j = j + 1
-            elseif dp:get(i + 1):get(j) >= dp:get(i):get(j + 1) then
+            elseif (dp[i + 1 + 1] or __K2L_IndexError(i + 1, dp.size, "array")):get(j) >= (dp[i + 1] or __K2L_IndexError(i, dp.size, "array")):get(j + 1) then
                 i = i + 1
             else
                 j = j + 1
@@ -116,15 +117,15 @@ local function knapsack(items, capacity)
     for i = 0, items.size - 1 do
         local item = items[i + 1]
         for w = 0, capacity do
-            local ____object_4 = best:get(i + 1)
-            local ____value_2 = best:get(i):get(w)
+            local ____object_4 = best[i + 1 + 1] or __K2L_IndexError(i + 1, best.size, "array")
+            local ____value_2 = (best[i + 1] or __K2L_IndexError(i, best.size, "array")):get(w)
             if w < 0 or w >= ____object_4.size then
                 __K2L_IndexError(w, ____object_4.size, "array")
             end
             ____object_4[w + 1] = ____value_2
             if item.weight <= w then
-                local ____object_5 = best:get(i + 1)
-                local ____value_3 = math.max(best:get(i + 1):get(w), best:get(i):get(w - item.weight) + item.value)
+                local ____object_5 = best[i + 1 + 1] or __K2L_IndexError(i + 1, best.size, "array")
+                local ____value_3 = math.max((best[i + 1 + 1] or __K2L_IndexError(i + 1, best.size, "array")):get(w), (best[i + 1] or __K2L_IndexError(i, best.size, "array")):get(w - item.weight) + item.value)
                 if w < 0 or w >= ____object_5.size then
                     __K2L_IndexError(w, ____object_5.size, "array")
                 end
@@ -135,12 +136,12 @@ local function knapsack(items, capacity)
     local chosen = __K2L_ListOf()
     local w = capacity
     for i = n, 1, -1 do
-        if best:get(i):get(w) ~= best:get(i - 1):get(w) then
+        if (best[i + 1] or __K2L_IndexError(i, best.size, "array")):get(w) ~= (best[i] or __K2L_IndexError(i - 1, best.size, "array")):get(w) then
             chosen:add(items:get(i - 1))
             w = w - items:get(i - 1).weight
         end
     end
-    return __K2L_Pair.new(best:get(n):get(capacity), chosen:reversed())
+    return __K2L_Pair.new((best[n + 1] or __K2L_IndexError(n, best.size, "array")):get(capacity), chosen:reversed())
 end
 
 local function coinChangeWays(coins, amount)
@@ -256,8 +257,8 @@ function Arrangements:count__1(pos, group)
             local len = self.groups:get(group)
             local ____end = pos + len
             local fits = ____end <= #self.pattern and __K2L_IntRange.new(pos, ____end - 1):none(function(it)
-                return (it >= 0 and it < #self.pattern and self.pattern:sub(it + 1, it + 1) or __K2L_IndexError(it, #self.pattern, "string")) == "."
-            end) and (____end == #self.pattern or (____end >= 0 and ____end < #self.pattern and self.pattern:sub(____end + 1, ____end + 1) or __K2L_IndexError(____end, #self.pattern, "string")) ~= "#")
+                return (it >= 0 and __K2L_StrByte(self.pattern, it + 1) or __K2L_IndexError(it, #self.pattern, "string")) == 46
+            end) and (____end == #self.pattern or (____end >= 0 and __K2L_StrByte(self.pattern, ____end + 1) or __K2L_IndexError(____end, #self.pattern, "string")) ~= 35)
             if fits then
                 total = total + self:count__1(math.min(____end + 1, #self.pattern), group + 1)
             end
@@ -273,9 +274,19 @@ local ____lambda_2 = function(____p1) return __K2L_StringToInt(____p1) end
 local function unfold(line, times)
     local ____destructured = __K2L_StringSplit(line, " ")
     local springs, counts = ____destructured[1], ____destructured[2]
-    local pattern = __K2L_ListOfSize(times, function(it) return springs end):joinToString("?")
+    local ____out = {}
+    for ____i_2 = 1, times do
+        local it = ____i_2 - 1
+        ____out[____i_2] = springs
+    end
+    local pattern = __K2L_ListWrap(____out, times):joinToString("?")
     local groups = __K2L_StringSplit(counts, ","):map(____lambda_2)
-    return __K2L_Pair.new(pattern, __K2L_ListOfSize(times, function(it) return groups end):flatten())
+    local ____out_1 = {}
+    for ____i_3 = 1, times do
+        local it = ____i_3 - 1
+        ____out_1[____i_3] = groups
+    end
+    return __K2L_Pair.new(pattern, __K2L_ListWrap(____out_1, times):flatten())
 end
 
 local fibMemo = __K2L_MapOf()
@@ -290,16 +301,16 @@ end
 
 local function triangleMaxPath(rows)
     return rows:reversed():reduce(function(below, row)
-        local ____out = {}
+        local ____out_2 = {}
         local ____count = 0
         local ____items, ____n = row:____array()
-        for ____i_2 = 1, ____n do
-            local v = ____items[____i_2]
-            local i = ____i_2 - 1
+        for ____i_4 = 1, ____n do
+            local v = ____items[____i_4]
+            local i = ____i_4 - 1
             ____count = ____count + 1
-            ____out[____count] = v + math.max(below:get(i), below:get(i + 1))
+            ____out_2[____count] = v + math.max(below:get(i), below:get(i + 1))
         end
-        return __K2L_ListWrap(____out, ____count)
+        return __K2L_ListWrap(____out_2, ____count)
     end):single()
 end
 
@@ -325,8 +336,8 @@ local ____lambda_4 = function(it) return it:joinToString("+") end
 local ____lambda_5 = function(it) return partitions(it).size end
 local function main()
     local ____list = __K2L_ReadOnlyListOf(__K2L_Pair.new("kitten", "sitting"), __K2L_Pair.new("flaw", "lawn"), __K2L_Pair.new("", "abc"), __K2L_Pair.new("intention", "execution"))
-    for ____i_3 = 1, ____list.size do
-        local ____item = ____list[____i_3]
+    for ____i_5 = 1, ____list.size do
+        local ____item = ____list[____i_5]
         local a, b = ____item.first, ____item.second
         print("edit(" .. a .. ", " .. b .. ") = " .. editDistance(a, b))
     end
@@ -336,8 +347,8 @@ local function main()
     local value, chosen = ____destructured_1.first, ____destructured_1.second
     local ____sum = 0
     local ____items_1, ____n_1 = chosen:____array()
-    for ____i_4 = 1, ____n_1 do
-        local it = ____items_1[____i_4]
+    for ____i_6 = 1, ____n_1 do
+        local it = ____items_1[____i_6]
         ____sum = ____sum + it.weight
     end
     print("knapsack value=" .. value .. " weight=" .. ____sum)
@@ -351,8 +362,8 @@ local function main()
     local lines = __K2L_ReadOnlyListOf("???.### 1,1,3", ".??..??...?##. 1,1,3", "?#?#?#?#?#?#?#? 1,3,1,6", "?###???????? 3,2,1")
     local total = 0
     local ____mod_1 = lines.____modCount
-    for ____i_5 = 1, lines.size do
-        local line = lines[____i_5]
+    for ____i_7 = 1, lines.size do
+        local line = lines[____i_7]
         local ____destructured_2 = unfold(line, 1)
         local pattern, groups = ____destructured_2.first, ____destructured_2.second
         local ____destructured_3 = unfold(line, 5)
@@ -362,35 +373,35 @@ local function main()
         local b = big:count()
         total = total + b
         print(__K2L_StringPadEnd(line, 26) .. " -> " .. a .. " / " .. b .. " (memo hits " .. big.hits .. ")")
-        if lines.____modCount ~= ____mod_1 and lines:____comodified(____i_5) then
+        if lines.____modCount ~= ____mod_1 and lines:____comodified(____i_7) then
             break
         end
     end
     print("total unfolded = " .. total)
     print("fib(78) = " .. fib(78) .. ", memo size " .. fibMemo.size)
     local ____list_1 = __K2L_StringLines(__K2L_Text.trimIndent("\n        3\n        7 4\n        2 4 6\n        8 5 9 3\n    "))
-    local ____out_1 = {}
+    local ____out_3 = {}
     local ____count_1 = 0
     local ____items_3, ____n_3 = ____list_1:____array()
-    for ____i_7 = 1, ____n_3 do
-        local row = ____items_3[____i_7]
+    for ____i_9 = 1, ____n_3 do
+        local row = ____items_3[____i_9]
         local ____result_1
         do
             local ____list_2 = __K2L_StringSplit(row, " ")
-            local ____out_2 = {}
+            local ____out_4 = {}
             local ____count_2 = 0
             local ____items_2, ____n_2 = ____list_2:____array()
-            for ____i_6 = 1, ____n_2 do
-                local it = ____items_2[____i_6]
+            for ____i_8 = 1, ____n_2 do
+                local it = ____items_2[____i_8]
                 ____count_2 = ____count_2 + 1
-                ____out_2[____count_2] = __K2L_StringToInt(it)
+                ____out_4[____count_2] = __K2L_StringToInt(it)
             end
-            ____result_1 = __K2L_ListWrap(____out_2, ____count_2)
+            ____result_1 = __K2L_ListWrap(____out_4, ____count_2)
         end
         ____count_1 = ____count_1 + 1
-        ____out_1[____count_1] = ____result_1
+        ____out_3[____count_1] = ____result_1
     end
-    local triangle = __K2L_ListWrap(____out_1, ____count_1)
+    local triangle = __K2L_ListWrap(____out_3, ____count_1)
     print("triangle max path = " .. triangleMaxPath(triangle))
     local parts = partitions(6)
     print("partitions(6): " .. parts.size .. " -> " .. parts:joinToString(" ", nil, nil, nil, nil, ____lambda_4))

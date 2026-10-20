@@ -9,6 +9,7 @@ local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
@@ -27,7 +28,9 @@ local __K2L_Ushr = ____lualib.__K2L_Ushr
 
 local Sudoku = __K2L_Class("Sudoku")
 
-local ____lambda_1 = function(it) return it:match("^%d$") ~= nil or it == "." end
+local ____lambda_1 = function(it)
+    return __K2L_IsDigit[it] == true or it == "."
+end
 function Sudoku:____init(puzzle)
     self.grid = __K2L_ListOfSize(81, 0, "[I")
     self.rows = __K2L_ListOfSize(9, 0, "[I")
@@ -176,7 +179,7 @@ local function tsp(dist)
     local parent = __K2L_ListOfSize(full, function(it)
         return __K2L_ListOfSize(n, ____lambda_4, "[I")
     end, "[[I")
-    local ____object_8 = dp:get(1)
+    local ____object_8 = dp[2] or __K2L_IndexError(1, dp.size, "array")
     if 0 < 0 or 0 >= ____object_8.size then
         __K2L_IndexError(0, ____object_8.size, "array")
     end
@@ -188,7 +191,7 @@ local function tsp(dist)
             end
             for last = 0, n - 1 do
                 do
-                    if mask & __K2L_Shl(1, last) == 0 or dp:get(mask):get(last) >= inf then
+                    if mask & __K2L_Shl(1, last) == 0 or (dp[mask + 1] or __K2L_IndexError(mask, dp.size, "array")):get(last) >= inf then
                         goto ____continue_2
                     end
                     for ____next = 0, n - 1 do
@@ -197,14 +200,14 @@ local function tsp(dist)
                                 goto ____continue_3
                             end
                             local nm = mask | __K2L_Shl(1, ____next)
-                            local cost = dp:get(mask):get(last) + dist:get(last):get(____next)
-                            if cost < dp:get(nm):get(____next) then
-                                local ____object_9 = dp:get(nm)
+                            local cost = (dp[mask + 1] or __K2L_IndexError(mask, dp.size, "array")):get(last) + (dist[last + 1] or __K2L_IndexError(last, dist.size, "array")):get(____next)
+                            if cost < (dp[nm + 1] or __K2L_IndexError(nm, dp.size, "array")):get(____next) then
+                                local ____object_9 = dp[nm + 1] or __K2L_IndexError(nm, dp.size, "array")
                                 if ____next < 0 or ____next >= ____object_9.size then
                                     __K2L_IndexError(____next, ____object_9.size, "array")
                                 end
                                 ____object_9[____next + 1] = cost
-                                local ____object_10 = parent:get(nm)
+                                local ____object_10 = parent[nm + 1] or __K2L_IndexError(nm, parent.size, "array")
                                 if ____next < 0 or ____next >= ____object_10.size then
                                     __K2L_IndexError(____next, ____object_10.size, "array")
                                 end
@@ -220,7 +223,7 @@ local function tsp(dist)
         ::____continue_1::
     end
     local ____destructured = __K2L_IntRange.new(1, n - 1):map(function(it)
-        return __K2L_Pair.new(it, dp:get(full - 1):get(it) + dist:get(it):get(0))
+        return __K2L_Pair.new(it, (dp[full] or __K2L_IndexError(full - 1, dp.size, "array")):get(it) + (dist[it + 1] or __K2L_IndexError(it, dist.size, "array")):get(0))
     end):minBy(____lambda_5)
     local ____end, total = ____destructured.first, ____destructured.second
     local tour = __K2L_ArrayDeque.new()
@@ -228,7 +231,7 @@ local function tsp(dist)
     local cur = ____end
     while cur ~= -1 do
         tour:addFirst(cur)
-        local p = parent:get(mask):get(cur)
+        local p = (parent[mask + 1] or __K2L_IndexError(mask, parent.size, "array")):get(cur)
         mask = mask ~ __K2L_Shl(1, cur)
         cur = p
     end
@@ -298,13 +301,13 @@ function BitSieve:____init(limit)
 end
 
 function BitSieve:get(i)
-    return self.bits:get((i & 0xFFFFFFFF) >> 5) & __K2L_Shl(1, i & 31) ~= 0
+    return (self.bits[((i & 0xFFFFFFFF) >> 5) + 1] or __K2L_IndexError((i & 0xFFFFFFFF) >> 5, self.bits.size, "array")) & __K2L_Shl(1, i & 31) ~= 0
 end
 
 function BitSieve:set(i)
     local ____object_11 = self.bits
     local ____key_6 = (i & 0xFFFFFFFF) >> 5
-    local ____value_6 = self.bits:get((i & 0xFFFFFFFF) >> 5) | __K2L_Shl(1, i & 31)
+    local ____value_6 = (self.bits[((i & 0xFFFFFFFF) >> 5) + 1] or __K2L_IndexError((i & 0xFFFFFFFF) >> 5, self.bits.size, "array")) | __K2L_Shl(1, i & 31)
     if ____key_6 < 0 or ____key_6 >= ____object_11.size then
         __K2L_IndexError(____key_6, ____object_11.size, "array")
     end
@@ -348,7 +351,9 @@ local function main()
     local ____destructured_1 = tsp(dist)
     local cost, tour = ____destructured_1.first, ____destructured_1.second
     print("tsp cost=" .. cost .. " tour=" .. tour:joinToString("->", nil, nil, nil, nil, function(it) return cities:get(it) end))
-    print("check: " .. tostring(tour:zipWithNext(function(a, b) return dist:get(a):get(b) end):sum() == cost))
+    print("check: " .. tostring(tour:zipWithNext(function(a, b)
+        return (dist[a + 1] or __K2L_IndexError(a, dist.size, "array")):get(b)
+    end):sum() == cost))
     local codes = __K2L_IntRange.new(0, 8 - 1):map(____lambda_8)
     local ____out_2 = {}
     local ____count_2 = 0

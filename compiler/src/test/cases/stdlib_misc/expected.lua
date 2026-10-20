@@ -341,10 +341,8 @@ local function results()
     print(__K2L_Result.failure(__K2L_RuntimeException.new("f")):isFailure())
 end
 
-local ____lambda_10 = function(it) return it * it end
-local ____lambda_11 = function(it) return "x" .. it end
-local ____lambda_12 = function(it) return it + 1 end
-local ____lambda_13 = function() return 5 end
+local ____lambda_10 = function(it) return it + 1 end
+local ____lambda_11 = function() return 5 end
 local function scope()
     local s = "abc"
     print(#s)
@@ -365,9 +363,19 @@ local function scope()
     ____builder_2:add(1)
     ____builder_2:add(1)
     print(__K2L_Str(____builder_2:____build()))
-    print(__K2L_Str(__K2L_ListOfSize(3, ____lambda_10)))
-    print(__K2L_Str(__K2L_ListOfSize(2, ____lambda_11)))
-    print(__K2L_Str(__K2L_ListOfSize(3, ____lambda_12, "[I"):toList()))
+    local ____out_1 = {}
+    for ____i_2 = 1, 3 do
+        local it = ____i_2 - 1
+        ____out_1[____i_2] = it * it
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, 3)))
+    local ____out_2 = {}
+    for ____i_3 = 1, 2 do
+        local it = ____i_3 - 1
+        ____out_2[____i_3] = "x" .. it
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_2, 2)))
+    print(__K2L_Str(__K2L_ListOfSize(3, ____lambda_10, "[I"):toList()))
     print(__K2L_Str(__K2L_ListOf(1, nil, 2):filterNotNull()))
     print(__K2L_Str(__K2L_ReadOnlyMapOf()))
     print(__K2L_Str(__K2L_ReadOnlySetOf(3, 1, 2):sorted()))
@@ -377,7 +385,7 @@ local function scope()
     local ____value_1 = __K2L_SetOf(1)
     ____value_1:addAll(__K2L_ReadOnlyListOf(2, 3))
     print(__K2L_Str(____value_1))
-    print(__K2L_Lazy(____lambda_13):getValue())
+    print(__K2L_Lazy(____lambda_11):getValue())
 end
 
 local function main()

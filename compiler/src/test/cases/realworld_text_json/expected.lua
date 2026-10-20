@@ -9,6 +9,8 @@ local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
+local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
@@ -188,7 +190,7 @@ function Parser:fail(msg)
 end
 
 function Parser:skipWs()
-    while self.pos < #self.src and (self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")):match("^%s$") ~= nil do
+    while self.pos < #self.src and __K2L_IsWhitespace[self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")] == true do
         self.pos = self.pos + 1
     end
 end
@@ -216,7 +218,7 @@ function Parser:value()
         return Json.Str.new(self:string())
     elseif c == "t" or c == "f" or c == "n" then
         return self:literal()
-    elseif c == "-" or c:match("^%d$") ~= nil then
+    elseif c == "-" or __K2L_IsDigit[c] == true then
         return self:number()
     else
         self:fail("unexpected character '" .. c .. "'")
@@ -241,15 +243,15 @@ function Parser:number()
     if self:peek() == "-" then
         self.pos = self.pos + 1
     end
-    while self:peek():match("^%d$") ~= nil do
+    while __K2L_IsDigit[self:peek()] == true do
         self.pos = self.pos + 1
     end
     if self:peek() == "." then
         self.pos = self.pos + 1
-        if self:peek():match("^%d$") == nil then
+        if __K2L_IsDigit[self:peek()] ~= true then
             self:fail("digit expected after '.'")
         end
-        while self:peek():match("^%d$") ~= nil do
+        while __K2L_IsDigit[self:peek()] == true do
             self.pos = self.pos + 1
         end
     end
@@ -258,7 +260,7 @@ function Parser:number()
         if self:peek() == "+" or self:peek() == "-" then
             self.pos = self.pos + 1
         end
-        while self:peek():match("^%d$") ~= nil do
+        while __K2L_IsDigit[self:peek()] == true do
             self.pos = self.pos + 1
         end
     end

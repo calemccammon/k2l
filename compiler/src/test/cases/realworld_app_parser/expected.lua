@@ -11,6 +11,10 @@ local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
+local __K2L_IsLetter = ____lualib.__K2L_IsLetter
+local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
+local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -85,7 +89,7 @@ function ParseResult.Success:toString()
 end
 
 function ParseResult.Success:hashCode()
-    return (31 * __K2L_Hash(self.value) + __K2L_Hash(self.rest) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    return (31 * __K2L_Hash(self.value) + self.rest:hashCode() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function ParseResult.Success:equals(other)
@@ -109,7 +113,7 @@ function ParseResult.Failure:toString()
 end
 
 function ParseResult.Failure:hashCode()
-    return (31 * __K2L_Hash(self.expected) + __K2L_Hash(self.at) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    return (31 * __K2L_Hash(self.expected) + self.at:hashCode() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function ParseResult.Failure:equals(other)
@@ -260,7 +264,7 @@ local function char(c)
     return satisfy("'" .. c .. "'", function(it) return it == c end)
 end
 
-local ws = map(many(satisfy("space", function(it) return it:match("^%s$") ~= nil end)), function(it) return __K2L_Unit end)
+local ws = map(many(satisfy("space", function(it) return __K2L_IsWhitespace[it] == true end)), function(it) return __K2L_Unit end)
 
 local function token(p)
     return thenSkip(p, ws)
@@ -272,12 +276,14 @@ local function symbol(s)
     end))
 end
 
-local digit = satisfy("digit", function(it) return it:match("^%d$") ~= nil end)
+local digit = satisfy("digit", function(it) return __K2L_IsDigit[it] == true end)
 local number = named(token(map(____then(many1(digit), optional(skipThen(char("."), many1(digit)))), function(____destructured_2)
     local whole, frac = ____destructured_2.first, ____destructured_2.second
     return __K2L_StringToDouble(whole:joinToString("") .. (frac and "." .. frac:joinToString("") or ""))
 end)), "number")
-local identifier = named(token(map(____then(satisfy("letter", function(it) return it:match("^%a$") ~= nil end), many(satisfy("letter or digit", function(it) return it:match("^%w$") ~= nil or it == "_" end))), function(____destructured_3)
+local identifier = named(token(map(____then(satisfy("letter", function(it) return __K2L_IsLetter[it] == true end), many(satisfy("letter or digit", function(it)
+    return __K2L_IsLetterOrDigit[it] == true or it == "_"
+end))), function(____destructured_3)
     local h, t = ____destructured_3.first, ____destructured_3.second
     return h .. t:joinToString("")
 end)), "identifier")

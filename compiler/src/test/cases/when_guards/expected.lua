@@ -3,6 +3,8 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_IsLetter = ____lualib.__K2L_IsLetter
+local __K2L_IsUpperCase = ____lualib.__K2L_IsUpperCase
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -91,7 +93,7 @@ local function classify(x)
         end
     elseif type(x) == "string" and #x == 0 then
         return "empty"
-    elseif type(x) == "string" and __K2L_Text.first(x):match("^%u$") ~= nil then
+    elseif type(x) == "string" and __K2L_IsUpperCase[__K2L_Text.first(x)] == true then
         return "capitalized"
     elseif type(x) == "string" then
         return "text"
@@ -108,7 +110,7 @@ local function describe(e, ____debug)
         return "diagonal click at " .. e.x
     elseif ____mt == Event.Click then
         return "click (" .. e.x .. ", " .. e.y .. ")"
-    elseif ____mt == Event.Key and (e.shift and e.code:match("^%a$") ~= nil) then
+    elseif ____mt == Event.Key and (e.shift and __K2L_IsLetter[e.code] == true) then
         return "key " .. e.code:upper()
     elseif ____mt == Event.Key then
         return "key " .. e.code

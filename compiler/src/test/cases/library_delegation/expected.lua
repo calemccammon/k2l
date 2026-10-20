@@ -5,7 +5,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CollectionBase = ____lualib.__K2L_CollectionBase
 local __K2L_ComparatorMixin = ____lualib.__K2L_ComparatorMixin
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunctionMixin = ____lualib.__K2L_FunctionMixin
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -442,10 +442,16 @@ function Twice:invoke(p1)
     return self.____delegate_Function1(p1)
 end
 
-local ____lambda_2 = function(it) return #it end
+local ____lambda_2 = function(____a, ____b)
+    local ____x, ____y = #____a, #____b
+    if ____x ~= ____y then
+        return ____x < ____y and -1 or 1
+    end
+    return 0
+end
 local function comparators()
     local words = __K2L_ReadOnlyListOf("ccc", "a", "bb", "dddd")
-    local byLength = Counting.new(__K2L_CompareBy(____lambda_2))
+    local byLength = Counting.new(____lambda_2)
     print(__K2L_Str(words:sortedWith(byLength)) .. " " .. tostring(byLength.calls > 0) .. " " .. byLength:compare("aa", "b"))
     print(__K2L_Str(words:sortedWith(__K2L_ReverseComparator(byLength))))
     local natural = Plain.new(__K2L_NaturalOrder)

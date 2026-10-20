@@ -5,6 +5,12 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
+local __K2L_IsLetter = ____lualib.__K2L_IsLetter
+local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
+local __K2L_IsLowerCase = ____lualib.__K2L_IsLowerCase
+local __K2L_IsUpperCase = ____lualib.__K2L_IsUpperCase
+local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Random = ____lualib.__K2L_Random
 local __K2L_Str = ____lualib.__K2L_Str
@@ -59,12 +65,12 @@ local function chars()
     print(__K2L_Num.digitToInt("f", 16))
     print(__K2L_Str(__K2L_Num.digitToIntOrNull("x")))
     print(__K2L_Num.digitToChar(7))
-    print(("a"):match("^%a$") ~= nil)
-    print(("1"):match("^%d$") ~= nil)
-    print((" "):match("^%s$") ~= nil)
-    print(("A"):match("^%u$") ~= nil)
-    print(("a"):match("^%l$") ~= nil)
-    print(("_"):match("^%w$") ~= nil)
+    print(__K2L_IsLetter.a == true)
+    print(__K2L_IsDigit["1"] == true)
+    print(__K2L_IsWhitespace[" "] == true)
+    print(__K2L_IsUpperCase.A == true)
+    print(__K2L_IsLowerCase.a == true)
+    print(__K2L_IsLetterOrDigit._ == true)
     print(__K2L_Compare("a", "c"))
     print(__K2L_Str(__K2L_CharRange.new("a", "e"):toList()))
     print(__K2L_CharRange.new("a", "e"):joinToString(""))

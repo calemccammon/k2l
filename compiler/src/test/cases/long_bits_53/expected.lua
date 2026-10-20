@@ -4,6 +4,7 @@ local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 
 local function unsigned(x)
     return x & 4294967295
@@ -29,8 +30,8 @@ local function main()
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     local h = 0
     for ____i_1 = 1, #"hash me" do
-        local c = ("hash me"):sub(____i_1, ____i_1)
-        h = h * 31 + c:byte() & 4294967295
+        local c = __K2L_StrByte("hash me", ____i_1)
+        h = h * 31 + c & 4294967295
     end
     print("hash " .. h .. " " .. __K2L_Num.toRadix(h, 16))
     local bitboard = __K2L_IntRange.new(0, 48 - 1):withStep(5):fold(0, ____lambda_2)

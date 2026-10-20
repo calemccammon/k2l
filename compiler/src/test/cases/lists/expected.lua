@@ -5,7 +5,6 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -43,7 +42,6 @@ local ____lambda_4 = function(it) return it.price end
 local ____lambda_5 = function(it) return it.price end
 local ____lambda_6 = function(it) return it.price end
 local ____lambda_7 = function(it) return it.price > 4 end
-local ____lambda_8 = function(it) return it * it end
 local function main()
     local xs = __K2L_ReadOnlyListOf(5, 3, 8, 1, 9, 2)
     print(__K2L_Str(xs))
@@ -276,7 +274,12 @@ local function main()
     end
     print(__K2L_Str(__K2L_ListWrap(____out_4, ____count_4)))
     print(__K2L_Equals(__K2L_ReadOnlyListOf(1, 2), __K2L_ReadOnlyListOf(1, 2)))
-    print(__K2L_Str(__K2L_ListOfSize(4, ____lambda_8)))
+    local ____out_6 = {}
+    for ____i_18 = 1, 4 do
+        local it = ____i_18 - 1
+        ____out_6[____i_18] = it * it
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_6, 4)))
     local arr = __K2L_TypedArrayOf("[I", 3, 1, 2)
     if 1 < 0 or 1 >= arr.size then
         __K2L_IndexError(1, arr.size, "array")

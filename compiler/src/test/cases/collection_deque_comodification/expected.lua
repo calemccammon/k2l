@@ -2,7 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Deque = ____lualib.__K2L_Deque
@@ -70,7 +70,13 @@ end
 
 local ____lambda_1 = function(it) return it == 7 end
 local ____lambda_2 = function(it) return it ~= 3 end
-local ____lambda_3 = function(it) return it end
+local ____lambda_3 = function(____a, ____b)
+    local ____x, ____y = ____b, ____a
+    if ____x ~= ____y then
+        return ____x < ____y and -1 or 1
+    end
+    return 0
+end
 local ____lambda_4 = function(it) return -it end
 local ____lambda_5 = function(it) return it * 10 end
 local ____lambda_6 = function()
@@ -288,7 +294,7 @@ local function main()
         for ____i_15 = 1, d.size do
             local x = d[____i_15]
             if x == 3 then
-                d:sortWith(__K2L_CompareByDescending(____lambda_3))
+                d:sortWith(____lambda_3)
             end
             if d.____modCount ~= ____mod_15 and d:____comodified(____i_15) then
                 break

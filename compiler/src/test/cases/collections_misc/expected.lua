@@ -2,15 +2,13 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
-local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 local __K2L_Triple = ____lualib.__K2L_Triple
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unpack = ____lualib.__K2L_Unpack
@@ -59,12 +57,27 @@ local function describe(label, ...)
     return label .. ": " .. parts:joinToString(" ")
 end
 
-local ____lambda_1 = function(it) return it.minor end
-local ____lambda_2 = function(it) return it.major end
-local ____lambda_3 = function(it) return it.minor end
-local ____lambda_4 = function(it) return it * it end
-local ____lambda_5 = function(it) return it:lower() end
-local ____lambda_6 = function(a, b) return b - a end
+local ____lambda_1 = function(____a, ____b)
+    local ____x, ____y = ____a.minor, ____b.minor
+    if ____x ~= ____y then
+        return ____x < ____y and -1 or 1
+    end
+    return 0
+end
+local ____lambda_2 = function(____a_1, ____b_1)
+    local ____x_2, ____y_2 = ____b_1.major, ____a_1.major
+    if ____x_2 ~= ____y_2 then
+        return ____x_2 < ____y_2 and -1 or 1
+    end
+    local ____x_3, ____y_3 = ____a_1.minor, ____b_1.minor
+    if ____x_3 ~= ____y_3 then
+        return ____x_3 < ____y_3 and -1 or 1
+    end
+    return 0
+end
+local ____lambda_3 = function(it) return it * it end
+local ____lambda_4 = function(it) return it:lower() end
+local ____lambda_5 = function(a, b) return b - a end
 local function main()
     print(sumAll())
     print(sumAll(1, 2, 3))
@@ -82,8 +95,8 @@ local function main()
     print(__K2L_Str(versions:sorted()))
     print(__K2L_Compare(Version.new(1, 0), Version.new(1, 2)) < 0)
     print(__K2L_Str(versions:maxOrNull()))
-    print(__K2L_Str(versions:sortedWith(__K2L_CompareBy(____lambda_1))))
-    print(__K2L_Str(versions:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_2), ____lambda_3))))
+    print(__K2L_Str(versions:sortedWith(____lambda_1)))
+    print(__K2L_Str(versions:sortedWith(____lambda_2)))
     local r = __K2L_IntRange.new(1, 10)
     local ____list = r:toList()
     local ____out = {}
@@ -97,7 +110,7 @@ local function main()
         end
     end
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
-    print(__K2L_Str(__K2L_IntRange.new(1, 4):map(____lambda_4)))
+    print(__K2L_Str(__K2L_IntRange.new(1, 4):map(____lambda_3)))
     print(__K2L_Str(__K2L_IntRange.new(10, 1, -1):withStep(4):toList()))
     print(r:contains(5))
     local sum = 0
@@ -109,7 +122,7 @@ local function main()
     local evens = __K2L_IntRange.new(0, 10 - 1):withStep(2):toList()
     print(__K2L_Str(evens))
     local words = __K2L_ReadOnlyListOf("banana", "Apple", "cherry")
-    print(__K2L_Str(words:sortedBy(____lambda_5)))
+    print(__K2L_Str(words:sortedBy(____lambda_4)))
     local ____out_1 = {}
     local ____count_1 = 0
     local ____items_1, ____n_1 = words:____array()
@@ -135,7 +148,7 @@ local function main()
         return __K2L_Pair.new(w, i)
     end)
     print(__K2L_Str(lookup))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1, 2):sortedWith(____lambda_6)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1, 2):sortedWith(____lambda_5)))
     local queue = __K2L_List.new()
     queue:addAll(__K2L_ReadOnlyListOf(1, 2, 3))
     print(queue:removeFirst())

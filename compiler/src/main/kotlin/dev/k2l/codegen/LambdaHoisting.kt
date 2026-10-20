@@ -41,8 +41,11 @@ class LambdaHoisting(
             return LambdaHoisting(planner.names, planner.preludes, planner.upvalues)
         }
 
-        /** Only one-statement functions (selectors, comparators): moving a block away from its use helps no one. */
-        private fun isCandidate(fn: LuaFunction) = fn.body.size == 1 && fn.body[0] is LuaReturn
+        /**
+         * Only one-statement functions (selectors, comparators) and those marked [LuaFunction.hoistable] (fused comparators):
+         * moving a block away from its use helps no one.
+         */
+        private fun isCandidate(fn: LuaFunction) = fn.hoistable || (fn.body.size == 1 && fn.body[0] is LuaReturn)
 
         private class Planner(val taken: Set<String>) {
             val names = IdentityHashMap<LuaFunction, String>()

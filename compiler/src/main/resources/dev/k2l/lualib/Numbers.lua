@@ -192,6 +192,9 @@ end
 
 local DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
 
+-- the radixes string.format writes (for magnitudes below 2^53, which every target formats exactly)
+local RADIX_FORMATS = {[8] = "%o", [16] = "%x"}
+
 -- Integer.toString(n, radix)
 function __K2L_Num.toRadix(n, radix)
     if radix < 2 or radix > 36 then
@@ -209,6 +212,10 @@ function __K2L_Num.toRadix(n, radix)
         n = -__K2L_FloorDiv(n + place, radix)
     elseif negative then
         n = -n
+    end
+    local fast = RADIX_FORMATS[radix]
+    if fast ~= nil and n < 9007199254740992 then
+        return (negative and "-" or "") .. string.format(fast, n)
     end
     while n > 0 do
         local digit = n % radix

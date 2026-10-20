@@ -7,11 +7,13 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
@@ -59,7 +61,7 @@ local function bigFib(n)
 end
 
 local function gcd(a, b)
-    return b == 0 and math.abs(a) or gcd(b, __K2L_IRem(a, b))
+    return b == 0 and math.abs(a) or gcd(b, b ~= 0 and __K2L_Fmod(a, b) + 0 or __K2L_IRem(a, b))
 end
 
 local function lcm(a, b)
@@ -68,13 +70,13 @@ end
 
 local function modPow(base, exp, mod)
     local result = 1
-    local b = __K2L_IRem(base, mod)
+    local b = mod ~= 0 and __K2L_Fmod(base, mod) + 0 or __K2L_IRem(base, mod)
     local e = exp
     while e > 0 do
         if e & 1 == 1 then
-            result = __K2L_IRem(result * b, mod)
+            result = mod ~= 0 and __K2L_Fmod(result * b, mod) + 0 or __K2L_IRem(result * b, mod)
         end
-        b = __K2L_IRem(b * b, mod)
+        b = mod ~= 0 and __K2L_Fmod(b * b, mod) + 0 or __K2L_IRem(b * b, mod)
         e = e // (1 << 1)
     end
     return result
@@ -89,7 +91,7 @@ local function isPrime(n)
     end
     local d = 3
     while d * d <= n do
-        if __K2L_IRem(n, d) == 0 then
+        if (d ~= 0 and __K2L_Fmod(n, d) + 0 or __K2L_IRem(n, d)) == 0 then
             return false
         end
         d = d + 2
@@ -103,7 +105,7 @@ local function primeFactors(n)
     local x = n
     local p = 2
     while p * p <= x do
-        while __K2L_IRem(x, p) == 0 do
+        while (p ~= 0 and __K2L_Fmod(x, p) + 0 or __K2L_IRem(x, p)) == 0 do
             factors:merge(p, 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_2))
             x = __K2L_IDiv(x, p)
         end
@@ -210,13 +212,21 @@ local ____lambda_4 = function(it) return Rational.ZERO end
 local function bernoulli(n)
     local a = __K2L_ListOfSize(n + 1, ____lambda_4, "[LRational;")
     for m = 0, n do
-        a:set(m, Rational:of(1, m + 1))
+        local ____value_1 = Rational:of(1, m + 1)
+        if m < 0 or m >= a.size then
+            __K2L_IndexError(m, a.size, "array")
+        end
+        a[m + 1] = ____value_1
         for j = m, 1, -1 do
             local ____key_1 = j - 1
-            a:set(____key_1, r(j):times(a:get(j - 1):minus(a:get(j))))
+            local ____value_2 = r(j):times((a[j] or __K2L_IndexError(j - 1, a.size, "array")):minus(a[j + 1] or __K2L_IndexError(j, a.size, "array")))
+            if ____key_1 < 0 or ____key_1 >= a.size then
+                __K2L_IndexError(____key_1, a.size, "array")
+            end
+            a[____key_1 + 1] = ____value_2
         end
     end
-    return a:get(0)
+    return a[1] or __K2L_IndexError(0, a.size, "array")
 end
 
 local function integrate(from, to, steps, f)

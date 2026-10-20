@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_List = ____lualib.__K2L_List
@@ -102,17 +102,22 @@ local ____lambda_4 = function(it)
     return it.status >= 0 and it.status // 100 or 0 - -it.status // 100
 end
 local ____lambda_5 = function(it) return it end
-local ____lambda_6 = function(it) return -it.value end
-local ____lambda_7 = function(it) return it.key end
-local ____lambda_8 = function(it) return __K2L_Text.take(it, 1) end
-local ____lambda_9 = function(it)
+local ____lambda_6 = function(____a, ____b)
+    local ____x, ____y = -____a.value, -____b.value
+    if ____x ~= ____y then
+        return ____x < ____y and -1 or 1
+    end
+    return __K2L_CompareValues(____a.key, ____b.key)
+end
+local ____lambda_7 = function(it) return __K2L_Text.take(it, 1) end
+local ____lambda_8 = function(it)
     return __K2L_StringToInt(it.groupValues:get(1))
 end
+local ____lambda_9 = function(it) return it.value end
 local ____lambda_10 = function(it) return it.value end
-local ____lambda_11 = function(it) return it.value end
-local ____lambda_12 = function(it) return it.value .. "@" .. it.range.first end
-local ____lambda_13 = function(it) return it.value end
-local ____lambda_14 = function(it)
+local ____lambda_11 = function(it) return it.value .. "@" .. it.range.first end
+local ____lambda_12 = function(it) return it.value end
+local ____lambda_13 = function(it)
     return __K2L_NotNull(it.groups:getNamed("num")).value .. __K2L_NotNull(it.groups:getNamed("word")).value:upper()
 end
 local function main()
@@ -254,7 +259,7 @@ local function main()
             ____out_2[____count_2] = ____inner[____j]
         end
     end
-    local ____list = __K2L_ListWrap(____out_2, ____count_2):groupingBy(____lambda_5):eachCount():getEntries():sortedWith(__K2L_CompareBy(____lambda_6, ____lambda_7))
+    local ____list = __K2L_ListWrap(____out_2, ____count_2):groupingBy(____lambda_5):eachCount():getEntries():sortedWith(____lambda_6)
     for ____i_9 = 1, ____list.size do
         local it = ____list[____i_9]
         print(it.key .. ": " .. it.value)
@@ -313,7 +318,7 @@ local function main()
         local logger = __K2L_NotNull(m.groups:getNamed("logger")).value
         local ____value_5 = __K2L_StringSplit(logger, ".")
         local ____result_5
-        ____result_5 = ____value_5:dropLast(1):joinToString(".", nil, nil, nil, nil, ____lambda_8) .. "." .. ____value_5:last()
+        ____result_5 = ____value_5:dropLast(1):joinToString(".", nil, nil, nil, nil, ____lambda_7) .. "." .. ____value_5:last()
         local short = ____result_5
         local ____destructured_1 = m.destructured
         local ts, level = ____destructured_1[1], ____destructured_1[2]
@@ -323,7 +328,7 @@ local function main()
             break
         end
     end
-    local durations = __K2L_Sequence.new(__K2L_Regex.new("(\\d+)ms"):findAllFactory(LOG)):map(____lambda_9):toList()
+    local durations = __K2L_Sequence.new(__K2L_Regex.new("(\\d+)ms"):findAllFactory(LOG)):map(____lambda_8):toList()
     local ____arg_10 = __K2L_Str(durations)
     local ____out_4 = {}
     local ____count_4 = 0
@@ -361,13 +366,13 @@ local function main()
     local words = __K2L_Regex.new("[\\s,;]+"):split("alpha, beta;gamma  delta,,epsilon")
     print(__K2L_Str(words))
     print(__K2L_Str(__K2L_Regex.new("\\d+"):split("a1b22c333", 3)))
-    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("(?<=@)\\w+"):findAllFactory("x@foo y@bar z@")):map(____lambda_10):toList()))
-    print(__K2L_Sequence.new(__K2L_Regex.new("\\b\\w+(?!\\w|-)"):findAllFactory("well-known self-made easy")):map(____lambda_11):joinToString("|"))
-    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("(\\w)\\1"):findAllFactory("bookkeeper aardvark")):map(____lambda_12):toList()))
+    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("(?<=@)\\w+"):findAllFactory("x@foo y@bar z@")):map(____lambda_9):toList()))
+    print(__K2L_Sequence.new(__K2L_Regex.new("\\b\\w+(?!\\w|-)"):findAllFactory("well-known self-made easy")):map(____lambda_10):joinToString("|"))
+    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("(\\w)\\1"):findAllFactory("bookkeeper aardvark")):map(____lambda_11):toList()))
     print(__K2L_Regex.new("(\\d+)-(\\d+)-(\\d+)"):replace("2024-03-12", "$3/$2/$1") .. " " .. __K2L_StringReplace("a.b.c", __K2L_Regex.escape("."), "\\$"))
-    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("^\\w+", "MULTILINE"):findAllFactory("one two\nthree four\n five")):map(____lambda_13):toList()))
+    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("^\\w+", "MULTILINE"):findAllFactory("one two\nthree four\n five")):map(____lambda_12):toList()))
     print(__K2L_Sequence.new(__K2L_Regex.new("error", "IGNORE_CASE"):findAllFactory(LOG)):count())
-    print(__K2L_Regex.new("(?<word>[a-z]+)(?<num>\\d*)"):replace("abc12 de xyz9", ____lambda_14))
+    print(__K2L_Regex.new("(?<word>[a-z]+)(?<num>\\d*)"):replace("abc12 de xyz9", ____lambda_13))
     local m = __K2L_Regex.new("\\d+"):find("a1bb22ccc333")
     local seen = __K2L_ListOf()
     while m ~= nil do

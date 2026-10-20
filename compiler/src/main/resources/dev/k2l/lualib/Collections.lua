@@ -76,6 +76,15 @@ local function isComparator(value)
     return mt and rawget(mt, "__call") ~= nil or false
 end
 
+-- LuaJIT's table.new(narray, nhash): a table sized up front for the lists whose size is known (no rehash while it fills)
+local tableNew
+if jit then
+    local ok, new = pcall(require, "table.new")
+    if ok then
+        tableNew = new
+    end
+end
+
 local function newList(arr, n)
     arr.size, arr.____modCount = n, 0
     return setmetatable(arr, __K2L_List)
@@ -477,7 +486,7 @@ end
 
 function __K2L_Iterable:map(transform)
     local arr, n = self:____array()
-    local out = {}
+    local out = tableNew and tableNew(n, 2) or {}
     for i = 1, n do
         out[i] = transform(arr[i])
     end
@@ -486,7 +495,7 @@ end
 
 function __K2L_Iterable:mapIndexed(transform)
     local arr, n = self:____array()
-    local out = {}
+    local out = tableNew and tableNew(n, 2) or {}
     for i = 1, n do
         out[i] = transform(i - 1, arr[i])
     end
@@ -905,17 +914,24 @@ function __K2L_Iterable:joinToString(separator, prefix, postfix, limit, truncate
     separator = separator or ", "
     limit = limit or -1
     local arr, n = self:____array()
-    local parts = {prefix or ""}
+    local texts, k, cut = {}, 0, false
     for i = 1, n do
         if limit >= 0 and i > limit then
-            parts[#parts + 1] = (separator or ", ") .. (truncated or "...")
+            cut = true
             break
         end
-        local text = transform and __K2L_Str(transform(arr[i])) or __K2L_Str(arr[i])
-        parts[#parts + 1] = (i > 1 and separator or "") .. text
+        local value = arr[i]
+        if transform then
+            value = transform(value)
+        end
+        k = k + 1
+        texts[k] = type(value) == "string" and value or __K2L_Str(value)
     end
-    parts[#parts + 1] = postfix or ""
-    return table.concat(parts)
+    local body = table.concat(texts, separator, 1, k)
+    if cut then
+        body = body .. separator .. (truncated or "...")
+    end
+    return (prefix or "") .. body .. (postfix or "")
 end
 
 function __K2L_Iterable:groupBy(keySelector, valueTransform)
@@ -2427,11 +2443,13 @@ end
 -- List(n) { init(it) } and Array(n) { ... }; also IntArray(n) with a constant initial value. `array` is the binary name of
 -- the array type (or true for an Object[]), nil for a list.
 local function __K2L_ListOfSize(size, init, array)
-    local out = {}
-    for i = 1, size do
-        if type(init) == "function" then
+    local out = tableNew and size > 0 and tableNew(size, 2) or {}
+    if type(init) == "function" then
+        for i = 1, size do
             out[i] = init(i - 1)
-        else
+        end
+    else
+        for i = 1, size do
             out[i] = init
         end
     end

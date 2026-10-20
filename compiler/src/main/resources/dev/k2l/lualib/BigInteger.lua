@@ -1,16 +1,21 @@
 -- requires: Class, Exceptions, Bit, ToInt32, Collections
--- java.math.BigInteger: sign and magnitude, the magnitude an array of base 10^7 limbs, least significant first.
--- A limb product plus carries stays below 2^53, so every step is exact in doubles (Lua 5.1, LuaJIT) as well as integers.
+-- java.math.BigInteger: sign and magnitude, the magnitude an array of base 10^7 limbs (10^9 with integers, Lua 5.3+),
+-- least significant first. A limb product plus carries stays below 2^53 (2^63), so every step is exact in doubles
+-- (Lua 5.1, 5.2, LuaJIT) as well as in integers.
 -- Bit operations convert to base 2^24 words (two's complement) and back.
 local __K2L_BigInteger = __K2L_Class("java.math.BigInteger")
 __K2L_BigInteger.____isNumber = true -- for `is Number`
 
 do
 
-local B = 10000000
-local WORD = 16777216
 local floor = math.floor
 local mtype = math.type
+-- the limb base and its number of decimal digits
+local B, D = 10000000, 7
+if mtype then
+    B, D = 1000000000, 9
+end
+local WORD = 16777216
 local intdiv = mtype and load("return function(a, b) return a // b end")()
 
 local POW2 = {}
@@ -176,11 +181,51 @@ local function divSmall(m, d)
     return trim(q), rem
 end
 
--- Lua 5.3+: the same three loops with integer division instead of a floor call per limb (compiled with load, so that
--- Lua 5.1 never parses the // operator)
+-- PUC Lua 5.1 and 5.2: the same with % (an instruction) instead of a call of floor, which costs more than the extra
+-- division (on LuaJIT, where floor compiles to one instruction, the extra division makes it slower)
+if not mtype and not jit then
+    function mulSmall(m, d, add)
+        local r, carry = {}, add or 0
+        for i = 1, #m do
+            local cur = m[i] * d + carry
+            local low = cur % B
+            r[i] = low
+            carry = (cur - low) / B
+        end
+        while carry > 0 do
+            r[#r + 1] = carry % B
+            carry = floor(carry / B)
+        end
+        return trim(r)
+    end
+
+    divSmall = function(m, d)
+        local n = #m
+        local q = {}
+        for i = 1, n do
+            q[i] = 0
+        end
+        local rem = 0
+        for i = n, 1, -1 do
+            local cur = rem * B + m[i]
+            rem = cur % d
+            if rem < 0 then
+                rem = rem + d
+            elseif rem >= d then
+                rem = rem - d
+            end
+            q[i] = (cur - rem) / d
+        end
+        return trim(q), rem
+    end
+end
+
+-- Lua 5.3+: the same loops with integer division instead of a floor call per limb (compiled with load, so that
+-- Lua 5.1 never parses the // operator); with base 10^9 the products need integers
+local divmodInt
 if mtype then
-    mulMag, mulSmall, divSmall = load([[
-local B, trim = ...
+    mulMag, mulSmall, divSmall, divmodInt = load([[
+local B, trim, cmpMag, copy = ...
 local mulSmall
 
 local function mulMag(a, b)
@@ -242,8 +287,81 @@ local function divSmall(m, d)
     return trim(q), rem
 end
 
-return mulMag, mulSmall, divSmall
-]])(B, trim)
+-- Knuth's algorithm D, as below
+local function divmodMag(a, b)
+    local n = #b
+    if cmpMag(a, b) < 0 then
+        return {}, copy(a)
+    end
+    if n == 1 then
+        local q, r = divSmall(a, b[1])
+        return q, r == 0 and {} or {r}
+    end
+    local d = B // (b[n] + 1)
+    local u, v = mulSmall(a, d), mulSmall(b, d)
+    local na = #a
+    for i = #u + 1, na + 1 do
+        u[i] = 0
+    end
+    local m = na - n
+    local q = {}
+    for i = 1, m + 1 do
+        q[i] = 0
+    end
+    local vtop, vsec = v[n], v[n - 1]
+    for j = m, 0, -1 do
+        local num = u[j + n + 1] * B + u[j + n]
+        local qhat = num // vtop
+        local rhat = num - qhat * vtop
+        while qhat >= B or qhat * vsec > rhat * B + u[j + n - 1] do
+            qhat = qhat - 1
+            rhat = rhat + vtop
+            if rhat >= B then
+                break
+            end
+        end
+        local borrow, carry = 0, 0
+        for i = 1, n do
+            local p = qhat * v[i] + carry
+            carry = p // B
+            local s = u[i + j] - (p - carry * B) - borrow
+            if s < 0 then
+                s = s + B
+                borrow = 1
+            else
+                borrow = 0
+            end
+            u[i + j] = s
+        end
+        local top = u[j + n + 1] - carry - borrow
+        if top < 0 then
+            qhat = qhat - 1
+            local c = 0
+            for i = 1, n do
+                local s = u[i + j] + v[i] + c
+                if s >= B then
+                    s = s - B
+                    c = 1
+                else
+                    c = 0
+                end
+                u[i + j] = s
+            end
+            top = 0
+        end
+        u[j + n + 1] = top
+        q[j + 1] = qhat
+    end
+    local r = {}
+    for i = 1, n do
+        r[i] = u[i]
+    end
+    local rq = divSmall(trim(r), d)
+    return trim(q), rq
+end
+
+return mulMag, mulSmall, divSmall, divmodMag
+]])(B, trim, cmpMag, copy)
 end
 
 -- Knuth's algorithm D: quotient and remainder of a / b, b nonzero
@@ -319,6 +437,10 @@ local function divmodMag(a, b)
     return trim(q), rq
 end
 
+if divmodInt then
+    divmodMag = divmodInt
+end
+
 local function make(sign, mag)
     if #mag == 0 then
         sign = 0
@@ -334,7 +456,13 @@ local TEN = make(1, {10})
 -- valueOf of -16..16, as the JVM caches them
 local SMALL = {}
 
+local tointeger = math.tointeger
+
 local function fromNumber(x)
+    if tointeger then
+        -- limbs are integers: a float limb would make the products of base 10^9 limbs inexact
+        x = tointeger(x) or x
+    end
     if x == 0 then
         return ZERO
     elseif x < B and x > -B then
@@ -461,9 +589,9 @@ local function parse(s, radix, strict)
     if radix == 10 then
         mag = {}
         local n = 0
-        for hi = #digits, 1, -7 do
+        for hi = #digits, 1, -D do
             n = n + 1
-            mag[n] = tonumber(digits:sub(math.max(1, hi - 6), hi))
+            mag[n] = tonumber(digits:sub(math.max(1, hi - D + 1), hi))
         end
     else
         local k = 1
@@ -495,8 +623,9 @@ local function magToString(mag, radix)
     end
     if radix == 10 then
         local parts = {string.format("%d", mag[n])}
+        local limb = "%0" .. D .. "d"
         for i = n - 1, 1, -1 do
-            parts[#parts + 1] = string.format("%07d", mag[i])
+            parts[#parts + 1] = string.format(limb, mag[i])
         end
         return table.concat(parts)
     end
@@ -894,6 +1023,9 @@ __K2L_BigInteger.ZERO = ZERO
 __K2L_BigInteger.ONE = ONE
 __K2L_BigInteger.TWO = TWO
 __K2L_BigInteger.TEN = TEN
+-- for BigDecimal and the emulated Long, which read the limbs
+__K2L_BigInteger.____limbBase = B
+__K2L_BigInteger.____limbDigits = D
 
 -- BigInteger(string, radix)
 function __K2L_BigInteger.parse(s, radix)
@@ -931,10 +1063,10 @@ end
 -- 10^n
 function __K2L_BigInteger.____pow10(n)
     local m = {}
-    for i = 1, floor(n / 7) do
+    for i = 1, floor(n / D) do
         m[i] = 0
     end
-    m[#m + 1] = POW10[n % 7]
+    m[#m + 1] = POW10[n % D]
     return make(1, m)
 end
 
@@ -943,14 +1075,14 @@ function __K2L_BigInteger:____mulPow10(n)
         return self
     end
     local m = {}
-    for i = 1, floor(n / 7) do
+    for i = 1, floor(n / D) do
         m[i] = 0
     end
     for i = 1, #self.mag do
         m[#m + 1] = self.mag[i]
     end
-    if n % 7 ~= 0 then
-        m = mulSmall(m, POW10[n % 7])
+    if n % D ~= 0 then
+        m = mulSmall(m, POW10[n % D])
     end
     return make(self.sign, m)
 end
@@ -968,7 +1100,7 @@ function __K2L_BigInteger:____digits()
     if n == 0 then
         return 1
     end
-    return (n - 1) * 7 + #string.format("%d", self.mag[n])
+    return (n - 1) * D + #string.format("%d", self.mag[n])
 end
 
 function __K2L_BigInteger:____isOne()

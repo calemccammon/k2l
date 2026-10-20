@@ -12,6 +12,7 @@ local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FloatToString = ____lualib.__K2L_FloatToString
 local __K2L_FloorDiv = ____lualib.__K2L_FloorDiv
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_Fround = ____lualib.__K2L_Fround
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -150,7 +151,7 @@ local function main()
     print(____dividend_2 >= 0 and ____dividend_2 % 1000 or (____dividend_2 % 1000 - 1000) % (-1000))
     local ____dividend_3 = -big - 1
     print(____dividend_3 >= 0 and ____dividend_3 // 1000 or (____dividend_3 + 999) // 1000)
-    print(__K2L_IRem(max, -1000))
+    print(-1000 ~= 0 and __K2L_Fmod(max, -1000) + 0 or __K2L_IRem(max, -1000))
     print(fib(90))
     print(fib(92) + fib(91))
     print(collatz(837799))
@@ -188,7 +189,7 @@ local function main()
         end
     end
     local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
-        print(__K2L_IRem(big, 0))
+        print(0 ~= 0 and __K2L_Fmod(big, 0) + 0 or __K2L_IRem(big, 0))
     end)
     if not ____ok_1 then
         local ____error_1 = __K2L_ToThrowable(____result_1)

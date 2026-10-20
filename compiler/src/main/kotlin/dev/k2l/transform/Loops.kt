@@ -181,6 +181,7 @@ private fun FileTransformer.textLoop(e: KtForExpression, frame: LoopFrame, range
     with(session) {
         val text = expression(rangeExpr)
         if (rangeExpr.expressionType?.isStringType == true) {
+            if (byteLoop(text, param, e.body) { loopBody(frame, e.body) }) return
             eachChar(text, naming.of(param), loopBody(frame, e.body))
         } else {
             charSequenceLoop(text, naming.of(param), loopBody(frame, e.body))

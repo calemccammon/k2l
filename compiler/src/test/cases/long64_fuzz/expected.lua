@@ -5,6 +5,7 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FloorDiv = ____lualib.__K2L_FloorDiv
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
@@ -20,7 +21,7 @@ local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 local function f(a, b, n)
     local sb = __K2L_StringBuilder.new()
     sb:append(tostring(a)):append(" "):append(tostring(b)):append(" | ")
-    sb:append(tostring(a + b)):append(" "):append(tostring(a - b)):append(" "):append(tostring(a * b)):append(" "):append(tostring(__K2L_IDiv(a, b))):append(" "):append(tostring(__K2L_IRem(a, b))):append(" | ")
+    sb:append(tostring(a + b)):append(" "):append(tostring(a - b)):append(" "):append(tostring(a * b)):append(" "):append(tostring(__K2L_IDiv(a, b))):append(" "):append(tostring(b ~= 0 and __K2L_Fmod(a, b) + 0 or __K2L_IRem(a, b))):append(" | ")
     sb:append(tostring(a << n)):append(" "):append(tostring(a // (1 << n))):append(" "):append(tostring(a >> n)):append(" | ")
     sb:append(tostring(a & b)):append(" "):append(tostring(a | b)):append(" "):append(tostring(a ~ b)):append(" "):append(tostring(~a)):append(" | ")
     sb:append(tostring(__K2L_Compare(a, b))):append(" "):append(tostring(a < b)):append(" "):append(tostring(a >= b)):append(" "):append(tostring(a == b)):append(" | ")

@@ -565,15 +565,17 @@ internal object TextMappings {
 
     private fun asciiChar(name: String, site: CallSite): LuaExpr? {
         val c = site.self
-        fun matches(pattern: String) = LuaBinary(LuaBinOp.Ne, LuaMethodCall(c, "match", listOf(LuaString(pattern))), LuaNil)
+
+        // a lookup in a table of the matching one-character strings, see CharClasses.lua
+        fun matches(table: String) = LuaBinary(LuaBinOp.Eq, LuaIndex(site.ref("CharClasses", table), c), LuaBool(true))
         return when (name) {
             "code" -> LuaMethodCall(c, "byte", emptyList())
-            "isDigit" -> matches("^%d$")
-            "isLetter" -> matches("^%a$")
-            "isLetterOrDigit" -> matches("^%w$")
-            "isWhitespace" -> matches("^%s$")
-            "isUpperCase" -> matches("^%u$")
-            "isLowerCase" -> matches("^%l$")
+            "isDigit" -> matches("__K2L_IsDigit")
+            "isLetter" -> matches("__K2L_IsLetter")
+            "isLetterOrDigit" -> matches("__K2L_IsLetterOrDigit")
+            "isWhitespace" -> matches("__K2L_IsWhitespace")
+            "isUpperCase" -> matches("__K2L_IsUpperCase")
+            "isLowerCase" -> matches("__K2L_IsLowerCase")
             "uppercaseChar", "uppercase", "titlecase", "titlecaseChar" -> LuaMethodCall(c, "upper", emptyList())
             "lowercaseChar", "lowercase" -> LuaMethodCall(c, "lower", emptyList())
             "digitToInt" -> site.libMember("Numbers", "__K2L_Num", "digitToInt", c, *site.args.toTypedArray())

@@ -1,7 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
-local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_HashSet = ____lualib.__K2L_HashSet
 local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
@@ -16,22 +15,26 @@ local __K2L_PriorityQueue = ____lualib.__K2L_PriorityQueue
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SortedSet = ____lualib.__K2L_SortedSet
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local ____lambda_1 = function(it) return -it end
-local ____lambda_2 = function(it)
-    return it >= 0 and it % 10 or (it % 10 - 10) % (-10)
+local ____lambda_2 = function(____a, ____b)
+    return __K2L_CompareValues(____a >= 0 and ____a % 10 or (____a % 10 - 10) % (-10), ____b >= 0 and ____b % 10 or (____b % 10 - 10) % (-10))
 end
-local ____lambda_3 = function(it) return it end
+local ____lambda_3 = function(____a_1, ____b_1)
+    local ____c = __K2L_CompareValues(____b_1, ____a_1)
+    if ____c ~= 0 then
+        return ____c
+    end
+    return __K2L_CompareValues(____a_1, ____b_1)
+end
 local ____lambda_4 = function(it) return it end
-local ____lambda_5 = function(it) return it end
+local ____lambda_5 = function(a, b) return a + b end
 local ____lambda_6 = function(a, b) return a + b end
-local ____lambda_7 = function(a, b) return a + b end
-local ____lambda_8 = function(a, b) return a ~ b end
-local ____lambda_9 = function(it) return it > 0 end
-local ____lambda_10 = function(it) return it ~= 5 end
-local ____lambda_11 = function(it) return it < 0 end
+local ____lambda_7 = function(a, b) return a ~ b end
+local ____lambda_8 = function(it) return it > 0 end
+local ____lambda_9 = function(it) return it ~= 5 end
+local ____lambda_10 = function(it) return it < 0 end
 local function main()
     local big = 5000000000000000000
     local max = 9223372036854775807
@@ -48,10 +51,10 @@ local function main()
     print(__K2L_Str(list))
     list:sortBy(____lambda_1, true)
     print(__K2L_Str(list))
-    list:sortWith(__K2L_CompareBy(____lambda_2))
+    list:sortWith(____lambda_2)
     print(__K2L_Str(list))
-    print(__K2L_Str(list:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_3), ____lambda_4))))
-    print(__K2L_Str(list:sortedBy(____lambda_5, true)))
+    print(__K2L_Str(list:sortedWith(____lambda_3)))
+    print(__K2L_Str(list:sortedBy(____lambda_4, true)))
     print(list:binarySearch(5))
     print(list:sorted():binarySearch(big))
     print(__K2L_NotNull(__K2L_JdkCollections.max(list)))
@@ -95,10 +98,10 @@ local function main()
         ____out[____count] = it:get(0) - it:get(1)
     end
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
-    print(__K2L_Str(list:zipWithNext(____lambda_6)))
-    print(__K2L_Str(list:runningFold(0, ____lambda_7)))
-    print(__K2L_Str(list:scan(1, ____lambda_8)))
-    print(__K2L_Str(list:partition(____lambda_9)))
+    print(__K2L_Str(list:zipWithNext(____lambda_5)))
+    print(__K2L_Str(list:runningFold(0, ____lambda_6)))
+    print(__K2L_Str(list:scan(1, ____lambda_7)))
+    print(__K2L_Str(list:partition(____lambda_8)))
     local ____result = __K2L_Map.new()
     local ____items_1, ____n_1 = list:____array()
     for ____i_1 = 1, ____n_1 do
@@ -124,7 +127,7 @@ local function main()
     end
     print(__K2L_Str(____result_1))
     print(__K2L_Str(list:reversed()))
-    print(__K2L_Str(list:takeWhile(____lambda_10)))
+    print(__K2L_Str(list:takeWhile(____lambda_9)))
     local ____result_2
     local ____items_3, ____n_3 = list:____array()
     for ____i_3 = 1, ____n_3 do
@@ -135,7 +138,7 @@ local function main()
         end
     end
     print(__K2L_Str(____result_2))
-    print(list:last(____lambda_11))
+    print(list:last(____lambda_10))
     local ____sum = 0
     local ____items_4, ____n_4 = list:____array()
     for ____i_4 = 1, ____n_4 do

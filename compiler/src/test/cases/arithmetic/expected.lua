@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_Str = ____lualib.__K2L_Str
@@ -12,11 +13,11 @@ local function main()
     print(a - b)
     print(a * b)
     print(__K2L_IDiv(a, b))
-    print(__K2L_IRem(a, b))
+    print(b ~= 0 and __K2L_Fmod(a, b) + 0 or __K2L_IRem(a, b))
     print(__K2L_IDiv(-a, b))
-    print(__K2L_IRem(-a, b))
+    print(b ~= 0 and __K2L_Fmod(-a, b) + 0 or __K2L_IRem(-a, b))
     print(__K2L_IDiv(a, -b))
-    print(__K2L_IRem(a, -b))
+    print(-b ~= 0 and __K2L_Fmod(a, -b) + 0 or __K2L_IRem(a, -b))
     local x = 7.5
     local y = 2.0
     print(__K2L_Str(x + y))

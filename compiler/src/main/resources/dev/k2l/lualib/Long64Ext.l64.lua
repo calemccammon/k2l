@@ -401,12 +401,12 @@ function X.doubleFromBits(bits)
     return negative and -value or value
 end
 
--- BigInteger.toLong(): the low 64 bits of the value (wraps like the JVM); mag is little-endian base 10^7
+-- BigInteger.toLong(): the low 64 bits of the value (wraps like the JVM); mag is little-endian base ____limbBase
 function X.bigToLong(big)
     local acc = 0
-    local mag = big.mag
+    local mag, base = big.mag, big.____limbBase
     for i = #mag, 1, -1 do
-        acc = add(mul(acc, 10000000), mag[i])
+        acc = add(mul(acc, base), mag[i])
     end
     if big.sign < 0 then
         return neg(acc)

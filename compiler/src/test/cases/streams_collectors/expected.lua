@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Collectors = ____lualib.__K2L_Collectors
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
@@ -73,9 +73,27 @@ local ____lambda_21 = function(it) return it.age end
 local ____lambda_22 = function(it) return it.age end
 local ____lambda_23 = function(it) return it.age * 1.5 end
 local ____lambda_24 = function(it) return it.age / 10.0 end
-local ____lambda_25 = function(it) return it.age end
-local ____lambda_26 = function(it) return it.age end
-local ____lambda_27 = function(it) return it.age end
+local ____lambda_25 = function(____a, ____b)
+    local ____x, ____y = ____a.age, ____b.age
+    if ____x ~= ____y then
+        return ____x < ____y and -1 or 1
+    end
+    return 0
+end
+local ____lambda_26 = function(____a_1, ____b_1)
+    local ____x_1, ____y_1 = ____a_1.age, ____b_1.age
+    if ____x_1 ~= ____y_1 then
+        return ____x_1 < ____y_1 and -1 or 1
+    end
+    return 0
+end
+local ____lambda_27 = function(____a_2, ____b_2)
+    local ____x_2, ____y_2 = ____a_2.age, ____b_2.age
+    if ____x_2 ~= ____y_2 then
+        return ____x_2 < ____y_2 and -1 or 1
+    end
+    return 0
+end
 local ____lambda_28 = function(it) return it.age end
 local ____lambda_29 = function(it) return it.size end
 local ____lambda_30 = function(it) return it.name end
@@ -104,9 +122,9 @@ local function collectors(people)
     print(__K2L_Str(__K2L_NotNull(__K2L_Streams.ofCollection(people):collect(__K2L_Collectors.averagingInt(____lambda_22)))))
     print(__K2L_Str(__K2L_NotNull(__K2L_Streams.ofCollection(people):collect(__K2L_Collectors.averagingDouble(____lambda_23)))))
     print(__K2L_Str(__K2L_NotNull(__K2L_Streams.ofCollection(people):collect(__K2L_Collectors.summingDouble(____lambda_24)))))
-    print(__K2L_Str(__K2L_Streams.ofCollection(people):collect(__K2L_Collectors.maxBy(__K2L_CompareBy(____lambda_25)))))
-    print(__K2L_Streams.ofCollection(people):collect(__K2L_Collectors.minBy(__K2L_CompareBy(____lambda_26))):get().name)
-    print(__K2L_Str(__K2L_Streams.empty(__K2L_Stream):collect(__K2L_Collectors.maxBy(__K2L_CompareBy(____lambda_27)))))
+    print(__K2L_Str(__K2L_Streams.ofCollection(people):collect(__K2L_Collectors.maxBy(____lambda_25))))
+    print(__K2L_Streams.ofCollection(people):collect(__K2L_Collectors.minBy(____lambda_26)):get().name)
+    print(__K2L_Str(__K2L_Streams.empty(__K2L_Stream):collect(__K2L_Collectors.maxBy(____lambda_27))))
     print(__K2L_NotNull(__K2L_Streams.ofCollection(people):map(____lambda_28):collect(__K2L_Collectors.collectingAndThen(__K2L_Collectors.toList(), ____lambda_29))))
     print(__K2L_Str(__K2L_Streams.ofCollection(people):map(____lambda_30):collect(__K2L_Collectors.toCollection(____lambda_31))))
     print(__K2L_Str(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3, 4)):collect(____lambda_32, function(list, x)

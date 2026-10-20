@@ -599,7 +599,7 @@ function __K2L_BigDecimal:stripTrailingZeros()
         for i = zeroLimbs + 1, #mag do
             rest[#rest + 1] = mag[i]
         end
-        u, s = BI.____make(u.sign, rest), s - zeroLimbs * 7
+        u, s = BI.____make(u.sign, rest), s - zeroLimbs * BI.____limbDigits
     end
     return stripZeros(u, s, -2147483648)
 end

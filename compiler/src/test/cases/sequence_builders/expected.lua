@@ -3,6 +3,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -42,7 +43,7 @@ local function primes()
             local ____items, ____n = found:____array()
             for ____i = 1, ____n do
                 local it = ____items[____i]
-                if __K2L_IRem(n, it) == 0 then
+                if (it ~= 0 and __K2L_Fmod(n, it) + 0 or __K2L_IRem(n, it)) == 0 then
                     ____result = false
                     break
                 end

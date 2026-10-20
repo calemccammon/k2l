@@ -21,9 +21,18 @@ private fun FileTransformer.fieldHash(p: KtParameter, value: LuaExpr): LuaExpr =
     val type = p.returnType.withoutFlexibility
     when {
         type.isMarkedNullable -> lualibCall("Hash", value)
+
         type.isIntType || type.isShortType || type.isByteType -> value
+
         type.isBooleanType -> LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.And, value, LuaNumber("1231")), LuaNumber("1237"))
+
         type.isDoubleType && !target.hasIntegers -> LuaCall(lualibRef("Hash", "__K2L_DoubleHash"), listOf(value))
+
+        // a data class of the program (final) has its own hashCode
+        (type.expandedSymbol?.psi as? KtClass)?.let {
+            it.isData() && classes.isSource(it)
+        } == true -> LuaMethodCall(value, "hashCode", emptyList())
+
         else -> lualibCall("Hash", value)
     }
 }

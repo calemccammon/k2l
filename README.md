@@ -414,7 +414,13 @@ end
 
 `sequence { }` and `iterator { }` use the same mechanism: each iteration runs the block in a coroutine
 that yields an element at each `yield(x)`, so elements are computed on demand and infinite generators
-work. Sequences are lazy, and side effects in `map`/`filter` interleave exactly as on the JVM.
+work. Sequences are lazy, and side effects in `map`/`filter` interleave exactly as on the JVM. A
+`yieldAll` of another `sequence { }` or `iterator { }` does not resume that block's coroutine from inside the outer one (each
+nested resume is a C call, and Lua allows only about 200): it hands the inner block to the generator, which keeps a stack of the
+active coroutines and resumes the innermost directly, so a recursive tree walk
+(`fun walk(n): Sequence<T> = sequence { yield(n); for (c in n.children) yieldAll(walk(c)) }`) goes as deep as the data. As on the
+JVM, whose `hasNext()` calls that of the inner iterator, an exception such an inner block throws before its first element comes
+out of the `yieldAll`, and one thrown later reaches the consumer directly, past any `try` around the `yieldAll`.
 
 ### Contexts, interceptors and intrinsics
 
@@ -793,6 +799,9 @@ and checks them against the JVM (see the `stdlib_*` test cases):
   48-bit generator: seeded sequences, `shuffle(list, Random(seed))` and `nextGaussian` match the JVM).
   `Map.withDefault { }` (`getValue` uses the default, `get` does not) and `listIterator()` with `hasPrevious`/`set`/`add`/`remove`.
   Arrays have `contentHashCode`, `contentDeepHashCode` and `contentDeepEquals`.
+  Collections and boxed arrays convert to every primitive array (`toCharArray()`, `toIntArray()`, `toLongArray()`,
+  `toDoubleArray()`, `toFloatArray()`, `toBooleanArray()`, `toByteArray()`, `toShortArray()`), and back with `toList()`,
+  `toTypedArray()`, `asList()`, ...
 - `java.lang` statics: `Integer`/`Long` `bitCount`, `numberOfLeadingZeros`/`numberOfTrailingZeros`, `highestOneBit`/`lowestOneBit`,
   `rotateLeft`/`rotateRight`, `signum`, `max`/`min`, `Integer.reverse`, `toUnsignedString`, `toBinaryString`/`toHexString`/
   `toOctalString`, `Double.isNaN`/`isInfinite`/`valueOf`/`toString`, `Boolean.parseBoolean`, `Character.getNumericValue` (ASCII
@@ -848,8 +857,14 @@ resumed by a driver around `main` (`__K2L_DeepMain`) from the bottom of the C st
 20000 levels deep before it ends in a `StackOverflowError`. That needs the driver: the protected calls of `try` blocks inside a
 Kotlin coroutine or a `sequence { }` (which run in coroutines of their own), of top-level property initializers, of functions
 called from Lua through `@LuaExternal` exports and of programs built with `--source-map` stay plain `pcall`s, and so do all of them
-on Lua 5.1, which cannot yield across `pcall`: there a recursion through a `try` block at every level fails after roughly 190
-levels (LuaJIT goes much deeper by itself). Unchecked casts (`x as T` of an erased `T`, `x as List<String>`) check nothing, as on
+on Lua 5.1, where a recursion through a `try` block at every level fails with "C stack overflow" after roughly 190 levels (LuaJIT
+goes much deeper by itself). That is a limit of Lua 5.1 that k2l cannot work around: there every protected call (`pcall`, `xpcall`,
+and also `coroutine.resume`, since a coroutine starts from its resumer's count of nested C calls) counts against
+`LUAI_MAXCCALLS` (200), so running a `try` body in a coroutine instead fails at the same depth; only a yield unwinds the C stack,
+and 5.1 cannot yield across a `pcall`, nor across a `for ... in` iterator, a metamethod, a `table.sort` comparator or a `gsub`
+callback. Running every `try` body as a coroutine of a driver would need to know that no such boundary lies between the `try`
+and the driver, which Lua 5.1 has no way to test without a `pcall` (`debug.getinfo` cannot tell a metamethod frame or a call
+after a tail call from a plain call), and would make every `try` cost a coroutine (some eight times a `pcall`). Unchecked casts (`x as T` of an erased `T`, `x as List<String>`) check nothing, as on
 the JVM, whose erased generic code throws `ClassCastException` later, where Kotlin emits a CHECKCAST: k2l checks there the values
 of the two common sources, calls of functions and property getters of the program whose body casts to a type parameter and
 returns it (`val s: String = unsafeCast(5)`, `box.get().length`, `slots[0]` with an `operator fun get`), and reads through a local

@@ -12,6 +12,10 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
+local __K2L_IsLetter = ____lualib.__K2L_IsLetter
+local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
+local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListBuilderOf = ____lualib.__K2L_ListBuilderOf
@@ -155,19 +159,19 @@ function Lexer:next()
     end
     local c = ____value
     local start = self.pos
-    if c:match("^%d$") ~= nil then
+    if __K2L_IsDigit[c] == true then
         while true do
             local ____receiver_1 = self:peekChar()
-            if (____receiver_1 and (____receiver_1:match("^%d$") ~= nil or ____receiver_1 == ".")) ~= true then
+            if (____receiver_1 and (__K2L_IsDigit[____receiver_1] == true or ____receiver_1 == ".")) ~= true then
                 break
             end
             self.pos = self.pos + 1
         end
         return Token.new(TokenType.NUMBER, __K2L_Text.substring(self.src, start, self.pos), self.line)
-    elseif c:match("^%a$") ~= nil or c == "_" then
+    elseif __K2L_IsLetter[c] == true or c == "_" then
         while true do
             local ____receiver = self:peekChar()
-            if (____receiver and (____receiver:match("^%w$") ~= nil or ____receiver == "_")) ~= true then
+            if (____receiver and (__K2L_IsLetterOrDigit[____receiver] == true or ____receiver == "_")) ~= true then
                 break
             end
             self.pos = self.pos + 1
@@ -236,7 +240,7 @@ function Lexer:skipBlanks()
         if c == "\n" then
             self.line = self.line + 1
             self.pos = self.pos + 1
-        elseif c:match("^%s$") ~= nil then
+        elseif __K2L_IsWhitespace[c] == true then
             self.pos = self.pos + 1
         elseif c == "#" then
             while self:peekChar() ~= nil and self:peekChar() ~= "\n" do

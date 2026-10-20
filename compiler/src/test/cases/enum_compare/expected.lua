@@ -2,7 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
-local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
@@ -15,7 +15,6 @@ local __K2L_RunCatching = ____lualib.__K2L_RunCatching
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_SortedSet = ____lualib.__K2L_SortedSet
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 
 local Level = __K2L_Class("Level")
 
@@ -148,13 +147,23 @@ local function largest(xs)
 end
 
 local ____lambda_4 = function(it) return it.level end
-local ____lambda_5 = function(it) return it.level end
-local ____lambda_6 = function(it) return it.shape end
+local ____lambda_5 = function(____a, ____b)
+    local ____c = __K2L_CompareValues(____b.level, ____a.level)
+    if ____c ~= 0 then
+        return ____c
+    end
+    return __K2L_CompareValues(____a.shape, ____b.shape)
+end
+local ____lambda_6 = function(____a_1, ____b_1)
+    local ____c_1 = __K2L_CompareValues(____a_1.shape, ____b_1.shape)
+    if ____c_1 ~= 0 then
+        return ____c_1
+    end
+    return __K2L_CompareValues(____a_1.name, ____b_1.name)
+end
 local ____lambda_7 = function(it) return it.shape end
-local ____lambda_8 = function(it) return it.name end
-local ____lambda_9 = function(it) return it.shape end
-local ____lambda_10 = function(it) return it.level end
-local ____lambda_11 = function() return Shape:named("hexagon") end
+local ____lambda_8 = function(it) return it.level end
+local ____lambda_9 = function() return Shape:named("hexagon") end
 local function main()
     print(tostring(__K2L_Compare(Level.LOW, Level.HIGH) < 0) .. " " .. tostring(__K2L_Compare(Level.CRITICAL, Level.MEDIUM) <= 0) .. " " .. __K2L_Compare(Level.HIGH, Level.LOW) .. " " .. __K2L_Compare(Level.LOW, Level.LOW))
     print(__K2L_Str(__K2L_ReadOnlyListOf(Level.HIGH, Level.LOW, Level.CRITICAL, Level.MEDIUM):sorted()))
@@ -172,7 +181,7 @@ local function main()
         ____out[____count] = it.name
     end
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
-    local ____list_1 = tasks:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_5), ____lambda_6))
+    local ____list_1 = tasks:sortedWith(____lambda_5)
     local ____out_1 = {}
     local ____count_1 = 0
     local ____items_1, ____n_1 = ____list_1:____array()
@@ -182,7 +191,7 @@ local function main()
         ____out_1[____count_1] = it.name
     end
     print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
-    local ____list_2 = tasks:sortedWith(__K2L_CompareBy(____lambda_7, ____lambda_8))
+    local ____list_2 = tasks:sortedWith(____lambda_6)
     local ____out_2 = {}
     local ____count_2 = 0
     local ____items_2, ____n_2 = ____list_2:____array()
@@ -192,7 +201,7 @@ local function main()
         ____out_2[____count_2] = it.name
     end
     print(__K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
-    print(tasks:maxBy(____lambda_9).name .. " " .. __K2L_Str(tasks:minOf(____lambda_10)))
+    print(tasks:maxBy(____lambda_7).name .. " " .. __K2L_Str(tasks:minOf(____lambda_8)))
     local c = Level.MEDIUM
     print(tostring(__K2L_Compare(c, Level.LOW) > 0) .. " " .. __K2L_Compare(c, Level.CRITICAL))
     print(__K2L_Str(__K2L_SortedSet.new(__K2L_ReadOnlyListOf(Shape.SQUARE, Shape.TRIANGLE, Shape.CIRCLE))))
@@ -223,7 +232,7 @@ local function main()
     print(____arg .. " " .. ____arg_1 .. " " .. tostring(__K2L_Compare(____value, ____bound_4) >= 0 and __K2L_Compare(____value, ____bound_5) <= 0))
     print(tostring("b" >= "a" and "b" <= "c") .. " " .. tostring("d" >= "a" and "d" <= "c") .. " " .. tostring(2.5 >= 1.0 and 2.5 <= 3.0))
     print(__K2L_Str(Shape:byCorners(3)) .. " " .. __K2L_Str(Shape:byCorners(5)) .. " " .. __K2L_Str(Shape:all()) .. " " .. __K2L_Str(Shape:named("square")))
-    print(__K2L_Str(__K2L_RunCatching(____lambda_11):exceptionOrNull()))
+    print(__K2L_Str(__K2L_RunCatching(____lambda_9):exceptionOrNull()))
 end
 
 __K2L_DeepMain(main)

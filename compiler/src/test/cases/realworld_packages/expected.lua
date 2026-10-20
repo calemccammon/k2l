@@ -170,7 +170,7 @@ function Constraint.Exact:toString()
 end
 
 function Constraint.Exact:hashCode()
-    return __K2L_Hash(self.v)
+    return self.v:hashCode()
 end
 
 function Constraint.Exact:equals(other)

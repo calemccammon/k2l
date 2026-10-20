@@ -840,6 +840,31 @@ local function compileSequence(items)
     return f or function(st, i, k) return k(i) end
 end
 
+-- As many steps as match from i, at most max: their count, and the position after each count of steps (positions[c + 1])
+-- once a step took more than one byte, else nil (the position after c steps is i + c)
+local function greedySteps(step, max, st, i)
+    local positions
+    local count, pos = 0, i
+    while count < max do
+        local nextPos = step(st, pos)
+        if nextPos == nil then
+            break
+        end
+        count = count + 1
+        if positions == nil and nextPos ~= pos + 1 then
+            positions = {}
+            for c = 0, count - 1 do
+                positions[c + 1] = i + c
+            end
+        end
+        pos = nextPos
+        if positions ~= nil then
+            positions[count + 1] = pos
+        end
+    end
+    return count, positions
+end
+
 local function compileRep(node)
     local min, max, lazy = node.min, node.max, node.lazy
     local step = singleStep(node.node)
@@ -871,19 +896,9 @@ local function compileRep(node)
             end
         end
         return function(st, i, k)
-            local positions = {i}
-            local count, pos = 0, i
-            while count < max do
-                local nextPos = step(st, pos)
-                if nextPos == nil then
-                    break
-                end
-                count = count + 1
-                pos = nextPos
-                positions[count + 1] = pos
-            end
+            local count, positions = greedySteps(step, max, st, i)
             for c = count, min, -1 do
-                local r = k(positions[c + 1])
+                local r = k(positions and positions[c + 1] or i + c)
                 if r then
                     return r
                 end
@@ -983,7 +998,52 @@ function compile(node)
             end
         end
     elseif t == "group" then
-        local f, index = compile(node.node), node.index
+        local inner, index = node.node, node.index
+        -- a group of single steps, or of a greedy repetition of one, records its span without a continuation closure
+        local innerStep = singleStep(inner)
+        if innerStep == nil and inner.t == "seq" and #inner.items > 0 then
+            local steps = {}
+            for j, item in ipairs(inner.items) do
+                steps[j] = singleStep(item)
+                if steps[j] == nil then
+                    steps = nil
+                    break
+                end
+            end
+            innerStep = steps and stepRun(steps)
+        end
+        local repStep = inner.t == "rep" and not inner.lazy and singleStep(inner.node)
+        if innerStep ~= nil then
+            return function(st, i, k)
+                local i2 = innerStep(st, i)
+                if i2 then
+                    local oldStart, oldEnd = st.starts[index], st.ends[index]
+                    st.starts[index], st.ends[index] = i, i2
+                    local r = k(i2)
+                    if not r then
+                        st.starts[index], st.ends[index] = oldStart, oldEnd
+                    end
+                    return r
+                end
+            end
+        elseif repStep then
+            local min, max = inner.min, inner.max
+            return function(st, i, k)
+                local count, positions = greedySteps(repStep, max, st, i)
+                for c = count, min, -1 do
+                    local i2 = positions and positions[c + 1] or i + c
+                    local oldStart, oldEnd = st.starts[index], st.ends[index]
+                    st.starts[index], st.ends[index] = i, i2
+                    local r = k(i2)
+                    if r then
+                        return r
+                    end
+                    st.starts[index], st.ends[index] = oldStart, oldEnd
+                end
+                return nil
+            end
+        end
+        local f = compile(inner)
         return function(st, i, k)
             return f(st, i, function(i2)
                 local oldStart, oldEnd = st.starts[index], st.ends[index]
@@ -1096,42 +1156,80 @@ function __K2L_MatchGroups:getNamed(name)
     return self[index + 1]
 end
 
+-- The match keeps the byte spans of its groups (the search state is reused); range, groupValues, groups and
+-- destructured are made from them when first read (see lazyMembers below).
 function __K2L_MatchResult:____init(regex, input, first, after, st, groupCount)
     self.____regex, self.____input, self.____after = regex, input, after
     self.____empty = after == first
     self.____first = first
-    local norm = __K2L_Regex.____norm or tostring
-    self.value = norm(input:sub(first, after - 1))
-    -- Indices are bytes, or UTF-16 units under --strings utf16 (see Utf16.lua)
-    local units = __K2L_Regex.____units
-    local function range(from, to)
-        if units then
-            return units.toUnit(input, from - 1), units.toUnit(input, to) - 1
-        end
-        return from - 1, to - 1
-    end
-    self.range = __K2L_IntRange.new(range(first, after - 1))
-    local values, groups = {self.value}, {__K2L_MatchGroup.new(self.value, range(first, after - 1))}
+    self.value = (__K2L_Regex.____norm or tostring)(input:sub(first, after - 1))
+    local spans, starts, ends = {}, st.starts, st.ends
     for g = 1, groupCount do
-        local s, e = st.starts[g], st.ends[g]
+        spans[2 * g - 1], spans[2 * g] = starts[g], ends[g]
+    end
+    self.____spans, self.____groupCount = spans, groupCount
+end
+
+-- Indices are bytes, or UTF-16 units under --strings utf16 (see Utf16.lua): the range of bytes [from, to] (1-based)
+local function matchRange(input, from, to)
+    local units = __K2L_Regex.____units
+    if units then
+        return units.toUnit(input, from - 1), units.toUnit(input, to) - 1
+    end
+    return from - 1, to - 1
+end
+
+local lazyMembers = {}
+
+function lazyMembers.range(self)
+    return __K2L_IntRange.new(matchRange(self.____input, self.____first, self.____after - 1))
+end
+
+function lazyMembers.groupValues(self)
+    local norm = __K2L_Regex.____norm or tostring
+    local input, spans, groupCount = self.____input, self.____spans, self.____groupCount
+    local values = {self.value}
+    for g = 1, groupCount do
+        local s = spans[2 * g - 1]
+        values[g + 1] = s ~= nil and norm(input:sub(s, spans[2 * g] - 1)) or ""
+    end
+    values.size = groupCount + 1
+    return setmetatable(values, __K2L_List)
+end
+
+function lazyMembers.groups(self)
+    local input, spans, groupCount = self.____input, self.____spans, self.____groupCount
+    local values = self.groupValues
+    local groups = {__K2L_MatchGroup.new(self.value, matchRange(input, self.____first, self.____after - 1))}
+    for g = 1, groupCount do
+        local s = spans[2 * g - 1]
         if s ~= nil then
-            values[g + 1] = norm(input:sub(s, e - 1))
-            groups[g + 1] = __K2L_MatchGroup.new(values[g + 1], range(s, e - 1))
-        else
-            values[g + 1] = ""
-            groups[g + 1] = nil
+            groups[g + 1] = __K2L_MatchGroup.new(values[g + 1], matchRange(input, s, spans[2 * g] - 1))
         end
     end
-    values.size, groups.size = groupCount + 1, groupCount + 1
-    self.groupValues = setmetatable(values, __K2L_List)
-    groups.names = regex.____names
-    self.groups = setmetatable(groups, __K2L_MatchGroups)
+    groups.size = groupCount + 1
+    groups.names = self.____regex.____names
+    return setmetatable(groups, __K2L_MatchGroups)
+end
+
+function lazyMembers.destructured(self)
+    local values, groupCount = self.groupValues, self.____groupCount
     local rest = {}
     for g = 1, groupCount do
         rest[g] = values[g + 1]
     end
     rest.size = groupCount
-    self.destructured = setmetatable(rest, __K2L_List)
+    return setmetatable(rest, __K2L_List)
+end
+
+function __K2L_MatchResult.__index(self, key)
+    local make = lazyMembers[key]
+    if make ~= nil then
+        local value = make(self)
+        rawset(self, key, value)
+        return value
+    end
+    return __K2L_MatchResult[key]
 end
 
 function __K2L_MatchResult:next()

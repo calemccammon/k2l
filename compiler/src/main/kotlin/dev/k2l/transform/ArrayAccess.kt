@@ -1,15 +1,30 @@
 package dev.k2l.transform
 
 import dev.k2l.codegen.*
+import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.psi.KtClassOrObject
 
 /** The primitive arrays whose elements are never nil or false (not BooleanArray; the unsigned ones are value classes). */
 private val PRIMITIVE_ARRAYS = setOf("IntArray", "LongArray", "DoubleArray", "FloatArray", "CharArray", "ShortArray", "ByteArray")
     .map { "kotlin/$it" }.toSet()
 
+/**
+ * An array whose elements are never nil or false: a primitive array of [PRIMITIVE_ARRAYS], or an `Array<T>` of a non-null
+ * element type that cannot hold a Boolean (a number, Char, String, array, or class of the program).
+ */
 internal fun FileTransformer.isPrimitiveArray(type: KaType?): Boolean = with(session) {
-    type != null && !type.isMarkedNullable && type.expandedSymbol?.classId?.asString() in PRIMITIVE_ARRAYS
+    if (type == null || type.isMarkedNullable) return false
+    val id = type.expandedSymbol?.classId?.asString()
+    if (id in PRIMITIVE_ARRAYS) return true
+    val element = type.elementType?.takeIf { id == "kotlin/Array" && !it.isMarkedNullable } ?: return false
+    val elementId = (element as? KaClassType)?.expandedSymbol?.classId?.asString() ?: return false
+    elementId in PLAIN_ELEMENTS || elementId in PRIMITIVE_ARRAYS || elementId == "kotlin/Array" ||
+        (element.expandedSymbol?.psi as? KtClassOrObject)?.let { classes.isSource(it) && !it.hasModifier(KtTokens.VALUE_KEYWORD) } == true
 }
+
+private val PLAIN_ELEMENTS = setOf("Int", "Long", "Double", "Float", "Char", "Short", "Byte", "String").map { "kotlin/$it" }.toSet()
 
 /**
  * Lua code that reads values without side effects or failing: names, literals, field reads and arithmetic of those, and
@@ -24,7 +39,8 @@ internal fun isPureRead(e: LuaExpr, calls: Boolean = false): Boolean = when (e) 
     else -> false
 }
 
-private val PURE_OPERATORS = setOf(LuaBinOp.Add, LuaBinOp.Sub, LuaBinOp.Mul, LuaBinOp.BAnd)
+private val PURE_OPERATORS =
+    setOf(LuaBinOp.Add, LuaBinOp.Sub, LuaBinOp.Mul, LuaBinOp.BAnd, LuaBinOp.BOr, LuaBinOp.BXor, LuaBinOp.Shl, LuaBinOp.Shr)
 
 /** Functions without side effects that generated code wraps Int arithmetic in (`--int-overflow wrap`). */
 private val PURE_FUNCTIONS = setOf(LuaName("__K2L_ToInt32"), luaPath("bit", "tobit"))

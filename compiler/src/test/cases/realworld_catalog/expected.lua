@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
@@ -28,7 +28,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
-local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Triple = ____lualib.__K2L_Triple
 
@@ -328,7 +327,6 @@ end
 
 local ____lambda_5 = function(it) return __K2L_Pair.new(it.member, it.isbn) end
 local ____lambda_6 = function(____p1, ____p2) return ____p1 + ____p2 end
-local ____lambda_7 = function(it) return it.value end
 function Library:recommend(isbn)
     local ____list_7 = self.loans
     local ____out_4 = {}
@@ -372,7 +370,13 @@ function Library:recommend(isbn)
             break
         end
     end
-    local ____list_11 = counts:getEntries():sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_7), function(it) return self.books:getValue(it.key).title end))
+    local ____list_11 = counts:getEntries():sortedWith(function(____a, ____b)
+        local ____x_1, ____y_1 = ____b.value, ____a.value
+        if ____x_1 ~= ____y_1 then
+            return ____x_1 < ____y_1 and -1 or 1
+        end
+        return __K2L_CompareValues(self.books:getValue(____a.key).title, self.books:getValue(____b.key).title)
+    end)
     local ____out_7 = {}
     local ____count_7 = 0
     local ____items_11, ____n_11 = ____list_11:____array()
@@ -430,7 +434,7 @@ function Library:authors()
     end)
 end
 
-local ____lambda_8 = function(it) return it > 0 end
+local ____lambda_7 = function(it) return it > 0 end
 function Library:genres()
     local ____values = Genre.____values
     local ____result_5 = __K2L_Map.new()
@@ -444,10 +448,10 @@ function Library:genres()
         local ____value_4 = ____result_6
         ____result_5:put(it, ____value_4)
     end
-    return ____result_5:filterValues(____lambda_8)
+    return ____result_5:filterValues(____lambda_7)
 end
 
-local ____lambda_9 = function(it) return it.id end
+local ____lambda_8 = function(it) return it.id end
 function Library:export()
     local ____list_14 = self.books:getValues()
     local ____out_10 = {}
@@ -475,7 +479,7 @@ function Library:export()
         ____out_10[____count_10] = ____result_7
     end
     local ____arg_5 = __K2L_Pair.new("books", __K2L_ListWrap(____out_10, ____count_10))
-    local ____list_16 = self.members:getValues():sortedBy(____lambda_9, true)
+    local ____list_16 = self.members:getValues():sortedBy(____lambda_8, true)
     local ____out_12 = {}
     local ____count_12 = 0
     local ____items_17, ____n_17 = ____list_16:____array()

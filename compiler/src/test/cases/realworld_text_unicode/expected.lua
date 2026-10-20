@@ -1,5 +1,5 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -13,7 +13,6 @@ local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 local __K2L_Utf16 = ____lualib.__K2L_Utf16
 local __K2L_Utf16Case = ____lualib.__K2L_Utf16Case
 
@@ -92,11 +91,16 @@ local ____lambda_8 = function(it)
 end
 local ____lambda_9 = function(it) return __K2L_Utf16Case.lowercase(it.value) end
 local ____lambda_10 = function(it) return it end
-local ____lambda_11 = function(it) return it.value end
-local ____lambda_12 = function(it) return it.key end
-local ____lambda_13 = function(it) return it.key .. "=" .. it.value end
-local ____lambda_14 = function(it) return __K2L_Utf16.code(it) > 127 end
-local ____lambda_15 = function(it) return __K2L_Utf16.len(it) end
+local ____lambda_11 = function(____a, ____b)
+    local ____x_1, ____y_1 = ____b.value, ____a.value
+    if ____x_1 ~= ____y_1 then
+        return ____x_1 < ____y_1 and -1 or 1
+    end
+    return __K2L_CompareValues(____a.key, ____b.key)
+end
+local ____lambda_12 = function(it) return it.key .. "=" .. it.value end
+local ____lambda_13 = function(it) return __K2L_Utf16.code(it) > 127 end
+local ____lambda_14 = function(it) return __K2L_Utf16.len(it) end
 local function main()
     local titles = __K2L_ReadOnlyListOf("Crème brûlée à la française", "Straße & Größe: Ärger über Öl", "Łódź, Kraków — Gdańsk!", "naïve café déjà vu 2024", "Smörgåsbord för 4 personer", "東京タワー 2024 🗼", "Ελληνικά κείμενα", "  Ünïcödé   spaces\t\ttabs  ")
     local ____mod = titles.____modCount
@@ -155,15 +159,15 @@ local function main()
     print(__K2L_Utf16.out(__K2L_Str(sb)))
     local text = __K2L_Text.trimIndent("\n        Le cœur a ses raisons que la raison ne connaît point. Où est la cathédrale? À côté du café!\n        L'été, l'été: déjà fini; ÉTÉ, Été — été.\n    ")
     local words = __K2L_Sequence.new(__K2L_Regex.new("[\\p{L}']+"):findAllFactory(text)):map(____lambda_9):toList()
-    local freq = words:groupingBy(____lambda_10):eachCount():getEntries():sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_11), ____lambda_12))
-    print(__K2L_Utf16.out(__K2L_Utf16.norm(freq:take(6):joinToString(nil, nil, nil, nil, nil, ____lambda_13))))
+    local freq = words:groupingBy(____lambda_10):eachCount():getEntries():sortedWith(____lambda_11)
+    print(__K2L_Utf16.out(__K2L_Utf16.norm(freq:take(6):joinToString(nil, nil, nil, nil, nil, ____lambda_12))))
     local ____out_1 = {}
     local ____count_1 = 0
     local ____items_2, ____n_2 = words:____array()
     for ____i_4 = 1, ____n_2 do
         local w = ____items_2[____i_4]
         local ____result_1
-        ____result_1 = __K2L_Text.toList(w):any(____lambda_14)
+        ____result_1 = __K2L_Text.toList(w):any(____lambda_13)
         if ____result_1 then
             ____count_1 = ____count_1 + 1
             ____out_1[____count_1] = w
@@ -178,7 +182,7 @@ local function main()
         ____count_2 = ____count_2 + 1
         ____out_2[____count_2] = __K2L_Utf16.len(it)
     end
-    print(__K2L_Utf16.out(tostring(__K2L_ListWrap(____out_2, ____count_2):sum()) .. " letters in " .. words.size .. " words; longest: " .. words:maxBy(____lambda_15)))
+    print(__K2L_Utf16.out(tostring(__K2L_ListWrap(____out_2, ____count_2):sum()) .. " letters in " .. words.size .. " words; longest: " .. words:maxBy(____lambda_14)))
     print(__K2L_Utf16.out(tostring(__K2L_Num.signInt(__K2L_Text.compare("éa", "ez"))) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf("zebra", "Äpfel", "apple", "École", "eclair"):sorted()) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf("zebra", "Äpfel", "apple", "École", "eclair"):sortedWith(__K2L_Text.caseInsensitiveOrder))))
     print(__K2L_Utf16.out(tostring(__K2L_Utf16Case.equalsIgnoreCase("Ǆemal", "ǆemal")) .. " " .. tostring(__K2L_Utf16Case.equalsIgnoreCase("STRASSE", "straße")) .. " " .. tostring(__K2L_StringContains(__K2L_Utf16Case.fold("ÀB"), __K2L_Utf16Case.fold("àb"))) .. " " .. __K2L_StringIndexOf("Größe", "ö") .. " " .. __K2L_Text.padStart("Größe", 8, "·") .. " " .. __K2L_Text.padEnd("x", 3, "é") .. "|"))
 end

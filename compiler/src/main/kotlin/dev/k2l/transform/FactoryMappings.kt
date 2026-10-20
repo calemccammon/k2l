@@ -89,14 +89,14 @@ internal object FactoryMappings {
                 if (args.size == 2 && (site.argTypes[0] as? KaFunctionType)?.parameterTypes?.size != 1) {
                     call("__K2L_CompareByWith", args[0], args[1])
                 } else {
-                    call("__K2L_CompareBy", *args)
+                    site.fusedComparator(false, null) ?: call("__K2L_CompareBy", *args)
                 }
 
-            "kotlin/comparisons/compareByDescending" -> call("__K2L_CompareByDescending", *args)
+            "kotlin/comparisons/compareByDescending" -> site.fusedComparator(true, null) ?: call("__K2L_CompareByDescending", *args)
 
-            "kotlin/comparisons/thenBy" -> call("__K2L_ThenBy", site.self, site.arg(0))
+            "kotlin/comparisons/thenBy" -> site.thenBy(false) ?: call("__K2L_ThenBy", site.self, site.arg(0))
 
-            "kotlin/comparisons/thenByDescending" -> call("__K2L_ThenByDescending", site.self, site.arg(0))
+            "kotlin/comparisons/thenByDescending" -> site.thenBy(true) ?: call("__K2L_ThenByDescending", site.self, site.arg(0))
 
             "kotlin/comparisons/then", "kotlin/comparisons/thenComparator" -> call("__K2L_Then", site.self, site.arg(0))
 

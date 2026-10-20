@@ -16,7 +16,7 @@ local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListBase = ____lualib.__K2L_ListBase
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapBase = ____lualib.__K2L_MapBase
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -169,7 +169,13 @@ function Matrix:getSize()
 end
 
 function Matrix:get(index)
-    return __K2L_ListOfSize(self.cols, function(it) return index * self.cols + it end)
+    local ____size = self.cols
+    local ____out = {}
+    for ____i = 1, ____size do
+        local it = ____i - 1
+        ____out[____i] = index * self.cols + it
+    end
+    return __K2L_ListWrap(____out, ____size)
 end
 
 function Matrix:toString()
@@ -287,8 +293,8 @@ local function interfaces()
     print(w:sum() .. " " .. __K2L_Str(w:reversed()) .. " " .. w:last() .. " " .. tostring(w:containsAll(__K2L_ReadOnlyListOf(6, 8))) .. " " .. w:listIteratorAt(1):next() .. " " .. w:joinToString())
     local t = 0
     local ____items, ____n = w:____array()
-    for ____i = 1, ____n do
-        local x = ____items[____i]
+    for ____i_1 = 1, ____n do
+        local x = ____items[____i_1]
         t = t + x
     end
     print("loop " .. t .. " " .. tostring(__K2L_Str(w) == "[6, 7, 8]") .. " " .. tostring(__K2L_Hash(w) == __K2L_Hash(__K2L_ReadOnlyListOf(6, 7, 8))))
@@ -297,8 +303,8 @@ local function interfaces()
     local c = Constants.new()
     print(tostring(__K2L_StringStartsWith(__K2L_Str(c), "Constants@")) .. " " .. __K2L_Str(c:get("pi")) .. " " .. __K2L_Str(c:getKeys()) .. " " .. __K2L_Str(c:getValues()) .. " " .. c:getSize() .. " " .. tostring(c:containsKey("e")) .. " " .. __K2L_Str(c:map(____lambda_3)) .. " " .. tostring(c:equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("pi", 3.14), __K2L_Pair.new("e", 2.72)))))
     local ____keys, ____values, ____n_1 = c:____arrays()
-    for ____i_1 = 1, ____n_1 do
-        local k, v = ____keys[____i_1], ____values[____i_1]
+    for ____i_2 = 1, ____n_1 do
+        local k, v = ____keys[____i_2], ____values[____i_2]
         io.write(k .. "=" .. __K2L_Str(v) .. ";")
     end
     print()
@@ -326,8 +332,8 @@ local function subclasses()
     local sized = Sized.new()
     local unsized = Unsized.new()
     local ____list = __K2L_ReadOnlyListOf(40, 3, 17, 64, 1)
-    for ____i_2 = 1, ____list.size do
-        local k = ____list[____i_2]
+    for ____i_3 = 1, ____list.size do
+        local k = ____list[____i_3]
         sized:set(k, "v" .. k)
         unsized:set(k, "v" .. k)
     end

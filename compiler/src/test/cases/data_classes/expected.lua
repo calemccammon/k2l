@@ -66,7 +66,7 @@ function Wrapper:toString()
 end
 
 function Wrapper:hashCode()
-    return __K2L_Hash(self.inner)
+    return self.inner:hashCode()
 end
 
 function Wrapper:equals(other)

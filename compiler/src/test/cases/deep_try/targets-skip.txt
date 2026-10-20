@@ -1,1 +1,1 @@
-5.1: Lua 5.1 cannot yield across pcall, so a recursion through try blocks still ends in C stack overflow after some 190 levels
+5.1: Lua 5.1 cannot yield across pcall, and its coroutine.resume counts against LUAI_MAXCCALLS as pcall does, so a recursion through try blocks still ends in C stack overflow after some 190 levels (see the README's "Other semantic differences")

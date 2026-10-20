@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -22,6 +22,7 @@ local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
@@ -32,7 +33,6 @@ local __K2L_StringToDouble = ____lualib.__K2L_StringToDouble
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_StringTrim = ____lualib.__K2L_StringTrim
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Triple = ____lualib.__K2L_Triple
 
@@ -125,7 +125,7 @@ local function parseCsvLine(line)
     local i = 0
     while i < #line do
         local c = i >= 0 and i < #line and line:sub(i + 1, i + 1) or __K2L_IndexError(i, #line, "string")
-        if inQuotes and c == "\"" and i + 1 < #line and (i + 1 >= 0 and i + 1 < #line and line:sub(i + 1 + 1, i + 1 + 1) or __K2L_IndexError(i + 1, #line, "string")) == "\"" then
+        if inQuotes and c == "\"" and i + 1 < #line and (i + 1 >= 0 and __K2L_StrByte(line, i + 1 + 1) or __K2L_IndexError(i + 1, #line, "string")) == 34 then
             current:append("\"")
             i = i + 1
         elseif c == "\"" then
@@ -158,7 +158,7 @@ function RowResult.Ok:toString()
 end
 
 function RowResult.Ok:hashCode()
-    return __K2L_Hash(self.sale)
+    return self.sale:hashCode()
 end
 
 function RowResult.Ok:equals(other)
@@ -296,21 +296,26 @@ end
 
 local ____lambda_2 = function(it) return getmetatable(it) == RowResult.Ok end
 local ____lambda_3 = function(x) return getmetatable(x) == RowResult.Bad end
-local ____lambda_4 = function(it) return it.third end
-local ____lambda_5 = function(it) return it.first end
-local ____lambda_6 = function(it) return it.region end
-local ____lambda_7 = function(acc, s)
+local ____lambda_4 = function(____a, ____b)
+    local ____c = __K2L_CompareValues(____b.third, ____a.third)
+    if ____c ~= 0 then
+        return ____c
+    end
+    return __K2L_CompareValues(____a.first, ____b.first)
+end
+local ____lambda_5 = function(it) return it.region end
+local ____lambda_6 = function(acc, s)
     return acc:plus(__K2L_Pair.new(s:getMonth(), (acc:get(s:getMonth()) or 0.0) + s:getRevenue()))
 end
-local ____lambda_8 = function(receiver) return receiver.region end
-local ____lambda_9 = function(it) return it.value end
-local ____lambda_10 = function(receiver) return receiver:getRevenue() end
-local ____lambda_11 = function(it) return it:getRevenue() end
-local ____lambda_12 = function(it) return it.first end
-local ____lambda_13 = function(it) return __K2L_Pair.new(it.rep, it.region) end
-local ____lambda_14 = function(it) return it.value.id end
-local ____lambda_15 = function(it) return it.date end
-local ____lambda_16 = function(acc, s) return acc + s.units end
+local ____lambda_7 = function(receiver) return receiver.region end
+local ____lambda_8 = function(it) return it.value end
+local ____lambda_9 = function(receiver) return receiver:getRevenue() end
+local ____lambda_10 = function(it) return it:getRevenue() end
+local ____lambda_11 = function(it) return it.first end
+local ____lambda_12 = function(it) return __K2L_Pair.new(it.rep, it.region) end
+local ____lambda_13 = function(it) return it.value.id end
+local ____lambda_14 = function(it) return it.date end
+local ____lambda_15 = function(acc, s) return acc + s.units end
 local function main()
     local ____list = __K2L_StringLines(RAW)
     local ____out_1 = {}
@@ -387,7 +392,7 @@ local function main()
             ____sum_2 = ____sum_2 + it:getRevenue()
         end
         return __K2L_Triple.new(rep, ____sum_1, ____sum_2)
-    end):sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_4), ____lambda_5))
+    end):sortedWith(____lambda_4)
     local ____arg = __K2L_ReadOnlyListOf("Rep", "Units", "Revenue")
     local ____out_4 = {}
     local ____count_4 = 0
@@ -413,7 +418,7 @@ local function main()
         ____out_5[____count_5] = it:getMonth()
     end
     local months = __K2L_ListWrap(____out_5, ____count_5):distinct():sorted()
-    local pivot = sales:groupingBy(____lambda_6):fold(__K2L_ReadOnlyMapOf(), ____lambda_7)
+    local pivot = sales:groupingBy(____lambda_5):fold(__K2L_ReadOnlyMapOf(), ____lambda_6)
     local ____values_1 = Region.____values
     local ____out_6 = {}
     local ____count_6 = 0
@@ -454,7 +459,7 @@ local function main()
     local pivotRows = __K2L_ListWrap(____out_7, ____count_7)
     print(____table(__K2L_SingletonListOf("Region"):plusAll(months), pivotRows, __K2L_IntRange.new(1, months.size):toSet()))
     print("\nTax owed:")
-    local ____list_4 = sales:groupBy(__K2L_PropertyRef.new("region", "region@702", ____lambda_8)):mapValues(function(____destructured_2)
+    local ____list_4 = sales:groupBy(__K2L_PropertyRef.new("region", "region@702", ____lambda_7)):mapValues(function(____destructured_2)
         local region, list = ____destructured_2.key, ____destructured_2.value
         local ____sum_3 = 0.0
         local ____items_12, ____n_12 = list:____array()
@@ -463,7 +468,7 @@ local function main()
             ____sum_3 = ____sum_3 + it:getRevenue()
         end
         return ____sum_3 * region.taxRate
-    end):getEntries():sortedByDescending(____lambda_9, true)
+    end):getEntries():sortedByDescending(____lambda_8, true)
     local ____mod = ____list_4.____modCount
     for ____i_16 = 1, ____list_4.size do
         local ____it_2 = ____list_4[____i_16]
@@ -486,10 +491,10 @@ local function main()
     local prices = __K2L_ListWrap(____out_9, ____count_9)
     local st = stats(prices)
     print("\nUnit price stats: n=" .. st.count .. " mean=" .. __K2L_StringFormat("%.3f", st.mean) .. " median=" .. __K2L_Str(st.median) .. " sd=" .. __K2L_StringFormat("%.4f", st.stdDev) .. " range=" .. __K2L_Str(st.min) .. ".." .. __K2L_Str(st.max))
-    local revenues = sales:map(__K2L_PropertyRef.new("revenue", "/Sale.revenue", ____lambda_10))
+    local revenues = sales:map(__K2L_PropertyRef.new("revenue", "/Sale.revenue", ____lambda_9))
     local ____value_4 = stats(revenues)
     print("Revenue stats: " .. __K2L_StringFormat("mean=%.2f median=%.2f max=%.2f", ____value_4.mean, ____value_4.median, ____value_4.max))
-    local best = sales:maxBy(____lambda_11)
+    local best = sales:maxBy(____lambda_10)
     local id, date, rep = best.id, best.date, best.rep
     print("\nBest sale: #" .. id .. " on " .. date .. " by " .. rep .. " (" .. money(best:getRevenue()) .. ")")
     local ____result_8 = __K2L_Map.new()
@@ -515,7 +520,7 @@ local function main()
         return ____sum_4
     end)
     local totalRevenue = productShare:getValues():sum(0.0)
-    local ____list_5 = productShare:toList():sortedBy(____lambda_12, true)
+    local ____list_5 = productShare:toList():sortedBy(____lambda_11, true)
     local ____mod_1 = ____list_5.____modCount
     for ____i_20 = 1, ____list_5.size do
         local ____it_3 = ____list_5[____i_20]
@@ -529,7 +534,7 @@ local function main()
             break
         end
     end
-    local ____list_6 = sales:associate(____lambda_13):getEntries()
+    local ____list_6 = sales:associate(____lambda_12):getEntries()
     local ____result_9 = __K2L_Map.new()
     local ____items_16, ____n_16 = ____list_6:____array()
     for ____i_21 = 1, ____n_16 do
@@ -551,9 +556,9 @@ local function main()
         local ____value_7 = it:getMonth()
         ____result_10:put(____value_7, it)
     end
-    local firstSaleOfMonth = ____result_10:mapValues(____lambda_14)
+    local firstSaleOfMonth = ____result_10:mapValues(____lambda_13)
     print("last sale id per month: " .. __K2L_Str(firstSaleOfMonth))
-    print("running units: " .. __K2L_Str(sales:sortedBy(____lambda_15, true):runningFold(0, ____lambda_16):drop(1)))
+    print("running units: " .. __K2L_Str(sales:sortedBy(____lambda_14, true):runningFold(0, ____lambda_15):drop(1)))
     local ____source = sales:first()
     local discounted = Sale.new(____source.id, ____source.date, ____source.rep, ____source.region, ____source.product, 100, 2.0)
     print("copy: " .. __K2L_Str(discounted) .. " revenue=" .. __K2L_Str(discounted:getRevenue()))

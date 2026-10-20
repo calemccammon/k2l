@@ -2,7 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Deque = ____lualib.__K2L_Deque
@@ -585,9 +585,15 @@ end
 ByLength = __K2L_Class("ByLength", __K2L_SortedSet)
 __K2L_ClassInfo(ByLength, "ByLength", "ByLength", "class")
 
-local ____lambda_7 = function(it) return #it end
+local ____lambda_7 = function(____a, ____b)
+    local ____x, ____y = #____a, #____b
+    if ____x ~= ____y then
+        return ____x < ____y and -1 or 1
+    end
+    return 0
+end
 function ByLength:____init()
-    __K2L_SortedSet.____init(self, __K2L_CompareBy(____lambda_7))
+    __K2L_SortedSet.____init(self, ____lambda_7)
 end
 
 MaxFirst = __K2L_Class("MaxFirst", __K2L_PriorityQueue)

@@ -198,9 +198,27 @@ internal fun FileTransformer.inlineValue(lambdaExpr: KtExpression, args: List<Lu
     if (single != null && isInlinableExpression(lambdaExpr, single, args)) {
         // `x.let { it + 1 }` becomes `x + 1`.
         var result: LuaExpr = LuaNil
-        inlineLambda(lambdaExpr, args, receiver) { listOf(LuaCallStmt(it.also { v -> result = v })) }
-        buffer.removeLastOrNull()
-        return result
+        var marker: LuaStmt? = null
+        val stmts =
+            collect {
+                inlineLambda(lambdaExpr, args, receiver) {
+                    listOf(
+                        LuaCallStmt(it.also { v -> result = v }).also { m ->
+                            marker =
+                                m
+                        },
+                    )
+                }
+            }
+        if (stmts.lastOrNull() === marker) {
+            emitAll(stmts.dropLast(1))
+            return result
+        }
+        // the value needed statements of its own (a cached operand) in a block: assign it there
+        val name = ctx.temp("result")
+        emit(LuaLocal(listOf(name)))
+        emitAll(stmts.mapStatements { s, _ -> if (s === marker) assign(name, result) else s })
+        return LuaName(name)
     }
     val name = ctx.temp("result")
     emit(LuaLocal(listOf(name)))

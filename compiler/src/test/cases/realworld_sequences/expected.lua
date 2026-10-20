@@ -5,6 +5,7 @@ local __K2L_CheckStep = ____lualib.__K2L_CheckStep
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IRem = ____lualib.__K2L_IRem
@@ -54,7 +55,7 @@ local primes = __K2L_SequenceBuilder(function(self)
         local ____items, ____n = ____list:____array()
         for ____i = 1, ____n do
             local it = ____items[____i]
-            if __K2L_IRem(candidate, it) == 0 then
+            if (it ~= 0 and __K2L_Fmod(candidate, it) + 0 or __K2L_IRem(candidate, it)) == 0 then
                 ____result = false
                 break
             end
@@ -324,7 +325,9 @@ local function main()
     end)
     local firstWithDivisors = triangular:first(function(____destructured_5)
         local t = ____destructured_5.second
-        return __K2L_IntRange.new(1, t):count(function(it) return __K2L_IRem(t, it) == 0 end) > 20
+        return __K2L_IntRange.new(1, t):count(function(it)
+            return (it ~= 0 and __K2L_Fmod(t, it) + 0 or __K2L_IRem(t, it)) == 0
+        end) > 20
     end)
     print("first triangular number with >20 divisors: " .. firstWithDivisors.second .. " (n=" .. firstWithDivisors.first .. ")")
     local evens = __K2L_GenerateSequence(0, ____lambda_16)

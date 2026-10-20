@@ -15,10 +15,31 @@ for n = 0, 64 do
     POW2[n] = 2 ^ n
 end
 
+local AND8 = __K2L_AND8
+
+-- (and, or and xor do the steps of __K2L_UAnd32 in place: a call less per operation)
 local function __K2L_BAnd(a, b)
     a, b = a % 4294967296, b % 4294967296
     local m = MASKS[b]
-    local r = m ~= nil and a % m or __K2L_UAnd32(a, b)
+    local r
+    if m ~= nil then
+        r = a % m
+    else
+        local x, y = a % 256, b % 256
+        r = AND8[x * 256 + y + 1]
+        local p, q = (a - x) / 256, (b - y) / 256
+        if p ~= 0 and q ~= 0 then
+            x, y = p % 256, q % 256
+            r = r + AND8[x * 256 + y + 1] * 256
+            p, q = (p - x) / 256, (q - y) / 256
+            if p ~= 0 and q ~= 0 then
+                x, y = p % 256, q % 256
+                r = r + AND8[x * 256 + y + 1] * 65536
+                p, q = (p - x) / 256, (q - y) / 256
+                r = r + AND8[p * 256 + q + 1] * 16777216
+            end
+        end
+    end
     if r >= 2147483648 then
         return r - 4294967296
     end
@@ -27,7 +48,22 @@ end
 
 local function __K2L_BOr(a, b)
     a, b = a % 4294967296, b % 4294967296
-    local r = a + b - __K2L_UAnd32(a, b)
+    -- the and of a and b, as __K2L_UAnd32 computes it
+    local x, y = a % 256, b % 256
+    local n = AND8[x * 256 + y + 1]
+    local p, q = (a - x) / 256, (b - y) / 256
+    if p ~= 0 and q ~= 0 then
+        x, y = p % 256, q % 256
+        n = n + AND8[x * 256 + y + 1] * 256
+        p, q = (p - x) / 256, (q - y) / 256
+        if p ~= 0 and q ~= 0 then
+            x, y = p % 256, q % 256
+            n = n + AND8[x * 256 + y + 1] * 65536
+            p, q = (p - x) / 256, (q - y) / 256
+            n = n + AND8[p * 256 + q + 1] * 16777216
+        end
+    end
+    local r = a + b - n
     if r >= 2147483648 then
         return r - 4294967296
     end
@@ -36,7 +72,22 @@ end
 
 local function __K2L_BXor(a, b)
     a, b = a % 4294967296, b % 4294967296
-    local r = a + b - 2 * __K2L_UAnd32(a, b)
+    -- the and of a and b, as __K2L_UAnd32 computes it
+    local x, y = a % 256, b % 256
+    local n = AND8[x * 256 + y + 1]
+    local p, q = (a - x) / 256, (b - y) / 256
+    if p ~= 0 and q ~= 0 then
+        x, y = p % 256, q % 256
+        n = n + AND8[x * 256 + y + 1] * 256
+        p, q = (p - x) / 256, (q - y) / 256
+        if p ~= 0 and q ~= 0 then
+            x, y = p % 256, q % 256
+            n = n + AND8[x * 256 + y + 1] * 65536
+            p, q = (p - x) / 256, (q - y) / 256
+            n = n + AND8[p * 256 + q + 1] * 16777216
+        end
+    end
+    local r = a + b - 2 * n
     if r >= 2147483648 then
         return r - 4294967296
     end
