@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -7,6 +8,10 @@ local Host = __K2L_Class("Host")
 
 function Host:____init(name)
     self.name = name
+end
+
+function Host.new(name)
+    return setmetatable({name = name}, Host)
 end
 
 Host.In = __K2L_Class("Host$In")
@@ -21,7 +26,16 @@ function Host.In:show()
 end
 
 function Host:refs()
-    return __K2L_ReadOnlyListOf(1, 2):map(function(...) return Host.In.new(self, ...) end):map(function(it) return it:show() end)
+    local ____list = __K2L_ReadOnlyListOf(1, 2):map(function(...) return Host.In.new(self, ...) end)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = it:show()
+    end
+    return __K2L_ListWrap(____out, ____count)
 end
 
 function Host:bound()
@@ -32,6 +46,10 @@ local Pair2 = __K2L_Class("Pair2")
 
 function Pair2:____init(a)
     self.a = a
+end
+
+function Pair2.new(a)
+    return setmetatable({a = a}, Pair2)
 end
 
 Pair2.Part = __K2L_Class("Pair2$Part")

@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
@@ -78,7 +79,16 @@ function Scaler:parse(s)
 end
 
 function Scaler:parseAll(xs)
-    return xs:map(function(...) return self:parse(...) end):map(function(it) return it.k end)
+    local ____list = xs:map(function(...) return self:parse(...) end)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = it.k
+    end
+    return __K2L_ListWrap(____out, ____count)
 end
 
 local function main()
@@ -97,7 +107,16 @@ local function main()
     print(__K2L_Str(Scaler:parseAll(__K2L_ReadOnlyListOf("7", "8"))))
     local ____arg_1 = __K2L_SingletonListOf("9")
     local ____receiver_1 = Scaler
-    print(__K2L_Str(____arg_1:map(function(...) return ____receiver_1:parse(...) end):map(function(it) return it.k end)))
+    local ____list_1 = ____arg_1:map(function(...) return ____receiver_1:parse(...) end)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it.k
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     local ____value_1 = Scaler.new(10)
     print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2):map(function(...) return ____value_1:scale(...) end)))
 end

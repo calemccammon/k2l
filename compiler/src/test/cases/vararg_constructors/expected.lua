@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_EnumValues = ____lualib.__K2L_EnumValues
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
@@ -17,7 +17,16 @@ end
 
 function Polygon:____init1(...)
     local coords = __K2L_ArrayOf(...)
-    Polygon.____init(self, "poly", __K2L_Unpack(coords:toList():chunked(2):map(function(it) return __K2L_Pair.new(it:get(0), it:get(1)) end):toTypedArray("[Lkotlin.Pair;")))
+    local ____list = coords:toList():chunked(2)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_Pair.new(it:get(0), it:get(1))
+    end
+    Polygon.____init(self, "poly", __K2L_Unpack(__K2L_ListWrap(____out, ____count):toTypedArray("[Lkotlin.Pair;")))
 end
 
 function Polygon.new1(...)
@@ -75,6 +84,10 @@ function Outer:____init(tag)
     self.tag = tag
 end
 
+function Outer.new(tag)
+    return setmetatable({tag = tag}, Outer)
+end
+
 Outer.Tagged = __K2L_Class("Outer$Tagged")
 
 function Outer.Tagged:____init(____outer, ...)
@@ -111,9 +124,15 @@ local function main()
     print(Triangle.new(__K2L_Pair.new(0, 0), __K2L_Pair.new(2, 0), __K2L_Pair.new(1, 1)):getSize())
     local path = Path.new("a", "b", "c")
     print(path.steps .. " " .. path:getSize())
-    print(__K2L_Str(__K2L_EnumValues(Chord):map(function(it)
-        return it.name .. ":" .. it.notes.size .. ":" .. it.notes:joinToString("")
-    end)))
+    local ____values = Chord.____values
+    local ____out_1 = {}
+    local ____count_1 = 0
+    for ____i_1 = 1, #____values do
+        local it = ____values[____i_1]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it.name .. ":" .. it.notes.size .. ":" .. it.notes:joinToString("")
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     print(__K2L_Str(Outer.Tagged.new(Outer.new("#"), 1, 2, 3)))
     local arr = __K2L_TypedArrayOf("[Ljava.lang.String;", "x", "y")
     print(__K2L_Str(Bag.new(__K2L_Unpack(arr)):add("z", __K2L_Unpack(arr))))

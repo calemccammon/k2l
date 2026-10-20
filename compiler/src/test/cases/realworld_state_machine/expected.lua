@@ -5,7 +5,6 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
-local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -13,7 +12,10 @@ local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotNull = ____lualib.__K2L_NotNull
@@ -23,7 +25,6 @@ local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Event = __K2L_Class("machine.Event")
@@ -36,12 +37,16 @@ function Event.Placed:____init(orderId, amount)
     self.amount = amount
 end
 
+function Event.Placed.new(orderId, amount)
+    return setmetatable({orderId = orderId, amount = amount}, Event.Placed)
+end
+
 function Event.Placed:toString()
     return "Placed(orderId=" .. self.orderId .. ", amount=" .. __K2L_Str(self.amount) .. ")"
 end
 
 function Event.Placed:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.orderId) + __K2L_Hash(self.amount))
+    return (31 * self.orderId + __K2L_Hash(self.amount) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Event.Placed:equals(other)
@@ -56,12 +61,16 @@ function Event.Paid:____init(orderId, amount)
     self.amount = amount
 end
 
+function Event.Paid.new(orderId, amount)
+    return setmetatable({orderId = orderId, amount = amount}, Event.Paid)
+end
+
 function Event.Paid:toString()
     return "Paid(orderId=" .. self.orderId .. ", amount=" .. __K2L_Str(self.amount) .. ")"
 end
 
 function Event.Paid:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.orderId) + __K2L_Hash(self.amount))
+    return (31 * self.orderId + __K2L_Hash(self.amount) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Event.Paid:equals(other)
@@ -76,12 +85,16 @@ function Event.Shipped:____init(orderId, carrier)
     self.carrier = carrier
 end
 
+function Event.Shipped.new(orderId, carrier)
+    return setmetatable({orderId = orderId, carrier = carrier}, Event.Shipped)
+end
+
 function Event.Shipped:toString()
     return "Shipped(orderId=" .. self.orderId .. ", carrier=" .. self.carrier .. ")"
 end
 
 function Event.Shipped:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.orderId) + __K2L_Hash(self.carrier))
+    return (31 * self.orderId + __K2L_Hash(self.carrier) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Event.Shipped:equals(other)
@@ -96,12 +109,16 @@ function Event.Cancelled:____init(orderId, reason)
     self.reason = reason
 end
 
+function Event.Cancelled.new(orderId, reason)
+    return setmetatable({orderId = orderId, reason = reason}, Event.Cancelled)
+end
+
 function Event.Cancelled:toString()
     return "Cancelled(orderId=" .. self.orderId .. ", reason=" .. self.reason .. ")"
 end
 
 function Event.Cancelled:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.orderId) + __K2L_Hash(self.reason))
+    return (31 * self.orderId + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Event.Cancelled:equals(other)
@@ -115,12 +132,16 @@ function Event.Delivered:____init(orderId)
     self.orderId = orderId
 end
 
+function Event.Delivered.new(orderId)
+    return setmetatable({orderId = orderId}, Event.Delivered)
+end
+
 function Event.Delivered:toString()
     return "Delivered(orderId=" .. self.orderId .. ")"
 end
 
 function Event.Delivered:hashCode()
-    return __K2L_Hash(self.orderId)
+    return self.orderId
 end
 
 function Event.Delivered:equals(other)
@@ -139,8 +160,9 @@ function OrderState:____init(name, ordinal, terminal)
     self.terminal = terminal
 end
 
+local ____lambda_1 = function(it) return it:upper() end
 function OrderState:getLabel()
-    return __K2L_Text.replaceFirstChar(self.name:lower(), function(it) return it:upper() end)
+    return __K2L_Text.replaceFirstChar(self.name:lower(), ____lambda_1)
 end
 
 function OrderState:toString()
@@ -155,9 +177,10 @@ do
     local ____NEW = __K2L_Class("OrderState", OrderState)
     __K2L_ClassInfo(____NEW, "machine.OrderState.NEW", "machine.OrderState$NEW", "class", "NEW")
     function ____NEW:next(event)
-        if __K2L_InstanceOf(event, Event.Paid) then
+        local ____mt = getmetatable(event)
+        if ____mt == Event.Paid then
             return OrderState.PAID
-        elseif __K2L_InstanceOf(event, Event.Cancelled) then
+        elseif ____mt == Event.Cancelled then
             return OrderState.CANCELLED
         else
             return nil
@@ -169,9 +192,10 @@ do
     local ____PAID = __K2L_Class("OrderState", OrderState)
     __K2L_ClassInfo(____PAID, "machine.OrderState.PAID", "machine.OrderState$PAID", "class", "PAID")
     function ____PAID:next(event)
-        if __K2L_InstanceOf(event, Event.Shipped) then
+        local ____mt_1 = getmetatable(event)
+        if ____mt_1 == Event.Shipped then
             return OrderState.SHIPPED
-        elseif __K2L_InstanceOf(event, Event.Cancelled) then
+        elseif ____mt_1 == Event.Cancelled then
             return OrderState.REFUNDED
         else
             return nil
@@ -183,7 +207,7 @@ do
     local ____SHIPPED = __K2L_Class("OrderState", OrderState)
     __K2L_ClassInfo(____SHIPPED, "machine.OrderState.SHIPPED", "machine.OrderState$SHIPPED", "class", "SHIPPED")
     function ____SHIPPED:next(event)
-        return __K2L_InstanceOf(event, Event.Delivered) and OrderState.DELIVERED or nil
+        return getmetatable(event) == Event.Delivered and OrderState.DELIVERED or nil
     end
     OrderState.SHIPPED = ____SHIPPED.new("SHIPPED", 2)
 end
@@ -235,8 +259,9 @@ function EventBus:____init()
     self.dispatched = 0
 end
 
+local ____lambda_2 = function() return __K2L_ListOf() end
 function EventBus:subscribe(topic, listener)
-    self.listeners:getOrPut(topic, function() return __K2L_ListOf() end):add(listener)
+    self.listeners:getOrPut(topic, ____lambda_2):add(listener)
     return function()
         local ____receiver = self.listeners:get(topic)
         if ____receiver ~= nil then
@@ -346,7 +371,20 @@ function OrderRegistry:plusAssign(order)
 end
 
 function OrderRegistry:byState()
-    return self.orders:getValues():groupBy(function(it) return it:getState() end, function(it) return it.id end):toSortedMap()
+    local ____list_1 = self.orders:getValues()
+    local ____result = __K2L_Map.new()
+    local ____items, ____n = ____list_1:____array()
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
+        local ____value_2 = it:getState()
+        local ____group = ____result:get(____value_2)
+        if ____group == nil then
+            ____group = __K2L_List.new()
+            ____result:put(____value_2, ____group)
+        end
+        ____group:add(it.id)
+    end
+    return ____result:toSortedMap()
 end
 
 OrderRegistry:____init()
@@ -359,7 +397,7 @@ function Processor:____init(bus, metrics)
     self.bus = bus
     self.____delegate_Metrics = metrics
     self.failures = __K2L_ListOf()
-    local ____result
+    local ____result_1
     do
         local ____this = self.bus
         local handler = function(e)
@@ -367,8 +405,8 @@ function Processor:____init(bus, metrics)
             OrderRegistry:plusAssign(order)
             self:count("placed")
         end
-        ____result = ____this:subscribe("*", __K2L_FunInterface(Listener, "onEvent", function(it)
-            if __K2L_InstanceOf(it, Event.Placed) then
+        ____result_1 = ____this:subscribe("*", __K2L_FunInterface(Listener, "onEvent", function(it)
+            if getmetatable(it) == Event.Placed then
                 handler(it)
             end
         end))
@@ -377,16 +415,16 @@ end
 
 function Processor:handle(event)
     self.bus:publish(event)
-    if __K2L_InstanceOf(event, Event.Placed) then
+    if getmetatable(event) == Event.Placed then
         return
     end
-    local ____ok, ____result_1 = pcall(function()
+    local ____ok, ____result_2 = pcall(function()
         OrderRegistry:get(event.orderId):apply(event)
         self:count(__K2L_NotNull(__K2L_KClassOfValue(event).simpleName):lower())
     end)
     if not ____ok then
-        local ____error = __K2L_ToThrowable(____result_1)
-        if __K2L_InstanceOf(____error, IllegalTransition) then
+        local ____error = __K2L_ToThrowable(____result_2)
+        if getmetatable(____error) == IllegalTransition then
             local e = ____error
             self.failures:add("transition: " .. __K2L_Str(e.message) .. " (from " .. e.state:getLabel() .. ")")
         elseif __K2L_InstanceOf(____error, __K2L_IllegalStateException) then
@@ -416,6 +454,12 @@ function Processor:report(...)
     return self.____delegate_Metrics:report(...)
 end
 
+local ____lambda_3 = function(____p1, ____p2) return ____p1 + ____p2 end
+local ____lambda_4 = function(it)
+    return __K2L_Str(it.key) .. "=" .. __K2L_Str(it.value)
+end
+local ____lambda_5 = function(____p1) return print(__K2L_Str(____p1)) end
+local ____lambda_6 = function(it) return it:getLabel() end
 local function main()
     local bus = EventBus.new()
     local log = __K2L_ListOf()
@@ -423,25 +467,23 @@ local function main()
     local ____object_1 = __K2L_Class("machine.MainKt$main$metrics$1", nil, Metrics)
     __K2L_ClassInfo(____object_1, nil, "machine.MainKt$main$metrics$1", "class", false)
     function ____object_1:count(name)
-        counts:merge(name, 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", function(____p1, ____p2) return ____p1 + ____p2 end))
+        counts:merge(name, 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_3))
     end
     function ____object_1:report()
-        return counts:getEntries():joinToString(", ", nil, nil, nil, nil, function(it)
-            return __K2L_Str(it.key) .. "=" .. __K2L_Str(it.value)
-        end)
+        return counts:getEntries():joinToString(", ", nil, nil, nil, nil, ____lambda_4)
     end
     local metrics = ____object_1
     local processor = Processor.new(bus, metrics)
     local unsubscribe = bus:subscribe("Paid", __K2L_FunInterface(Listener, "onEvent", function(it)
         log:add("paid " .. it.orderId)
     end))
-    local ____result_2
+    local ____result_3
     do
         local handler = function(it)
             log:add("shipped " .. it.orderId .. " via " .. it.carrier)
         end
-        ____result_2 = bus:subscribe("*", __K2L_FunInterface(Listener, "onEvent", function(it)
-            if __K2L_InstanceOf(it, Event.Shipped) then
+        ____result_3 = bus:subscribe("*", __K2L_FunInterface(Listener, "onEvent", function(it)
+            if getmetatable(it) == Event.Shipped then
                 handler(it)
             end
         end))
@@ -452,7 +494,7 @@ local function main()
     function ____object_2:onEvent(event)
         cancellations = cancellations + 1
         local ____arg = cancellations
-        if not __K2L_InstanceOf(event, Event.Cancelled) then
+        if getmetatable(event) ~= Event.Cancelled then
             __K2L_CastFail(event, "machine.Event$Cancelled", "machine.Event.Cancelled")
         end
         log:add("cancelled #" .. ____arg .. ": " .. event.reason)
@@ -467,16 +509,16 @@ local function main()
         processor:handle(event)
     end
     local ____mod_1 = log.____modCount
-    for ____i_1 = 1, log.size do
-        local it = log[____i_1];
-        (function(____p1) return print(__K2L_Str(____p1)) end)(it)
-        if log.____modCount ~= ____mod_1 and log:____comodified(____i_1) then
+    for ____i_2 = 1, log.size do
+        local it = log[____i_2];
+        (____lambda_5)(it)
+        if log.____modCount ~= ____mod_1 and log:____comodified(____i_2) then
             break
         end
     end
-    local ____list_1 = processor:failures__1()
-    for ____i_2 = 1, ____list_1.size do
-        local it = ____list_1[____i_2]
+    local ____list_2 = processor:failures__1()
+    for ____i_3 = 1, ____list_2.size do
+        local it = ____list_2[____i_3]
         print("! " .. it)
     end
     print(processor:report())
@@ -486,15 +528,35 @@ local function main()
     end
     print(__K2L_Str(OrderRegistry:byState()))
     print("issued=" .. Order:getIssued() .. " registry=" .. OrderRegistry:getSize() .. " dispatched=" .. bus.dispatched)
-    print(__K2L_Str(bus:recent():map(function(it) return __K2L_KClassOfValue(it).simpleName end)))
-    print(__K2L_EnumValues(OrderState):filter(function(it) return it.terminal end):joinToString(nil, nil, nil, nil, nil, function(it) return it:getLabel() end))
+    local ____list_3 = bus:recent()
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = ____list_3:____array()
+    for ____i_4 = 1, ____n_1 do
+        local it = ____items_1[____i_4]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_KClassOfValue(it).simpleName
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
+    local ____values = OrderState.____values
+    local ____out_1 = {}
+    local ____count_1 = 0
+    for ____i_5 = 1, #____values do
+        local it = ____values[____i_5]
+        if it.terminal then
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = it
+        end
+    end
+    print(__K2L_ListWrap(____out_1, ____count_1):joinToString(nil, nil, nil, nil, nil, ____lambda_6))
     print(__K2L_Str(__K2L_EnumValueOf(OrderState, "PAID"):next(Event.Shipped.new(1, "DHL"))))
     local sameEvents = __K2L_ReadOnlySetOf(Event.Paid.new(1, 2.0), Event.Paid.new(1, 2.0), Event.Delivered.new(1))
     print(sameEvents.size)
     local describe = function(e)
-        if __K2L_InstanceOf(e, Event.Placed) or __K2L_InstanceOf(e, Event.Paid) then
+        local ____mt_2 = getmetatable(e)
+        if ____mt_2 == Event.Placed or ____mt_2 == Event.Paid then
             return "money"
-        elseif __K2L_InstanceOf(e, Event.Shipped) then
+        elseif ____mt_2 == Event.Shipped then
             return "carrier " .. e.carrier
         else
             return "other"

@@ -47,14 +47,16 @@ return {Circle = Circle}
 -- ==== model/shapes.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Shape = __K2L_Class("app.model.Shape")
 
 function Shape:____init(name)
     self.name = name
+end
+
+function Shape.new(name)
+    return setmetatable({name = name}, Shape)
 end
 
 function Shape:area()
@@ -116,12 +118,16 @@ function Point:____init(x, y)
     self.y = y
 end
 
+function Point.new(x, y)
+    return setmetatable({x = x, y = y}, Point)
+end
+
 function Point:toString()
     return "Point(x=" .. self.x .. ", y=" .. self.y .. ")"
 end
 
 function Point:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.x) + __K2L_Hash(self.y))
+    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Point:equals(other)

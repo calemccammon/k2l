@@ -5,6 +5,7 @@ local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
 local __K2L_Str = ____lualib.__K2L_Str
@@ -25,6 +26,10 @@ Scheduler.Waiting = __K2L_Class("Scheduler$Waiting")
 function Scheduler.Waiting:____init(wakeAt, cont)
     self.wakeAt = wakeAt
     self.cont = cont
+end
+
+function Scheduler.Waiting.new(wakeAt, cont)
+    return setmetatable({wakeAt = wakeAt, cont = cont}, Scheduler.Waiting)
 end
 
 function Scheduler:launch(name, task)
@@ -67,13 +72,24 @@ end
 
 function Scheduler:runFrame()
     self.frame = self.frame + 1
-    local due = self.waiting:filter(function(it) return it.wakeAt <= self.frame end)
+    local ____list = self.waiting
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
+        if it.wakeAt <= self.frame then
+            ____count = ____count + 1
+            ____out[____count] = it
+        end
+    end
+    local due = __K2L_ListWrap(____out, ____count)
     self.waiting:removeAll(due)
     local ____mod_1 = due.____modCount
-    for ____i_1 = 1, due.size do
-        local w = due[____i_1]
+    for ____i_2 = 1, due.size do
+        local w = due[____i_2]
         w.cont:resumeWith(__K2L_Result.success(__K2L_Unit))
-        if due.____modCount ~= ____mod_1 and due:____comodified(____i_1) then
+        if due.____modCount ~= ____mod_1 and due:____comodified(____i_2) then
             break
         end
     end

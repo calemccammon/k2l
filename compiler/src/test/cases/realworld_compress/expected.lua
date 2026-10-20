@@ -4,10 +4,11 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_PriorityQueue = ____lualib.__K2L_PriorityQueue
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
@@ -26,7 +27,6 @@ local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
-local __K2L_Ushr = ____lualib.__K2L_Ushr
 
 local ____exports = {}
 local Node = __K2L_Class("Node")
@@ -36,8 +36,14 @@ function Node:____init(weight)
     self.weight = weight
 end
 
+function Node.new(weight)
+    return setmetatable({weight = weight}, Node)
+end
+
+local ____lambda_1 = function(receiver) return receiver.weight end
+local ____lambda_2 = function(receiver) return receiver:getMinChar() end
 function Node:compareTo(other)
-    return __K2L_CompareBy(__K2L_PropertyRef.new("weight", "weight@227", function(receiver) return receiver.weight end), __K2L_PropertyRef.new("minChar", "/Node.minChar", function(receiver) return receiver:getMinChar() end))(self, other)
+    return __K2L_CompareBy(__K2L_PropertyRef.new("weight", "weight@227", ____lambda_1), __K2L_PropertyRef.new("minChar", "/Node.minChar", ____lambda_2))(self, other)
 end
 
 Node.Leaf = __K2L_Class("Node$Leaf", Node)
@@ -64,9 +70,10 @@ function Node.Branch:getMinChar()
     return self.minChar
 end
 
+local ____lambda_3 = function(it) return it end
 local function buildTree(text)
     local queue = __K2L_PriorityQueue.new()
-    local ____collection = __K2L_StringToList(text):groupingBy(function(it) return it end):eachCount()
+    local ____collection = __K2L_StringToList(text):groupingBy(____lambda_3):eachCount()
     local ____items, ____n = ____collection:____entryArray()
     local ____mod = ____collection.____modCount
     for ____i = 1, ____n do
@@ -90,6 +97,7 @@ local function buildTree(text)
     return queue:single()
 end
 
+local ____lambda_4 = function() return "0" end
 local function codes(node, prefix, out)
     if prefix == nil then
         prefix = ""
@@ -97,10 +105,11 @@ local function codes(node, prefix, out)
     if out == nil then
         out = __K2L_SortedMapOf()
     end
-    if __K2L_InstanceOf(node, Node.Leaf) then
+    local ____mt = getmetatable(node)
+    if ____mt == Node.Leaf then
         local ____key = node.ch
-        out:set(____key, __K2L_Text.ifEmpty(prefix, function() return "0" end))
-    elseif __K2L_InstanceOf(node, Node.Branch) then
+        out:set(____key, __K2L_Text.ifEmpty(prefix, ____lambda_4))
+    elseif ____mt == Node.Branch then
         codes(node.left, prefix .. "0", out)
         codes(node.right, prefix .. "1", out)
     end
@@ -111,16 +120,17 @@ local function decode(tree, bits)
     local ____builder = __K2L_StringBuilder.new()
     do
         local node = tree
-        for b in bits:gmatch(".") do
+        for ____i_1 = 1, #bits do
+            local b = bits:sub(____i_1, ____i_1)
             local ____cast = node
-            if not __K2L_InstanceOf(____cast, Node.Branch) then
+            if getmetatable(____cast) ~= Node.Branch then
                 __K2L_CastFail(____cast, "Node$Branch", "Node.Branch")
             end
             local ____result
             ____result = b == "0" and ____cast.left or ____cast.right
             node = ____result
             local ____value = node
-            if __K2L_InstanceOf(____value, Node.Leaf) then
+            if getmetatable(____value) == Node.Leaf then
                 ____builder:append(node.ch)
                 node = tree
             end
@@ -134,6 +144,10 @@ Token.Literal = __K2L_Class("Token$Literal", nil, Token)
 
 function Token.Literal:____init(c)
     self.c = c
+end
+
+function Token.Literal.new(c)
+    return setmetatable({c = c}, Token.Literal)
 end
 
 function Token.Literal:toString()
@@ -155,12 +169,16 @@ function Token.Ref:____init(distance, length)
     self.length = length
 end
 
+function Token.Ref.new(distance, length)
+    return setmetatable({distance = distance, length = length}, Token.Ref)
+end
+
 function Token.Ref:toString()
     return "Ref(distance=" .. self.distance .. ", length=" .. self.length .. ")"
 end
 
 function Token.Ref:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.distance) + __K2L_Hash(self.length))
+    return (31 * self.distance + self.length + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Token.Ref:equals(other)
@@ -178,7 +196,7 @@ local function lz77(input, window)
         local bestDist = 0
         for j = math.max(0, i - window), i - 1 do
             local len = 0
-            while i + len < #input and __K2L_StringCharAt(input, j + len) == __K2L_StringCharAt(input, i + len) and len < 255 do
+            while i + len < #input and (j + len >= 0 and j + len < #input and input:sub(j + len + 1, j + len + 1) or __K2L_IndexError(j + len, #input, "string")) == (i + len >= 0 and i + len < #input and input:sub(i + len + 1, i + len + 1) or __K2L_IndexError(i + len, #input, "string")) and len < 255 do
                 len = len + 1
             end
             if len > bestLen then
@@ -192,7 +210,7 @@ local function lz77(input, window)
         else
             local ____old = i
             i = i + 1
-            out:add(Token.Literal.new(__K2L_StringCharAt(input, ____old)))
+            out:add(Token.Literal.new(____old >= 0 and ____old < #input and input:sub(____old + 1, ____old + 1) or __K2L_IndexError(____old, #input, "string")))
         end
     end
     return out
@@ -201,16 +219,17 @@ end
 local function unlz77(tokens)
     local sb = __K2L_StringBuilder.new()
     local ____mod_1 = tokens.____modCount
-    for ____i_1 = 1, tokens.size do
-        local t = tokens[____i_1]
-        if __K2L_InstanceOf(t, Token.Literal) then
+    for ____i_2 = 1, tokens.size do
+        local t = tokens[____i_2]
+        local ____mt_1 = getmetatable(t)
+        if ____mt_1 == Token.Literal then
             sb:append(t.c)
-        elseif __K2L_InstanceOf(t, Token.Ref) then
+        elseif ____mt_1 == Token.Ref then
             for it = 0, t.length - 1 do
                 sb:append(sb:get(sb:getLength() - t.distance))
             end
         end
-        if tokens.____modCount ~= ____mod_1 and tokens:____comodified(____i_1) then
+        if tokens.____modCount ~= ____mod_1 and tokens:____comodified(____i_2) then
             break
         end
     end
@@ -219,30 +238,48 @@ end
 
 local B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
+local ____lambda_5 = function(i, acc, b)
+    return acc | __K2L_Shl(b, 16 - 8 * i)
+end
 local function base64(bytes)
     return bytes:chunked(3):joinToString("", nil, nil, nil, nil, function(chunk)
-        local n = chunk:foldIndexed(0, function(i, acc, b)
-            return acc | __K2L_Shl(b, 16 - 8 * i)
-        end)
+        local n = chunk:foldIndexed(0, ____lambda_5)
         return __K2L_IntRange.new(0, 4 - 1):map(function(k)
             return k <= chunk.size and __K2L_StringCharAt(B64, __K2L_Shr(n, 18 - 6 * k) & 63) or "="
         end):joinToString("")
     end)
 end
 
+local ____lambda_6 = function(it) return it ~= "=" end
+local ____lambda_7 = function(it) return __K2L_StringIndexOf(B64, it) end
+local ____lambda_8 = function(i, acc, v)
+    return acc | __K2L_Shl(v, 18 - 6 * i)
+end
 local function unbase64(s)
-    return __K2L_StringToList(__K2L_Text.filter(s, function(it) return it ~= "=" end)):map(function(it) return __K2L_StringIndexOf(B64, it) end):chunked(4):flatMap(function(group)
-        local n = group:foldIndexed(0, function(i, acc, v)
-            return acc | __K2L_Shl(v, 18 - 6 * i)
-        end)
-        return __K2L_IntRange.new(0, group.size - 1 - 1):map(function(k) return __K2L_Shr(n, 16 - 8 * k) & 255 end)
-    end)
+    local ____list = __K2L_StringToList(__K2L_Text.filter(s, ____lambda_6)):map(____lambda_7):chunked(4)
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = ____list:____array()
+    for ____i_3 = 1, ____n_1 do
+        local group = ____items_1[____i_3]
+        local ____result_1
+        do
+            local n = group:foldIndexed(0, ____lambda_8)
+            ____result_1 = __K2L_IntRange.new(0, group.size - 1 - 1):map(function(k) return __K2L_Shr(n, 16 - 8 * k) & 255 end)
+        end
+        local ____inner, ____m = ____result_1:____array()
+        for ____j = 1, ____m do
+            ____count = ____count + 1
+            ____out[____count] = ____inner[____j]
+        end
+    end
+    return __K2L_ListWrap(____out, ____count)
 end
 
 local CRC_TABLE = __K2L_ListOfSize(256, function(n)
     local c = n
     for it = 0, 7 do
-        c = c & 1 ~= 0 and __K2L_Ushr(c, 1) ~ __K2L_ToInt32(3988292384) or __K2L_Ushr(c, 1)
+        c = c & 1 ~= 0 and (c & 0xFFFFFFFF) >> 1 ~ __K2L_ToInt32(3988292384) or (c & 0xFFFFFFFF) >> 1
     end
     return c
 end, "[I")
@@ -250,10 +287,10 @@ end, "[I")
 local function crc32(bytes)
     local crc = -1
     local ____mod_2 = bytes.____modCount
-    for ____i_2 = 1, bytes.size do
-        local b = bytes[____i_2]
-        crc = CRC_TABLE:get((crc ~ b) & 255) ~ __K2L_Ushr(crc, 8)
-        if bytes.____modCount ~= ____mod_2 and bytes:____comodified(____i_2) then
+    for ____i_4 = 1, bytes.size do
+        local b = bytes[____i_4]
+        crc = CRC_TABLE:get((crc ~ b) & 255) ~ (crc & 0xFFFFFFFF) >> 8
+        if bytes.____modCount ~= ____mod_2 and bytes:____comodified(____i_4) then
             break
         end
     end
@@ -273,6 +310,10 @@ local slowSquare = function(x)
     return x * x
 end
 
+local ____lambda_9 = function(x) return getmetatable(x) == Token.Ref end
+local ____lambda_10 = function(it) return it:byte() end
+local ____lambda_11 = function(it) return it:byte() end
+local ____lambda_12 = function(it) return it:byte() end
 local function main()
     local text = "abracadabra alakazam"
     local tree = buildTree(text)
@@ -281,37 +322,73 @@ local function main()
     local encoded = __K2L_StringToList(text):map(function(it) return ____table:getValue(it) end):joinToString("")
     print("encoded " .. #encoded .. " bits vs " .. #text * 8 .. ": " .. __K2L_Text.chunked(encoded, 8):joinToString(" "))
     print("decoded: " .. decode(tree, encoded) .. " ok=" .. tostring(decode(tree, encoded) == text))
-    local avg = (____table:getEntries():sumOf(function(____destructured)
-        local c, code = ____destructured.key, ____destructured.value
-        return #code * __K2L_StringToList(text):count(function(it) return it == c end)
-    end) + 0.0) / #text
+    local ____list_1 = ____table:getEntries()
+    local ____sum = 0
+    local ____items_2, ____n_2 = ____list_1:____array()
+    for ____i_5 = 1, ____n_2 do
+        local ____it = ____items_2[____i_5]
+        local ____result_2
+        do
+            local c, code = ____it.key, ____it.value
+            ____result_2 = #code * __K2L_StringToList(text):count(function(it) return it == c end)
+        end
+        ____sum = ____sum + ____result_2
+    end
+    local avg = (____sum + 0.0) / #text
     print("average code length: " .. __K2L_StringFormat("%.3f", avg))
     print("single symbol: " .. __K2L_Str(codes(buildTree("zzzz"))))
     local sample = "to be or not to be, that is the question; to be or not to be"
     local tokens = lz77(sample)
-    print("lz77: " .. tokens.size .. " tokens, " .. tokens:count(function(it) return __K2L_InstanceOf(it, Token.Ref) end) .. " refs; first refs " .. __K2L_Str(tokens:filter(function(x) return __K2L_InstanceOf(x, Token.Ref) end):take(3)))
+    local ____arg = tokens.size
+    local ____result_3 = 0
+    local ____items_3, ____n_3 = tokens:____array()
+    for ____i_6 = 1, ____n_3 do
+        local it = ____items_3[____i_6]
+        if getmetatable(it) == Token.Ref then
+            ____result_3 = ____result_3 + 1
+        end
+    end
+    print("lz77: " .. ____arg .. " tokens, " .. ____result_3 .. " refs; first refs " .. __K2L_Str(tokens:filter(____lambda_9):take(3)))
     print("round trip: " .. tostring(unlz77(tokens) == sample))
     local pattern = "abcabcabcabcabcabcx"
     print("lz77(" .. pattern .. ") = " .. lz77(pattern):joinToString("", nil, nil, nil, nil, function(it)
-        if __K2L_InstanceOf(it, Token.Literal) then
+        if getmetatable(it) == Token.Literal then
             return it.c
         else
-            if not __K2L_InstanceOf(it, Token.Ref) then
+            if getmetatable(it) ~= Token.Ref then
                 __K2L_CastFail(it, "Token$Ref", "Token.Ref")
             end
             return "<" .. it.distance .. "," .. it.length .. ">"
         end
     end))
-    local ____list = __K2L_ReadOnlyListOf("Man", "Ma", "M", "hello, world!", "")
-    for ____i_3 = 1, ____list.size do
-        local s = ____list[____i_3]
-        local bytes = __K2L_StringToList(s):map(function(it) return it:byte() end)
+    local ____list_2 = __K2L_ReadOnlyListOf("Man", "Ma", "M", "hello, world!", "")
+    for ____i_8 = 1, ____list_2.size do
+        local s = ____list_2[____i_8]
+        local bytes = __K2L_StringToList(s):map(____lambda_10)
         local enc = base64(bytes)
-        local back = unbase64(enc):map(function(it) return string.char(it) end):joinToString("")
+        local ____list_3 = unbase64(enc)
+        local ____out_1 = {}
+        local ____count_1 = 0
+        local ____items_4, ____n_4 = ____list_3:____array()
+        for ____i_7 = 1, ____n_4 do
+            local it = ____items_4[____i_7]
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = string.char(it)
+        end
+        local back = __K2L_ListWrap(____out_1, ____count_1):joinToString("")
         print("base64('" .. s .. "') = '" .. enc .. "' -> '" .. back .. "' crc=" .. __K2L_StringPadStart(__K2L_Num.toRadix(crc32(bytes), 16), 8, "0"))
     end
-    print("crc32('123456789') = " .. crc32(__K2L_StringToList("123456789"):map(function(it) return it:byte() end)) .. " (0x" .. __K2L_Str(__K2L_Unsigned.toRadix(crc32(__K2L_StringToList("123456789"):map(function(it) return it:byte() end)), 16)) .. ")")
-    print("table: " .. __K2L_Str(CRC_TABLE:take(4):map(function(it) return __K2L_Num.toRadixUnsigned(it, 16) end)))
+    print("crc32('123456789') = " .. crc32(__K2L_StringToList("123456789"):map(____lambda_11)) .. " (0x" .. __K2L_Str(__K2L_Unsigned.toRadix(crc32(__K2L_StringToList("123456789"):map(____lambda_12)), 16)) .. ")")
+    local ____list_4 = CRC_TABLE:take(4)
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_5, ____n_5 = ____list_4:____array()
+    for ____i_9 = 1, ____n_5 do
+        local it = ____items_5[____i_9]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = __K2L_Num.toRadixUnsigned(it, 16)
+    end
+    print("table: " .. __K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
     local fast = memoized(slowSquare)
     local results = __K2L_ReadOnlyListOf(3, 4, 3, 3, 5, 4):map(fast)
     print("memoized: " .. __K2L_Str(results) .. ", underlying calls " .. ____exports.slowCalls)

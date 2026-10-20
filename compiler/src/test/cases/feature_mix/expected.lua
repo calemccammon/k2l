@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Lazy = ____lualib.__K2L_Lazy
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ObservableProperty = ____lualib.__K2L_ObservableProperty
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -106,6 +106,10 @@ function Item:____init(title)
     self.title = title
 end
 
+function Item.new(title)
+    return setmetatable({title = title}, Item)
+end
+
 function Item:getShown()
     return self.title
 end
@@ -127,13 +131,21 @@ local function main()
     till:sell(Size.LARGE)
     till:sell(Size.LARGE)
     print(getTag(till))
-    print(__K2L_Str(__K2L_EnumValues(Size):map(function(it) return getLabel(it) end)))
+    local ____values = Size.____values
+    local ____out = {}
+    local ____count = 0
+    for ____i = 1, #____values do
+        local it = ____values[____i]
+        ____count = ____count + 1
+        ____out[____count] = getLabel(it)
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     local items = __K2L_ReadOnlyListOf(Item.new("plain"), Special.new("fancy"))
     local ____mod = items.____modCount
-    for ____i = 1, items.size do
-        local item = items[____i]
+    for ____i_1 = 1, items.size do
+        local item = items[____i_1]
         print(item:getShown())
-        if items.____modCount ~= ____mod and items:____comodified(____i) then
+        if items.____modCount ~= ____mod and items:____comodified(____i_1) then
             break
         end
     end

@@ -62,6 +62,10 @@ function Table:____init(name)
     self.name = name
 end
 
+function Table.new(name)
+    return setmetatable({name = name}, Table)
+end
+
 function Table:row(separator, ...)
     local cells = __K2L_ArrayOf(...)
     if separator == nil then
@@ -100,9 +104,19 @@ local function spreadFirst(xs)
     return ____result
 end
 
+local ____lambda_1 = function(it) return it:joinToString("+") end
+local ____lambda_2 = function(it) return "empty " .. __K2L_Str(it) end
+local ____lambda_3 = function(____p1) return sum(__K2L_Unpack(____p1)) end
+local ____lambda_4 = function(____p1, ____p2, ____p3)
+    return tagged(____p1, ____p3, __K2L_Unpack(____p2))
+end
+local ____lambda_5 = function(____p1, ____p2)
+    return Row.new(____p2, __K2L_Unpack(____p1))
+end
+local ____lambda_6 = function(self, ...) return self:row(...) end
 local function main()
     print(tagged("t", ";", 1, 2) .. " " .. tagged("u") .. " " .. tagged("v", nil, __K2L_Spread("s.", __K2L_TypedArrayOf("[I", 4, 5), 6)))
-    print(build(function(it) return it:joinToString("+") end, "a", "b") .. " " .. build(function(it) return "empty " .. __K2L_Str(it) end))
+    print(build(____lambda_1, "a", "b") .. " " .. build(____lambda_2))
     print(__K2L_Str(Row.new(3, "a", "b")))
     print(__K2L_Str(Row.new(nil, "c")))
     local s = Sub.new()
@@ -110,15 +124,11 @@ local function main()
     local t = Table.new("t")
     print(t:row(nil, 1, "x", nil) .. " / " .. t:row(",") .. " / " .. t:row("-", __K2L_Spread("s.", __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2), 3)))
     print(spreadFirst(__K2L_TypedArrayOf("[I", 1, 2)) .. " " .. spreadFirst(__K2L_TypedArrayOf("[I", 3, -4)))
-    local f = function(____p1) return sum(__K2L_Unpack(____p1)) end
-    local g = function(____p1, ____p2, ____p3)
-        return tagged(____p1, ____p3, __K2L_Unpack(____p2))
-    end
+    local f = ____lambda_3
+    local g = ____lambda_4
     local one = sum
-    local mk = function(____p1, ____p2)
-        return Row.new(____p2, __K2L_Unpack(____p1))
-    end
-    local ____reference = function(self, ...) return self:row(...) end
+    local mk = ____lambda_5
+    local ____reference = ____lambda_6
     local method = function(____p1, ____p2, ____p3)
         return ____reference(____p1, ____p3, __K2L_Unpack(____p2))
     end

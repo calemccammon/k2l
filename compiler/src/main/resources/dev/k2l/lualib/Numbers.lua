@@ -288,12 +288,18 @@ function __K2L_Num.rotateSmall(x, n, bits, signed)
     return u
 end
 
+-- POP8[b + 1]: the number of one bits of the byte b
+local POP8 = {}
+for b = 0, 255 do
+    POP8[b + 1] = b % 2 + (POP8[(b - b % 2) / 2 + 1] or 0)
+end
+
 function __K2L_Num.countOneBits(n)
     n = n % 4294967296
     local count = 0
     while n > 0 do
-        count = count + n % 2
-        n = __K2L_FloorDiv(n, 2)
+        local b = n % 256
+        count, n = count + POP8[b + 1], (n - b) / 256
     end
     return count
 end

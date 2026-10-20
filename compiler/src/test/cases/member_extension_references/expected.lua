@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -25,11 +26,39 @@ function Builder:twice(____this_2)
 end
 
 function Builder:fromInside()
-    return __K2L_ReadOnlyListOf("x", "y"):map(function(it) return self:shout(it) end):plusAll(__K2L_SingletonListOf("p"):map(function(s) return self:shout(s) end))
+    local ____list = __K2L_ReadOnlyListOf("x", "y")
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = self:shout(it)
+    end
+    local ____arg = __K2L_ListWrap(____out, ____count)
+    local ____list_1 = __K2L_SingletonListOf("p")
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local s = ____items_1[____i_1]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = self:shout(s)
+    end
+    return ____arg:plusAll(__K2L_ListWrap(____out_1, ____count_1))
 end
 
 function Builder:inside()
-    return __K2L_ReadOnlyListOf(1, 2):map(function(it) return self:twice(it) end)
+    local ____list_2 = __K2L_ReadOnlyListOf(1, 2)
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_2, ____n_2 = ____list_2:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_2[____i_2]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = self:twice(it)
+    end
+    return __K2L_ListWrap(____out_2, ____count_2)
 end
 
 function Builder:deferred()
@@ -40,21 +69,30 @@ end
 local function main()
     local b = Builder.new("!")
     do
-        local ____list = __K2L_ReadOnlyListOf("a", "b")
-        local ____mod = ____list.____modCount
-        for ____i = 1, ____list.size do
-            local it = ____list[____i]
+        local ____list_3 = __K2L_ReadOnlyListOf("a", "b")
+        local ____mod = ____list_3.____modCount
+        for ____i_3 = 1, ____list_3.size do
+            local it = ____list_3[____i_3]
             b:unaryPlus(it)
-            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            if ____list_3.____modCount ~= ____mod and ____list_3:____comodified(____i_3) then
                 break
             end
         end
-        local ____list_1 = __K2L_SingletonListOf("c")
-        for ____i_1 = 1, ____list_1.size do
-            local it = ____list_1[____i_1]
+        local ____list_4 = __K2L_SingletonListOf("c")
+        for ____i_4 = 1, ____list_4.size do
+            local it = ____list_4[____i_4]
             b:unaryPlus(it)
         end
-        print(__K2L_Str(__K2L_ReadOnlyListOf("m", "n"):map(function(it) return b:shout(it) end)))
+        local ____list_5 = __K2L_ReadOnlyListOf("m", "n")
+        local ____out_3 = {}
+        local ____count_3 = 0
+        local ____items_3, ____n_3 = ____list_5:____array()
+        for ____i_5 = 1, ____n_3 do
+            local it = ____items_3[____i_5]
+            ____count_3 = ____count_3 + 1
+            ____out_3[____count_3] = b:shout(it)
+        end
+        print(__K2L_Str(__K2L_ListWrap(____out_3, ____count_3)))
         local f = function(it) return b:shout(it) end
         print(f("with"))
         local g = function(n) return b:twice(n) end

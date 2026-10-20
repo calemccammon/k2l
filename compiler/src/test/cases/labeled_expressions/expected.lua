@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -27,19 +27,32 @@ local function main()
     local y = five > 3 and "big" or "small"
     print(y)
     local half = function(x)
-        if math.fmod(x, 2) ~= 0 then
+        if (x >= 0 and x % 2 or 0 - -x % 2) ~= 0 then
             return -1
         end
-        return __K2L_IDiv(x, 2)
+        return x >= 0 and x // 2 or 0 - -x // 2
     end
     print(__K2L_Str(__K2L_ReadOnlyListOf(4, 5, 6):map(half)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2, 3):map(function(it)
-        if it == 2 then
-            return 0
-        else
-            return it * 10
+    local ____list = __K2L_ReadOnlyListOf(1, 2, 3)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        local ____result
+        do
+            if it == 2 then
+                ____result = 0
+                goto ____inline_end
+            else
+                ____result = it * 10
+            end
+            ::____inline_end::
         end
-    end)))
+        ____count = ____count + 1
+        ____out[____count] = ____result
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     local n = 0
     print(__K2L_Str(twice(function()
         n = n + 1
@@ -58,10 +71,10 @@ local function main()
     end
     do
         if total == 4 then
-            goto ____inline_end
+            goto ____inline_end_1
         end
         print("not reached")
-        ::____inline_end::
+        ::____inline_end_1::
     end
     print(sign(-2) .. " " .. sign(0) .. " " .. sign(9))
     local ____pairs = twice(function()

@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
@@ -21,12 +22,25 @@ local function mark(s)
     end):joinToString(""))
 end
 
+local ____lambda_1 = function(it)
+    return "[" .. it.range.first .. "," .. it.range.last + 1 .. "]"
+end
 local function show(pattern, s)
     local regex = __K2L_Regex.new(pattern)
-    local ranges = __K2L_Sequence.new(regex:findAllFactory(s)):map(function(it)
-        return "[" .. it.range.first .. "," .. it.range.last + 1 .. "]"
-    end):joinToString("")
-    print(__K2L_Utf16.out("'" .. pattern .. "' on " .. mark(s) .. " (" .. __K2L_Utf16.len(s) .. "): " .. ranges .. " replace=" .. mark(regex:replace(s, "-")) .. " split=" .. __K2L_Str(regex:split(s):map(function(it) return mark(it) end))))
+    local ranges = __K2L_Sequence.new(regex:findAllFactory(s)):map(____lambda_1):joinToString("")
+    local ____arg = mark(s)
+    local ____arg_1 = __K2L_Utf16.len(s)
+    local ____arg_2 = mark(regex:replace(s, "-"))
+    local ____list = regex:split(s)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = mark(it)
+    end
+    print(__K2L_Utf16.out("'" .. pattern .. "' on " .. ____arg .. " (" .. ____arg_1 .. "): " .. ranges .. " replace=" .. ____arg_2 .. " split=" .. __K2L_Str(__K2L_ListWrap(____out, ____count))))
 end
 
 local function main()
@@ -51,8 +65,26 @@ local function main()
     show("(?<!a)", smile)
     show("", "")
     show("x*", "ab")
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_StringSplit("a,b", ""):map(function(it) return mark(it) end))))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_StringSplit(smile, ""):map(function(it) return mark(it) end))))
+    local ____list_1 = __K2L_StringSplit("a,b", "")
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = mark(it)
+    end
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1))))
+    local ____list_2 = __K2L_StringSplit(smile, "")
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_2, ____n_2 = ____list_2:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_2[____i_2]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = mark(it)
+    end
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ListWrap(____out_2, ____count_2))))
     print(__K2L_Utf16.out(mark(__K2L_StringReplace(smile, "", "-"))))
     print(__K2L_Utf16.out(__K2L_StringIndexOf(smile, "") + __K2L_StringLastIndexOf(smile, "") + __K2L_StringIndexOf(smile, "", 2)))
 end

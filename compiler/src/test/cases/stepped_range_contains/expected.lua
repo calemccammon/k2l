@@ -57,31 +57,42 @@ local function charKind(c)
     end
 end
 
+local ____lambda_1 = function(it)
+    return it >= 0 and it <= 10 and (it - 0) % 2 == 0
+end
+local ____lambda_2 = function(it)
+    return it >= 1 and it <= 10 and (it - 1) % 3 == 0
+end
+local ____lambda_3 = function(it)
+    return not (it >= 1 and it <= 10 and (it - 1) % 3 == 0)
+end
+local ____lambda_4 = function(it)
+    return it >= 0 and it <= 10 and (10 - it) % 3 == 0
+end
+local ____lambda_5 = function(it)
+    return it >= 0 and it < 10 and (it - 0) % 4 == 0
+end
+local ____lambda_6 = function(it)
+    return it >= 0 and it < 9 and (it - 0) % 3 == 0
+end
+local ____lambda_7 = function(it)
+    return it >= 5 and it <= 4 and (it - 5) % 1 == 0
+end
+local ____lambda_8 = function(it)
+    return it >= 7 and it <= 7 and (it - 7) % 5 == 0
+end
+local ____lambda_9 = function(it)
+    return it >= 2 and it <= 13 and (it - 2) % 5 == 0
+end
 local function main()
-    print(ints(__K2L_IntRange.new(-2, 12), function(it)
-        return it >= 0 and it <= 10 and (it - 0) % 2 == 0
-    end))
-    print(ints(__K2L_IntRange.new(-2, 12), function(it)
-        return it >= 1 and it <= 10 and (it - 1) % 3 == 0
-    end))
-    print(ints(__K2L_IntRange.new(-2, 12), function(it)
-        return not (it >= 1 and it <= 10 and (it - 1) % 3 == 0)
-    end))
-    print(ints(__K2L_IntRange.new(-2, 12), function(it)
-        return it >= 0 and it <= 10 and (10 - it) % 3 == 0
-    end))
-    print(ints(__K2L_IntRange.new(-2, 12), function(it)
-        return it >= 0 and it < 10 and (it - 0) % 4 == 0
-    end))
-    print(ints(__K2L_IntRange.new(-2, 12), function(it)
-        return it >= 0 and it < 9 and (it - 0) % 3 == 0
-    end))
-    print(ints(__K2L_IntRange.new(-2, 12), function(it)
-        return it >= 5 and it <= 4 and (it - 5) % 1 == 0
-    end))
-    print(ints(__K2L_IntRange.new(-2, 12), function(it)
-        return it >= 7 and it <= 7 and (it - 7) % 5 == 0
-    end))
+    print(ints(__K2L_IntRange.new(-2, 12), ____lambda_1))
+    print(ints(__K2L_IntRange.new(-2, 12), ____lambda_2))
+    print(ints(__K2L_IntRange.new(-2, 12), ____lambda_3))
+    print(ints(__K2L_IntRange.new(-2, 12), ____lambda_4))
+    print(ints(__K2L_IntRange.new(-2, 12), ____lambda_5))
+    print(ints(__K2L_IntRange.new(-2, 12), ____lambda_6))
+    print(ints(__K2L_IntRange.new(-2, 12), ____lambda_7))
+    print(ints(__K2L_IntRange.new(-2, 12), ____lambda_8))
     print(ints(__K2L_IntRange.new(-2, 12), function(it)
         local ____first_3 = -1
         return it >= -1 and it <= ____first_3 and (____first_3 - it) % 2 == 0
@@ -148,9 +159,7 @@ local function main()
     local ____value_13 = -7
     print(tostring(____value_12 >= -10 and ____value_12 <= 10 and (10 - ____value_12) % 4 == 0) .. " " .. tostring(not (____value_13 >= -10 and ____value_13 <= 10 and (10 - ____value_13) % 4 == 0)) .. " " .. tostring(10 >= 0 and 10 < 10 and (10 - 0) % 5 == 0))
     print(tostring(7 >= 1 and 7 <= 10 and (7 - 1) % 3 == 0) .. " " .. tostring(not (8 >= 1 and 8 <= 10 and (8 - 1) % 3 == 0)) .. " " .. tostring(not math.ult(5, 1) and not math.ult(9, 5) and __K2L_Unsigned.urem(9 - 5, 2) == 0) .. " " .. tostring(not math.ult(4, 1) and not math.ult(9, 4) and __K2L_Unsigned.urem(9 - 4, 2) == 0))
-    local longs = __K2L_IntRange.new(-5, 15):filter(function(it)
-        return it >= 2 and it <= 13 and (it - 2) % 5 == 0
-    end)
+    local longs = __K2L_IntRange.new(-5, 15):filter(____lambda_9)
     print(__K2L_Str(longs))
     local ____list_1 = __K2L_ReadOnlyListOf(2, 0, -3)
     for ____i_1 = 1, ____list_1.size do

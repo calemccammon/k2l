@@ -13,6 +13,7 @@ local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_LinkedList = ____lualib.__K2L_LinkedList
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_PriorityQueue = ____lualib.__K2L_PriorityQueue
 local __K2L_QueueInterface = ____lualib.__K2L_QueueInterface
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -38,6 +39,7 @@ local function t(name, f)
     print(name .. " -> " .. __K2L_Str(r))
 end
 
+local ____lambda_1 = function() return __K2L_Deque.new():first() end
 local function main()
     local d = __K2L_Deque.new(__K2L_ReadOnlyListOf(1, 2, 3))
     local a = d
@@ -68,15 +70,23 @@ local function main()
     t("eq", function()
         return tostring(__K2L_Equals(d, __K2L_ReadOnlyListOf(1, 2, 3))) .. " " .. tostring(__K2L_Equals(__K2L_ReadOnlyListOf(1, 2, 3), d)) .. " " .. tostring(__K2L_Equals(d:toList(), __K2L_ReadOnlyListOf(1, 2, 3))) .. " " .. tostring(__K2L_Equals(d, d))
     end)
-    t("first empty", function() return __K2L_Deque.new():first() end)
+    t("first empty", ____lambda_1)
     t("single", function() return d:single() end)
     t("ops", function()
-        return __K2L_Str(d:map(function(it) return it * 2 end)) .. " " .. __K2L_Str(d:first()) .. " " .. __K2L_Str(d:last()) .. " " .. __K2L_Str(d:elementAt(1)) .. " " .. d:indexOf(2) .. " " .. tostring(d:contains(3)) .. " " .. d:sum()
+        local ____out = {}
+        local ____count = 0
+        local ____items, ____n = d:____array()
+        for ____i = 1, ____n do
+            local it = ____items[____i]
+            ____count = ____count + 1
+            ____out[____count] = it * 2
+        end
+        return __K2L_Str(__K2L_ListWrap(____out, ____count)) .. " " .. __K2L_Str(d:first()) .. " " .. __K2L_Str(d:last()) .. " " .. __K2L_Str(d:elementAt(1)) .. " " .. d:indexOf(2) .. " " .. tostring(d:contains(3)) .. " " .. d:sum()
     end)
     t("loop", function()
         local s = 0
-        for ____i = 1, d.size do
-            local x = d[____i]
+        for ____i_1 = 1, d.size do
+            local x = d[____i_1]
             s = s + x
         end
         return s

@@ -6,7 +6,11 @@ local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
+local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -28,12 +32,31 @@ local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local TEXT = __K2L_Text.trimIndent("\n    It was the best of times, it was the worst of times, it was the age of wisdom,\n    it was the age of foolishness, it was the epoch of belief, it was the epoch of\n    incredulity, it was the season of Light, it was the season of Darkness, it was\n    the spring of hope, it was the winter of despair.\n")
 
 local function words(self)
-    return __K2L_Regex.new("[^A-Za-z']+"):split(self):filter(function(it) return #it > 0 end):map(function(it) return it:lower() end)
+    local ____list = __K2L_Regex.new("[^A-Za-z']+"):split(self)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        if #it > 0 then
+            ____count = ____count + 1
+            ____out[____count] = it
+        end
+    end
+    local ____list_1 = __K2L_ListWrap(____out, ____count)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it:lower()
+    end
+    return __K2L_ListWrap(____out_1, ____count_1)
 end
 
 local function caesar(text, shift)
@@ -54,7 +77,8 @@ local function vigenere(text, key, decrypt)
     end
     local k = 0
     local ____builder = __K2L_StringBuilder.new()
-    for c in text:gmatch(".") do
+    for ____i_2 = 1, #text do
+        local c = text:sub(____i_2, ____i_2)
         do
             if c:match("^%a$") == nil then
                 ____builder:append(c)
@@ -78,38 +102,40 @@ local function runLength(s)
     local sb = __K2L_StringBuilder.new()
     local run = 1
     for i = 1, #s do
-        if i < #s and __K2L_StringCharAt(s, i) == __K2L_StringCharAt(s, i - 1) then
+        if i < #s and (i >= 0 and i < #s and s:sub(i + 1, i + 1) or __K2L_IndexError(i, #s, "string")) == (i - 1 >= 0 and i - 1 < #s and s:sub(i - 1 + 1, i - 1 + 1) or __K2L_IndexError(i - 1, #s, "string")) then
             run = run + 1
         else
             if run > 1 then
                 sb:append(tostring(run))
             end
-            sb:append(__K2L_StringCharAt(s, i - 1))
+            sb:append(i - 1 >= 0 and i - 1 < #s and s:sub(i - 1 + 1, i - 1 + 1) or __K2L_IndexError(i - 1, #s, "string"))
             run = 1
         end
     end
     return sb:toString()
 end
 
+local ____lambda_1 = function() return "1" end
 local function unRunLength(s)
     return __K2L_Sequence.new(__K2L_Regex.new("(\\d*)(\\D)"):findAllFactory(s)):joinToString("", nil, nil, nil, nil, function(m)
         local ____destructured = m.destructured
         local count, ch = ____destructured[1], ____destructured[2]
-        return __K2L_Text.repeatCount(ch, __K2L_StringToInt(__K2L_Text.ifEmpty(count, function() return "1" end)))
+        return __K2L_Text.repeatCount(ch, __K2L_StringToInt(__K2L_Text.ifEmpty(count, ____lambda_1)))
     end)
 end
 
+local ____lambda_2 = function(it) return it:match("^%w$") ~= nil end
 local function isPalindrome(s)
-    local cleaned = __K2L_Text.filter(s, function(it) return it:match("^%w$") ~= nil end):lower()
+    local cleaned = __K2L_Text.filter(s, ____lambda_2):lower()
     return cleaned == cleaned:reverse()
 end
 
 local function longestPalindrome(s)
     local best = ""
     for center = 0, 2 * #s - 1 - 1 do
-        local lo = __K2L_IDiv(center, 2)
-        local hi = lo + math.fmod(center, 2)
-        while lo >= 0 and hi < #s and __K2L_StringCharAt(s, lo) == __K2L_StringCharAt(s, hi) do
+        local lo = center >= 0 and center // 2 or 0 - -center // 2
+        local hi = lo + (center >= 0 and center % 2 or 0 - -center % 2)
+        while lo >= 0 and hi < #s and (lo >= 0 and lo < #s and s:sub(lo + 1, lo + 1) or __K2L_IndexError(lo, #s, "string")) == (hi >= 0 and hi < #s and s:sub(hi + 1, hi + 1) or __K2L_IndexError(hi, #s, "string")) do
             lo = lo - 1
             hi = hi + 1
         end
@@ -124,10 +150,10 @@ end
 local function wrap(text, width)
     local lines = __K2L_ListOf()
     local line = __K2L_StringBuilder.new()
-    local ____list = __K2L_Regex.new("\\s+"):split(text)
-    local ____mod = ____list.____modCount
-    for ____i = 1, ____list.size do
-        local word = ____list[____i]
+    local ____list_2 = __K2L_Regex.new("\\s+"):split(text)
+    local ____mod = ____list_2.____modCount
+    for ____i_3 = 1, ____list_2.size do
+        local word = ____list_2[____i_3]
         if line:isNotEmpty() and line:getLength() + 1 + #word > width then
             lines:add(line:toString())
             line:clear()
@@ -136,7 +162,7 @@ local function wrap(text, width)
             line:append(" ")
         end
         line:append(word)
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+        if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_3) then
             break
         end
     end
@@ -152,16 +178,35 @@ local function justify(line, width)
         return __K2L_StringPadEnd(line, width)
     end
     local gaps = words.size - 1
-    local spaces = width - words:sumOf(function(it) return #it end)
-    return words:mapIndexed(function(i, w)
+    local ____sum = 0
+    local ____items_2, ____n_2 = words:____array()
+    for ____i_4 = 1, ____n_2 do
+        local it = ____items_2[____i_4]
+        ____sum = ____sum + #it
+    end
+    local spaces = width - ____sum
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_3, ____n_3 = words:____array()
+    for ____i_5 = 1, ____n_3 do
+        local w = ____items_3[____i_5]
+        local i = ____i_5 - 1
+        local ____result
         if i == gaps then
-            return w
+            ____result = w
         else
-            return w .. __K2L_Text.repeatCount(" ", __K2L_IDiv(spaces, gaps) + (i < __K2L_IRem(spaces, gaps) and 1 or 0))
+            ____result = w .. __K2L_Text.repeatCount(" ", __K2L_IDiv(spaces, gaps) + (i < __K2L_IRem(spaces, gaps) and 1 or 0))
         end
-    end):joinToString("")
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = ____result
+    end
+    return __K2L_ListWrap(____out_2, ____count_2):joinToString("")
 end
 
+local ____lambda_3 = function(it) return it:upper() end
+local ____lambda_4 = function(w)
+    return __K2L_Text.replaceFirstChar(w, ____lambda_3)
+end
 local function render(template, values)
     return __K2L_Regex.new("\\{\\{\\s*(\\w+)(?:\\|(\\w+))?\\s*}}"):replace(template, function(m)
         local ____destructured_1 = m.destructured
@@ -173,9 +218,7 @@ local function render(template, values)
         elseif filter == "upper" then
             return value:upper()
         elseif filter == "title" then
-            return __K2L_StringSplit(value, " "):joinToString(" ", nil, nil, nil, nil, function(w)
-                return __K2L_Text.replaceFirstChar(w, function(it) return it:upper() end)
-            end)
+            return __K2L_StringSplit(value, " "):joinToString(" ", nil, nil, nil, nil, ____lambda_4)
         elseif filter == "len" then
             return tostring(#value)
         else
@@ -193,12 +236,16 @@ function LogEntry:____init(time, level, component, message)
     self.message = message
 end
 
+function LogEntry.new(time, level, component, message)
+    return setmetatable({time = time, level = level, component = component, message = message}, LogEntry)
+end
+
 function LogEntry:toString()
     return "LogEntry(time=" .. self.time .. ", level=" .. self.level .. ", component=" .. self.component .. ", message=" .. self.message .. ")"
 end
 
 function LogEntry:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.time) + __K2L_Hash(self.level)) + __K2L_Hash(self.component)) + __K2L_Hash(self.message))
+    return (31 * (31 * (31 * __K2L_Hash(self.time) + __K2L_Hash(self.level)) + __K2L_Hash(self.component)) + __K2L_Hash(self.message) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function LogEntry:equals(other)
@@ -207,59 +254,148 @@ end
 
 local LOG = "\n    2024-05-01T10:00:01 INFO  [db] connection pool started (size=10)\n    2024-05-01T10:00:02 WARN  [http] slow request: GET /api/items took 1532ms\n    2024-05-01T10:00:05 ERROR [db] query failed: timeout after 3000ms\n    garbage line without structure\n    2024-05-01T10:00:07 INFO  [http] GET /api/items 200 in 87ms\n    2024-05-01T10:00:09 ERROR [auth] invalid token for user=alice\n    2024-05-01T10:00:12 INFO  [http] POST /api/orders 201 in 143ms\n"
 
+local ____lambda_5 = function(____p1) return not __K2L_StringIsBlank(____p1) end
 local function parseLog(text)
     local re = __K2L_Regex.new("^(\\S+)\\s+(INFO|WARN|ERROR)\\s+\\[(\\w+)]\\s+(.*)$")
     local bad = 0
-    local entries = __K2L_StringLines(__K2L_Text.trimIndent(text)):filter(function(____p1) return not __K2L_StringIsBlank(____p1) end):mapNotNull(function(line)
-        local ____receiver_1 = re:matchEntire(line)
-        local ____receiver_2 = ____receiver_1 and ____receiver_1.groupValues
+    local ____list_3 = __K2L_StringLines(__K2L_Text.trimIndent(text)):filter(____lambda_5)
+    local ____out_3 = {}
+    local ____count_3 = 0
+    local ____items_4, ____n_4 = ____list_3:____array()
+    for ____i_6 = 1, ____n_4 do
+        local line = ____items_4[____i_6]
         local ____result_1
-        if ____receiver_2 ~= nil then
-            local ____result
-            do
-                local t, l, c, m = ____receiver_2[2], ____receiver_2[3], ____receiver_2[4], ____receiver_2[5]
-                ____result = LogEntry.new(t, l, c, m)
+        do
+            local ____receiver_1 = re:matchEntire(line)
+            local ____receiver_2 = ____receiver_1 and ____receiver_1.groupValues
+            local ____result_3
+            if ____receiver_2 ~= nil then
+                local ____result_2
+                do
+                    local t, l, c, m = ____receiver_2[2], ____receiver_2[3], ____receiver_2[4], ____receiver_2[5]
+                    ____result_2 = LogEntry.new(t, l, c, m)
+                end
+                ____result_3 = ____result_2
             end
-            ____result_1 = ____result
+            local ____value = ____result_3
+            if ____value == nil then
+                local ____result_4
+                bad = bad + 1
+                ____result_4 = nil
+                ____value = ____result_4
+            end
+            ____result_1 = ____value
         end
-        local ____value = ____result_1
-        if ____value == nil then
-            local ____result_2
-            bad = bad + 1
-            ____result_2 = nil
-            ____value = ____result_2
+        local ____value_1 = ____result_1
+        if ____value_1 ~= nil then
+            ____count_3 = ____count_3 + 1
+            ____out_3[____count_3] = ____value_1
         end
-        return ____value
-    end)
+    end
+    local entries = __K2L_ListWrap(____out_3, ____count_3)
     return __K2L_Pair.new(entries, bad)
 end
 
+local ____lambda_6 = function(it) return it end
+local ____lambda_7 = function(it) return it.value end
+local ____lambda_8 = function(it) return it.key end
+local ____lambda_9 = function(it) return it.key .. "=" .. it.value end
+local ____lambda_10 = function(it) return #it end
+local ____lambda_11 = function(it) return it.value.size end
+local ____lambda_12 = function(it) return it:match("^%a$") ~= nil end
+local ____lambda_13 = function(it) return it end
+local ____lambda_14 = function(it) return it.value end
+local ____lambda_15 = function(it) return it.value end
+local ____lambda_16 = function(____p1) return ____p1:upper() end
+local ____lambda_17 = function()
+    return render("{{x|bogus}}", __K2L_SingletonMapOf(__K2L_Pair.new("x", 1)))
+end
+local ____lambda_18 = function(it) return it.level end
+local ____lambda_19 = function(m) return m.groupValues:get(2) end
+local ____lambda_20 = function(it)
+    return __K2L_Pair.new(it.groupValues:get(1), it.groupValues:get(2))
+end
+local ____lambda_21 = function(it) return it:upper() end
+local ____lambda_22 = function(it) return it:byte() end
+local ____lambda_23 = function(it)
+    return (it.index >= 0 and it.index % 2 or 0 - -it.index % 2) == 0
+end
 local function main()
     local words = words(TEXT)
     print("words=" .. words.size .. " distinct=" .. words:toSet().size .. " chars=" .. #TEXT .. " lines=" .. __K2L_StringLines(TEXT).size)
-    local freq = words:groupingBy(function(it) return it end):eachCount()
-    local top = freq:getEntries():sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(function(it) return it.value end), function(it) return it.key end)):take(5)
-    print("top: " .. top:joinToString(nil, nil, nil, nil, nil, function(it) return it.key .. "=" .. it.value end))
-    print("longest words: " .. __K2L_Str(words:distinct():sortedByDescending(function(it) return #it end, true):take(3)))
-    print("by length: " .. __K2L_Str(words:distinct():groupBy(function(it) return #it end):toSortedMap():mapValues(function(it) return it.value.size end)))
-    print("letters: " .. __K2L_Str(__K2L_StringToList(__K2L_Text.filter(TEXT:lower(), function(it) return it:match("^%a$") ~= nil end)):groupingBy(function(it) return it end):eachCount():getEntries():sortedByDescending(function(it) return it.value end, true):take(4):map(function(it) return it.key .. ":" .. it.value end)))
-    print("capitalized: " .. __K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("\\b[A-Z]\\w*"):findAllFactory(TEXT)):map(function(it) return it.value end):toList()))
-    print("sentence case: " .. __K2L_Str(__K2L_StringSplit(__K2L_StringLines(TEXT):first(), ", "):map(function(it)
-        return __K2L_Text.replaceFirstChar(it, function(____p1) return ____p1:upper() end)
-    end)))
+    local freq = words:groupingBy(____lambda_6):eachCount()
+    local top = freq:getEntries():sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_7), ____lambda_8)):take(5)
+    print("top: " .. top:joinToString(nil, nil, nil, nil, nil, ____lambda_9))
+    print("longest words: " .. __K2L_Str(words:distinct():sortedByDescending(____lambda_10, true):take(3)))
+    local ____list_4 = words:distinct()
+    local ____result_5 = __K2L_Map.new()
+    local ____items_5, ____n_5 = ____list_4:____array()
+    for ____i_7 = 1, ____n_5 do
+        local it = ____items_5[____i_7]
+        local ____value_2 = #it
+        local ____group = ____result_5:get(____value_2)
+        if ____group == nil then
+            ____group = __K2L_List.new()
+            ____result_5:put(____value_2, ____group)
+        end
+        ____group:add(it)
+    end
+    print("by length: " .. __K2L_Str(____result_5:toSortedMap():mapValues(____lambda_11)))
+    local ____list_5 = __K2L_StringToList(__K2L_Text.filter(TEXT:lower(), ____lambda_12)):groupingBy(____lambda_13):eachCount():getEntries():sortedByDescending(____lambda_14, true):take(4)
+    local ____out_4 = {}
+    local ____count_4 = 0
+    local ____items_6, ____n_6 = ____list_5:____array()
+    for ____i_8 = 1, ____n_6 do
+        local it = ____items_6[____i_8]
+        ____count_4 = ____count_4 + 1
+        ____out_4[____count_4] = it.key .. ":" .. it.value
+    end
+    print("letters: " .. __K2L_Str(__K2L_ListWrap(____out_4, ____count_4)))
+    print("capitalized: " .. __K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("\\b[A-Z]\\w*"):findAllFactory(TEXT)):map(____lambda_15):toList()))
+    local ____list_6 = __K2L_StringSplit(__K2L_StringLines(TEXT):first(), ", ")
+    local ____out_5 = {}
+    local ____count_5 = 0
+    local ____items_7, ____n_7 = ____list_6:____array()
+    for ____i_9 = 1, ____n_7 do
+        local it = ____items_7[____i_9]
+        ____count_5 = ____count_5 + 1
+        ____out_5[____count_5] = __K2L_Text.replaceFirstChar(it, ____lambda_16)
+    end
+    print("sentence case: " .. __K2L_Str(__K2L_ListWrap(____out_5, ____count_5)))
     local list = __K2L_ReadOnlyListOf("listen", "silent", "enlist", "google", "gooegl", "cat", "act", "tac", "dog")
-    local anagrams = list:groupBy(function(it)
-        return __K2L_Text.toCharArray(it):sorted():joinToString("")
-    end):getValues():filter(function(it) return it.size > 1 end)
+    local ____result_6 = __K2L_Map.new()
+    local ____items_8, ____n_8 = list:____array()
+    for ____i_10 = 1, ____n_8 do
+        local it = ____items_8[____i_10]
+        local ____value_3 = __K2L_Text.toCharArray(it):sorted():joinToString("")
+        local ____group_1 = ____result_6:get(____value_3)
+        if ____group_1 == nil then
+            ____group_1 = __K2L_List.new()
+            ____result_6:put(____value_3, ____group_1)
+        end
+        ____group_1:add(it)
+    end
+    local ____list_7 = ____result_6:getValues()
+    local ____out_6 = {}
+    local ____count_6 = 0
+    local ____items_9, ____n_9 = ____list_7:____array()
+    for ____i_11 = 1, ____n_9 do
+        local it = ____items_9[____i_11]
+        if it.size > 1 then
+            ____count_6 = ____count_6 + 1
+            ____out_6[____count_6] = it
+        end
+    end
+    local anagrams = __K2L_ListWrap(____out_6, ____count_6)
     print("anagrams: " .. __K2L_Str(anagrams))
     local secret = caesar("Hello, World! xyz", 3)
     print("caesar: " .. secret .. " -> " .. caesar(secret, -3))
     local v = vigenere("Attack at dawn!", "Lemon")
     print("vigenere: " .. v .. " -> " .. vigenere(v, "Lemon", true))
     print("rot13 twice: " .. caesar(caesar("Why did the chicken cross the road?", 13), 13))
-    local ____list_1 = __K2L_ReadOnlyListOf("WWWWWWWWWWWWBWWWWWWWWWWWWBBBWWWWWWWWWWWWWWWWWWWWWWWWBWWWWWWWWWWWWWW", "abc", "aabcccccaaa", "")
-    for ____i_1 = 1, ____list_1.size do
-        local s = ____list_1[____i_1]
+    local ____list_8 = __K2L_ReadOnlyListOf("WWWWWWWWWWWWBWWWWWWWWWWWWBBBWWWWWWWWWWWWWWWWWWWWWWWWBWWWWWWWWWWWWWW", "abc", "aabcccccaaa", "")
+    for ____i_12 = 1, ____list_8.size do
+        local s = ____list_8[____i_12]
         local enc = runLength(s)
         if unRunLength(enc) ~= s then
             error(__K2L_IllegalStateException.new("round trip failed for " .. s))
@@ -268,67 +404,118 @@ local function main()
     end
     local phrases = __K2L_ReadOnlyListOf("A man, a plan, a canal: Panama", "race a car", "No 'x' in Nixon", "Was it a car or a cat I saw?")
     local ____mod_1 = phrases.____modCount
-    for ____i_2 = 1, phrases.size do
-        local it = phrases[____i_2]
+    for ____i_13 = 1, phrases.size do
+        local it = phrases[____i_13]
         print("palindrome? " .. __K2L_StringPadEnd(tostring(isPalindrome(it)), 5) .. " " .. it)
-        if phrases.____modCount ~= ____mod_1 and phrases:____comodified(____i_2) then
+        if phrases.____modCount ~= ____mod_1 and phrases:____comodified(____i_13) then
             break
         end
     end
     print("longest palindromes: " .. __K2L_Str(__K2L_ReadOnlyListOf("babad", "cbbd", "forgeeksskeegfor", "abacdfgdcaba"):map(longestPalindrome)))
     local lines = wrap(__K2L_StringReplace(TEXT, "\n", " "), 36)
     local ____mod_2 = lines.____modCount
-    for ____i_3 = 1, lines.size do
-        local l = lines[____i_3]
-        local i = ____i_3 - 1
+    for ____i_14 = 1, lines.size do
+        local l = lines[____i_14]
+        local i = ____i_14 - 1
         print("|" .. (i == lines.size - 1 and __K2L_StringPadEnd(l, 36) or justify(l, 36)) .. "|")
-        if lines.____modCount ~= ____mod_2 and lines:____comodified(____i_3) then
+        if lines.____modCount ~= ____mod_2 and lines:____comodified(____i_14) then
             break
         end
     end
     local tpl = "Dear {{ name|title }}, your order #{{id}} of {{ count }} {{item|upper}} ships {{when}}. ({{name|len}})"
     print(render(tpl, __K2L_ReadOnlyMapOf(__K2L_Pair.new("name", "ada lovelace"), __K2L_Pair.new("id", 1042), __K2L_Pair.new("count", 3), __K2L_Pair.new("item", "widgets"), __K2L_Pair.new("when", nil))))
-    local ____receiver_3 = __K2L_RunCatching(function()
-        return render("{{x|bogus}}", __K2L_SingletonMapOf(__K2L_Pair.new("x", 1)))
-    end):exceptionOrNull()
+    local ____receiver_3 = __K2L_RunCatching(____lambda_17):exceptionOrNull()
     print(__K2L_Str(____receiver_3 and ____receiver_3.message))
     local ____destructured_2 = parseLog(LOG)
     local entries, bad = ____destructured_2.first, ____destructured_2.second
     print("log: " .. entries.size .. " entries, " .. bad .. " malformed")
-    print("levels: " .. __K2L_Str(entries:groupingBy(function(it) return it.level end):eachCount()))
-    local durations = entries:mapNotNull(function(it)
-        local ____receiver_4 = __K2L_Regex.new("(\\d+)ms"):find(it.message)
-        local ____receiver_5 = ____receiver_4 and ____receiver_4.groupValues
-        local ____receiver_6 = ____receiver_5 and ____receiver_5:get(1)
-        return ____receiver_6 and __K2L_StringToInt(____receiver_6)
-    end)
+    print("levels: " .. __K2L_Str(entries:groupingBy(____lambda_18):eachCount()))
+    local ____out_7 = {}
+    local ____count_7 = 0
+    local ____items_10, ____n_10 = entries:____array()
+    for ____i_15 = 1, ____n_10 do
+        local it = ____items_10[____i_15]
+        local ____result_7
+        do
+            local ____receiver_4 = __K2L_Regex.new("(\\d+)ms"):find(it.message)
+            local ____receiver_5 = ____receiver_4 and ____receiver_4.groupValues
+            local ____receiver_6 = ____receiver_5 and ____receiver_5:get(1)
+            ____result_7 = ____receiver_6 and __K2L_StringToInt(____receiver_6)
+        end
+        local ____value_4 = ____result_7
+        if ____value_4 ~= nil then
+            ____count_7 = ____count_7 + 1
+            ____out_7[____count_7] = ____value_4
+        end
+    end
+    local durations = __K2L_ListWrap(____out_7, ____count_7)
     print("durations: " .. __K2L_Str(durations) .. " avg=" .. __K2L_StringFormat("%.1f", durations:average()))
-    local ____list_2 = entries:filter(function(it) return it.level == "ERROR" end)
-    local ____mod_3 = ____list_2.____modCount
-    for ____i_4 = 1, ____list_2.size do
-        local ____it_1 = ____list_2[____i_4]
+    local ____out_8 = {}
+    local ____count_8 = 0
+    local ____items_11, ____n_11 = entries:____array()
+    for ____i_16 = 1, ____n_11 do
+        local it = ____items_11[____i_16]
+        if it.level == "ERROR" then
+            ____count_8 = ____count_8 + 1
+            ____out_8[____count_8] = it
+        end
+    end
+    local ____list_9 = __K2L_ListWrap(____out_8, ____count_8)
+    local ____mod_3 = ____list_9.____modCount
+    for ____i_17 = 1, ____list_9.size do
+        local ____it_1 = ____list_9[____i_17]
         do
             local time, comp, msg = ____it_1.time, ____it_1.component, ____it_1.message
             print("  " .. __K2L_Text.substringAfter(time, "T") .. " " .. comp .. ": " .. __K2L_Text.substringBefore(msg, ":"))
         end
-        if ____list_2.____modCount ~= ____mod_3 and ____list_2:____comodified(____i_4) then
+        if ____list_9.____modCount ~= ____mod_3 and ____list_9:____comodified(____i_17) then
             break
         end
     end
-    local paths = entries:flatMap(function(it)
-        return __K2L_Sequence.new(__K2L_Regex.new("(GET|POST) (\\S+)"):findAllFactory(it.message)):map(function(m) return m.groupValues:get(2) end):toList()
-    end)
-    print("paths: " .. __K2L_Str(paths:distinct()) .. " kv: " .. __K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("(\\w+)=(\\w+)"):findAllFactory(LOG)):associate(function(it)
-        return __K2L_Pair.new(it.groupValues:get(1), it.groupValues:get(2))
-    end)))
-    print("snake: " .. __K2L_Regex.new("([a-z])([A-Z])"):replace("parseHttpResponseCode", "$1_$2"):lower() .. " camel: " .. __K2L_StringSplit("max_retry_count", "_"):mapIndexed(function(i, p)
-        if i == 0 then
-            return p
-        else
-            return __K2L_Text.replaceFirstChar(p, function(it) return it:upper() end)
+    local ____out_9 = {}
+    local ____count_9 = 0
+    local ____items_12, ____n_12 = entries:____array()
+    for ____i_18 = 1, ____n_12 do
+        local it = ____items_12[____i_18]
+        local ____result_8
+        ____result_8 = __K2L_Sequence.new(__K2L_Regex.new("(GET|POST) (\\S+)"):findAllFactory(it.message)):map(____lambda_19):toList()
+        local ____inner, ____m = ____result_8:____array()
+        for ____j = 1, ____m do
+            ____count_9 = ____count_9 + 1
+            ____out_9[____count_9] = ____inner[____j]
         end
-    end):joinToString(""))
-    print("chars: " .. __K2L_Str(__K2L_StringToList("Hello"):map(function(it) return it:byte() end)) .. " " .. __K2L_Str(__K2L_StringToList("Kotlin"):withIndex():filter(function(it) return math.fmod(it.index, 2) == 0 end):map(function(it) return it.value end)) .. " " .. __K2L_Str(__K2L_Text.split("a-b-c", {"-"}, 2)))
+    end
+    local paths = __K2L_ListWrap(____out_9, ____count_9)
+    print("paths: " .. __K2L_Str(paths:distinct()) .. " kv: " .. __K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("(\\w+)=(\\w+)"):findAllFactory(LOG)):associate(____lambda_20)))
+    local ____arg = __K2L_Regex.new("([a-z])([A-Z])"):replace("parseHttpResponseCode", "$1_$2"):lower()
+    local ____list_10 = __K2L_StringSplit("max_retry_count", "_")
+    local ____out_10 = {}
+    local ____count_10 = 0
+    local ____items_13, ____n_13 = ____list_10:____array()
+    for ____i_19 = 1, ____n_13 do
+        local p = ____items_13[____i_19]
+        local i = ____i_19 - 1
+        local ____result_9
+        if i == 0 then
+            ____result_9 = p
+        else
+            ____result_9 = __K2L_Text.replaceFirstChar(p, ____lambda_21)
+        end
+        ____count_10 = ____count_10 + 1
+        ____out_10[____count_10] = ____result_9
+    end
+    print("snake: " .. ____arg .. " camel: " .. __K2L_ListWrap(____out_10, ____count_10):joinToString(""))
+    local ____arg_1 = __K2L_StringToList("Hello"):map(____lambda_22)
+    local ____list_11 = __K2L_StringToList("Kotlin"):withIndex():filter(____lambda_23)
+    local ____out_11 = {}
+    local ____count_11 = 0
+    local ____items_14, ____n_14 = ____list_11:____array()
+    for ____i_20 = 1, ____n_14 do
+        local it = ____items_14[____i_20]
+        ____count_11 = ____count_11 + 1
+        ____out_11[____count_11] = it.value
+    end
+    print("chars: " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(__K2L_ListWrap(____out_11, ____count_11)) .. " " .. __K2L_Str(__K2L_Text.split("a-b-c", {"-"}, 2)))
 end
 
 main()

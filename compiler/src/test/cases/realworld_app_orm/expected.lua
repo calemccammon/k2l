@@ -2,6 +2,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
@@ -13,11 +14,31 @@ local __K2L_Unit = ____lualib.__K2L_Unit
 local ____Database = require("orm.Database")
 local ____Model = require("model.Model")
 
+local ____lambda_1 = function(self) return self:getId():eq(2) end
+local ____lambda_2 = function(____this)
+    return ____this:update(__K2L_TouchObject(____Model.Posts), ____Model.Posts:getAuthor():eq(1), __K2L_SingletonMapOf(__K2L_Pair.new(____Model.Posts:getAuthor(), 3)))
+end
+local ____lambda_3 = function(____this_3) return 1 end
+local ____lambda_4 = function(____this_2)
+    return ____this_2:transaction(____lambda_3)
+end
+local ____lambda_5 = function(it) return it.likes end
+local ____lambda_6 = function(receiver) return receiver.title end
 local function main()
     local db = ____Database.Database.new()
     db:create(__K2L_TouchObject(____Model.Authors))
     db:create(__K2L_TouchObject(____Model.Posts))
-    print("columns: " .. __K2L_Str(____Model.Authors:getAllColumns()) .. " " .. __K2L_Str(____Model.Posts:getAllColumns():map(function(it) return it.name end)))
+    local ____arg = ____Model.Authors:getAllColumns()
+    local ____list = ____Model.Posts:getAllColumns()
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = it.name
+    end
+    print("columns: " .. __K2L_Str(____arg) .. " " .. __K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(__K2L_Str(____Model.Authors:getId()) .. " " .. __K2L_Str(____Model.Authors:getRole().default) .. " " .. ____Model.Posts:getLikes():ddl())
     local authors = ____Model.AuthorDao.new(db)
     local posts = ____Model.PostDao.new(db)
@@ -32,7 +53,7 @@ local function main()
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result)
-        if __K2L_InstanceOf(____error, ____Database.DatabaseException) then
+        if getmetatable(____error) == ____Database.DatabaseException then
             local e = ____error
             print("error: " .. __K2L_Str(e.message))
         else
@@ -40,16 +61,33 @@ local function main()
         end
     end
     print("admins: " .. __K2L_Str(authors:admins()))
-    print("ada's posts: " .. __K2L_Str(posts:byAuthor(ada):map(function(it) return it.title end)) .. ", published: " .. __K2L_Str(posts:publishedBy(ada):map(function(it) return it.title end)))
+    local ____list_1 = posts:byAuthor(ada)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it.title
+    end
+    local ____arg_1 = __K2L_ListWrap(____out_1, ____count_1)
+    local ____list_2 = posts:publishedBy(ada)
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_2, ____n_2 = ____list_2:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_2[____i_2]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = it.title
+    end
+    print("ada's posts: " .. __K2L_Str(____arg_1) .. ", published: " .. __K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
     print("all authors: " .. __K2L_Str(authors:all()))
     print("same object: " .. tostring(authors:all():first() == ada) .. ", cached " .. authors:getCached())
     authors:rename(bob, "Robert")
     bob:setRole(____Model.Role.EDITOR)
     bob:setRole(____Model.Role.EDITOR)
-    print("bob: " .. __K2L_Str(bob) .. " changes=" .. __K2L_Str(bob.changes) .. " reloaded=" .. __K2L_Str(authors:find(function(self) return self:getId():eq(2) end)))
-    local moved = db:transaction(function(____this)
-        return ____this:update(__K2L_TouchObject(____Model.Posts), ____Model.Posts:getAuthor():eq(1), __K2L_SingletonMapOf(__K2L_Pair.new(____Model.Posts:getAuthor(), 3)))
-    end)
+    print("bob: " .. __K2L_Str(bob) .. " changes=" .. __K2L_Str(bob.changes) .. " reloaded=" .. __K2L_Str(authors:find(____lambda_1)))
+    local moved = db:transaction(____lambda_2)
     print("moved " .. moved .. " posts")
     local ____ok_1, ____result_1 = pcall(function()
         db:transaction(function(____this_1)
@@ -60,7 +98,7 @@ local function main()
     end)
     if not ____ok_1 then
         local ____error_1 = __K2L_ToThrowable(____result_1)
-        if __K2L_InstanceOf(____error_1, ____Database.DatabaseException) then
+        if getmetatable(____error_1) == ____Database.DatabaseException then
             local e = ____error_1
             local ____receiver = e.cause
             print(__K2L_Str(e.message) .. ": " .. __K2L_Str(____receiver and ____receiver.message) .. "; posts=" .. db:count(__K2L_TouchObject(____Model.Posts)))
@@ -69,9 +107,7 @@ local function main()
         end
     end
     local ____ok_2, ____result_2 = pcall(function()
-        db:transaction(function(____this_2)
-            return ____this_2:transaction(function(____this_3) return 1 end)
-        end)
+        db:transaction(____lambda_4)
     end)
     if not ____ok_2 then
         local ____error_2 = __K2L_ToThrowable(____result_2)
@@ -82,13 +118,31 @@ local function main()
             error(____error_2, 0)
         end
     end
-    print("posts now: " .. __K2L_Str(posts:all():map(function(it)
-        return it.id .. ":" .. it.authorId .. ":" .. it.likes
-    end)))
-    print(__K2L_Str(posts:all():filter(function(it) return it.published end):sortedByDescending(function(it) return it.likes end, true):map(__K2L_PropertyRef.new("title", "title@562", function(receiver) return receiver.title end))))
-    local ____list = db.statements
-    for ____i = 1, ____list.size do
-        local it = ____list[____i]
+    local ____list_3 = posts:all()
+    local ____out_3 = {}
+    local ____count_3 = 0
+    local ____items_3, ____n_3 = ____list_3:____array()
+    for ____i_3 = 1, ____n_3 do
+        local it = ____items_3[____i_3]
+        ____count_3 = ____count_3 + 1
+        ____out_3[____count_3] = it.id .. ":" .. it.authorId .. ":" .. it.likes
+    end
+    print("posts now: " .. __K2L_Str(__K2L_ListWrap(____out_3, ____count_3)))
+    local ____list_4 = posts:all()
+    local ____out_4 = {}
+    local ____count_4 = 0
+    local ____items_4, ____n_4 = ____list_4:____array()
+    for ____i_4 = 1, ____n_4 do
+        local it = ____items_4[____i_4]
+        if it.published then
+            ____count_4 = ____count_4 + 1
+            ____out_4[____count_4] = it
+        end
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_4, ____count_4):sortedByDescending(____lambda_5, true):map(__K2L_PropertyRef.new("title", "title@562", ____lambda_6))))
+    local ____list_5 = db.statements
+    for ____i_5 = 1, ____list_5.size do
+        local it = ____list_5[____i_5]
         print("  " .. it)
     end
 end
@@ -107,7 +161,6 @@ local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_TouchObject = ____lualib.__K2L_TouchObject
 
 local ____Table = require("orm.Table")
@@ -193,7 +246,7 @@ function Post:toString()
 end
 
 function Post:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.id) + __K2L_Hash(self.authorId)) + __K2L_Hash(self.title)) + __K2L_Hash(self.published)) + __K2L_Hash(self.likes))
+    return (31 * (31 * (31 * (31 * self.id + self.authorId) + __K2L_Hash(self.title)) + (self.published and 1231 or 1237)) + self.likes + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Post:equals(other)
@@ -303,10 +356,11 @@ function AuthorDao:key(entity)
     return entity.id
 end
 
+local ____lambda_1 = function(____this)
+    return ____this:getRole():eq(Role.ADMIN)
+end
 function AuthorDao:admins()
-    return self:find(function(____this)
-        return ____this:getRole():eq(Role.ADMIN)
-    end)
+    return self:find(____lambda_1)
 end
 
 function AuthorDao:rename(author, newName)
@@ -339,8 +393,8 @@ local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -386,7 +440,7 @@ function Database:render(c, v)
     local ____result_1
     if v ~= nil then
         local ____result
-        if not __K2L_InstanceOf(c, ____Table.Column) then
+        if getmetatable(c) ~= ____Table.Column then
             __K2L_CastFail(c, "db.orm.Column", "db.orm.Column")
         end
         ____result = c.type:render(v)
@@ -397,28 +451,52 @@ end
 
 function Database:insert(____table, entity)
     local values = ____table:toRow(entity)
-    local pk = ____table:getAllColumns():firstOrNull(function(it) return it.primaryKey end)
-    local ____result_3
+    local ____list = ____table:getAllColumns()
+    local ____result_2
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        if it.primaryKey then
+            ____result_2 = it
+            break
+        end
+    end
+    local pk = ____result_2
+    local ____result_4
     if pk ~= nil then
-        local ____result_2
+        local ____result_3
         do
             local ____receiver = self:render(pk, values:get(pk))
-            ____result_2 = ____receiver and __K2L_Text.trimChars(____receiver, 3, "'")
+            ____result_3 = ____receiver and __K2L_Text.trimChars(____receiver, 3, "'")
         end
-        ____result_3 = ____result_2
+        ____result_4 = ____result_3
     end
-    local key = ____result_3
-    if key ~= nil and self:rows(____table):any(function(it) return it:get(pk.name) == key end) then
+    local key = ____result_4
+    local ____cond = key ~= nil
+    if ____cond then
+        local ____list_1 = self:rows(____table)
+        local ____result_5 = false
+        local ____items_1, ____n_1 = ____list_1:____array()
+        for ____i_1 = 1, ____n_1 do
+            local it = ____items_1[____i_1]
+            if it:get(pk.name) == key then
+                ____result_5 = true
+                break
+            end
+        end
+        ____cond = ____result_5
+    end
+    if ____cond then
         error(DatabaseException.new("duplicate key " .. key .. " in " .. ____table.tableName))
     end
-    local ____list = ____table:getAllColumns()
-    local ____mod = ____list.____modCount
-    for ____i = 1, ____list.size do
-        local c = ____list[____i]
+    local ____list_2 = ____table:getAllColumns()
+    local ____mod = ____list_2.____modCount
+    for ____i_2 = 1, ____list_2.size do
+        local c = ____list_2[____i_2]
         if not c.nullable and values:get(c) == nil and c.default == nil then
             error(DatabaseException.new(__K2L_Str(c) .. " may not be null"))
         end
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+        if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
             break
         end
     end
@@ -437,14 +515,36 @@ function Database:select(____table, where)
         where = nil
     end
     self.statements:add("SELECT * FROM " .. ____table.tableName .. (where and " WHERE " .. where.sql or ""))
-    return self:rows(____table):map(function(it) return ____Table.Row.new(it) end):filter(function(it)
-        local ____receiver_2 = where and where.test
-        local ____value_1 = ____receiver_2 and ____receiver_2(it)
-        if ____value_1 == nil then
-            ____value_1 = true
+    local ____list_3 = self:rows(____table)
+    local ____out = {}
+    local ____count = 0
+    local ____items_2, ____n_2 = ____list_3:____array()
+    for ____i_3 = 1, ____n_2 do
+        local it = ____items_2[____i_3]
+        ____count = ____count + 1
+        ____out[____count] = ____Table.Row.new(it)
+    end
+    local ____list_4 = __K2L_ListWrap(____out, ____count)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_3, ____n_3 = ____list_4:____array()
+    for ____i_4 = 1, ____n_3 do
+        local it = ____items_3[____i_4]
+        local ____result_6
+        do
+            local ____receiver_2 = where and where.test
+            local ____value_1 = ____receiver_2 and ____receiver_2(it)
+            if ____value_1 == nil then
+                ____value_1 = true
+            end
+            ____result_6 = ____value_1
         end
-        return ____value_1
-    end):map(function(...) return ____table:toEntity(...) end)
+        if ____result_6 then
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = it
+        end
+    end
+    return __K2L_ListWrap(____out_1, ____count_1):map(function(...) return ____table:toEntity(...) end)
 end
 
 function Database:update(____table, where, changes)
@@ -453,32 +553,32 @@ function Database:update(____table, where, changes)
         return c.name .. " = " .. __K2L_Str(self:render(c, v))
     end) .. " WHERE " .. where.sql)
     local n = 0
-    local ____list_1 = self:rows(____table)
-    local ____mod_2 = ____list_1.____modCount
-    for ____i_2 = 1, ____list_1.size do
-        local row = ____list_1[____i_2]
+    local ____list_5 = self:rows(____table)
+    local ____mod_2 = ____list_5.____modCount
+    for ____i_6 = 1, ____list_5.size do
+        local row = ____list_5[____i_6]
         do
             if not where.test(____Table.Row.new(row)) then
                 goto ____continue
             end
-            local ____items, ____n = changes:____entryArray()
+            local ____items_4, ____n_4 = changes:____entryArray()
             local ____mod_1 = changes.____modCount
-            for ____i_1 = 1, ____n do
-                local ____entry = ____items[____i_1]
+            for ____i_5 = 1, ____n_4 do
+                local ____entry = ____items_4[____i_5]
                 do
                     local c, v = ____entry.key, ____entry.value
                     local ____key_1 = c.name
                     local ____receiver_3 = self:render(c, v)
                     row:set(____key_1, ____receiver_3 and __K2L_Text.trimChars(____receiver_3, 3, "'"))
                 end
-                if changes.____modCount ~= ____mod_1 and changes:____comodified(____i_1, ____n) then
+                if changes.____modCount ~= ____mod_1 and changes:____comodified(____i_5, ____n_4) then
                     break
                 end
             end
             n = n + 1
         end
         ::____continue::
-        if ____list_1.____modCount ~= ____mod_2 and ____list_1:____comodified(____i_2) then
+        if ____list_5.____modCount ~= ____mod_2 and ____list_5:____comodified(____i_6) then
             break
         end
     end
@@ -491,31 +591,47 @@ function Database:transaction(block)
     end
     self.snapshot = self.data:mapValues(function(____destructured_1)
         local rows = ____destructured_1.value
-        return rows:map(function(it) return it:toMap() end)
+        local ____out_2 = {}
+        local ____count_2 = 0
+        local ____items_5, ____n_5 = rows:____array()
+        for ____i_7 = 1, ____n_5 do
+            local it = ____items_5[____i_7]
+            ____count_2 = ____count_2 + 1
+            ____out_2[____count_2] = it:toMap()
+        end
+        return __K2L_ListWrap(____out_2, ____count_2)
     end)
     self.statements:add("BEGIN")
-    local ____ok, ____result_4, ____returned = pcall(function()
+    local ____ok, ____result_7, ____returned = pcall(function()
         local ____value_2 = block(self)
         self.statements:add("COMMIT")
         return true, ____value_2
     end)
     if not ____ok then
-        ____ok, ____result_4, ____returned = pcall(function()
-            local ____error = __K2L_ToThrowable(____result_4)
-            if __K2L_InstanceOf(____error, DatabaseException) then
+        ____ok, ____result_7, ____returned = pcall(function()
+            local ____error = __K2L_ToThrowable(____result_7)
+            if getmetatable(____error) == DatabaseException then
                 local e = ____error
                 self.statements:add("ROLLBACK")
                 local ____collection = __K2L_NotNull(self.snapshot)
-                local ____items_1, ____n_1 = ____collection:____entryArray()
+                local ____items_6, ____n_6 = ____collection:____entryArray()
                 local ____mod_3 = ____collection.____modCount
-                for ____i_3 = 1, ____n_1 do
-                    local ____entry_1 = ____items_1[____i_3]
+                for ____i_9 = 1, ____n_6 do
+                    local ____entry_1 = ____items_6[____i_9]
                     do
                         local name, rows = ____entry_1.key, ____entry_1.value
                         local ____object_1 = self.data
-                        ____object_1:set(name, rows:map(function(it) return it:toMutableMap() end):toMutableList())
+                        local ____out_3 = {}
+                        local ____count_3 = 0
+                        local ____items_7, ____n_7 = rows:____array()
+                        for ____i_8 = 1, ____n_7 do
+                            local it = ____items_7[____i_8]
+                            ____count_3 = ____count_3 + 1
+                            ____out_3[____count_3] = it:toMutableMap()
+                        end
+                        ____object_1:set(name, __K2L_ListWrap(____out_3, ____count_3):toMutableList())
                     end
-                    if ____collection.____modCount ~= ____mod_3 and ____collection:____comodified(____i_3, ____n_1) then
+                    if ____collection.____modCount ~= ____mod_3 and ____collection:____comodified(____i_9, ____n_6) then
                         break
                     end
                 end
@@ -527,9 +643,9 @@ function Database:transaction(block)
     end
     self.snapshot = nil
     if not ____ok then
-        error(____result_4, 0)
+        error(____result_7, 0)
     end
-    if ____result_4 then
+    if ____result_7 then
         return ____returned
     end
 end
@@ -559,15 +675,26 @@ function Dao:save(entity)
 end
 
 function Dao:find(predicate)
-    return self.db:select(self.table, predicate(self.table)):map(function(e)
-        return self.identity:getOrPut(self:key(e), function() return e end)
-    end)
+    local ____list_6 = self.db:select(self.table, predicate(self.table))
+    local ____out_4 = {}
+    local ____count_4 = 0
+    local ____items_8, ____n_8 = ____list_6:____array()
+    for ____i_10 = 1, ____n_8 do
+        local e = ____items_8[____i_10]
+        local ____result_8
+        ____result_8 = self.identity:getOrPut(self:key(e), function() return e end)
+        ____count_4 = ____count_4 + 1
+        ____out_4[____count_4] = ____result_8
+    end
+    return __K2L_ListWrap(____out_4, ____count_4)
 end
 
+local ____lambda_1 = function(it) return true end
+local ____lambda_2 = function(____this)
+    return ____Table.Predicate.new("1 = 1", ____lambda_1)
+end
 function Dao:all()
-    return self:find(function(____this)
-        return ____Table.Predicate.new("1 = 1", function(it) return true end)
-    end)
+    return self:find(____lambda_2)
 end
 
 function Dao:getCached()
@@ -592,6 +719,10 @@ local ColumnType = __K2L_Class("db.orm.ColumnType")
 
 function ColumnType:____init(sqlName)
     self.sqlName = sqlName
+end
+
+function ColumnType.new(sqlName)
+    return setmetatable({sqlName = sqlName}, ColumnType)
 end
 
 function ColumnType:render(value)
@@ -647,7 +778,22 @@ function ColumnType.EnumType:____init(values)
 end
 
 function ColumnType.EnumType:parse(raw)
-    return self.values:first(function(it) return it.name == raw end)
+    local ____list = self.values
+    local ____result
+    local ____found = false
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        if it.name == raw then
+            ____result = it
+            ____found = true
+            break
+        end
+    end
+    if not ____found then
+        error(__K2L_NoSuchElementException.new("Collection contains no element matching the predicate."))
+    end
+    return ____result
 end
 
 function ColumnType.EnumType:render(value)
@@ -698,6 +844,10 @@ Predicate = __K2L_Class("db.orm.Predicate")
 function Predicate:____init(sql, test)
     self.sql = sql
     self.test = test
+end
+
+function Predicate.new(sql, test)
+    return setmetatable({sql = sql, test = test}, Predicate)
 end
 
 function Predicate:____and(other)
@@ -759,18 +909,27 @@ function Table.ColumnDelegate:____init(column)
     self.column = column
 end
 
+function Table.ColumnDelegate.new(column)
+    return setmetatable({column = column}, Table.ColumnDelegate)
+end
+
 function Table.ColumnDelegate:getValue(thisRef, property)
     return self.column
 end
 
+local ____lambda_1 = function(it) return it:ddl() end
 function Table:ddl()
-    return "CREATE TABLE " .. self.tableName .. " (" .. self.columns:joinToString(", ", nil, nil, nil, nil, function(it) return it:ddl() end) .. ")"
+    return "CREATE TABLE " .. self.tableName .. " (" .. self.columns:joinToString(", ", nil, nil, nil, nil, ____lambda_1) .. ")"
 end
 
 Row = __K2L_Class("db.orm.Row")
 
 function Row:____init(values)
     self.values = values
+end
+
+function Row.new(values)
+    return setmetatable({values = values}, Row)
 end
 
 function Row:raw(c)

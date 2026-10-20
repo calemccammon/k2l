@@ -70,13 +70,35 @@ local function __K2L_DoubleHash(value)
     return __K2L_ToInt32(xor32(doubleBits(value)))
 end
 
+local byte, find = string.byte, string.find
+
+-- String.hashCode(), four bytes per step (h * 31^4 + ...: below 2^53, so exact with doubles too)
+local function hashString(s)
+    local h
+    if find(s, "[\128-\255]") then
+        h = hashUtf8(s)
+    else
+        h = 0
+        local i, n = 1, #s
+        while i + 3 <= n do
+            local b1, b2, b3, b4 = byte(s, i, i + 3)
+            h = (h * 923521 + b1 * 29791 + b2 * 961 + b3 * 31 + b4) % 4294967296
+            i = i + 4
+        end
+        while i <= n do
+            h = (31 * h + byte(s, i)) % 4294967296
+            i = i + 1
+        end
+        if h >= 2147483648 then
+            h = h - 4294967296
+        end
+    end
+    return h
+end
+
 local function __K2L_Hash(value)
     local t = type(value)
-    if value == nil then
-        return 0
-    elseif t == "boolean" then
-        return value and 1231 or 1237
-    elseif t == "number" then
+    if t == "number" then
         if value % 1 == 0 and value >= -2147483648 and value <= 2147483647 then
             return value
         end
@@ -89,14 +111,11 @@ local function __K2L_Hash(value)
         end
         return __K2L_ToInt32(xor32(hi, lo))
     elseif t == "string" then
-        if value:find("[\128-\255]") then
-            return hashUtf8(value)
-        end
-        local h = 0
-        for i = 1, #value do
-            h = (31 * h + value:byte(i)) % 4294967296
-        end
-        return __K2L_ToInt32(h)
+        return hashString(value)
+    elseif value == nil then
+        return 0
+    elseif t == "boolean" then
+        return value and 1231 or 1237
     elseif t == "table" and value.hashCode ~= nil then
         return value:hashCode()
     elseif t == "cdata" then

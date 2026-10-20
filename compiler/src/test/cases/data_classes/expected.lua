@@ -3,7 +3,6 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Person = __K2L_Class("Person")
 
@@ -13,12 +12,16 @@ function Person:____init(name, age, email)
     self.email = email
 end
 
+function Person.new(name, age, email)
+    return setmetatable({name = name, age = age, email = email}, Person)
+end
+
 function Person:toString()
     return "Person(name=" .. self.name .. ", age=" .. self.age .. ", email=" .. __K2L_Str(self.email) .. ")"
 end
 
 function Person:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.name) + __K2L_Hash(self.age)) + __K2L_Hash(self.email))
+    return (31 * (31 * __K2L_Hash(self.name) + self.age) + __K2L_Hash(self.email) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Person:equals(other)
@@ -32,12 +35,16 @@ function Pair2:____init(first, second)
     self.second = second
 end
 
+function Pair2.new(first, second)
+    return setmetatable({first = first, second = second}, Pair2)
+end
+
 function Pair2:toString()
     return "Pair2(first=" .. self.first .. ", second=" .. __K2L_Str(self.second) .. ")"
 end
 
 function Pair2:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.first) + __K2L_Hash(self.second))
+    return (31 * self.first + __K2L_Hash(self.second) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Pair2:equals(other)
@@ -48,6 +55,10 @@ local Wrapper = __K2L_Class("Wrapper")
 
 function Wrapper:____init(inner)
     self.inner = inner
+end
+
+function Wrapper.new(inner)
+    return setmetatable({inner = inner}, Wrapper)
 end
 
 function Wrapper:toString()

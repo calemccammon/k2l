@@ -17,10 +17,14 @@ local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_HashSet = ____lualib.__K2L_HashSet
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Num = ____lualib.__K2L_Num
@@ -44,12 +48,16 @@ function Account:____init(id, balance)
     self.balance = balance
 end
 
+function Account.new(id, balance)
+    return setmetatable({id = id, balance = balance}, Account)
+end
+
 function Account:toString()
     return "Account(id=" .. self.id .. ", balance=" .. self.balance .. ")"
 end
 
 function Account:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.id) + __K2L_Hash(self.balance))
+    return (31 * __K2L_Hash(self.id) + __K2L_Hash(self.balance) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Account:equals(other)
@@ -73,7 +81,7 @@ local function collatz(start)
     local n = start
     local steps = 0
     while n ~= 1 do
-        n = math.fmod(n, 2) == 0 and __K2L_IDiv(n, 2) or 3 * n + 1
+        n = (n >= 0 and n % 2 or (n % 2 - 2) % (-2)) == 0 and (n >= 0 and n // 2 or (n + 1) // 2) or 3 * n + 1
         steps = steps + 1
     end
     return steps
@@ -111,6 +119,15 @@ local function classify(n)
     end
 end
 
+local ____lambda_1 = function(acc, x) return acc * 31 + x end
+local ____lambda_2 = function(a, b) return a ~ b end
+local ____lambda_3 = function(it) return it.value.size end
+local ____lambda_4 = function(it) return it.balance end
+local ____lambda_5 = function(it) return it * 3 end
+local ____lambda_6 = function(it) return it >= 0 and it // 7 or (it + 6) // 7 end
+local ____lambda_7 = function(it) return it > 0 end
+local ____lambda_8 = function(x) return math.type(x) == "integer" end
+local ____lambda_9 = function() return __K2L_ListOf() end
 local function main()
     local big = 5000000000000000000
     local max = 9223372036854775807
@@ -123,10 +140,14 @@ local function main()
     print(max * max)
     print(big + big)
     print(1 - 3)
-    print(7 + __K2L_IDiv(2 * big, 4))
-    print(math.fmod(big + 1, 1000))
-    print(math.fmod(-big - 1, 1000))
-    print(__K2L_IDiv(-big - 1, 1000))
+    local ____dividend = 2 * big
+    print(7 + (____dividend >= 0 and ____dividend // 4 or (____dividend + 3) // 4))
+    local ____dividend_1 = big + 1
+    print(____dividend_1 >= 0 and ____dividend_1 % 1000 or (____dividend_1 % 1000 - 1000) % (-1000))
+    local ____dividend_2 = -big - 1
+    print(____dividend_2 >= 0 and ____dividend_2 % 1000 or (____dividend_2 % 1000 - 1000) % (-1000))
+    local ____dividend_3 = -big - 1
+    print(____dividend_3 >= 0 and ____dividend_3 // 1000 or (____dividend_3 + 999) // 1000)
     print(__K2L_IRem(max, -1000))
     print(fib(90))
     print(fib(92) + fib(91))
@@ -142,9 +163,9 @@ local function main()
     print(v)
     v = v * 2
     print(v)
-    v = __K2L_IDiv(v, 3)
+    v = v >= 0 and v // 3 or (v + 2) // 3
     print(v)
-    v = math.fmod(v, 1000003)
+    v = v >= 0 and v % 1000003 or (v % 1000003 - 1000003) % (-1000003)
     print(v)
     local w = min + 1
     w = w - 1
@@ -296,27 +317,77 @@ local function main()
     local ids = __K2L_ReadOnlyListOf(big, max, 17, big + 1, min)
     print(__K2L_Str(ids))
     print(ids:sum())
-    print(ids:sumOf(function(it) return __K2L_IDiv(it, 2) end))
-    print(__K2L_Str(ids:map(function(it) return math.fmod(it, 100) end)))
-    print(__K2L_Str(ids:filter(function(it) return it > 100 end)))
+    local ____sum = 0
+    local ____items, ____n = ids:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____sum = ____sum + (it >= 0 and it // 2 or (it + 1) // 2)
+    end
+    print(____sum)
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = ids:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = it >= 0 and it % 100 or (it % 100 - 100) % (-100)
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_2, ____n_2 = ids:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_2[____i_2]
+        if it > 100 then
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = it
+        end
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     print(ids:indexOf(max))
     print(ids:contains(big))
-    print(ids:count(function(it) return it < 0 end))
-    print(ids:fold(1, function(acc, x) return acc * 31 + x end))
-    print(ids:reduce(function(a, b) return a ~ b end))
+    local ____result_3 = 0
+    local ____items_3, ____n_3 = ids:____array()
+    for ____i_3 = 1, ____n_3 do
+        local it = ____items_3[____i_3]
+        if it < 0 then
+            ____result_3 = ____result_3 + 1
+        end
+    end
+    print(____result_3)
+    print(ids:fold(1, ____lambda_1))
+    print(ids:reduce(____lambda_2))
     print(ids:distinct().size)
-    print(__K2L_Str(ids:zip(ids:drop(1)):map(function(____destructured)
-        local a, b = ____destructured.first, ____destructured.second
-        return b - a
-    end)))
-    print(__K2L_Str(ids:associateWith(function(it) return __K2L_Bits.ones64(it) end)))
+    local ____list = ids:zip(ids:drop(1))
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_4, ____n_4 = ____list:____array()
+    for ____i_4 = 1, ____n_4 do
+        local ____it = ____items_4[____i_4]
+        local ____result_4
+        do
+            local a, b = ____it.first, ____it.second
+            ____result_4 = b - a
+        end
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = ____result_4
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
+    local ____result_5 = __K2L_Map.new()
+    local ____items_5, ____n_5 = ids:____array()
+    for ____i_5 = 1, ____n_5 do
+        local it = ____items_5[____i_5]
+        local ____value = __K2L_Bits.ones64(it)
+        ____result_5:put(it, ____value)
+    end
+    print(__K2L_Str(____result_5))
     local counts = __K2L_HashMap.new()
-    local ____list = ids:plusAll(ids)
-    local ____mod = ____list.____modCount
-    for ____i = 1, ____list.size do
-        local x = ____list[____i]
+    local ____list_1 = ids:plusAll(ids)
+    local ____mod = ____list_1.____modCount
+    for ____i_6 = 1, ____list_1.size do
+        local x = ____list_1[____i_6]
         counts:set(x, (counts:get(x) or 0) + 1)
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+        if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_6) then
             break
         end
     end
@@ -346,15 +417,37 @@ local function main()
     print(accounts:get(0):equals(accounts:get(1)))
     print(accounts:toSet().size)
     print(accounts:get(0):hashCode() == accounts:get(2):hashCode())
-    print(__K2L_Str(accounts:groupBy(function(it) return it.id end):mapValues(function(it) return it.value.size end)))
-    print(accounts:sumOf(function(it) return it.balance end))
-    print(__K2L_Str(accounts:maxByOrNull(function(it) return it.balance end)))
+    local ____result_6 = __K2L_Map.new()
+    local ____items_6, ____n_6 = accounts:____array()
+    for ____i_7 = 1, ____n_6 do
+        local it = ____items_6[____i_7]
+        local ____value_1 = it.id
+        local ____group = ____result_6:get(____value_1)
+        if ____group == nil then
+            ____group = __K2L_List.new()
+            ____result_6:put(____value_1, ____group)
+        end
+        ____group:add(it)
+    end
+    print(__K2L_Str(____result_6:mapValues(____lambda_3)))
+    local ____sum_1 = 0
+    local ____items_7, ____n_7 = accounts:____array()
+    for ____i_8 = 1, ____n_7 do
+        local it = ____items_7[____i_8]
+        ____sum_1 = ____sum_1 + it.balance
+    end
+    print(____sum_1)
+    print(__K2L_Str(accounts:maxByOrNull(____lambda_4)))
     local arr = __K2L_TypedArrayOf("[J", big, 1, max, min)
     print(arr:sum())
     print(arr:max())
     print(arr:min())
     print(__K2L_Str(arr:sorted()))
-    arr:set(1, arr:get(0) * 2)
+    local ____value_2 = (arr[1] or __K2L_IndexError(0, arr.size, "array")) * 2
+    if 1 < 0 or 1 >= arr.size then
+        __K2L_IndexError(1, arr.size, "array")
+    end
+    arr[2] = ____value_2
     print(arr:contentToString())
     print(arr.size)
     local total = 0
@@ -387,13 +480,13 @@ local function main()
     print(__K2L_Str(__K2L_IntRange.new(1, 5):toList()))
     print(__K2L_Str(__K2L_IntRange.new(1, 5):map(function(it) return it * big end)))
     print(__K2L_IntRange.new(1, 5):sum())
-    print(__K2L_GenerateSequence(1, function(it) return it * 3 end):take(45):last())
-    print(__K2L_Str(__K2L_GenerateSequence(big, function(it) return __K2L_IDiv(it, 7) end):takeWhile(function(it) return it > 0 end):toList()))
+    print(__K2L_GenerateSequence(1, ____lambda_5):take(45):last())
+    print(__K2L_Str(__K2L_GenerateSequence(big, ____lambda_6):takeWhile(____lambda_7):toList()))
     print(describe(big))
     print(describe("x"))
     local anys = __K2L_ReadOnlyListOf(big, "s", max)
     print(__K2L_Str(anys))
-    print(anys:filter(function(x) return math.type(x) == "integer" end):sum())
+    print(anys:filter(____lambda_8):sum())
     local anyBig = big
     print(__K2L_Equals(anyBig, big))
     print(__K2L_Equals(anyBig, 5000000000000000000))
@@ -406,7 +499,7 @@ local function main()
     print(__K2L_Str(____table:toList()))
     local m = __K2L_MapOf()
     for i = 0, 5 do
-        m:getOrPut(math.fmod(i, 3) * big, function() return __K2L_ListOf() end):add(i)
+        m:getOrPut((i >= 0 and i % 3 or (i % 3 - 3) % (-3)) * big, ____lambda_9):add(i)
     end
     print(__K2L_Str(m))
 end

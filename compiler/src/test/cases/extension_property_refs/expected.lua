@@ -12,6 +12,10 @@ function Box:____init(items)
     self.items = items
 end
 
+function Box.new(items)
+    return setmetatable({items = items}, Box)
+end
+
 local function getLastChar(self)
     return __K2L_StringCharAt(self, #self - 1)
 end
@@ -37,6 +41,7 @@ local function describe(p, s)
     return p.name .. " of " .. s .. " is " .. p:get(s)
 end
 
+local ____lambda_1 = function() return getLastChar("lua") end
 local function main()
     local ref = __K2L_PropertyRef.new("lastChar", "kotlin.String./lastChar", getLastChar)
     print(ref.name)
@@ -44,7 +49,7 @@ local function main()
     print(ref:get("world"))
     print(__K2L_Str(__K2L_ReadOnlyListOf("ab", "cd", "xyz"):map(__K2L_PropertyRef.new("lastChar", "kotlin.String./lastChar", getLastChar))))
     print(describe(__K2L_PropertyRef.new("lastChar", "kotlin.String./lastChar", getLastChar), "kotlin"))
-    local bound = __K2L_PropertyRef.new("lastChar", "kotlin.String./lastChar", function() return getLastChar("lua") end, nil, "lua")
+    local bound = __K2L_PropertyRef.new("lastChar", "kotlin.String./lastChar", ____lambda_1, nil, "lua")
     print(bound.name)
     print(bound:get())
     print(bound:get())

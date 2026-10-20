@@ -4,8 +4,8 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IDiv = ____lualib.__K2L_IDiv
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
@@ -19,6 +19,10 @@ __K2L_ClassInfo(Contractor, "corp.Contractor", "corp.Contractor", "class")
 function Contractor:____init(company, monthly)
     self.company = company
     self.monthly = monthly
+end
+
+function Contractor.new(company, monthly)
+    return setmetatable({company = company, monthly = monthly}, Contractor)
 end
 
 function Contractor:getMonthly()
@@ -43,6 +47,16 @@ local function printTrace(title)
     ____Employees.trace:clear()
 end
 
+local ____lambda_1 = function(____p1) return print(__K2L_Str(____p1)) end
+local ____lambda_2 = function(it) return it.tag end
+local ____lambda_3 = function(receiver) return receiver:getTitle() end
+local ____lambda_4 = function(x) return getmetatable(x) == ____Payroll.Bonus end
+local ____lambda_5 = function(it) return it.amount end
+local ____lambda_6 = function(x)
+    return getmetatable(x) == ____Payroll.Deduction
+end
+local ____lambda_7 = function(it) return it.amount end
+local ____lambda_8 = function(it) return __K2L_KClassOfValue(it).simpleName end
 local function main()
     local ada = ____Employees.Lead.new("Ada", 120000)
     printTrace("lead")
@@ -61,15 +75,24 @@ local function main()
     local ____mod = ____list_1.____modCount
     for ____i_1 = 1, ____list_1.size do
         local it = ____list_1[____i_1];
-        (function(____p1) return print(__K2L_Str(____p1)) end)(it)
+        (____lambda_1)(it)
         if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_1) then
             break
         end
     end
-    print("headcount " .. ceo:getHeadcount() .. ", everyone: " .. __K2L_Str(ceo:everyone():map(function(it) return it.tag end):toList()))
+    print("headcount " .. ceo:getHeadcount() .. ", everyone: " .. __K2L_Str(ceo:everyone():map(____lambda_2):toList()))
     print(tostring(eng:contains(dee)) .. " " .. tostring(ceo:contains(dee)) .. " " .. tostring(eng:contains(ceo)) .. " " .. ada:payslip() .. " | " .. bo:payslip(3) .. " | " .. ceo:payslip(12))
-    print("titles: " .. __K2L_Str(ceo:everyone():map(__K2L_PropertyRef.new("title", "corp/staff/Employee.title", function(receiver) return receiver:getTitle() end)):toList()))
-    print("currencies: " .. __K2L_Str(__K2L_ReadOnlyListOf(ada, bo, Contractor.new("Acme", 9000)):map(function(it) return it:getCurrency() end)))
+    print("titles: " .. __K2L_Str(ceo:everyone():map(__K2L_PropertyRef.new("title", "corp/staff/Employee.title", ____lambda_3)):toList()))
+    local ____list_2 = __K2L_ReadOnlyListOf(ada, bo, Contractor.new("Acme", 9000))
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list_2:____array()
+    for ____i_2 = 1, ____n do
+        local it = ____items[____i_2]
+        ____count = ____count + 1
+        ____out[____count] = it:getCurrency()
+    end
+    print("currencies: " .. __K2L_Str(__K2L_ListWrap(____out, ____count)))
     local ledger = ____Payroll.Ledger.new()
     ledger:add(ada, ____Payroll.Raise.new(10), ____Payroll.Bonus.new(500, "launch"))
     ledger:add(bo, ____Payroll.Bonus.new(200, "on call"), ____Payroll.Deduction.new(150, "laptop"), ____Payroll.Bonus.new(100, "referral"))
@@ -81,21 +104,25 @@ local function main()
     print(__K2L_Str(payroll:run(ceo:everyone():asIterable())))
     local ____arg = payroll:getBonuses()
     local ____result
-    ____result = ledger:get(bo):filter(function(x)
-        return __K2L_InstanceOf(x, ____Payroll.Bonus)
-    end):sumOf(function(it) return it.amount end)
+    ____result = ledger:get(bo):filter(____lambda_4):sumOf(____lambda_5)
     local ____arg_1 = ____result
     local ____result_1
-    ____result_1 = ledger:get(bo):filter(function(x)
-        return __K2L_InstanceOf(x, ____Payroll.Deduction)
-    end):sumOf(function(it) return it.amount end)
+    ____result_1 = ledger:get(bo):filter(____lambda_6):sumOf(____lambda_7)
     print("bonuses " .. ____arg .. ", bo's bonuses " .. ____arg_1 .. ", deductions " .. ____result_1)
     local other = ____Employees.Engineer.new("Ada", 1)
     print(tostring(ada:equals(other)) .. " " .. tostring(ada:equals(ada)) .. " " .. __K2L_ReadOnlySetOf(ada, bo, ada, cy).size .. " " .. tostring(ada:hashCode() == __K2L_Hash("ADA-100")))
     printTrace("other")
-    local byTitle = ceo:everyone():groupBy(function(it) return __K2L_KClassOfValue(it).simpleName end):mapValues(function(____destructured)
+    local byTitle = ceo:everyone():groupBy(____lambda_8):mapValues(function(____destructured)
         local v = ____destructured.value
-        return v:map(function(it) return it.name end)
+        local ____out_1 = {}
+        local ____count_1 = 0
+        local ____items_1, ____n_1 = v:____array()
+        for ____i_3 = 1, ____n_1 do
+            local it = ____items_1[____i_3]
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = it.name
+        end
+        return __K2L_ListWrap(____out_1, ____count_1)
     end)
     print(__K2L_Str(byTitle))
     local ctor = ____Employees.Intern.new
@@ -112,13 +139,11 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IDiv = ____lualib.__K2L_IDiv
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Adjustment = __K2L_Class("corp.pay.Adjustment")
 __K2L_ClassInfo(Adjustment, "corp.pay.Adjustment", "corp.pay.Adjustment", "interface")
@@ -130,12 +155,16 @@ function Bonus:____init(amount, reason)
     self.reason = reason
 end
 
+function Bonus.new(amount, reason)
+    return setmetatable({amount = amount, reason = reason}, Bonus)
+end
+
 function Bonus:toString()
     return "Bonus(amount=" .. self.amount .. ", reason=" .. self.reason .. ")"
 end
 
 function Bonus:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.amount) + __K2L_Hash(self.reason))
+    return (31 * self.amount + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Bonus:equals(other)
@@ -150,12 +179,16 @@ function Deduction:____init(amount, reason)
     self.reason = reason
 end
 
+function Deduction.new(amount, reason)
+    return setmetatable({amount = amount, reason = reason}, Deduction)
+end
+
 function Deduction:toString()
     return "Deduction(amount=" .. self.amount .. ", reason=" .. self.reason .. ")"
 end
 
 function Deduction:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.amount) + __K2L_Hash(self.reason))
+    return (31 * self.amount + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Deduction:equals(other)
@@ -178,7 +211,7 @@ function Raise:toString()
 end
 
 function Raise:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.percent) + __K2L_Hash(self.reason))
+    return (31 * self.percent + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Raise:equals(other)
@@ -196,9 +229,10 @@ function Ledger:get(p)
     return self.entries:get(p) or __K2L_ReadOnlyListOf()
 end
 
+local ____lambda_1 = function() return __K2L_ListOf() end
 function Ledger:add(p, ...)
     local adjustments = __K2L_ArrayOf(...)
-    self.entries:getOrPut(p, function() return __K2L_ListOf() end):addAll(adjustments)
+    self.entries:getOrPut(p, ____lambda_1):addAll(adjustments)
 end
 
 function Ledger:payees()
@@ -212,17 +246,24 @@ function Payroll:____init(ledger)
     self.ledger = ledger
 end
 
+function Payroll.new(ledger)
+    return setmetatable({ledger = ledger}, Payroll)
+end
+
 function Payroll:net(e)
     local pay = e:getMonthly()
     local ____list = self.ledger:get(e)
     local ____mod = ____list.____modCount
     for ____i = 1, ____list.size do
         local adj = ____list[____i]
-        if __K2L_InstanceOf(adj, Raise) then
-            pay = pay + __K2L_IDiv(pay * adj.percent, 100)
-        elseif __K2L_InstanceOf(adj, Bonus) then
+        local ____mt = getmetatable(adj)
+        if ____mt == Raise then
+            local ____arg = pay
+            local ____dividend = pay * adj.percent
+            pay = ____arg + (____dividend >= 0 and ____dividend // 100 or 0 - -____dividend // 100)
+        elseif ____mt == Bonus then
             pay = pay + adj.amount
-        elseif __K2L_InstanceOf(adj, Deduction) then
+        elseif ____mt == Deduction then
             pay = pay - adj.amount
         end
         if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
@@ -238,28 +279,52 @@ function Payroll:run(people)
     end)
 end
 
+local ____lambda_2 = function(it) return " " .. it end
 function Payroll:explain(e)
-    local parts = self.ledger:get(e):map(function(it)
-        if __K2L_InstanceOf(it, Bonus) then
-            return "+" .. it.amount .. " (" .. it.reason .. ")"
-        elseif __K2L_InstanceOf(it, Deduction) then
-            return "-" .. it.amount .. " (" .. it.reason .. ")"
-        elseif __K2L_InstanceOf(it, Raise) then
-            return "+" .. it.percent .. "% (" .. it.reason .. ")"
-        end
-    end)
-    return e.name .. ": " .. e:getMonthly() .. parts:joinToString("", nil, nil, nil, nil, function(it) return " " .. it end) .. " = " .. self:net(e)
-end
-
-function Payroll:getBonuses()
-    return self.ledger:payees():sumOf(function(e)
+    local ____list_1 = self.ledger:get(e)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list_1:____array()
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
         local ____result
         do
-            local ____this = self.ledger
-            ____result = ____this:get(e):filter(function(x) return __K2L_InstanceOf(x, Bonus) end):sumOf(function(it) return it.amount end)
+            local ____mt_1 = getmetatable(it)
+            if ____mt_1 == Bonus then
+                ____result = "+" .. it.amount .. " (" .. it.reason .. ")"
+            elseif ____mt_1 == Deduction then
+                ____result = "-" .. it.amount .. " (" .. it.reason .. ")"
+            elseif ____mt_1 == Raise then
+                ____result = "+" .. it.percent .. "% (" .. it.reason .. ")"
+            end
         end
-        return ____result
-    end)
+        ____count = ____count + 1
+        ____out[____count] = ____result
+    end
+    local parts = __K2L_ListWrap(____out, ____count)
+    return e.name .. ": " .. e:getMonthly() .. parts:joinToString("", nil, nil, nil, nil, ____lambda_2) .. " = " .. self:net(e)
+end
+
+local ____lambda_3 = function(x) return getmetatable(x) == Bonus end
+local ____lambda_4 = function(it) return it.amount end
+function Payroll:getBonuses()
+    local ____list_2 = self.ledger:payees()
+    local ____sum = 0
+    local ____items_1, ____n_1 = ____list_2:____array()
+    for ____i_2 = 1, ____n_1 do
+        local e = ____items_1[____i_2]
+        local ____result_1
+        do
+            local ____result_2
+            do
+                local ____this = self.ledger
+                ____result_2 = ____this:get(e):filter(____lambda_3):sumOf(____lambda_4)
+            end
+            ____result_1 = ____result_2
+        end
+        ____sum = ____sum + ____result_1
+    end
+    return ____sum
 end
 
 return {Adjustment = Adjustment, Bonus = Bonus, Deduction = Deduction, Raise = Raise, Ledger = Ledger, Payroll = Payroll}
@@ -270,10 +335,10 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
@@ -328,7 +393,7 @@ function Employee:getTitle()
 end
 
 function Employee:getMonthly()
-    return __K2L_IDiv(self.baseSalary, 12)
+    return self.baseSalary >= 0 and self.baseSalary // 12 or 0 - -self.baseSalary // 12
 end
 
 function Employee:report(indent)
@@ -457,37 +522,69 @@ function Manager:plusAssign(e)
 end
 
 function Manager:contains(e)
-    return self.team:contains(e) or self.team:any(function(it)
-        return __K2L_InstanceOf(it, Manager) and it:contains(e)
-    end)
+    local ____cond = self.team:contains(e)
+    if not ____cond then
+        local ____list = self.team
+        local ____result = false
+        local ____items, ____n = ____list:____array()
+        for ____i = 1, ____n do
+            local it = ____items[____i]
+            if getmetatable(it) == Manager and it:contains(e) then
+                ____result = true
+                break
+            end
+        end
+        ____cond = ____result
+    end
+    return ____cond
 end
 
 function Manager:report(indent)
     if indent == nil then
         indent = ""
     end
-    return Employee.report(self, indent):plusAll(self.team:flatMap(function(it) return it:report(indent .. "  ") end))
+    local ____arg_1 = Employee.report(self, indent)
+    local ____list_1 = self.team
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        local ____inner, ____m = it:report(indent .. "  "):____array()
+        for ____j = 1, ____m do
+            ____count = ____count + 1
+            ____out[____count] = ____inner[____j]
+        end
+    end
+    return ____arg_1:plusAll(__K2L_ListWrap(____out, ____count))
 end
 
 function Manager:getHeadcount()
-    return 1 + self.team:sumOf(function(it)
-        return __K2L_InstanceOf(it, Manager) and it:getHeadcount() or 1
-    end)
+    local ____list_2 = self.team
+    local ____sum = 0
+    local ____items_2, ____n_2 = ____list_2:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_2[____i_2]
+        local ____result_1
+        ____result_1 = getmetatable(it) == Manager and it:getHeadcount() or 1
+        ____sum = ____sum + ____result_1
+    end
+    return 1 + ____sum
 end
 
 function Manager:everyone()
     return __K2L_SequenceBuilder(function(____this)
         ____this:yield(self)
-        local ____list = self.team
-        local ____mod = ____list.____modCount
-        for ____i = 1, ____list.size do
-            local e = ____list[____i]
-            if __K2L_InstanceOf(e, Manager) then
+        local ____list_3 = self.team
+        local ____mod = ____list_3.____modCount
+        for ____i_3 = 1, ____list_3.size do
+            local e = ____list_3[____i_3]
+            if getmetatable(e) == Manager then
                 ____this:yieldAll(e:everyone())
             else
                 ____this:yield(e)
             end
-            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            if ____list_3.____modCount ~= ____mod and ____list_3:____comodified(____i_3) then
                 break
             end
         end

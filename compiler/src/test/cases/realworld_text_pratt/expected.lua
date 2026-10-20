@@ -9,6 +9,7 @@ local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -21,7 +22,6 @@ local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringReplace = ____lualib.__K2L_StringReplace
 local __K2L_StringToDoubleOrNull = ____lualib.__K2L_StringToDoubleOrNull
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Utf16 = ____lualib.__K2L_Utf16
 local __K2L_Utf16Case = ____lualib.__K2L_Utf16Case
@@ -61,12 +61,16 @@ function Token:____init(kind, text, pos)
     self.pos = pos
 end
 
+function Token.new(kind, text, pos)
+    return setmetatable({kind = kind, text = text, pos = pos}, Token)
+end
+
 function Token:toString()
     return self.kind == Kind.EOF and "EOF@" .. self.pos or __K2L_Str(self.kind) .. "('" .. self.text .. "')@" .. self.pos
 end
 
 function Token:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.kind) + __K2L_Hash(self.text)) + __K2L_Hash(self.pos))
+    return (31 * (31 * __K2L_Hash(self.kind) + __K2L_Hash(self.text)) + self.pos + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Token:equals(other)
@@ -160,6 +164,10 @@ function Num:____init(v)
     self.v = v
 end
 
+function Num.new(v)
+    return setmetatable({v = v}, Num)
+end
+
 function Num:toString()
     return "Num(v=" .. __K2L_Str(self.v) .. ")"
 end
@@ -177,6 +185,10 @@ __K2L_ClassInfo(Var, "Var", "Var", "class")
 
 function Var:____init(name)
     self.name = name
+end
+
+function Var.new(name)
+    return setmetatable({name = name}, Var)
 end
 
 function Var:toString()
@@ -199,12 +211,16 @@ function Unary:____init(op, e)
     self.e = e
 end
 
+function Unary.new(op, e)
+    return setmetatable({op = op, e = e}, Unary)
+end
+
 function Unary:toString()
     return "Unary(op=" .. self.op .. ", e=" .. __K2L_Str(self.e) .. ")"
 end
 
 function Unary:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.op) + __K2L_Hash(self.e))
+    return (31 * __K2L_Hash(self.op) + __K2L_Hash(self.e) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Unary:equals(other)
@@ -220,12 +236,16 @@ function Binary:____init(op, l, r)
     self.r = r
 end
 
+function Binary.new(op, l, r)
+    return setmetatable({op = op, l = l, r = r}, Binary)
+end
+
 function Binary:toString()
     return "Binary(op=" .. self.op .. ", l=" .. __K2L_Str(self.l) .. ", r=" .. __K2L_Str(self.r) .. ")"
 end
 
 function Binary:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.op) + __K2L_Hash(self.l)) + __K2L_Hash(self.r))
+    return (31 * (31 * __K2L_Hash(self.op) + __K2L_Hash(self.l)) + __K2L_Hash(self.r) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Binary:equals(other)
@@ -240,12 +260,16 @@ function Call:____init(fn, args)
     self.args = args
 end
 
+function Call.new(fn, args)
+    return setmetatable({fn = fn, args = args}, Call)
+end
+
 function Call:toString()
     return "Call(fn=" .. self.fn .. ", args=" .. __K2L_Str(self.args) .. ")"
 end
 
 function Call:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.fn) + __K2L_Hash(self.args))
+    return (31 * __K2L_Hash(self.fn) + __K2L_Hash(self.args) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Call:equals(other)
@@ -261,12 +285,16 @@ function Cond:____init(c, t, f)
     self.f = f
 end
 
+function Cond.new(c, t, f)
+    return setmetatable({c = c, t = t, f = f}, Cond)
+end
+
 function Cond:toString()
     return "Cond(c=" .. __K2L_Str(self.c) .. ", t=" .. __K2L_Str(self.t) .. ", f=" .. __K2L_Str(self.f) .. ")"
 end
 
 function Cond:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.c) + __K2L_Hash(self.t)) + __K2L_Hash(self.f))
+    return (31 * (31 * __K2L_Hash(self.c) + __K2L_Hash(self.t)) + __K2L_Hash(self.f) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Cond:equals(other)
@@ -400,17 +428,18 @@ function Pratt:expect(kind, what)
 end
 
 local function show(e)
-    if __K2L_InstanceOf(e, Num) then
+    local ____mt = getmetatable(e)
+    if ____mt == Num then
         return math.fmod(e.v, 1.0) == 0.0 and tostring(__K2L_DoubleToLong(e.v)) or __K2L_Str(e.v)
-    elseif __K2L_InstanceOf(e, Var) then
+    elseif ____mt == Var then
         return e.name
-    elseif __K2L_InstanceOf(e, Unary) then
+    elseif ____mt == Unary then
         return "(" .. e.op .. show(e.e) .. ")"
-    elseif __K2L_InstanceOf(e, Binary) then
+    elseif ____mt == Binary then
         return "(" .. show(e.l) .. " " .. e.op .. " " .. show(e.r) .. ")"
-    elseif __K2L_InstanceOf(e, Call) then
+    elseif ____mt == Call then
         return e.fn .. __K2L_Utf16.norm(e.args:joinToString(", ", "(", ")", nil, nil, function(it) return show(it) end))
-    elseif __K2L_InstanceOf(e, Cond) then
+    elseif ____mt == Cond then
         return "(" .. show(e.c) .. " ? " .. show(e.t) .. " : " .. show(e.f) .. ")"
     end
 end
@@ -418,15 +447,16 @@ end
 local functions = __K2L_ReadOnlyMapOf(__K2L_Pair.new("max", function(a) return a:maxOrNull() or 0.0 / 0.0 end), __K2L_Pair.new("min", function(a) return a:minOrNull() or 0.0 / 0.0 end), __K2L_Pair.new("sqrt", function(a) return math.sqrt(a:single()) end), __K2L_Pair.new("abs", function(a) return math.abs(a:single()) end), __K2L_Pair.new("hypot", function(a) return __K2L_Num.hypot(a:get(0), a:get(1)) end), __K2L_Pair.new("avg", function(a) return a:average() end))
 
 local function eval(e, env)
-    if __K2L_InstanceOf(e, Num) then
+    local ____mt_1 = getmetatable(e)
+    if ____mt_1 == Num then
         return e.v
-    elseif __K2L_InstanceOf(e, Var) then
+    elseif ____mt_1 == Var then
         local ____value_4 = env:get(e.name)
         if ____value_4 == nil then
             error(__K2L_IllegalArgumentException.new("unknown variable '" .. e.name .. "'"))
         end
         return ____value_4
-    elseif __K2L_InstanceOf(e, Unary) then
+    elseif ____mt_1 == Unary then
         local ____subject_3 = e.op
         if ____subject_3 == "-" then
             return -eval(e.e, env)
@@ -435,7 +465,7 @@ local function eval(e, env)
         else
             return eval(e.e, env)
         end
-    elseif __K2L_InstanceOf(e, Binary) then
+    elseif ____mt_1 == Binary then
         local a = eval(e.l, env)
         local ____subject_1 = e.op
         if ____subject_1 == "&&" then
@@ -471,13 +501,22 @@ local function eval(e, env)
                 return a ~= b and 1.0 or 0.0
             end
         end
-    elseif __K2L_InstanceOf(e, Call) then
+    elseif ____mt_1 == Call then
         local ____value_3 = functions:get(e.fn)
         if ____value_3 == nil then
             error(__K2L_IllegalArgumentException.new("unknown function " .. e.fn .. "/" .. e.args.size))
         end
-        return ____value_3(e.args:map(function(it) return eval(it, env) end))
-    elseif __K2L_InstanceOf(e, Cond) then
+        local ____list = e.args
+        local ____out = {}
+        local ____count = 0
+        local ____items, ____n = ____list:____array()
+        for ____i = 1, ____n do
+            local it = ____items[____i]
+            ____count = ____count + 1
+            ____out[____count] = eval(it, env)
+        end
+        return ____value_3(__K2L_ListWrap(____out, ____count))
+    elseif ____mt_1 == Cond then
         return eval(e.c, env) ~= 0.0 and eval(e.t, env) or eval(e.f, env)
     end
 end
@@ -491,26 +530,26 @@ local function main()
     print(__K2L_Utf16.out(__K2L_Str(tokenize("max(1, 2.5e3) ** -x"))))
     local programs = __K2L_ReadOnlyListOf("1 + 2 * 3", "(1 + 2) * 3", "2 ** 3 ** 2", "-x ** 2", "10 - 4 - 3", "1_000_000 / 8", "x > 2 && y < 0 ? hypot(x, y) : 0", "n % 3 == 1 || !(x == 3)", "max(x, y, n, 7) - min(1, 2)", "avg(1, 2, 3, 4) * sqrt(16)", "pi * x ^ 2", "1 / 0", "0 / 0 == 0 / 0", ".5 + 1.25e-1", "x ? y ? 1 : 2 : 3")
     local ____mod = programs.____modCount
-    for ____i = 1, programs.size do
-        local src = programs[____i]
+    for ____i_1 = 1, programs.size do
+        local src = programs[____i_1]
         local ast = Pratt.new(tokenize(src)):parseAll()
         local v = eval(ast, env)
         print(__K2L_Utf16.out(__K2L_StringFormat("%-36s => %-40s = %s", src, show(ast), v == __K2L_Num.round(v) and not __K2L_Num.isInfinite(v) and __K2L_StringFormat("%.0f", v) or __K2L_StringFormat("%.6f", v))))
-        if programs.____modCount ~= ____mod and programs:____comodified(____i) then
+        if programs.____modCount ~= ____mod and programs:____comodified(____i_1) then
             break
         end
     end
     local broken = __K2L_ReadOnlyListOf("1 +", "(1 + 2", "max(1, 2", "3 $ 4", "* 5", "1 2", "a ? b", "1.2.3", "sqrt(1, 2)", "foo(1)", "z + 1", "x é 2")
     local ____mod_1 = broken.____modCount
-    for ____i_1 = 1, broken.size do
-        local src = broken[____i_1]
+    for ____i_2 = 1, broken.size do
+        local src = broken[____i_2]
         local ____ok, ____result = pcall(function()
             local v = eval(Pratt.new(tokenize(src)):parseAll(), env)
             print(__K2L_Utf16.out(src .. " = " .. __K2L_Str(v)))
         end)
         if not ____ok then
             local ____error = __K2L_ToThrowable(____result)
-            if __K2L_InstanceOf(____error, ParseError) then
+            if getmetatable(____error) == ParseError then
                 local e = ____error
                 print(__K2L_Utf16.out("parse error: " .. __K2L_Str(e.message) .. " at " .. e.pos))
                 print(__K2L_Utf16.out(__K2L_Text.prependIndent(caret(src, e.pos), "  | ")))
@@ -524,7 +563,7 @@ local function main()
                 error(____error, 0)
             end
         end
-        if broken.____modCount ~= ____mod_1 and broken:____comodified(____i_1) then
+        if broken.____modCount ~= ____mod_1 and broken:____comodified(____i_2) then
             break
         end
     end

@@ -5,6 +5,7 @@ local __K2L_FloorDiv = ____lualib.__K2L_FloorDiv
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -53,6 +54,40 @@ local function t(label, f)
     end
 end
 
+local ____lambda_1 = function() return __K2L_StringToInt("x") end
+local ____lambda_2 = function() return __K2L_Num.digitToInt("x") end
+local ____lambda_3 = function() return __K2L_ReadOnlyListOf():first() end
+local ____lambda_4 = function() return __K2L_ReadOnlyListOf():last() end
+local ____lambda_5 = function() return __K2L_ReadOnlyListOf():max() end
+local ____lambda_6 = function(a, b) return a + b end
+local ____lambda_7 = function()
+    return __K2L_ReadOnlyListOf():reduce(____lambda_6)
+end
+local ____lambda_8 = function()
+    return __K2L_ReadOnlyListOf():random(__K2L_Random.default())
+end
+local ____lambda_9 = function() return __K2L_ReadOnlyListOf():average() end
+local ____lambda_10 = function() return __K2L_IDiv(1, id(0)) end
+local ____lambda_11 = function() return __K2L_IRem(1, id(0)) end
+local ____lambda_12 = function() return __K2L_IRem(1, id(0)) end
+local ____lambda_13 = function() return __K2L_Num.mod(1, id(0)) end
+local ____lambda_14 = function() return __K2L_FloorDiv(1, id(0)) end
+local ____lambda_15 = function() return __K2L_IDiv(1, id(0)) end
+local ____lambda_16 = function() return __K2L_IRem(1, id(0)) end
+local ____lambda_17 = function() return __K2L_Num.mod(1, id(0)) end
+local ____lambda_18 = function() return 1.0 / id(0) end
+local ____lambda_19 = function() return math.fmod(1.5, id(0) + 0.0) end
+local ____lambda_20 = function() return math.fmod(-1.5, 0.0) end
+local ____lambda_21 = function() return math.fmod(5.5, -2.0) end
+local ____lambda_22 = function() return math.fmod(-5.5, 2.0) end
+local ____lambda_23 = function() return -5.5 % 2.0 end
+local ____lambda_24 = function() return 5.5 % 0.0 end
+local ____lambda_25 = function() return 0.0 / 0.0 end
+local ____lambda_26 = function() return __K2L_Num.mod(-7, id(3)) end
+local ____lambda_27 = function() return __K2L_Num.mod(7, id(-3)) end
+local ____lambda_28 = function() return __K2L_FloorDiv(-7, id(2)) end
+local ____lambda_29 = function() return __K2L_IRem(-7, id(3)) end
+local ____lambda_30 = function() return __K2L_IRem(7, id(-3)) end
 local function main()
     local s = "hello"
     local e = ""
@@ -98,8 +133,8 @@ local function main()
     t("elementAt(9)", function() return __K2L_Text.get(s, id(9)) end)
     t("chunked(0)", function() return __K2L_Text.chunked(s, id(0)) end)
     t("windowed(0)", function() return __K2L_Text.windowed(s, id(0)) end)
-    t("toInt", function() return __K2L_StringToInt("x") end)
-    t("digitToInt", function() return __K2L_Num.digitToInt("x") end)
+    t("toInt", ____lambda_1)
+    t("digitToInt", ____lambda_2)
     local list = __K2L_ReadOnlyListOf(1, 2, 3)
     local mlist = __K2L_ListOf(1, 2, 3)
     local arr = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2, 3)
@@ -128,16 +163,19 @@ local function main()
     end)
     t("ia[5]=", function()
         local ____key_3 = id(5)
-        ia:set(____key_3, 1)
+        if ____key_3 < 0 or ____key_3 >= ia.size then
+            __K2L_IndexError(____key_3, ia.size, "array")
+        end
+        ia[____key_3 + 1] = 1
         return __K2L_Unit
     end)
     t("ia[3]+=", function()
         local ____key_4 = id(3)
-        ia:set(____key_4, ia:get(____key_4) + 1)
+        ia[____key_4 + 1] = (ia[____key_4 + 1] or __K2L_IndexError(____key_4, ia.size, "array")) + 1
         return __K2L_Unit
     end)
-    t("list.first", function() return __K2L_ReadOnlyListOf():first() end)
-    t("list.last", function() return __K2L_ReadOnlyListOf():last() end)
+    t("list.first", ____lambda_3)
+    t("list.last", ____lambda_4)
     t("list.take(-1)", function() return list:take(id(-1)) end)
     t("list.drop(-1)", function() return list:drop(id(-1)) end)
     t("list.elementAt", function() return list:elementAt(id(7)) end)
@@ -151,35 +189,31 @@ local function main()
     t("list.single", function() return list:single() end)
     t("list.chunked", function() return list:chunked(id(0)) end)
     t("list.windowed", function() return list:windowed(id(0)) end)
-    t("list.max", function() return __K2L_ReadOnlyListOf():max() end)
-    t("list.reduce", function()
-        return __K2L_ReadOnlyListOf():reduce(function(a, b) return a + b end)
-    end)
-    t("list.random", function()
-        return __K2L_ReadOnlyListOf():random(__K2L_Random.default())
-    end)
-    t("ints.avg", function() return __K2L_ReadOnlyListOf():average() end)
-    t("div", function() return __K2L_IDiv(1, id(0)) end)
-    t("rem", function() return __K2L_IRem(1, id(0)) end)
-    t("rem fn", function() return __K2L_IRem(1, id(0)) end)
-    t("mod", function() return __K2L_Num.mod(1, id(0)) end)
-    t("floorDiv", function() return __K2L_FloorDiv(1, id(0)) end)
-    t("ldiv", function() return __K2L_IDiv(1, id(0)) end)
-    t("lrem", function() return __K2L_IRem(1, id(0)) end)
-    t("lmod", function() return __K2L_Num.mod(1, id(0)) end)
-    t("fdiv", function() return 1.0 / id(0) end)
-    t("frem", function() return math.fmod(1.5, id(0) + 0.0) end)
-    t("frem2", function() return math.fmod(-1.5, 0.0) end)
-    t("frem3", function() return math.fmod(5.5, -2.0) end)
-    t("frem4", function() return math.fmod(-5.5, 2.0) end)
-    t("fmod", function() return -5.5 % 2.0 end)
-    t("fmod0", function() return 5.5 % 0.0 end)
-    t("zero div", function() return 0.0 / 0.0 end)
-    t("imod", function() return __K2L_Num.mod(-7, id(3)) end)
-    t("imod2", function() return __K2L_Num.mod(7, id(-3)) end)
-    t("ifloor", function() return __K2L_FloorDiv(-7, id(2)) end)
-    t("irem", function() return __K2L_IRem(-7, id(3)) end)
-    t("irem2", function() return __K2L_IRem(7, id(-3)) end)
+    t("list.max", ____lambda_5)
+    t("list.reduce", ____lambda_7)
+    t("list.random", ____lambda_8)
+    t("ints.avg", ____lambda_9)
+    t("div", ____lambda_10)
+    t("rem", ____lambda_11)
+    t("rem fn", ____lambda_12)
+    t("mod", ____lambda_13)
+    t("floorDiv", ____lambda_14)
+    t("ldiv", ____lambda_15)
+    t("lrem", ____lambda_16)
+    t("lmod", ____lambda_17)
+    t("fdiv", ____lambda_18)
+    t("frem", ____lambda_19)
+    t("frem2", ____lambda_20)
+    t("frem3", ____lambda_21)
+    t("frem4", ____lambda_22)
+    t("fmod", ____lambda_23)
+    t("fmod0", ____lambda_24)
+    t("zero div", ____lambda_25)
+    t("imod", ____lambda_26)
+    t("imod2", ____lambda_27)
+    t("ifloor", ____lambda_28)
+    t("irem", ____lambda_29)
+    t("irem2", ____lambda_30)
     local data = __K2L_TypedArrayOf("[I", 5, 6, 7)
     local text = "abc"
     local numbers = __K2L_ReadOnlyListOf(1, 2, 3)
@@ -208,7 +242,7 @@ local function main()
     t("loop+1", function()
         local x = 0
         for i = 0, data.size - 1 do
-            x = x + data:get(i + 1)
+            x = x + (data[i + 1 + 1] or __K2L_IndexError(i + 1, data.size, "array"))
         end
         return x
     end)

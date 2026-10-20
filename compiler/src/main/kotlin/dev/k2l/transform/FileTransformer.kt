@@ -39,6 +39,7 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.isPrivate
+import java.util.IdentityHashMap
 
 /**
  * Translates one Kotlin file into a Lua chunk. Expressions may need statements to run before them
@@ -56,6 +57,7 @@ class FileTransformer(
     internal val usesListViews get() = module.usesListViews
     internal val implementsCharSequence get() = module.implementsCharSequence
     internal val implementsClosedRange get() = module.implementsClosedRange
+    internal val implementsCollections get() = module.implementsCollections
     internal fun usesFunctionNames(scan: (Set<KtFile>) -> Boolean) = module.usesFunctionNames(scan)
 
     /** `local ____strings = require("util.strings")` for another file of the module. */
@@ -458,7 +460,7 @@ class FileTransformer(
         }
         val target = assignTarget(left) ?: return
         if (e.operationToken == KtTokens.EQ) {
-            emitAll(valueInto(right) { listOf(target.write(it)) })
+            emitAll(valueInto(right) { target.assignAll(it) })
             return
         }
         val op = AUGMENTED.getValue(e.operationToken)
@@ -469,7 +471,7 @@ class FileTransformer(
             return
         }
         val value = operator(op, target.read, leftType, expression(right), right.expressionType, e)
-        emit(target.write(value))
+        emit(target.update(value))
     }
 
     /** Whether `a op= b` calls an `opAssign` operator (`plusAssign`) rather than assigning `a op b`. */
@@ -555,8 +557,7 @@ class FileTransformer(
             }
 
             // checked like the JVM: out-of-range reads and writes throw IndexOutOfBoundsException
-            kind?.isIndexable == true ->
-                Target(LuaMethodCall(receiver, "get", listOf(key))) { LuaCallStmt(LuaMethodCall(receiver, "set", listOf(key, it))) }
+            kind?.isIndexable == true -> checkedIndexTarget(type, receiver, key)
 
             else -> unsupported(e, "Index assignment on '${type.pretty()}'").let { null }
         }
@@ -565,7 +566,7 @@ class FileTransformer(
     private fun KaSession.increment(e: KtUnaryExpression, target: Target) {
         val op = if (e.operationToken == KtTokens.PLUSPLUS) LuaBinOp.Add else LuaBinOp.Sub
         val type = e.baseExpression?.expressionType
-        emit(target.write(if (type?.isCharType == true) charStepped(op, target.read) else stepped(op, target.read, type)))
+        emit(target.update(if (type?.isCharType == true) charStepped(op, target.read) else stepped(op, target.read, type)))
     }
 
     /** `c++` on a Char: the Char whose code is one more (or less). */
@@ -752,6 +753,7 @@ class FileTransformer(
             else -> null
         }
         val subjectType = (subjectVar?.initializer ?: subjectExpr)?.expressionType
+        hoistSubjectMetatable(e, subject)
 
         var tail: List<LuaStmt>? = null
         for (entry in e.entries.reversed()) {
@@ -774,6 +776,7 @@ class FileTransformer(
                 tail = pre + LuaIf(cond, body, tail?.takeIf { it.isNotEmpty() })
             }
         }
+        subject?.let(subjectMetatables::remove)
         tail?.let { emitAll(it) }
     }
 
@@ -897,6 +900,8 @@ class FileTransformer(
             // Lua numbers, emulated Longs and BigInteger/BigDecimal
             psi is KtObjectDeclaration -> LuaBinary(LuaBinOp.Eq, value, classRef(psi))
 
+            psi != null && isFinalSourceClass(type) -> finalClassTest(value, classRef(psi))
+
             psi != null -> lualibCall("InstanceOf", value, classRef(psi))
 
             type.collectionKind() == CollectionKind.Array -> arrayTypeTest(value, type)
@@ -941,6 +946,9 @@ class FileTransformer(
 
     /** Function values returning Unit passed where a function with a result is expected, see [noteUnitResult]. */
     internal val unitResults = HashSet<KtExpression>()
+
+    /** `getmetatable(subject)` read once before a `when`, by its subject, see [hoistSubjectMetatable]. */
+    internal val subjectMetatables: MutableMap<LuaExpr, LuaExpr> = IdentityHashMap()
 
     /** Values substituted for receiver expressions, e.g. the cached receiver of `a?.b`. */
     internal val overrides = HashMap<KtExpression, LuaExpr>()
@@ -996,7 +1004,7 @@ class FileTransformer(
         // anonymous function
         is KtCallableReferenceExpression -> callableReference(e)
 
-        is KtArrayAccessExpression -> call(e, e)
+        is KtArrayAccessExpression -> arrayAccess(e)
 
         is KtSafeQualifiedExpression -> safeCall(e)
 

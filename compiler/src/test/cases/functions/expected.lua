@@ -40,6 +40,7 @@ local function hidden()
     print("hidden")
 end
 
+local ____lambda_1 = function(y) return y * y end
 local function outer(x)
     local function square(y)
         return y * y

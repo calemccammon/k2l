@@ -6,6 +6,7 @@ local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 
@@ -18,6 +19,10 @@ __K2L_ClassInfo(Animal, "app.Animal", "app.Animal", "class")
 
 function Animal:____init(name)
     self.name = name
+end
+
+function Animal.new(name)
+    return setmetatable({name = name}, Animal)
 end
 
 function Animal:sound()
@@ -108,6 +113,7 @@ local function use(g)
     return g:greet("Ann")
 end
 
+local ____lambda_1 = function(name) return "Hi " .. name end
 local function main()
     local ____object_4 = __K2L_Class("app.MainKt$main$1", nil, Greeter)
     __K2L_ClassInfo(____object_4, nil, "app.MainKt$main$1", "class", false)
@@ -173,7 +179,15 @@ local function main()
         end
         return ____object_8
     end)
-    print(__K2L_Str(made:map(function(it) return it:next() end)))
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = made:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = it:next()
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(made:get(0) == made:get(1))
     local Local = __K2L_Class("app.MainKt$main$Local")
     __K2L_ClassInfo(Local, nil, "app.MainKt$main$Local", "class")

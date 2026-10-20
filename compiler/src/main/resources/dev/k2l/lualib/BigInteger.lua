@@ -108,10 +108,16 @@ local function subMag(a, b)
     return trim(r)
 end
 
+local mulSmall
+
 local function mulMag(a, b)
     local na, nb = #a, #b
     if na == 0 or nb == 0 then
         return {}
+    elseif nb == 1 then
+        return mulSmall(a, b[1])
+    elseif na == 1 then
+        return mulSmall(b, a[1])
     end
     local r = {}
     for i = 1, na + nb do
@@ -134,7 +140,7 @@ local function mulMag(a, b)
 end
 
 -- m * d + add for 0 <= d, add < 10^8
-local function mulSmall(m, d, add)
+function mulSmall(m, d, add)
     local r, carry = {}, add or 0
     for i = 1, #m do
         local cur = m[i] * d + carry
@@ -168,6 +174,76 @@ local function divSmall(m, d)
         q[i] = qi
     end
     return trim(q), rem
+end
+
+-- Lua 5.3+: the same three loops with integer division instead of a floor call per limb (compiled with load, so that
+-- Lua 5.1 never parses the // operator)
+if mtype then
+    mulMag, mulSmall, divSmall = load([[
+local B, trim = ...
+local mulSmall
+
+local function mulMag(a, b)
+    local na, nb = #a, #b
+    if na == 0 or nb == 0 then
+        return {}
+    elseif nb == 1 then
+        return mulSmall(a, b[1])
+    elseif na == 1 then
+        return mulSmall(b, a[1])
+    end
+    local r = {}
+    for i = 1, na + nb do
+        r[i] = 0
+    end
+    for i = 1, na do
+        local ai = a[i]
+        if ai ~= 0 then
+            local carry, k = 0, i
+            for j = 1, nb do
+                local cur = r[k] + ai * b[j] + carry
+                carry = cur // B
+                r[k] = cur - carry * B
+                k = k + 1
+            end
+            r[k] = carry
+        end
+    end
+    return trim(r)
+end
+
+function mulSmall(m, d, add)
+    local r, carry = {}, add or 0
+    for i = 1, #m do
+        local cur = m[i] * d + carry
+        carry = cur // B
+        r[i] = cur - carry * B
+    end
+    while carry > 0 do
+        r[#r + 1] = carry % B
+        carry = carry // B
+    end
+    return trim(r)
+end
+
+local function divSmall(m, d)
+    local n = #m
+    local q = {}
+    for i = 1, n do
+        q[i] = 0
+    end
+    local rem = 0
+    for i = n, 1, -1 do
+        local cur = rem * B + m[i]
+        local qi = cur // d
+        rem = cur - qi * d
+        q[i] = qi
+    end
+    return trim(q), rem
+end
+
+return mulMag, mulSmall, divSmall
+]])(B, trim)
 end
 
 -- Knuth's algorithm D: quotient and remainder of a / b, b nonzero
@@ -255,9 +331,21 @@ local ONE = make(1, {1})
 local TWO = make(1, {2})
 local TEN = make(1, {10})
 
+-- valueOf of -16..16, as the JVM caches them
+local SMALL = {}
+
 local function fromNumber(x)
     if x == 0 then
         return ZERO
+    elseif x < B and x > -B then
+        local cached = SMALL[x]
+        if cached ~= nil then
+            return cached
+        end
+        if x > 0 then
+            return make(1, {x})
+        end
+        return make(-1, {-x})
     end
     local sign = 1
     local addOne = false
@@ -283,6 +371,11 @@ local function fromNumber(x)
     end
     return make(sign, m)
 end
+
+for i = 1, 16 do
+    SMALL[i], SMALL[-i] = make(1, {i}), make(-1, {i})
+end
+SMALL[1], SMALL[2], SMALL[10] = ONE, TWO, TEN
 
 local function isBigInteger(o)
     return getmetatable(o) == __K2L_BigInteger

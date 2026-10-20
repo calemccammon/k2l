@@ -4,6 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassCastException = ____lualib.__K2L_ClassCastException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_List = ____lualib.__K2L_List
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_NullPointerException = ____lualib.__K2L_NullPointerException
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -15,6 +16,10 @@ local Animal = __K2L_Class("Animal")
 
 function Animal:____init(name)
     self.name = name
+end
+
+function Animal.new(name)
+    return setmetatable({name = name}, Animal)
 end
 
 local Dog = __K2L_Class("Dog", Animal)
@@ -67,14 +72,15 @@ local function describe(x)
     return "other"
 end
 
+local ____lambda_1 = function() return Single == Single end
 local function main()
     local animal = Dog.new("rex")
-    if not __K2L_InstanceOf(animal, Dog) then
+    if getmetatable(animal) ~= Dog then
         __K2L_CastFail(animal, "Dog", "Dog")
     end
     print(animal:bark())
     attempt("cat", function()
-        if not __K2L_InstanceOf(animal, Cat) then
+        if getmetatable(animal) ~= Cat then
             __K2L_CastFail(animal, "Cat", "Cat")
         end
         return animal.name
@@ -134,7 +140,7 @@ local function main()
         return nothing
     end)
     attempt("null as Dog", function()
-        if not __K2L_InstanceOf(nothing, Dog) then
+        if getmetatable(nothing) ~= Dog then
             __K2L_CastFail(nothing, "Dog", "Dog")
         end
         return nothing
@@ -151,7 +157,7 @@ local function main()
         end
         return shape
     end)
-    attempt("object", function() return Single == Single end)
+    attempt("object", ____lambda_1)
     attempt("string as Single", function()
         if "x" ~= Single then
             __K2L_CastFail("x", "Single", "Single")
@@ -190,7 +196,18 @@ local function main()
         __K2L_CastFail(anyD, "java.lang.Double", "kotlin.Double")
     end
     print(__K2L_Str(anyD))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("a", 1):map(function(it) return type(it) == "string" and it or "n" end)))
+    local ____list = __K2L_ReadOnlyListOf("a", 1)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        local ____result_1
+        ____result_1 = type(it) == "string" and it or "n"
+        ____count = ____count + 1
+        ____out[____count] = ____result_1
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     attempt("in args", function()
         local ____arg = 1 + 1
         if math.type(any) ~= "integer" then
@@ -198,13 +215,13 @@ local function main()
         end
         return __K2L_ReadOnlyListOf(____arg, any + 1)
     end)
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_2 = pcall(function()
         if math.type(any) ~= "integer" then
             __K2L_CastFail(any, "java.lang.Integer", "kotlin.Int")
         end
     end)
     if not ____ok_1 then
-        local ____error_1 = __K2L_ToThrowable(____result_1)
+        local ____error_1 = __K2L_ToThrowable(____result_2)
         if __K2L_InstanceOf(____error_1, __K2L_ClassCastException) then
             local e = ____error_1
             print(__K2L_Str(e.message))
@@ -212,13 +229,13 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_2 = pcall(function()
-        if not __K2L_InstanceOf(animal, Cat) then
+    local ____ok_2, ____result_3 = pcall(function()
+        if getmetatable(animal) ~= Cat then
             __K2L_CastFail(animal, "Cat", "Cat")
         end
     end)
     if not ____ok_2 then
-        local ____error_2 = __K2L_ToThrowable(____result_2)
+        local ____error_2 = __K2L_ToThrowable(____result_3)
         if __K2L_InstanceOf(____error_2, __K2L_ClassCastException) then
             local e = ____error_2
             local ____receiver = e.message

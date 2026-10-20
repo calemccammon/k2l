@@ -232,7 +232,11 @@ internal object TextMappings {
 
     private fun indexing(name: String, c: StringCall): LuaExpr? = when (name) {
         // s[i] and s.get(i) throw StringIndexOutOfBoundsException, except for the index of a loop over s.indices
-        "get" -> if (c.site.transformer.isProvenIndex(c.site.element, c.site.receiverType)) charAt(c) else c.helper("CharAt", c.args[0])
+        "get" -> when {
+            c.site.transformer.isProvenIndex(c.site.element, c.site.receiverType) -> charAt(c)
+            c.site.isString(c.site.receiverType) -> c.site.transformer.inlineCharAt(c.self, c.args[0]) ?: c.helper("CharAt", c.args[0])
+            else -> c.helper("CharAt", c.args[0])
+        }
 
         "substring", "subSequence" -> if (c.isRange(0)) c.text("substringOf", c.args[0]) else c.text("substring", *c.args.toTypedArray())
 

@@ -15,7 +15,6 @@ local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
 local __K2L_UninitializedPropertyAccessException = ____lualib.__K2L_UninitializedPropertyAccessException
@@ -44,7 +43,7 @@ function UserId:toString()
 end
 
 function UserId:hashCode()
-    return __K2L_Hash(self.raw)
+    return self.raw
 end
 
 function UserId:equals(other)
@@ -56,6 +55,10 @@ __K2L_ClassInfo(Email, "Email", "Email", "class")
 
 function Email:____init(address)
     self.address = address
+end
+
+function Email.new(address)
+    return setmetatable({address = address}, Email)
 end
 
 function Email:getDomain()
@@ -82,12 +85,16 @@ function Account:____init(id, email)
     self.email = email
 end
 
+function Account.new(id, email)
+    return setmetatable({id = id, email = email}, Account)
+end
+
 function Account:toString()
     return "Account(id=" .. __K2L_Str(self.id) .. ", email=" .. __K2L_Str(self.email) .. ")"
 end
 
 function Account:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.id) + __K2L_Hash(self.email))
+    return (31 * __K2L_Hash(self.id) + __K2L_Hash(self.email) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Account:equals(other)
@@ -105,6 +112,11 @@ function Session:status()
     return self.user ~= nil and "logged in as " .. (self.user or __K2L_Uninitialized("user")).email.address or "anonymous"
 end
 
+local ____lambda_1 = function() return UserId.new(-1) end
+local ____lambda_2 = function(it) return it.raw end
+local ____lambda_3 = function()
+    return #(____exports.config or __K2L_Uninitialized("config"))
+end
 local function main()
     local a = UserId.new(7)
     print(__K2L_Str(a))
@@ -115,9 +127,9 @@ local function main()
     print(__K2L_Str(a:getNext()) .. " " .. a:describe() .. " " .. Email.new("a@b.org"):getDomain())
     print(Account.new(UserId.new(1), Email.new("x@y.z")):equals(Account.new(UserId.new(1), Email.new("x@y.z"))))
     print(__K2L_Str(Account.new(UserId.new(1), Email.new("x@y.z"))))
-    local ____receiver = __K2L_RunCatching(function() return UserId.new(-1) end):exceptionOrNull()
+    local ____receiver = __K2L_RunCatching(____lambda_1):exceptionOrNull()
     print(__K2L_Str(____receiver and ____receiver.message))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(UserId.new(3), UserId.new(1)):sortedBy(function(it) return it.raw end, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(UserId.new(3), UserId.new(1)):sortedBy(____lambda_2, true)))
     local s = Session.new()
     print(s:status())
     local ____ok, ____result = pcall(function()
@@ -141,9 +153,7 @@ local function main()
     s.tags = __K2L_ListOf("a");
     (s.tags or __K2L_Uninitialized("tags")):add("b")
     print(__K2L_Str(s.tags or __K2L_Uninitialized("tags")))
-    local ____receiver_2 = __K2L_RunCatching(function()
-        return #(____exports.config or __K2L_Uninitialized("config"))
-    end):exceptionOrNull()
+    local ____receiver_2 = __K2L_RunCatching(____lambda_3):exceptionOrNull()
     print(__K2L_Str(____receiver_2 and ____receiver_2.message))
     ____exports.config = "ready"
     print(____exports.config or __K2L_Uninitialized("config"))

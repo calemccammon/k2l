@@ -12,6 +12,7 @@ local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -21,7 +22,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringToDouble = ____lualib.__K2L_StringToDouble
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Unit = ____lualib.__K2L_Unit
 
@@ -57,7 +57,7 @@ function Input:toString()
 end
 
 function Input:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.text) + __K2L_Hash(self.pos))
+    return (31 * __K2L_Hash(self.text) + self.pos + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Input:equals(other)
@@ -74,12 +74,16 @@ function ParseResult.Success:____init(value, rest)
     self.rest = rest
 end
 
+function ParseResult.Success.new(value, rest)
+    return setmetatable({value = value, rest = rest}, ParseResult.Success)
+end
+
 function ParseResult.Success:toString()
     return "Success(value=" .. __K2L_Str(self.value) .. ", rest=" .. __K2L_Str(self.rest) .. ")"
 end
 
 function ParseResult.Success:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.value) + __K2L_Hash(self.rest))
+    return (31 * __K2L_Hash(self.value) + __K2L_Hash(self.rest) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function ParseResult.Success:equals(other)
@@ -94,12 +98,16 @@ function ParseResult.Failure:____init(expected, at)
     self.at = at
 end
 
+function ParseResult.Failure.new(expected, at)
+    return setmetatable({expected = expected, at = at}, ParseResult.Failure)
+end
+
 function ParseResult.Failure:toString()
     return "Failure(expected=" .. self.expected .. ", at=" .. __K2L_Str(self.at) .. ")"
 end
 
 function ParseResult.Failure:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.expected) + __K2L_Hash(self.at))
+    return (31 * __K2L_Hash(self.expected) + __K2L_Hash(self.at) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function ParseResult.Failure:equals(other)
@@ -107,9 +115,10 @@ function ParseResult.Failure:equals(other)
 end
 
 function ParseResult:fold(onSuccess, onFailure)
-    if __K2L_InstanceOf(self, ParseResult.Success) then
+    local ____mt = getmetatable(self)
+    if ____mt == ParseResult.Success then
         return onSuccess(self.value, self.rest)
-    elseif __K2L_InstanceOf(self, ParseResult.Failure) then
+    elseif ____mt == ParseResult.Failure then
         return onFailure(self.expected, self.at)
     end
 end
@@ -131,9 +140,10 @@ end
 local function map(self, f)
     return __K2L_FunInterface(Parser, "parse", function(input)
         local r = self:parse(input)
-        if __K2L_InstanceOf(r, ParseResult.Success) then
+        local ____mt_1 = getmetatable(r)
+        if ____mt_1 == ParseResult.Success then
             return ParseResult.Success.new(f(r.value), r.rest)
-        elseif __K2L_InstanceOf(r, ParseResult.Failure) then
+        elseif ____mt_1 == ParseResult.Failure then
             return r
         end
     end)
@@ -142,9 +152,10 @@ end
 local function flatMap(____this, f)
     return __K2L_FunInterface(Parser, "parse", function(input)
         local r = ____this:parse(input)
-        if __K2L_InstanceOf(r, ParseResult.Success) then
+        local ____mt_2 = getmetatable(r)
+        if ____mt_2 == ParseResult.Success then
             return f(r.value):parse(r.rest)
-        elseif __K2L_InstanceOf(r, ParseResult.Failure) then
+        elseif ____mt_2 == ParseResult.Failure then
             return r
         end
     end)
@@ -153,13 +164,15 @@ end
 local function ____or(____this_1, other)
     return __K2L_FunInterface(Parser, "parse", function(input)
         local a = ____this_1:parse(input)
-        if __K2L_InstanceOf(a, ParseResult.Success) then
+        local ____mt_3 = getmetatable(a)
+        if ____mt_3 == ParseResult.Success then
             return a
-        elseif __K2L_InstanceOf(a, ParseResult.Failure) then
+        elseif ____mt_3 == ParseResult.Failure then
             local b = other:parse(input)
-            if __K2L_InstanceOf(b, ParseResult.Success) then
+            local ____mt_4 = getmetatable(b)
+            if ____mt_4 == ParseResult.Success then
                 return b
-            elseif __K2L_InstanceOf(b, ParseResult.Failure) then
+            elseif ____mt_4 == ParseResult.Failure then
                 return a.at.pos >= b.at.pos and a or b
             end
         end
@@ -188,7 +201,7 @@ local function many(____this_5)
         local current = input
         while true do
             local r = ____this_5:parse(current)
-            if not __K2L_InstanceOf(r, ParseResult.Success) or r.rest.pos == current.pos then
+            if getmetatable(r) ~= ParseResult.Success or r.rest.pos == current.pos then
                 break
             end
             items:add(r.value)
@@ -205,8 +218,9 @@ local function many1(____this_6)
     end)
 end
 
+local ____lambda_1 = function(it) return it end
 local function optional(____this_7)
-    return ____or(map(____this_7, function(it) return it end), Parser:pure(nil))
+    return ____or(map(____this_7, ____lambda_1), Parser:pure(nil))
 end
 
 local function sepBy(____this_8, sep)
@@ -219,9 +233,10 @@ end
 local function named(____this_9, name)
     return __K2L_FunInterface(Parser, "parse", function(input)
         local r = ____this_9:parse(input)
-        if __K2L_InstanceOf(r, ParseResult.Success) then
+        local ____mt_5 = getmetatable(r)
+        if ____mt_5 == ParseResult.Success then
             return r
-        elseif __K2L_InstanceOf(r, ParseResult.Failure) then
+        elseif ____mt_5 == ParseResult.Failure then
             return ParseResult.Failure.new(r.at.pos == input.pos and name or r.expected, r.at)
         end
     end)
@@ -273,6 +288,10 @@ function Expr.Num:____init(v)
     self.v = v
 end
 
+function Expr.Num.new(v)
+    return setmetatable({v = v}, Expr.Num)
+end
+
 function Expr.Num:toString()
     return "Num(v=" .. __K2L_Str(self.v) .. ")"
 end
@@ -290,6 +309,10 @@ __K2L_ClassInfo(Expr.Var, "parsing.Expr.Var", "parsing.Expr$Var", "class")
 
 function Expr.Var:____init(name)
     self.name = name
+end
+
+function Expr.Var.new(name)
+    return setmetatable({name = name}, Expr.Var)
 end
 
 function Expr.Var:toString()
@@ -313,12 +336,16 @@ function Expr.Bin:____init(op, l, r)
     self.r = r
 end
 
+function Expr.Bin.new(op, l, r)
+    return setmetatable({op = op, l = l, r = r}, Expr.Bin)
+end
+
 function Expr.Bin:toString()
     return "Bin(op=" .. self.op .. ", l=" .. __K2L_Str(self.l) .. ", r=" .. __K2L_Str(self.r) .. ")"
 end
 
 function Expr.Bin:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.op) + __K2L_Hash(self.l)) + __K2L_Hash(self.r))
+    return (31 * (31 * __K2L_Hash(self.op) + __K2L_Hash(self.l)) + __K2L_Hash(self.r) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Expr.Bin:equals(other)
@@ -330,6 +357,10 @@ __K2L_ClassInfo(Expr.Neg, "parsing.Expr.Neg", "parsing.Expr$Neg", "class")
 
 function Expr.Neg:____init(e)
     self.e = e
+end
+
+function Expr.Neg.new(e)
+    return setmetatable({e = e}, Expr.Neg)
 end
 
 function Expr.Neg:toString()
@@ -352,12 +383,16 @@ function Expr.Call:____init(fn, args)
     self.args = args
 end
 
+function Expr.Call.new(fn, args)
+    return setmetatable({fn = fn, args = args}, Expr.Call)
+end
+
 function Expr.Call:toString()
     return "Call(fn=" .. self.fn .. ", args=" .. __K2L_Str(self.args) .. ")"
 end
 
 function Expr.Call:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.fn) + __K2L_Hash(self.args))
+    return (31 * __K2L_Hash(self.fn) + __K2L_Hash(self.args) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Expr.Call:equals(other)
@@ -376,13 +411,17 @@ end
 
 local expr = lazyParser(function() return chainLeft(term, "+-") end)
 term = lazyParser(function() return chainLeft(factor, "*/%") end)
+
+local ____lambda_2 = function(it) return Expr.Num.new(it) end
+local ____lambda_3 = function(it) return Expr.Neg.new(it) end
 factor = lazyParser(function()
     local call = map(____then(identifier, optional(thenSkip(skipThen(symbol("("), sepBy(expr, symbol(","))), symbol(")")))), function(____destructured_6)
         local name, args = ____destructured_6.first, ____destructured_6.second
         return args == nil and Expr.Var.new(name) or Expr.Call.new(name, args)
     end)
-    return ____or(____or(____or(map(number, function(it) return Expr.Num.new(it) end), call), map(skipThen(symbol("-"), factor), function(it) return Expr.Neg.new(it) end)), thenSkip(skipThen(symbol("("), expr), symbol(")")))
+    return ____or(____or(____or(map(number, ____lambda_2), call), map(skipThen(symbol("-"), factor), ____lambda_3)), thenSkip(skipThen(symbol("("), expr), symbol(")")))
 end)
+
 local EvalException = __K2L_Class("parsing.EvalException", __K2L_Exception)
 __K2L_ClassInfo(EvalException, "parsing.EvalException", "parsing.EvalException", "class")
 
@@ -391,17 +430,18 @@ function EvalException:____init(message)
 end
 
 local function eval(e, env)
-    if __K2L_InstanceOf(e, Expr.Num) then
+    local ____mt_6 = getmetatable(e)
+    if ____mt_6 == Expr.Num then
         return e.v
-    elseif __K2L_InstanceOf(e, Expr.Var) then
+    elseif ____mt_6 == Expr.Var then
         local ____value_1 = env:get(e.name)
         if ____value_1 == nil then
             error(EvalException.new("unknown variable " .. e.name))
         end
         return ____value_1
-    elseif __K2L_InstanceOf(e, Expr.Neg) then
+    elseif ____mt_6 == Expr.Neg then
         return -eval(e.e, env)
-    elseif __K2L_InstanceOf(e, Expr.Bin) then
+    elseif ____mt_6 == Expr.Bin then
         local ____destructured_7 = __K2L_Pair.new(eval(e.l, env), eval(e.r, env))
         local l, r = ____destructured_7.first, ____destructured_7.second
         local ____subject_1 = e.op
@@ -420,8 +460,17 @@ local function eval(e, env)
         else
             return math.fmod(l, r)
         end
-    elseif __K2L_InstanceOf(e, Expr.Call) then
-        local args = e.args:map(function(it) return eval(it, env) end)
+    elseif ____mt_6 == Expr.Call then
+        local ____list = e.args
+        local ____out = {}
+        local ____count = 0
+        local ____items, ____n = ____list:____array()
+        for ____i = 1, ____n do
+            local it = ____items[____i]
+            ____count = ____count + 1
+            ____out[____count] = eval(it, env)
+        end
+        local args = __K2L_ListWrap(____out, ____count)
         local ____subject = e.fn
         if ____subject == "max" then
             local ____value = args:maxOrNull()
@@ -440,25 +489,27 @@ local function eval(e, env)
 end
 
 local function show(e)
-    if __K2L_InstanceOf(e, Expr.Num) then
+    local ____mt_7 = getmetatable(e)
+    if ____mt_7 == Expr.Num then
         return math.fmod(e.v, 1.0) == 0.0 and tostring(__K2L_DoubleToLong(e.v)) or __K2L_Str(e.v)
-    elseif __K2L_InstanceOf(e, Expr.Var) then
+    elseif ____mt_7 == Expr.Var then
         return e.name
-    elseif __K2L_InstanceOf(e, Expr.Neg) then
+    elseif ____mt_7 == Expr.Neg then
         return "-" .. show(e.e)
-    elseif __K2L_InstanceOf(e, Expr.Bin) then
+    elseif ____mt_7 == Expr.Bin then
         return "(" .. show(e.l) .. " " .. e.op .. " " .. show(e.r) .. ")"
-    elseif __K2L_InstanceOf(e, Expr.Call) then
+    elseif ____mt_7 == Expr.Call then
         return e.fn .. "(" .. e.args:joinToString(", ", nil, nil, nil, nil, show) .. ")"
     end
 end
 
+local ____lambda_4 = function(v)
+    return __K2L_FunInterface(Parser, "parse", function(input)
+        return input:getAtEnd() and ParseResult.Success.new(v, input) or ParseResult.Failure.new("end of input", input)
+    end)
+end
 local function parseAll(____this_10, text)
-    return flatMap(skipThen(ws, ____this_10), function(v)
-        return __K2L_FunInterface(Parser, "parse", function(input)
-            return input:getAtEnd() and ParseResult.Success.new(v, input) or ParseResult.Failure.new("end of input", input)
-        end)
-    end):parse(Input.new(text))
+    return flatMap(skipThen(ws, ____this_10), ____lambda_4):parse(Input.new(text))
 end
 
 local Json = __K2L_Class("parsing.Json")
@@ -468,6 +519,10 @@ __K2L_ClassInfo(Json.Str, "parsing.Json.Str", "parsing.Json$Str", "class")
 
 function Json.Str:____init(s)
     self.s = s
+end
+
+function Json.Str.new(s)
+    return setmetatable({s = s}, Json.Str)
 end
 
 function Json.Str:toString()
@@ -489,6 +544,10 @@ function Json.Num:____init(n)
     self.n = n
 end
 
+function Json.Num.new(n)
+    return setmetatable({n = n}, Json.Num)
+end
+
 function Json.Num:toString()
     return "Num(n=" .. __K2L_Str(self.n) .. ")"
 end
@@ -506,6 +565,10 @@ __K2L_ClassInfo(Json.Arr, "parsing.Json.Arr", "parsing.Json$Arr", "class")
 
 function Json.Arr:____init(items)
     self.items = items
+end
+
+function Json.Arr.new(items)
+    return setmetatable({items = items}, Json.Arr)
 end
 
 function Json.Arr:toString()
@@ -527,6 +590,10 @@ function Json.Obj:____init(fields)
     self.fields = fields
 end
 
+function Json.Obj.new(fields)
+    return setmetatable({fields = fields}, Json.Obj)
+end
+
 function Json.Obj:toString()
     return "Obj(fields=" .. __K2L_Str(self.fields) .. ")"
 end
@@ -542,14 +609,16 @@ end
 Json.Null = __K2L_Class("parsing.Json$Null", Json)
 __K2L_ClassInfo(Json.Null, "parsing.Json.Null", "parsing.Json$Null", "class")
 
+local ____lambda_5 = function(it) return it:render() end
 function Json:render()
-    if __K2L_InstanceOf(self, Json.Str) then
+    local ____mt_8 = getmetatable(self)
+    if ____mt_8 == Json.Str then
         return "\"" .. self.s .. "\""
-    elseif __K2L_InstanceOf(self, Json.Num) then
+    elseif ____mt_8 == Json.Num then
         return math.fmod(self.n, 1.0) == 0.0 and tostring(__K2L_DoubleToLong(self.n)) or __K2L_Str(self.n)
-    elseif __K2L_InstanceOf(self, Json.Arr) then
-        return self.items:joinToString(",", "[", "]", nil, nil, function(it) return it:render() end)
-    elseif __K2L_InstanceOf(self, Json.Obj) then
+    elseif ____mt_8 == Json.Arr then
+        return self.items:joinToString(",", "[", "]", nil, nil, ____lambda_5)
+    elseif ____mt_8 == Json.Obj then
         return self.fields:getEntries():joinToString(",", "{", "}", nil, nil, function(____destructured_8)
             local k, v = ____destructured_8.key, ____destructured_8.value
             return "\"" .. k .. "\":" .. v:render()
@@ -560,19 +629,33 @@ function Json:render()
 end
 
 local jsonString = named(map(token(thenSkip(skipThen(char("\""), many(satisfy("character", function(it) return it ~= "\"" end))), char("\""))), function(it) return it:joinToString("") end), "string")
+
+local ____lambda_6 = function(it) return Json.Str.new(it) end
+local ____lambda_7 = function(it) return Json.Num.new(it) end
+local ____lambda_8 = function(it) return Json.Arr.new(it) end
+local ____lambda_9 = function(it) return Json.Obj.new(it:toMap()) end
+local ____lambda_10 = function(it) return Json.Null end
 json = lazyParser(function()
     local arr = thenSkip(skipThen(symbol("["), sepBy(json, symbol(","))), symbol("]"))
     local field = ____then(thenSkip(jsonString, symbol(":")), json)
     local obj = thenSkip(skipThen(symbol("{"), sepBy(field, symbol(","))), symbol("}"))
-    return ____or(____or(____or(____or(map(jsonString, function(it) return Json.Str.new(it) end), map(number, function(it) return Json.Num.new(it) end)), map(arr, function(it) return Json.Arr.new(it) end)), map(obj, function(it) return Json.Obj.new(it:toMap()) end)), map(symbol("null"), function(it) return Json.Null end))
+    return ____or(____or(____or(____or(map(jsonString, ____lambda_6), map(number, ____lambda_7)), map(arr, ____lambda_8)), map(obj, ____lambda_9)), map(symbol("null"), ____lambda_10))
 end)
 
+local ____lambda_11 = function(expected, at)
+    return "syntax error: expected " .. expected .. " at " .. __K2L_Str(at)
+end
+local ____lambda_12 = function(v, _) return v:render() end
+local ____lambda_13 = function(exp, at)
+    return "error: expected " .. exp .. " at " .. __K2L_Str(at)
+end
+local ____lambda_14 = function(it) return it * 2 end
 local function main()
     local env = __K2L_ReadOnlyMapOf(__K2L_Pair.new("x", 3.0), __K2L_Pair.new("y", 4.0), __K2L_Pair.new("rate", 0.5))
     local inputs = __K2L_ReadOnlyListOf("1 + 2 * 3", "(1 + 2) * 3", "x * x + y * y", "-x + 10 / 4", "max(x, y, 2) * rate", "sum(1, 2, 3, 4) % 3", "min()", "unknown + 1", "foo(1)", "7 / (y - 4)", "2 *", "(1 + 2", "3 $ 4", "  12.5  ")
     local ____mod = inputs.____modCount
-    for ____i = 1, inputs.size do
-        local text = inputs[____i]
+    for ____i_1 = 1, inputs.size do
+        local text = inputs[____i_1]
         local line = parseAll(expr, text):fold(function(e, _)
             local ____ok, ____result, ____returned = pcall(function()
                 return true, show(e) .. " = " .. __K2L_Str(eval(e, env))
@@ -583,7 +666,7 @@ local function main()
                 end
             else
                 local ____error = __K2L_ToThrowable(____result)
-                if __K2L_InstanceOf(____error, EvalException) then
+                if getmetatable(____error) == EvalException then
                     local ex = ____error
                     return show(e) .. " fails: " .. __K2L_Str(ex.message)
                 elseif __K2L_InstanceOf(____error, __K2L_NoSuchElementException) then
@@ -593,44 +676,47 @@ local function main()
                     error(____error, 0)
                 end
             end
-        end, function(expected, at)
-            return "syntax error: expected " .. expected .. " at " .. __K2L_Str(at)
-        end)
+        end, ____lambda_11)
         print(text .. "  =>  " .. line)
-        if inputs.____modCount ~= ____mod and inputs:____comodified(____i) then
+        if inputs.____modCount ~= ____mod and inputs:____comodified(____i_1) then
             break
         end
     end
     local docs = __K2L_ReadOnlyListOf("{\"name\": \"k2l\", \"tags\": [\"lua\", \"kotlin\"], \"stars\": 42, \"meta\": {\"license\": null}}", "[1, 2.5, [], {}]", "{\"a\": [1, 2,]}", "{\"unterminated\": \"abc")
     local ____mod_1 = docs.____modCount
-    for ____i_1 = 1, docs.size do
-        local d = docs[____i_1]
-        print(parseAll(json, d):fold(function(v, _) return v:render() end, function(exp, at)
-            return "error: expected " .. exp .. " at " .. __K2L_Str(at)
-        end))
-        if docs.____modCount ~= ____mod_1 and docs:____comodified(____i_1) then
+    for ____i_2 = 1, docs.size do
+        local d = docs[____i_2]
+        print(parseAll(json, d):fold(____lambda_12, ____lambda_13))
+        if docs.____modCount ~= ____mod_1 and docs:____comodified(____i_2) then
             break
         end
     end
     local r = parseAll(json, "{\"k\": [1, 2, 3]}")
-    if __K2L_InstanceOf(r, ParseResult.Success) then
+    if getmetatable(r) == ParseResult.Success then
         local ____cast = r.value
-        if not __K2L_InstanceOf(____cast, Json.Obj) then
+        if getmetatable(____cast) ~= Json.Obj then
             __K2L_CastFail(____cast, "parsing.Json$Obj", "parsing.Json.Obj")
         end
         local ____cast_1 = ____cast.fields:get("k")
-        if not __K2L_InstanceOf(____cast_1, Json.Arr) then
+        if getmetatable(____cast_1) ~= Json.Arr then
             __K2L_CastFail(____cast_1, "parsing.Json$Arr", "parsing.Json.Arr")
         end
         local items = ____cast_1.items
-        print("k has " .. items.size .. " items, sum " .. __K2L_Str(items:sumOf(function(it)
-            if not __K2L_InstanceOf(it, Json.Num) then
+        local ____arg = items.size
+        local ____sum = 0.0
+        local ____items_1, ____n_1 = items:____array()
+        for ____i_3 = 1, ____n_1 do
+            local it = ____items_1[____i_3]
+            local ____result_1
+            if getmetatable(it) ~= Json.Num then
                 __K2L_CastFail(it, "parsing.Json$Num", "parsing.Json.Num")
             end
-            return it.n
-        end, 0.0)))
+            ____result_1 = it.n
+            ____sum = ____sum + ____result_1
+        end
+        print("k has " .. ____arg .. " items, sum " .. __K2L_Str(____sum))
     end
-    print(__K2L_Str(map(Parser:pure(5), function(it) return it * 2 end):parse(Input.new("rest"))))
+    print(__K2L_Str(map(Parser:pure(5), ____lambda_14):parse(Input.new("rest"))))
     print(__K2L_Str(Parser:fail("nothing"):parse(Input.new(""))))
     print(__K2L_Str(many(____or(char("a"), char("b"))):parse(Input.new("abbac"))))
 end

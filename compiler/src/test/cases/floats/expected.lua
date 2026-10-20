@@ -4,6 +4,7 @@ local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_FloatSum = ____lualib.__K2L_FloatSum
 local __K2L_FloatToString = ____lualib.__K2L_FloatToString
 local __K2L_Fround = ____lualib.__K2L_Fround
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToDouble = ____lualib.__K2L_StringToDouble
@@ -46,7 +47,15 @@ local function main()
     print(__K2L_DoubleToString(3.4028234663852886E38))
     local xs = __K2L_ReadOnlyListOf(1.100000023841858, 2.200000047683716, 3.299999952316284)
     print(__K2L_FloatToString(__K2L_FloatSum(xs)))
-    print(__K2L_Str(xs:map(function(it) return __K2L_Fround(it * 2) end)))
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = xs:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_Fround(it * 2)
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(__K2L_FloatToString(a) .. "!")
     print(__K2L_DoubleToString(a * 3))
 end

@@ -1,7 +1,6 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
@@ -20,7 +19,7 @@ local function getSquared(____this)
 end
 
 local function getIsEven(____this_1)
-    return math.fmod(____this_1, 2) == 0
+    return (____this_1 >= 0 and ____this_1 % 2 or 0 - -____this_1 % 2) == 0
 end
 
 local function getSize2(____this_2)
@@ -66,12 +65,16 @@ function Box:____init(value, name)
     self.name = name
 end
 
+function Box.new(value, name)
+    return setmetatable({value = value, name = name}, Box)
+end
+
 local function getDoubled(____this_9)
     return ____this_9.value * 2
 end
 
 local function setDoubled(____this_9, v)
-    ____this_9.value = __K2L_IDiv(v, 2)
+    ____this_9.value = v >= 0 and v // 2 or 0 - -v // 2
 end
 
 local function getLabel(____this_10)
@@ -194,7 +197,6 @@ return ____exports
 -- ==== util/ext.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 
 local function getLastChar(self)
@@ -215,12 +217,16 @@ function Counter:____init(count)
     self.count = count
 end
 
+function Counter.new(count)
+    return setmetatable({count = count}, Counter)
+end
+
 local function getDouble(____this_1)
     return ____this_1.count * 2
 end
 
 local function setDouble(____this_1, value)
-    ____this_1.count = __K2L_IDiv(value, 2)
+    ____this_1.count = value >= 0 and value // 2 or 0 - -value // 2
 end
 
 return {getLastChar = getLastChar, getHead = getHead, setHead = setHead, Counter = Counter, getDouble = getDouble, setDouble = setDouble}

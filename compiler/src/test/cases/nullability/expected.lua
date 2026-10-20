@@ -10,6 +10,10 @@ function Node:____init(value, ____next)
     self.next = ____next
 end
 
+function Node.new(value, ____next)
+    return setmetatable({value = value, next = ____next}, Node)
+end
+
 function Node:describe()
     return "Node(" .. self.value .. ")"
 end

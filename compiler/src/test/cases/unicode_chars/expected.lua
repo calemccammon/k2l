@@ -50,6 +50,9 @@ local function classification()
     end
 end
 
+local ____lambda_1 = function(it) return __K2L_Utf16Case.uppercase(it) end
+local ____lambda_2 = function(it) return __K2L_Utf16Case.titlecase(it) end
+local ____lambda_3 = function(it) return __K2L_Utf16Case.titlecase(it) end
 local function caseMapping()
     print(__K2L_Utf16.out(__K2L_Utf16Case.uppercaseChar("é")))
     print(__K2L_Utf16.out(__K2L_Utf16Case.lowercaseChar("É")))
@@ -73,9 +76,9 @@ local function caseMapping()
     print(__K2L_Utf16.out(__K2L_Utf16Case.uppercase("ǈ")))
     print(__K2L_Utf16.out(__K2L_Utf16Case.uppercase("ﬃ")))
     print(__K2L_Utf16.out(__K2L_Utf16Case.titlecase("ﬃ")))
-    print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar("éa", function(it) return __K2L_Utf16Case.uppercase(it) end)))
-    print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar("ǆemal", function(it) return __K2L_Utf16Case.titlecase(it) end)))
-    print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar("ßtraße", function(it) return __K2L_Utf16Case.titlecase(it) end)))
+    print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar("éa", ____lambda_1)))
+    print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar("ǆemal", ____lambda_2)))
+    print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar("ßtraße", ____lambda_3)))
 end
 
 local function stringCase()
@@ -108,6 +111,7 @@ local function stringCase()
     print(__K2L_Utf16.out(__K2L_Utf16Case.lowercase("aΣ")))
 end
 
+local ____lambda_4 = function(it) return it end
 local function ignoreCase()
     print(__K2L_Utf16.out(__K2L_Utf16Case.equalsIgnoreCase("É", "é")))
     print(__K2L_Utf16.out(__K2L_Utf16Case.equalsIgnoreCase("Straße", "STRASSE")))
@@ -126,7 +130,7 @@ local function ignoreCase()
     print(__K2L_Utf16.out(__K2L_Text.compare("é", "É")))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_ReadOnlyListOf("zèbre", "Zèbre", "éclair", "Éclat", "apple", "Äpfel", "Zoo"):sortedWith(__K2L_Text.caseInsensitiveOrder))))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_ReadOnlyListOf("zèbre", "Zèbre", "éclair", "Éclat", "apple", "Äpfel", "Zoo"):sorted())))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_ReadOnlyListOf("b", "é", "a", "É"):sortedWith(__K2L_CompareByWith(__K2L_Text.caseInsensitiveOrder, function(it) return it end)))))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ReadOnlyListOf("b", "é", "a", "É"):sortedWith(__K2L_CompareByWith(__K2L_Text.caseInsensitiveOrder, ____lambda_4)))))
     print(__K2L_Utf16.out("é" == "É"))
     print(__K2L_Utf16.out("é" == "É" or true and __K2L_Utf16Case.equalsIgnoreCase("é", "É")))
     print(__K2L_Utf16.out("a" == "b" or true and __K2L_Utf16Case.equalsIgnoreCase("a", "b")))
@@ -143,20 +147,33 @@ local function digits()
     print(__K2L_Utf16.out(__K2L_Str(__K2L_Num.digitToIntOrNull("²"))))
 end
 
+local ____lambda_5 = function(it) return __K2L_Utf16Case.isLetter(it) end
+local ____lambda_6 = function(it) return __K2L_Utf16Case.isDigit(it) end
+local ____lambda_7 = function(it) return __K2L_Utf16Case.isWhitespace(it) end
+local ____lambda_8 = function(it) return __K2L_Utf16Case.isUpperCase(it) end
+local ____lambda_9 = function(it) return __K2L_Utf16Case.isLowerCase(it) end
+local ____lambda_10 = function(it) return __K2L_Utf16Case.isLetterOrDigit(it) end
+local ____lambda_11 = function(it)
+    return __K2L_Utf16Case.isLetter(it) and __K2L_Utf16Case.uppercaseChar(it) or it
+end
+local ____lambda_12 = function(it) return __K2L_Utf16.isSurrogate(it) end
+local ____lambda_13 = function(it) return __K2L_Utf16Case.isLetter(it) end
+local ____lambda_14 = function(it) return not __K2L_Utf16Case.isLetter(it) end
+local ____lambda_15 = function(it)
+    return __K2L_Utf16Case.isLowerCase(it) and __K2L_Utf16Case.titlecase(it) or it
+end
 local function predicates()
     local s = "Héllo, Wörld! 日本語 123 ١٢٣ 😀"
-    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(function(it) return __K2L_Utf16Case.isLetter(it) end)))
-    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(function(it) return __K2L_Utf16Case.isDigit(it) end)))
-    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(function(it) return __K2L_Utf16Case.isWhitespace(it) end)))
-    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(function(it) return __K2L_Utf16Case.isUpperCase(it) end)))
-    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(function(it) return __K2L_Utf16Case.isLowerCase(it) end)))
-    print(__K2L_Utf16.out(__K2L_Text.filter(s, function(it) return __K2L_Utf16Case.isLetterOrDigit(it) end)))
-    print(__K2L_Utf16.out(__K2L_Utf16.norm(__K2L_Text.toList(s):map(function(it)
-        return __K2L_Utf16Case.isLetter(it) and __K2L_Utf16Case.uppercaseChar(it) or it
-    end):joinToString(""))))
-    print(__K2L_Utf16.out(__K2L_Text.toList(s):any(function(it) return __K2L_Utf16.isSurrogate(it) end)))
-    print(__K2L_Utf16.out(__K2L_Text.toList(s):all(function(it) return __K2L_Utf16Case.isLetter(it) end)))
-    print(__K2L_Utf16.out(__K2L_Text.trimWith(s, 3, function(it) return not __K2L_Utf16Case.isLetter(it) end)))
+    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(____lambda_5)))
+    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(____lambda_6)))
+    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(____lambda_7)))
+    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(____lambda_8)))
+    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(____lambda_9)))
+    print(__K2L_Utf16.out(__K2L_Text.filter(s, ____lambda_10)))
+    print(__K2L_Utf16.out(__K2L_Utf16.norm(__K2L_Text.toList(s):map(____lambda_11):joinToString(""))))
+    print(__K2L_Utf16.out(__K2L_Text.toList(s):any(____lambda_12)))
+    print(__K2L_Utf16.out(__K2L_Text.toList(s):all(____lambda_13)))
+    print(__K2L_Utf16.out(__K2L_Text.trimWith(s, 3, ____lambda_14)))
     print(__K2L_Utf16.out(__K2L_Text.trim("  é 　")))
     print(__K2L_Utf16.out(__K2L_Utf16.len(__K2L_Text.trim("  é 　"))))
     print(__K2L_Utf16.out(__K2L_Text.isBlank("  ")))
@@ -165,21 +182,23 @@ local function predicates()
     print(__K2L_Utf16.out(__K2L_Utf16.len(__K2L_Text.trimStart(" é"))))
     print(__K2L_Utf16.out(__K2L_Utf16.len(__K2L_Text.trimEnd("é "))))
     print(__K2L_Utf16.out(capitalizeFirst("été")))
-    print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar(__K2L_Utf16Case.lowercase("ÉTÉ"), function(it)
-        return __K2L_Utf16Case.isLowerCase(it) and __K2L_Utf16Case.titlecase(it) or it
-    end)))
+    print(__K2L_Utf16.out(__K2L_Text.replaceFirstChar(__K2L_Utf16Case.lowercase("ÉTÉ"), ____lambda_15)))
 end
 
+local ____lambda_16 = function(it) return __K2L_Utf16Case.uppercase(it) end
 function capitalizeFirst(self)
-    return __K2L_Text.replaceFirstChar(self, function(it) return __K2L_Utf16Case.uppercase(it) end)
+    return __K2L_Text.replaceFirstChar(self, ____lambda_16)
 end
 
+local ____lambda_17 = function(it) return it.value end
+local ____lambda_18 = function(it) return it.value end
+local ____lambda_19 = function(it) return it.value end
 local function regexClasses()
     local word = __K2L_Regex.new("\\w+")
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(word:findAllFactory("héllo wörld 日本語 abc")):map(function(it) return it.value end):toList())))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("\\d+"):findAllFactory("a١٢٣b123")):map(function(it) return it.value end):toList())))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(word:findAllFactory("héllo wörld 日本語 abc")):map(____lambda_17):toList())))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("\\d+"):findAllFactory("a١٢٣b123")):map(____lambda_18):toList())))
     print(__K2L_Utf16.out(__K2L_Sequence.new(__K2L_Regex.new("\\s"):findAllFactory("a b c")):count()))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[a-z]+"):findAllFactory("héllo")):map(function(it) return it.value end):toList())))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[a-z]+"):findAllFactory("héllo")):map(____lambda_19):toList())))
     local ____receiver = __K2L_Regex.new("é"):find("héllo")
     print(__K2L_Utf16.out(__K2L_Str(____receiver and ____receiver.range)))
     local ____receiver_1 = __K2L_Regex.new("(.)(.)"):find("日本語")

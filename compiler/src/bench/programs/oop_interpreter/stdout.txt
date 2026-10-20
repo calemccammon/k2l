@@ -1,0 +1,4 @@
+fib: [4181] steps=27060
+loops: [5412150, 56, 5412150] steps=26619
+closures: [15204] steps=26616
+lexed 87410 tokens, parsed 760 statements, 380 prints

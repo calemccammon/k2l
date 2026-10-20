@@ -7,7 +7,6 @@ local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Named = __K2L_Class("Named")
 
@@ -54,6 +53,10 @@ local Polite = __K2L_Class("Polite", nil, Named)
 
 function Polite:____init(impl)
     self.____delegate_Named = impl
+end
+
+function Polite.new(impl)
+    return setmetatable({____delegate_Named = impl}, Polite)
 end
 
 function Polite:greet(other)
@@ -192,6 +195,10 @@ function Square:____init(side)
     self.side = side
 end
 
+function Square.new(side)
+    return setmetatable({side = side}, Square)
+end
+
 function Square:getArea()
     return self.side * self.side
 end
@@ -204,6 +211,10 @@ local Framed = __K2L_Class("Framed", nil, Shape)
 
 function Framed:____init(s)
     self.____delegate_Shape = s
+end
+
+function Framed.new(s)
+    return setmetatable({____delegate_Shape = s}, Framed)
 end
 
 function Framed:getArea(...)
@@ -231,6 +242,10 @@ local Via = __K2L_Class("Via", nil, Derived)
 
 function Via:____init(d)
     self.____delegate_Derived = d
+end
+
+function Via.new(d)
+    return setmetatable({____delegate_Derived = d}, Via)
 end
 
 function Via:id(...)
@@ -292,12 +307,16 @@ function Point:____init(x, y)
     self.y = y
 end
 
+function Point.new(x, y)
+    return setmetatable({x = x, y = y}, Point)
+end
+
 function Point:toString()
     return "Point(x=" .. self.x .. ", y=" .. self.y .. ")"
 end
 
 function Point:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.x) + __K2L_Hash(self.y))
+    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Point:equals(other)
@@ -332,7 +351,7 @@ function Pin:toString()
 end
 
 function Pin:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.tag) + __K2L_Hash(self.at))
+    return (31 * __K2L_Hash(self.tag) + __K2L_Hash(self.at) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Pin:equals(other)

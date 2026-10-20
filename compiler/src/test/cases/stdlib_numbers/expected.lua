@@ -4,16 +4,12 @@ local __K2L_ClosedRange = ____lualib.__K2L_ClosedRange
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Random = ____lualib.__K2L_Random
-local __K2L_Shl = ____lualib.__K2L_Shl
-local __K2L_Shr = ____lualib.__K2L_Shr
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
-local __K2L_Ushr = ____lualib.__K2L_Ushr
 
 local function ints()
     print(2147483647)
@@ -41,9 +37,9 @@ local function ints()
     print(5 ~ 3)
     print(5 & 3)
     print(5 | 3)
-    print(__K2L_Shl(1, 4))
-    print(__K2L_Shr(-16, 2))
-    print(__K2L_Ushr(-16, 28))
+    print(((1 << 4) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
+    print(-16 // 4)
+    print((-16 & 0xFFFFFFFF) >> 28)
     print(__K2L_Num.signInt(7))
     print(math.abs(-7))
     print(__K2L_Str((10 + 0.0) / 4))
@@ -77,9 +73,18 @@ local function chars()
     print(("x"):upper())
 end
 
+local ____lambda_1 = function(it) return it * it end
+local ____lambda_2 = function(a, b) return a * b end
+local ____lambda_3 = function(it)
+    return (it >= 0 and it % 2 or 0 - -it % 2) == 1
+end
+local ____lambda_4 = function(it) return it * 2 end
+local ____lambda_5 = function(a)
+    return __K2L_IntRange.new(1, a):map(function(it) return a * 10 + it end)
+end
 local function ranges()
     print(__K2L_IntRange.new(1, 5):sum())
-    print(__K2L_Str(__K2L_IntRange.new(1, 5):map(function(it) return it * it end)))
+    print(__K2L_Str(__K2L_IntRange.new(1, 5):map(____lambda_1)))
     print(__K2L_Str(__K2L_IntRange.new(5, 1, -1):toList()))
     print(__K2L_Str(__K2L_IntRange.new(1, 10):withStep(3):toList()))
     print(__K2L_Str(__K2L_IntRange.new(10, 1, -1):withStep(4):toList()))
@@ -94,9 +99,16 @@ local function ranges()
     print(not (7 >= 1 and 7 <= 5))
     print(__K2L_IntRange.new(1, 5):contains(5))
     print(__K2L_Str(__K2L_IntRange.new(1, 5):average()))
-    print(__K2L_IntRange.new(1, 5):fold(1, function(a, b) return a * b end))
-    print(__K2L_IntRange.new(1, 3):toList():sumOf(function(it) return it end))
-    print(__K2L_Str(__K2L_IntRange.new(1, 5):filter(function(it) return math.fmod(it, 2) == 1 end)))
+    print(__K2L_IntRange.new(1, 5):fold(1, ____lambda_2))
+    local ____list = __K2L_IntRange.new(1, 3):toList()
+    local ____sum = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____sum = ____sum + it
+    end
+    print(____sum)
+    print(__K2L_Str(__K2L_IntRange.new(1, 5):filter(____lambda_3)))
     print(__K2L_IntRange.new(1, 5):min())
     print(__K2L_IntRange.new(1, 5):max())
     print(__K2L_IntRange.new(1, 5):isEmpty())
@@ -107,11 +119,9 @@ local function ranges()
     print(__K2L_Str(__K2L_IntRange.new(1, 5):withStep(2)))
     print(__K2L_Str(__K2L_IntRange.new(1, 3):toList()))
     print(__K2L_Str(__K2L_IntRange.new(1, 5):zip(__K2L_IntRange.new(6, 10))))
-    print(__K2L_Str(__K2L_IntRange.new(1, 4):associateWith(function(it) return it * 2 end)))
+    print(__K2L_Str(__K2L_IntRange.new(1, 4):associateWith(____lambda_4)))
     print(__K2L_Str(__K2L_IntRange.new(1, 6):chunked(4)))
-    print(__K2L_Str(__K2L_IntRange.new(1, 3):flatMap(function(a)
-        return __K2L_IntRange.new(1, a):map(function(it) return a * 10 + it end)
-    end)))
+    print(__K2L_Str(__K2L_IntRange.new(1, 3):flatMap(____lambda_5)))
     local ____value = __K2L_IntRange.new(1, 5):random(__K2L_Random.seeded(3))
     print(____value >= 1 and ____value <= 5)
 end
@@ -120,8 +130,8 @@ local function longs()
     local big = 1234567890123
     print(big)
     print(big + 1)
-    print(__K2L_IDiv(big, 1000))
-    print(math.fmod(big, 1000))
+    print(big >= 0 and big // 1000 or (big + 999) // 1000)
+    print(big >= 0 and big % 1000 or (big % 1000 - 1000) % (-1000))
     print(#tostring(big))
     print(big > 5)
     print(__K2L_StringToInt("123456789012", nil, true))

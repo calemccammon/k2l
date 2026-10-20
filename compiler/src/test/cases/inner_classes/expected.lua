@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -143,6 +144,10 @@ local Shape = __K2L_Class("Shape")
 
 function Shape:____init(name)
     self.name = name
+end
+
+function Shape.new(name)
+    return setmetatable({name = name}, Shape)
 end
 
 function Shape:sides()
@@ -318,7 +323,7 @@ local function main()
     local part = Shape.SpecialPart.new(sq, 5, "y")
     print(part:label())
     print(__K2L_InstanceOf(part, Shape.Part))
-    print(__K2L_InstanceOf(part, Shape.SpecialPart))
+    print(getmetatable(part) == Shape.SpecialPart)
     local w = Wrapper.new()
     local a = Wrapper.Counted.new(w)
     local b = Wrapper.Counted.new(w)
@@ -327,9 +332,32 @@ local function main()
     print(Wrapper.Lazy.new(w):scaled())
     print(Wrapper.Lazy.new(w, 10):scaled())
     print(Wrapper.Lazy.new(w, 2, "z"):scaled())
-    local handles = __K2L_ReadOnlyListOf(1, 2, 3):map(function(it) return Counter.Handle.new(counter, it) end)
-    print(__K2L_Str(handles:map(function(it) return it:bump() end)))
-    local total = handles:sumOf(function(it) return it.step end)
+    local ____list_1 = __K2L_ReadOnlyListOf(1, 2, 3)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list_1:____array()
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = Counter.Handle.new(counter, it)
+    end
+    local handles = __K2L_ListWrap(____out, ____count)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = handles:____array()
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it:bump()
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
+    local ____sum = 0
+    local ____items_2, ____n_2 = handles:____array()
+    for ____i_3 = 1, ____n_2 do
+        local it = ____items_2[____i_3]
+        ____sum = ____sum + it.step
+    end
+    local total = ____sum
     print(total)
 end
 

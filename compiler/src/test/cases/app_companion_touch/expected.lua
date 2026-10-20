@@ -17,6 +17,10 @@ function Widget:____init(name)
     self.name = name
 end
 
+function Widget.new(name)
+    return setmetatable({name = name}, Widget)
+end
+
 function Widget:create(name)
     return Widget.new(name)
 end

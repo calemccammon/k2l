@@ -4,5 +4,9 @@
 local function __K2L_IMul(a, b)
     local al = a % 65536
     local ah = (a - al) / 65536
-    return __K2L_ToInt32(al * b + ((ah * b) % 65536) * 65536)
+    local r = (al * b + ((ah * b) % 65536) * 65536) % 4294967296
+    if r >= 2147483648 then
+        return r - 4294967296
+    end
+    return r
 end

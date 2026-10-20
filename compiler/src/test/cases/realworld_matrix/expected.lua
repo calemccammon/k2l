@@ -8,10 +8,12 @@ local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
@@ -21,16 +23,16 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringReplace = ____lualib.__K2L_StringReplace
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local fmt
 local Matrix = __K2L_Class("Matrix")
 
+local ____lambda_1 = function(_, _) return 0.0 end
 function Matrix:____init(rows, cols, init)
     if init == nil then
-        init = function(_, _) return 0.0 end
+        init = ____lambda_1
     end
     self.rows = rows
     self.cols = cols
@@ -45,7 +47,10 @@ end
 
 function Matrix:set(r, c, v)
     local ____object = self.data:get(r)
-    ____object:set(c, v)
+    if c < 0 or c >= ____object.size then
+        __K2L_IndexError(c, ____object.size, "array")
+    end
+    ____object[c + 1] = v
 end
 
 function Matrix:times(o)
@@ -102,7 +107,7 @@ end
 function Matrix:solve(b)
     local n = self.rows
     local aug = Matrix.new(n, n + 1, function(r, c)
-        return c < n and self:get(r, c) or b:get(r)
+        return c < n and self:get(r, c) or (b[r + 1] or __K2L_IndexError(r, b.size, "array"))
     end)
     for col = 0, n - 1 do
         local pivot = __K2L_IntRange.new(col, n - 1):maxBy(function(it) return math.abs(aug:get(it, col)) end)
@@ -139,23 +144,27 @@ function Matrix:copy()
 end
 
 function Matrix:equals(other)
-    return __K2L_InstanceOf(other, Matrix) and other.rows == self.rows and other.cols == self.cols and __K2L_IntRange.new(0, self.rows - 1):all(function(r)
+    return getmetatable(other) == Matrix and other.rows == self.rows and other.cols == self.cols and __K2L_IntRange.new(0, self.rows - 1):all(function(r)
         return self.data:get(r):contentEquals(other.data:get(r))
     end)
 end
 
+local ____lambda_2 = function(h, row) return h * 31 + row:contentHashCode() end
 function Matrix:hashCode()
-    return self.data:fold(self.rows * 31 + self.cols, function(h, row) return h * 31 + row:contentHashCode() end)
+    return self.data:fold(self.rows * 31 + self.cols, ____lambda_2)
 end
 
+local ____lambda_3 = function(it) return __K2L_StringFormat("%7.2f", it) end
+local ____lambda_4 = function(row)
+    return row:joinToString(" ", nil, nil, nil, nil, ____lambda_3)
+end
 function Matrix:toString()
-    return self.data:joinToString("\n", nil, nil, nil, nil, function(row)
-        return row:joinToString(" ", nil, nil, nil, nil, function(it) return __K2L_StringFormat("%7.2f", it) end)
-    end)
+    return self.data:joinToString("\n", nil, nil, nil, nil, ____lambda_4)
 end
 
+local ____lambda_5 = function(r, c) return r == c and 1.0 or 0.0 end
 function Matrix:identity(n)
-    return Matrix.new(n, n, function(r, c) return r == c and 1.0 or 0.0 end)
+    return Matrix.new(n, n, ____lambda_5)
 end
 
 function Matrix:of(...)
@@ -168,6 +177,10 @@ Meters.____comparable = true
 
 function Meters:____init(value)
     self.value = value
+end
+
+function Meters.new(value)
+    return setmetatable({value = value}, Meters)
 end
 
 function Meters:plus(o)
@@ -198,6 +211,10 @@ local Seconds = __K2L_Class("Seconds")
 
 function Seconds:____init(value)
     self.value = value
+end
+
+function Seconds.new(value)
+    return setmetatable({value = value}, Seconds)
 end
 
 function Seconds:toString()
@@ -231,6 +248,10 @@ function Vec:____init(x, y)
     self.y = y
 end
 
+function Vec.new(x, y)
+    return setmetatable({x = x, y = y}, Vec)
+end
+
 function Vec:plus(o)
     return Vec.new(self.x + o.x, self.y + o.y)
 end
@@ -260,7 +281,7 @@ function Vec:toString()
 end
 
 function Vec:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.x) + __K2L_Hash(self.y))
+    return (31 * __K2L_Hash(self.x) + __K2L_Hash(self.y) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Vec:equals(other)
@@ -271,8 +292,10 @@ function fmt(____this_2)
     return ____this_2 == math.floor(____this_2) + 0.0 and math.abs(____this_2) < 1.0E9 and tostring(__K2L_DoubleToLong(____this_2)) or __K2L_StringFormat("%.3f", ____this_2)
 end
 
+local ____lambda_6 = function(it) return it.x end
+local ____lambda_7 = function(it) return it.y end
 local function convexHull(points)
-    local sorted = points:sortedWith(__K2L_CompareBy(function(it) return it.x end, function(it) return it.y end))
+    local sorted = points:sortedWith(__K2L_CompareBy(____lambda_6, ____lambda_7))
     local function half(list)
         local hull = __K2L_List.new()
         local ____mod = list.____modCount
@@ -291,23 +314,28 @@ local function convexHull(points)
     return half(sorted):plusAll(half(sorted:asReversed()))
 end
 
+local ____lambda_8 = function(a, b) return a:cross(b) end
 local function polygonArea(poly)
-    return math.abs(poly:plus(poly:first()):zipWithNext(function(a, b) return a:cross(b) end):sum(0.0)) / 2
+    return math.abs(poly:plus(poly:first()):zipWithNext(____lambda_8):sum(0.0)) / 2
 end
 
 local Poly = __K2L_Class("Poly")
 
+local ____lambda_9 = function(it) return it == 0 end
+local ____lambda_10 = function() return __K2L_SingletonListOf(0) end
 function Poly:____init(coefficients)
-    self.coef = coefficients:dropLastWhile(function(it) return it == 0 end):ifEmpty(function() return __K2L_SingletonListOf(0) end)
+    self.coef = coefficients:dropLastWhile(____lambda_9):ifEmpty(____lambda_10)
 end
 
 function Poly:getDegree()
     return self.coef.size - 1
 end
 
+local ____lambda_11 = function(it) return 0 end
+local ____lambda_12 = function(it) return 0 end
 function Poly:plus(o)
     return Poly.new(__K2L_ListOfSize(math.max(self.coef.size, o.coef.size), function(it)
-        return self.coef:getOrElse(it, function(it) return 0 end) + o.coef:getOrElse(it, function(it) return 0 end)
+        return self.coef:getOrElse(it, ____lambda_11) + o.coef:getOrElse(it, ____lambda_12)
     end))
 end
 
@@ -320,7 +348,7 @@ function Poly:times(o)
         for j = 0, ____list_1.size - 1 do
             local b = ____list_1[j + 1]
             local ____key = i + j
-            out:set(____key, out:get(____key) + a * b)
+            out[____key + 1] = (out[____key + 1] or __K2L_IndexError(____key, out.size, "array")) + a * b
         end
     end
     return Poly.new(out:toList())
@@ -331,11 +359,33 @@ function Poly:invoke(x)
 end
 
 function Poly:derivative()
-    return Poly.new(self.coef:drop(1):mapIndexed(function(i, c) return c * (i + 1) end))
+    local ____list_2 = self.coef:drop(1)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list_2:____array()
+    for ____i_1 = 1, ____n do
+        local c = ____items[____i_1]
+        local i = ____i_1 - 1
+        ____count = ____count + 1
+        ____out[____count] = c * (i + 1)
+    end
+    return Poly.new(__K2L_ListWrap(____out, ____count))
 end
 
+local ____lambda_13 = function() return "0" end
 function Poly:toString()
-    return __K2L_Text.ifEmpty(__K2L_StringReplace(self.coef:withIndex():reversed():filter(function(it) return it.value ~= 0 end):joinToString(" + ", nil, nil, nil, nil, function(____destructured)
+    local ____list_3 = self.coef:withIndex():reversed()
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_3:____array()
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
+        if it.value ~= 0 then
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = it
+        end
+    end
+    return __K2L_Text.ifEmpty(__K2L_StringReplace(__K2L_ListWrap(____out_1, ____count_1):joinToString(" + ", nil, nil, nil, nil, function(____destructured)
         local i, c = ____destructured.index, ____destructured.value
         if i == 0 then
             return tostring(c)
@@ -344,17 +394,26 @@ function Poly:toString()
         else
             return __K2L_Str(c == 1 and "" or c) .. "x^" .. i
         end
-    end), "+ -", "- "), function() return "0" end)
+    end), "+ -", "- "), ____lambda_13)
 end
 
+local ____lambda_14 = function(it) return fmt(it) end
+local ____lambda_15 = function(r, c) return r * 3 + c + 1 + 0.0 end
+local ____lambda_16 = function()
+    return Matrix:of(__K2L_TypedArrayOf("[D", 1.0, 2.0), __K2L_TypedArrayOf("[D", 2.0, 4.0)):solve(__K2L_TypedArrayOf("[D", 1.0, 2.0))
+end
+local ____lambda_17 = function(r, c) return 1.0 / (r + c + 1) end
+local ____lambda_18 = function(acc, d) return acc:plus(d) end
+local ____lambda_19 = function(it) return it.value end
+local ____lambda_20 = function(self, ...) return self:plus(...) end
 local function main()
     local a = Matrix:of(__K2L_TypedArrayOf("[D", 2.0, 1.0, -1.0), __K2L_TypedArrayOf("[D", -3.0, -1.0, 2.0), __K2L_TypedArrayOf("[D", -2.0, 1.0, 2.0))
     print("A =\n" .. __K2L_Str(a))
     print("det(A) = " .. fmt(a:determinant()))
     local x = a:solve(__K2L_TypedArrayOf("[D", 8.0, -11.0, -3.0))
-    print("solve: " .. x:joinToString(nil, nil, nil, nil, nil, function(it) return fmt(it) end))
+    print("solve: " .. x:joinToString(nil, nil, nil, nil, nil, ____lambda_14))
     print("A * I == A: " .. tostring(a:times(Matrix:identity(3)):equals(a)) .. ", A^T^T == A: " .. tostring(a:transpose():transpose():equals(a)))
-    local b = Matrix.new(2, 3, function(r, c) return r * 3 + c + 1 + 0.0 end)
+    local b = Matrix.new(2, 3, ____lambda_15)
     print("B * B^T =\n" .. __K2L_Str(b:times(b:transpose())))
     print("-B + B is zero: " .. tostring(b:unaryMinus():plus(b):equals(Matrix.new(2, 3))))
     local ____ok, ____result = pcall(function()
@@ -369,19 +428,26 @@ local function main()
             error(____error, 0)
         end
     end
-    print(__K2L_Str(__K2L_RunCatching(function()
-        return Matrix:of(__K2L_TypedArrayOf("[D", 1.0, 2.0), __K2L_TypedArrayOf("[D", 2.0, 4.0)):solve(__K2L_TypedArrayOf("[D", 1.0, 2.0))
-    end):exceptionOrNull()))
-    local hilbert = Matrix.new(4, 4, function(r, c) return 1.0 / (r + c + 1) end)
+    print(__K2L_Str(__K2L_RunCatching(____lambda_16):exceptionOrNull()))
+    local hilbert = Matrix.new(4, 4, ____lambda_17)
     print("det(H4) = " .. __K2L_StringFormat("%.6e", hilbert:determinant()))
     local m = Matrix:identity(2)
     m:set(0, 1, 5.0)
     m:set(1, 0, m:get(1, 0) + 2.0)
     print("edited: " .. __K2L_Str(m:get(0, 1)) .. " " .. __K2L_Str(m:get(1, 0)) .. " hash equal: " .. tostring(m:hashCode() == m:copy():hashCode()))
-    local run = __K2L_ReadOnlyListOf(getM(400.0), getKm(1), getM(2.5):times(100.0)):fold(getM(0.0), function(acc, d) return acc:plus(d) end)
+    local run = __K2L_ReadOnlyListOf(getM(400.0), getKm(1), getM(2.5):times(100.0)):fold(getM(0.0), ____lambda_18)
     print("distance " .. __K2L_Str(run) .. ", speed " .. __K2L_StringFormat("%.3f", div(run, Seconds.new(300.0))) .. " m/s, longest " .. __K2L_Str(__K2L_ReadOnlyListOf(getM(3.0), getM(12.5), getM(7.0)):max()))
     local legs = __K2L_ReadOnlyMapOf(__K2L_Pair.new("warmup", getM(800.0)), __K2L_Pair.new("main", getKm(5)), __K2L_Pair.new("cooldown", getM(400.0)))
-    print("legs sorted: " .. __K2L_Str(legs:getEntries():sortedBy(function(it) return it.value end, true):map(function(it) return it.key end)) .. " total " .. __K2L_Str(legs:getValues():reduce(function(self, ...) return self:plus(...) end)))
+    local ____list_4 = legs:getEntries():sortedBy(____lambda_19, true)
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_2, ____n_2 = ____list_4:____array()
+    for ____i_3 = 1, ____n_2 do
+        local it = ____items_2[____i_3]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = it.key
+    end
+    print("legs sorted: " .. __K2L_Str(__K2L_ListWrap(____out_2, ____count_2)) .. " total " .. __K2L_Str(legs:getValues():reduce(____lambda_20)))
     local pts = __K2L_ReadOnlyListOf(Vec.new(0.0, 0.0), Vec.new(4.0, 0.0), Vec.new(4.0, 3.0), Vec.new(0.0, 3.0), Vec.new(2.0, 1.0), Vec.new(1.0, 2.0), Vec.new(2.0, 5.0), Vec.new(3.0, 1.5))
     local hull = convexHull(pts)
     print("hull: " .. __K2L_Str(hull) .. " area=" .. fmt(polygonArea(hull)))

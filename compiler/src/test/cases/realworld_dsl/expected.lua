@@ -22,13 +22,18 @@ function TextElement:____init(text)
     self.text = text
 end
 
+function TextElement.new(text)
+    return setmetatable({text = text}, TextElement)
+end
+
 function TextElement:render(builder, indent)
     builder:append(indent .. escape(self.text) .. "\n")
 end
 
 function escape(s)
     local ____builder = __K2L_StringBuilder.new()
-    for c in s:gmatch(".") do
+    for ____i = 1, #s do
+        local c = s:sub(____i, ____i)
         if c == "<" then
             ____builder:append("&lt;")
         elseif c == ">" then
@@ -67,10 +72,10 @@ function Tag:render(builder, indent)
     builder:append(">\n")
     local ____list = self.children
     local ____mod = ____list.____modCount
-    for ____i = 1, ____list.size do
-        local c = ____list[____i]
+    for ____i_1 = 1, ____list.size do
+        local c = ____list[____i_1]
         c:render(builder, indent .. "  ")
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+        if ____list.____modCount ~= ____mod and ____list:____comodified(____i_1) then
             break
         end
     end
@@ -234,8 +239,9 @@ local function setCssClass(self, value)
     end
 end
 
+local ____lambda_1 = function(x) return __K2L_InstanceOf(x, Tag) end
 local function getDepth(____this_1)
-    return 1 + (____this_1.children:filter(function(x) return __K2L_InstanceOf(x, Tag) end):maxOfOrNull(function(it) return getDepth(it) end) or 0)
+    return 1 + (____this_1.children:filter(____lambda_1):maxOfOrNull(function(it) return getDepth(it) end) or 0)
 end
 
 local function html(init)
@@ -258,9 +264,15 @@ function Json.JString:____init(value)
     self.value = value
 end
 
+function Json.JString.new(value)
+    return setmetatable({value = value}, Json.JString)
+end
+
 function Json.JString:write(sb)
     sb:append("\"")
-    for ch in self.value:gmatch(".") do
+    local ____text = self.value
+    for ____i_2 = 1, #____text do
+        local ch = ____text:sub(____i_2, ____i_2)
         if ch == "\"" then
             sb:append("\\\"")
         elseif ch == "\\" then
@@ -292,6 +304,10 @@ function Json.JNumber:____init(value)
     self.value = value
 end
 
+function Json.JNumber.new(value)
+    return setmetatable({value = value}, Json.JNumber)
+end
+
 function Json.JNumber:write(sb)
     sb:append(__K2L_Str(self.value))
 end
@@ -314,6 +330,10 @@ function Json.JBool:____init(value)
     self.value = value
 end
 
+function Json.JBool.new(value)
+    return setmetatable({value = value}, Json.JBool)
+end
+
 function Json.JBool:write(sb)
     sb:append(tostring(self.value))
 end
@@ -323,7 +343,7 @@ function Json.JBool:toString()
 end
 
 function Json.JBool:hashCode()
-    return __K2L_Hash(self.value)
+    return self.value and 1231 or 1237
 end
 
 function Json.JBool:equals(other)
@@ -342,18 +362,22 @@ function Json.JArray:____init(items)
     self.items = items
 end
 
+function Json.JArray.new(items)
+    return setmetatable({items = items}, Json.JArray)
+end
+
 function Json.JArray:write(sb)
     sb:append("[")
     local ____list_1 = self.items
     local ____mod_1 = ____list_1.____modCount
-    for ____i_1 = 1, ____list_1.size do
-        local item = ____list_1[____i_1]
-        local i = ____i_1 - 1
+    for ____i_3 = 1, ____list_1.size do
+        local item = ____list_1[____i_3]
+        local i = ____i_3 - 1
         if i > 0 then
             sb:append(",")
         end
         item:write(sb)
-        if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_1) then
+        if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_3) then
             break
         end
     end
@@ -366,14 +390,18 @@ function Json.JObject:____init(fields)
     self.fields = fields
 end
 
+function Json.JObject.new(fields)
+    return setmetatable({fields = fields}, Json.JObject)
+end
+
 function Json.JObject:write(sb)
     sb:append("{")
     local first = true
     local ____map = self.fields
     local ____keys, ____values, ____n = ____map:____arrays()
     local ____mod_2 = ____map.____modCount
-    for ____i_2 = 1, ____n do
-        local k, v = ____keys[____i_2], ____values[____i_2]
+    for ____i_4 = 1, ____n do
+        local k, v = ____keys[____i_4], ____values[____i_4]
         if not first then
             sb:append(",")
         end
@@ -381,7 +409,7 @@ function Json.JObject:write(sb)
         Json.JString.new(k):write(sb)
         sb:append(":")
         v:write(sb)
-        if ____map.____modCount ~= ____mod_2 and ____map:____comodified(____i_2, ____n) then
+        if ____map.____modCount ~= ____mod_2 and ____map:____comodified(____i_4, ____n) then
             break
         end
     end
@@ -473,6 +501,7 @@ local function json(init)
     return ____value_5:build()
 end
 
+local ____lambda_2 = function(x) return getmetatable(x) == A end
 local function main()
     local page = html(function(____this_4)
         ____this_4:head(function(____this_5)
@@ -497,7 +526,7 @@ local function main()
                 for i = 0, ____list_2.size - 1 do
                     local item = ____list_2[i + 1]
                     ____this_11:li(function(____this_12)
-                        if math.fmod(i, 2) == 0 then
+                        if (i >= 0 and i % 2 or 0 - -i % 2) == 0 then
                             setCssClass(____this_12, "even")
                         end
                         ____this_12:unaryPlus(i + 1 .. ". " .. item)
@@ -511,7 +540,7 @@ local function main()
     end)
     io.write(__K2L_Str(page))
     local ____cast = page.children:last()
-    if not __K2L_InstanceOf(____cast, Body) then
+    if getmetatable(____cast) ~= Body then
         __K2L_CastFail(____cast, "dsl.Body", "dsl.Body")
     end
     local body = ____cast
@@ -524,7 +553,7 @@ local function main()
     print("body class=" .. __K2L_Str(____arg_1) .. " depth=" .. ____arg_2 .. " p=" .. __K2L_Str(____cast_1:get("data-id")))
     setCssClass(body, nil)
     print("after: " .. __K2L_Str(getCssClass(body)) .. " " .. __K2L_Str(body.attributes))
-    local link = body.children:filter(function(x) return __K2L_InstanceOf(x, A) end):single()
+    local link = body.children:filter(____lambda_2):single()
     print(link:getHref())
     local doc = json(function(____this_14)
         ____this_14:to("name", "k2l")
@@ -549,7 +578,7 @@ local function main()
     print(__K2L_Str(doc))
     print(__K2L_Str(doc:get("owner")))
     local ____cast_2 = doc:get("targets")
-    if not __K2L_InstanceOf(____cast_2, Json.JArray) then
+    if getmetatable(____cast_2) ~= Json.JArray then
         __K2L_CastFail(____cast_2, "dsl.Json$JArray", "dsl.Json.JArray")
     end
     print(____cast_2.items.size)

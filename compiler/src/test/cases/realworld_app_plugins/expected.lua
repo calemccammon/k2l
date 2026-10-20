@@ -93,8 +93,9 @@ function Plugin:onStart()
     return nil
 end
 
+local ____lambda_1 = function(receiver) return receiver.priority end
 function Plugin:compareTo(other)
-    local ____value = __K2L_CompareBy(__K2L_PropertyRef.new("priority", "priority@666", function(receiver) return receiver.priority end))(other, self)
+    local ____value = __K2L_CompareBy(__K2L_PropertyRef.new("priority", "priority@666", ____lambda_1))(other, self)
     local ____result
     ____result = ____value ~= 0 and ____value or __K2L_Text.compare(self:getId(), other:getId())
     return ____result
@@ -198,8 +199,9 @@ function UpperPlugin:____init(priority)
     ____Plugin.initLog:add("UpperPlugin.init")
 end
 
+local ____lambda_1 = function(it) return it:match("^%l$") ~= nil end
 function UpperPlugin:process(input)
-    if __K2L_StringToList(input):any(function(it) return it:match("^%l$") ~= nil end) then
+    if __K2L_StringToList(input):any(____lambda_1) then
         return input:upper()
     else
         return nil
@@ -296,18 +298,20 @@ local function counterPlugin(prefix)
     return ____object
 end
 
+local ____lambda_2 = function(it) return ReplacePlugin.new(it) end
+local ____lambda_3 = function(it)
+    return counterPlugin(it:getOrDefault("prefix", "#"))
+end
 local function installBuiltins()
     local ____arg = __K2L_TouchObject(____Plugin.Registry)
     local ____receiver_1 = __K2L_TouchObject(UpperPlugin)
     ____arg:register("upper", function(...) return ____receiver_1:create(...) end)
-    ____Plugin.Registry:register("replace", function(it) return ReplacePlugin.new(it) end)
+    ____Plugin.Registry:register("replace", ____lambda_2)
     ____Plugin.Registry:register("guard", function(it)
         local ____receiver_2 = it:get("limit")
         return GuardPlugin.new(____receiver_2 and __K2L_StringToIntOrNull(____receiver_2) or 20)
     end)
-    ____Plugin.Registry:register("counter", function(it)
-        return counterPlugin(it:getOrDefault("prefix", "#"))
-    end)
+    ____Plugin.Registry:register("counter", ____lambda_3)
 end
 
 return {UpperPlugin = UpperPlugin, ReplacePlugin = ReplacePlugin, GuardPlugin = GuardPlugin, counterPlugin = counterPlugin, installBuiltins = installBuiltins}
@@ -323,6 +327,7 @@ local __K2L_IsComparable = ____lualib.__K2L_IsComparable
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -399,8 +404,13 @@ function Host.Report:____init(lines)
     self.lines = lines
 end
 
+function Host.Report.new(lines)
+    return setmetatable({lines = lines}, Host.Report)
+end
+
+local ____lambda_1 = function(it) return "  | " .. it end
 function Host.Report:toString()
-    return self.lines:joinToString("\n", nil, nil, nil, nil, function(it) return "  | " .. it end)
+    return self.lines:joinToString("\n", nil, nil, nil, nil, ____lambda_1)
 end
 
 function Host:load(...)
@@ -436,19 +446,37 @@ function Host:run(input)
 end
 
 function Host:report()
-    return Host.Report.new(self.plugins:map(function(p)
+    local ____list = self.plugins
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = ____list:____array()
+    for ____i_2 = 1, ____n_1 do
+        local p = ____items_1[____i_2]
+        local ____result_2
         if __K2L_InstanceOf(p, ____Plugin.CountingPlugin) then
-            return p:stats()
+            ____result_2 = p:stats()
         elseif __K2L_InstanceOf(p, ____Plugin.Configurable) then
-            return "configurable " .. p:getId()
+            ____result_2 = "configurable " .. p:getId()
         else
-            return p:getId() .. " (" .. (p.started and "started" or "idle") .. ")"
+            ____result_2 = p:getId() .. " (" .. (p.started and "started" or "idle") .. ")"
         end
-    end):plusAll(self.failures))
+        ____count = ____count + 1
+        ____out[____count] = ____result_2
+    end
+    return Host.Report.new(__K2L_ListWrap(____out, ____count):plusAll(self.failures))
 end
 
 function Host:getOrder()
-    return self.plugins:map(function(it) return it:getId() end)
+    local ____list_1 = self.plugins
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_2, ____n_2 = ____list_1:____array()
+    for ____i_3 = 1, ____n_2 do
+        local it = ____items_2[____i_3]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it:getId()
+    end
+    return __K2L_ListWrap(____out_1, ____count_1)
 end
 
 local Version = __K2L_Class("host.Version")
@@ -540,6 +568,8 @@ local function check(x)
     return ____builder:toString()
 end
 
+local ____lambda_2 = function(it) return ____Builtins.UpperPlugin:create(it) end
+local ____lambda_3 = function(x) return __K2L_IsComparable(x) end
 local function main()
     print("before install: " .. __K2L_Str(____Plugin.initLog))
     ____Builtins.installBuiltins()
@@ -548,30 +578,30 @@ local function main()
     local host = Host.new("main")
     host:load(__K2L_Pair.new("guard", __K2L_SingletonMapOf(__K2L_Pair.new("limit", "16"))), __K2L_Pair.new("replace", __K2L_ReadOnlyMapOf(__K2L_Pair.new("from", "cat"), __K2L_Pair.new("to", "dog"))), __K2L_Pair.new("upper", __K2L_ReadOnlyMapOf()), __K2L_Pair.new("missing", __K2L_ReadOnlyMapOf()), __K2L_Pair.new("counter", __K2L_SingletonMapOf(__K2L_Pair.new("prefix", "!"))))
     print("init order:")
-    local ____list = ____Plugin.initLog
-    for ____i_2 = 1, ____list.size do
-        local it = ____list[____i_2]
+    local ____list_2 = ____Plugin.initLog
+    for ____i_4 = 1, ____list_2.size do
+        local it = ____list_2[____i_4]
         print("  " .. it)
     end
     print("order: " .. __K2L_Str(host:getOrder()))
-    local ____list_1 = __K2L_ReadOnlyListOf("the cat sat", "!cat", "NO CHANGE", "a very long input line", "cat cat")
-    for ____i_4 = 1, ____list_1.size do
-        local input = ____list_1[____i_4]
+    local ____list_3 = __K2L_ReadOnlyListOf("the cat sat", "!cat", "NO CHANGE", "a very long input line", "cat cat")
+    for ____i_6 = 1, ____list_3.size do
+        local input = ____list_3[____i_6]
         local ____destructured = host:run(input)
         local result, steps = ____destructured.first, ____destructured.second
         print(input .. " => " .. result)
-        for ____i_3 = 1, steps.size do
-            local it = steps[____i_3]
+        for ____i_5 = 1, steps.size do
+            local it = steps[____i_5]
             print("    " .. it)
         end
     end
     print("report:\n" .. __K2L_Str(host:report()))
     print("lookups: " .. ____Plugin.Registry.lookups .. ", registered: " .. __K2L_Str(____Plugin.Registry:getNames()))
-    local ____ok_2, ____result_2 = pcall(function()
-        ____Plugin.Registry:register("upper", function(it) return ____Builtins.UpperPlugin:create(it) end)
+    local ____ok_2, ____result_3 = pcall(function()
+        ____Plugin.Registry:register("upper", ____lambda_2)
     end)
     if not ____ok_2 then
-        local ____error_2 = __K2L_ToThrowable(____result_2)
+        local ____error_2 = __K2L_ToThrowable(____result_3)
         if __K2L_InstanceOf(____error_2, __K2L_IllegalStateException) then
             local e = ____error_2
             print("error: " .. __K2L_Str(e.message))
@@ -583,7 +613,7 @@ local function main()
     print(__K2L_Str(another) .. " " .. another:getDisplayName() .. " " .. another:describe() .. " " .. another:compareTo(____Plugin.Registry:create("upper")))
     print(__K2L_Str(Version) .. " " .. check(Version) .. " | " .. check(Level.HIGH) .. " " .. Level.HIGH:describe() .. " " .. Level.LOW:describe())
     print(check(Both.new()) .. " " .. Both.new():describe() .. " | " .. check(another) .. " | " .. check("text") .. " | " .. check(__K2L_SingletonListOf(1)))
-    local comparables = __K2L_ReadOnlyListOf(Version, 3, "s", another, Level.LOW, Both.new(), 2.5):filter(function(x) return __K2L_IsComparable(x) end)
+    local comparables = __K2L_ReadOnlyListOf(Version, 3, "s", another, Level.LOW, Both.new(), 2.5):filter(____lambda_3)
     print("comparables: " .. comparables.size)
 end
 

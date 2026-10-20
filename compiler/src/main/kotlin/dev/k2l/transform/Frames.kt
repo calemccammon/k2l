@@ -105,8 +105,16 @@ internal class InlinedLambda(
     val callerLoops: ArrayDeque<LoopFrame>,
 )
 
-/** Something assignable: a variable, or a property of an object (possibly with accessors). */
-internal class Target(val read: LuaExpr, val write: (LuaExpr) -> LuaStmt)
+/**
+ * Something assignable: a variable, or a property of an object (possibly with accessors). [assignAll] is `target = value`
+ * as statements (a primitive array element checks the index first), [update] the write of `target op= value` and `target++`,
+ * which follows a [read] of the same target (that already checked an index).
+ */
+internal open class Target(val read: LuaExpr, val write: (LuaExpr) -> LuaStmt) {
+    open fun assignAll(value: LuaExpr): List<LuaStmt> = listOf(write(value))
+
+    open fun update(value: LuaExpr): LuaStmt = write(value)
+}
 
 /** A call operand: source still to be transformed (in evaluation order), or an already-built Lua value. */
 internal sealed interface Operand {

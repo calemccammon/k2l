@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Locale = ____lualib.__K2L_Locale
 local __K2L_LocaleNames = ____lualib.__K2L_LocaleNames
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -60,10 +61,26 @@ local function main()
     print(#__K2L_LocaleNames.variant("en_US") == 0)
     print(#__K2L_LocaleNames.script("en_US") == 0)
     print(__K2L_Str(__K2L_LocaleNames.language(de)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("en", "de", "fr"):map(function(it) return __K2L_LocaleNames.language(it) end)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("fr", "ja", "ru", "ar", "ko"):map(function(it)
-        return __K2L_LocaleNames.language(__K2L_Locale.of(it))
-    end):sorted()))
+    local ____list = __K2L_ReadOnlyListOf("en", "de", "fr")
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_LocaleNames.language(it)
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
+    local ____list_1 = __K2L_ReadOnlyListOf("fr", "ja", "ru", "ar", "ko")
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = __K2L_LocaleNames.language(__K2L_Locale.of(it))
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1):sorted()))
 end
 
 ____exports.show = show

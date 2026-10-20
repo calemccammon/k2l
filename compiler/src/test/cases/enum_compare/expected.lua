@@ -6,6 +6,7 @@ local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -14,7 +15,6 @@ local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_SortedSet = ____lualib.__K2L_SortedSet
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Level = __K2L_Class("Level")
 
@@ -65,7 +65,16 @@ Shape.____values = {Shape.CIRCLE, Shape.TRIANGLE, Shape.SQUARE}
 Shape.____companion = true
 
 function Shape:byCorners(n)
-    return __K2L_EnumValues(Shape):firstOrNull(function(it) return it.corners == n end)
+    local ____values = Shape.____values
+    local ____result
+    for ____i = 1, #____values do
+        local it = ____values[____i]
+        if it.corners == n then
+            ____result = it
+            break
+        end
+    end
+    return ____result
 end
 
 function Shape:all()
@@ -84,12 +93,16 @@ function Task:____init(name, level, shape)
     self.shape = shape
 end
 
+function Task.new(name, level, shape)
+    return setmetatable({name = name, level = level, shape = shape}, Task)
+end
+
 function Task:toString()
     return "Task(name=" .. self.name .. ", level=" .. __K2L_Str(self.level) .. ", shape=" .. __K2L_Str(self.shape) .. ")"
 end
 
 function Task:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.name) + __K2L_Hash(self.level)) + __K2L_Hash(self.shape))
+    return (31 * (31 * __K2L_Hash(self.name) + __K2L_Hash(self.level)) + __K2L_Hash(self.shape) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Task:equals(other)
@@ -104,8 +117,14 @@ function Version:____init(major, minor)
     self.minor = minor
 end
 
+function Version.new(major, minor)
+    return setmetatable({major = major, minor = minor}, Version)
+end
+
+local ____lambda_1 = function(it) return it.major end
+local ____lambda_2 = function(it) return it.minor end
 function Version:compareTo(other)
-    return __K2L_CompareBy(function(it) return it.major end, function(it) return it.minor end)(self, other)
+    return __K2L_CompareBy(____lambda_1, ____lambda_2)(self, other)
 end
 
 function Version:toString()
@@ -113,19 +132,28 @@ function Version:toString()
 end
 
 function Version:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.major) + __K2L_Hash(self.minor))
+    return (31 * self.major + self.minor + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Version:equals(other)
     return getmetatable(other) == Version and self.major == other.major and self.minor == other.minor
 end
 
+local ____lambda_3 = function(a, b)
+    return __K2L_Compare(a, b) >= 0 and a or b
+end
 local function largest(xs)
-    return xs:reduce(function(a, b)
-        return __K2L_Compare(a, b) >= 0 and a or b
-    end)
+    return xs:reduce(____lambda_3)
 end
 
+local ____lambda_4 = function(it) return it.level end
+local ____lambda_5 = function(it) return it.level end
+local ____lambda_6 = function(it) return it.shape end
+local ____lambda_7 = function(it) return it.shape end
+local ____lambda_8 = function(it) return it.name end
+local ____lambda_9 = function(it) return it.shape end
+local ____lambda_10 = function(it) return it.level end
+local ____lambda_11 = function() return Shape:named("hexagon") end
 local function main()
     print(tostring(__K2L_Compare(Level.LOW, Level.HIGH) < 0) .. " " .. tostring(__K2L_Compare(Level.CRITICAL, Level.MEDIUM) <= 0) .. " " .. __K2L_Compare(Level.HIGH, Level.LOW) .. " " .. __K2L_Compare(Level.LOW, Level.LOW))
     print(__K2L_Str(__K2L_ReadOnlyListOf(Level.HIGH, Level.LOW, Level.CRITICAL, Level.MEDIUM):sorted()))
@@ -133,17 +161,44 @@ local function main()
     print(__K2L_Str(__K2L_ReadOnlyListOf(Level.MEDIUM, Level.CRITICAL, Level.LOW):max()) .. " " .. __K2L_Str(__K2L_Num.maxOf(Level.LOW, Level.HIGH)) .. " " .. __K2L_Str(__K2L_Num.minOf(Shape.SQUARE, Shape.TRIANGLE)))
     print(__K2L_Str(largest(__K2L_ReadOnlyListOf(Shape.TRIANGLE, Shape.SQUARE, Shape.CIRCLE))))
     local tasks = __K2L_ReadOnlyListOf(Task.new("b", Level.HIGH, Shape.SQUARE), Task.new("a", Level.LOW, Shape.TRIANGLE), Task.new("c", Level.HIGH, Shape.CIRCLE), Task.new("d", Level.MEDIUM, Shape.TRIANGLE))
-    print(__K2L_Str(tasks:sortedBy(function(it) return it.level end, true):map(function(it) return it.name end)))
-    print(__K2L_Str(tasks:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(function(it) return it.level end), function(it) return it.shape end)):map(function(it) return it.name end)))
-    print(__K2L_Str(tasks:sortedWith(__K2L_CompareBy(function(it) return it.shape end, function(it) return it.name end)):map(function(it) return it.name end)))
-    print(tasks:maxBy(function(it) return it.shape end).name .. " " .. __K2L_Str(tasks:minOf(function(it) return it.level end)))
+    local ____list = tasks:sortedBy(____lambda_4, true)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = it.name
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
+    local ____list_1 = tasks:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_5), ____lambda_6))
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it.name
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
+    local ____list_2 = tasks:sortedWith(__K2L_CompareBy(____lambda_7, ____lambda_8))
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_2, ____n_2 = ____list_2:____array()
+    for ____i_3 = 1, ____n_2 do
+        local it = ____items_2[____i_3]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = it.name
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
+    print(tasks:maxBy(____lambda_9).name .. " " .. __K2L_Str(tasks:minOf(____lambda_10)))
     local c = Level.MEDIUM
     print(tostring(__K2L_Compare(c, Level.LOW) > 0) .. " " .. __K2L_Compare(c, Level.CRITICAL))
     print(__K2L_Str(__K2L_SortedSet.new(__K2L_ReadOnlyListOf(Shape.SQUARE, Shape.TRIANGLE, Shape.CIRCLE))))
     print(__K2L_Str(__K2L_SortedMapOf(__K2L_Pair.new(Level.HIGH, 1), __K2L_Pair.new(Level.LOW, 2))))
-    local ____list = __K2L_EnumValues(Level)
-    for ____i = 1, ____list.size do
-        local level = ____list[____i]
+    local ____values_1 = Level.____values
+    for ____i_4 = 1, #____values_1 do
+        local level = ____values_1[____i_4]
         local band
         if __K2L_Compare(level, Level.LOW) >= 0 and __K2L_Compare(level, Level.MEDIUM) <= 0 then
             band = "routine"
@@ -167,7 +222,7 @@ local function main()
     print(tostring(____arg) .. " " .. tostring(____arg_1) .. " " .. tostring(__K2L_Compare(____value, ____bound_4) >= 0 and __K2L_Compare(____value, ____bound_5) <= 0))
     print(tostring("b" >= "a" and "b" <= "c") .. " " .. tostring("d" >= "a" and "d" <= "c") .. " " .. tostring(2.5 >= 1.0 and 2.5 <= 3.0))
     print(__K2L_Str(Shape:byCorners(3)) .. " " .. __K2L_Str(Shape:byCorners(5)) .. " " .. __K2L_Str(Shape:all()) .. " " .. __K2L_Str(Shape:named("square")))
-    print(__K2L_Str(__K2L_RunCatching(function() return Shape:named("hexagon") end):exceptionOrNull()))
+    print(__K2L_Str(__K2L_RunCatching(____lambda_11):exceptionOrNull()))
 end
 
 main()

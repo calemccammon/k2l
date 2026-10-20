@@ -22,27 +22,40 @@ local function attempt(label, block)
     end
 end
 
+local ____lambda_1 = function() return __K2L_Exact.add(1, 2) end
+local ____lambda_2 = function() return __K2L_Exact.sub(5, 7) end
+local ____lambda_3 = function() return __K2L_Exact.mul(46340, 46340) end
+local ____lambda_4 = function() return __K2L_Exact.mul(46341, 46341) end
+local ____lambda_5 = function() return __K2L_Exact.neg(5) end
+local ____lambda_6 = function() return __K2L_Exact.inc(41) end
+local ____lambda_7 = function() return __K2L_Exact.dec(41) end
+local ____lambda_8 = function() return __K2L_Exact.toInt(123456) end
+local ____lambda_9 = function() return __K2L_Exact.toInt(3000000000) end
+local ____lambda_10 = function() return __K2L_Exact.toInt(-3000000000) end
+local ____lambda_11 = function() return __K2L_Exact.abs(-9) end
+local ____lambda_12 = function() return __K2L_Num.mod(5, 0) end
+local ____lambda_13 = function() return __K2L_FloorDiv(5, 0) end
 local function main()
     local max = 2147483647
     local min = -2147483648
-    attempt("add", function() return __K2L_Exact.add(1, 2) end)
+    attempt("add", ____lambda_1)
     attempt("add overflow", function() return __K2L_Exact.add(max, 1) end)
     attempt("add underflow", function() return __K2L_Exact.add(min, -1) end)
-    attempt("sub", function() return __K2L_Exact.sub(5, 7) end)
+    attempt("sub", ____lambda_2)
     attempt("sub overflow", function() return __K2L_Exact.sub(min, 1) end)
-    attempt("mul", function() return __K2L_Exact.mul(46340, 46340) end)
-    attempt("mul overflow", function() return __K2L_Exact.mul(46341, 46341) end)
+    attempt("mul", ____lambda_3)
+    attempt("mul overflow", ____lambda_4)
     attempt("mul overflow 2", function() return __K2L_Exact.mul(max, 2) end)
-    attempt("neg", function() return __K2L_Exact.neg(5) end)
+    attempt("neg", ____lambda_5)
     attempt("neg overflow", function() return __K2L_Exact.neg(min) end)
-    attempt("inc", function() return __K2L_Exact.inc(41) end)
+    attempt("inc", ____lambda_6)
     attempt("inc overflow", function() return __K2L_Exact.inc(max) end)
-    attempt("dec", function() return __K2L_Exact.dec(41) end)
+    attempt("dec", ____lambda_7)
     attempt("dec overflow", function() return __K2L_Exact.dec(min) end)
-    attempt("toIntExact", function() return __K2L_Exact.toInt(123456) end)
-    attempt("toIntExact overflow", function() return __K2L_Exact.toInt(3000000000) end)
-    attempt("toIntExact negative overflow", function() return __K2L_Exact.toInt(-3000000000) end)
-    attempt("absExact", function() return __K2L_Exact.abs(-9) end)
+    attempt("toIntExact", ____lambda_8)
+    attempt("toIntExact overflow", ____lambda_9)
+    attempt("toIntExact negative overflow", ____lambda_10)
+    attempt("absExact", ____lambda_11)
     attempt("absExact overflow", function() return __K2L_Exact.abs(min) end)
     local big = 3000000000
     attempt("long add", function() return __K2L_Exact.addLong(big, big) end)
@@ -58,8 +71,8 @@ local function main()
     print(__K2L_FloorDiv(-7, 3))
     print(__K2L_FloorDiv(7, -3))
     print(__K2L_FloorDiv(-7, 3))
-    attempt("floorMod zero", function() return __K2L_Num.mod(5, 0) end)
-    attempt("floorDiv zero", function() return __K2L_FloorDiv(5, 0) end)
+    attempt("floorMod zero", ____lambda_12)
+    attempt("floorDiv zero", ____lambda_13)
 end
 
 main()

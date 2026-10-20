@@ -73,6 +73,10 @@ function Plain:____init(name)
     self.name = name
 end
 
+function Plain.new(name)
+    return setmetatable({name = name}, Plain)
+end
+
 function Plain:getName()
     return self.name
 end

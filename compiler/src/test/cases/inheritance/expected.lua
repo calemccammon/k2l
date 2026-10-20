@@ -23,6 +23,10 @@ function Polygon:____init(name, sides)
     self.sides = sides
 end
 
+function Polygon.new(name, sides)
+    return setmetatable({name = name, sides = sides}, Polygon)
+end
+
 function Polygon:perimeterHint()
     return self.sides .. " sides"
 end
@@ -74,6 +78,10 @@ function Animal:____init(sound)
     self.sound = sound
 end
 
+function Animal.new(sound)
+    return setmetatable({sound = sound}, Animal)
+end
+
 function Animal:speak()
     return "The animal says " .. self.sound
 end
@@ -95,11 +103,12 @@ function Dog:speak()
 end
 
 local function kind(s)
-    if __K2L_InstanceOf(s, Square) then
+    local ____mt = getmetatable(s)
+    if ____mt == Square then
         return "square"
     elseif __K2L_InstanceOf(s, Rect) then
         return "rect " .. __K2L_Str(s.w) .. "x" .. __K2L_Str(s.h)
-    elseif __K2L_InstanceOf(s, Circle) then
+    elseif ____mt == Circle then
         return "circle r=" .. __K2L_Str(s.r)
     else
         return "unknown"

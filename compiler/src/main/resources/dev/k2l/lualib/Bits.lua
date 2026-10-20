@@ -66,34 +66,31 @@ function __K2L_Bits.lowest64(x)
     return x & -x
 end
 
-function __K2L_Bits.ones64(x)
-    local count = 0
-    while x ~= 0 do
-        count = count + (x & 1)
-        x = x >> 1
-    end
-    return count
+-- SWAR bit count: 2-, 4- and 8-bit partial sums, then the bytes added up by a multiplication (integers wrap)
+local function ones64(x)
+    x = x - ((x >> 1) & 0x5555555555555555)
+    x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333)
+    x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0F
+    return (x * 0x0101010101010101) >> 56
 end
+
+__K2L_Bits.ones64 = ones64
 
 function __K2L_Bits.ctz64(x)
     if x == 0 then
         return 64
     end
-    local count = 0
-    while (x & 1) == 0 do
-        count = count + 1
-        x = x >> 1
-    end
-    return count
+    return ones64((x & -x) - 1)
 end
 
 function __K2L_Bits.clz64(x)
-    local bits = 0
-    while x ~= 0 do
-        bits = bits + 1
-        x = x >> 1
-    end
-    return 64 - bits
+    x = x | (x >> 1)
+    x = x | (x >> 2)
+    x = x | (x >> 4)
+    x = x | (x >> 8)
+    x = x | (x >> 16)
+    x = x | (x >> 32)
+    return 64 - ones64(x)
 end
 
 -- Math.copySign for Double.withSign(sign): the sign of -0.0 counts.

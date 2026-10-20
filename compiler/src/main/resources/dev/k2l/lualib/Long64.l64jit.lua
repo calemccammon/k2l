@@ -20,10 +20,13 @@ local function divZero()
     error(__K2L_ArithmeticException.new("/ by zero"))
 end
 
--- the canonical form of an int64_t: a number when it is a safe integer
+-- the canonical form of an int64_t: a number when it is a safe integer. Comparing the
+-- converted double keeps LuaJIT traces stable; it is exact because any int64_t at or
+-- beyond 2^53 rounds to at least 2^53
 local function norm(c)
-    if c > -LIM and c < LIM then
-        return tonumber(c)
+    local n = tonumber(c)
+    if n > -LIM and n < LIM then
+        return n
     end
     return c
 end

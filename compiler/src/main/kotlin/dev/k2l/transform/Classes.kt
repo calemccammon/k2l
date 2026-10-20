@@ -203,6 +203,7 @@ internal fun FileTransformer.constructors(c: KtClassOrObject, ref: LuaExpr, info
             initializers(c)
         }
         emitMethod(ref, INIT, enumParams + params.filter { !it.isVarArg }.map { naming.of(it) }, body, isVararg = vararg != null)
+        if (vararg == null && enumParams.isEmpty()) plainConstructor(c, ref, params.map { naming.of(it) }, body)
     }
     (c as? KtClass)?.secondaryConstructors?.forEachIndexed { i, ctor -> secondaryConstructor(c, ctor, (i + 1).toString(), ref, info) }
 }

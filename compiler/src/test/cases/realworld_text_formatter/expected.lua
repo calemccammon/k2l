@@ -5,6 +5,8 @@ local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
@@ -23,10 +25,21 @@ local __K2L_Text = ____lualib.__K2L_Text
 local function wrap(text, width)
     local lines = __K2L_ListOf()
     local line = __K2L_StringBuilder.new()
-    local ____list = __K2L_Regex.new("\\s+"):split(text):filter(function(it) return not __K2L_StringIsBlank(it) end)
-    local ____mod = ____list.____modCount
-    for ____i = 1, ____list.size do
-        local word = ____list[____i]
+    local ____list = __K2L_Regex.new("\\s+"):split(text)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        if not __K2L_StringIsBlank(it) then
+            ____count = ____count + 1
+            ____out[____count] = it
+        end
+    end
+    local ____list_1 = __K2L_ListWrap(____out, ____count)
+    local ____mod = ____list_1.____modCount
+    for ____i_1 = 1, ____list_1.size do
+        local word = ____list_1[____i_1]
         if line:isNotEmpty() and line:getLength() + 1 + #word > width then
             lines:add(line:toString())
             line:setLength(0)
@@ -35,7 +48,7 @@ local function wrap(text, width)
             line:append(" ")
         end
         line:append(word)
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+        if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_1) then
             break
         end
     end
@@ -51,20 +64,26 @@ local function justify(line, width)
         return __K2L_StringPadEnd(line, width)
     end
     local gaps = words.size - 1
-    local spaces = width - words:sumOf(function(it) return #it end)
+    local ____sum = 0
+    local ____items_1, ____n_1 = words:____array()
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
+        ____sum = ____sum + #it
+    end
+    local spaces = width - ____sum
     local each = __K2L_IDiv(spaces, gaps)
     local extra = __K2L_IRem(spaces, gaps)
     local ____builder = __K2L_StringBuilder.new()
     do
         local ____mod_1 = words.____modCount
-        for ____i_1 = 1, words.size do
-            local w = words[____i_1]
-            local i = ____i_1 - 1
+        for ____i_3 = 1, words.size do
+            local w = words[____i_3]
+            local i = ____i_3 - 1
             ____builder:append(w)
             if i < gaps then
                 ____builder:append(__K2L_Text.repeatCount(" ", each + (i < extra and 1 or 0)))
             end
-            if words.____modCount ~= ____mod_1 and words:____comodified(____i_1) then
+            if words.____modCount ~= ____mod_1 and words:____comodified(____i_3) then
                 break
             end
         end
@@ -79,17 +98,19 @@ local function center(s, width, fill)
     if #s >= width then
         return s
     end
-    local left = __K2L_IDiv(width - #s, 2)
+    local ____dividend = width - #s
+    local left = ____dividend >= 0 and ____dividend // 2 or 0 - -____dividend // 2
     return __K2L_StringPadEnd(__K2L_StringPadStart(s, #s + left, fill), width, fill)
 end
 
+local ____lambda_1 = function(it) return #it end
 local function columns(items, cols, gutter)
     if gutter == nil then
         gutter = 2
     end
     local rows = __K2L_IDiv(items.size + cols - 1, cols)
     local widths = __K2L_IntRange.new(0, cols - 1):map(function(c)
-        return __K2L_IntRange.new(0, rows - 1):mapNotNull(function(r) return items:getOrNull(c * rows + r) end):maxOfOrNull(function(it) return #it end) or 0
+        return __K2L_IntRange.new(0, rows - 1):mapNotNull(function(r) return items:getOrNull(c * rows + r) end):maxOfOrNull(____lambda_1) or 0
     end)
     return __K2L_IntRange.new(0, rows - 1):joinToString("\n", nil, nil, nil, nil, function(r)
         return __K2L_StringTrimEnd(__K2L_IntRange.new(0, cols - 1):mapNotNull(function(c)
@@ -128,12 +149,48 @@ end
 
 function Table:add(...)
     local cells = __K2L_ArrayOf(...)
-    self.rows:add(cells:map(function(it) return it and __K2L_Str(it) or "-" end))
+    local ____arg = self.rows
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_2, ____n_2 = cells:____array()
+    for ____i_4 = 1, ____n_2 do
+        local it = ____items_2[____i_4]
+        local ____result
+        ____result = it and __K2L_Str(it) or "-"
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = ____result
+    end
+    ____arg:add(__K2L_ListWrap(____out_1, ____count_1))
 end
 
+local ____lambda_2 = function(it) return __K2L_Text.repeatCount("-", it + 2) end
 function Table:render()
     local widths = self.headers:getIndices():map(function(i)
-        return self.rows:map(function(it) return it:get(i) end):plus(self.headers:get(i)):maxOf(function(it) return #it end)
+        local ____list_2 = self.rows
+        local ____out_2 = {}
+        local ____count_2 = 0
+        local ____items_3, ____n_3 = ____list_2:____array()
+        for ____i_5 = 1, ____n_3 do
+            local it = ____items_3[____i_5]
+            ____count_2 = ____count_2 + 1
+            ____out_2[____count_2] = it:get(i)
+        end
+        local ____list_3 = __K2L_ListWrap(____out_2, ____count_2):plus(self.headers:get(i))
+        local ____best
+        local ____has = false
+        local ____items_4, ____n_4 = ____list_3:____array()
+        for ____i_6 = 1, ____n_4 do
+            local it = ____items_4[____i_6]
+            local ____key = #it
+            if not ____has or ____best < ____key then
+                ____best = ____key
+                ____has = true
+            end
+        end
+        if not ____has then
+            error(__K2L_NoSuchElementException.new(nil))
+        end
+        return ____best
     end)
     local function cell(s, i)
         local ____subject = self.aligns:get(i)
@@ -145,18 +202,35 @@ function Table:render()
             return center(s, widths:get(i))
         end
     end
-    local sep = widths:joinToString("+", "+", "+", nil, nil, function(it) return __K2L_Text.repeatCount("-", it + 2) end)
+    local sep = widths:joinToString("+", "+", "+", nil, nil, ____lambda_2)
     local sb = __K2L_StringBuilder.new(sep):append("\n")
-    sb:append(self.headers:mapIndexed(function(i, h)
-        return " " .. center(h, widths:get(i)) .. " "
-    end):joinToString("|", "|", "|")):append("\n")
+    local ____list_4 = self.headers
+    local ____out_3 = {}
+    local ____count_3 = 0
+    local ____items_5, ____n_5 = ____list_4:____array()
+    for ____i_7 = 1, ____n_5 do
+        local h = ____items_5[____i_7]
+        local i = ____i_7 - 1
+        ____count_3 = ____count_3 + 1
+        ____out_3[____count_3] = " " .. center(h, widths:get(i)) .. " "
+    end
+    sb:append(__K2L_ListWrap(____out_3, ____count_3):joinToString("|", "|", "|")):append("\n")
     sb:append(__K2L_StringReplace(sep, "-", "=")):append("\n")
-    local ____list_1 = self.rows
-    local ____mod_2 = ____list_1.____modCount
-    for ____i_2 = 1, ____list_1.size do
-        local r = ____list_1[____i_2]
-        sb:append(r:mapIndexed(function(i, c) return " " .. cell(c, i) .. " " end):joinToString("|", "|", "|")):append("\n")
-        if ____list_1.____modCount ~= ____mod_2 and ____list_1:____comodified(____i_2) then
+    local ____list_5 = self.rows
+    local ____mod_2 = ____list_5.____modCount
+    for ____i_9 = 1, ____list_5.size do
+        local r = ____list_5[____i_9]
+        local ____out_4 = {}
+        local ____count_4 = 0
+        local ____items_6, ____n_6 = r:____array()
+        for ____i_8 = 1, ____n_6 do
+            local c = ____items_6[____i_8]
+            local i = ____i_8 - 1
+            ____count_4 = ____count_4 + 1
+            ____out_4[____count_4] = " " .. cell(c, i) .. " "
+        end
+        sb:append(__K2L_ListWrap(____out_4, ____count_4):joinToString("|", "|", "|")):append("\n")
+        if ____list_5.____modCount ~= ____mod_2 and ____list_5:____comodified(____i_9) then
             break
         end
     end
@@ -169,28 +243,28 @@ local LOREM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do e
 local function formatSamples()
     local ints = __K2L_ReadOnlyListOf(0, 7, -7, 42, 1234567, -98765, 2147483647, -2147483648)
     local ____mod_3 = ints.____modCount
-    for ____i_3 = 1, ints.size do
-        local n = ints[____i_3]
+    for ____i_10 = 1, ints.size do
+        local n = ints[____i_10]
         print(__K2L_StringFormat("[%d] [%5d] [%-6d] [%05d] [%+d] [%,d] [%(d] [% d] [%x] [%X] [%o] [%#x] [%#o]", n, n, n, n, n, n, n, n, n, n, n, n, n))
-        if ints.____modCount ~= ____mod_3 and ints:____comodified(____i_3) then
+        if ints.____modCount ~= ____mod_3 and ints:____comodified(____i_10) then
             break
         end
     end
     local longs = __K2L_ReadOnlyListOf(0, 9007199254740991, -1, -4503599627370496, -9223372036854775807 - 1, 255)
     local ____mod_4 = longs.____modCount
-    for ____i_4 = 1, longs.size do
-        local n = longs[____i_4]
+    for ____i_11 = 1, longs.size do
+        local n = longs[____i_11]
         print(__K2L_StringFormat("%d %,d %x %X %o %20d|%-20d|", n, n, __K2L_Text.sized(n, 64), __K2L_Text.sized(n, 64), __K2L_Text.sized(n, 64), n, n))
-        if longs.____modCount ~= ____mod_4 and longs:____comodified(____i_4) then
+        if longs.____modCount ~= ____mod_4 and longs:____comodified(____i_11) then
             break
         end
     end
     local doubles = __K2L_ReadOnlyListOf(0.0, -0.0, 0.125, 2.675, 1.005, 3.14159265358979, -1234.5678, 1.0E-7, 6.02214076E23, 999.9999, 0.5, 1.5, 2.5)
     local ____mod_5 = doubles.____modCount
-    for ____i_5 = 1, doubles.size do
-        local d = doubles[____i_5]
+    for ____i_12 = 1, doubles.size do
+        local d = doubles[____i_12]
         print(__K2L_StringFormat("%f|%.2f|%10.3f|%-10.1f|%+.0f|%e|%.3E|%g|%,.2f|%08.2f|%(.1f", d, d, d, d, d, d, d, d, d, d, d))
-        if doubles.____modCount ~= ____mod_5 and doubles:____comodified(____i_5) then
+        if doubles.____modCount ~= ____mod_5 and doubles:____comodified(____i_12) then
             break
         end
     end
@@ -212,26 +286,46 @@ local function main()
     local lines = wrap(LOREM, 40)
     print(center(" Wrapped (40) ", 44, "*"))
     local ____mod_6 = lines.____modCount
-    for ____i_6 = 1, lines.size do
-        local it = lines[____i_6]
+    for ____i_13 = 1, lines.size do
+        local it = lines[____i_13]
         print("|" .. __K2L_StringPadEnd(it, 40) .. "|")
-        if lines.____modCount ~= ____mod_6 and lines:____comodified(____i_6) then
+        if lines.____modCount ~= ____mod_6 and lines:____comodified(____i_13) then
             break
         end
     end
     print(center(" Justified ", 44, "~"))
-    local ____list_2 = lines:dropLast(1)
-    local ____mod_7 = ____list_2.____modCount
-    for ____i_7 = 1, ____list_2.size do
-        local it = ____list_2[____i_7]
+    local ____list_6 = lines:dropLast(1)
+    local ____mod_7 = ____list_6.____modCount
+    for ____i_14 = 1, ____list_6.size do
+        local it = ____list_6[____i_14]
         print("|" .. justify(it, 40) .. "|")
-        if ____list_2.____modCount ~= ____mod_7 and ____list_2:____comodified(____i_7) then
+        if ____list_6.____modCount ~= ____mod_7 and ____list_6:____comodified(____i_14) then
             break
         end
     end
     print("|" .. __K2L_StringPadEnd(lines:last(), 40) .. "|")
     print(center("x", 7, ".") .. center("odd", 8, "_") .. center("toolongforit", 4))
-    local words = __K2L_Regex.new("[^A-Za-z]+"):split(LOREM):filter(function(it) return #it > 3 end):map(function(it) return it:lower() end):distinct():sorted()
+    local ____list_7 = __K2L_Regex.new("[^A-Za-z]+"):split(LOREM)
+    local ____out_5 = {}
+    local ____count_5 = 0
+    local ____items_7, ____n_7 = ____list_7:____array()
+    for ____i_15 = 1, ____n_7 do
+        local it = ____items_7[____i_15]
+        if #it > 3 then
+            ____count_5 = ____count_5 + 1
+            ____out_5[____count_5] = it
+        end
+    end
+    local ____list_8 = __K2L_ListWrap(____out_5, ____count_5)
+    local ____out_6 = {}
+    local ____count_6 = 0
+    local ____items_8, ____n_8 = ____list_8:____array()
+    for ____i_16 = 1, ____n_8 do
+        local it = ____items_8[____i_16]
+        ____count_6 = ____count_6 + 1
+        ____out_6[____count_6] = it:lower()
+    end
+    local words = __K2L_ListWrap(____out_6, ____count_6):distinct():sorted()
     print(columns(words, 4))
     print()
     local t = Table.new(__K2L_ReadOnlyListOf("Item", "Qty", "Price", "Note"), __K2L_ReadOnlyListOf(Align.LEFT, Align.RIGHT, Align.RIGHT, Align.CENTER))
@@ -242,13 +336,19 @@ local function main()
     print(t:render())
     formatSamples()
     local items = __K2L_ReadOnlyListOf(__K2L_Pair.new("coffee", 3.5), __K2L_Pair.new("bagel", 2.25), __K2L_Pair.new("orange juice", 4.0), __K2L_Pair.new("tip", 1.75))
-    local total = items:sumOf(function(it) return it.second end, 0.0)
+    local ____sum_1 = 0.0
+    local ____items_9, ____n_9 = items:____array()
+    for ____i_17 = 1, ____n_9 do
+        local it = ____items_9[____i_17]
+        ____sum_1 = ____sum_1 + it.second
+    end
+    local total = ____sum_1
     local ____mod_8 = items.____modCount
-    for ____i_8 = 1, items.size do
-        local ____item = items[____i_8]
+    for ____i_18 = 1, items.size do
+        local ____item = items[____i_18]
         local name, price = ____item.first, ____item.second
         print(__K2L_StringPadEnd(name, 20, ".") .. __K2L_StringFormat("$%7.2f", price))
-        if items.____modCount ~= ____mod_8 and items:____comodified(____i_8) then
+        if items.____modCount ~= ____mod_8 and items:____comodified(____i_18) then
             break
         end
     end

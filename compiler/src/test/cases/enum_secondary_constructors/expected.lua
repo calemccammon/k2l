@@ -1,7 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
-local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Color = __K2L_Class("Color")
@@ -61,9 +60,9 @@ Color.BLUE = Color.new1("BLUE", 2)
 Color.____values = {Color.RED, Color.GREEN, Color.BLUE}
 
 local function main()
-    local ____list = __K2L_EnumValues(Color)
-    for ____i = 1, ____list.size do
-        local c = ____list[____i]
+    local ____values = Color.____values
+    for ____i = 1, #____values do
+        local c = ____values[____i]
         print(c:describe())
     end
     print(__K2L_EnumValueOf(Color, "GREEN").ordinal)

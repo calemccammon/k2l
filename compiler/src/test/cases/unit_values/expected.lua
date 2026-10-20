@@ -8,6 +8,8 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_KClassNamed = ____lualib.__K2L_KClassNamed
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -117,10 +119,15 @@ function Box:____init(value)
     self.value = value
 end
 
+function Box.new(value)
+    return setmetatable({value = value}, Box)
+end
+
 function Box:toString()
     return "Box(" .. __K2L_Str(self.value) .. ")"
 end
 
+local ____lambda_1 = function() return #"text" end
 local function main()
     u()
     print("kotlin.Unit")
@@ -142,7 +149,7 @@ local function main()
         u()
         return __K2L_Unit
     end)))
-    print(__K2L_Str(__K2L_RunCatching(function() return #"text" end)))
+    print(__K2L_Str(__K2L_RunCatching(____lambda_1)))
     u()
     id(__K2L_Unit)
     print("kotlin.Unit")
@@ -165,10 +172,17 @@ local function main()
     u()
     print(__K2L_Str(Box.new(__K2L_Unit)))
     print(__K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new(1, __K2L_Unit))))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2):map(function(it)
+    local ____list_1 = __K2L_ReadOnlyListOf(1, 2)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list_1:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
         u()
-        return __K2L_Unit
-    end)))
+        ____count = ____count + 1
+        ____out[____count] = __K2L_Unit
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     local x = "x"
     local y = nil
     local ____result_3
@@ -250,10 +264,16 @@ local function main()
         u()
         return __K2L_Unit
     end):toList()))
-    print(__K2L_Str(__K2L_SingletonListOf(1):associateWith(function(it)
+    local ____list_2 = __K2L_SingletonListOf(1)
+    local ____result_5 = __K2L_Map.new()
+    local ____items_1, ____n_1 = ____list_2:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
         u()
-        return __K2L_Unit
-    end)))
+        local ____value = __K2L_Unit
+        ____result_5:put(it, ____value)
+    end
+    print(__K2L_Str(____result_5))
     print(expanded(5))
     print(expanded(0))
     print("calls: " .. ____exports.calls)
@@ -267,6 +287,10 @@ function Hooks:____init(onStart)
     self.onStart = onStart
 end
 
+function Hooks.new(onStart)
+    return setmetatable({onStart = onStart}, Hooks)
+end
+
 local function pick()
     return function(...)
         u(...)
@@ -274,6 +298,8 @@ local function pick()
     end
 end
 
+local ____lambda_2 = function() return "lambda" end
+local ____lambda_3 = function() return 1 end
 function convertedReferences()
     local h = function(...)
         u(...)
@@ -287,10 +313,19 @@ function convertedReferences()
         return __K2L_Unit
     end
     print(__K2L_Str(widened()))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(function(...)
+    local ____list_3 = __K2L_ReadOnlyListOf(function(...)
         u(...)
         return __K2L_Unit
-    end, function() return "lambda" end):map(function(it) return it() end)))
+    end, ____lambda_2)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_2, ____n_2 = ____list_3:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_2[____i_2]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it()
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     local hooks = Hooks.new(u)
     local ____fn = hooks.onStart
     local started = function(...)
@@ -298,7 +333,7 @@ function convertedReferences()
         return __K2L_Unit
     end
     print(__K2L_Str(started()))
-    local late = function() return 1 end
+    local late = ____lambda_3
     late = function(...)
         plain(...)
         return __K2L_Unit

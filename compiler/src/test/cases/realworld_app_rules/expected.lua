@@ -4,7 +4,6 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NumberTo = ____lualib.__K2L_NumberTo
 local __K2L_Str = ____lualib.__K2L_Str
@@ -15,6 +14,10 @@ local Condition = __K2L_Class("rules.dsl.Condition")
 function Condition:____init(text, test)
     self.text = text
     self.test = test
+end
+
+function Condition.new(text, test)
+    return setmetatable({text = text, test = test}, Condition)
 end
 
 function Condition:____and(other)
@@ -37,6 +40,10 @@ local FactRef = __K2L_Class("rules.dsl.FactRef")
 
 function FactRef:____init(name)
     self.name = name
+end
+
+function FactRef.new(name)
+    return setmetatable({name = name}, FactRef)
 end
 
 function FactRef:gt(n)
@@ -66,11 +73,11 @@ end
 function FactRef:____in(range)
     return Condition.new(self.name .. " in " .. __K2L_Str(range.first) .. ".." .. __K2L_Str(range.last), function(it)
         local ____cast = it:get(self.name)
-        local ____receiver = __K2L_InstanceOf(____cast, ____Facts.Value.Num) and ____cast or nil
+        local ____receiver = getmetatable(____cast) == ____Facts.Value.Num and ____cast or nil
         local ____result
         if ____receiver ~= nil then
             local ____cast_1 = it:get(self.name)
-            ____result = (__K2L_InstanceOf(____cast_1, ____Facts.Value.Num) and ____cast_1 or nil).v
+            ____result = (getmetatable(____cast_1) == ____Facts.Value.Num and ____cast_1 or nil).v
         end
         local ____receiver_1 = ____result
         local ____value = ____receiver_1 and range:contains(____receiver_1)
@@ -101,8 +108,9 @@ function ConditionScope:fact(name)
     return FactRef.new(name)
 end
 
+local ____lambda_1 = function(it) return true end
 function ConditionScope:always()
-    return Condition.new("always", function(it) return true end)
+    return Condition.new("always", ____lambda_1)
 end
 
 local ActionScope = __K2L_Class("rules.dsl.ActionScope")
@@ -110,6 +118,10 @@ local ActionScope = __K2L_Class("rules.dsl.ActionScope")
 function ActionScope:____init(facts, fired)
     self.facts = facts
     self.fired = fired
+end
+
+function ActionScope.new(facts, fired)
+    return setmetatable({facts = facts, fired = fired}, ActionScope)
 end
 
 function ActionScope:becomes(____this_1, value)
@@ -149,6 +161,10 @@ function Rule:____init(name, priority, condition, action, once)
     self.condition = condition
     self.action = action
     self.once = once
+end
+
+function Rule.new(name, priority, condition, action, once)
+    return setmetatable({name = name, priority = priority, condition = condition, action = action, once = once}, Rule)
 end
 
 function Rule:toString()
@@ -212,10 +228,11 @@ function RuleSetBuilder:each(items, block)
     end
 end
 
+local ____lambda_2 = function(it) return it.priority end
 local function ruleSet(block)
     local ____value_4 = RuleSetBuilder.new()
     block(____value_4)
-    return ____value_4.rules:sortedByDescending(function(it) return it.priority end, true)
+    return ____value_4.rules:sortedByDescending(____lambda_2, true)
 end
 
 return {Condition = Condition, FactRef = FactRef, ConditionScope = ConditionScope, ActionScope = ActionScope, Rule = Rule, RuleBuilder = RuleBuilder, RuleSetBuilder = RuleSetBuilder, ruleSet = ruleSet}
@@ -313,7 +330,6 @@ local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
@@ -327,6 +343,10 @@ Value.Num = __K2L_Class("rules.engine.Value$Num", Value)
 
 function Value.Num:____init(v)
     self.v = v
+end
+
+function Value.Num.new(v)
+    return setmetatable({v = v}, Value.Num)
 end
 
 function Value.Num:toString()
@@ -347,6 +367,10 @@ function Value.Text:____init(s)
     self.s = s
 end
 
+function Value.Text.new(s)
+    return setmetatable({s = s}, Value.Text)
+end
+
 function Value.Text:toString()
     return "\"" .. self.s .. "\""
 end
@@ -365,12 +389,16 @@ function Value.Flag:____init(b)
     self.b = b
 end
 
+function Value.Flag.new(b)
+    return setmetatable({b = b}, Value.Flag)
+end
+
 function Value.Flag:toString()
     return tostring(self.b)
 end
 
 function Value.Flag:hashCode()
-    return __K2L_Hash(self.b)
+    return self.b and 1231 or 1237
 end
 
 function Value.Flag:equals(other)
@@ -384,11 +412,11 @@ function Value.Missing:toString()
 end
 
 function Value:compareTo(other)
-    if __K2L_InstanceOf(self, Value.Num) and __K2L_InstanceOf(other, Value.Num) then
+    if getmetatable(self) == Value.Num and getmetatable(other) == Value.Num then
         return __K2L_Compare(self.v, other.v)
-    elseif __K2L_InstanceOf(self, Value.Text) and __K2L_InstanceOf(other, Value.Text) then
+    elseif getmetatable(self) == Value.Text and getmetatable(other) == Value.Text then
         return __K2L_Text.compare(self.s, other.s)
-    elseif __K2L_InstanceOf(self, Value.Flag) and __K2L_InstanceOf(other, Value.Flag) then
+    elseif getmetatable(self) == Value.Flag and getmetatable(other) == Value.Flag then
         return __K2L_Compare(self.b, other.b)
     else
         error(__K2L_IllegalArgumentException.new("cannot compare " .. __K2L_Str(self) .. " with " .. __K2L_Str(other)))
@@ -396,9 +424,9 @@ function Value:compareTo(other)
 end
 
 function Value:plus(other)
-    if __K2L_InstanceOf(self, Value.Num) and __K2L_InstanceOf(other, Value.Num) then
+    if getmetatable(self) == Value.Num and getmetatable(other) == Value.Num then
         return Value.Num.new(self.v + other.v)
-    elseif __K2L_InstanceOf(self, Value.Text) then
+    elseif getmetatable(self) == Value.Text then
         return Value.Text.new(self.s .. other:render())
     else
         error(__K2L_UnsupportedOperationException.new(__K2L_Str(self) .. " + " .. __K2L_Str(other)))
@@ -406,17 +434,17 @@ function Value:plus(other)
 end
 
 function Value:times(k)
-    local ____receiver = __K2L_InstanceOf(self, Value.Num) and self or nil
+    local ____receiver = getmetatable(self) == Value.Num and self or nil
     local ____result
     if ____receiver ~= nil then
-        local ____value = __K2L_InstanceOf(self, Value.Num) and self or nil
+        local ____value = getmetatable(self) == Value.Num and self or nil
         ____result = Value.Num.new(____value.v * k)
     end
     return ____result or Value.Missing
 end
 
 function Value:render()
-    if __K2L_InstanceOf(self, Value.Text) then
+    if getmetatable(self) == Value.Text then
         return self.s
     else
         return __K2L_Str(self)
@@ -483,10 +511,11 @@ function Facts:getTrail()
     return self.changes
 end
 
+local ____lambda_1 = function(it)
+    return __K2L_Str(it.key) .. "=" .. __K2L_Str(it.value)
+end
 function Facts:toString()
-    return self.values:getEntries():joinToString(", ", "{", "}", nil, nil, function(it)
-        return __K2L_Str(it.key) .. "=" .. __K2L_Str(it.value)
-    end)
+    return self.values:getEntries():joinToString(", ", "{", "}", nil, nil, ____lambda_1)
 end
 
 return {Value = Value, toValue = toValue, toValue__1 = toValue__1, toValue__2 = toValue__2, toValue__3 = toValue__3, Facts = Facts}
@@ -513,13 +542,33 @@ local ____RuleDsl = require("dsl.RuleDsl")
 local ____Facts = require("engine.Facts")
 local ____Engine = require("engine.Engine")
 local tiers = __K2L_ReadOnlyListOf(__K2L_Pair.new("bronze", 0.0), __K2L_Pair.new("silver", 0.1), __K2L_Pair.new("gold", 0.2))
+
+local ____lambda_1 = function(____this_1)
+    return ____this_1:unaryPlus("age"):atLeast(18)
+end
+local ____lambda_2 = function(____this_4)
+    return ____this_4:unaryPlus("age"):lt(25):____and(____this_4:fact("premium"):getIsSet())
+end
+local ____lambda_3 = function(____this_7)
+    return ____this_7:unaryPlus("claims"):gt(2):____or(____this_7:unaryPlus("points"):gt(6))
+end
+local ____lambda_4 = function(____this_10)
+    return ____this_10:unaryPlus("risk"):eq("high"):____and(____this_10:fact("premium"):getIsSet())
+end
+local ____lambda_5 = function(____this_17)
+    return ____this_17:fact("premium"):getIsSet():____and(____this_17:fact("label"):getIsSet():____not())
+end
+local ____lambda_6 = function(____this_20)
+    return ____this_20:fact("manualReview"):getIsTrue()
+end
+local ____lambda_7 = function(____this_23)
+    return ____this_23:unaryPlus("age"):____in(__K2L_ClosedRange.new(30.0, 50.0, __K2L_DoubleToString))
+end
 local quoteRules = ____RuleDsl.ruleSet(function(self)
     self:rule("base premium", function(____this)
         ____this.priority = 100
         ____this.once = true
-        ____this:whenever(function(____this_1)
-            return ____this_1:unaryPlus("age"):atLeast(18)
-        end)
+        ____this:whenever(____lambda_1)
         ____this:____then(function(____this_2)
             ____this_2:becomes__1("premium", 500)
             ____this_2:note("base premium set")
@@ -528,9 +577,7 @@ local quoteRules = ____RuleDsl.ruleSet(function(self)
     self:rule("young driver", function(____this_3)
         ____this_3.priority = 90
         ____this_3.once = true
-        ____this_3:whenever(function(____this_4)
-            return ____this_4:unaryPlus("age"):lt(25):____and(____this_4:fact("premium"):getIsSet())
-        end)
+        ____this_3:whenever(____lambda_2)
         ____this_3:____then(function(____this_5)
             ____this_5:becomes("premium", ____this_5:invoke("premium"):times(1.5))
             ____this_5:note("young driver surcharge")
@@ -539,9 +586,7 @@ local quoteRules = ____RuleDsl.ruleSet(function(self)
     self:rule("claims", function(____this_6)
         ____this_6.priority = 80
         ____this_6.once = true
-        ____this_6:whenever(function(____this_7)
-            return ____this_7:unaryPlus("claims"):gt(2):____or(____this_7:unaryPlus("points"):gt(6))
-        end)
+        ____this_6:whenever(____lambda_3)
         ____this_6:____then(function(____this_8)
             ____this_8:becomes__2("risk", "high")
             ____this_8:note("high risk: claims=" .. __K2L_Str(____this_8:invoke("claims")) .. " points=" .. __K2L_Str(____this_8:invoke("points")))
@@ -550,9 +595,7 @@ local quoteRules = ____RuleDsl.ruleSet(function(self)
     self:rule("high risk", function(____this_9)
         ____this_9.priority = 70
         ____this_9.once = true
-        ____this_9:whenever(function(____this_10)
-            return ____this_10:unaryPlus("risk"):eq("high"):____and(____this_10:fact("premium"):getIsSet())
-        end)
+        ____this_9:whenever(____lambda_4)
         ____this_9:____then(function(____this_11)
             ____this_11:becomes("premium", ____this_11:invoke("premium"):plus(____Facts.toValue(250)))
             ____this_11:becomes__3("manualReview", true)
@@ -576,9 +619,7 @@ local quoteRules = ____RuleDsl.ruleSet(function(self)
     end)
     self:rule("label", function(____this_16)
         ____this_16.priority = 10
-        ____this_16:whenever(function(____this_17)
-            return ____this_17:fact("premium"):getIsSet():____and(____this_17:fact("label"):getIsSet():____not())
-        end)
+        ____this_16:whenever(____lambda_5)
         ____this_16:____then(function(____this_18)
             ____this_18:becomes("label", ____Facts.toValue__2("quote: "):plus(____this_18:invoke("premium")))
         end)
@@ -586,18 +627,14 @@ local quoteRules = ____RuleDsl.ruleSet(function(self)
     self:rule("cleanup", function(____this_19)
         ____this_19.priority = 5
         ____this_19.once = true
-        ____this_19:whenever(function(____this_20)
-            return ____this_20:fact("manualReview"):getIsTrue()
-        end)
+        ____this_19:whenever(____lambda_6)
         ____this_19:____then(function(____this_21)
             ____this_21:drop("tier")
             ____this_21:note("tier dropped for review")
         end)
     end)
     self:rule("mid age", function(____this_22)
-        ____this_22:whenever(function(____this_23)
-            return ____this_23:unaryPlus("age"):____in(__K2L_ClosedRange.new(30.0, 50.0, __K2L_DoubleToString))
-        end)
+        ____this_22:whenever(____lambda_7)
         ____this_22:____then(function(____this_24)
             ____this_24:becomes__2("band", "mid")
         end)
@@ -621,6 +658,10 @@ local function quote(name, ...)
     end
 end
 
+local ____lambda_8 = function(____this_27)
+    return ____this_27:fact("x"):getIsSet()
+end
+local ____lambda_9 = function(____this_31) return ____this_31:always() end
 local function main()
     local ____list_1 = quoteRules
     local ____mod = ____list_1.____modCount
@@ -637,12 +678,10 @@ local function main()
     quote("odd", __K2L_Pair.new("age", ____Facts.toValue__2("forty")), __K2L_Pair.new("claims", ____Facts.toValue(1)), __K2L_Pair.new("points", ____Facts.toValue(9)))
     local looping = ____RuleDsl.ruleSet(function(____this_25)
         ____this_25:rule("ping", function(____this_26)
-            ____this_26:whenever(function(____this_27)
-                return ____this_27:fact("x"):getIsSet()
-            end)
+            ____this_26:whenever(____lambda_8)
             ____this_26:____then(function(____this_28)
                 local ____cast = ____this_28:invoke("x")
-                if not __K2L_InstanceOf(____cast, ____Facts.Value.Num) then
+                if getmetatable(____cast) ~= ____Facts.Value.Num then
                     __K2L_CastFail(____cast, "rules.engine.Value$Num", "rules.engine.Value.Num")
                 end
                 ____this_28:becomes__1("x", ____cast.v + 1)
@@ -654,7 +693,7 @@ local function main()
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result)
-        if __K2L_InstanceOf(____error, ____Engine.RuleCycleException) then
+        if getmetatable(____error) == ____Engine.RuleCycleException then
             local e = ____error
             print("cycle: " .. __K2L_Str(e.message) .. " after " .. e.rounds)
         else
@@ -664,7 +703,7 @@ local function main()
     local ____ok_1, ____result_1 = pcall(function()
         ____RuleDsl.ruleSet(function(____this_29)
             ____this_29:rule("broken", function(____this_30)
-                ____this_30:whenever(function(____this_31) return ____this_31:always() end)
+                ____this_30:whenever(____lambda_9)
             end)
         end)
     end)

@@ -4,14 +4,12 @@ local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringReplace = ____lualib.__K2L_StringReplace
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local ____Document = require("text.Document")
 local Command = __K2L_Class("editor.history.Command")
@@ -25,6 +23,10 @@ local Insert = __K2L_Class("editor.history.Insert", nil, Command)
 function Insert:____init(at, text)
     self.at = at
     self.text = text
+end
+
+function Insert.new(at, text)
+    return setmetatable({at = at, text = text}, Insert)
 end
 
 function Insert:getLabel()
@@ -41,7 +43,7 @@ function Insert:revert(doc)
 end
 
 function Insert:mergeWith(____next)
-    if __K2L_InstanceOf(____next, Insert) and not __K2L_StringContains(self.text, "\n") and not __K2L_StringContains(____next.text, "\n") and ____next.at:equals(____Document.Pos.new(self.at.line, self.at.col + #self.text)) and ____next.text ~= " " then
+    if getmetatable(____next) == Insert and not __K2L_StringContains(self.text, "\n") and not __K2L_StringContains(____next.text, "\n") and ____next.at:equals(____Document.Pos.new(self.at.line, self.at.col + #self.text)) and ____next.text ~= " " then
         return Insert.new(self.at, self.text .. ____next.text)
     else
         return nil
@@ -53,7 +55,7 @@ function Insert:toString()
 end
 
 function Insert:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.at) + __K2L_Hash(self.text))
+    return (31 * __K2L_Hash(self.at) + __K2L_Hash(self.text) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Insert:equals(other)
@@ -92,6 +94,10 @@ local Batch = __K2L_Class("editor.history.Batch", nil, Command)
 function Batch:____init(label, parts)
     self.label = label
     self.parts = parts
+end
+
+function Batch.new(label, parts)
+    return setmetatable({label = label, parts = parts}, Batch)
 end
 
 function Batch:getLabel()
@@ -241,12 +247,14 @@ function History:redo__1()
     return true
 end
 
+local ____lambda_1 = function(it) return it:getLabel() end
 function History:getUndoLabels()
-    return self.undo:map(function(it) return it:getLabel() end)
+    return self.undo:map(____lambda_1)
 end
 
+local ____lambda_2 = function(it) return it:getLabel() end
 function History:getRedoLabels()
-    return self.redo:map(function(it) return it:getLabel() end)
+    return self.redo:map(____lambda_2)
 end
 
 return {Command = Command, Insert = Insert, Delete = Delete, Batch = Batch, Noop = Noop, BoundedStack = BoundedStack, History = History}
@@ -291,11 +299,12 @@ function Macro:play(history, times)
 end
 
 local function describe(c)
-    if __K2L_InstanceOf(c, ____Commands.Insert) then
+    local ____mt = getmetatable(c)
+    if ____mt == ____Commands.Insert then
         return "Insert(" .. #c.text .. " chars)"
-    elseif __K2L_InstanceOf(c, ____Commands.Delete) then
+    elseif ____mt == ____Commands.Delete then
         return "Delete"
-    elseif __K2L_InstanceOf(c, ____Commands.Batch) then
+    elseif ____mt == ____Commands.Batch then
         return "Batch"
     elseif __K2L_Equals(c, ____Commands.Noop) then
         return "Noop"
@@ -307,6 +316,12 @@ local function show(____this, title)
     print(__K2L_Str(____this))
 end
 
+local ____lambda_1 = function(it)
+    return ____Commands.Insert.new(____Document.Pos.new(it.line, 0), "* ")
+end
+local ____lambda_2 = function(p)
+    return ____Commands.Insert.new(____Document.Pos.new(p.line, p.col + 2), ";")
+end
 local function main()
     local doc = ____Document.Editable.new("hello world\nsecond line")
     local events = __K2L_ListOf()
@@ -343,11 +358,7 @@ local function main()
     show(doc, "redone twice")
     history:execute(____Commands.Insert.new(____Document.Pos.new(2, 0), "\nthird\nfourth"))
     show(doc, "multi-line insert")
-    local macro = Macro.new("bullet"):record(function(it)
-        return ____Commands.Insert.new(____Document.Pos.new(it.line, 0), "* ")
-    end):record(function(p)
-        return ____Commands.Insert.new(____Document.Pos.new(p.line, p.col + 2), ";")
-    end)
+    local macro = Macro.new("bullet"):record(____lambda_1):record(____lambda_2)
     macro:play(history, 2)
     show(doc, "macro")
     history:undo__1()
@@ -394,7 +405,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Pos = __K2L_Class("editor.text.Pos")
 Pos.____comparable = true
@@ -404,8 +414,14 @@ function Pos:____init(line, col)
     self.col = col
 end
 
+function Pos.new(line, col)
+    return setmetatable({line = line, col = col}, Pos)
+end
+
+local ____lambda_1 = function(it) return it.line end
+local ____lambda_2 = function(it) return it.col end
 function Pos:compareTo(other)
-    return __K2L_CompareBy(function(it) return it.line end, function(it) return it.col end)(self, other)
+    return __K2L_CompareBy(____lambda_1, ____lambda_2)(self, other)
 end
 
 function Pos:toString()
@@ -413,7 +429,7 @@ function Pos:toString()
 end
 
 function Pos:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.line) + __K2L_Hash(self.col))
+    return (31 * self.line + self.col + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Pos:equals(other)
@@ -425,6 +441,10 @@ local Selection = __K2L_Class("editor.text.Selection")
 function Selection:____init(anchor, head)
     self.anchor = anchor
     self.head = head
+end
+
+function Selection.new(anchor, head)
+    return setmetatable({anchor = anchor, head = head}, Selection)
 end
 
 function Selection:getStart()
@@ -444,7 +464,7 @@ function Selection:toString()
 end
 
 function Selection:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.anchor) + __K2L_Hash(self.head))
+    return (31 * __K2L_Hash(self.anchor) + __K2L_Hash(self.head) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Selection:equals(other)
@@ -453,11 +473,12 @@ end
 
 local Document = __K2L_Class("editor.text.Document")
 
+local ____lambda_3 = function(it) return __K2L_StringBuilder.new(it) end
 function Document:____init(text)
     if text == nil then
         text = ""
     end
-    self.lines = __K2L_StringSplit(text, "\n"):map(function(it) return __K2L_StringBuilder.new(it) end):toMutableList()
+    self.lines = __K2L_StringSplit(text, "\n"):map(____lambda_3):toMutableList()
     self.revision = 0
 end
 
@@ -482,10 +503,11 @@ function Document:clamp(p)
     return Pos.new(line, __K2L_Num.coerceIn(p.col, 0, self.lines:get(line):getLength()))
 end
 
+local ____lambda_4 = function(i, l)
+    return __K2L_StringPadStart(tostring(i + 1), 2) .. "| " .. __K2L_Str(l)
+end
 function Document:toString()
-    return self.lines:mapIndexed(function(i, l)
-        return __K2L_StringPadStart(tostring(i + 1), 2) .. "| " .. __K2L_Str(l)
-    end):joinToString("\n")
+    return self.lines:mapIndexed(____lambda_4):joinToString("\n")
 end
 
 local Editable = __K2L_Class("editor.text.Editable", Document)

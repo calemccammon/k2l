@@ -132,7 +132,10 @@ object StdlibMappings {
     private fun bitwise() {
         for (t in listOf("Int", "Long")) {
             val isLong = t == "Long"
-            def("kotlin/$t.and") { if (isLong && !target.hasIntegers) longBits("LBAnd") else bitwise("BAnd", LuaBinOp.BAnd) }
+            def("kotlin/$t.and") {
+                ConstantBits.mask(this, isLong)
+                    ?: if (isLong && !target.hasIntegers) longBits("LBAnd") else bitwise("BAnd", LuaBinOp.BAnd)
+            }
             def("kotlin/$t.or") { if (isLong && !target.hasIntegers) longBits("LBOr") else bitwise("BOr", LuaBinOp.BOr) }
             def("kotlin/$t.xor") { if (isLong && !target.hasIntegers) longBits("LBXor") else bitwise("BXor", LuaBinOp.BXor) }
             def("kotlin/$t.inv") { if (target.hasIntegers) LuaUnary(LuaUnOp.BNot, self) else floatBits(isLong, "BNot") }
@@ -144,15 +147,23 @@ object StdlibMappings {
     }
 
     private fun shifts() {
-        def("kotlin/Int.shl") { if (target.hasIntegers) bitCall("__K2L_Shl") else floatBits(false, "Shl") }
-        def("kotlin/Int.shr") { if (target.hasIntegers) bitCall("__K2L_Shr") else floatBits(false, "Shr") }
-        def("kotlin/Int.ushr") { if (target.hasIntegers) bitCall("__K2L_Ushr") else floatBits(false, "Ushr") }
+        def("kotlin/Int.shl") {
+            ConstantBits.integerShift(this, "shl") ?: if (target.hasIntegers) bitCall("__K2L_Shl") else floatBits(false, "Shl")
+        }
+        def("kotlin/Int.shr") {
+            ConstantBits.integerShift(this, "shr") ?: ConstantBits.shift(this, false, false)
+                ?: if (target.hasIntegers) bitCall("__K2L_Shr") else floatBits(false, "Shr")
+        }
+        def("kotlin/Int.ushr") {
+            ConstantBits.integerShift(this, "ushr") ?: ConstantBits.shift(this, false, true)
+                ?: if (target.hasIntegers) bitCall("__K2L_Ushr") else floatBits(false, "Ushr")
+        }
         def("kotlin/Long.shl") { if (target.hasIntegers) LuaBinary(LuaBinOp.Shl, self, arg(0)) else floatBits(true, "Shl") }
         def("kotlin/Long.shr") {
             if (target.hasIntegers) {
                 LuaBinary(LuaBinOp.IDiv, self, LuaBinary(LuaBinOp.Shl, LuaNumber("1"), arg(0)))
             } else {
-                floatBits(true, "Shr")
+                ConstantBits.shift(this, true, false) ?: floatBits(true, "Shr")
             }
         }
         def("kotlin/Long.ushr") { if (target.hasIntegers) LuaBinary(LuaBinOp.Shr, self, arg(0)) else floatBits(true, "Ushr") }

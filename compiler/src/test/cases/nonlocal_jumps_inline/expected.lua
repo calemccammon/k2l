@@ -117,7 +117,7 @@ local function scopeFunctions()
         do
             m = m + 1
             local ____value_1 = m
-            if math.fmod(____value_1, 2) == 0 then
+            if (____value_1 >= 0 and ____value_1 % 2 or 0 - -____value_1 % 2) == 0 then
                 goto ____continue_5
             end
             log = log .. "-" .. m

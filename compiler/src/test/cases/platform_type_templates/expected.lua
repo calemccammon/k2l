@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
@@ -13,7 +14,16 @@ local function main()
     local ____arg_1 = tm:ceilingEntry(2)
     local ____receiver = tm:higherEntry(9)
     print("entries: " .. __K2L_Str(____arg) .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(____receiver and ____receiver.value))
-    local keys = __K2L_ReadOnlyListOf(0, 4, 9, 12):map(function(it) return __K2L_Str(tm:floorKey(it)) end)
+    local ____list = __K2L_ReadOnlyListOf(0, 4, 9, 12)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_Str(tm:floorKey(it))
+    end
+    local keys = __K2L_ListWrap(____out, ____count)
     print(__K2L_Str(keys))
     print("first: " .. __K2L_Str(tm:firstKey()) .. ", missing: " .. __K2L_Str(tm:higherKey(100)))
     local sb = __K2L_StringBuilder.new("ab")

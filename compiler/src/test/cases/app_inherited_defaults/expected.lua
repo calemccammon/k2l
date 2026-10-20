@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 
@@ -8,6 +9,10 @@ local Base = __K2L_Class("Base", nil, Report)
 
 function Base:____init(name)
     self.name = name
+end
+
+function Base.new(name)
+    return setmetatable({name = name}, Base)
 end
 
 function Base:greet(greeting, target)
@@ -60,7 +65,17 @@ function Branch:render(prefix, max)
     if max == nil then
         max = #prefix + 10
     end
-    return __K2L_SingletonListOf(prefix .. self.name .. "/" .. max):plusAll(self.kids:map(function(it) return it:render(prefix .. "  ") end)):joinToString("\n")
+    local ____arg = __K2L_SingletonListOf(prefix .. self.name .. "/" .. max)
+    local ____list = self.kids
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = it:render(prefix .. "  ")
+    end
+    return ____arg:plusAll(__K2L_ListWrap(____out, ____count)):joinToString("\n")
 end
 
 function Branch:greet(hi, who)

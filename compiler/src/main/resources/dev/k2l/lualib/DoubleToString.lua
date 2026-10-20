@@ -12,10 +12,22 @@ local function __K2L_DoubleToString(x)
         return 1 / x < 0 and "-0.0" or "0.0"
     end
     local s
-    for precision = 0, 16 do
-        s = string.format("%." .. precision .. "e", x)
-        if tonumber(s) == x then
-            break
+    if x >= 2.2250738585072014e-308 or x <= -2.2250738585072014e-308 then
+        -- a normal double: its shortest digits are those of the first of %.14e, %.15e and %.16e that reads back (see
+        -- decimalDigits in Strings.lua)
+        s = string.format("%.14e", x)
+        if tonumber(s) ~= x then
+            s = string.format("%.15e", x)
+            if tonumber(s) ~= x then
+                s = string.format("%.16e", x)
+            end
+        end
+    else
+        for precision = 0, 16 do
+            s = string.format("%." .. precision .. "e", x)
+            if tonumber(s) == x then
+                break
+            end
         end
     end
     local sign, int, frac, exp = string.match(s, "^(-?)(%d)%.?(%d*)e([-+]%d+)$")

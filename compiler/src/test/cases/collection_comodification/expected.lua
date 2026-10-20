@@ -41,6 +41,8 @@ local function t(name, f)
     print(name .. " -> " .. __K2L_Str(r))
 end
 
+local ____lambda_1 = function(it) return it == 99 end
+local ____lambda_2 = function() return 0 end
 local function main()
     t("list add in for", function()
         local l = __K2L_ListOf(1, 2, 3)
@@ -260,7 +262,8 @@ local function main()
         local l = __K2L_ListOf(1, 2, 3, 4)
         local it = __K2L_IteratorOf(l)
         while it:hasNext() do
-            if math.fmod(it:next(), 2) == 0 then
+            local ____dividend = it:next()
+            if (____dividend >= 0 and ____dividend % 2 or 0 - -____dividend % 2) == 0 then
                 it:remove()
             end
         end
@@ -280,7 +283,7 @@ local function main()
         for ____i_13 = 1, l.size do
             local x = l[____i_13]
             if x == 1 then
-                l:removeIf(function(it) return it == 99 end)
+                l:removeIf(____lambda_1)
             end
             if l.____modCount ~= ____mod_13 and l:____comodified(____i_13) then
                 break
@@ -711,7 +714,7 @@ local function main()
         local ____mod_38 = m.____modCount
         for ____i_38 = 1, ____n_18 do
             local k = ____items_13[____i_38]
-            m:getOrPut(k, function() return 0 end)
+            m:getOrPut(k, ____lambda_2)
             if m.____modCount ~= ____mod_38 and m:____comodified(____i_38, ____n_18) then
                 break
             end

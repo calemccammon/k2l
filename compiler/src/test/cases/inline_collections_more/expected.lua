@@ -18,7 +18,6 @@ local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
@@ -30,12 +29,16 @@ function Item:____init(name, price)
     self.price = price
 end
 
+function Item.new(name, price)
+    return setmetatable({name = name, price = price}, Item)
+end
+
 function Item:toString()
     return "Item(name=" .. self.name .. ", price=" .. self.price .. ")"
 end
 
 function Item:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.name) + __K2L_Hash(self.price))
+    return (31 * __K2L_Hash(self.name) + self.price + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Item:equals(other)
@@ -64,6 +67,7 @@ local function partitions(xs, stopAt)
     return __K2L_Str(small) .. " " .. __K2L_Str(big)
 end
 
+local ____lambda_1 = function(it) return it.price end
 local function maxBys(stopAt)
     local ____list = items
     local ____best
@@ -83,7 +87,7 @@ local function maxBys(stopAt)
         end
     end
     local a = ____best
-    local b = items:minByOrNull(function(it) return it.price end)
+    local b = items:minByOrNull(____lambda_1)
     local ____list_1 = items
     local ____best_1
     local ____bestKey_1
@@ -372,7 +376,7 @@ local function indexedOps(xs, stopAt)
         if x == stopAt then
             return "idx stop " .. i
         end
-        ____result_17 = math.fmod(i, 2) == 0 and x > 0
+        ____result_17 = (i >= 0 and i % 2 or 0 - -i % 2) == 0 and x > 0
         if ____result_17 then
             ____result_16:add(x)
         end
@@ -460,7 +464,7 @@ local function lasts(xs, stopAt)
         if it == stopAt then
             return "last stop"
         end
-        ____result_24 = math.fmod(it, 2) == 1
+        ____result_24 = (it >= 0 and it % 2 or 0 - -it % 2) == 1
         if ____result_24 then
             ____result_23 = it
             ____found = true
@@ -958,7 +962,8 @@ local function builders(stopAt)
     end
     local l = ____builder:____build()
     local ____builder_1 = __K2L_StringBuilder.new()
-    for c in ("abc"):gmatch(".") do
+    for ____i_13 = 1, #"abc" do
+        local c = ("abc"):sub(____i_13, ____i_13)
         if c == "z" then
             return "buildString stop"
         end
@@ -981,13 +986,14 @@ local function builders(stopAt)
     return __K2L_Str(l) .. " " .. s .. " " .. __K2L_Str(m) .. " " .. n
 end
 
+local ____lambda_2 = function(it) return -it end
 local function arrays(stopAt)
     local arr = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 5, 3, 8)
-    local a = arr:sortedBy(function(it) return -it end, true)
+    local a = arr:sortedBy(____lambda_2, true)
     local ____result_71
     local ____found_9 = false
-    for ____i_13 = arr.size, 1, -1 do
-        local it = arr[____i_13]
+    for ____i_14 = arr.size, 1, -1 do
+        local it = arr[____i_14]
         local ____result_72
         if it == -1 then
             return "never"
@@ -1052,7 +1058,7 @@ local function sets(stopAt)
         if it == stopAt then
             return "set stop"
         end
-        ____result_76 = math.fmod(it, 2) == 0
+        ____result_76 = (it >= 0 and it % 2 or 0 - -it % 2) == 0
         if ____result_76 then
             ____result_75 = it
             ____found_10 = true
@@ -1070,7 +1076,7 @@ local function sets(stopAt)
         if it == -1 then
             return "never"
         end
-        ____result_77 = math.fmod(it, 5)
+        ____result_77 = it >= 0 and it % 5 or 0 - -it % 5
         local ____key_11 = ____result_77
         if not ____has_11 or __K2L_Compare(____key_11, ____bestKey_11) > 0 then
             ____best_11 = it

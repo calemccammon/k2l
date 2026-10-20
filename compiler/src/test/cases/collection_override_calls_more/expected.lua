@@ -209,12 +209,13 @@ end
 __K2L_PropertyOverride(TM, "entries", "getEntries")
 __K2L_HonorOverrides(TM, __K2L_SortedMap)
 
+local ____lambda_1 = function(it) return it + 1 end
+local ____lambda_2 = function(it) return it > 1 end
+local ____lambda_3 = function(it) return it > 2 end
 local function coll(label, c)
     op(label .. " toString", function() return __K2L_Str(c) end)
-    op(label .. " map", function() return c:map(function(it) return it + 1 end) end)
-    op(label .. " filter", function()
-        return c:filter(function(it) return it > 1 end)
-    end)
+    op(label .. " map", function() return c:map(____lambda_1) end)
+    op(label .. " filter", function() return c:filter(____lambda_2) end)
     op(label .. " for", function()
         local s = 0
         local ____items, ____n = c:____array()
@@ -237,7 +238,7 @@ local function coll(label, c)
     op(label .. " toSet", function() return c:toSet() end)
     op(label .. " sorted", function() return c:sorted() end)
     op(label .. " count", function() return c:count() end)
-    op(label .. " any", function() return c:any(function(it) return it > 2 end) end)
+    op(label .. " any", function() return c:any(____lambda_3) end)
     op(label .. " sum", function() return c:sum() end)
     if not __K2L_InstanceOf(c, __K2L_PriorityQueue) and not __K2L_InstanceOf(c, __K2L_Deque) then
         op(label .. " hashCode", function() return __K2L_Hash(c) end)
@@ -251,6 +252,9 @@ local function coll(label, c)
     op(label .. " single", function() return c:singleOrNull() end)
 end
 
+local ____lambda_4 = function(it) return it.key end
+local ____lambda_5 = function(it) return it.key > 1 end
+local ____lambda_6 = function() return "z" end
 local function maps(label, m)
     op(label .. " toString", function() return __K2L_Str(m) end)
     op(label .. " for", function()
@@ -262,10 +266,8 @@ local function maps(label, m)
         end
         return s
     end)
-    op(label .. " map", function() return m:map(function(it) return it.key end) end)
-    op(label .. " filter", function()
-        return m:filter(function(it) return it.key > 1 end)
-    end)
+    op(label .. " map", function() return m:map(____lambda_4) end)
+    op(label .. " filter", function() return m:filter(____lambda_5) end)
     op(label .. " eq", function()
         return __K2L_Equals(m, __K2L_ReadOnlyMapOf(__K2L_Pair.new(1, "a"), __K2L_Pair.new(2, "b")))
     end)
@@ -273,9 +275,7 @@ local function maps(label, m)
         return __K2L_Equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new(1, "a"), __K2L_Pair.new(2, "b")), m)
     end)
     op(label .. " hashCode", function() return __K2L_Hash(m) end)
-    op(label .. " getOrElse", function()
-        return m:getOrElse(1, function() return "z" end)
-    end)
+    op(label .. " getOrElse", function() return m:getOrElse(1, ____lambda_6) end)
     op(label .. " toList", function() return m:toList() end)
     op(label .. " HashMap", function() return __K2L_HashMap.new(m) end)
     op(label .. " count", function() return m:count() end)

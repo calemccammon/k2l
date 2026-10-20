@@ -8,7 +8,8 @@ local function main()
     print(__K2L_Str(__K2L_IntRange.new(1, 5):map(function(it) return r:nextLong() end)))
     local s = __K2L_JavaRandom.new(-1)
     print(s:nextLong())
-    print(math.fmod(s:nextLong(), 1000))
+    local ____dividend = s:nextLong()
+    print(____dividend >= 0 and ____dividend % 1000 or (____dividend % 1000 - 1000) % (-1000))
     print(__K2L_JavaRandom.new(1234567890123456789):nextInt(100))
 end
 

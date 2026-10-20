@@ -3,13 +3,14 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringEndsWith = ____lualib.__K2L_StringEndsWith
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
@@ -21,7 +22,6 @@ local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_StringTrim = ____lualib.__K2L_StringTrim
 local __K2L_StringTrimStart = ____lualib.__K2L_StringTrimStart
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local function escapeHtml(s)
     return __K2L_StringReplace(__K2L_StringReplace(__K2L_StringReplace(__K2L_StringReplace(s, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"), "\"", "&quot;")
@@ -39,15 +39,19 @@ local EM = __K2L_Regex.new("(?<![*\\w])\\*(?!\\s)(.+?)(?<!\\s)\\*(?!\\*)|(?<!\\w
 local AUTOLINK = __K2L_Regex.new("<(https?://[^>]+)>")
 local STRIKE = __K2L_Regex.new("~~(.+?)~~")
 
+local ____lambda_1 = function(it)
+    return "<a href=\"" .. it.groupValues:get(1) .. "\">" .. it.groupValues:get(1) .. "</a>"
+end
+local ____lambda_2 = function(m)
+    return "<em>" .. __K2L_NotNull(m.groups:get(1) or m.groups:get(2)).value .. "</em>"
+end
 local function inline(text)
     local codes = __K2L_ListOf()
     local s = CODE_SPAN:replace(text, function(m)
         codes:add("<code>" .. escapeHtml(m.groupValues:get(1)) .. "</code>")
         return "\000" .. codes.size - 1 .. "\000"
     end)
-    s = AUTOLINK:replace(s, function(it)
-        return "<a href=\"" .. it.groupValues:get(1) .. "\">" .. it.groupValues:get(1) .. "</a>"
-    end)
+    s = AUTOLINK:replace(s, ____lambda_1)
     s = __K2L_StringReplace(__K2L_StringReplace(__K2L_StringReplace(escapeHtml(s), "&lt;a href=&quot;", "<a href=\""), "&quot;&gt;", "\">"), "&lt;/a&gt;", "</a>")
     s = IMAGE:replace(s, function(m)
         local ____destructured = m.destructured
@@ -59,9 +63,7 @@ local function inline(text)
         local ____receiver = m.groups:get(1)
         return "<strong>" .. (____receiver and ____receiver.value or __K2L_NotNull(m.groups:get(2)).value) .. "</strong>"
     end)
-    s = EM:replace(s, function(m)
-        return "<em>" .. __K2L_NotNull(m.groups:get(1) or m.groups:get(2)).value .. "</em>"
-    end)
+    s = EM:replace(s, ____lambda_2)
     s = STRIKE:replace(s, "<del>$1</del>")
     return __K2L_Regex.new("\000(\\d+)\000"):replace(s, function(it)
         return codes:get(__K2L_StringToInt(it.groupValues:get(1)))
@@ -76,12 +78,16 @@ function Heading:____init(level, text, id)
     self.id = id
 end
 
+function Heading.new(level, text, id)
+    return setmetatable({level = level, text = text, id = id}, Heading)
+end
+
 function Heading:toString()
     return "Heading(level=" .. self.level .. ", text=" .. self.text .. ", id=" .. self.id .. ")"
 end
 
 function Heading:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.level) + __K2L_Hash(self.text)) + __K2L_Hash(self.id))
+    return (31 * (31 * self.level + __K2L_Hash(self.text)) + __K2L_Hash(self.id) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Heading:equals(other)
@@ -96,11 +102,16 @@ function Converter:____init()
     self.usedIds = __K2L_HashMap.new()
 end
 
+local ____lambda_3 = function(____p1, ____p2) return ____p1 + ____p2 end
 function Converter:uniqueId(base)
-    local n = __K2L_NotNull(self.usedIds:merge(base, 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", function(____p1, ____p2) return ____p1 + ____p2 end)))
+    local n = __K2L_NotNull(self.usedIds:merge(base, 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_3)))
     return n == 1 and base or base .. "-" .. n - 1
 end
 
+local ____lambda_4 = function(it) return it == "#" end
+local ____lambda_5 = function(it) return "" end
+local ____lambda_6 = function(it) return "" end
+local ____lambda_7 = function(it) return it:match("^%d$") ~= nil end
 function Converter:convert(md)
     local lines = __K2L_StringLines(md)
     local i = 0
@@ -121,7 +132,7 @@ function Converter:convert(md)
             local cls = #lang == 0 and "" or " class=\"language-" .. lang .. "\""
             self.out:append("<pre><code" .. cls .. ">"):append(escapeHtml(body:joinToString("\n"))):append("</code></pre>\n")
         elseif __K2L_Regex.new("^#{1,6} "):containsMatchIn(line) then
-            local level = #__K2L_Text.takeWhile(line, function(it) return it == "#" end)
+            local level = #__K2L_Text.takeWhile(line, ____lambda_4)
             local text = __K2L_StringTrim(__K2L_Text.trimChars(__K2L_StringTrim(__K2L_Text.drop(line, level)), 2, "#"))
             local id = self:uniqueId(slug(text))
             self.headings:add(Heading.new(level, text, id))
@@ -140,39 +151,57 @@ function Converter:convert(md)
             self.out:append("<blockquote>\n"):append(Converter.new():convert(quoted:joinToString("\n"))):append("</blockquote>\n")
         elseif __K2L_StringContains(line, "|") and i + 1 < lines.size and __K2L_Regex.new("^\\s*\\|?\\s*:?-+:?\\s*(\\|\\s*:?-+:?\\s*)*\\|?\\s*$"):matches(lines:get(i + 1)) then
             local function cells(row)
-                return __K2L_StringSplit(__K2L_Text.removeSuffix(__K2L_Text.removePrefix(__K2L_StringTrim(row), "|"), "|"), "|"):map(function(it) return __K2L_StringTrim(it) end)
+                local ____list = __K2L_StringSplit(__K2L_Text.removeSuffix(__K2L_Text.removePrefix(__K2L_StringTrim(row), "|"), "|"), "|")
+                local ____out = {}
+                local ____count = 0
+                local ____items, ____n = ____list:____array()
+                for ____i = 1, ____n do
+                    local it = ____items[____i]
+                    ____count = ____count + 1
+                    ____out[____count] = __K2L_StringTrim(it)
+                end
+                return __K2L_ListWrap(____out, ____count)
             end
             local header = cells(line)
-            local aligns = cells(lines:get(i + 1)):map(function(it)
+            local ____list_1 = cells(lines:get(i + 1))
+            local ____out_1 = {}
+            local ____count_1 = 0
+            local ____items_1, ____n_1 = ____list_1:____array()
+            for ____i_1 = 1, ____n_1 do
+                local it = ____items_1[____i_1]
+                local ____result
                 if __K2L_StringStartsWith(it, ":") and __K2L_StringEndsWith(it, ":") then
-                    return " style=\"text-align:center\""
+                    ____result = " style=\"text-align:center\""
                 elseif __K2L_StringEndsWith(it, ":") then
-                    return " style=\"text-align:right\""
+                    ____result = " style=\"text-align:right\""
                 else
-                    return ""
+                    ____result = ""
                 end
-            end)
+                ____count_1 = ____count_1 + 1
+                ____out_1[____count_1] = ____result
+            end
+            local aligns = __K2L_ListWrap(____out_1, ____count_1)
             i = i + 2
             self.out:append("<table>\n<tr>")
             local ____mod = header.____modCount
-            for ____i = 1, header.size do
-                local h = header[____i]
-                local c = ____i - 1
-                self.out:append("<th" .. aligns:getOrElse(c, function(it) return "" end) .. ">" .. inline(h) .. "</th>")
-                if header.____modCount ~= ____mod and header:____comodified(____i) then
+            for ____i_2 = 1, header.size do
+                local h = header[____i_2]
+                local c = ____i_2 - 1
+                self.out:append("<th" .. aligns:getOrElse(c, ____lambda_5) .. ">" .. inline(h) .. "</th>")
+                if header.____modCount ~= ____mod and header:____comodified(____i_2) then
                     break
                 end
             end
             self.out:append("</tr>\n")
             while i < lines.size and __K2L_StringContains(lines:get(i), "|") do
                 self.out:append("<tr>")
-                local ____list = cells(lines:get(i))
-                local ____mod_1 = ____list.____modCount
-                for ____i_1 = 1, ____list.size do
-                    local v = ____list[____i_1]
-                    local c = ____i_1 - 1
-                    self.out:append("<td" .. aligns:getOrElse(c, function(it) return "" end) .. ">" .. inline(v) .. "</td>")
-                    if ____list.____modCount ~= ____mod_1 and ____list:____comodified(____i_1) then
+                local ____list_2 = cells(lines:get(i))
+                local ____mod_1 = ____list_2.____modCount
+                for ____i_3 = 1, ____list_2.size do
+                    local v = ____list_2[____i_3]
+                    local c = ____i_3 - 1
+                    self.out:append("<td" .. aligns:getOrElse(c, ____lambda_6) .. ">" .. inline(v) .. "</td>")
+                    if ____list_2.____modCount ~= ____mod_1 and ____list_2:____comodified(____i_3) then
                         break
                     end
                 end
@@ -184,7 +213,7 @@ function Converter:convert(md)
             local ordered = __K2L_Text.first(__K2L_StringTrimStart(line)):match("^%d$") ~= nil
             local start
             if ordered then
-                start = __K2L_StringToInt(__K2L_Text.takeWhile(__K2L_StringTrim(line), function(it) return it:match("^%d$") ~= nil end))
+                start = __K2L_StringToInt(__K2L_Text.takeWhile(__K2L_StringTrim(line), ____lambda_7))
             else
                 start = 1
             end
@@ -201,7 +230,7 @@ function Converter:convert(md)
                 local box
                 if #check == 0 then
                     box = ""
-                elseif __K2L_StringCharAt(check, 1) == " " then
+                elseif (1 >= 0 and 1 < #check and check:sub(1 + 1, 1 + 1) or __K2L_IndexError(1, #check, "string")) == " " then
                     box = "<input type=\"checkbox\" disabled> "
                 else
                     box = "<input type=\"checkbox\" checked disabled> "
@@ -224,15 +253,16 @@ function Converter:convert(md)
     return self.out:toString()
 end
 
+local ____lambda_8 = function(it) return it.level end
 local function toc(headings)
     local ____builder = __K2L_StringBuilder.new()
     do
-        local minLevel = headings:minOfOrNull(function(it) return it.level end) or 1
+        local minLevel = headings:minOfOrNull(____lambda_8) or 1
         local ____mod_2 = headings.____modCount
-        for ____i_2 = 1, headings.size do
-            local h = headings[____i_2]
+        for ____i_4 = 1, headings.size do
+            local h = headings[____i_4]
             ____builder:append(__K2L_Text.repeatCount("  ", h.level - minLevel)):append("- ["):append(h.text):append("](#"):append(h.id):append(")\n")
-            if headings.____modCount ~= ____mod_2 and headings:____comodified(____i_2) then
+            if headings.____modCount ~= ____mod_2 and headings:____comodified(____i_4) then
                 break
             end
         end
@@ -242,15 +272,36 @@ end
 
 local DOCUMENT = __K2L_Text.trimIndent("\n# k2l *Guide*\n\nWelcome to **k2l**, a _Kotlin_ to Lua transpiler. See <https://example.org/k2l> or [the docs](https://example.org/docs).\nUse `x < y && y > z` freely; it's ~~not~~ escaped.\nSecond line after a hard break.\n\n## Installing\n\n1. Download the archive\n2. Unpack it to `~/opt`\n3. Add **bin** to `PATH`\n\n## Features & Limits\n\n- [x] classes and *objects*\n- [ ] reflection beyond the __basics__\n* plain item with an ![logo](img/logo.png \"The Logo\") inside\n\n> Note: quotes can contain **markup**\n> and span lines.\n>\n> # Even headings\n\n| Feature | Status | Since |\n|:--------|:------:|------:|\n| Regex   | done   | 0.1 |\n| Streams | `partial` | 0.2 |\n\n```kotlin\nfun main() = println(\"<hello>\")\n```\n\n***\n\n## Installing\n\n5) fifth\n6) sixth\n\nSnake_case_words and 2*3*4 should stay as they are, but *this* is emphasis.\n")
 
+local ____lambda_9 = function(it) return it.groupValues:get(1) end
 local function main()
     local c = Converter.new()
     local html = c:convert(DOCUMENT)
     io.write(html)
     print("---- toc ----")
     io.write(toc(c.headings))
-    local words = __K2L_Regex.new("\\W+"):split(__K2L_Regex.new("<[^>]+>"):replace(html, " ")):filter(function(it) return #it > 0 end)
-    print("words: " .. words.size .. ", distinct: " .. words:map(function(it) return it:lower() end):toSet().size)
-    print("tags: " .. __K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("<(\\w+)"):findAllFactory(html)):groupingBy(function(it) return it.groupValues:get(1) end):eachCount():toSortedMap()))
+    local ____list_3 = __K2L_Regex.new("\\W+"):split(__K2L_Regex.new("<[^>]+>"):replace(html, " "))
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_2, ____n_2 = ____list_3:____array()
+    for ____i_5 = 1, ____n_2 do
+        local it = ____items_2[____i_5]
+        if #it > 0 then
+            ____count_2 = ____count_2 + 1
+            ____out_2[____count_2] = it
+        end
+    end
+    local words = __K2L_ListWrap(____out_2, ____count_2)
+    local ____arg = words.size
+    local ____out_3 = {}
+    local ____count_3 = 0
+    local ____items_3, ____n_3 = words:____array()
+    for ____i_6 = 1, ____n_3 do
+        local it = ____items_3[____i_6]
+        ____count_3 = ____count_3 + 1
+        ____out_3[____count_3] = it:lower()
+    end
+    print("words: " .. ____arg .. ", distinct: " .. __K2L_ListWrap(____out_3, ____count_3):toSet().size)
+    print("tags: " .. __K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("<(\\w+)"):findAllFactory(html)):groupingBy(____lambda_9):eachCount():toSortedMap()))
 end
 
 main()

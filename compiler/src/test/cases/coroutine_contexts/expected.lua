@@ -12,7 +12,6 @@ local __K2L_CoroutineContext = ____lualib.__K2L_CoroutineContext
 local __K2L_CreateCoroutine = ____lualib.__K2L_CreateCoroutine
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
@@ -108,6 +107,12 @@ local function launch(context, block)
     end))
 end
 
+local ____lambda_1 = function(acc, element)
+    return acc + (getmetatable(element) == UserId and element.id or 100)
+end
+local ____lambda_2 = function(acc, element)
+    return acc .. tostring(getmetatable(element) == QueueDispatcher)
+end
 local function main()
     local dispatcher = QueueDispatcher.new()
     launch(__K2L_ContextPlus(__K2L_ContextPlus(dispatcher, CoroutineName.new("alpha")), UserId.new(1)), function()
@@ -144,9 +149,7 @@ local function main()
     print(__K2L_Str(____receiver_5 and ____receiver_5.id))
     local ____receiver_6 = __K2L_ContextGet(__K2L_ContextPlus(ctx, CoroutineName.new("m")), CoroutineName)
     print(__K2L_Str(____receiver_6 and ____receiver_6.name))
-    print(__K2L_ContextFold(ctx, 0, function(acc, element)
-        return acc + (__K2L_InstanceOf(element, UserId) and element.id or 100)
-    end))
+    print(__K2L_ContextFold(ctx, 0, ____lambda_1))
     local ____receiver_7 = __K2L_ContextGet(__K2L_ContextPlus(__K2L_EmptyCoroutineContext, ctx), UserId)
     print(__K2L_Str(____receiver_7 and ____receiver_7.id))
     local ____receiver_8 = __K2L_ContextGet(__K2L_ContextPlus(ctx, __K2L_EmptyCoroutineContext), CoroutineName)
@@ -155,9 +158,7 @@ local function main()
     print(__K2L_ContextMinusKey(__K2L_ContextMinusKey(ctx, CoroutineName), UserId) == __K2L_EmptyCoroutineContext)
     local withDispatcher = __K2L_ContextPlus(dispatcher, ctx)
     print(__K2L_ContextGet(withDispatcher, __K2L_ContinuationInterceptor) == dispatcher)
-    print(__K2L_ContextFold(withDispatcher, "", function(acc, element)
-        return acc .. tostring(__K2L_InstanceOf(element, QueueDispatcher))
-    end))
+    print(__K2L_ContextFold(withDispatcher, "", ____lambda_2))
     local finished = false
     local creator = QueueDispatcher.new()
     local cont = __K2L_CreateCoroutine(function()

@@ -16,10 +16,18 @@ function P:____init(x)
     self.x = x
 end
 
+function P.new(x)
+    return setmetatable({x = x}, P)
+end
+
 local Hashed = __K2L_Class("app.Hashed")
 
 function Hashed:____init(id)
     self.id = id
+end
+
+function Hashed.new(id)
+    return setmetatable({id = id}, Hashed)
 end
 
 function Hashed:hashCode()
@@ -43,12 +51,16 @@ function D:____init(v)
     self.v = v
 end
 
+function D.new(v)
+    return setmetatable({v = v}, D)
+end
+
 function D:toString()
     return "D(v=" .. self.v .. ")"
 end
 
 function D:hashCode()
-    return __K2L_Hash(self.v)
+    return self.v
 end
 
 function D:equals(other)

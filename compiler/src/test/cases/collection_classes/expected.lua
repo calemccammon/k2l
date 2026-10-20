@@ -11,6 +11,7 @@ local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -78,28 +79,89 @@ local function factories()
     show("Collections.nCopies", __K2L_JdkCollections.nCopies(2, 0))
 end
 
+local ____lambda_1 = function(it) return it.key == 1 end
+local ____lambda_2 = function(it) return -it end
+local ____lambda_3 = function(it) return -it end
 local function operations()
     local xs = __K2L_ReadOnlyListOf(1, 2, 3)
-    show("toList0", xs:filter(function(it) return it > 5 end):toList())
-    show("toList1", xs:filter(function(it) return it > 2 end):toList())
-    show("toList2", xs:filter(function(it) return it > 1 end):toList())
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = xs:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        if it > 5 then
+            ____count = ____count + 1
+            ____out[____count] = it
+        end
+    end
+    show("toList0", __K2L_ListWrap(____out, ____count):toList())
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = xs:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        if it > 2 then
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = it
+        end
+    end
+    show("toList1", __K2L_ListWrap(____out_1, ____count_1):toList())
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_2, ____n_2 = xs:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_2[____i_2]
+        if it > 1 then
+            ____count_2 = ____count_2 + 1
+            ____out_2[____count_2] = it
+        end
+    end
+    show("toList2", __K2L_ListWrap(____out_2, ____count_2):toList())
     show("toMutableList", __K2L_SingletonListOf(1):toMutableList())
-    show("toSet0", xs:filter(function(it) return it > 5 end):toSet())
+    local ____out_3 = {}
+    local ____count_3 = 0
+    local ____items_3, ____n_3 = xs:____array()
+    for ____i_3 = 1, ____n_3 do
+        local it = ____items_3[____i_3]
+        if it > 5 then
+            ____count_3 = ____count_3 + 1
+            ____out_3[____count_3] = it
+        end
+    end
+    show("toSet0", __K2L_ListWrap(____out_3, ____count_3):toSet())
     show("toSet1", __K2L_SingletonListOf(1):toSet())
     show("toSet2", xs:toSet())
     show("toMutableSet", __K2L_SingletonListOf(1):toMutableSet())
     show("toMap1", __K2L_SingletonListOf(__K2L_Pair.new(1, 2)):toMap())
     show("toMap2", __K2L_ReadOnlyListOf(__K2L_Pair.new(1, 2), __K2L_Pair.new(1, 3)):toMap())
-    show("map.toMap", __K2L_ReadOnlyMapOf(__K2L_Pair.new(1, 2), __K2L_Pair.new(2, 3)):filter(function(it) return it.key == 1 end):toMap())
+    show("map.toMap", __K2L_ReadOnlyMapOf(__K2L_Pair.new(1, 2), __K2L_Pair.new(2, 3)):filter(____lambda_1):toMap())
     show("map.toList", __K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):toList())
     show("sorted", __K2L_ReadOnlyListOf(2, 1):sorted())
     show("sorted1", __K2L_SingletonListOf(2):sorted())
-    show("sortedWith", xs:sortedWith(__K2L_CompareBy(function(it) return -it end)))
-    show("sortedBy", xs:sortedBy(function(it) return -it end, true))
+    show("sortedWith", xs:sortedWith(__K2L_CompareBy(____lambda_2)))
+    show("sortedBy", xs:sortedBy(____lambda_3, true))
     show("sortedDescending", xs:sortedDescending())
     show("array.sorted", __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1):sorted())
-    show("filter", xs:filter(function(it) return true end))
-    show("map", xs:map(function(it) return it end))
+    local ____out_4 = {}
+    local ____count_4 = 0
+    local ____items_4, ____n_4 = xs:____array()
+    for ____i_4 = 1, ____n_4 do
+        local it = ____items_4[____i_4]
+        if true then
+            ____count_4 = ____count_4 + 1
+            ____out_4[____count_4] = it
+        end
+    end
+    show("filter", __K2L_ListWrap(____out_4, ____count_4))
+    local ____out_5 = {}
+    local ____count_5 = 0
+    local ____items_5, ____n_5 = xs:____array()
+    for ____i_5 = 1, ____n_5 do
+        local it = ____items_5[____i_5]
+        ____count_5 = ____count_5 + 1
+        ____out_5[____count_5] = it
+    end
+    show("map", __K2L_ListWrap(____out_5, ____count_5))
     show("take1", xs:take(1))
     show("take5", xs:take(5))
     show("take0", xs:take(0))
@@ -117,55 +179,86 @@ local function operations()
     show("map plus", __K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):plus(__K2L_Pair.new(1, 3)))
 end
 
+local ____lambda_4 = function() return __K2L_ReadOnlyListOf():get(0) end
+local ____lambda_5 = function() return __K2L_SingletonListOf(1):get(1) end
+local ____lambda_6 = function() return __K2L_SingletonListOf(1):get(-1) end
+local ____lambda_7 = function() return __K2L_ReadOnlyListOf(1, 2):get(2) end
+local ____lambda_8 = function() return __K2L_ReadOnlyListOf(1, 2):get(-1) end
+local ____lambda_9 = function()
+    return __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2):get(2)
+end
+local ____lambda_10 = function() return __K2L_TypedArrayOf("[I", 1, 2):get(2) end
+local ____lambda_11 = function() return __K2L_ListOf(1, 2):get(2) end
+local ____lambda_12 = function() return __K2L_ListOf(1, 2):get(-1) end
+local ____lambda_13 = function()
+    return __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1):asList():get(3)
+end
+local ____lambda_14 = function()
+    return __K2L_ReadOnlyListOf(2, 1):sorted():get(2)
+end
+local ____lambda_15 = function()
+    return __K2L_JdkCollections.emptyList():get(0)
+end
+local ____lambda_16 = function()
+    return __K2L_JdkCollections.nCopies(2, 0):get(5)
+end
+local ____lambda_17 = function()
+    return __K2L_JdkCollections.singletonList(0):get(5)
+end
+local ____lambda_18 = function() return __K2L_SingletonListOf(1):elementAt(4) end
+local ____lambda_19 = function()
+    return __K2L_ReadOnlyListOf(1, 2):elementAt(4)
+end
+local ____lambda_20 = function() return __K2L_ReadOnlyListOf():elementAt(4) end
+local ____lambda_21 = function() return __K2L_ListOf(1, 2):elementAt(5) end
+local ____lambda_22 = function()
+    return __K2L_ReadOnlyListOf(1, 2):elementAt(5)
+end
+local ____lambda_23 = function() return __K2L_ReadOnlySetOf(1, 2):elementAt(4) end
+local ____lambda_24 = function()
+    return __K2L_ReadOnlySetOf(1, 2):elementAt(-1)
+end
+local ____lambda_25 = function()
+    return true, __K2L_SingletonListOf(1):get(3)
+end
+local ____lambda_26 = function()
+    return true, __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1):get(3)
+end
+local ____lambda_27 = function()
+    return true, __K2L_ReadOnlyListOf(1, 2):get(3)
+end
+local ____lambda_28 = function()
+    return true, __K2L_ListOf(1):get(3)
+end
 local function indexes()
-    tryIt("listOf()[0]", function() return __K2L_ReadOnlyListOf():get(0) end)
-    tryIt("listOf(1)[1]", function() return __K2L_SingletonListOf(1):get(1) end)
-    tryIt("listOf(1)[-1]", function() return __K2L_SingletonListOf(1):get(-1) end)
-    tryIt("listOf(1,2)[2]", function() return __K2L_ReadOnlyListOf(1, 2):get(2) end)
-    tryIt("listOf(1,2)[-1]", function() return __K2L_ReadOnlyListOf(1, 2):get(-1) end)
-    tryIt("arr[2]", function()
-        return __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2):get(2)
-    end)
-    tryIt("intarr[2]", function() return __K2L_TypedArrayOf("[I", 1, 2):get(2) end)
+    tryIt("listOf()[0]", ____lambda_4)
+    tryIt("listOf(1)[1]", ____lambda_5)
+    tryIt("listOf(1)[-1]", ____lambda_6)
+    tryIt("listOf(1,2)[2]", ____lambda_7)
+    tryIt("listOf(1,2)[-1]", ____lambda_8)
+    tryIt("arr[2]", ____lambda_9)
+    tryIt("intarr[2]", ____lambda_10)
     tryIt("arr set", function()
         local a = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1)
         a:set(3, 4)
         return __K2L_Unit
     end)
-    tryIt("mutable[2]", function() return __K2L_ListOf(1, 2):get(2) end)
-    tryIt("mutable[-1]", function() return __K2L_ListOf(1, 2):get(-1) end)
-    tryIt("asList.get", function()
-        return __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1):asList():get(3)
-    end)
-    tryIt("sorted get", function()
-        return __K2L_ReadOnlyListOf(2, 1):sorted():get(2)
-    end)
-    tryIt("Collections.emptyList get", function()
-        return __K2L_JdkCollections.emptyList():get(0)
-    end)
-    tryIt("nCopies get", function()
-        return __K2L_JdkCollections.nCopies(2, 0):get(5)
-    end)
-    tryIt("singletonList get", function()
-        return __K2L_JdkCollections.singletonList(0):get(5)
-    end)
-    tryIt("elementAt listOf(1)", function() return __K2L_SingletonListOf(1):elementAt(4) end)
-    tryIt("elementAt listOf(1, 2)", function()
-        return __K2L_ReadOnlyListOf(1, 2):elementAt(4)
-    end)
-    tryIt("elementAt emptyList", function() return __K2L_ReadOnlyListOf():elementAt(4) end)
-    tryIt("elementAt mutable", function() return __K2L_ListOf(1, 2):elementAt(5) end)
-    tryIt("elementAt via Iterable", function()
-        return __K2L_ReadOnlyListOf(1, 2):elementAt(5)
-    end)
-    tryIt("elementAt set", function() return __K2L_ReadOnlySetOf(1, 2):elementAt(4) end)
-    tryIt("elementAt set -1", function()
-        return __K2L_ReadOnlySetOf(1, 2):elementAt(-1)
-    end)
+    tryIt("mutable[2]", ____lambda_11)
+    tryIt("mutable[-1]", ____lambda_12)
+    tryIt("asList.get", ____lambda_13)
+    tryIt("sorted get", ____lambda_14)
+    tryIt("Collections.emptyList get", ____lambda_15)
+    tryIt("nCopies get", ____lambda_16)
+    tryIt("singletonList get", ____lambda_17)
+    tryIt("elementAt listOf(1)", ____lambda_18)
+    tryIt("elementAt listOf(1, 2)", ____lambda_19)
+    tryIt("elementAt emptyList", ____lambda_20)
+    tryIt("elementAt mutable", ____lambda_21)
+    tryIt("elementAt via Iterable", ____lambda_22)
+    tryIt("elementAt set", ____lambda_23)
+    tryIt("elementAt set -1", ____lambda_24)
     tryIt("catch IndexOutOfBounds", function()
-        local ____ok_1, ____result_1, ____returned_1 = pcall(function()
-            return true, __K2L_SingletonListOf(1):get(3)
-        end)
+        local ____ok_1, ____result_1, ____returned_1 = pcall(____lambda_25)
         if ____ok_1 then
             if ____result_1 then
                 return ____returned_1
@@ -181,9 +274,7 @@ local function indexes()
         end
     end)
     tryIt("catch for an array", function()
-        local ____ok_2, ____result_2, ____returned_2 = pcall(function()
-            return true, __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1):get(3)
-        end)
+        local ____ok_2, ____result_2, ____returned_2 = pcall(____lambda_26)
         if ____ok_2 then
             if ____result_2 then
                 return ____returned_2
@@ -199,9 +290,7 @@ local function indexes()
         end
     end)
     tryIt("catch ArrayIndexOutOfBounds", function()
-        local ____ok_3, ____result_3, ____returned_3 = pcall(function()
-            return true, __K2L_ReadOnlyListOf(1, 2):get(3)
-        end)
+        local ____ok_3, ____result_3, ____returned_3 = pcall(____lambda_27)
         if ____ok_3 then
             if ____result_3 then
                 return ____returned_3
@@ -217,9 +306,7 @@ local function indexes()
         end
     end)
     tryIt("not caught as ArrayIndexOutOfBounds", function()
-        local ____ok_4, ____result_4, ____returned_4 = pcall(function()
-            return true, __K2L_ListOf(1):get(3)
-        end)
+        local ____ok_4, ____result_4, ____returned_4 = pcall(____lambda_28)
         if ____ok_4 then
             if ____result_4 then
                 return ____returned_4
@@ -247,12 +334,20 @@ local function indexes()
     end)
 end
 
+local ____lambda_29 = function() return __K2L_ListOf():removeFirst() end
+local ____lambda_30 = function() return __K2L_ListOf():removeLast() end
+local ____lambda_31 = function() return __K2L_List.new():removeFirst() end
+local ____lambda_32 = function() return __K2L_ListOf():removeFirstOrNull() end
+local ____lambda_33 = function() return __K2L_ListOf():first() end
+local ____lambda_34 = function()
+    return __K2L_JdkCollections.emptyList():add(1)
+end
 local function mutation()
-    tryIt("removeFirst", function() return __K2L_ListOf():removeFirst() end)
-    tryIt("removeLast", function() return __K2L_ListOf():removeLast() end)
-    tryIt("ArrayList removeFirst", function() return __K2L_List.new():removeFirst() end)
-    tryIt("removeFirstOrNull", function() return __K2L_ListOf():removeFirstOrNull() end)
-    tryIt("first", function() return __K2L_ListOf():first() end)
+    tryIt("removeFirst", ____lambda_29)
+    tryIt("removeLast", ____lambda_30)
+    tryIt("ArrayList removeFirst", ____lambda_31)
+    tryIt("removeFirstOrNull", ____lambda_32)
+    tryIt("first", ____lambda_33)
     tryIt("add listOf(1,2)", function()
         local ____cast = __K2L_ReadOnlyListOf(1, 2)
         if not (__K2L_InstanceOf(____cast, __K2L_List) and not ____cast.____readOnly) then
@@ -434,9 +529,7 @@ local function mutation()
         ____cast_23:clear()
         return __K2L_Unit
     end)
-    tryIt("Collections.emptyList add", function()
-        return __K2L_JdkCollections.emptyList():add(1)
-    end)
+    tryIt("Collections.emptyList add", ____lambda_34)
     tryIt("toMutableList of listOf(1)", function()
         local ____value_1 = __K2L_SingletonListOf(1):toMutableList()
         ____value_1:add(2)
@@ -464,52 +557,79 @@ local function mutation()
     end)
 end
 
+local ____lambda_35 = function()
+    return __K2L_Equals(__K2L_SingletonListOf(1), __K2L_ListOf(1)) and __K2L_Equals(__K2L_ReadOnlySetOf(1), __K2L_SetOf(1)) and __K2L_Equals(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)), __K2L_MapOf(__K2L_Pair.new(1, 2)))
+end
+local ____lambda_36 = function()
+    return __K2L_Equals(__K2L_ReadOnlyListOf(), __K2L_ListOf()) and __K2L_Equals(__K2L_ReadOnlySetOf(), __K2L_SetOf()) and __K2L_Equals(__K2L_ReadOnlyMapOf(), __K2L_MapOf())
+end
+local ____lambda_37 = function()
+    return __K2L_Hash(__K2L_ReadOnlyListOf(1, 2)) + __K2L_Hash(__K2L_ReadOnlySetOf(1)) + __K2L_Hash(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2))) + __K2L_Hash(__K2L_ReadOnlyListOf())
+end
+local ____lambda_38 = function()
+    return __K2L_ReadOnlyListOf() == __K2L_ReadOnlyListOf() and __K2L_ReadOnlySetOf() == __K2L_ReadOnlySetOf() and __K2L_ReadOnlyMapOf() == __K2L_ReadOnlyMapOf()
+end
+local ____lambda_39 = function()
+    return __K2L_Str(__K2L_ReadOnlyListOf()) .. __K2L_Str(__K2L_ReadOnlySetOf()) .. __K2L_Str(__K2L_ReadOnlyMapOf()) .. __K2L_Str(__K2L_SingletonListOf(1)) .. __K2L_Str(__K2L_ReadOnlySetOf(1)) .. __K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)))
+end
+local ____lambda_40 = function()
+    return __K2L_Equals(__K2L_KClassOfValue(__K2L_SingletonListOf(1)), __K2L_KClassOfValue(__K2L_JdkCollections.singletonList(2)))
+end
+local ____lambda_41 = function()
+    return __K2L_SingletonListOf(1):contains(1) and __K2L_ReadOnlyListOf(1, 2):contains(2) and __K2L_ReadOnlySetOf(1):contains(1) and __K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):containsKey(1)
+end
+local ____lambda_42 = function(it) return it.value end
 local function equality()
-    tryIt("eq", function()
-        return __K2L_Equals(__K2L_SingletonListOf(1), __K2L_ListOf(1)) and __K2L_Equals(__K2L_ReadOnlySetOf(1), __K2L_SetOf(1)) and __K2L_Equals(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)), __K2L_MapOf(__K2L_Pair.new(1, 2)))
-    end)
-    tryIt("eq empty", function()
-        return __K2L_Equals(__K2L_ReadOnlyListOf(), __K2L_ListOf()) and __K2L_Equals(__K2L_ReadOnlySetOf(), __K2L_SetOf()) and __K2L_Equals(__K2L_ReadOnlyMapOf(), __K2L_MapOf())
-    end)
-    tryIt("hash", function()
-        return __K2L_Hash(__K2L_ReadOnlyListOf(1, 2)) + __K2L_Hash(__K2L_ReadOnlySetOf(1)) + __K2L_Hash(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2))) + __K2L_Hash(__K2L_ReadOnlyListOf())
-    end)
-    tryIt("same empty", function()
-        return __K2L_ReadOnlyListOf() == __K2L_ReadOnlyListOf() and __K2L_ReadOnlySetOf() == __K2L_ReadOnlySetOf() and __K2L_ReadOnlyMapOf() == __K2L_ReadOnlyMapOf()
-    end)
-    tryIt("toString", function()
-        return __K2L_Str(__K2L_ReadOnlyListOf()) .. __K2L_Str(__K2L_ReadOnlySetOf()) .. __K2L_Str(__K2L_ReadOnlyMapOf()) .. __K2L_Str(__K2L_SingletonListOf(1)) .. __K2L_Str(__K2L_ReadOnlySetOf(1)) .. __K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)))
-    end)
-    tryIt("class equality", function()
-        return __K2L_Equals(__K2L_KClassOfValue(__K2L_SingletonListOf(1)), __K2L_KClassOfValue(__K2L_JdkCollections.singletonList(2)))
-    end)
-    tryIt("contains", function()
-        return __K2L_SingletonListOf(1):contains(1) and __K2L_ReadOnlyListOf(1, 2):contains(2) and __K2L_ReadOnlySetOf(1):contains(1) and __K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):containsKey(1)
-    end)
+    tryIt("eq", ____lambda_35)
+    tryIt("eq empty", ____lambda_36)
+    tryIt("hash", ____lambda_37)
+    tryIt("same empty", ____lambda_38)
+    tryIt("toString", ____lambda_39)
+    tryIt("class equality", ____lambda_40)
+    tryIt("contains", ____lambda_41)
     local single = __K2L_SingletonListOf(5)
     local total = 0
-    for ____i = 1, single.size do
-        local x = single[____i]
+    for ____i_6 = 1, single.size do
+        local x = single[____i_6]
         total = total + x
     end
     local ____list = __K2L_ReadOnlyListOf()
-    for ____i_1 = 1, ____list.size do
-        local x = ____list[____i_1]
+    for ____i_7 = 1, ____list.size do
+        local x = ____list[____i_7]
         total = total + x
     end
     local ____collection = __K2L_ReadOnlySetOf(7)
-    local ____items, ____n = ____collection:____array()
-    for ____i_2 = 1, ____n do
-        local x = ____items[____i_2]
+    local ____items_6, ____n_6 = ____collection:____array()
+    for ____i_8 = 1, ____n_6 do
+        local x = ____items_6[____i_8]
         total = total + x
     end
     local ____map = __K2L_SingletonMapOf(__K2L_Pair.new(1, 2))
-    local ____keys, ____values, ____n_1 = ____map:____arrays()
-    for ____i_3 = 1, ____n_1 do
-        local k, v = ____keys[____i_3], ____values[____i_3]
+    local ____keys, ____values, ____n_7 = ____map:____arrays()
+    for ____i_9 = 1, ____n_7 do
+        local k, v = ____keys[____i_9], ____values[____i_9]
         total = total + (k + v)
     end
-    print("loops " .. total .. " " .. __K2L_Str(single:map(function(it) return it * 2 end)) .. " " .. __K2L_Str(__K2L_ReadOnlySetOf(3):map(function(it) return it end)) .. " " .. __K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):map(function(it) return it.value end)))
+    local ____arg = total
+    local ____out_6 = {}
+    local ____count_6 = 0
+    local ____items_7, ____n_8 = single:____array()
+    for ____i_10 = 1, ____n_8 do
+        local it = ____items_7[____i_10]
+        ____count_6 = ____count_6 + 1
+        ____out_6[____count_6] = it * 2
+    end
+    local ____arg_1 = __K2L_ListWrap(____out_6, ____count_6)
+    local ____list_1 = __K2L_ReadOnlySetOf(3)
+    local ____out_7 = {}
+    local ____count_7 = 0
+    local ____items_8, ____n_9 = ____list_1:____array()
+    for ____i_11 = 1, ____n_9 do
+        local it = ____items_8[____i_11]
+        ____count_7 = ____count_7 + 1
+        ____out_7[____count_7] = it
+    end
+    print("loops " .. ____arg .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(__K2L_ListWrap(____out_7, ____count_7)) .. " " .. __K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):map(____lambda_42)))
 end
 
 local function main()

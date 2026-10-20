@@ -12,7 +12,6 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_HashSet = ____lualib.__K2L_HashSet
 local __K2L_HonorOverrides = ____lualib.__K2L_HonorOverrides
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -37,7 +36,6 @@ local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local CountingIterator
@@ -50,7 +48,8 @@ function Evens:____init(limit)
 end
 
 function Evens:getSize()
-    return __K2L_IDiv(self.limit + 1, 2)
+    local ____dividend = self.limit + 1
+    return ____dividend >= 0 and ____dividend // 2 or 0 - -____dividend // 2
 end
 
 function Evens:iterator()
@@ -107,6 +106,10 @@ function CountingIterator:____init(owner, inner)
     self.inner = inner
 end
 
+function CountingIterator.new(owner, inner)
+    return setmetatable({owner = owner, inner = inner}, CountingIterator)
+end
+
 function CountingIterator:hasNext()
     return self.inner:hasNext()
 end
@@ -129,12 +132,16 @@ function Pair2:____init(key, value)
     self.value = value
 end
 
+function Pair2.new(key, value)
+    return setmetatable({key = key, value = value}, Pair2)
+end
+
 function Pair2:toString()
     return "Pair2(key=" .. self.key .. ", value=" .. self.value .. ")"
 end
 
 function Pair2:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.key) + __K2L_Hash(self.value))
+    return (31 * __K2L_Hash(self.key) + self.value + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Pair2:equals(other)
@@ -149,8 +156,9 @@ function Squares:____init(n)
     self.n = n
 end
 
+local ____lambda_1 = function(it) return Pair2.new("k" .. it, it * it) end
 function Squares:getEntries()
-    return __K2L_IntRange.new(1, self.n):map(function(it) return Pair2.new("k" .. it, it * it) end):toSet()
+    return __K2L_IntRange.new(1, self.n):map(____lambda_1):toSet()
 end
 
 __K2L_PropertyOverride(Squares, "entries", "getEntries")
@@ -315,10 +323,13 @@ function Copied:put(key, value)
     return __K2L_Map.put(self, key, value)
 end
 
+local ____lambda_2 = function(it) return it >= 0 and it // 2 or 0 - -it // 2 end
+local ____lambda_3 = function(it) return it > 3 end
+local ____lambda_4 = function(it) return it == "b" end
 local function sets()
     local e = Evens.new(9)
     print(__K2L_Str(e) .. " " .. e:getSize() .. " " .. tostring(e:contains(4)) .. " " .. tostring(e:contains(5)) .. " " .. tostring(e:equals(__K2L_ReadOnlySetOf(0, 2, 4, 6, 8))) .. " " .. tostring(__K2L_Equals(__K2L_ReadOnlySetOf(8, 6, 4, 2, 0), e)) .. " " .. tostring(e:hashCode() == __K2L_Hash(__K2L_ReadOnlySetOf(0, 2, 4, 6, 8))))
-    print(__K2L_Str(e:map(function(it) return __K2L_IDiv(it, 2) end)) .. " " .. __K2L_Str(e:filter(function(it) return it > 3 end)) .. " " .. e:sum() .. " " .. __K2L_Str(e:sortedDescending()) .. " " .. tostring(e:containsAll(__K2L_ReadOnlyListOf(2, 4))) .. " " .. tostring(__K2L_InstanceOf(e, __K2L_Set)))
+    print(__K2L_Str(e:map(____lambda_2)) .. " " .. __K2L_Str(e:filter(____lambda_3)) .. " " .. e:sum() .. " " .. __K2L_Str(e:sortedDescending()) .. " " .. tostring(e:containsAll(__K2L_ReadOnlyListOf(2, 4))) .. " " .. tostring(__K2L_InstanceOf(e, __K2L_Set)))
     local total = 0
     local ____items, ____n = e:____array()
     for ____i = 1, ____n do
@@ -329,7 +340,7 @@ local function sets()
     local bag = Bag.new()
     bag:add("b")
     bag:addAll(__K2L_ReadOnlyListOf("a", "b"))
-    print("bag " .. __K2L_Str(bag) .. " " .. bag:getSize() .. " " .. tostring(bag:contains("a")) .. " " .. bag:count(function(it) return it == "b" end))
+    print("bag " .. __K2L_Str(bag) .. " " .. bag:getSize() .. " " .. tostring(bag:contains("a")) .. " " .. bag:count(____lambda_4))
     bag:remove("b")
     print("bag remove " .. __K2L_Str(bag) .. " " .. tostring(bag:equals(Bag.new())) .. " " .. tostring(__K2L_InstanceOf(bag, __K2L_List)))
     bag:clear()
@@ -346,14 +357,20 @@ local function sets()
     print("retainAll " .. __K2L_Str(tags) .. " removes=" .. tags.removes .. " " .. tostring(tags:equals(__K2L_ReadOnlySetOf("y", "red"))))
 end
 
+local ____lambda_5 = function(it) return it.key .. it.value end
+local ____lambda_6 = function(it) return it.value > 1 end
+local ____lambda_7 = function(it) return it.value + 1 end
+local ____lambda_8 = function(it) return it.value end
+local ____lambda_9 = function() return 5 end
+local ____lambda_10 = function() return 9 end
 local function maps()
     local sq = Squares.new(3)
     print(__K2L_Str(sq) .. " " .. sq.size .. " " .. __K2L_Str(sq:get("k2")) .. " " .. __K2L_Str(sq:get("x")) .. " " .. tostring(sq:containsKey("k3")) .. " " .. tostring(sq:containsValue(9)) .. " " .. __K2L_Str(sq:getKeys()) .. " " .. __K2L_Str(sq:getValues()))
     print(tostring(sq:equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("k1", 1), __K2L_Pair.new("k2", 4), __K2L_Pair.new("k3", 9)))) .. " " .. tostring(__K2L_Equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("k1", 1), __K2L_Pair.new("k2", 4), __K2L_Pair.new("k3", 9)), sq)) .. " " .. tostring(sq:isEmpty()))
-    local ____arg = sq:map(function(it) return it.key .. it.value end)
-    local ____arg_1 = sq:filter(function(it) return it.value > 1 end)
-    local ____arg_2 = sq:mapValues(function(it) return it.value + 1 end)
-    local ____receiver = sq:maxByOrNull(function(it) return it.value end)
+    local ____arg = sq:map(____lambda_5)
+    local ____arg_1 = sq:filter(____lambda_6)
+    local ____arg_2 = sq:mapValues(____lambda_7)
+    local ____receiver = sq:maxByOrNull(____lambda_8)
     print(__K2L_Str(____arg) .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(____arg_2) .. " " .. __K2L_Str(____receiver and ____receiver.key))
     local ____keys, ____values, ____n_1 = sq:____arrays()
     for ____i_1 = 1, ____n_1 do
@@ -367,11 +384,14 @@ local function maps()
     r:putAll(__K2L_ReadOnlyMapOf(__K2L_Pair.new("c", 3), __K2L_Pair.new("d", 4)))
     print("registry " .. __K2L_Str(r) .. " " .. r.size .. " " .. __K2L_Str(r:get("c")) .. " " .. __K2L_Str(r.log))
     print("remove " .. __K2L_Str(r:remove("b")) .. " " .. __K2L_Str(r:remove("zz")) .. " " .. __K2L_Str(r))
-    print("getOrPut " .. r:getOrPut("e", function() return 5 end) .. " " .. r:getOrPut("a", function() return 9 end) .. " " .. __K2L_Str(r.log))
+    print("getOrPut " .. r:getOrPut("e", ____lambda_9) .. " " .. r:getOrPut("a", ____lambda_10) .. " " .. __K2L_Str(r.log))
     r:clear()
     print("clear " .. __K2L_Str(r) .. " " .. tostring(r:isEmpty()) .. " " .. tostring(__K2L_InstanceOf(r, __K2L_Map)))
 end
 
+local ____lambda_11 = function(it) return it * 2 end
+local ____lambda_12 = function(it) return #it end
+local ____lambda_13 = function(it) return it end
 local function iterators()
     local c = Countdown.new(3)
     print(tostring(c:hasNext()) .. " " .. tostring(c:hasNext()) .. " " .. c:next() .. " " .. c:next())
@@ -392,7 +412,7 @@ local function iterators()
             error(____error, 0)
         end
     end
-    print(__K2L_Str(__K2L_AsSequence(Countdown.new(4)):map(function(it) return it * 2 end):toList()))
+    print(__K2L_Str(__K2L_AsSequence(Countdown.new(4)):map(____lambda_11):toList()))
     local f = Faulty.new()
     print("faulty " .. f:next())
     for step = 1, 2 do
@@ -410,7 +430,7 @@ local function iterators()
         end
     end
     local w = Words.new("the quick brown fox")
-    print(__K2L_Str(w:map(function(it) return #it end)) .. " " .. w:count() .. " " .. w:first() .. " " .. __K2L_Str(w:sortedBy(function(it) return it end, true)) .. " " .. w:joinToString("+"))
+    print(__K2L_Str(w:map(____lambda_12)) .. " " .. w:count() .. " " .. w:first() .. " " .. __K2L_Str(w:sortedBy(____lambda_13, true)) .. " " .. w:joinToString("+"))
     local ____items_1, ____n_2 = w:____array()
     for ____i_2 = 1, ____n_2 do
         local x = ____items_1[____i_2]

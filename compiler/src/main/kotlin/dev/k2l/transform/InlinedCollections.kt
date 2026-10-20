@@ -39,8 +39,18 @@ private val INLINED_MAP_FUNCTIONS = setOf(
 private const val COLLECTIONS_PACKAGE = "kotlin/collections/"
 private const val TEXT_PACKAGE = "kotlin/text/"
 
-/** What a loop iterates: a list-like value (maps iterate their entries), and whether its elements may be nil. */
-internal class Source(val collection: LuaExpr, val kind: CollectionKind, val elementNullable: Boolean)
+/**
+ * What a loop iterates: a list-like value (maps iterate their entries), and whether its elements may be nil. A [snapshot]
+ * is walked as the lualib's methods walk it, see [snapshotLoop].
+ */
+internal class Source(
+    val collection: LuaExpr,
+    val kind: CollectionKind,
+    val elementNullable: Boolean,
+    val snapshot: Boolean = false,
+    /** A plain 1-based table walked up to `#collection` (an enum's `____values`), for a [snapshot]. */
+    val plainArray: Boolean = false,
+)
 
 /** The name of the function a library call is, when it is one of those expanded for its package. */
 private fun expandedName(callableId: String?): String? {
@@ -97,9 +107,12 @@ internal fun FileTransformer.inlinedCollectionCall(
     val name = expandedName(callableId) ?: return null
     if (call !is KaFunctionCall<*>) return null
     val args = callArguments(call)
-    if (!needsExpansion(name, args)) return null
     val type = receiverExpr?.expressionType ?: call.extensionReceiver?.type
     val inText = callableId!!.startsWith(TEXT_PACKAGE)
+    if (!needsExpansion(name, args)) {
+        if (inText) return null
+        return loopedCollectionCall(name, args, type, full, receiverExpr) { implicit ?: receiverExpr?.let { expression(it) } }
+    }
     expand(name, args, Triple(type, receiverExpr, implicit), inText, full)
 }
 
@@ -194,11 +207,7 @@ internal fun FileTransformer.eachElement(
     val element = LuaName(item).also { stable += it }
     val index = indexParam?.let { LuaName(forEachVar(params, it, "index")).also { n -> stable += n } }
     val body = collect { step(element, index) }
-    if (source.kind == CollectionKind.Map) {
-        val entries = LuaMethodCall(source.collection, "____entryArray", emptyList())
-        emit(LuaGenericFor(listOf("_", item), listOf(luaCall(LuaName("ipairs"), entries)), body))
-        return
-    }
+    if (snapshotOrEntriesLoop(source, item, index, body)) return
     val list = asList(source.kind, source.collection)
     val plain = index == null && !backwards && !usesListViews
     if (!source.elementNullable && plain) {
@@ -218,6 +227,21 @@ internal fun FileTransformer.eachElement(
             LuaNumericFor(i, LuaNumber("1"), size, null, header + body)
         },
     )
+}
+
+/** The loop over a [Source.snapshot] (see [snapshotLoop]) or a map's entries; false for other sources. */
+private fun FileTransformer.snapshotOrEntriesLoop(source: Source, item: String, index: LuaName?, body: List<LuaStmt>): Boolean {
+    when {
+        source.snapshot -> snapshotLoop(source, item, index, body)
+
+        source.kind == CollectionKind.Map -> {
+            val entries = LuaMethodCall(source.collection, "____entryArray", emptyList())
+            emit(LuaGenericFor(listOf("_", item), listOf(luaCall(LuaName("ipairs"), entries)), body))
+        }
+
+        else -> return false
+    }
+    return true
 }
 
 internal fun FileTransformer.newList(): LuaExpr = LuaCall(lualibRef("Collections", "__K2L_ListOf"), emptyList())
@@ -269,7 +293,7 @@ internal fun FileTransformer.listing(name: String, source: Source, lambda: KtExp
 }
 
 /** `any`, `all`, `none`, `count`, `first`, `firstOrNull` and `find`: a loop that stops at the deciding element. */
-private fun FileTransformer.searching(name: String, source: Source, lambda: KtExpression): LuaExpr = with(session) {
+internal fun FileTransformer.searching(name: String, source: Source, lambda: KtExpression): LuaExpr = with(session) {
     val initial = when (name) {
         "any" -> LuaBool(false)
         "all", "none" -> LuaBool(true)
@@ -298,7 +322,7 @@ private fun FileTransformer.searching(name: String, source: Source, lambda: KtEx
     return result
 }
 
-private fun FileTransformer.summing(source: Source, lambda: KtExpression, full: KtExpression): LuaExpr = with(session) {
+internal fun FileTransformer.summing(source: Source, lambda: KtExpression, full: KtExpression): LuaExpr = with(session) {
     val isDouble = full.expressionType?.let { it.isDoubleType || it.isFloatType } == true
     val result = declare("sum", LuaNumber(if (isDouble) "0.0" else "0"))
     eachElement(source, lambda, 0) { item, _ ->

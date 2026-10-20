@@ -342,6 +342,12 @@ end
 
 __K2L_HonorOverrides(TS, __K2L_SortedSet)
 
+local ____lambda_1 = function(it) return it > 100 end
+local ____lambda_2 = function() return 6 end
+local ____lambda_3 = function(____p1, ____p2) return ____p1 + ____p2 end
+local ____lambda_4 = function(_, v) return __K2L_NotNull(v) + 1 end
+local ____lambda_5 = function(it) return 7 end
+local ____lambda_6 = function(it) return it.key end
 local function main()
     local pq = PQ.new()
     show("pq.add", function() return pq:add(3) end)
@@ -353,9 +359,7 @@ local function main()
     show("pq.toString", function() return __K2L_Str(pq) end)
     show("pq.contains", function() return pq:contains(3) end)
     show("pq.removeAll", function() return pq:removeAll(__K2L_SingletonListOf(3)) end)
-    show("pq.removeIf", function()
-        return pq:removeIf(function(it) return it > 100 end)
-    end)
+    show("pq.removeIf", function() return pq:removeIf(____lambda_1) end)
     show("pq.isEmpty", function() return pq:isEmpty() end)
     show("pq.toList", function() return pq:toList() end)
     show("pq.clear", function()
@@ -449,18 +453,12 @@ local function main()
         return __K2L_Unit
     end)
     show("tm.putIfAbsent", function() return tm:putIfAbsent("e", 5) end)
-    show("tm.getOrPut", function()
-        return tm:getOrPut("f", function() return 6 end)
-    end)
+    show("tm.getOrPut", function() return tm:getOrPut("f", ____lambda_2) end)
     show("tm.merge", function()
-        return tm:merge("a", 10, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", function(____p1, ____p2) return ____p1 + ____p2 end))
+        return tm:merge("a", 10, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_3))
     end)
-    show("tm.compute", function()
-        return tm:compute("a", function(_, v) return __K2L_NotNull(v) + 1 end)
-    end)
-    show("tm.computeIfAbsent", function()
-        return tm:computeIfAbsent("g", function(it) return 7 end)
-    end)
+    show("tm.compute", function() return tm:compute("a", ____lambda_4) end)
+    show("tm.computeIfAbsent", function() return tm:computeIfAbsent("g", ____lambda_5) end)
     show("tm.get", function() return tm:get("a") end)
     show("tm.getValue", function() return tm:getValue("a") end)
     show("tm.contains", function() return tm:containsKey("a") end)
@@ -487,7 +485,7 @@ local function main()
         return __K2L_Unit
     end)
     show("tm.keys", function() return tm:getKeys():toList() end)
-    show("tm.map", function() return tm:map(function(it) return it.key end) end)
+    show("tm.map", function() return tm:map(____lambda_6) end)
     show("tm.equals", function()
         return tm:equals(__K2L_SingletonMapOf(__K2L_Pair.new("a", 12)))
     end)
@@ -584,8 +582,9 @@ end
 ByLength = __K2L_Class("ByLength", __K2L_SortedSet)
 __K2L_ClassInfo(ByLength, "ByLength", "ByLength", "class")
 
+local ____lambda_7 = function(it) return #it end
 function ByLength:____init()
-    __K2L_SortedSet.____init(self, __K2L_CompareBy(function(it) return #it end))
+    __K2L_SortedSet.____init(self, __K2L_CompareBy(____lambda_7))
 end
 
 MaxFirst = __K2L_Class("MaxFirst", __K2L_PriorityQueue)

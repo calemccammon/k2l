@@ -13,6 +13,10 @@ function CountdownIterator:____init(current)
     self.current = current
 end
 
+function CountdownIterator.new(current)
+    return setmetatable({current = current}, CountdownIterator)
+end
+
 function CountdownIterator:hasNext()
     return self.current > 0
 end
@@ -70,36 +74,48 @@ function Derived:total()
     return self:sum()
 end
 
+local ____lambda_1 = function(it) return it * 2 end
 local function describe(items)
-    return __K2L_Str(items:map(function(it) return it * 2 end):toList())
+    return __K2L_Str(items:map(____lambda_1):toList())
 end
 
+local ____lambda_2 = function(it) return it * it end
+local ____lambda_3 = function(it)
+    return (it >= 0 and it % 2 or 0 - -it % 2) == 1
+end
+local ____lambda_4 = function(it) return it > 2 end
+local ____lambda_5 = function(it) return #it end
+local ____lambda_6 = function(it)
+    return (it >= 0 and it % 2 or (it % 2 - 2) % (-2)) == 0
+end
+local ____lambda_7 = function(it) return it + 1 end
+local ____lambda_8 = function(it) return it == 2 end
 local function main()
     local c = Countdown.new(5)
     print(__K2L_Str(c:toList()))
-    print(__K2L_Str(c:map(function(it) return it * it end):filter(function(it) return math.fmod(it, 2) == 1 end):toList()))
+    print(__K2L_Str(c:map(____lambda_2):filter(____lambda_3):toList()))
     print(c:sum())
     print(c:first())
     print(__K2L_Str(c:take(2):toList()))
-    print(c:count(function(it) return it > 2 end))
+    print(c:count(____lambda_4))
     for _, x in c:iter() do
         io.write(x .. " ")
     end
     print()
     print(describe(c))
-    print(__K2L_Str(Words.new("the quick brown fox"):map(function(it) return #it end):toList()))
+    print(__K2L_Str(Words.new("the quick brown fox"):map(____lambda_5):toList()))
     print(Words.new("a b c"):joinToString("-"))
     print(__K2L_Str(Fibonacci.new():take(10):toList()))
-    print(__K2L_Str(Fibonacci.new():filter(function(it) return math.fmod(it, 2) == 0 end):take(4):toList()))
+    print(__K2L_Str(Fibonacci.new():filter(____lambda_6):take(4):toList()))
     print(Derived.new():total())
-    print(__K2L_Str(Derived.new():map(function(it) return it + 1 end):toList()))
+    print(__K2L_Str(Derived.new():map(____lambda_7):toList()))
     local seq = Countdown.new(3)
     print(__K2L_Str(seq:zip(Countdown.new(2)):toList()))
     print(__K2L_Str(seq:plusAll(Countdown.new(2)):toList()))
     print(__K2L_Str(Countdown.new(4):windowed(2):toList()))
     print(Countdown.new(3):iterator():next())
     print(__K2L_Str(Countdown.new(3):toList()))
-    print(Countdown.new(3):any(function(it) return it == 2 end))
+    print(Countdown.new(3):any(____lambda_8))
     local it = Countdown.new(2):iterator()
     while it:hasNext() do
         print(it:next())

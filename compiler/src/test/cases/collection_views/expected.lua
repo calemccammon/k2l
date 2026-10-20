@@ -7,6 +7,7 @@ local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_HashMapOf = ____lualib.__K2L_HashMapOf
 local __K2L_HashSetOf = ____lualib.__K2L_HashSetOf
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_Iterable = ____lualib.__K2L_Iterable
@@ -225,6 +226,7 @@ function Growing:lastIndexOf(element)
     return self.____delegate_MutableList:lastIndexOf(element)
 end
 
+local ____lambda_1 = function(it) return it > 50 end
 local function subLists()
     local list = __K2L_ListOf(1, 2, 3, 4, 5)
     local sub = list:subList(1, 4)
@@ -260,7 +262,7 @@ local function subLists()
     end)
     sub:sort()
     t("sort", function() return list end)
-    sub:removeAll(function(it) return it > 50 end)
+    sub:removeAll(____lambda_1)
     t("removeAll", function()
         return __K2L_Str(list) .. " " .. __K2L_Str(sub)
     end)
@@ -306,6 +308,10 @@ local function subLists()
     end)
 end
 
+local ____lambda_2 = function(it) return it + 1 end
+local ____lambda_3 = function()
+    return __K2L_JavaClass(__K2L_KClassOfValue(__K2L_TypedArrayOf("[C", "a", "b"):asList(8))).name
+end
 local function arrayViews()
     local arr = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2, 3)
     local view = arr:asList()
@@ -332,11 +338,14 @@ local function arrayViews()
         vs = vs + x
     end
     t("asList loop", function()
-        return vs .. " " .. view:indexOf(3) .. " " .. __K2L_Str(view:map(function(it) return it + 1 end))
+        return vs .. " " .. view:indexOf(3) .. " " .. __K2L_Str(view:map(____lambda_2))
     end)
     local ints = __K2L_TypedArrayOf("[I", 3, 1, 2)
     local iview = ints:asList(3)
-    ints:set(0, 30)
+    if 0 < 0 or 0 >= ints.size then
+        __K2L_IndexError(0, ints.size, "array")
+    end
+    ints[1] = 30
     t("int view", function()
         return __K2L_Str(iview) .. " " .. iview.size .. " " .. iview:get(0) .. " " .. iview:sum() .. " " .. tostring(__K2L_InstanceOf(iview, __K2L_List) and not iview.____readOnly) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(iview)).name)
     end)
@@ -347,11 +356,16 @@ local function arrayViews()
         return iview
     end)
     t("int view get", function() return iview:get(5) end)
-    t("chars view", function()
-        return __K2L_JavaClass(__K2L_KClassOfValue(__K2L_TypedArrayOf("[C", "a", "b"):asList(8))).name
-    end)
+    t("chars view", ____lambda_3)
 end
 
+local ____lambda_4 = function(it) return it > 5 end
+local ____lambda_5 = function()
+    return __K2L_MapOf(__K2L_Pair.new(1, 2)):getKeys():add(3)
+end
+local ____lambda_6 = function()
+    return __K2L_MapOf(__K2L_Pair.new(1, 2)):getValues():add(3)
+end
 local function readOnly()
     t("emptyList as", function()
         local ____cast = __K2L_ReadOnlyListOf()
@@ -390,7 +404,7 @@ local function readOnly()
         return __K2L_InstanceOf(____value_1, __K2L_List)
     end)
     t("empty filter is", function()
-        local ____value_2 = __K2L_SingletonListOf(1):filter(function(it) return it > 5 end)
+        local ____value_2 = __K2L_SingletonListOf(1):filter(____lambda_4)
         return __K2L_InstanceOf(____value_2, __K2L_Iterable) and ____value_2.size ~= nil and not ____value_2.____readOnly
     end)
     t("emptyMap keys is", function()
@@ -445,18 +459,17 @@ local function readOnly()
         end
         return fixed
     end)
-    t("keys add", function()
-        return __K2L_MapOf(__K2L_Pair.new(1, 2)):getKeys():add(3)
-    end)
-    t("values add", function()
-        return __K2L_MapOf(__K2L_Pair.new(1, 2)):getValues():add(3)
-    end)
+    t("keys add", ____lambda_5)
+    t("values add", ____lambda_6)
     local m = __K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2))
     m:getKeys():remove("a")
     m:getValues():remove(2)
     t("views remove", function() return m end)
 end
 
+local ____lambda_7 = function(it)
+    return __K2L_JavaClass(__K2L_KClassOfValue(it)).name
+end
 local function classNames()
     local linked = __K2L_MapOf(__K2L_Pair.new(1, 2))
     local hashed = __K2L_HashMapOf(__K2L_Pair.new(1, 2))
@@ -470,9 +483,7 @@ local function classNames()
     end
     print("empty " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(__K2L_ReadOnlyMapOf():getKeys())).name) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(__K2L_ReadOnlyMapOf():getValues())).name))
     local iterators = __K2L_ReadOnlyListOf(__K2L_IteratorOf(__K2L_ListOf(1)), __K2L_IteratorOf(__K2L_ReadOnlyListOf(1, 2)), __K2L_IteratorOf(__K2L_SingletonListOf(1)), __K2L_IteratorOf(__K2L_ReadOnlyListOf()), __K2L_IteratorOf(__K2L_SetOf(1)), __K2L_IteratorOf(__K2L_HashSetOf(1)), __K2L_IteratorOf(__K2L_SortedSetOf(1)), __K2L_IteratorOf(__K2L_IntRange.new(1, 2)), __K2L_IteratorOf(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 1)), __K2L_IteratorOf(__K2L_PriorityQueue.new(__K2L_SingletonListOf(1))), __K2L_IteratorOf(__K2L_ArrayDeque.new(__K2L_SingletonListOf(1))))
-    print(__K2L_Str(iterators:map(function(it)
-        return __K2L_JavaClass(__K2L_KClassOfValue(it)).name
-    end)))
+    print(__K2L_Str(iterators:map(____lambda_7)))
     local ints = __K2L_TypedArrayOf("[I", 1)
     local strings = __K2L_TypedArrayOf("[Ljava.lang.String;", "a")
     local nested = __K2L_TypedArrayOf("[[I", __K2L_TypedArrayOf("[I", 1))

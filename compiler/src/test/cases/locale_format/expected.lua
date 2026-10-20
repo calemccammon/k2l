@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Locale = ____lualib.__K2L_Locale
 local __K2L_LocaleFormat = ____lualib.__K2L_LocaleFormat
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -59,9 +60,16 @@ local function main()
     print(__K2L_LocaleFormat.format(__K2L_Locale.of("fa"), nil, "%.2f", 3.14159))
     print(__K2L_LocaleFormat.format(__K2L_Locale.of("my"), nil, "%,d", 1234567))
     print(__K2L_LocaleFormat.format(__K2L_Locale.of("th", "TH", "TH"), nil, "%,.2f", 1234567.891))
-    local dynamic = __K2L_ReadOnlyListOf("de_DE", "en_US", "fr_FR"):map(function(it)
-        return __K2L_LocaleFormat.format(it, nil, "%,.1f", 1234567.85)
-    end)
+    local ____list = __K2L_ReadOnlyListOf("de_DE", "en_US", "fr_FR")
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_LocaleFormat.format(it, nil, "%,.1f", 1234567.85)
+    end
+    local dynamic = __K2L_ListWrap(____out, ____count)
     print(__K2L_Str(dynamic))
     local chosen = dynamic.size > 2 and __K2L_Locale.of("it", "IT") or "en_US"
     print(__K2L_LocaleFormat.format(chosen, nil, "%,d", 1234567))

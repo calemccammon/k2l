@@ -9,6 +9,8 @@ local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_Utf16 = ____lualib.__K2L_Utf16
 local __K2L_Utf16Case = ____lualib.__K2L_Utf16Case
 
+local ____lambda_1 = function(it) return it > 65535 end
+local ____lambda_2 = function(it) return it + 1 end
 local function codePoints()
     local s = "a😀b𝄞é"
     print(__K2L_Utf16.out(__K2L_Utf16.len(s)))
@@ -28,8 +30,8 @@ local function codePoints()
     __K2L_Utf16.codePoints(s):forEach(function(it)
         print(__K2L_Utf16.out(__K2L_Str(__K2L_Num.toRadixUnsigned(it, 16))))
     end)
-    print(__K2L_Utf16.out(__K2L_Utf16.codePoints(s):filter(function(it) return it > 65535 end):count()))
-    print(__K2L_Utf16.out(__K2L_Utf16.codePoints(s):map(function(it) return it + 1 end):sum()))
+    print(__K2L_Utf16.out(__K2L_Utf16.codePoints(s):filter(____lambda_1):count()))
+    print(__K2L_Utf16.out(__K2L_Utf16.codePoints(s):map(____lambda_2):sum()))
 end
 
 local function surrogates()
@@ -80,12 +82,14 @@ local function locales()
     print(__K2L_Utf16.out(__K2L_StringFormat("%s-%s", 1, "x")))
 end
 
+local ____lambda_3 = function(it) return it.range end
+local ____lambda_4 = function(it) return it.range.first end
 local function regexIndices()
     local s = "a😀b😀c"
     local emoji = __K2L_Regex.new("😀")
     local ____receiver = emoji:find(s)
     print(__K2L_Utf16.out(__K2L_Str(____receiver and ____receiver.range)))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(emoji:findAllFactory(s)):map(function(it) return it.range end):toList())))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(emoji:findAllFactory(s)):map(____lambda_3):toList())))
     local ____receiver_1 = emoji:find(s, 2)
     print(__K2L_Utf16.out(__K2L_Str(____receiver_1 and ____receiver_1.range)))
     local ____receiver_2 = __K2L_Regex.new("b."):find(s)
@@ -95,7 +99,7 @@ local function regexIndices()
     local ____receiver_5 = ____receiver_4 and ____receiver_4:get(2)
     print(__K2L_Utf16.out(__K2L_Str(____receiver_5 and ____receiver_5.range)))
     print(__K2L_Utf16.out(__K2L_Sequence.new(__K2L_Regex.new("."):findAllFactory(s)):count()))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[a-c]"):findAllFactory(s)):map(function(it) return it.range.first end):toList())))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[a-c]"):findAllFactory(s)):map(____lambda_4):toList())))
     print(__K2L_Utf16.out(emoji:replace(s, "<>")))
     print(__K2L_Utf16.out(__K2L_Str(emoji:split(s))))
     print(__K2L_Utf16.out(__K2L_Regex.new("[^a-z]"):replace(s, "?")))

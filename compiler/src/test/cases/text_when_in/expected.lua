@@ -29,13 +29,18 @@ function Bag:____init(items)
     self.items = items
 end
 
+function Bag.new(items)
+    return setmetatable({items = items}, Bag)
+end
+
 function Bag:contains(s)
     return self.items:contains(s:lower())
 end
 
 local function main()
     local ____pairs = __K2L_ReadOnlyMapOf(__K2L_Pair.new(")", "("), __K2L_Pair.new("]", "["))
-    for c in ("a(b]z!"):gmatch(".") do
+    for ____i = 1, #"a(b]z!" do
+        local c = ("a(b]z!"):sub(____i, ____i)
         if ____pairs:getValues():contains(c) then
             print("open " .. c)
         elseif ____pairs:getKeys():contains(c) then
@@ -74,8 +79,8 @@ local function main()
     print(____temp_1)
     local bag = Bag.new(__K2L_ReadOnlySetOf("apple", "pear"))
     local ____list = __K2L_ReadOnlyListOf("Apple", "kiwi")
-    for ____i = 1, ____list.size do
-        local f = ____list[____i]
+    for ____i_1 = 1, ____list.size do
+        local f = ____list[____i_1]
         local ____temp_2
         if bag:contains(f) then
             ____temp_2 = f .. " in bag"

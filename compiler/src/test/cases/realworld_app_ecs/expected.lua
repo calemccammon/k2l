@@ -4,8 +4,6 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
@@ -23,12 +21,16 @@ function Entity:____init(id)
     self.id = id
 end
 
+function Entity.new(id)
+    return setmetatable({id = id}, Entity)
+end
+
 function Entity:toString()
     return "e" .. self.id
 end
 
 function Entity:hashCode()
-    return __K2L_Hash(self.id)
+    return self.id
 end
 
 function Entity:equals(other)
@@ -114,7 +116,7 @@ end
 
 function World:add(e, c)
     local ____cast = self.stores:getOrPut(__K2L_KClassOfValue(c), function() return Store.new(__K2L_KClassOfValue(c)) end)
-    if not __K2L_InstanceOf(____cast, Store) then
+    if getmetatable(____cast) ~= Store then
         __K2L_CastFail(____cast, "sim.ecs.Store", "sim.ecs.Store")
     end
     local store = ____cast
@@ -123,7 +125,7 @@ end
 
 function World:store(____type)
     local ____cast_1 = self.stores:getOrPut(____type, function() return Store.new(____type) end)
-    if not __K2L_InstanceOf(____cast_1, Store) then
+    if getmetatable(____cast_1) ~= Store then
         __K2L_CastFail(____cast_1, "sim.ecs.Store", "sim.ecs.Store")
     end
     return ____cast_1
@@ -199,13 +201,14 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IRem = ____lualib.__K2L_IRem
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_Triple = ____lualib.__K2L_Triple
 
 local ____World = require("ecs.World")
@@ -218,12 +221,16 @@ function Position:____init(x, y)
     self.y = y
 end
 
+function Position.new(x, y)
+    return setmetatable({x = x, y = y}, Position)
+end
+
 function Position:toString()
     return "Position(x=" .. self.x .. ", y=" .. self.y .. ")"
 end
 
 function Position:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.x) + __K2L_Hash(self.y))
+    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Position:equals(other)
@@ -238,12 +245,16 @@ function Velocity:____init(dx, dy)
     self.dy = dy
 end
 
+function Velocity.new(dx, dy)
+    return setmetatable({dx = dx, dy = dy}, Velocity)
+end
+
 function Velocity:toString()
     return "Velocity(dx=" .. self.dx .. ", dy=" .. self.dy .. ")"
 end
 
 function Velocity:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.dx) + __K2L_Hash(self.dy))
+    return (31 * self.dx + self.dy + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Velocity:equals(other)
@@ -258,6 +269,10 @@ function Health:____init(hp, max)
     self.max = max
 end
 
+function Health.new(hp, max)
+    return setmetatable({hp = hp, max = max}, Health)
+end
+
 function Health:getDead()
     return self.hp <= 0
 end
@@ -267,7 +282,7 @@ function Health:toString()
 end
 
 function Health:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.hp) + __K2L_Hash(self.max))
+    return (31 * self.hp + self.max + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Health:equals(other)
@@ -279,6 +294,10 @@ __K2L_ClassInfo(Name, "sim.game.Name", "sim.game.Name", "class")
 
 function Name:____init(value)
     self.value = value
+end
+
+function Name.new(value)
+    return setmetatable({value = value}, Name)
 end
 
 function Name:toString()
@@ -301,12 +320,16 @@ function Damage:____init(amount, range)
     self.range = range
 end
 
+function Damage.new(amount, range)
+    return setmetatable({amount = amount, range = range}, Damage)
+end
+
 function Damage:toString()
     return "Damage(amount=" .. self.amount .. ", range=" .. self.range .. ")"
 end
 
 function Damage:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.amount) + __K2L_Hash(self.range))
+    return (31 * self.amount + self.range + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Damage:equals(other)
@@ -334,21 +357,41 @@ function Movement:update(world, dt)
     do
         local a = world:store(__K2L_KClassOf(Position))
         local b = world:store(__K2L_KClassOf(Velocity))
-        ____result = a:ids():filter(function(it)
-            return b:ids():contains(it) and world:isAlive(it)
-        end):map(function(id)
-            local ____value = ____World.Entity.new(id)
-            return __K2L_Triple.new(____value, __K2L_NotNull(a:get(____value)), __K2L_NotNull(b:get(____value)))
-        end)
+        local ____list = a:ids()
+        local ____out = {}
+        local ____count = 0
+        local ____items, ____n = ____list:____array()
+        for ____i = 1, ____n do
+            local it = ____items[____i]
+            if b:ids():contains(it) and world:isAlive(it) then
+                ____count = ____count + 1
+                ____out[____count] = it
+            end
+        end
+        local ____list_1 = __K2L_ListWrap(____out, ____count)
+        local ____out_1 = {}
+        local ____count_1 = 0
+        local ____items_1, ____n_1 = ____list_1:____array()
+        for ____i_1 = 1, ____n_1 do
+            local id = ____items_1[____i_1]
+            local ____result_1
+            do
+                local ____value = ____World.Entity.new(id)
+                ____result_1 = __K2L_Triple.new(____value, __K2L_NotNull(a:get(____value)), __K2L_NotNull(b:get(____value)))
+            end
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = ____result_1
+        end
+        ____result = __K2L_ListWrap(____out_1, ____count_1)
     end
-    local ____list = ____result
-    local ____mod = ____list.____modCount
-    for ____i = 1, ____list.size do
-        local ____item = ____list[____i]
+    local ____list_2 = ____result
+    local ____mod = ____list_2.____modCount
+    for ____i_2 = 1, ____list_2.size do
+        local ____item = ____list_2[____i_2]
         local pos, vel = ____item.second, ____item.third
         pos.x = __K2L_Num.mod(pos.x + vel.dx * dt, self.width)
         pos.y = __K2L_Num.coerceIn(pos.y + vel.dy * dt, 0, self.height - 1)
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+        if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
             break
         end
     end
@@ -362,37 +405,77 @@ function Combat:____init()
 end
 
 function Combat:update(world, dt)
-    local ____result_1
-    do
-        local a = world:store(__K2L_KClassOf(Position))
-        local b = world:store(__K2L_KClassOf(Damage))
-        ____result_1 = a:ids():filter(function(it)
-            return b:ids():contains(it) and world:isAlive(it)
-        end):map(function(id)
-            local ____value_1 = ____World.Entity.new(id)
-            return __K2L_Triple.new(____value_1, __K2L_NotNull(a:get(____value_1)), __K2L_NotNull(b:get(____value_1)))
-        end)
-    end
-    local attackers = ____result_1
     local ____result_2
     do
         local a = world:store(__K2L_KClassOf(Position))
-        local b = world:store(__K2L_KClassOf(Health))
-        ____result_2 = a:ids():filter(function(it)
-            return b:ids():contains(it) and world:isAlive(it)
-        end):map(function(id)
-            local ____value_2 = ____World.Entity.new(id)
-            return __K2L_Triple.new(____value_2, __K2L_NotNull(a:get(____value_2)), __K2L_NotNull(b:get(____value_2)))
-        end)
+        local b = world:store(__K2L_KClassOf(Damage))
+        local ____list_3 = a:ids()
+        local ____out_2 = {}
+        local ____count_2 = 0
+        local ____items_2, ____n_2 = ____list_3:____array()
+        for ____i_3 = 1, ____n_2 do
+            local it = ____items_2[____i_3]
+            if b:ids():contains(it) and world:isAlive(it) then
+                ____count_2 = ____count_2 + 1
+                ____out_2[____count_2] = it
+            end
+        end
+        local ____list_4 = __K2L_ListWrap(____out_2, ____count_2)
+        local ____out_3 = {}
+        local ____count_3 = 0
+        local ____items_3, ____n_3 = ____list_4:____array()
+        for ____i_4 = 1, ____n_3 do
+            local id = ____items_3[____i_4]
+            local ____result_3
+            do
+                local ____value_1 = ____World.Entity.new(id)
+                ____result_3 = __K2L_Triple.new(____value_1, __K2L_NotNull(a:get(____value_1)), __K2L_NotNull(b:get(____value_1)))
+            end
+            ____count_3 = ____count_3 + 1
+            ____out_3[____count_3] = ____result_3
+        end
+        ____result_2 = __K2L_ListWrap(____out_3, ____count_3)
     end
-    local targets = ____result_2
+    local attackers = ____result_2
+    local ____result_4
+    do
+        local a = world:store(__K2L_KClassOf(Position))
+        local b = world:store(__K2L_KClassOf(Health))
+        local ____list_5 = a:ids()
+        local ____out_4 = {}
+        local ____count_4 = 0
+        local ____items_4, ____n_4 = ____list_5:____array()
+        for ____i_5 = 1, ____n_4 do
+            local it = ____items_4[____i_5]
+            if b:ids():contains(it) and world:isAlive(it) then
+                ____count_4 = ____count_4 + 1
+                ____out_4[____count_4] = it
+            end
+        end
+        local ____list_6 = __K2L_ListWrap(____out_4, ____count_4)
+        local ____out_5 = {}
+        local ____count_5 = 0
+        local ____items_5, ____n_5 = ____list_6:____array()
+        for ____i_6 = 1, ____n_5 do
+            local id = ____items_5[____i_6]
+            local ____result_5
+            do
+                local ____value_2 = ____World.Entity.new(id)
+                ____result_5 = __K2L_Triple.new(____value_2, __K2L_NotNull(a:get(____value_2)), __K2L_NotNull(b:get(____value_2)))
+            end
+            ____count_5 = ____count_5 + 1
+            ____out_5[____count_5] = ____result_5
+        end
+        ____result_4 = __K2L_ListWrap(____out_5, ____count_5)
+    end
+    local targets = ____result_4
     local ____mod_2 = attackers.____modCount
-    for ____i_2 = 1, attackers.size do
-        local ____item_1 = attackers[____i_2]
+    for ____i_8 = 1, attackers.size do
+        local ____item_1 = attackers[____i_8]
         local a, apos, dmg = ____item_1.first, ____item_1.second, ____item_1.third
         local ____mod_1 = targets.____modCount
-        for ____i_1 = 1, targets.size do
-            local ____item_2 = targets[____i_1]
+        for ____i_7 = 1, targets.size do
+            local ____item_2 = targets[____i_7]
             local t, tpos, health = ____item_2.first, ____item_2.second, ____item_2.third
             do
                 if a:equals(t) or health:getDead() then
@@ -405,11 +488,11 @@ function Combat:update(world, dt)
                 end
             end
             ::____continue::
-            if targets.____modCount ~= ____mod_1 and targets:____comodified(____i_1) then
+            if targets.____modCount ~= ____mod_1 and targets:____comodified(____i_7) then
                 break
             end
         end
-        if attackers.____modCount ~= ____mod_2 and attackers:____comodified(____i_2) then
+        if attackers.____modCount ~= ____mod_2 and attackers:____comodified(____i_8) then
             break
         end
     end
@@ -423,34 +506,65 @@ function Reaper:____init()
 end
 
 function Reaper:update(world, dt)
-    local ____result_3
+    local ____result_6
     do
         local s = world:store(__K2L_KClassOf(Health))
-        ____result_3 = s:ids():filter(function(it) return world:isAlive(it) end):map(function(it)
-            return __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
-        end)
-    end
-    local ____list_1 = ____result_3:filter(function(____destructured)
-        local h = ____destructured.second
-        return h:getDead()
-    end)
-    local ____mod_3 = ____list_1.____modCount
-    for ____i_3 = 1, ____list_1.size do
-        local ____it = ____list_1[____i_3]
-        do
-            local e = ____it.first
-            local ____result_4
-            do
-                local ____result_5
-                ____result_5 = world:store(__K2L_KClassOf(Player)):get(e)
-                ____result_4 = ____result_5 ~= nil
+        local ____list_7 = s:ids()
+        local ____out_6 = {}
+        local ____count_6 = 0
+        local ____items_6, ____n_6 = ____list_7:____array()
+        for ____i_9 = 1, ____n_6 do
+            local it = ____items_6[____i_9]
+            if world:isAlive(it) then
+                ____count_6 = ____count_6 + 1
+                ____out_6[____count_6] = it
             end
-            if ____result_4 then
+        end
+        local ____list_8 = __K2L_ListWrap(____out_6, ____count_6)
+        local ____out_7 = {}
+        local ____count_7 = 0
+        local ____items_7, ____n_7 = ____list_8:____array()
+        for ____i_10 = 1, ____n_7 do
+            local it = ____items_7[____i_10]
+            ____count_7 = ____count_7 + 1
+            ____out_7[____count_7] = __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
+        end
+        ____result_6 = __K2L_ListWrap(____out_7, ____count_7)
+    end
+    local ____list_9 = ____result_6
+    local ____out_8 = {}
+    local ____count_8 = 0
+    local ____items_8, ____n_8 = ____list_9:____array()
+    for ____i_11 = 1, ____n_8 do
+        local ____it = ____items_8[____i_11]
+        local ____result_7
+        do
+            local h = ____it.second
+            ____result_7 = h:getDead()
+        end
+        if ____result_7 then
+            ____count_8 = ____count_8 + 1
+            ____out_8[____count_8] = ____it
+        end
+    end
+    local ____list_10 = __K2L_ListWrap(____out_8, ____count_8)
+    local ____mod_3 = ____list_10.____modCount
+    for ____i_12 = 1, ____list_10.size do
+        local ____it_1 = ____list_10[____i_12]
+        do
+            local e = ____it_1.first
+            local ____result_8
+            do
+                local ____result_9
+                ____result_9 = world:store(__K2L_KClassOf(Player)):get(e)
+                ____result_8 = ____result_9 ~= nil
+            end
+            if ____result_8 then
                 world.log:add("t" .. world.tick .. ": the player died")
             end
             world:destroy(e)
         end
-        if ____list_1.____modCount ~= ____mod_3 and ____list_1:____comodified(____i_3) then
+        if ____list_10.____modCount ~= ____mod_3 and ____list_10:____comodified(____i_12) then
             break
         end
     end
@@ -468,24 +582,42 @@ function Regeneration:update(world, dt)
     if __K2L_IRem(world.tick, self.every) ~= 0 then
         return
     end
-    local ____result_6
+    local ____result_10
     do
         local s = world:store(__K2L_KClassOf(Health))
-        ____result_6 = s:ids():filter(function(it) return world:isAlive(it) end):map(function(it)
-            return __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
-        end)
+        local ____list_11 = s:ids()
+        local ____out_9 = {}
+        local ____count_9 = 0
+        local ____items_9, ____n_9 = ____list_11:____array()
+        for ____i_13 = 1, ____n_9 do
+            local it = ____items_9[____i_13]
+            if world:isAlive(it) then
+                ____count_9 = ____count_9 + 1
+                ____out_9[____count_9] = it
+            end
+        end
+        local ____list_12 = __K2L_ListWrap(____out_9, ____count_9)
+        local ____out_10 = {}
+        local ____count_10 = 0
+        local ____items_10, ____n_10 = ____list_12:____array()
+        for ____i_14 = 1, ____n_10 do
+            local it = ____items_10[____i_14]
+            ____count_10 = ____count_10 + 1
+            ____out_10[____count_10] = __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
+        end
+        ____result_10 = __K2L_ListWrap(____out_10, ____count_10)
     end
-    local ____list_2 = ____result_6
-    local ____mod_4 = ____list_2.____modCount
-    for ____i_4 = 1, ____list_2.size do
-        local ____it_1 = ____list_2[____i_4]
+    local ____list_13 = ____result_10
+    local ____mod_4 = ____list_13.____modCount
+    for ____i_15 = 1, ____list_13.size do
+        local ____it_2 = ____list_13[____i_15]
         do
-            local h = ____it_1.second
+            local h = ____it_2.second
             if not h:getDead() and h.hp < h.max then
                 h.hp = h.hp + 1
             end
         end
-        if ____list_2.____modCount ~= ____mod_4 and ____list_2:____comodified(____i_4) then
+        if ____list_13.____modCount ~= ____mod_4 and ____list_13:____comodified(____i_15) then
             break
         end
     end
@@ -496,45 +628,64 @@ function distance(a, b)
 end
 
 function nameOf(self, e)
-    local ____result_7
-    ____result_7 = self:store(__K2L_KClassOf(Name)):get(e)
-    local ____receiver = ____result_7
+    local ____result_11
+    ____result_11 = self:store(__K2L_KClassOf(Name)):get(e)
+    local ____receiver = ____result_11
     return ____receiver and ____receiver.value or e:toString()
 end
 
+local ____lambda_1 = function(it) return "." end
 local function render(____this, width, height)
     local grid = __K2L_ListOfSize(height, function(it)
-        return __K2L_ListOfSize(width, function(it) return "." end, "[C")
+        return __K2L_ListOfSize(width, ____lambda_1, "[C")
     end)
-    local ____result_8
+    local ____result_12
     do
         local s = ____this:store(__K2L_KClassOf(Position))
-        ____result_8 = s:ids():filter(function(it) return ____this:isAlive(it) end):map(function(it)
-            return __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
-        end)
+        local ____list_14 = s:ids()
+        local ____out_11 = {}
+        local ____count_11 = 0
+        local ____items_11, ____n_11 = ____list_14:____array()
+        for ____i_16 = 1, ____n_11 do
+            local it = ____items_11[____i_16]
+            if ____this:isAlive(it) then
+                ____count_11 = ____count_11 + 1
+                ____out_11[____count_11] = it
+            end
+        end
+        local ____list_15 = __K2L_ListWrap(____out_11, ____count_11)
+        local ____out_12 = {}
+        local ____count_12 = 0
+        local ____items_12, ____n_12 = ____list_15:____array()
+        for ____i_17 = 1, ____n_12 do
+            local it = ____items_12[____i_17]
+            ____count_12 = ____count_12 + 1
+            ____out_12[____count_12] = __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
+        end
+        ____result_12 = __K2L_ListWrap(____out_12, ____count_12)
     end
-    local ____list_3 = ____result_8
-    local ____mod_5 = ____list_3.____modCount
-    for ____i_5 = 1, ____list_3.size do
-        local ____item_3 = ____list_3[____i_5]
+    local ____list_16 = ____result_12
+    local ____mod_5 = ____list_16.____modCount
+    for ____i_18 = 1, ____list_16.size do
+        local ____item_3 = ____list_16[____i_18]
         local e, pos = ____item_3.first, ____item_3.second
         local c
-        local ____result_11
+        local ____result_15
         do
-            local ____result_12
-            ____result_12 = ____this:store(__K2L_KClassOf(Player)):get(e)
-            ____result_11 = ____result_12 ~= nil
+            local ____result_16
+            ____result_16 = ____this:store(__K2L_KClassOf(Player)):get(e)
+            ____result_15 = ____result_16 ~= nil
         end
-        if ____result_11 then
+        if ____result_15 then
             c = "@"
         else
-            local ____result_9
+            local ____result_13
             do
-                local ____result_10
-                ____result_10 = ____this:store(__K2L_KClassOf(Damage)):get(e)
-                ____result_9 = ____result_10 ~= nil
+                local ____result_14
+                ____result_14 = ____this:store(__K2L_KClassOf(Damage)):get(e)
+                ____result_13 = ____result_14 ~= nil
             end
-            if ____result_9 then
+            if ____result_13 then
                 c = "M"
             else
                 c = __K2L_Text.first(nameOf(____this, e)):lower()
@@ -542,12 +693,23 @@ local function render(____this, width, height)
         end
         local ____object = grid:get(pos.y)
         local ____key = pos.x
-        ____object:set(____key, c)
-        if ____list_3.____modCount ~= ____mod_5 and ____list_3:____comodified(____i_5) then
+        if ____key < 0 or ____key >= ____object.size then
+            __K2L_IndexError(____key, ____object.size, "array")
+        end
+        ____object[____key + 1] = c
+        if ____list_16.____modCount ~= ____mod_5 and ____list_16:____comodified(____i_18) then
             break
         end
     end
-    return grid:map(function(it) return __K2L_Text.string(it) end)
+    local ____out_13 = {}
+    local ____count_13 = 0
+    local ____items_13, ____n_13 = grid:____array()
+    for ____i_19 = 1, ____n_13 do
+        local it = ____items_13[____i_19]
+        ____count_13 = ____count_13 + 1
+        ____out_13[____count_13] = __K2L_Text.string(it)
+    end
+    return __K2L_ListWrap(____out_13, ____count_13)
 end
 
 return {Position = Position, Velocity = Velocity, Health = Health, Name = Name, Damage = Damage, Player = Player, Movement = Movement, Combat = Combat, Reaper = Reaper, Regeneration = Regeneration, distance = distance, nameOf = nameOf, render = render}
@@ -557,6 +719,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -573,21 +736,40 @@ function Counter:____init()
     self.seen = __K2L_MapOf()
 end
 
+local ____lambda_1 = function(____p1, ____p2) return ____p1 + ____p2 end
 function Counter:update(world, dt)
     local ____result
     do
         local s = world:store(__K2L_KClassOf(____Systems.Health))
-        ____result = s:ids():filter(function(it) return world:isAlive(it) end):map(function(it)
-            return __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
-        end)
+        local ____list = s:ids()
+        local ____out = {}
+        local ____count = 0
+        local ____items, ____n = ____list:____array()
+        for ____i = 1, ____n do
+            local it = ____items[____i]
+            if world:isAlive(it) then
+                ____count = ____count + 1
+                ____out[____count] = it
+            end
+        end
+        local ____list_1 = __K2L_ListWrap(____out, ____count)
+        local ____out_1 = {}
+        local ____count_1 = 0
+        local ____items_1, ____n_1 = ____list_1:____array()
+        for ____i_1 = 1, ____n_1 do
+            local it = ____items_1[____i_1]
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
+        end
+        ____result = __K2L_ListWrap(____out_1, ____count_1)
     end
-    local ____list = ____result
-    local ____mod = ____list.____modCount
-    for ____i = 1, ____list.size do
-        local ____item = ____list[____i]
+    local ____list_2 = ____result
+    local ____mod = ____list_2.____modCount
+    for ____i_2 = 1, ____list_2.size do
+        local ____item = ____list_2[____i_2]
         local e = ____item.first
-        self.seen:merge(____Systems.nameOf(world, e), 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", function(____p1, ____p2) return ____p1 + ____p2 end))
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+        self.seen:merge(____Systems.nameOf(world, e), 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_1))
+        if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
             break
         end
     end
@@ -609,9 +791,27 @@ local function main()
         local ____result_2
         do
             local s = world:store(__K2L_KClassOf(____Systems.Position))
-            ____result_2 = s:ids():filter(function(it) return world:isAlive(it) end):map(function(it)
-                return __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
-            end)
+            local ____list_3 = s:ids()
+            local ____out_2 = {}
+            local ____count_2 = 0
+            local ____items_2, ____n_2 = ____list_3:____array()
+            for ____i_3 = 1, ____n_2 do
+                local it = ____items_2[____i_3]
+                if world:isAlive(it) then
+                    ____count_2 = ____count_2 + 1
+                    ____out_2[____count_2] = it
+                end
+            end
+            local ____list_4 = __K2L_ListWrap(____out_2, ____count_2)
+            local ____out_3 = {}
+            local ____count_3 = 0
+            local ____items_3, ____n_3 = ____list_4:____array()
+            for ____i_4 = 1, ____n_3 do
+                local it = ____items_3[____i_4]
+                ____count_3 = ____count_3 + 1
+                ____out_3[____count_3] = __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
+            end
+            ____result_2 = __K2L_ListWrap(____out_3, ____count_3)
         end
         local items = ____result_2
         ____result_1 = __K2L_Str(__K2L_KClassOf(____Systems.Position).simpleName) .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured)
@@ -625,9 +825,27 @@ local function main()
         local ____result_4
         do
             local s = world:store(__K2L_KClassOf(____Systems.Health))
-            ____result_4 = s:ids():filter(function(it) return world:isAlive(it) end):map(function(it)
-                return __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
-            end)
+            local ____list_5 = s:ids()
+            local ____out_4 = {}
+            local ____count_4 = 0
+            local ____items_4, ____n_4 = ____list_5:____array()
+            for ____i_5 = 1, ____n_4 do
+                local it = ____items_4[____i_5]
+                if world:isAlive(it) then
+                    ____count_4 = ____count_4 + 1
+                    ____out_4[____count_4] = it
+                end
+            end
+            local ____list_6 = __K2L_ListWrap(____out_4, ____count_4)
+            local ____out_5 = {}
+            local ____count_5 = 0
+            local ____items_5, ____n_5 = ____list_6:____array()
+            for ____i_6 = 1, ____n_5 do
+                local it = ____items_5[____i_6]
+                ____count_5 = ____count_5 + 1
+                ____out_5[____count_5] = __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
+            end
+            ____result_4 = __K2L_ListWrap(____out_5, ____count_5)
         end
         local items = ____result_4
         ____result_3 = __K2L_Str(__K2L_KClassOf(____Systems.Health).simpleName) .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured_1)
@@ -656,15 +874,15 @@ local function main()
     for t = 1, 8 do
         world:step()
         print("-- tick " .. world.tick .. ": population " .. world:getPopulation())
-        local ____list_1 = ____Systems.render(world, width, height)
-        for ____i_1 = 1, ____list_1.size do
-            local it = ____list_1[____i_1]
+        local ____list_7 = ____Systems.render(world, width, height)
+        for ____i_7 = 1, ____list_7.size do
+            local it = ____list_7[____i_7]
             print("   " .. it)
         end
     end
-    local ____list_2 = world.log
-    for ____i_2 = 1, ____list_2.size do
-        local it = ____list_2[____i_2]
+    local ____list_8 = world.log
+    for ____i_8 = 1, ____list_8.size do
+        local it = ____list_8[____i_8]
         print(it)
     end
     local ____result_10
@@ -672,9 +890,27 @@ local function main()
         local ____result_11
         do
             local s = world:store(__K2L_KClassOf(____Systems.Health))
-            ____result_11 = s:ids():filter(function(it) return world:isAlive(it) end):map(function(it)
-                return __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
-            end)
+            local ____list_9 = s:ids()
+            local ____out_6 = {}
+            local ____count_6 = 0
+            local ____items_6, ____n_6 = ____list_9:____array()
+            for ____i_9 = 1, ____n_6 do
+                local it = ____items_6[____i_9]
+                if world:isAlive(it) then
+                    ____count_6 = ____count_6 + 1
+                    ____out_6[____count_6] = it
+                end
+            end
+            local ____list_10 = __K2L_ListWrap(____out_6, ____count_6)
+            local ____out_7 = {}
+            local ____count_7 = 0
+            local ____items_7, ____n_7 = ____list_10:____array()
+            for ____i_10 = 1, ____n_7 do
+                local it = ____items_7[____i_10]
+                ____count_7 = ____count_7 + 1
+                ____out_7[____count_7] = __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
+            end
+            ____result_11 = __K2L_ListWrap(____out_7, ____count_7)
         end
         local items = ____result_11
         ____result_10 = __K2L_Str(__K2L_KClassOf(____Systems.Health).simpleName) .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured_2)
@@ -698,9 +934,27 @@ local function main()
         local ____result_14
         do
             local s = world:store(__K2L_KClassOf(____Systems.Position))
-            ____result_14 = s:ids():filter(function(it) return world:isAlive(it) end):map(function(it)
-                return __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
-            end)
+            local ____list_11 = s:ids()
+            local ____out_8 = {}
+            local ____count_8 = 0
+            local ____items_8, ____n_8 = ____list_11:____array()
+            for ____i_11 = 1, ____n_8 do
+                local it = ____items_8[____i_11]
+                if world:isAlive(it) then
+                    ____count_8 = ____count_8 + 1
+                    ____out_8[____count_8] = it
+                end
+            end
+            local ____list_12 = __K2L_ListWrap(____out_8, ____count_8)
+            local ____out_9 = {}
+            local ____count_9 = 0
+            local ____items_9, ____n_9 = ____list_12:____array()
+            for ____i_12 = 1, ____n_9 do
+                local it = ____items_9[____i_12]
+                ____count_9 = ____count_9 + 1
+                ____out_9[____count_9] = __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
+            end
+            ____result_14 = __K2L_ListWrap(____out_9, ____count_9)
         end
         local items = ____result_14
         ____result_13 = __K2L_Str(__K2L_KClassOf(____Systems.Position).simpleName) .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured_3)
@@ -713,17 +967,48 @@ local function main()
     do
         local a = world:store(__K2L_KClassOf(____Systems.Name))
         local b = world:store(__K2L_KClassOf(____Systems.Velocity))
-        ____result_15 = a:ids():filter(function(it)
-            return b:ids():contains(it) and world:isAlive(it)
-        end):map(function(id)
-            local ____value = ____World.Entity.new(id)
-            return __K2L_Triple.new(____value, __K2L_NotNull(a:get(____value)), __K2L_NotNull(b:get(____value)))
-        end)
+        local ____list_13 = a:ids()
+        local ____out_10 = {}
+        local ____count_10 = 0
+        local ____items_10, ____n_10 = ____list_13:____array()
+        for ____i_13 = 1, ____n_10 do
+            local it = ____items_10[____i_13]
+            if b:ids():contains(it) and world:isAlive(it) then
+                ____count_10 = ____count_10 + 1
+                ____out_10[____count_10] = it
+            end
+        end
+        local ____list_14 = __K2L_ListWrap(____out_10, ____count_10)
+        local ____out_11 = {}
+        local ____count_11 = 0
+        local ____items_11, ____n_11 = ____list_14:____array()
+        for ____i_14 = 1, ____n_11 do
+            local id = ____items_11[____i_14]
+            local ____result_16
+            do
+                local ____value = ____World.Entity.new(id)
+                ____result_16 = __K2L_Triple.new(____value, __K2L_NotNull(a:get(____value)), __K2L_NotNull(b:get(____value)))
+            end
+            ____count_11 = ____count_11 + 1
+            ____out_11[____count_11] = ____result_16
+        end
+        ____result_15 = __K2L_ListWrap(____out_11, ____count_11)
     end
-    print(__K2L_Str(____result_15:map(function(____destructured_4)
-        local n, v = ____destructured_4.second, ____destructured_4.third
-        return n.value .. ":" .. v.dx .. "," .. v.dy
-    end)))
+    local ____list_15 = ____result_15
+    local ____out_12 = {}
+    local ____count_12 = 0
+    local ____items_12, ____n_12 = ____list_15:____array()
+    for ____i_15 = 1, ____n_12 do
+        local ____it_2 = ____items_12[____i_15]
+        local ____result_17
+        do
+            local n, v = ____it_2.second, ____it_2.third
+            ____result_17 = n.value .. ":" .. v.dx .. "," .. v.dy
+        end
+        ____count_12 = ____count_12 + 1
+        ____out_12[____count_12] = ____result_17
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_12, ____count_12)))
     print(__K2L_Str(world))
 end
 

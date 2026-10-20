@@ -1,8 +1,8 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringEndsWith = ____lualib.__K2L_StringEndsWith
 local __K2L_StringEqualsIgnoreCase = ____lualib.__K2L_StringEqualsIgnoreCase
@@ -27,7 +27,7 @@ local function main()
     local s = "Hello, World"
     print(__K2L_Text.substring(s, 7))
     print(__K2L_Text.substring(s, 0, 5))
-    print(__K2L_StringCharAt(s, 4))
+    print(4 >= 0 and 4 < #s and s:sub(4 + 1, 4 + 1) or __K2L_IndexError(4, #s, "string"))
     print(__K2L_StringStartsWith(s, "Hell"))
     print(__K2L_StringEndsWith(s, "x"))
     print(__K2L_StringContains(s, "lo, W"))
@@ -62,7 +62,8 @@ local function main()
     end
     print()
     local vowels = 0
-    for ch in ("programming"):gmatch(".") do
+    for ____i = 1, #"programming" do
+        local ch = ("programming"):sub(____i, ____i)
         if __K2L_StringContains("aeiou", ch) then
             vowels = vowels + 1
         end

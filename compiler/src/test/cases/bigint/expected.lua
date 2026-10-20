@@ -6,6 +6,7 @@ local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -202,6 +203,7 @@ local function numberTheory()
     print(a:signum())
 end
 
+local ____lambda_1 = function(it) return it end
 local function comparisons()
     print("-- comparisons")
     local a = __K2L_BigInteger.parse("100000000000000000000")
@@ -232,10 +234,14 @@ local function comparisons()
     end
     print(__K2L_Str(counts))
     print(__K2L_Str(__K2L_ReadOnlyListOf(a, b):maxOrNull()))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(a, b):minByOrNull(function(it) return it end)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(a, b):minByOrNull(____lambda_1)))
     print(__K2L_Str(__K2L_Num.maxOf(a, b)))
 end
 
+local ____lambda_2 = function(acc, v) return acc:multiply(v) end
+local ____lambda_3 = function(it) return __K2L_BigInteger.parse(it) end
+local ____lambda_4 = function(it) return __K2L_BigInteger.valueOf(it) end
+local ____lambda_5 = function(acc, v) return acc:multiply(v) end
 local function operators()
     print("-- operators")
     local x = __K2L_BigInteger.parse("5")
@@ -254,11 +260,54 @@ local function operators()
     print(__K2L_Str(x:bnot()))
     local y = __K2L_BigInteger.parse("-12")
     print(__K2L_Str(y) .. " " .. __K2L_Str(x) .. " " .. __K2L_Str(y:multiply(x)) .. " " .. __K2L_Str(y:add(x)) .. " " .. __K2L_Str(y:subtract(x)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2, 3, 4, 5):map(function(it) return __K2L_BigInteger.valueOf(it) end):fold(__K2L_BigInteger.ONE, function(acc, v) return acc:multiply(v) end)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("1", "2", "3"):sumOf(function(it) return __K2L_BigInteger.parse(it) end, __K2L_BigInteger.ZERO)))
-    print(__K2L_Str(__K2L_IntRange.new(1, 5):map(function(it) return __K2L_BigInteger.valueOf(it) end):reduce(function(acc, v) return acc:multiply(v) end)))
+    local ____list_1 = __K2L_ReadOnlyListOf(1, 2, 3, 4, 5)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list_1:____array()
+    for ____i_7 = 1, ____n do
+        local it = ____items[____i_7]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_BigInteger.valueOf(it)
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count):fold(__K2L_BigInteger.ONE, ____lambda_2)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf("1", "2", "3"):sumOf(____lambda_3, __K2L_BigInteger.ZERO)))
+    print(__K2L_Str(__K2L_IntRange.new(1, 5):map(____lambda_4):reduce(____lambda_5)))
 end
 
+local ____lambda_6 = function()
+    return __K2L_BigInteger.TEN:divide(__K2L_BigInteger.ZERO)
+end
+local ____lambda_7 = function()
+    return __K2L_BigInteger.TEN:remainder(__K2L_BigInteger.ZERO)
+end
+local ____lambda_8 = function()
+    return __K2L_BigInteger.TEN:mod(__K2L_BigInteger.ZERO)
+end
+local ____lambda_9 = function()
+    return __K2L_BigInteger.TEN:mod(__K2L_BigInteger.valueOf(-3))
+end
+local ____lambda_10 = function() return __K2L_BigInteger.valueOf(-4):sqrt() end
+local ____lambda_11 = function() return __K2L_BigInteger.TEN:pow(-1) end
+local ____lambda_12 = function()
+    return __K2L_BigInteger.valueOf(4):modInverse(__K2L_BigInteger.valueOf(8))
+end
+local ____lambda_13 = function() return __K2L_BigInteger.parse("") end
+local ____lambda_14 = function() return __K2L_BigInteger.parse("-") end
+local ____lambda_15 = function() return __K2L_BigInteger.parse("abc") end
+local ____lambda_16 = function() return __K2L_BigInteger.parse("12-3") end
+local ____lambda_17 = function() return __K2L_BigInteger.parse("--3") end
+local ____lambda_18 = function()
+    return __K2L_BigInteger.parse("12345678901234567890x")
+end
+local ____lambda_19 = function() return __K2L_BigInteger.parse("12", 99) end
+local ____lambda_20 = function() return __K2L_BigInteger.parse("xyz", 16) end
+local ____lambda_21 = function() return __K2L_BigInteger.TEN:testBit(-1) end
+local ____lambda_22 = function()
+    return __K2L_BigInteger.parse("12345678901"):intValueExact()
+end
+local ____lambda_23 = function()
+    return __K2L_BigInteger.parse("123456789012345678901"):longValueExact()
+end
 local function failures()
     print("-- failures")
     local function attempt(label, block)
@@ -275,40 +324,24 @@ local function failures()
             end
         end
     end
-    attempt("div0", function()
-        return __K2L_BigInteger.TEN:divide(__K2L_BigInteger.ZERO)
-    end)
-    attempt("rem0", function()
-        return __K2L_BigInteger.TEN:remainder(__K2L_BigInteger.ZERO)
-    end)
-    attempt("mod0", function()
-        return __K2L_BigInteger.TEN:mod(__K2L_BigInteger.ZERO)
-    end)
-    attempt("modNeg", function()
-        return __K2L_BigInteger.TEN:mod(__K2L_BigInteger.valueOf(-3))
-    end)
-    attempt("sqrtNeg", function() return __K2L_BigInteger.valueOf(-4):sqrt() end)
-    attempt("powNeg", function() return __K2L_BigInteger.TEN:pow(-1) end)
-    attempt("inverse", function()
-        return __K2L_BigInteger.valueOf(4):modInverse(__K2L_BigInteger.valueOf(8))
-    end)
-    attempt("empty", function() return __K2L_BigInteger.parse("") end)
-    attempt("sign only", function() return __K2L_BigInteger.parse("-") end)
-    attempt("letters", function() return __K2L_BigInteger.parse("abc") end)
-    attempt("embedded", function() return __K2L_BigInteger.parse("12-3") end)
-    attempt("double sign", function() return __K2L_BigInteger.parse("--3") end)
-    attempt("digit", function()
-        return __K2L_BigInteger.parse("12345678901234567890x")
-    end)
-    attempt("radix", function() return __K2L_BigInteger.parse("12", 99) end)
-    attempt("hex", function() return __K2L_BigInteger.parse("xyz", 16) end)
-    attempt("bit", function() return __K2L_BigInteger.TEN:testBit(-1) end)
-    attempt("intExact", function()
-        return __K2L_BigInteger.parse("12345678901"):intValueExact()
-    end)
-    attempt("longExact", function()
-        return __K2L_BigInteger.parse("123456789012345678901"):longValueExact()
-    end)
+    attempt("div0", ____lambda_6)
+    attempt("rem0", ____lambda_7)
+    attempt("mod0", ____lambda_8)
+    attempt("modNeg", ____lambda_9)
+    attempt("sqrtNeg", ____lambda_10)
+    attempt("powNeg", ____lambda_11)
+    attempt("inverse", ____lambda_12)
+    attempt("empty", ____lambda_13)
+    attempt("sign only", ____lambda_14)
+    attempt("letters", ____lambda_15)
+    attempt("embedded", ____lambda_16)
+    attempt("double sign", ____lambda_17)
+    attempt("digit", ____lambda_18)
+    attempt("radix", ____lambda_19)
+    attempt("hex", ____lambda_20)
+    attempt("bit", ____lambda_21)
+    attempt("intExact", ____lambda_22)
+    attempt("longExact", ____lambda_23)
 end
 
 local function main()

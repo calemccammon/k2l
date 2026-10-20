@@ -14,13 +14,13 @@ local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_RoundingMode = ____lualib.__K2L_RoundingMode
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
-local __K2L_Shl = ____lualib.__K2L_Shl
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
@@ -28,10 +28,11 @@ local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
+local ____lambda_1 = function(acc, i)
+    return acc:multiply(__K2L_BigInteger.valueOf(i))
+end
 local function factorial(n)
-    return __K2L_IntRange.new(2, n):fold(__K2L_BigInteger.ONE, function(acc, i)
-        return acc:multiply(__K2L_BigInteger.valueOf(i))
-    end)
+    return __K2L_IntRange.new(2, n):fold(__K2L_BigInteger.ONE, ____lambda_1)
 end
 
 local function binomial(n, k)
@@ -81,7 +82,7 @@ local function isPrime(n)
     if n < 2 then
         return false
     end
-    if math.fmod(n, 2) == 0 then
+    if (n >= 0 and n % 2 or (n % 2 - 2) % (-2)) == 0 then
         return n == 2
     end
     local d = 3
@@ -94,13 +95,14 @@ local function isPrime(n)
     return true
 end
 
+local ____lambda_2 = function(____p1, ____p2) return ____p1 + ____p2 end
 local function primeFactors(n)
     local factors = __K2L_MapOf()
     local x = n
     local p = 2
     while p * p <= x do
         while __K2L_IRem(x, p) == 0 do
-            factors:merge(p, 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", function(____p1, ____p2) return ____p1 + ____p2 end))
+            factors:merge(p, 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_2))
             x = __K2L_IDiv(x, p)
         end
         p = p + 1
@@ -118,6 +120,10 @@ Rational.____comparable = true
 function Rational:____init(num, den)
     self.num = num
     self.den = den
+end
+
+function Rational.new(num, den)
+    return setmetatable({num = num, den = den}, Rational)
 end
 
 function Rational:plus(o)
@@ -148,7 +154,7 @@ function Rational:compareTo(other)
 end
 
 function Rational:equals(other)
-    return __K2L_InstanceOf(other, Rational) and __K2L_Equals(self.num, other.num) and __K2L_Equals(self.den, other.den)
+    return getmetatable(other) == Rational and __K2L_Equals(self.num, other.num) and __K2L_Equals(self.den, other.den)
 end
 
 function Rational:hashCode()
@@ -193,12 +199,14 @@ local function r(self)
     return Rational:of(self)
 end
 
+local ____lambda_3 = function(acc, k) return acc:plus(Rational:of(1, k)) end
 local function harmonic(n)
-    return __K2L_IntRange.new(1, n):fold(Rational.ZERO, function(acc, k) return acc:plus(Rational:of(1, k)) end)
+    return __K2L_IntRange.new(1, n):fold(Rational.ZERO, ____lambda_3)
 end
 
+local ____lambda_4 = function(it) return Rational.ZERO end
 local function bernoulli(n)
-    local a = __K2L_ListOfSize(n + 1, function(it) return Rational.ZERO end, "[LRational;")
+    local a = __K2L_ListOfSize(n + 1, ____lambda_4, "[LRational;")
     for m = 0, n do
         a:set(m, Rational:of(1, m + 1))
         for j = m, 1, -1 do
@@ -216,7 +224,7 @@ local function integrate(from, to, steps, f)
     local h = (to - from) / steps
     local sum = f(from) + f(to)
     for i = 1, steps - 1 do
-        sum = sum + f(from + i * h) * (math.fmod(i, 2) == 1 and 4 or 2)
+        sum = sum + f(from + i * h) * ((i >= 0 and i % 2 or 0 - -i % 2) == 1 and 4 or 2)
     end
     return sum * h / 3
 end
@@ -237,31 +245,43 @@ local function sqrtNewton(x, eps)
     return guess
 end
 
+local ____lambda_5 = function(it) return __K2L_Num.digitToInt(it) end
+local ____lambda_6 = function(it) return it == "0" end
+local ____lambda_7 = function(it) return binomial(10, it) end
+local ____lambda_8 = function(n)
+    return primeFactors(n):getEntries():fold(1, function(acc, ____destructured)
+        local p, e = ____destructured.key, ____destructured.value
+        return acc * __K2L_IntRange.new(1, e):fold(1, function(s, _) return s * p + 1 end)
+    end)
+end
+local ____lambda_9 = function(it) return bernoulli(it) end
+local ____lambda_10 = function() return Rational:of(1, 0) end
+local ____lambda_11 = function(it) return 4 / (1 + it * it) end
+local ____lambda_12 = function(it) return math.exp(-it * it / 2) end
+local ____lambda_13 = function(acc, _)
+    return acc:multiply(__K2L_BigDecimal.parse("1.05")):setScale(2, __K2L_RoundingMode.HALF_EVEN)
+end
 local function main()
     print("20! = " .. __K2L_Str(factorial(20)) .. " (fits in Long: " .. tostring(__K2L_Compare(factorial(20), __K2L_BigInteger.valueOf(9223372036854775807)) <= 0) .. ")")
     print("25! = " .. __K2L_Str(factorial(25)))
     local f100 = factorial(100)
-    print("100! has " .. #f100:toString() .. " digits, digit sum " .. __K2L_StringToList(f100:toString()):sumOf(function(it) return __K2L_Num.digitToInt(it) end) .. ", trailing zeros " .. #__K2L_Text.takeLastWhile(f100:toString(), function(it) return it == "0" end))
+    print("100! has " .. #f100:toString() .. " digits, digit sum " .. __K2L_StringToList(f100:toString()):sumOf(____lambda_5) .. ", trailing zeros " .. #__K2L_Text.takeLastWhile(f100:toString(), ____lambda_6))
     print("C(50, 25) = " .. __K2L_Str(binomial(50, 25)) .. ", C(100, 3) = " .. __K2L_Str(binomial(100, 3)))
-    print("pascal row 10: " .. __K2L_Str(__K2L_IntRange.new(0, 10):map(function(it) return binomial(10, it) end)))
+    print("pascal row 10: " .. __K2L_Str(__K2L_IntRange.new(0, 10):map(____lambda_7)))
     print("F(100) = " .. __K2L_Str(bigFib(100)))
     print("F(300) mod 1e9+7 = " .. __K2L_Str(bigFib(300):mod(__K2L_BigInteger.valueOf(1000000007))))
     print("2^100 = " .. __K2L_Str(__K2L_BigInteger.TWO:pow(100)) .. ", bits " .. __K2L_BigInteger.TWO:pow(100):bitLength())
     print("3^200 mod 1000007 = " .. __K2L_Str(__K2L_BigInteger.valueOf(3):modPow(__K2L_BigInteger.valueOf(200), __K2L_BigInteger.valueOf(1000007))) .. " vs " .. modPow(3, 200, 1000007))
     print("gcd(1071, 462) = " .. gcd(1071, 462) .. ", lcm(1..20) = " .. __K2L_IntRange.new(1, 20):reduce(lcm))
-    print("2^62 = " .. (1 << 62) .. ", Long.MAX_VALUE / 7 = " .. __K2L_IDiv(9223372036854775807, 7) .. ", -17 mod 5 = " .. math.fmod(-17, 5) .. " / " .. __K2L_Num.mod(-17, 5) .. " / " .. __K2L_Num.mod(-17, 5))
+    local ____dividend = -17
+    print("2^62 = " .. (1 << 62) .. ", Long.MAX_VALUE / 7 = " .. __K2L_IDiv(9223372036854775807, 7) .. ", -17 mod 5 = " .. (____dividend >= 0 and ____dividend % 5 or 0 - -____dividend % 5) .. " / " .. __K2L_Num.mod(-17, 5) .. " / " .. __K2L_Num.mod(-17, 5))
     print("big modpow: " .. modPow(2, 1000000, 1000000007) .. " " .. modPow(12345, 6789, 999983))
     print("primes near 1e9: " .. __K2L_Str(__K2L_IntRange.new(1000000000, 1000000100):filter(isPrime)))
     print("factors: " .. __K2L_Str(primeFactors(600851475143)) .. " " .. __K2L_Str(primeFactors(360)) .. " " .. __K2L_Str(primeFactors(9999999967)))
-    local divisorSum = function(n)
-        return primeFactors(n):getEntries():fold(1, function(acc, ____destructured)
-            local p, e = ____destructured.key, ____destructured.value
-            return acc * __K2L_IntRange.new(1, e):fold(1, function(s, _) return s * p + 1 end)
-        end)
-    end
+    local divisorSum = ____lambda_8
     print("sigma(360) = " .. divisorSum(360) .. ", perfect: " .. __K2L_Str(__K2L_IntRange.new(2, 10000):filter(function(it) return divisorSum(it) == 2 * it end)))
     print("H(10) = " .. __K2L_Str(harmonic(10)) .. " ≈ " .. __K2L_StringFormat("%.6f", harmonic(10):toDouble()) .. ", ln(10)+γ ≈ " .. __K2L_StringFormat("%.6f", math.log(10.0) + 0.5772156649))
-    print("bernoulli: " .. __K2L_Str(__K2L_IntRange.new(0, 12):map(function(it) return bernoulli(it) end)))
+    print("bernoulli: " .. __K2L_Str(__K2L_IntRange.new(0, 12):map(____lambda_9)))
     local third = Rational:of(1, 3)
     print("1/3 + 1/6 = " .. __K2L_Str(third:plus(Rational:of(1, 6))) .. ", -(2/4) = " .. __K2L_Str(Rational:of(2, 4):unaryMinus()) .. ", (3/4)/(1/8) = " .. __K2L_Str(Rational:of(3, 4):div(Rational:of(1, 8))))
     print("sorted: " .. __K2L_Str(__K2L_ReadOnlyListOf(Rational:of(3, 7), Rational:of(1, 2), Rational:of(-2, 5), r(1)):sorted()))
@@ -278,11 +298,11 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____receiver = __K2L_RunCatching(function() return Rational:of(1, 0) end):exceptionOrNull()
+    local ____receiver = __K2L_RunCatching(____lambda_10):exceptionOrNull()
     print(__K2L_Str(____receiver and ____receiver.message))
-    local pi = integrate(0.0, 1.0, nil, function(it) return 4 / (1 + it * it) end)
+    local pi = integrate(0.0, 1.0, nil, ____lambda_11)
     print("pi ≈ " .. __K2L_StringFormat("%.12f", pi) .. " error " .. __K2L_StringFormat("%.2e", math.abs(pi - math.pi)))
-    local gauss = integrate(-5.0, 5.0, 2000, function(it) return math.exp(-it * it / 2) end) / math.sqrt(2 * math.pi)
+    local gauss = integrate(-5.0, 5.0, 2000, ____lambda_12) / math.sqrt(2 * math.pi)
     print("gaussian area ≈ " .. __K2L_StringFormat("%.8f", gauss))
     local ____list = __K2L_ReadOnlyListOf(2.0, 10.0, 12345.678)
     for ____i = 1, ____list.size do
@@ -291,14 +311,31 @@ local function main()
     end
     print("doubles: " .. __K2L_Str(0.1 + 0.2) .. " " .. __K2L_Str(1.0 / 3) .. " " .. __K2L_Str(2.0 / 3 * 3) .. " " .. __K2L_Str(1.0E20) .. " " .. __K2L_Str(1.5E-7) .. " " .. __K2L_Str(100.0) .. " " .. __K2L_Str(-0.0) .. " " .. __K2L_Str(1.7976931348623157E308))
     print("format: " .. __K2L_StringFormat("%8.3f|%-8.2f|%08.2f|%+.1e|%,d", math.pi, -math.pi, 3.14159, 12345.678, 1234567890))
-    print("rounding: " .. __K2L_Str(__K2L_ReadOnlyListOf(2.5, 3.5, -2.5, 0.125):map(function(it) return __K2L_Num.roundToLong(it) end)) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf(1.005, 2.675):map(function(it) return __K2L_StringFormat("%.2f", it) end)))
+    local ____list_1 = __K2L_ReadOnlyListOf(2.5, 3.5, -2.5, 0.125)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list_1:____array()
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_Num.roundToLong(it)
+    end
+    local ____arg = __K2L_ListWrap(____out, ____count)
+    local ____list_2 = __K2L_ReadOnlyListOf(1.005, 2.675)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_2:____array()
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = __K2L_StringFormat("%.2f", it)
+    end
+    print("rounding: " .. __K2L_Str(____arg) .. " " .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     local bd = __K2L_BigDecimal.parse("10"):divide(__K2L_BigDecimal.parse("3"), 20, __K2L_RoundingMode.HALF_UP)
     print("10/3 = " .. __K2L_Str(bd) .. ", scaled " .. __K2L_Str(bd:setScale(4, __K2L_RoundingMode.DOWN)) .. ", money " .. __K2L_Str(__K2L_BigDecimal.parse("19.99"):multiply(__K2L_BigDecimal.fromLong(3))))
-    local compound = __K2L_IntRange.new(1, 10):fold(__K2L_BigDecimal.parse("1000.00"), function(acc, _)
-        return acc:multiply(__K2L_BigDecimal.parse("1.05")):setScale(2, __K2L_RoundingMode.HALF_EVEN)
-    end)
+    local compound = __K2L_IntRange.new(1, 10):fold(__K2L_BigDecimal.parse("1000.00"), ____lambda_13)
     print("compound interest: " .. __K2L_Str(compound))
-    print("Int ops: " .. 2147483647 + 1 .. " " .. __K2L_Shl(1, 30) * 2 .. " " .. __K2L_Str(__K2L_Num.toRadixUnsigned(255, 16)) .. " " .. __K2L_StringToInt("ff", 16) .. " " .. 11 .. " " .. -9223372036854775807 - 1)
+    print("Int ops: " .. 2147483647 + 1 .. " " .. (((1 << 30) + 0x80000000 & 0xFFFFFFFF) - 0x80000000) * 2 .. " " .. __K2L_Str(__K2L_Num.toRadixUnsigned(255, 16)) .. " " .. __K2L_StringToInt("ff", 16) .. " " .. 11 .. " " .. -9223372036854775807 - 1)
 end
 
 main()

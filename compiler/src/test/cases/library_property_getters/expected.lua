@@ -24,6 +24,10 @@ function RequestId:____init(id)
     self.id = id
 end
 
+function RequestId.new(id)
+    return setmetatable({id = id}, RequestId)
+end
+
 function RequestId:getKey()
     return RequestKey
 end
@@ -117,13 +121,15 @@ local function tag()
     return ____receiver and ____receiver.tag or "none"
 end
 
+local ____lambda_1 = function(acc, _) return acc + 1 end
+local ____lambda_2 = function() return #tag() end
 local function main()
     local ctx = __K2L_ContextPlus(__K2L_ContextPlus(__K2L_EmptyCoroutineContext, RequestId.new(7)), Tagged.new("t"))
     local ____receiver_1 = __K2L_ContextGet(ctx, RequestKey)
     print(__K2L_Str(____receiver_1 and ____receiver_1.id))
     local ____receiver_2 = __K2L_ContextGet(ctx, Tagged)
     print(__K2L_Str(____receiver_2 and ____receiver_2.tag))
-    print(__K2L_ContextFold(ctx, 0, function(acc, _) return acc + 1 end))
+    print(__K2L_ContextFold(ctx, 0, ____lambda_1))
     local minus = __K2L_ContextMinusKey(ctx, RequestKey)
     print(__K2L_ContextGet(minus, RequestKey) == nil)
     local ____receiver_3 = __K2L_ContextGet(minus, Tagged)
@@ -156,7 +162,7 @@ local function main()
     print(child.reads)
     local log = __K2L_ListOf()
     local receiver = Receiver.new(log)
-    local block = function() return #tag() end
+    local block = ____lambda_2
     __K2L_StartCoroutine(block, receiver)
     print(__K2L_Str(log))
 end

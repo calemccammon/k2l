@@ -28,14 +28,38 @@ local function hashUtf8(s)
     return __K2L_ToInt32(h)
 end
 
+local byte, find = string.byte, string.find
+
+-- String.hashCode(), four bytes per step (h * 31^4 + ...: below 2^53, so exact with doubles too)
+local function hashString(s)
+    local h
+    if find(s, "[\128-\255]") then
+        h = hashUtf8(s)
+    else
+        h = 0
+        local i, n = 1, #s
+        while i + 3 <= n do
+            local b1, b2, b3, b4 = byte(s, i, i + 3)
+            h = (h * 923521 + b1 * 29791 + b2 * 961 + b3 * 31 + b4) & 0xFFFFFFFF
+            i = i + 4
+        end
+        while i <= n do
+            h = (31 * h + byte(s, i)) & 0xFFFFFFFF
+            i = i + 1
+        end
+        if h >= 2147483648 then
+            h = h - 4294967296
+        end
+    end
+    return h
+end
+
+local mtype = math.type
+
 local function __K2L_Hash(value)
     local t = type(value)
-    if value == nil then
-        return 0
-    elseif t == "boolean" then
-        return value and 1231 or 1237
-    elseif t == "number" then
-        if math.type(value) == "integer" then
+    if t == "number" then
+        if mtype(value) == "integer" then
             -- Int.hashCode() is the value itself; Long.hashCode() folds the high bits in.
             if value >= -0x80000000 and value <= 0x7FFFFFFF then
                 return value
@@ -44,14 +68,11 @@ local function __K2L_Hash(value)
         end
         return __K2L_Hash(string.unpack("<i8", string.pack("<d", value)))
     elseif t == "string" then
-        if value:find("[\128-\255]") then
-            return hashUtf8(value)
-        end
-        local h = 0
-        for i = 1, #value do
-            h = (31 * h + value:byte(i)) & 0xFFFFFFFF
-        end
-        return __K2L_ToInt32(h)
+        return hashString(value)
+    elseif value == nil then
+        return 0
+    elseif t == "boolean" then
+        return value and 1231 or 1237
     elseif t == "table" and value.hashCode ~= nil then
         return value:hashCode()
     end

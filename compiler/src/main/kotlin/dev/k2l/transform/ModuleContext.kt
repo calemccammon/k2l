@@ -77,16 +77,22 @@ class ModuleContext(
     val usesListViews: Boolean by lazy { files.any(::mentionsListViews) }
 
     /** Whether some class implements `ClosedRange`: then `start` of a ClosedRange value may be its own property. */
-    val implementsClosedRange: Boolean by lazy { files.any { mentionsSuperType(it, "ClosedRange") } }
+    val implementsClosedRange: Boolean by lazy { files.any { mentionsSuperType(it, setOf("ClosedRange")) } }
 
     /** Whether some class implements `CharSequence`: then CharSequence values may be objects (see CharSequences.kt). */
-    val implementsCharSequence: Boolean by lazy { files.any { mentionsSuperType(it, "CharSequence") } }
+    val implementsCharSequence: Boolean by lazy { files.any { mentionsSuperType(it, setOf("CharSequence")) } }
 
-    private fun mentionsSuperType(file: KtFile, name: String): Boolean {
+    /**
+     * Whether some class extends or implements a library collection or map: then a collection value may be an object of
+     * the program, whose collection operations call its overrides (see CollectionOverrides.lua) and stay method calls.
+     */
+    val implementsCollections: Boolean by lazy { files.any { mentionsSuperType(it, COLLECTION_TYPES) } }
+
+    private fun mentionsSuperType(file: KtFile, names: Set<String>): Boolean {
         var found = false
         file.accept(object : KtTreeVisitorVoid() {
             override fun visitSuperTypeListEntry(specifier: KtSuperTypeListEntry) {
-                if ((specifier.typeReference?.typeElement as? KtUserType)?.referencedName == name) found = true
+                if ((specifier.typeReference?.typeElement as? KtUserType)?.referencedName in names) found = true
                 super.visitSuperTypeListEntry(specifier)
             }
         })
@@ -145,6 +151,13 @@ class ModuleContext(
     companion object {
         private val VIEW_NAMES = setOf("unmodifiableList", "unmodifiableCollection", "subList", "asList")
         private val LIST_BASES = setOf("AbstractList", "AbstractMutableList", "List", "MutableList")
+        private val COLLECTION_TYPES = listOf("Iterable", "Collection", "List", "Set", "Map").flatMap {
+            listOf(it, "Mutable$it", "Abstract$it", "AbstractMutable$it")
+        }.toSet() + setOf(
+            "ArrayList", "LinkedList", "HashSet", "LinkedHashSet", "TreeSet", "SortedSet", "NavigableSet", "HashMap", "LinkedHashMap",
+            "TreeMap", "SortedMap", "NavigableMap", "ArrayDeque", "Deque", "Queue", "AbstractQueue", "PriorityQueue",
+            "AbstractSequentialList", "Vector", "Stack", "MutableIterable",
+        )
         private val FLOAT_NAMES = setOf("Float", "FloatArray", "floatArrayOf", "toFloat", "toFloatOrNull", "toFloatArray")
 
         fun single(file: KtFile) = ModuleContext(setOf(file), { it.name.removeSuffix(".kt") })

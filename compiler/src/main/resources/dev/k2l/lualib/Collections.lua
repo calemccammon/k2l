@@ -145,22 +145,30 @@ local function sortByKeys(arr, n, keys, descending)
         while i <= n do
             local mid, hi = math.min(i + width, n + 1), math.min(i + 2 * width, n + 1)
             local a, b, k = i, mid, i
-            while a < mid and b < hi do
-                local ia, ib = src[a], src[b]
-                local takeB
-                if descending then
-                    takeB = keys[ib] > keys[ia]
-                else
-                    takeB = keys[ib] < keys[ia]
+            if descending then
+                while a < mid and b < hi do
+                    local ia, ib = src[a], src[b]
+                    if keys[ib] > keys[ia] then
+                        dst[k] = ib
+                        b = b + 1
+                    else
+                        dst[k] = ia
+                        a = a + 1
+                    end
+                    k = k + 1
                 end
-                if takeB then
-                    dst[k] = ib
-                    b = b + 1
-                else
-                    dst[k] = ia
-                    a = a + 1
+            else
+                while a < mid and b < hi do
+                    local ia, ib = src[a], src[b]
+                    if keys[ib] < keys[ia] then
+                        dst[k] = ib
+                        b = b + 1
+                    else
+                        dst[k] = ia
+                        a = a + 1
+                    end
+                    k = k + 1
                 end
-                k = k + 1
             end
             while a < mid do
                 dst[k] = src[a]
@@ -902,12 +910,13 @@ end
 function __K2L_Iterable:groupBy(keySelector, valueTransform)
     local arr, n = self:____array()
     local map = __K2L_Map.new()
+    local values = map.____values
     for i = 1, n do
-        local key = keySelector(arr[i])
-        local group = map:get(key)
+        local slot = map:____slot(keySelector(arr[i]))
+        local group = values[slot]
         if group == nil then
             group = __K2L_List.new()
-            map:put(key, group)
+            values[slot] = group
         end
         if valueTransform ~= nil then
             group:add(valueTransform(arr[i]))
@@ -1623,11 +1632,14 @@ local function eachOf(grouping, action)
     end
 end
 
+-- The results are new LinkedHashMaps that nobody else sees yet: each element looks its key up once (____slot), and a
+-- missing key's entry is added before its value is computed.
 function __K2L_Grouping:eachCount()
     local counts = __K2L_Map.new()
+    local values = counts.____values
     eachOf(self, function(element)
-        local key = self.keySelector(element)
-        counts:put(key, (counts:get(key) or 0) + 1)
+        local slot = counts:____slot(self.keySelector(element))
+        values[slot] = (values[slot] or 0) + 1
     end)
     return counts
 end
@@ -1635,13 +1647,14 @@ end
 -- fold(initialValue, operation(accumulator, element))
 function __K2L_Grouping:fold(initial, operation)
     local result = __K2L_Map.new()
+    local values = result.____values
     eachOf(self, function(element)
-        local key = self.keySelector(element)
+        local slot, found = result:____slot(self.keySelector(element))
         local acc = initial
-        if result:containsKey(key) then
-            acc = result:get(key)
+        if found then
+            acc = values[slot]
         end
-        result:put(key, operation(acc, element))
+        values[slot] = operation(acc, element)
     end)
     return result
 end
@@ -1649,12 +1662,14 @@ end
 -- reduce(operation(key, accumulator, element))
 function __K2L_Grouping:reduce(operation)
     local result = __K2L_Map.new()
+    local values = result.____values
     eachOf(self, function(element)
         local key = self.keySelector(element)
-        if result:containsKey(key) then
-            result:put(key, operation(key, result:get(key), element))
+        local slot, found = result:____slot(key)
+        if found then
+            values[slot] = operation(key, values[slot], element)
         else
-            result:put(key, element)
+            values[slot] = element
         end
     end)
     return result
@@ -1663,10 +1678,11 @@ end
 -- aggregate(operation(key, accumulator, element, isFirst))
 function __K2L_Grouping:aggregate(operation)
     local result = __K2L_Map.new()
+    local values = result.____values
     eachOf(self, function(element)
         local key = self.keySelector(element)
-        local first = not result:containsKey(key)
-        result:put(key, operation(key, result:get(key), element, first))
+        local slot, found = result:____slot(key)
+        values[slot] = operation(key, values[slot], element, not found)
     end)
     return result
 end
@@ -2651,7 +2667,9 @@ local NIL_KEY = {}
 -- Finds the slot of `key`: raw lookup for plain values, hashCode buckets plus equals() for objects.
 local function findSlot(self, key)
     local kind = type(key)
-    if (kind == "table" and key.hashCode ~= nil) or kind == "cdata" then
+    if kind == "string" or kind == "number" then
+        return self.____index[key]
+    elseif (kind == "table" and key.hashCode ~= nil) or kind == "cdata" then
         -- cdata is an int64_t of --long64 emulate: table keys would compare it by identity
         local bucket = self.____buckets[kind == "cdata" and __K2L_Hash(key) or key:hashCode()]
         if bucket ~= nil then
@@ -3119,6 +3137,15 @@ function __K2L_Map:____setValue(key, value)
     if slot ~= nil then
         self.____values[slot] = value
     end
+end
+
+-- The slot of `key`, added (without a value) when it is missing, and whether it was there: for the maps the lualib builds.
+function __K2L_Map:____slot(key)
+    local slot = findSlot(self, key)
+    if slot ~= nil then
+        return slot, true
+    end
+    return addSlot(self, key), false
 end
 
 function __K2L_Map:get(key)
@@ -4609,30 +4636,66 @@ local function tableSizeFor(capacity)
     return size
 end
 
+-- (h ^ (h >>> 16)) & (capacity - 1) for a power-of-two capacity, from the low bits of both halves
 local function bucketOf(key, capacity)
     local h = __K2L_Hash(key)
-    return __K2L_BXor(h, __K2L_Ushr(h, 16)) % capacity
+    return __K2L_BXor(h % capacity, __K2L_Ushr(h, 16) % capacity)
 end
 
 -- Puts the keys (and values) in iteration order; new entries were appended, so a stable sort by
--- bucket leaves older entries of a bucket ahead of newer ones, as the chains of a HashMap do.
+-- bucket leaves older entries of a bucket ahead of newer ones, as the chains of a HashMap do. The sort counts the
+-- entries of each bucket (the buckets in order are a loop over the capacity, or a sort of the used ones when the
+-- capacity is much larger than the size), then moves every entry to its place.
 local function normalize(self)
     self.____dirty = false
     local n, keys, values = self.size, self.____keys, self.____values
-    local capacity, bucket, order = self.____capacity, {}, {}
+    local capacity, bucket, count = self.____capacity, {}, {}
     for i = 1, n do
-        bucket[i], order[i] = bucketOf(keys[i], capacity), i
+        local b = bucketOf(keys[i], capacity) + 1
+        bucket[i] = b
+        count[b] = (count[b] or 0) + 1
     end
-    local sorted = stableSort(order, n, function(a, b) return bucket[a] < bucket[b] end)
+    local pos = 1
+    if capacity <= 4 * n + 64 then
+        for b = 1, capacity do
+            local c = count[b]
+            if c ~= nil then
+                count[b], pos = pos, pos + c
+            end
+        end
+    else
+        local used, m = {}, 0
+        for b in pairs(count) do
+            m = m + 1
+            used[m] = b
+        end
+        table.sort(used)
+        for j = 1, m do
+            local b = used[j]
+            count[b], pos = pos, pos + count[b]
+        end
+    end
     local newKeys, newValues = {}, values and {} or nil
     for i = 1, n do
-        newKeys[i] = keys[sorted[i]]
+        local b = bucket[i]
+        local at = count[b]
+        count[b] = at + 1
+        newKeys[at] = keys[i]
         if values ~= nil then
-            newValues[i] = values[sorted[i]]
+            newValues[at] = values[i]
         end
     end
     self.____keys, self.____values = newKeys, newValues
-    reindex(self)
+    if next(self.____buckets) == nil then
+        -- only plain keys: their slots are renumbered in place
+        local index = self.____index
+        for i = 1, n do
+            local key = newKeys[i]
+            index[key == nil and NIL_KEY or key] = i
+        end
+    else
+        reindex(self)
+    end
 end
 
 local function grow(self)

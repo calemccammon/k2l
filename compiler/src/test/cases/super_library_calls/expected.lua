@@ -5,7 +5,6 @@ local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IdentityHash = ____lualib.__K2L_IdentityHash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
@@ -21,7 +20,8 @@ local function shape(s)
     local at = __K2L_StringIndexOf(s, "@")
     local hex = __K2L_Text.substring(s, at + 1)
     local isHex = #hex > 0
-    for c in hex:gmatch(".") do
+    for ____i = 1, #hex do
+        local c = hex:sub(____i, ____i)
         if not (c >= "0" and c <= "9" or c >= "a" and c <= "f") then
             isHex = false
         end
@@ -47,6 +47,10 @@ function Identity:____init(id)
     self.id = id
 end
 
+function Identity.new(id)
+    return setmetatable({id = id}, Identity)
+end
+
 function Identity:equals(other)
     return self == other
 end
@@ -61,8 +65,12 @@ function Mixed:____init(id)
     self.id = id
 end
 
+function Mixed.new(id)
+    return setmetatable({id = id}, Mixed)
+end
+
 function Mixed:equals(other)
-    return self == other or __K2L_InstanceOf(other, Mixed) and other.id == self.id
+    return self == other or getmetatable(other) == Mixed and other.id == self.id
 end
 
 function Mixed:hashCode()
@@ -73,6 +81,10 @@ local Hashed = __K2L_Class("Hashed")
 
 function Hashed:____init(id)
     self.id = id
+end
+
+function Hashed.new(id)
+    return setmetatable({id = id}, Hashed)
 end
 
 function Hashed:hashCode()
@@ -189,7 +201,7 @@ local function main()
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result)
-        if __K2L_InstanceOf(____error, MyException) then
+        if getmetatable(____error) == MyException then
             local ex = ____error
             print("caught " .. __K2L_Str(ex))
         else

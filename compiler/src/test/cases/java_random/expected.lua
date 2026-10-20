@@ -5,7 +5,6 @@ local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_JavaRandom = ____lualib.__K2L_JavaRandom
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_Shl = ____lualib.__K2L_Shl
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -27,7 +26,9 @@ local function ints()
     local ranged = __K2L_JavaRandom.new(99)
     print(__K2L_Str(__K2L_IntRange.new(1, 8):map(function(it) return ranged:nextInt(5, 15) end)))
     print(__K2L_Str(__K2L_IntRange.new(1, 8):map(function(it) return ranged:nextInt(-100, 100) end)))
-    print(__K2L_Str(__K2L_IntRange.new(1, 4):map(function(it) return ranged:nextInt(0, __K2L_Shl(1, 20)) end)))
+    print(__K2L_Str(__K2L_IntRange.new(1, 4):map(function(it)
+        return ranged:nextInt(0, ((1 << 20) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
+    end)))
     print(__K2L_Str(__K2L_IntRange.new(1, 4):map(function(it) return ranged:nextInt(10, 11) end)))
     print(__K2L_Str(__K2L_IntRange.new(1, 4):map(function(it)
         return ranged:nextInt(-1000000000, 1000000000)

@@ -41,7 +41,7 @@ local function risky(mode)
     if not ____ok then
         ____ok, ____result, ____returned = pcall(function()
             local ____error = __K2L_ToThrowable(____result)
-            if __K2L_InstanceOf(____error, ValidationError) then
+            if getmetatable(____error) == ValidationError then
                 local e = ____error
                 return true, "validation failed for " .. e.field .. ": " .. __K2L_Str(e.message)
             elseif __K2L_InstanceOf(____error, __K2L_IllegalStateException) then

@@ -96,26 +96,35 @@ local function addTo(target, extra, counts)
     counts:remove("old")
 end
 
+local ____lambda_1 = function(it) return it > 3 end
+local ____lambda_2 = function(it)
+    return (it >= 0 and it % 3 or 0 - -it % 3) == 0
+end
+local ____lambda_3 = function(it) return it > "b" end
+local ____lambda_4 = function(it) return it < "e" end
+local ____lambda_5 = function(it) return it < 8 end
+local ____lambda_6 = function()
+    return __K2L_Iterable.first(__K2L_IntRange.new(1, 0))
+end
+local ____lambda_7 = function(it) return it < 4 end
 local function ranges()
     local r = __K2L_IntRange.new(1, 10)
     print(r.first)
     print(r.last)
     print(r.step)
-    print(__K2L_Iterable.first(r, function(it) return it > 3 end))
-    print(__K2L_Iterable.last(r, function(it) return math.fmod(it, 3) == 0 end))
+    print(__K2L_Iterable.first(r, ____lambda_1))
+    print(__K2L_Iterable.last(r, ____lambda_2))
     print(__K2L_Iterable.first(r))
     print(__K2L_Iterable.last(r))
     print(__K2L_Iterable.last(__K2L_IntRange.new(1, 10):withStep(4)))
-    print(__K2L_Iterable.first(__K2L_CharRange.new("a", "f"), function(it) return it > "b" end))
-    print(__K2L_Iterable.last(__K2L_CharRange.new("a", "f"), function(it) return it < "e" end))
-    print(__K2L_Iterable.first(__K2L_IntRange.new(10, 1, -1), function(it) return it < 8 end))
-    local ____receiver = __K2L_RunCatching(function()
-        return __K2L_Iterable.first(__K2L_IntRange.new(1, 0))
-    end):exceptionOrNull()
+    print(__K2L_Iterable.first(__K2L_CharRange.new("a", "f"), ____lambda_3))
+    print(__K2L_Iterable.last(__K2L_CharRange.new("a", "f"), ____lambda_4))
+    print(__K2L_Iterable.first(__K2L_IntRange.new(10, 1, -1), ____lambda_5))
+    local ____receiver = __K2L_RunCatching(____lambda_6):exceptionOrNull()
     local ____receiver_1 = ____receiver and __K2L_JavaClass(__K2L_KClassOfValue(____receiver))
     print(__K2L_Str(____receiver_1 and (____receiver_1.simpleName or "")))
     print(__K2L_IntRange.new(1, 0).first)
-    print(__K2L_Iterable.last(__K2L_IntRange.new(1, 5), function(it) return it < 4 end))
+    print(__K2L_Iterable.last(__K2L_IntRange.new(1, 5), ____lambda_7))
 end
 
 local function main()

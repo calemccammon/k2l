@@ -7,14 +7,13 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Container, ChildContainer
@@ -78,6 +77,10 @@ function Key:____init(____type, qualifier)
     self.qualifier = qualifier
 end
 
+function Key.new(____type, qualifier)
+    return setmetatable({type = ____type, qualifier = qualifier}, Key)
+end
+
 function Key:toString()
     local ____arg = self.type.simpleName or "?"
     local ____receiver_1 = self.qualifier
@@ -85,7 +88,7 @@ function Key:toString()
 end
 
 function Key:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.type) + __K2L_Hash(self.qualifier))
+    return (31 * __K2L_Hash(self.type) + __K2L_Hash(self.qualifier) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Key:equals(other)
@@ -140,14 +143,33 @@ function Container:resolve(____type, qualifier)
     end
     local key = Key.new(____type, qualifier)
     if self.resolving:contains(key) then
-        local chain = self.resolving:map(function(it) return it:toString() end):plus(key:toString())
+        local ____list = self.resolving
+        local ____out = {}
+        local ____count = 0
+        local ____items, ____n = ____list:____array()
+        for ____i = 1, ____n do
+            local it = ____items[____i]
+            ____count = ____count + 1
+            ____out[____count] = it:toString()
+        end
+        local chain = __K2L_ListWrap(____out, ____count):plus(key:toString())
         error(ResolutionException.new("cycle: " .. chain:joinToString(" -> "), chain))
     end
     self.resolving:addLast(key)
     local ____ok, ____result, ____returned = pcall(function()
         local ____value = self:lookup(key, self)
         if ____value == nil then
-            error(ResolutionException.new("no binding for " .. __K2L_Str(key) .. " in " .. self.name, self.resolving:map(function(it) return it:toString() end)))
+            local ____arg_1 = "no binding for " .. __K2L_Str(key) .. " in " .. self.name
+            local ____list_1 = self.resolving
+            local ____out_1 = {}
+            local ____count_1 = 0
+            local ____items_1, ____n_1 = ____list_1:____array()
+            for ____i_1 = 1, ____n_1 do
+                local it = ____items_1[____i_1]
+                ____count_1 = ____count_1 + 1
+                ____out_1[____count_1] = it:toString()
+            end
+            error(ResolutionException.new(____arg_1, __K2L_ListWrap(____out_1, ____count_1)))
         end
         return true, ____value
     end)
@@ -162,7 +184,7 @@ end
 
 function Container:lookup(key, requester)
     local ____cast = self.bindings:get(key)
-    if not (____cast == nil or __K2L_InstanceOf(____cast, Binding)) then
+    if not (____cast == nil or getmetatable(____cast) == Binding) then
         __K2L_CastFail(____cast, "app.di.core.Binding", "app.di.core.Binding")
     end
     local binding = ____cast
@@ -193,10 +215,31 @@ function Container:child(name)
 end
 
 function Container:describe()
-    local ____arg_1 = self.bindings:getValues():map(function(it) return it:toString() end)
+    local ____list_2 = self.bindings:getValues()
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_2, ____n_2 = ____list_2:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_2[____i_2]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = it:toString()
+    end
+    local ____arg_2 = __K2L_ListWrap(____out_2, ____count_2)
     local ____receiver_3 = self.parent
     local ____receiver_4 = ____receiver_3 and ____receiver_3:describe()
-    return ____arg_1:plusAll(____receiver_4 and ____receiver_4:map(function(it) return "  ^ " .. it end) or __K2L_ReadOnlyListOf())
+    local ____result_1
+    if ____receiver_4 ~= nil then
+        local ____out_3 = {}
+        local ____count_3 = 0
+        local ____items_3, ____n_3 = ____receiver_4:____array()
+        for ____i_3 = 1, ____n_3 do
+            local it = ____items_3[____i_3]
+            ____count_3 = ____count_3 + 1
+            ____out_3[____count_3] = "  ^ " .. it
+        end
+        ____result_1 = __K2L_ListWrap(____out_3, ____count_3)
+    end
+    return ____arg_2:plusAll(____result_1 or __K2L_ReadOnlyListOf())
 end
 
 function Container:creations()
@@ -238,7 +281,6 @@ local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Event = __K2L_Class("app.di.events.Event")
@@ -251,6 +293,10 @@ function UserCreated:____init(source, user)
     self.user = user
 end
 
+function UserCreated.new(source, user)
+    return setmetatable({source = source, user = user}, UserCreated)
+end
+
 function UserCreated:getSource()
     return self.source
 end
@@ -260,7 +306,7 @@ function UserCreated:toString()
 end
 
 function UserCreated:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.source) + __K2L_Hash(self.user))
+    return (31 * __K2L_Hash(self.source) + __K2L_Hash(self.user) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function UserCreated:equals(other)
@@ -288,7 +334,7 @@ function UserDeleted:toString()
 end
 
 function UserDeleted:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.source) + __K2L_Hash(self.user)) + __K2L_Hash(self.reason))
+    return (31 * (31 * __K2L_Hash(self.source) + __K2L_Hash(self.user)) + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function UserDeleted:equals(other)
@@ -304,6 +350,10 @@ function OrderPlaced:____init(source, orderId, total)
     self.total = total
 end
 
+function OrderPlaced.new(source, orderId, total)
+    return setmetatable({source__OrderPlaced = source, orderId = orderId, total = total}, OrderPlaced)
+end
+
 function OrderPlaced:getSource()
     return self.source__OrderPlaced or "null"
 end
@@ -313,7 +363,7 @@ function OrderPlaced:toString()
 end
 
 function OrderPlaced:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.source) + __K2L_Hash(self.orderId)) + __K2L_Hash(self.total))
+    return (31 * (31 * __K2L_Hash(self.source) + self.orderId) + __K2L_Hash(self.total) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function OrderPlaced:equals(other)
@@ -345,12 +395,16 @@ function Delivery.Delivered:____init(handlers)
     self.handlers = handlers
 end
 
+function Delivery.Delivered.new(handlers)
+    return setmetatable({handlers = handlers}, Delivery.Delivered)
+end
+
 function Delivery.Delivered:toString()
     return "Delivered(handlers=" .. self.handlers .. ")"
 end
 
 function Delivery.Delivered:hashCode()
-    return __K2L_Hash(self.handlers)
+    return self.handlers
 end
 
 function Delivery.Delivered:equals(other)
@@ -362,6 +416,10 @@ __K2L_ClassInfo(Delivery.Failed, "app.di.events.Delivery.Failed", "app.di.events
 
 function Delivery.Failed:____init(errors)
     self.errors = errors
+end
+
+function Delivery.Failed.new(errors)
+    return setmetatable({errors = errors}, Delivery.Failed)
 end
 
 function Delivery.Failed:toString()
@@ -407,12 +465,13 @@ function EventBus:____init()
     self.published = 0
 end
 
+local ____lambda_1 = function() return __K2L_ListOf() end
 function EventBus:subscribe(____type, handler)
     if not (type(handler) == "function" or __K2L_InstanceOf(handler, __K2L_FunctionMixin)) then
         __K2L_CastFail(handler, "java.lang.Function1", "kotlin.Function1")
     end
     local h = handler
-    local list = self.handlers:getOrPut(____type, function() return __K2L_ListOf() end)
+    local list = self.handlers:getOrPut(____type, ____lambda_1)
     list:add(h)
     return Subscription.new(function()
         list:remove(h)
@@ -489,6 +548,10 @@ function A:____init(b)
     self.b = b
 end
 
+function A.new(b)
+    return setmetatable({b = b}, A)
+end
+
 B = __K2L_Class("app.di.B")
 __K2L_ClassInfo(B, "app.di.B", "app.di.B", "class")
 
@@ -538,12 +601,13 @@ function Audit:____init(bus)
     ____arg_2:add(____result_2)
 end
 
+local ____lambda_1 = function(self, ...) return self:cancel(...) end
 function Audit:stop()
     local ____list = self.subs
     local ____mod = ____list.____modCount
     for ____i = 1, ____list.size do
         local it = ____list[____i];
-        (function(self, ...) return self:cancel(...) end)(it)
+        (____lambda_1)(it)
         if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
             break
         end
@@ -551,19 +615,25 @@ function Audit:stop()
 end
 
 local function describe(d)
-    if __K2L_InstanceOf(d, ____EventBus.Delivery.Delivered) then
+    local ____mt = getmetatable(d)
+    if ____mt == ____EventBus.Delivery.Delivered then
         return "delivered to " .. d.handlers
-    elseif __K2L_InstanceOf(d, ____EventBus.Delivery.Failed) then
+    elseif ____mt == ____EventBus.Delivery.Failed then
         return "failed: " .. d.errors:joinToString("; ")
     elseif __K2L_Equals(d, ____EventBus.Delivery.Dropped) then
         return "dropped"
     end
 end
 
+local ____lambda_2 = function(self) return ____Services.FakeClock.new() end
+local ____lambda_3 = function(____this_2) return ____EventBus.EventBus.new() end
+local ____lambda_4 = function(____this_4)
+    return ____Services.RequestId:next()
+end
 local function buildContainer()
     local ____value = ____Container.Container.new1("app")
     do
-        local factory = function(self) return ____Services.FakeClock.new() end
+        local factory = ____lambda_2
         ____value:register(__K2L_KClassOf(____Services.Clock), ____Container.Scope.SINGLETON, nil, factory)
     end
     do
@@ -583,7 +653,7 @@ local function buildContainer()
         ____value:register(__K2L_KClassOf(____Services.Logger), ____Container.Scope.SINGLETON, "audit", factory)
     end
     do
-        local factory = function(____this_2) return ____EventBus.EventBus.new() end
+        local factory = ____lambda_3
         ____value:register(__K2L_KClassOf(____EventBus.EventBus), ____Container.Scope.SINGLETON, nil, factory)
     end
     do
@@ -595,9 +665,7 @@ local function buildContainer()
         ____value:register(__K2L_KClassOf(____Services.UserRepository), ____Container.Scope.SINGLETON, nil, factory)
     end
     do
-        local ____factory = function(____this_4)
-            return ____Services.RequestId:next()
-        end
+        local ____factory = ____lambda_4
         ____value:register(__K2L_KClassOf(____Services.RequestId), ____Container.Scope.PROTOTYPE, nil, ____factory)
     end
     do
@@ -640,6 +708,19 @@ local function buildContainer()
     return ____value
 end
 
+local ____lambda_5 = function(x)
+    return getmetatable(x) == ____EventBus.UserCreated
+end
+local ____lambda_6 = function(x)
+    return __K2L_InstanceOf(x, ____EventBus.Event)
+end
+local ____lambda_7 = function(____this_8)
+    return ____Services.Session.new("anon")
+end
+local ____lambda_8 = function(____this_9)
+    return ____Services.Session.new("ada")
+end
+local ____lambda_9 = function(____this_14) return ____EventBus.EventBus.new() end
 local function main()
     local root = buildContainer()
     print("== bindings")
@@ -717,14 +798,10 @@ local function main()
     audit:stop()
     print("  after stop: " .. describe(bus:publish(____EventBus.UserCreated.new("x", "y"))))
     local ____result_24
-    ____result_24 = bus:getDead():filter(function(x)
-        return __K2L_InstanceOf(x, ____EventBus.UserCreated)
-    end)
+    ____result_24 = bus:getDead():filter(____lambda_5)
     local ____arg_9 = ____result_24
     local ____result_25
-    ____result_25 = bus:getDead():filter(function(x)
-        return __K2L_InstanceOf(x, ____EventBus.Event)
-    end)
+    ____result_25 = bus:getDead():filter(____lambda_6)
     print("  dead users: " .. __K2L_Str(____arg_9) .. ", dead events: " .. ____result_25.size)
     print("  counts: " .. __K2L_Str(bus:subscriberCounts()))
     local ____list_3 = audit.entries
@@ -734,16 +811,12 @@ local function main()
     end
     print("== scopes")
     do
-        local factory = function(____this_8)
-            return ____Services.Session.new("anon")
-        end
+        local factory = ____lambda_7
         root:register(__K2L_KClassOf(____Services.Session), ____Container.Scope.SCOPED, nil, factory)
     end
     local ____value_1 = root:child("request-1")
     do
-        local factory = function(____this_9)
-            return ____Services.Session.new("ada")
-        end
+        local factory = ____lambda_8
         ____value_1:register(__K2L_KClassOf(____Services.Session), ____Container.Scope.SCOPED, nil, factory)
     end
     local req1 = ____value_1
@@ -785,7 +858,7 @@ local function main()
         end)
         if not ____ok_2 then
             local ____error_2 = __K2L_ToThrowable(____result_34)
-            if __K2L_InstanceOf(____error_2, ____Container.ResolutionException) then
+            if getmetatable(____error_2) == ____Container.ResolutionException then
                 local e = ____error_2
                 print("  resolve " .. __K2L_Str(__K2L_KClassNamed("kotlin.String").simpleName) .. " failed: " .. __K2L_Str(e.message))
                 ____result_33 = nil
@@ -803,7 +876,7 @@ local function main()
         end)
         if not ____ok_3 then
             local ____error_3 = __K2L_ToThrowable(____result_37)
-            if __K2L_InstanceOf(____error_3, ____Container.ResolutionException) then
+            if getmetatable(____error_3) == ____Container.ResolutionException then
                 local e = ____error_3
                 print("  resolve " .. __K2L_Str(__K2L_KClassNamed("kotlin.collections.Map").simpleName) .. " failed: " .. __K2L_Str(e.message))
                 ____result_36 = nil
@@ -840,7 +913,7 @@ local function main()
     end)
     if not ____ok_4 then
         local ____error_4 = __K2L_ToThrowable(____result_42)
-        if __K2L_InstanceOf(____error_4, ____Container.ResolutionException) then
+        if getmetatable(____error_4) == ____Container.ResolutionException then
             local e = ____error_4
             print("  " .. __K2L_Str(e.message) .. " (" .. e.chain.size .. " links)")
         else
@@ -875,7 +948,7 @@ local function main()
     print("  lazy cycle ok: " .. tostring(b.a:get().b == b))
     local ____ok_5, ____result_48 = pcall(function()
         do
-            local factory = function(____this_14) return ____EventBus.EventBus.new() end
+            local factory = ____lambda_9
             root:register(__K2L_KClassOf(____EventBus.EventBus), ____Container.Scope.SINGLETON, nil, factory)
         end
     end)
@@ -1027,6 +1100,10 @@ function UserService:____init(repo, bus, ids)
     self.ids = ids
 end
 
+function UserService.new(repo, bus, ids)
+    return setmetatable({repo = repo, bus = bus, ids = ids}, UserService)
+end
+
 function UserService:create(name)
     local id = self.repo:add(name)
     self.bus:publish(____EventBus.UserCreated.new("users/" .. __K2L_Str(self.ids:get()), name))
@@ -1071,6 +1148,10 @@ __K2L_CompanionInfo(RequestId, "app.di.services.RequestId.Companion", "app.di.se
 
 function RequestId:____init(value)
     self.value = value
+end
+
+function RequestId.new(value)
+    return setmetatable({value = value}, RequestId)
 end
 
 function RequestId:toString()

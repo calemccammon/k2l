@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_HashMap = ____lualib.__K2L_HashMap
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
@@ -20,13 +21,16 @@ function Matrix:____init(rows, cols)
 end
 
 function Matrix:get(i, j)
-    return self.data:get(i * self.cols + j)
+    return self.data[i * self.cols + j + 1] or __K2L_IndexError(i * self.cols + j, self.data.size, "array")
 end
 
 function Matrix:set(i, j, v)
     local ____object = self.data
     local ____key = i * self.cols + j
-    ____object:set(____key, v)
+    if ____key < 0 or ____key >= ____object.size then
+        __K2L_IndexError(____key, ____object.size, "array")
+    end
+    ____object[____key + 1] = v
 end
 
 function Matrix:get__1(row, col)
@@ -99,6 +103,10 @@ function Row:____init(values)
     self.values = values
 end
 
+function Row.new(values)
+    return setmetatable({values = values}, Row)
+end
+
 function Row:get(i)
     return self.values:get(i)
 end
@@ -159,7 +167,7 @@ local function main()
     print(g:get(0, 0) .. g:get(5, 5))
     local counts = MapGrid.new(0)
     for i = 0, 2 do
-        local ____key_7 = math.fmod(i, 2)
+        local ____key_7 = i >= 0 and i % 2 or 0 - -i % 2
         counts:set(____key_7, 0, counts:get(____key_7, 0) + 1)
     end
     print(counts:get(0, 0) .. " " .. counts:get(1, 0))

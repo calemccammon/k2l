@@ -23,6 +23,12 @@ local function attempt(label, block)
     end
 end
 
+local ____lambda_1 = function()
+    return __K2L_Exact.mulLong(3037000499, 3037000499)
+end
+local ____lambda_2 = function()
+    return __K2L_Exact.mulLong(3037000500, 3037000500)
+end
 local function main()
     local max = 9223372036854775807
     local min = -9223372036854775807 - 1
@@ -32,12 +38,8 @@ local function main()
     attempt("sub", function() return __K2L_Exact.subLong(min + 1, 1) end)
     attempt("sub overflow", function() return __K2L_Exact.subLong(min, 1) end)
     attempt("sub overflow 2", function() return __K2L_Exact.subLong(0, min) end)
-    attempt("mul", function()
-        return __K2L_Exact.mulLong(3037000499, 3037000499)
-    end)
-    attempt("mul overflow", function()
-        return __K2L_Exact.mulLong(3037000500, 3037000500)
-    end)
+    attempt("mul", ____lambda_1)
+    attempt("mul overflow", ____lambda_2)
     attempt("mul min", function() return __K2L_Exact.mulLong(min, -1) end)
     attempt("mul min 2", function() return __K2L_Exact.mulLong(-1, min) end)
     attempt("mul zero", function() return __K2L_Exact.mulLong(min, 0) end)

@@ -40,6 +40,10 @@ function Greeter:____init(greeting)
     self.greeting = greeting
 end
 
+function Greeter.new(greeting)
+    return setmetatable({greeting = greeting}, Greeter)
+end
+
 function Greeter:greet(name)
     return self.greeting .. ", " .. name
 end
@@ -60,8 +64,12 @@ function StringBox:add(s)
     self.text = self.text .. s
 end
 
+local ____lambda_1 = function(it) return it * 3 end
+local ____lambda_2 = function(it) return it * it > 20 end
+local ____lambda_3 = function(s) return #s end
+local ____lambda_4 = function(x) return x + 1 end
 local function main()
-    print(applyTwice(function(it) return it * 3 end, 2))
+    print(applyTwice(____lambda_1, 2))
     local add5 = makeAdder(5)
     print(add5(10))
     print(compose(add5, square)(1))
@@ -70,13 +78,13 @@ local function main()
         count = count + #it
     end)
     print(count)
-    print(firstMatch(10, function(it) return it * it > 20 end))
+    print(firstMatch(10, ____lambda_2))
     local g = Greeter.new("Hi")
     local greet = function(...) return g:greet(...) end
     print(greet("Ann"))
-    local lengthOf = function(s) return #s end
+    local lengthOf = ____lambda_3
     print(lengthOf("four"))
-    local f = function(x) return x + 1 end
+    local f = ____lambda_4
     print(f(1))
     print(buildText(function(self)
         self:add("a")

@@ -5,6 +5,7 @@ local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -12,7 +13,6 @@ local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_SortedSet = ____lualib.__K2L_SortedSet
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local companions
 local E = __K2L_Class("E")
@@ -71,34 +71,51 @@ function Task:____init(name, level)
     self.level = level
 end
 
+function Task.new(name, level)
+    return setmetatable({name = name, level = level}, Task)
+end
+
 function Task:toString()
     return "Task(name=" .. self.name .. ", level=" .. __K2L_Str(self.level) .. ")"
 end
 
 function Task:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.name) + __K2L_Hash(self.level))
+    return (31 * __K2L_Hash(self.name) + __K2L_Hash(self.level) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Task:equals(other)
     return getmetatable(other) == Task and self.name == other.name and self.level == other.level
 end
 
+local ____lambda_1 = function(it) return it.key end
+local ____lambda_2 = function(it) return it.level end
+local ____lambda_3 = function(it) return it.name end
+local ____lambda_4 = function(it) return it.level end
 local function main()
     print(__K2L_Compare(E.A, E.B) < 0)
     print(__K2L_Compare(E.C, E.A))
     print(__K2L_Str(__K2L_ReadOnlyListOf(E.C, E.A, E.B):sorted()))
     print(__K2L_Str(__K2L_ReadOnlyListOf(E.C, E.A, E.B):max()))
-    print(__K2L_Str(__K2L_ReadOnlyMapOf(__K2L_Pair.new(E.C, 1), __K2L_Pair.new(E.A, 2)):getEntries():sortedBy(function(it) return it.key end, true)))
+    print(__K2L_Str(__K2L_ReadOnlyMapOf(__K2L_Pair.new(E.C, 1), __K2L_Pair.new(E.A, 2)):getEntries():sortedBy(____lambda_1, true)))
     local c = E.B
     print(__K2L_Compare(c, E.A))
     print(__K2L_Str(__K2L_Num.maxOf(E.A, E.C)))
     print(__K2L_Str(__K2L_Num.coerceIn(E.B, E.C, E.C)))
     print(__K2L_Str(__K2L_SortedSet.new(__K2L_ReadOnlyListOf(E.B, E.C, E.A, E.B))))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(Level.HIGH, Level.LOW):sorted():map(function(it) return it:label() end)))
+    local ____list = __K2L_ReadOnlyListOf(Level.HIGH, Level.LOW):sorted()
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = it:label()
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(__K2L_Compare(Level.HIGH, Level.LOW) > 0)
     local tasks = __K2L_ReadOnlyListOf(Task.new("x", Level.HIGH), Task.new("y", Level.LOW), Task.new("z", Level.HIGH))
-    print(__K2L_Str(tasks:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(function(it) return it.level end), function(it) return it.name end))))
-    print(tasks:maxBy(function(it) return it.level end).name)
+    print(__K2L_Str(tasks:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_2), ____lambda_3))))
+    print(tasks:maxBy(____lambda_4).name)
     companions()
 end
 
@@ -124,7 +141,16 @@ Size.____values = {Size.SMALL, Size.LARGE}
 Size.____companion = true
 
 function Size:parse(c)
-    return __K2L_EnumValues(Size):firstOrNull(function(it) return it.letter == c end)
+    local ____values = Size.____values
+    local ____result
+    for ____i_1 = 1, #____values do
+        local it = ____values[____i_1]
+        if it.letter == c then
+            ____result = it
+            break
+        end
+    end
+    return ____result
 end
 
 function Size:count()

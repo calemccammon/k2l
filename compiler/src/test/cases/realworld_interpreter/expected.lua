@@ -14,6 +14,7 @@ local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListBuilderOf = ____lualib.__K2L_ListBuilderOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -26,7 +27,6 @@ local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringToDoubleOrNull = ____lualib.__K2L_StringToDoubleOrNull
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Env
@@ -100,12 +100,16 @@ function Token:____init(____type, text, line)
     self.line = line
 end
 
+function Token.new(____type, text, line)
+    return setmetatable({type = ____type, text = text, line = line}, Token)
+end
+
 function Token:toString()
     return self.type == TokenType.EOF and "<eof>" or __K2L_Str(self.type) .. " '" .. self.text .. "'"
 end
 
 function Token:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.type) + __K2L_Hash(self.text)) + __K2L_Hash(self.line))
+    return (31 * (31 * __K2L_Hash(self.type) + __K2L_Hash(self.text)) + self.line + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Token:equals(other)
@@ -259,12 +263,16 @@ function Expr.Num:____init(value, line)
     self.line = line
 end
 
+function Expr.Num.new(value, line)
+    return setmetatable({value = value, line = line}, Expr.Num)
+end
+
 function Expr.Num:toString()
     return "Num(value=" .. __K2L_Str(self.value) .. ", line=" .. self.line .. ")"
 end
 
 function Expr.Num:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.value) + __K2L_Hash(self.line))
+    return (31 * __K2L_Hash(self.value) + self.line + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Expr.Num:equals(other)
@@ -279,12 +287,16 @@ function Expr.Str:____init(value, line)
     self.line = line
 end
 
+function Expr.Str.new(value, line)
+    return setmetatable({value = value, line = line}, Expr.Str)
+end
+
 function Expr.Str:toString()
     return "Str(value=" .. self.value .. ", line=" .. self.line .. ")"
 end
 
 function Expr.Str:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.value) + __K2L_Hash(self.line))
+    return (31 * __K2L_Hash(self.value) + self.line + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Expr.Str:equals(other)
@@ -299,12 +311,16 @@ function Expr.Bool:____init(value, line)
     self.line = line
 end
 
+function Expr.Bool.new(value, line)
+    return setmetatable({value = value, line = line}, Expr.Bool)
+end
+
 function Expr.Bool:toString()
     return "Bool(value=" .. tostring(self.value) .. ", line=" .. self.line .. ")"
 end
 
 function Expr.Bool:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.value) + __K2L_Hash(self.line))
+    return (31 * (self.value and 1231 or 1237) + self.line + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Expr.Bool:equals(other)
@@ -319,12 +335,16 @@ function Expr.Var:____init(name, line)
     self.line = line
 end
 
+function Expr.Var.new(name, line)
+    return setmetatable({name = name, line = line}, Expr.Var)
+end
+
 function Expr.Var:toString()
     return "Var(name=" .. self.name .. ", line=" .. self.line .. ")"
 end
 
 function Expr.Var:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.name) + __K2L_Hash(self.line))
+    return (31 * __K2L_Hash(self.name) + self.line + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Expr.Var:equals(other)
@@ -340,12 +360,16 @@ function Expr.Unary:____init(op, operand, line)
     self.line = line
 end
 
+function Expr.Unary.new(op, operand, line)
+    return setmetatable({op = op, operand = operand, line = line}, Expr.Unary)
+end
+
 function Expr.Unary:toString()
     return "Unary(op=" .. self.op .. ", operand=" .. __K2L_Str(self.operand) .. ", line=" .. self.line .. ")"
 end
 
 function Expr.Unary:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.op) + __K2L_Hash(self.operand)) + __K2L_Hash(self.line))
+    return (31 * (31 * __K2L_Hash(self.op) + __K2L_Hash(self.operand)) + self.line + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Expr.Unary:equals(other)
@@ -362,12 +386,16 @@ function Expr.Binary:____init(left, op, right, line)
     self.line = line
 end
 
+function Expr.Binary.new(left, op, right, line)
+    return setmetatable({left = left, op = op, right = right, line = line}, Expr.Binary)
+end
+
 function Expr.Binary:toString()
     return "Binary(left=" .. __K2L_Str(self.left) .. ", op=" .. self.op .. ", right=" .. __K2L_Str(self.right) .. ", line=" .. self.line .. ")"
 end
 
 function Expr.Binary:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.left) + __K2L_Hash(self.op)) + __K2L_Hash(self.right)) + __K2L_Hash(self.line))
+    return (31 * (31 * (31 * __K2L_Hash(self.left) + __K2L_Hash(self.op)) + __K2L_Hash(self.right)) + self.line + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Expr.Binary:equals(other)
@@ -383,12 +411,16 @@ function Expr.Call:____init(callee, args, line)
     self.line = line
 end
 
+function Expr.Call.new(callee, args, line)
+    return setmetatable({callee = callee, args = args, line = line}, Expr.Call)
+end
+
 function Expr.Call:toString()
     return "Call(callee=" .. self.callee .. ", args=" .. __K2L_Str(self.args) .. ", line=" .. self.line .. ")"
 end
 
 function Expr.Call:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.callee) + __K2L_Hash(self.args)) + __K2L_Hash(self.line))
+    return (31 * (31 * __K2L_Hash(self.callee) + __K2L_Hash(self.args)) + self.line + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Expr.Call:equals(other)
@@ -405,12 +437,16 @@ function Stmt.Let:____init(name, init)
     self.init = init
 end
 
+function Stmt.Let.new(name, init)
+    return setmetatable({name = name, init = init}, Stmt.Let)
+end
+
 function Stmt.Let:toString()
     return "Let(name=" .. self.name .. ", init=" .. __K2L_Str(self.init) .. ")"
 end
 
 function Stmt.Let:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.name) + __K2L_Hash(self.init))
+    return (31 * __K2L_Hash(self.name) + __K2L_Hash(self.init) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Stmt.Let:equals(other)
@@ -425,12 +461,16 @@ function Stmt.Assign:____init(name, value)
     self.value = value
 end
 
+function Stmt.Assign.new(name, value)
+    return setmetatable({name = name, value = value}, Stmt.Assign)
+end
+
 function Stmt.Assign:toString()
     return "Assign(name=" .. self.name .. ", value=" .. __K2L_Str(self.value) .. ")"
 end
 
 function Stmt.Assign:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.name) + __K2L_Hash(self.value))
+    return (31 * __K2L_Hash(self.name) + __K2L_Hash(self.value) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Stmt.Assign:equals(other)
@@ -442,6 +482,10 @@ __K2L_ClassInfo(Stmt.Print, "calc.Stmt.Print", "calc.Stmt$Print", "class")
 
 function Stmt.Print:____init(expr)
     self.expr = expr
+end
+
+function Stmt.Print.new(expr)
+    return setmetatable({expr = expr}, Stmt.Print)
 end
 
 function Stmt.Print:toString()
@@ -465,12 +509,16 @@ function Stmt.If:____init(cond, ____then, otherwise)
     self.otherwise = otherwise
 end
 
+function Stmt.If.new(cond, ____then, otherwise)
+    return setmetatable({cond = cond, ["then"] = ____then, otherwise = otherwise}, Stmt.If)
+end
+
 function Stmt.If:toString()
     return "If(cond=" .. __K2L_Str(self.cond) .. ", then=" .. __K2L_Str(self["then"]) .. ", otherwise=" .. __K2L_Str(self.otherwise) .. ")"
 end
 
 function Stmt.If:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.cond) + __K2L_Hash(self["then"])) + __K2L_Hash(self.otherwise))
+    return (31 * (31 * __K2L_Hash(self.cond) + __K2L_Hash(self["then"])) + __K2L_Hash(self.otherwise) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Stmt.If:equals(other)
@@ -485,12 +533,16 @@ function Stmt.While:____init(cond, body)
     self.body = body
 end
 
+function Stmt.While.new(cond, body)
+    return setmetatable({cond = cond, body = body}, Stmt.While)
+end
+
 function Stmt.While:toString()
     return "While(cond=" .. __K2L_Str(self.cond) .. ", body=" .. __K2L_Str(self.body) .. ")"
 end
 
 function Stmt.While:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.cond) + __K2L_Hash(self.body))
+    return (31 * __K2L_Hash(self.cond) + __K2L_Hash(self.body) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Stmt.While:equals(other)
@@ -506,12 +558,16 @@ function Stmt.FunDecl:____init(name, params, body)
     self.body = body
 end
 
+function Stmt.FunDecl.new(name, params, body)
+    return setmetatable({name = name, params = params, body = body}, Stmt.FunDecl)
+end
+
 function Stmt.FunDecl:toString()
     return "FunDecl(name=" .. self.name .. ", params=" .. __K2L_Str(self.params) .. ", body=" .. __K2L_Str(self.body) .. ")"
 end
 
 function Stmt.FunDecl:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.name) + __K2L_Hash(self.params)) + __K2L_Hash(self.body))
+    return (31 * (31 * __K2L_Hash(self.name) + __K2L_Hash(self.params)) + __K2L_Hash(self.body) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Stmt.FunDecl:equals(other)
@@ -523,6 +579,10 @@ __K2L_ClassInfo(Stmt.Return, "calc.Stmt.Return", "calc.Stmt$Return", "class")
 
 function Stmt.Return:____init(value)
     self.value = value
+end
+
+function Stmt.Return.new(value)
+    return setmetatable({value = value}, Stmt.Return)
 end
 
 function Stmt.Return:toString()
@@ -542,6 +602,10 @@ __K2L_ClassInfo(Stmt.ExprStmt, "calc.Stmt.ExprStmt", "calc.Stmt$ExprStmt", "clas
 
 function Stmt.ExprStmt:____init(expr)
     self.expr = expr
+end
+
+function Stmt.ExprStmt.new(expr)
+    return setmetatable({expr = expr}, Stmt.ExprStmt)
 end
 
 function Stmt.ExprStmt:toString()
@@ -748,6 +812,10 @@ function Value.NumV:____init(n)
     self.n = n
 end
 
+function Value.NumV.new(n)
+    return setmetatable({n = n}, Value.NumV)
+end
+
 function Value.NumV:toString()
     return self.n == math.floor(self.n) + 0.0 and not __K2L_Num.isInfinite(self.n) and tostring(__K2L_DoubleToLong(self.n)) or __K2L_Str(self.n)
 end
@@ -765,6 +833,10 @@ __K2L_ClassInfo(Value.StrV, "calc.Value.StrV", "calc.Value$StrV", "class")
 
 function Value.StrV:____init(s)
     self.s = s
+end
+
+function Value.StrV.new(s)
+    return setmetatable({s = s}, Value.StrV)
 end
 
 function Value.StrV:toString()
@@ -786,12 +858,16 @@ function Value.BoolV:____init(b)
     self.b = b
 end
 
+function Value.BoolV.new(b)
+    return setmetatable({b = b}, Value.BoolV)
+end
+
 function Value.BoolV:toString()
     return tostring(self.b)
 end
 
 function Value.BoolV:hashCode()
-    return __K2L_Hash(self.b)
+    return self.b and 1231 or 1237
 end
 
 function Value.BoolV:equals(other)
@@ -813,6 +889,10 @@ function Value.FunV:____init(decl, closure)
     self.closure = closure
 end
 
+function Value.FunV.new(decl, closure)
+    return setmetatable({decl = decl, closure = closure}, Value.FunV)
+end
+
 function Value.FunV:toString()
     return "<fun " .. self.decl.name .. "/" .. self.decl.params.size .. ">"
 end
@@ -824,6 +904,10 @@ function Value.Native:____init(name, arity, fn)
     self.name = name
     self.arity = arity
     self.fn = fn
+end
+
+function Value.Native.new(name, arity, fn)
+    return setmetatable({name = name, arity = arity, fn = fn}, Value.Native)
 end
 
 function Value.Native:toString()
@@ -886,6 +970,9 @@ end
 local Interpreter = __K2L_Class("calc.Interpreter")
 __K2L_ClassInfo(Interpreter, "calc.Interpreter", "calc.Interpreter", "class")
 
+local ____lambda_1 = function(args)
+    return Value.StrV.new(__K2L_Str(args:get(0)))
+end
 function Interpreter:____init(out)
     self.out = out
     self.globals = Env.new()
@@ -893,14 +980,12 @@ function Interpreter:____init(out)
     self.steps = 0
     self.globals:define("len", Value.Native.new("len", 1, function(____destructured)
         local s = ____destructured[1]
-        local ____receiver_4 = __K2L_InstanceOf(s, Value.StrV) and s or nil
-        local ____receiver_5 = ____receiver_4 and (__K2L_InstanceOf(s, Value.StrV) and s or nil).s
+        local ____receiver_4 = getmetatable(s) == Value.StrV and s or nil
+        local ____receiver_5 = ____receiver_4 and (getmetatable(s) == Value.StrV and s or nil).s
         local ____receiver_6 = ____receiver_5 and #____receiver_5
         return Value.NumV.new(____receiver_6 and ____receiver_6 + 0.0 or -1.0)
     end))
-    self.globals:define("str", Value.Native.new("str", 1, function(args)
-        return Value.StrV.new(__K2L_Str(args:get(0)))
-    end))
+    self.globals:define("str", Value.Native.new("str", 1, ____lambda_1))
     self.globals:define("max", Value.Native.new("max", 2, function(____destructured_1)
         local a, b = ____destructured_1[1], ____destructured_1[2]
         return self:num(a, 0) >= self:num(b, 0) and a or b
@@ -924,13 +1009,14 @@ end
 
 function Interpreter:exec(stmt, env)
     self.steps = self.steps + 1
-    if __K2L_InstanceOf(stmt, Stmt.Let) then
+    local ____mt = getmetatable(stmt)
+    if ____mt == Stmt.Let then
         env:define(stmt.name, self:eval(stmt.init, env))
-    elseif __K2L_InstanceOf(stmt, Stmt.Assign) then
+    elseif ____mt == Stmt.Assign then
         env:assign(stmt.name, self:eval(stmt.value, env), stmt.value.line)
-    elseif __K2L_InstanceOf(stmt, Stmt.Print) then
+    elseif ____mt == Stmt.Print then
         self.out(__K2L_Str(self:eval(stmt.expr, env)))
-    elseif __K2L_InstanceOf(stmt, Stmt.If) then
+    elseif ____mt == Stmt.If then
         if self:truthy(self:eval(stmt.cond, env)) then
             self:execBlock(stmt["then"], Env.new(env))
         else
@@ -939,7 +1025,7 @@ function Interpreter:exec(stmt, env)
                 self:execBlock(____receiver_8, Env.new(env))
             end
         end
-    elseif __K2L_InstanceOf(stmt, Stmt.While) then
+    elseif ____mt == Stmt.While then
         local guard = 0
         while self:truthy(self:eval(stmt.cond, env)) do
             guard = guard + 1
@@ -948,22 +1034,23 @@ function Interpreter:exec(stmt, env)
             end
             self:execBlock(stmt.body, Env.new(env))
         end
-    elseif __K2L_InstanceOf(stmt, Stmt.FunDecl) then
+    elseif ____mt == Stmt.FunDecl then
         env:define(stmt.name, Value.FunV.new(stmt, env))
-    elseif __K2L_InstanceOf(stmt, Stmt.Return) then
+    elseif ____mt == Stmt.Return then
         local ____receiver_7 = stmt.value
         error(ReturnSignal.new(____receiver_7 and self:eval(____receiver_7, env) or Value.Nil))
-    elseif __K2L_InstanceOf(stmt, Stmt.ExprStmt) then
+    elseif ____mt == Stmt.ExprStmt then
         self:eval(stmt.expr, env)
     end
 end
 
 function Interpreter:truthy(v)
-    if __K2L_InstanceOf(v, Value.BoolV) then
+    local ____mt_1 = getmetatable(v)
+    if ____mt_1 == Value.BoolV then
         return v.b
     elseif __K2L_Equals(v, Value.Nil) then
         return false
-    elseif __K2L_InstanceOf(v, Value.NumV) then
+    elseif ____mt_1 == Value.NumV then
         return v.n ~= 0.0
     else
         return true
@@ -971,8 +1058,8 @@ function Interpreter:truthy(v)
 end
 
 function Interpreter:num(v, line)
-    local ____receiver_9 = __K2L_InstanceOf(v, Value.NumV) and v or nil
-    local ____value_12 = ____receiver_9 and (__K2L_InstanceOf(v, Value.NumV) and v or nil).n
+    local ____receiver_9 = getmetatable(v) == Value.NumV and v or nil
+    local ____value_12 = ____receiver_9 and (getmetatable(v) == Value.NumV and v or nil).n
     if ____value_12 == nil then
         error(RuntimeError.new("expected a number, got " .. __K2L_Str(__K2L_KClassOfValue(v).simpleName) .. " " .. __K2L_Str(v), line))
     end
@@ -980,24 +1067,25 @@ function Interpreter:num(v, line)
 end
 
 function Interpreter:eval(e, env)
-    if __K2L_InstanceOf(e, Expr.Num) then
+    local ____mt_2 = getmetatable(e)
+    if ____mt_2 == Expr.Num then
         return Value.NumV.new(e.value)
-    elseif __K2L_InstanceOf(e, Expr.Str) then
+    elseif ____mt_2 == Expr.Str then
         return Value.StrV.new(e.value)
-    elseif __K2L_InstanceOf(e, Expr.Bool) then
+    elseif ____mt_2 == Expr.Bool then
         return Value.BoolV.new(e.value)
-    elseif __K2L_InstanceOf(e, Expr.Var) then
+    elseif ____mt_2 == Expr.Var then
         return env:lookup(e.name, e.line)
-    elseif __K2L_InstanceOf(e, Expr.Unary) then
+    elseif ____mt_2 == Expr.Unary then
         local ____subject_2 = e.op
         if ____subject_2 == "-" then
             return Value.NumV.new(-self:num(self:eval(e.operand, env), e.line))
         else
             return Value.BoolV.new(not self:truthy(self:eval(e.operand, env)))
         end
-    elseif __K2L_InstanceOf(e, Expr.Binary) then
+    elseif ____mt_2 == Expr.Binary then
         return self:binary(e, env)
-    elseif __K2L_InstanceOf(e, Expr.Call) then
+    elseif ____mt_2 == Expr.Call then
         return self:call(e, env)
     end
 end
@@ -1019,7 +1107,7 @@ function Interpreter:binary(e, env)
     local r = self:eval(e.right, env)
     local ____subject_3 = e.op
     if ____subject_3 == "+" then
-        return (__K2L_InstanceOf(l, Value.StrV) or __K2L_InstanceOf(r, Value.StrV)) and Value.StrV.new(__K2L_Str(l) .. __K2L_Str(r)) or Value.NumV.new(self:num(l, e.line) + self:num(r, e.line))
+        return (getmetatable(l) == Value.StrV or getmetatable(r) == Value.StrV) and Value.StrV.new(__K2L_Str(l) .. __K2L_Str(r)) or Value.NumV.new(self:num(l, e.line) + self:num(r, e.line))
     elseif ____subject_3 == "-" then
         return Value.NumV.new(self:num(l, e.line) - self:num(r, e.line))
     elseif ____subject_3 == "*" then
@@ -1051,13 +1139,23 @@ end
 
 function Interpreter:call(e, env)
     local callee = env:lookup(e.callee, e.line)
-    local args = e.args:map(function(it) return self:eval(it, env) end)
-    if __K2L_InstanceOf(callee, Value.Native) then
+    local ____list = e.args
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = self:eval(it, env)
+    end
+    local args = __K2L_ListWrap(____out, ____count)
+    local ____mt_3 = getmetatable(callee)
+    if ____mt_3 == Value.Native then
         if args.size ~= callee.arity then
             error(RuntimeError.new(callee.name .. " expects " .. callee.arity .. " args", e.line))
         end
         return callee.fn(args)
-    elseif __K2L_InstanceOf(callee, Value.FunV) then
+    elseif ____mt_3 == Value.FunV then
         local params = callee.decl.params
         if args.size ~= params.size then
             error(RuntimeError.new(callee.decl.name .. " expects " .. params.size .. " args, got " .. args.size, e.line))
@@ -1067,15 +1165,15 @@ function Interpreter:call(e, env)
             error(RuntimeError.new("stack overflow in " .. callee.decl.name, e.line))
         end
         local ____local = Env.new(callee.closure)
-        local ____list = params:zip(args)
-        local ____mod_1 = ____list.____modCount
-        for ____i_1 = 1, ____list.size do
-            local ____it_1 = ____list[____i_1]
+        local ____list_1 = params:zip(args)
+        local ____mod_1 = ____list_1.____modCount
+        for ____i_2 = 1, ____list_1.size do
+            local ____it_1 = ____list_1[____i_2]
             do
                 local p, a = ____it_1.first, ____it_1.second
                 ____local:define(p, a)
             end
-            if ____list.____modCount ~= ____mod_1 and ____list:____comodified(____i_1) then
+            if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_2) then
                 break
             end
         end
@@ -1086,7 +1184,7 @@ function Interpreter:call(e, env)
         if not ____ok then
             ____ok, ____result_2, ____returned = pcall(function()
                 local ____error = __K2L_ToThrowable(____result_2)
-                if __K2L_InstanceOf(____error, ReturnSignal) then
+                if getmetatable(____error) == ReturnSignal then
                     local r = ____error
                     return true, r.value
                 else
@@ -1119,7 +1217,7 @@ local function runSource(name, src)
     if not ____ok_1 then
         ____ok_1, ____result_3 = pcall(function()
             local ____error_1 = __K2L_ToThrowable(____result_3)
-            if __K2L_InstanceOf(____error_1, SyntaxError) then
+            if getmetatable(____error_1) == SyntaxError then
                 local e = ____error_1
                 output:add("syntax: " .. __K2L_Str(e))
             elseif __K2L_InstanceOf(____error_1, LangException) then
@@ -1132,9 +1230,9 @@ local function runSource(name, src)
             end
         end)
     end
-    for ____i_2 = 1, output.size do
-        local s = output[____i_2]
-        local i = ____i_2 - 1
+    for ____i_3 = 1, output.size do
+        local s = output[____i_3]
+        local i = ____i_3 - 1
         print("  " .. i + 1 .. ": " .. s)
     end
     print("  steps=" .. interp.steps)
@@ -1143,6 +1241,9 @@ local function runSource(name, src)
     end
 end
 
+local ____lambda_2 = function(it) return it.type end
+local ____lambda_3 = function(it) return it.key end
+local ____lambda_4 = function(it) return __K2L_Str(it.key) .. "=" .. it.value end
 local function main()
     runSource("fib", __K2L_Text.trimIndent("\n        fun fib(n) { if n < 2 { return n; } return fib(n - 1) + fib(n - 2); }\n        let i = 0;\n        while i < 10 { print \"fib(\" + str(i) + \") = \" + fib(i); i = i + 1; }\n        "))
     runSource("closures", __K2L_Text.trimIndent("\n        fun counter() {\n          let n = 0;\n          fun inc() { n = n + 1; return n; }\n          return inc;\n        }\n        let c = counter();\n        c(); c();\n        print \"count: \" + c();\n        print max(3, 7) * 2 / 4;\n        print len(\"hello\") % 3;\n        print !(1 < 2) || 3 >= 3 && \"x\" != \"y\";\n        "))
@@ -1154,7 +1255,7 @@ local function main()
     runSource("arity", "fun two(a, b) { return a; }\nprint two(1);")
     local tokens = Lexer.new("let total = a1 + 42 >= b;"):tokens()
     print(tokens:joinToString(" | "))
-    print(tokens:groupingBy(function(it) return it.type end):eachCount():getEntries():sortedBy(function(it) return it.key end, true):joinToString(nil, nil, nil, nil, nil, function(it) return __K2L_Str(it.key) .. "=" .. it.value end))
+    print(tokens:groupingBy(____lambda_2):eachCount():getEntries():sortedBy(____lambda_3, true):joinToString(nil, nil, nil, nil, nil, ____lambda_4))
     local ast = Parser.new(Lexer.new("print -x * (y + 2);"):tokens()):program():single()
     print(__K2L_Str(ast))
     local nested = Env.new(Env.new(Env.new()))

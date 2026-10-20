@@ -9,6 +9,7 @@ local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunctionMixin = ____lualib.__K2L_FunctionMixin
 local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
@@ -169,8 +170,9 @@ function ReadOnly:____init(list)
     self.____delegate_List = list
 end
 
+local ____lambda_1 = function(it) return it:upper() end
 function ReadOnly:shout()
-    return self:joinToString(" ", nil, nil, nil, nil, function(it) return it:upper() end)
+    return self:joinToString(" ", nil, nil, nil, nil, ____lambda_1)
 end
 
 function ReadOnly:isEmpty()
@@ -404,7 +406,7 @@ function Name:____init(s)
 end
 
 function Name:get(index)
-    return __K2L_StringCharAt(self.____delegate_CharSequence, index)
+    return index >= 0 and index < #self.____delegate_CharSequence and self.____delegate_CharSequence:sub(index + 1, index + 1) or __K2L_IndexError(index, #self.____delegate_CharSequence, "string")
 end
 
 function Name:subSequence(startIndex, endIndex)
@@ -441,9 +443,10 @@ function Twice:invoke(p1)
     return self.____delegate_Function1(p1)
 end
 
+local ____lambda_2 = function(it) return #it end
 local function comparators()
     local words = __K2L_ReadOnlyListOf("ccc", "a", "bb", "dddd")
-    local byLength = Counting.new(__K2L_CompareBy(function(it) return #it end))
+    local byLength = Counting.new(__K2L_CompareBy(____lambda_2))
     print(__K2L_Str(words:sortedWith(byLength)) .. " " .. tostring(byLength.calls > 0) .. " " .. byLength:compare("aa", "b"))
     print(__K2L_Str(words:sortedWith(__K2L_ReverseComparator(byLength))))
     local natural = Plain.new(__K2L_NaturalOrder)
@@ -453,6 +456,9 @@ local function comparators()
     print(__K2L_Str(tree))
 end
 
+local ____lambda_3 = function(it) return it * 2 end
+local ____lambda_4 = function(it) return it > 3 end
+local ____lambda_5 = function(it) return it > 10 end
 local function lists()
     local l = Logging.new(__K2L_ListOf(3, 1, 2))
     l:add(4)
@@ -464,7 +470,7 @@ local function lists()
     l:remove(7)
     l:set(0, 30)
     l:sort()
-    print(__K2L_Str(l.inner) .. " " .. l:first() .. " " .. l:last() .. " " .. l:sum() .. " " .. __K2L_Str(l:map(function(it) return it * 2 end)) .. " " .. __K2L_Str(l:filter(function(it) return it > 3 end)) .. " " .. l:joinToString("-"))
+    print(__K2L_Str(l.inner) .. " " .. l:first() .. " " .. l:last() .. " " .. l:sum() .. " " .. __K2L_Str(l:map(____lambda_3)) .. " " .. __K2L_Str(l:filter(____lambda_4)) .. " " .. l:joinToString("-"))
     local total = 0
     local ____items, ____n = l:____array()
     for ____i = 1, ____n do
@@ -476,12 +482,18 @@ local function lists()
     local it = __K2L_JdkCollections.listIterator(l)
     it:next()
     it:remove()
-    print(__K2L_Str(l.inner) .. " " .. tostring(l:removeIf(function(it) return it > 10 end)) .. " " .. __K2L_Str(l.inner) .. " " .. __K2L_Str(l.log))
+    print(__K2L_Str(l.inner) .. " " .. tostring(l:removeIf(____lambda_5)) .. " " .. __K2L_Str(l.inner) .. " " .. __K2L_Str(l.log))
     local r = ReadOnly.new(__K2L_ReadOnlyListOf("a", "b", "c"))
     print(r:shout() .. " " .. r.size .. " " .. r:get(1) .. " " .. r:lastIndexOf("c") .. " " .. tostring(r:containsAll(__K2L_ReadOnlyListOf("a", "c"))) .. " " .. __K2L_Str(r:asReversed()) .. " " .. __K2L_Str(r:zip(r:drop(1))))
     print(tostring(r:equals(__K2L_ReadOnlyListOf("a", "b", "c"))) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(r), "ReadOnly@")) .. " " .. __K2L_Str(r:toList()) .. " " .. __K2L_Str(r:toSet()) .. " " .. __K2L_Str(r:withIndex():last()))
 end
 
+local ____lambda_6 = function(it) return it.key .. it.value end
+local ____lambda_7 = function() return 7 end
+local ____lambda_8 = function(it) return it > 3 end
+local ____lambda_9 = function(it) return it.value end
+local ____lambda_10 = function(it) return it.value * 10 end
+local ____lambda_11 = function(it) return it.value > 1 end
 local function maps()
     local t = Tagged.new(__K2L_MapOf(__K2L_Pair.new("x", 1)))
     t:set("Y", 2)
@@ -495,19 +507,22 @@ local function maps()
     end
     print()
     t:remove("x")
-    print(__K2L_Str(t:getEntries():map(function(it) return it.key .. it.value end)) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(t), "Tagged@")) .. " " .. tostring(t:equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("y", 2), __K2L_Pair.new("z", 3), __K2L_Pair.new("W", 4)))))
-    print(t:getOrDefault("q", 0) .. " " .. t:getOrPut("q", function() return 7 end) .. " " .. __K2L_Str(t:filterValues(function(it) return it > 3 end)) .. " " .. t:getEntries():maxBy(function(it) return it.value end).key .. " " .. __K2L_Str(t:toList()))
+    print(__K2L_Str(t:getEntries():map(____lambda_6)) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(t), "Tagged@")) .. " " .. tostring(t:equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("y", 2), __K2L_Pair.new("z", 3), __K2L_Pair.new("W", 4)))))
+    print(t:getOrDefault("q", 0) .. " " .. t:getOrPut("q", ____lambda_7) .. " " .. __K2L_Str(t:filterValues(____lambda_8)) .. " " .. t:getEntries():maxBy(____lambda_9).key .. " " .. __K2L_Str(t:toList()))
     local m = Lookup.new(__K2L_ReadOnlyMapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2)))
-    print(__K2L_Str(m:get("a")) .. " " .. m:getValue("b") .. " " .. tostring(m:isEmpty()) .. " " .. __K2L_Str(m:mapValues(function(it) return it.value * 10 end)) .. " " .. m:count() .. " " .. tostring(m:any(function(it) return it.value > 1 end)))
+    print(__K2L_Str(m:get("a")) .. " " .. m:getValue("b") .. " " .. tostring(m:isEmpty()) .. " " .. __K2L_Str(m:mapValues(____lambda_10)) .. " " .. m:count() .. " " .. tostring(m:any(____lambda_11)))
 end
 
+local ____lambda_12 = function(it) return it * it end
+local ____lambda_13 = function(it) return it == "l" end
+local ____lambda_14 = function(it) return it * 2 end
 local function others()
     local u = Unique.new(__K2L_ReadOnlySetOf(3, 1, 2))
     print(u.size .. " " .. tostring(u:contains(2)) .. " " .. __K2L_Str(u:sorted()) .. " " .. tostring(u:equals(__K2L_ReadOnlySetOf(1, 2, 3))) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(u), "Unique@")) .. " " .. __K2L_Str(u:intersect(__K2L_ReadOnlySetOf(2, 9))))
     local b = Bag.new(__K2L_ReadOnlyListOf("x", "y"))
     print(b.size .. " " .. tostring(b:contains("y")) .. " " .. b:joinToString() .. " " .. tostring(b:isEmpty()) .. " " .. __K2L_Str(b:toList()))
     local w = Wrap.new(__K2L_IntRange.new(1, 4))
-    print(__K2L_Str(w:map(function(it) return it * it end)) .. " " .. w:sum() .. " " .. __K2L_Str(w:toList()) .. " " .. w:count() .. " " .. w:first())
+    print(__K2L_Str(w:map(____lambda_12)) .. " " .. w:sum() .. " " .. __K2L_Str(w:toList()) .. " " .. w:count() .. " " .. w:first())
     local s = 0
     local ____items_1, ____n_2 = w:____array()
     for ____i_2 = 1, ____n_2 do
@@ -521,7 +536,7 @@ local function others()
     end
     print()
     local n = Name.new("hello")
-    print(#__K2L_CharSequenceText(n) .. " " .. __K2L_StringCharAt(__K2L_CharSequenceText(n), 1) .. " " .. __K2L_Str(__K2L_Text.substring(__K2L_CharSequenceText(n), 1, 3)) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(n), "Name@")) .. " " .. tostring(__K2L_StringStartsWith(__K2L_CharSequenceText(n), "he")) .. " " .. tostring(__K2L_StringContains(__K2L_CharSequenceText(n), "l")) .. " " .. __K2L_StringToList(__K2L_CharSequenceText(n)):count(function(it) return it == "l" end))
+    print(#__K2L_CharSequenceText(n) .. " " .. __K2L_StringCharAt(__K2L_CharSequenceText(n), 1) .. " " .. __K2L_Str(__K2L_Text.substring(__K2L_CharSequenceText(n), 1, 3)) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(n), "Name@")) .. " " .. tostring(__K2L_StringStartsWith(__K2L_CharSequenceText(n), "he")) .. " " .. tostring(__K2L_StringContains(__K2L_CharSequenceText(n), "l")) .. " " .. __K2L_StringToList(__K2L_CharSequenceText(n)):count(____lambda_13))
     local j = Job.new(function()
         print("job ran")
     end)
@@ -535,7 +550,7 @@ local function others()
             break
         end
     end
-    local twice = Twice.new(function(it) return it * 2 end)
+    local twice = Twice.new(____lambda_14)
     print(twice(21) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf(1, 2):map(twice)))
 end
 
@@ -669,6 +684,10 @@ function Version:____init(n)
     self.n = n
 end
 
+function Version.new(n)
+    return setmetatable({n = n}, Version)
+end
+
 function Version:compareTo(other)
     return __K2L_Compare(self.n, other.n)
 end
@@ -678,7 +697,7 @@ function Version:toString()
 end
 
 function Version:hashCode()
-    return __K2L_Hash(self.n)
+    return self.n
 end
 
 function Version:equals(other)
@@ -830,6 +849,13 @@ end
 
 __K2L_PropertyOverride(Layer, "size", "getSize")
 
+local ____lambda_15 = function(it)
+    return (it >= 0 and it % 2 or 0 - -it % 2) == 0
+end
+local ____lambda_16 = function(it) return __K2L_Pair.new(it.key, it.value) end
+local ____lambda_17 = function(it) return #it end
+local ____lambda_18 = function(it) return #it > 1 end
+local ____lambda_19 = function(it) return it + 1 end
 local function more()
     local s = Sized.new(__K2L_SetOf("a"))
     s:add(" b ")
@@ -837,7 +863,7 @@ local function more()
     print(s:getSize() .. " " .. s:count() .. " " .. __K2L_Str(s:toList()) .. " " .. tostring(s:contains("b")) .. " " .. tostring(s:isEmpty()) .. " " .. tostring(s:remove("a")) .. " " .. __K2L_Str(s:toSortedSet()))
     local p = Pool.new(__K2L_ListOf(1, 2, 3))
     p:add(4)
-    p:removeAll(function(it) return math.fmod(it, 2) == 0 end)
+    p:removeAll(____lambda_15)
     print(p.size .. " " .. __K2L_Str(p:toList()) .. " " .. tostring(p:retainAll(__K2L_SingletonListOf(3))) .. " " .. __K2L_Str(p:toList()))
     p:clear()
     print(tostring(p:isEmpty()) .. " " .. p.size)
@@ -852,9 +878,9 @@ local function more()
     local r = Release.new(Version.new(3), "three")
     print(tostring(__K2L_Compare(r, Version.new(2)) > 0) .. " " .. tostring(__K2L_Compare(r, Version.new(3)) < 0) .. " " .. __K2L_Compare(r, Version.new(4)) .. " " .. r.label)
     local e = Pairing.new(__K2L_SingletonMapOf(__K2L_Pair.new("k", 5)):getEntries():first())
-    print(e.key .. " " .. e.value .. " " .. __K2L_Str(__K2L_SingletonListOf(e):associate(function(it) return __K2L_Pair.new(it.key, it.value) end)))
+    print(e.key .. " " .. e.value .. " " .. __K2L_Str(__K2L_SingletonListOf(e):associate(____lambda_16)))
     local lines = Lines.new(__K2L_SequenceOf("x", "yy", "zzz"))
-    print(__K2L_Str(lines:map(function(it) return #it end):toList()) .. " " .. lines:filter(function(it) return #it > 1 end):count() .. " " .. lines:first())
+    print(__K2L_Str(lines:map(____lambda_17):toList()) .. " " .. lines:filter(____lambda_18):count() .. " " .. lines:first())
     for _, line in lines:iter() do
         io.write(line .. " ")
     end
@@ -908,7 +934,7 @@ local function more()
     __K2L_PropertyOverride(____object, "size", "getSize", true)
     ____object:____init()
     local anonymous = ____object
-    print(total .. " " .. anonymous.size .. " " .. anonymous:last() .. " " .. __K2L_Str(anonymous:map(function(it) return it + 1 end)))
+    print(total .. " " .. anonymous.size .. " " .. anonymous:last() .. " " .. __K2L_Str(anonymous:map(____lambda_19)))
     print(Pair:getSize() .. " " .. __K2L_Str(Pair:toList()) .. " " .. Pair:last() .. " " .. Words.size .. " " .. __K2L_Str(Words:sorted()) .. " " .. Words:first())
 end
 
@@ -969,6 +995,7 @@ end
 
 __K2L_PropertyOverride(Traced, "size", "getSize")
 
+local ____lambda_20 = function(it) return it * 2 end
 local function traced()
     local t = Traced.new(__K2L_ReadOnlyListOf(4, 5, 6))
     local ____items_3, ____n_4 = t:____array()
@@ -983,7 +1010,7 @@ local function traced()
     end
     print(__K2L_Str(t.log))
     t.log:clear()
-    print(t:joinToString() .. " " .. __K2L_Str(t:map(function(it) return it * 2 end)) .. " " .. t:sum() .. " " .. __K2L_Str(t:toList()) .. " " .. tostring(t:contains(5)) .. " " .. __K2L_Str(t.log))
+    print(t:joinToString() .. " " .. __K2L_Str(t:map(____lambda_20)) .. " " .. t:sum() .. " " .. __K2L_Str(t:toList()) .. " " .. tostring(t:contains(5)) .. " " .. __K2L_Str(t.log))
     t.log:clear()
     print(t:first() .. " " .. t:last() .. " " .. t:get(1) .. " " .. __K2L_Str(t:getOrNull(2)) .. " " .. __K2L_Str(t.log))
 end

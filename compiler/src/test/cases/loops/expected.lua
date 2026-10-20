@@ -68,7 +68,7 @@ local function main()
     local sum = 0
     for k = 1, 100 do
         do
-            if math.fmod(k, 2) == 0 then
+            if (k >= 0 and k % 2 or 0 - -k % 2) == 0 then
                 goto ____continue_2
             end
             sum = sum + k

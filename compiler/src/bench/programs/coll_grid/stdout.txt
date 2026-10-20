@@ -1,0 +1,4 @@
+round 0: bfs 368, route 125368, open 5095
+round 1: bfs 486, route 162486, open 5105
+round 2: bfs 416, route 134416, open 5100
+distinct 7549, max 14, checksum 476940

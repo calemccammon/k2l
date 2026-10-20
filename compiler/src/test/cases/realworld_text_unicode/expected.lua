@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -67,16 +68,35 @@ local function padDisplay(s, width)
     return s .. __K2L_Text.repeatCount(" ", math.max(width - displayWidth(s), 0))
 end
 
+local ____lambda_1 = function(it) return __K2L_Utf16Case.isLetter(it) end
+local ____lambda_2 = function(it) return __K2L_Utf16Case.isUpperCase(it) end
+local ____lambda_3 = function(it) return __K2L_Utf16Case.isDigit(it) end
+local ____lambda_4 = function(it) return __K2L_Utf16Case.isWhitespace(it) end
+local ____lambda_5 = function(it) return __K2L_Utf16.isSurrogate(it) end
 local function describe(s)
-    local letters = __K2L_Text.toList(s):count(function(it) return __K2L_Utf16Case.isLetter(it) end)
-    local upper = __K2L_Text.toList(s):count(function(it) return __K2L_Utf16Case.isUpperCase(it) end)
-    local digits = __K2L_Text.toList(s):count(function(it) return __K2L_Utf16Case.isDigit(it) end)
-    local spaces = __K2L_Text.toList(s):count(function(it) return __K2L_Utf16Case.isWhitespace(it) end)
-    local surrogates = __K2L_Text.toList(s):count(function(it) return __K2L_Utf16.isSurrogate(it) end)
+    local letters = __K2L_Text.toList(s):count(____lambda_1)
+    local upper = __K2L_Text.toList(s):count(____lambda_2)
+    local digits = __K2L_Text.toList(s):count(____lambda_3)
+    local spaces = __K2L_Text.toList(s):count(____lambda_4)
+    local surrogates = __K2L_Text.toList(s):count(____lambda_5)
     local cps = __K2L_Utf16.codePointCount(s, 0, __K2L_Utf16.len(s))
     return "len=" .. __K2L_Utf16.len(s) .. " cps=" .. cps .. " letters=" .. letters .. " upper=" .. upper .. " digits=" .. digits .. " spaces=" .. spaces .. " surrogates=" .. surrogates
 end
 
+local ____lambda_6 = function(it) return __K2L_Utf16Case.titlecase(it) end
+local ____lambda_7 = function(w)
+    return __K2L_Text.replaceFirstChar(w, ____lambda_6)
+end
+local ____lambda_8 = function(it)
+    return "U+" .. __K2L_Utf16Case.uppercase(__K2L_Num.toRadix(it, 16))
+end
+local ____lambda_9 = function(it) return __K2L_Utf16Case.lowercase(it.value) end
+local ____lambda_10 = function(it) return it end
+local ____lambda_11 = function(it) return it.value end
+local ____lambda_12 = function(it) return it.key end
+local ____lambda_13 = function(it) return it.key .. "=" .. it.value end
+local ____lambda_14 = function(it) return __K2L_Utf16.code(it) > 127 end
+local ____lambda_15 = function(it) return __K2L_Utf16.len(it) end
 local function main()
     local titles = __K2L_ReadOnlyListOf("Crème brûlée à la française", "Straße & Größe: Ärger über Öl", "Łódź, Kraków — Gdańsk!", "naïve café déjà vu 2024", "Smörgåsbord för 4 personer", "東京タワー 2024 🗼", "Ελληνικά κείμενα", "  Ünïcödé   spaces\t\ttabs  ")
     local ____mod = titles.____modCount
@@ -92,9 +112,7 @@ local function main()
     local ____mod_1 = ____list.____modCount
     for ____i_1 = 1, ____list.size do
         local t = ____list[____i_1]
-        print(__K2L_Utf16.out(__K2L_Utf16Case.uppercase(t) .. " / " .. __K2L_Utf16Case.lowercase(t) .. " / " .. __K2L_Utf16.norm(__K2L_StringSplit(t, " "):joinToString(" ", nil, nil, nil, nil, function(w)
-            return __K2L_Text.replaceFirstChar(w, function(it) return __K2L_Utf16Case.titlecase(it) end)
-        end))))
+        print(__K2L_Utf16.out(__K2L_Utf16Case.uppercase(t) .. " / " .. __K2L_Utf16Case.lowercase(t) .. " / " .. __K2L_Utf16.norm(__K2L_StringSplit(t, " "):joinToString(" ", nil, nil, nil, nil, ____lambda_7))))
         if ____list.____modCount ~= ____mod_1 and ____list:____comodified(____i_1) then
             break
         end
@@ -106,10 +124,26 @@ local function main()
     print(__K2L_Utf16.out(describe(titles:get(5))))
     print(__K2L_Utf16.out(truncate(emoji, 12) .. " | " .. truncate(emoji, 15) .. " | " .. __K2L_Text.reversed(emoji)))
     local cps = __K2L_Utf16.codePoints(emoji):toArray()
-    print(__K2L_Utf16.out(__K2L_Utf16.norm(cps:filter(function(it) return it > 65535 end):joinToString(" ", nil, nil, nil, nil, function(it)
-        return "U+" .. __K2L_Utf16Case.uppercase(__K2L_Num.toRadix(it, 16))
-    end))))
-    print(__K2L_Utf16.out(tostring(cps:count(function(it) return __K2L_Utf16Case.isLetterCp(it) end)) .. " letters by code point, " .. __K2L_Utf16.len(emoji) .. " units"))
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = cps:____array()
+    for ____i_2 = 1, ____n do
+        local it = ____items[____i_2]
+        if it > 65535 then
+            ____count = ____count + 1
+            ____out[____count] = it
+        end
+    end
+    print(__K2L_Utf16.out(__K2L_Utf16.norm(__K2L_ListWrap(____out, ____count):joinToString(" ", nil, nil, nil, nil, ____lambda_8))))
+    local ____result = 0
+    local ____items_1, ____n_1 = cps:____array()
+    for ____i_3 = 1, ____n_1 do
+        local it = ____items_1[____i_3]
+        if __K2L_Utf16Case.isLetterCp(it) then
+            ____result = ____result + 1
+        end
+    end
+    print(__K2L_Utf16.out(tostring(____result) .. " letters by code point, " .. __K2L_Utf16.len(emoji) .. " units"))
     local sb = __K2L_StringBuilder.new("héllo wörld")
     sb:set(0, "H")
     sb:insert(6, "schöne ")
@@ -120,13 +154,31 @@ local function main()
     sb:reverse()
     print(__K2L_Utf16.out(__K2L_Str(sb)))
     local text = __K2L_Text.trimIndent("\n        Le cœur a ses raisons que la raison ne connaît point. Où est la cathédrale? À côté du café!\n        L'été, l'été: déjà fini; ÉTÉ, Été — été.\n    ")
-    local words = __K2L_Sequence.new(__K2L_Regex.new("[\\p{L}']+"):findAllFactory(text)):map(function(it) return __K2L_Utf16Case.lowercase(it.value) end):toList()
-    local freq = words:groupingBy(function(it) return it end):eachCount():getEntries():sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(function(it) return it.value end), function(it) return it.key end))
-    print(__K2L_Utf16.out(__K2L_Utf16.norm(freq:take(6):joinToString(nil, nil, nil, nil, nil, function(it) return it.key .. "=" .. it.value end))))
-    print(__K2L_Utf16.out(__K2L_Str(words:filter(function(w)
-        return __K2L_Text.toList(w):any(function(it) return __K2L_Utf16.code(it) > 127 end)
-    end):distinct():sorted())))
-    print(__K2L_Utf16.out(tostring(words:map(function(it) return __K2L_Utf16.len(it) end):sum()) .. " letters in " .. words.size .. " words; longest: " .. words:maxBy(function(it) return __K2L_Utf16.len(it) end)))
+    local words = __K2L_Sequence.new(__K2L_Regex.new("[\\p{L}']+"):findAllFactory(text)):map(____lambda_9):toList()
+    local freq = words:groupingBy(____lambda_10):eachCount():getEntries():sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_11), ____lambda_12))
+    print(__K2L_Utf16.out(__K2L_Utf16.norm(freq:take(6):joinToString(nil, nil, nil, nil, nil, ____lambda_13))))
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_2, ____n_2 = words:____array()
+    for ____i_4 = 1, ____n_2 do
+        local w = ____items_2[____i_4]
+        local ____result_1
+        ____result_1 = __K2L_Text.toList(w):any(____lambda_14)
+        if ____result_1 then
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = w
+        end
+    end
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1):distinct():sorted())))
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_3, ____n_3 = words:____array()
+    for ____i_5 = 1, ____n_3 do
+        local it = ____items_3[____i_5]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = __K2L_Utf16.len(it)
+    end
+    print(__K2L_Utf16.out(tostring(__K2L_ListWrap(____out_2, ____count_2):sum()) .. " letters in " .. words.size .. " words; longest: " .. words:maxBy(____lambda_15)))
     print(__K2L_Utf16.out(tostring(__K2L_Num.signInt(__K2L_Text.compare("éa", "ez"))) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf("zebra", "Äpfel", "apple", "École", "eclair"):sorted()) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf("zebra", "Äpfel", "apple", "École", "eclair"):sortedWith(__K2L_Text.caseInsensitiveOrder))))
     print(__K2L_Utf16.out(tostring(__K2L_Utf16Case.equalsIgnoreCase("Ǆemal", "ǆemal")) .. " " .. tostring(__K2L_Utf16Case.equalsIgnoreCase("STRASSE", "straße")) .. " " .. tostring(__K2L_StringContains(__K2L_Utf16Case.fold("ÀB"), __K2L_Utf16Case.fold("àb"))) .. " " .. __K2L_StringIndexOf("Größe", "ö") .. " " .. __K2L_Text.padStart("Größe", 8, "·") .. " " .. __K2L_Text.padEnd("x", 3, "é") .. "|"))
 end

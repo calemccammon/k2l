@@ -6,6 +6,7 @@ local __K2L_CollectionBase = ____lualib.__K2L_CollectionBase
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
@@ -41,7 +42,7 @@ function Window:getSize()
 end
 
 function Window:get(index)
-    return self.data:get(self.from + index)
+    return self.data[self.from + index + 1] or __K2L_IndexError(self.from + index, self.data.size, "array")
 end
 
 function Window:isEmpty()
@@ -275,9 +276,14 @@ end
 
 __K2L_PropertyOverride(Shelf, "size", "getSize")
 
+local ____lambda_1 = function(it) return it * 2 end
+local ____lambda_2 = function(it)
+    return (it >= 0 and it % 2 or 0 - -it % 2) == 0
+end
+local ____lambda_3 = function(it) return it.key end
 local function interfaces()
     local w = Window.new(__K2L_TypedArrayOf("[I", 5, 6, 7, 8, 9), 1, 4)
-    print(tostring(__K2L_StringStartsWith(__K2L_Str(w), "Window@")) .. " " .. w:getSize() .. " " .. w:get(1) .. " " .. w:indexOf(8) .. " " .. tostring(w:contains(7)) .. " " .. __K2L_Str(w:subList(1, 3):toList()) .. " " .. __K2L_Str(w:map(function(it) return it * 2 end)) .. " " .. tostring(w:equals(__K2L_ReadOnlyListOf(6, 7, 8))))
+    print(tostring(__K2L_StringStartsWith(__K2L_Str(w), "Window@")) .. " " .. w:getSize() .. " " .. w:get(1) .. " " .. w:indexOf(8) .. " " .. tostring(w:contains(7)) .. " " .. __K2L_Str(w:subList(1, 3):toList()) .. " " .. __K2L_Str(w:map(____lambda_1)) .. " " .. tostring(w:equals(__K2L_ReadOnlyListOf(6, 7, 8))))
     print(w:sum() .. " " .. __K2L_Str(w:reversed()) .. " " .. w:last() .. " " .. tostring(w:containsAll(__K2L_ReadOnlyListOf(6, 8))) .. " " .. w:listIteratorAt(1):next() .. " " .. w:joinToString())
     local t = 0
     local ____items, ____n = w:____array()
@@ -287,9 +293,9 @@ local function interfaces()
     end
     print("loop " .. t .. " " .. tostring(__K2L_Str(w) == "[6, 7, 8]") .. " " .. tostring(__K2L_Hash(w) == __K2L_Hash(__K2L_ReadOnlyListOf(6, 7, 8))))
     local n = Numbers.new(4)
-    print(tostring(__K2L_StringStartsWith(__K2L_Str(n), "Numbers@")) .. " " .. n:getSize() .. " " .. tostring(n:contains(3)) .. " " .. __K2L_Str(n:filter(function(it) return math.fmod(it, 2) == 0 end)) .. " " .. __K2L_Str(n:toList()) .. " " .. n:max() .. " " .. tostring(n:equals(Numbers.new(4))))
+    print(tostring(__K2L_StringStartsWith(__K2L_Str(n), "Numbers@")) .. " " .. n:getSize() .. " " .. tostring(n:contains(3)) .. " " .. __K2L_Str(n:filter(____lambda_2)) .. " " .. __K2L_Str(n:toList()) .. " " .. n:max() .. " " .. tostring(n:equals(Numbers.new(4))))
     local c = Constants.new()
-    print(tostring(__K2L_StringStartsWith(__K2L_Str(c), "Constants@")) .. " " .. __K2L_Str(c:get("pi")) .. " " .. __K2L_Str(c:getKeys()) .. " " .. __K2L_Str(c:getValues()) .. " " .. c:getSize() .. " " .. tostring(c:containsKey("e")) .. " " .. __K2L_Str(c:map(function(it) return it.key end)) .. " " .. tostring(c:equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("pi", 3.14), __K2L_Pair.new("e", 2.72)))))
+    print(tostring(__K2L_StringStartsWith(__K2L_Str(c), "Constants@")) .. " " .. __K2L_Str(c:get("pi")) .. " " .. __K2L_Str(c:getKeys()) .. " " .. __K2L_Str(c:getValues()) .. " " .. c:getSize() .. " " .. tostring(c:containsKey("e")) .. " " .. __K2L_Str(c:map(____lambda_3)) .. " " .. tostring(c:equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("pi", 3.14), __K2L_Pair.new("e", 2.72)))))
     local ____keys, ____values, ____n_1 = c:____arrays()
     for ____i_1 = 1, ____n_1 do
         local k, v = ____keys[____i_1], ____values[____i_1]
@@ -298,9 +304,12 @@ local function interfaces()
     print()
 end
 
+local ____lambda_4 = function(it) return it:sum() end
+local ____lambda_5 = function(it) return it:upper() end
+local ____lambda_6 = function(it) return it == "A" end
 local function subclasses()
     local m = Matrix.new(3, 2)
-    print(__K2L_Str(m) .. " " .. __K2L_Str(m:get(2)) .. " " .. m:find(__K2L_ReadOnlyListOf(2, 3)) .. " " .. __K2L_Str(m:flatten()) .. " " .. __K2L_Str(m:map(function(it) return it:sum() end)))
+    print(__K2L_Str(m) .. " " .. __K2L_Str(m:get(2)) .. " " .. m:find(__K2L_ReadOnlyListOf(2, 3)) .. " " .. __K2L_Str(m:flatten()) .. " " .. __K2L_Str(m:map(____lambda_4)))
     local b = Bounded.new(2)
     b:add("x")
     b:add("y")
@@ -328,11 +337,11 @@ local function subclasses()
     shelf:sort()
     print("shelf " .. __K2L_Str(shelf) .. " sets=" .. shelf.sets)
     __K2L_JdkCollections.reverse(shelf)
-    shelf:replaceAll(function(it) return it:upper() end)
+    shelf:replaceAll(____lambda_5)
     print("reverse/replaceAll " .. __K2L_Str(shelf) .. " " .. tostring(shelf.sets > 0))
     shelf:shuffle(__K2L_JavaRandom.new(4))
     print("shuffle " .. __K2L_Str(shelf:sorted()) .. " " .. shelf:getSize())
-    shelf:removeIf(function(it) return it == "A" end)
+    shelf:removeIf(____lambda_6)
     shelf:addAt(0, "Z")
     local ____value = shelf:toMutableList()
     ____value:add("!")

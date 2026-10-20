@@ -135,11 +135,21 @@ function X.parseOrThrow(s, radix, unsigned)
     return n
 end
 
+-- POP8[b + 1]: the number of one bits of the byte b
+local POP8 = {}
+for b = 0, 255 do
+    local n, x = 0, b
+    while x > 0 do
+        n, x = n + x % 2, floor(x / 2)
+    end
+    POP8[b + 1] = n
+end
+
 local function bitCount(x)
     local count = 0
     while x > 0 do
-        local b = x % 2
-        count, x = count + b, (x - b) / 2
+        local b = x % 256
+        count, x = count + POP8[b + 1], (x - b) / 256
     end
     return count
 end

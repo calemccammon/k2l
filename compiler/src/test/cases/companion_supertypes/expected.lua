@@ -7,6 +7,7 @@ local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_TouchObject = ____lualib.__K2L_TouchObject
@@ -37,6 +38,10 @@ __K2L_ClassInfo(Foo, "app.Foo", "app.Foo", "class")
 
 function Foo:____init(n)
     self.n = n
+end
+
+function Foo.new(n)
+    return setmetatable({n = n}, Foo)
 end
 
 function Foo:next()
@@ -163,6 +168,10 @@ function Labeled:____init(label)
     self.label = label
 end
 
+function Labeled.new(label)
+    return setmetatable({label = label}, Labeled)
+end
+
 function Labeled:getLabel()
     return self.label
 end
@@ -186,6 +195,10 @@ function Outer.Inner:____init(tag)
     self.tag = tag
 end
 
+function Outer.Inner.new(tag)
+    return setmetatable({tag = tag}, Outer.Inner)
+end
+
 function Outer.Inner:toString()
     return "Inner(" .. self.tag .. ")"
 end
@@ -204,6 +217,10 @@ function Box:____init(value)
     self.value = value
 end
 
+function Box.new(value)
+    return setmetatable({value = value}, Box)
+end
+
 function Box:toString()
     return "Box(" .. __K2L_Str(self.value) .. ")"
 end
@@ -220,7 +237,15 @@ local function make(f)
 end
 
 local function encodeAll(codecs, s)
-    return codecs:map(function(it) return it:encode(s) end)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = codecs:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = it:encode(s)
+    end
+    return __K2L_ListWrap(____out, ____count)
 end
 
 local function main()
@@ -255,10 +280,10 @@ local function main()
     print(n:getLabel())
     local shapes = __K2L_ReadOnlyListOf(Foo.Companion, Shape.Companion, Outer.Inner.Companion, Box.Companion)
     local ____mod = shapes.____modCount
-    for ____i = 1, shapes.size do
-        local s = shapes[____i]
+    for ____i_1 = 1, shapes.size do
+        local s = shapes[____i_1]
         print(s:getKind() .. " " .. __K2L_Str(s:create()))
-        if shapes.____modCount ~= ____mod and shapes:____comodified(____i) then
+        if shapes.____modCount ~= ____mod and shapes:____comodified(____i_1) then
             break
         end
     end
@@ -272,7 +297,16 @@ local function main()
     local ____arg = Tagged.Companion:getLabel() .. " "
     local ____value_1 = Tagged.Companion
     print(____arg .. tostring(__K2L_InstanceOf(____value_1, Labeled)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(Foo.Companion, Tagged.Companion, __K2L_TouchObject(Baz.Companion)):map(function(it) return it:getLabel() end)))
+    local ____list = __K2L_ReadOnlyListOf(Foo.Companion, Tagged.Companion, __K2L_TouchObject(Baz.Companion))
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list:____array()
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it:getLabel()
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     print(____token.Token.Companion:parse("id") .. " " .. make(____token.Token.Companion).text)
     print(__K2L_Str(__K2L_KClassOf(Foo.Companion).simpleName) .. " " .. __K2L_Str(__K2L_KClassOf(Bar.Maker).simpleName))
 end
@@ -308,6 +342,10 @@ __K2L_ClassInfo(Token, "app.model.Token", "app.model.Token", "class")
 
 function Token:____init(text)
     self.text = text
+end
+
+function Token.new(text)
+    return setmetatable({text = text}, Token)
 end
 
 Token.Companion = __K2L_Class("app.model.Token$Companion", nil, ____factory.Factory)

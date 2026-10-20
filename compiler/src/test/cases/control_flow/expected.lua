@@ -10,7 +10,7 @@ local function sign(n)
 end
 
 local function describe(n)
-    local parity = math.fmod(n, 2) == 0 and "even" or "odd"
+    local parity = (n >= 0 and n % 2 or 0 - -n % 2) == 0 and "even" or "odd"
     local size
     if n < 10 then
         size = "small"
@@ -81,10 +81,10 @@ local function main()
     print(__K2L_Str(label))
     local n = 15
     local fizz
-    if math.fmod(n, 15) == 0 then
+    if (n >= 0 and n % 15 or 0 - -n % 15) == 0 then
         local word = "Fizz"
         fizz = word .. "Buzz"
-    elseif math.fmod(n, 3) == 0 then
+    elseif (n >= 0 and n % 3 or 0 - -n % 3) == 0 then
         fizz = "Fizz"
     else
         fizz = tostring(n)

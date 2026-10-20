@@ -5,7 +5,6 @@ local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
-local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -15,7 +14,10 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -32,7 +34,6 @@ local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 local __K2L_ThenByDescending = ____lualib.__K2L_ThenByDescending
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Unit = ____lualib.__K2L_Unit
 
@@ -44,6 +45,10 @@ Money.____comparable = true
 
 function Money:____init(cents)
     self.cents = cents
+end
+
+function Money.new(cents)
+    return setmetatable({cents = cents}, Money)
 end
 
 function Money:plus(o)
@@ -69,7 +74,7 @@ end
 function Money:toString()
     local sign = self.cents < 0 and "-" or ""
     local abs = math.abs(self.cents)
-    return sign .. "$" .. __K2L_IDiv(abs, 100) .. "." .. __K2L_StringPadStart(tostring(math.fmod(abs, 100)), 2, "0")
+    return sign .. "$" .. (abs >= 0 and abs // 100 or (abs + 99) // 100) .. "." .. __K2L_StringPadStart(tostring(abs >= 0 and abs % 100 or (abs % 100 - 100) % (-100)), 2, "0")
 end
 
 function Money:hashCode()
@@ -82,10 +87,11 @@ end
 
 Money.____companion = true
 
+local ____lambda_1 = function(it) return "0" end
 function Money:parse(s)
     local ____value = __K2L_StringSplit(__K2L_Text.removePrefix(s, "$"), ".")
     local ____result
-    ____result = __K2L_Pair.new(____value:get(0), ____value:getOrElse(1, function(it) return "0" end))
+    ____result = __K2L_Pair.new(____value:get(0), ____value:getOrElse(1, ____lambda_1))
     local ____destructured = ____result
     local whole, frac = ____destructured.first, ____destructured.second
     return Money.new(__K2L_StringToInt(whole, nil, true) * 100 + __K2L_StringToInt(__K2L_Text.take(__K2L_StringPadEnd(frac, 2, "0"), 2), nil, true))
@@ -101,8 +107,9 @@ local function getDollars(self)
     return Money.new(self * 100)
 end
 
+local ____lambda_2 = function(self, ...) return self:plus(...) end
 local function sum(____this)
-    return ____this:fold(Money.ZERO, function(self, ...) return self:plus(...) end)
+    return ____this:fold(Money.ZERO, ____lambda_2)
 end
 
 local Category = __K2L_Class("Category")
@@ -141,12 +148,16 @@ function Product:____init(sku, name, category, price)
     self.price = price
 end
 
+function Product.new(sku, name, category, price)
+    return setmetatable({sku = sku, name = name, category = category, price = price}, Product)
+end
+
 function Product:toString()
     return "Product(sku=" .. self.sku .. ", name=" .. self.name .. ", category=" .. __K2L_Str(self.category) .. ", price=" .. __K2L_Str(self.price) .. ")"
 end
 
 function Product:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.sku) + __K2L_Hash(self.name)) + __K2L_Hash(self.category)) + __K2L_Hash(self.price))
+    return (31 * (31 * (31 * __K2L_Hash(self.sku) + __K2L_Hash(self.name)) + __K2L_Hash(self.category)) + __K2L_Hash(self.price) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Product:equals(other)
@@ -173,12 +184,16 @@ function Event.Received:____init(sku, qty)
     self.qty = qty
 end
 
+function Event.Received.new(sku, qty)
+    return setmetatable({sku = sku, qty = qty}, Event.Received)
+end
+
 function Event.Received:toString()
     return "Received(sku=" .. self.sku .. ", qty=" .. self.qty .. ")"
 end
 
 function Event.Received:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.sku) + __K2L_Hash(self.qty))
+    return (31 * __K2L_Hash(self.sku) + self.qty + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Event.Received:equals(other)
@@ -194,12 +209,16 @@ function Event.Shipped:____init(sku, qty, order)
     self.order = order
 end
 
+function Event.Shipped.new(sku, qty, order)
+    return setmetatable({sku = sku, qty = qty, order = order}, Event.Shipped)
+end
+
 function Event.Shipped:toString()
     return "Shipped(sku=" .. self.sku .. ", qty=" .. self.qty .. ", order=" .. self.order .. ")"
 end
 
 function Event.Shipped:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.sku) + __K2L_Hash(self.qty)) + __K2L_Hash(self.order))
+    return (31 * (31 * __K2L_Hash(self.sku) + self.qty) + __K2L_Hash(self.order) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Event.Shipped:equals(other)
@@ -215,12 +234,16 @@ function Event.Adjusted:____init(sku, delta, reason)
     self.reason = reason
 end
 
+function Event.Adjusted.new(sku, delta, reason)
+    return setmetatable({sku = sku, delta = delta, reason = reason}, Event.Adjusted)
+end
+
 function Event.Adjusted:toString()
     return "Adjusted(sku=" .. self.sku .. ", delta=" .. self.delta .. ", reason=" .. self.reason .. ")"
 end
 
 function Event.Adjusted:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.sku) + __K2L_Hash(self.delta)) + __K2L_Hash(self.reason))
+    return (31 * (31 * __K2L_Hash(self.sku) + self.delta) + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Event.Adjusted:equals(other)
@@ -235,12 +258,16 @@ function Event.PriceChanged:____init(sku, newPrice)
     self.newPrice = newPrice
 end
 
+function Event.PriceChanged.new(sku, newPrice)
+    return setmetatable({sku = sku, newPrice = newPrice}, Event.PriceChanged)
+end
+
 function Event.PriceChanged:toString()
     return "PriceChanged(sku=" .. self.sku .. ", newPrice=" .. __K2L_Str(self.newPrice) .. ")"
 end
 
 function Event.PriceChanged:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.sku) + __K2L_Hash(self.newPrice))
+    return (31 * __K2L_Hash(self.sku) + __K2L_Hash(self.newPrice) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Event.PriceChanged:equals(other)
@@ -284,14 +311,16 @@ function Inventory:quantity(sku)
     return self.stock:get(sku) or 0
 end
 
+local ____lambda_3 = function(____p1, ____p2) return ____p1 + ____p2 end
 function Inventory:apply(event)
     self:product(event.sku)
-    if __K2L_InstanceOf(event, Event.Received) then
+    local ____mt = getmetatable(event)
+    if ____mt == Event.Received then
         if not (event.qty > 0) then
             error(__K2L_IllegalArgumentException.new("received quantity must be positive"))
         end
-        self.stock:merge(event.sku, event.qty, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", function(____p1, ____p2) return ____p1 + ____p2 end))
-    elseif __K2L_InstanceOf(event, Event.Shipped) then
+        self.stock:merge(event.sku, event.qty, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_3))
+    elseif ____mt == Event.Shipped then
         local have = self:quantity(event.sku)
         if have < event.qty then
             error(OutOfStockException.new(event.sku, event.qty, have))
@@ -299,41 +328,60 @@ function Inventory:apply(event)
         local ____object_3 = self.stock
         local ____key_3 = event.sku
         ____object_3:set(____key_3, have - event.qty)
-    elseif __K2L_InstanceOf(event, Event.Adjusted) then
+    elseif ____mt == Event.Adjusted then
         local ____object_2 = self.stock
         local ____key_2 = event.sku
         ____object_2:set(____key_2, math.max(self:quantity(event.sku) + event.delta, 0))
-    elseif __K2L_InstanceOf(event, Event.PriceChanged) then
+    elseif ____mt == Event.PriceChanged then
         local ____object_1 = self.products
         local ____key_1 = event.sku
         local ____source = self:product(event.sku)
         ____object_1:set(____key_1, Product.new(____source.sku, ____source.name, ____source.category, event.newPrice))
     end
     self.log:add(event)
-    if not self.stock:getValues():all(function(it) return it >= 0 end) then
+    local ____list = self.stock:getValues()
+    local ____result_1 = true
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        if not (it >= 0) then
+            ____result_1 = false
+            break
+        end
+    end
+    if not ____result_1 then
         error(__K2L_IllegalStateException.new("negative stock"))
     end
 end
 
 function Inventory:value()
-    return sum(self.products:getValues():map(function(it)
-        return it.price:times(self:quantity(it.sku))
-    end))
+    local ____list_1 = self.products:getValues()
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = it.price:times(self:quantity(it.sku))
+    end
+    return sum(__K2L_ListWrap(____out, ____count))
 end
 
+local ____lambda_4 = function(it) return it.category end
+local ____lambda_5 = function(it) return it.sku end
 function Inventory:report()
     local ____builder = __K2L_StringBuilder.new()
     do
         ____builder:appendLine(__K2L_StringFormat("%-6s %-14s %-12s %5s %10s", "SKU", "Name", "Category", "Qty", "Value"))
-        local ____list = self.products:getValues():sortedWith(__K2L_ThenBy(__K2L_ThenByDescending(__K2L_CompareBy(function(it) return it.category end), function(it) return self:quantity(it.sku) end), function(it) return it.sku end))
-        local ____mod = ____list.____modCount
-        for ____i = 1, ____list.size do
-            local p = ____list[____i]
+        local ____list_2 = self.products:getValues():sortedWith(__K2L_ThenBy(__K2L_ThenByDescending(__K2L_CompareBy(____lambda_4), function(it) return self:quantity(it.sku) end), ____lambda_5))
+        local ____mod = ____list_2.____modCount
+        for ____i_2 = 1, ____list_2.size do
+            local p = ____list_2[____i_2]
             do
                 local qty = self:quantity(p.sku)
                 ____builder:appendLine(__K2L_StringFormat("%-6s %-14s %-12s %5d %10s", p.sku, p.name, p.category, qty, p.price:times(qty)))
             end
-            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
                 break
             end
         end
@@ -348,6 +396,10 @@ __K2L_ClassInfo(OrderLine, "OrderLine", "OrderLine", "class")
 function OrderLine:____init(sku, qty)
     self.sku = sku
     self.qty = qty
+end
+
+function OrderLine.new(sku, qty)
+    return setmetatable({sku = sku, qty = qty}, OrderLine)
 end
 
 local OrderBuilder = __K2L_Class("OrderBuilder")
@@ -368,9 +420,31 @@ function OrderBuilder:build()
     if not self.lines:isNotEmpty() then
         error(__K2L_IllegalStateException.new("order " .. self.id .. " has no lines"))
     end
-    return Order.new(self.id, self.customer, self.express, self.lines:groupBy(function(it) return it.sku end):map(function(____destructured_1)
+    local ____arg = self.id
+    local ____arg_1 = self.customer
+    local ____arg_2 = self.express
+    local ____list_3 = self.lines
+    local ____result_2 = __K2L_Map.new()
+    local ____items_2, ____n_2 = ____list_3:____array()
+    for ____i_3 = 1, ____n_2 do
+        local it = ____items_2[____i_3]
+        local ____value_2 = it.sku
+        local ____group = ____result_2:get(____value_2)
+        if ____group == nil then
+            ____group = __K2L_List.new()
+            ____result_2:put(____value_2, ____group)
+        end
+        ____group:add(it)
+    end
+    return Order.new(____arg, ____arg_1, ____arg_2, ____result_2:map(function(____destructured_1)
         local sku, ls = ____destructured_1.key, ____destructured_1.value
-        return OrderLine.new(sku, ls:sumOf(function(it) return it.qty end))
+        local ____sum = 0
+        local ____items_3, ____n_3 = ls:____array()
+        for ____i_4 = 1, ____n_3 do
+            local it = ____items_3[____i_4]
+            ____sum = ____sum + it.qty
+        end
+        return OrderLine.new(sku, ____sum)
     end))
 end
 
@@ -384,12 +458,16 @@ function Order:____init(id, customer, express, lines)
     self.lines = lines
 end
 
+function Order.new(id, customer, express, lines)
+    return setmetatable({id = id, customer = customer, express = express, lines = lines}, Order)
+end
+
 function Order:toString()
     return "Order(id=" .. self.id .. ", customer=" .. self.customer .. ", express=" .. tostring(self.express) .. ", lines=" .. __K2L_Str(self.lines) .. ")"
 end
 
 function Order:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.id) + __K2L_Hash(self.customer)) + __K2L_Hash(self.express)) + __K2L_Hash(self.lines))
+    return (31 * (31 * (31 * __K2L_Hash(self.id) + __K2L_Hash(self.customer)) + (self.express and 1231 or 1237)) + __K2L_Hash(self.lines) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Order:equals(other)
@@ -397,56 +475,76 @@ function Order:equals(other)
 end
 
 local function order(id, block)
-    local ____value_2 = OrderBuilder.new(id)
-    block(____value_2)
-    return ____value_2:build()
+    local ____value_3 = OrderBuilder.new(id)
+    block(____value_3)
+    return ____value_3:build()
 end
 
 local function fulfil(____this_2, order)
     return __K2L_RunCatching(function(____this_3)
-        local ____list_1 = order.lines
-        local ____mod_1 = ____list_1.____modCount
-        for ____i_1 = 1, ____list_1.size do
-            local line = ____list_1[____i_1]
+        local ____list_4 = order.lines
+        local ____mod_1 = ____list_4.____modCount
+        for ____i_5 = 1, ____list_4.size do
+            local line = ____list_4[____i_5]
             do
                 local have = ____this_3:quantity(line.sku)
                 if have < line.qty then
                     error(OutOfStockException.new(line.sku, line.qty, have))
                 end
             end
-            if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_1) then
+            if ____list_4.____modCount ~= ____mod_1 and ____list_4:____comodified(____i_5) then
                 break
             end
         end
-        local ____value_3 = sum(order.lines:map(function(line)
+        local ____list_5 = order.lines
+        local ____out_1 = {}
+        local ____count_1 = 0
+        local ____items_4, ____n_4 = ____list_5:____array()
+        for ____i_6 = 1, ____n_4 do
+            local line = ____items_4[____i_6]
+            local ____result_3
             ____this_3:apply(Event.Shipped.new(line.sku, line.qty, order.id))
-            return ____this_3:product(line.sku).price:times(line.qty)
-        end))
-        local ____result_1
-        ____result_1 = order.express and ____value_3:plus(getDollars(15)) or ____value_3
-        return ____result_1
+            ____result_3 = ____this_3:product(line.sku).price:times(line.qty)
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = ____result_3
+        end
+        local ____value_4 = sum(__K2L_ListWrap(____out_1, ____count_1))
+        local ____result_4
+        ____result_4 = order.express and ____value_4:plus(getDollars(15)) or ____value_4
+        return ____result_4
     end, ____this_2)
 end
 
+local ____lambda_6 = function(l) return l.qty .. "x" .. l.sku end
+local ____lambda_7 = function()
+    return order("ORD-4", function(____this_7)
+        ____this_7.customer = "nobody"
+    end)
+end
+local ____lambda_8 = function(x) return getmetatable(x) == Event.Shipped end
+local ____lambda_9 = function(it)
+    return __K2L_KClassOfValue(it).simpleName or "?"
+end
+local ____lambda_10 = function(it) return getDollars(it) end
 local function main()
     local inv = Inventory.new()
-    local ____list_2 = __K2L_ReadOnlyListOf(Product.new("A100", "Apples (kg)", Category.PRODUCE, Money:parse("3.49")), Product.new("M200", "Milk 1L", Category.DAIRY, Money:parse("$1.2")), Product.new("H300", "Hammer", Category.HARDWARE, getDollars(18)), Product.new("H301", "Nails x100", Category.HARDWARE, Money:parse("4.05")), Product.new("B400", "Kotlin Book", Category.BOOKS, Money:parse("39.99")))
-    local ____mod_2 = ____list_2.____modCount
-    for ____i_2 = 1, ____list_2.size do
-        local it = ____list_2[____i_2];
+    local ____list_6 = __K2L_ReadOnlyListOf(Product.new("A100", "Apples (kg)", Category.PRODUCE, Money:parse("3.49")), Product.new("M200", "Milk 1L", Category.DAIRY, Money:parse("$1.2")), Product.new("H300", "Hammer", Category.HARDWARE, getDollars(18)), Product.new("H301", "Nails x100", Category.HARDWARE, Money:parse("4.05")), Product.new("B400", "Kotlin Book", Category.BOOKS, Money:parse("39.99")))
+    local ____mod_2 = ____list_6.____modCount
+    for ____i_7 = 1, ____list_6.size do
+        local it = ____list_6[____i_7];
         (function(...) return inv:register(...) end)(it)
-        if ____list_2.____modCount ~= ____mod_2 and ____list_2:____comodified(____i_2) then
+        if ____list_6.____modCount ~= ____mod_2 and ____list_6:____comodified(____i_7) then
             break
         end
     end
-    local ____list_3 = __K2L_ReadOnlyListOf(Product.new("A100", "Dup", Category.BOOKS, getDollars(1)), Product.new("Z1", "Free", Category.BOOKS, Money.ZERO))
-    for ____i_3 = 1, ____list_3.size do
-        local attempt = ____list_3[____i_3]
-        local ____ok, ____result_2 = pcall(function()
+    local ____list_7 = __K2L_ReadOnlyListOf(Product.new("A100", "Dup", Category.BOOKS, getDollars(1)), Product.new("Z1", "Free", Category.BOOKS, Money.ZERO))
+    for ____i_8 = 1, ____list_7.size do
+        local attempt = ____list_7[____i_8]
+        local ____ok, ____result_5 = pcall(function()
             inv:register(attempt)
         end)
         if not ____ok then
-            local ____error = __K2L_ToThrowable(____result_2)
+            local ____error = __K2L_ToThrowable(____result_5)
             if __K2L_InstanceOf(____error, __K2L_IllegalArgumentException) then
                 local e = ____error
                 print("rejected " .. attempt.sku .. ": " .. __K2L_Str(e.message))
@@ -457,10 +555,10 @@ local function main()
     end
     local incoming = __K2L_ReadOnlyListOf(Event.Received.new("A100", 50), Event.Received.new("M200", 24), Event.Received.new("H300", 5), Event.Received.new("H301", 40), Event.Received.new("B400", 3), Event.Adjusted.new("A100", -4, "bruised"), Event.PriceChanged.new("M200", Money:parse("1.35")), Event.Received.new("H300", 2))
     local ____mod_3 = incoming.____modCount
-    for ____i_4 = 1, incoming.size do
-        local it = incoming[____i_4];
+    for ____i_9 = 1, incoming.size do
+        local it = incoming[____i_9];
         (function(...) return inv:apply(...) end)(it)
-        if incoming.____modCount ~= ____mod_3 and incoming:____comodified(____i_4) then
+        if incoming.____modCount ~= ____mod_3 and incoming:____comodified(____i_9) then
             break
         end
     end
@@ -480,26 +578,22 @@ local function main()
         ____this_6:of(1, "B400")
     end))
     local ____mod_4 = orders.____modCount
-    for ____i_5 = 1, orders.size do
-        local o = orders[____i_5]
+    for ____i_10 = 1, orders.size do
+        local o = orders[____i_10]
         fulfil(inv, o):onSuccess(function(it)
-            print(o.id .. " for " .. o.customer .. ": charged " .. __K2L_Str(it) .. " (" .. o.lines:joinToString(nil, nil, nil, nil, nil, function(l) return l.qty .. "x" .. l.sku end) .. ")")
+            print(o.id .. " for " .. o.customer .. ": charged " .. __K2L_Str(it) .. " (" .. o.lines:joinToString(nil, nil, nil, nil, nil, ____lambda_6) .. ")")
         end):onFailure(function(e)
-            if __K2L_InstanceOf(e, OutOfStockException) then
+            if getmetatable(e) == OutOfStockException then
                 print(o.id .. " failed: " .. __K2L_Str(e.message) .. " [short by " .. e.requested - e.available .. "]")
             else
                 error(e)
             end
         end)
-        if orders.____modCount ~= ____mod_4 and orders:____comodified(____i_5) then
+        if orders.____modCount ~= ____mod_4 and orders:____comodified(____i_10) then
             break
         end
     end
-    print(__K2L_Str(__K2L_RunCatching(function()
-        return order("ORD-4", function(____this_7)
-            ____this_7.customer = "nobody"
-        end)
-    end):exceptionOrNull()))
+    print(__K2L_Str(__K2L_RunCatching(____lambda_7):exceptionOrNull()))
     print(__K2L_Str(__K2L_RunCatching(function()
         inv:apply(Event.Received.new("NOPE", 1))
         return __K2L_Unit
@@ -512,38 +606,120 @@ local function main()
     inv:apply(Event.Adjusted.new("H301", -1000, "flood"))
     print()
     print(inv:report())
-    local shipped = inv:getEvents():filter(function(x) return __K2L_InstanceOf(x, Event.Shipped) end)
-    print("\nshipped by order: " .. __K2L_Str(shipped:groupBy(function(it) return it.order end, function(it) return it.sku .. "x" .. it.qty end)))
-    local countsByType = inv:getEvents():groupingBy(function(it)
-        return __K2L_KClassOfValue(it).simpleName or "?"
-    end):eachCount():toSortedMap()
+    local shipped = inv:getEvents():filter(____lambda_8)
+    local ____result_6 = __K2L_Map.new()
+    local ____items_5, ____n_5 = shipped:____array()
+    for ____i_11 = 1, ____n_5 do
+        local it = ____items_5[____i_11]
+        local ____value_5 = it.order
+        local ____group_1 = ____result_6:get(____value_5)
+        if ____group_1 == nil then
+            ____group_1 = __K2L_List.new()
+            ____result_6:put(____value_5, ____group_1)
+        end
+        ____group_1:add(it.sku .. "x" .. it.qty)
+    end
+    print("\nshipped by order: " .. __K2L_Str(____result_6))
+    local countsByType = inv:getEvents():groupingBy(____lambda_9):eachCount():toSortedMap()
     print("event counts: " .. __K2L_Str(countsByType))
-    local perishableValue = __K2L_EnumValues(Category):filter(function(it) return it.perishable end):associateWith(function(cat)
-        return sum(inv:getEvents():map(function(it) return it.sku end):distinct():map(function(...) return inv:product(...) end):filter(function(it) return it.category == cat end):map(function(it) return it.price:times(inv:quantity(it.sku)) end))
-    end)
+    local ____values = Category.____values
+    local ____out_2 = {}
+    local ____count_2 = 0
+    for ____i_12 = 1, #____values do
+        local it = ____values[____i_12]
+        if it.perishable then
+            ____count_2 = ____count_2 + 1
+            ____out_2[____count_2] = it
+        end
+    end
+    local ____list_8 = __K2L_ListWrap(____out_2, ____count_2)
+    local ____result_7 = __K2L_Map.new()
+    local ____items_9, ____n_9 = ____list_8:____array()
+    for ____i_16 = 1, ____n_9 do
+        local cat = ____items_9[____i_16]
+        local ____result_8
+        do
+            local ____list_9 = inv:getEvents()
+            local ____out_3 = {}
+            local ____count_3 = 0
+            local ____items_6, ____n_6 = ____list_9:____array()
+            for ____i_13 = 1, ____n_6 do
+                local it = ____items_6[____i_13]
+                ____count_3 = ____count_3 + 1
+                ____out_3[____count_3] = it.sku
+            end
+            local ____list_10 = __K2L_ListWrap(____out_3, ____count_3):distinct():map(function(...) return inv:product(...) end)
+            local ____out_4 = {}
+            local ____count_4 = 0
+            local ____items_7, ____n_7 = ____list_10:____array()
+            for ____i_14 = 1, ____n_7 do
+                local it = ____items_7[____i_14]
+                if it.category == cat then
+                    ____count_4 = ____count_4 + 1
+                    ____out_4[____count_4] = it
+                end
+            end
+            local ____list_11 = __K2L_ListWrap(____out_4, ____count_4)
+            local ____out_5 = {}
+            local ____count_5 = 0
+            local ____items_8, ____n_8 = ____list_11:____array()
+            for ____i_15 = 1, ____n_8 do
+                local it = ____items_8[____i_15]
+                ____count_5 = ____count_5 + 1
+                ____out_5[____count_5] = it.price:times(inv:quantity(it.sku))
+            end
+            ____result_8 = sum(__K2L_ListWrap(____out_5, ____count_5))
+        end
+        local ____value_6 = ____result_8
+        ____result_7:put(cat, ____value_6)
+    end
+    local perishableValue = ____result_7
     print("perishable value: " .. __K2L_Str(perishableValue))
-    local prices = inv:getEvents():mapNotNull(function(it)
-        local ____receiver_1 = __K2L_InstanceOf(it, Event.PriceChanged) and it or nil
-        return ____receiver_1 and (__K2L_InstanceOf(it, Event.PriceChanged) and it or nil).newPrice
-    end)
-    print("price changes: " .. __K2L_Str(prices) .. ", max product price " .. __K2L_Str(__K2L_ReadOnlyListOf("A100", "H300", "B400"):map(function(it) return inv:product(it).price end):maxOrNull()))
-    print("money math: " .. __K2L_Str(getDollars(10):div(3)) .. " " .. __K2L_Str(Money.new(-250)) .. " " .. __K2L_Str(Money:parse("0.5"):times(3)) .. " " .. __K2L_Str(sum(__K2L_IntRange.new(1, 4):map(function(it) return getDollars(it) end))))
+    local ____list_12 = inv:getEvents()
+    local ____out_6 = {}
+    local ____count_6 = 0
+    local ____items_10, ____n_10 = ____list_12:____array()
+    for ____i_17 = 1, ____n_10 do
+        local it = ____items_10[____i_17]
+        local ____result_9
+        do
+            local ____receiver_1 = getmetatable(it) == Event.PriceChanged and it or nil
+            ____result_9 = ____receiver_1 and (getmetatable(it) == Event.PriceChanged and it or nil).newPrice
+        end
+        local ____value_7 = ____result_9
+        if ____value_7 ~= nil then
+            ____count_6 = ____count_6 + 1
+            ____out_6[____count_6] = ____value_7
+        end
+    end
+    local prices = __K2L_ListWrap(____out_6, ____count_6)
+    local ____list_13 = __K2L_ReadOnlyListOf("A100", "H300", "B400")
+    local ____out_7 = {}
+    local ____count_7 = 0
+    local ____items_11, ____n_11 = ____list_13:____array()
+    for ____i_18 = 1, ____n_11 do
+        local it = ____items_11[____i_18]
+        ____count_7 = ____count_7 + 1
+        ____out_7[____count_7] = inv:product(it).price
+    end
+    print("price changes: " .. __K2L_Str(prices) .. ", max product price " .. __K2L_Str(__K2L_ListWrap(____out_7, ____count_7):maxOrNull()))
+    print("money math: " .. __K2L_Str(getDollars(10):div(3)) .. " " .. __K2L_Str(Money.new(-250)) .. " " .. __K2L_Str(Money:parse("0.5"):times(3)) .. " " .. __K2L_Str(sum(__K2L_IntRange.new(1, 4):map(____lambda_10))))
     local ____destructured_2 = inv:product("B400")
     local sku, name, category = ____destructured_2.sku, ____destructured_2.name, ____destructured_2.category
     print("destructured: " .. sku .. " / " .. name .. " / " .. __K2L_Str(category) .. " / " .. category.ordinal .. " / " .. __K2L_EnumValueOf(Category, "DAIRY").code)
-    local ____value_4 = inv:product("A100")
-    print("with: " .. name .. " costs " .. __K2L_Str(____value_4.price) .. ", perishable=" .. tostring(category.perishable))
-    local ____value_5 = inv:product("H300")
-    local ____receiver_2 = inv:quantity(____value_5.sku) > 0 and ____value_5 or nil
-    local ____result_3
+    local ____value_8 = inv:product("A100")
+    print("with: " .. name .. " costs " .. __K2L_Str(____value_8.price) .. ", perishable=" .. tostring(category.perishable))
+    local ____value_9 = inv:product("H300")
+    local ____receiver_2 = inv:quantity(____value_9.sku) > 0 and ____value_9 or nil
+    local ____result_10
     if ____receiver_2 ~= nil then
         print("in stock: " .. ____receiver_2.name)
-        ____result_3 = __K2L_Unit
+        ____result_10 = __K2L_Unit
     end
-    local ____value_6 = ____result_3
-    if ____value_6 == nil then
+    local ____value_10 = ____result_10
+    if ____value_10 == nil then
         print("hammers sold out")
-        ____value_6 = __K2L_Unit
+        ____value_10 = __K2L_Unit
     end
 end
 
