@@ -1,7 +1,3 @@
-import org.gradle.process.ExecOperations
-import java.io.ByteArrayOutputStream
-import javax.inject.Inject
-
 plugins {
     alias(libs.plugins.kotlin.jvm)
     application
@@ -69,88 +65,46 @@ tasks.test {
 
 // ---- Kotlin/JVM oracle: the expected stdout of every test case comes from running it on the JVM ----
 
-val oracleCompiler = configurations.create("oracleCompiler")
+// The oracle itself (src/oracle) compiles every case in one JVM: starting kotlinc once per case made it the slowest part of CI.
+val oracle: SourceSet = sourceSets.create("oracle")
 
 dependencies {
-    oracleCompiler("org.jetbrains.kotlin:kotlin-compiler-embeddable:${libs.versions.kotlin.get()}")
+    "oracleImplementation"("org.jetbrains.kotlin:kotlin-compiler-embeddable:${libs.versions.kotlin.get()}")
 }
 
-abstract class KotlinOracle @Inject constructor(private val exec: ExecOperations) : DefaultTask() {
-    @get:Classpath abstract val compilerClasspath: ConfigurableFileCollection
-
-    @get:Internal abstract val casesDir: DirectoryProperty
-
-    @get:Internal abstract val workDir: DirectoryProperty
-
-    @get:Input abstract val update: Property<Boolean>
-
-    /** Comma-separated case names to run (`-Ponly=floats,unsigned`, or `-PoracleCases=...`); all cases when empty. */
-    @get:Input abstract val only: Property<String>
-
-    @TaskAction
-    fun run() {
-        val stdlib = compilerClasspath.files.first { it.name.matches(Regex("kotlin-stdlib-[0-9.]+\\.jar")) }
-        val cases = casesDir.get().asFile.listFiles().orEmpty().filter {
-            File(it, "main.kt").isFile && !File(it, "errors.txt").isFile &&
-                (only.get().isEmpty() || it.name in only.get().split(','))
-        }.sortedBy { it.name }
-        val mismatched = mutableListOf<String>()
-        for (case in cases) {
-            if (File(case, "jvm-skip").isFile) continue // calls into hand-written Lua, so it can't run on the JVM
-            val classes = workDir.get().dir(case.name).asFile.apply {
-                deleteRecursively()
-                mkdirs()
-            }
-            val sources = case.walkTopDown().filter { it.extension == "kt" }.map { it.path }.toList()
-            val pkg = Regex("""^package\s+([\w.]+)""", RegexOption.MULTILINE).find(File(case, "main.kt").readText())?.groupValues?.get(1)
-            exec.javaexec {
-                classpath = compilerClasspath
-                mainClass.set("org.jetbrains.kotlin.cli.jvm.K2JVMCompiler")
-                args(listOf("-no-stdlib", "-no-reflect", "-nowarn", "-classpath", stdlib.path, "-d", classes.path) + sources)
-            }
-            val stdout = ByteArrayOutputStream()
-            exec.javaexec {
-                classpath(classes, stdlib)
-                mainClass.set(if (pkg != null) "$pkg.MainKt" else "MainKt")
-                // Cases print non-ASCII text and Locale.getDefault(): do not depend on the locale of the machine
-                // (k2l's default locale is en_US)
-                jvmArgs("-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Duser.language=en", "-Duser.country=US")
-                standardOutput = stdout
-            }
-            val actual = stdout.toString(Charsets.UTF_8)
-            val expected = File(case, "stdout.txt")
-            if (update.get()) {
-                expected.writeText(actual)
-            } else if (!expected.isFile || expected.readText() != actual) {
-                mismatched += case.name
-            }
-        }
-        if (mismatched.isNotEmpty()) {
-            throw GradleException("Kotlin/JVM output differs from stdout.txt for $mismatched (rerun with -PupdateOracle)")
-        }
-        logger.lifecycle("Kotlin/JVM oracle matched stdout.txt for ${cases.size} cases")
+/** Runs [dev.k2l.oracle] on the cases in [cases]; `-Ponly=floats,unsigned` (or [onlyProperty]) limits it to some cases. */
+fun registerOracle(name: String, description: String, cases: Directory, work: String, onlyProperty: String) =
+    tasks.register<JavaExec>(name) {
+        this.description = description
+        group = "verification"
+        classpath = oracle.runtimeClasspath
+        mainClass.set("dev.k2l.oracle.OracleKt")
+        jvmArgs("-XX:+UseParallelGC")
+        maxHeapSize = "3g"
+        systemProperty("k2l.oracle.cases", cases.asFile.absolutePath)
+        systemProperty("k2l.oracle.work", layout.buildDirectory.dir(work).get().asFile.absolutePath)
+        systemProperty("k2l.oracle.update", providers.gradleProperty("updateOracle").isPresent)
+        systemProperty("k2l.oracle.only", providers.gradleProperty(onlyProperty).orNull.orEmpty())
+        // -PoracleThreads=1 compiles and runs the cases one at a time.
+        providers.gradleProperty("oracleThreads").orNull?.let { systemProperty("k2l.oracle.threads", it) }
+        outputs.upToDateWhen { false }
     }
-}
 
-tasks.register<KotlinOracle>("kotlinOracle") {
-    description = "Runs every test case on Kotlin/JVM and checks (or with -PupdateOracle, writes) its stdout.txt."
-    group = "verification"
-    compilerClasspath.from(oracleCompiler)
-    casesDir.set(testCases)
-    workDir.set(layout.buildDirectory.dir("oracle"))
-    update.set(providers.gradleProperty("updateOracle").isPresent)
-    only.set(providers.gradleProperty("only").orElse(providers.gradleProperty("oracleCases")).orElse(""))
-}
+registerOracle(
+    "kotlinOracle",
+    "Runs every test case on Kotlin/JVM and checks (or with -PupdateOracle, writes) its stdout.txt.",
+    testCases,
+    "oracle",
+    if (providers.gradleProperty("only").isPresent) "only" else "oracleCases",
+)
 
-tasks.register<KotlinOracle>("benchOracle") {
-    description = "Runs every benchmark program on Kotlin/JVM and checks (or with -PupdateOracle, writes) its stdout.txt."
-    group = "verification"
-    compilerClasspath.from(oracleCompiler)
-    casesDir.set(benchPrograms)
-    workDir.set(layout.buildDirectory.dir("bench-oracle"))
-    update.set(providers.gradleProperty("updateOracle").isPresent)
-    only.set(providers.gradleProperty("benchOnly").orElse(""))
-}
+registerOracle(
+    "benchOracle",
+    "Runs every benchmark program on Kotlin/JVM and checks (or with -PupdateOracle, writes) its stdout.txt.",
+    benchPrograms,
+    "bench-oracle",
+    "benchOnly",
+)
 
 // ---- Benchmarks: ./gradlew :compiler:bench (local only, see "Benchmarks" in the README) ----
 

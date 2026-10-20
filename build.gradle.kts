@@ -45,7 +45,7 @@ subprojects {
     configure<dev.detekt.gradle.extensions.DetektExtension> {
         buildUponDefaultConfig.set(true)
         config.setFrom(rootProject.file("config/detekt.yml"))
-        source.setFrom("src/main/kotlin", "src/test/kotlin", "src/functionalTest/kotlin", "src/bench/kotlin")
+        source.setFrom("src/main/kotlin", "src/test/kotlin", "src/functionalTest/kotlin", "src/bench/kotlin", "src/oracle/kotlin")
     }
 }
 
@@ -72,7 +72,7 @@ subprojects {
         pom {
             name.set("k2l ${project.name}")
             description.set(publishedDescriptions.getValue(project.name))
-            inceptionYear.set("2025")
+            inceptionYear.set("2026")
             url.set("https://github.com/calemccammon/k2l")
             // TODO(license): no LICENSE file exists in the repository yet. Choose a license, add the LICENSE file
             // and fill in the matching <licenses> entry here before the first publication (Maven Central requires one).

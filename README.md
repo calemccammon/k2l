@@ -3,7 +3,7 @@
 k2l transpiles Kotlin source code to readable Lua, in the spirit of
 [TypeScriptToLua](https://typescripttolua.github.io/). It uses the official Kotlin compiler's
 [Analysis API](https://kotlin.github.io/analysis-api/) to parse and type-check your code, then
-generates Lua that looks like something you would write by hand:
+generates readable Lua, close to what you would write by hand:
 
 ```kotlin
 data class Item(val name: String, val price: Int)
@@ -13,27 +13,42 @@ fun cheapest(items: List<Item>): String? =
 ```
 
 ```lua
+local ____lambda_1 = function(it) return it.price end
 local function cheapest(items)
-    local ____receiver = items:filter(function(it) return it.price > 0 end):minByOrNull(function(it) return it.price end)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = items:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        if it.price > 0 then
+            ____count = ____count + 1
+            ____out[____count] = it
+        end
+    end
+    local ____receiver = __K2L_ListWrap(____out, ____count):minByOrNull(____lambda_1)
     return ____receiver and ____receiver.name
 end
 ```
 
-Supported targets are Lua 5.1, 5.2, 5.3, 5.4 and LuaJIT.
+Common collection functions with a lambda literal (`filter` here) become loops; the others are methods of the runtime
+library (`minByOrNull`). Supported targets are Lua 5.1, 5.2, 5.3, 5.4 and LuaJIT. The test suite (277 programs, 51 of
+them realistic applications) runs every program on each target and compares its output with what Kotlin/JVM prints.
+In 0.2.0 the generated code runs about twice as fast as it did before this release's optimization work (see
+[Performance](#performance)).
 
 ## Installation
 
 Requirements: JDK 21 or newer, and a Lua interpreter to run the output.
 
-**Command line.** Download `k2l-<version>.zip` (or `.tar`) from the
+**Command line.** Download `k2l-0.2.0.zip` (or `.tar`) from the
 [Releases](https://github.com/calemccammon/k2l/releases) page, check it against `SHA256SUMS`, unpack it and put
-`k2l-<version>/bin` on your `PATH`:
+`k2l-0.2.0/bin` on your `PATH`:
 
 ```sh
 sha256sum -c --ignore-missing SHA256SUMS
-unzip k2l-<version>.zip
-export PATH="$PWD/k2l-<version>/bin:$PATH"
-k2l --version
+unzip k2l-0.2.0.zip
+export PATH="$PWD/k2l-0.2.0/bin:$PATH"
+k2l --version                 # k2l 0.2.0
 ```
 
 **Gradle plugin.** Once published, the plugin `dev.k2l` comes from the Gradle Plugin Portal, with its version equal to the
@@ -46,13 +61,13 @@ pluginManagement {
 }
 
 // build.gradle.kts
-plugins { id("dev.k2l") version "<version>" }
+plugins { id("dev.k2l") version "0.2.0" }
 repositories { mavenCentral() }   // where the plugin finds the compiler (dev.k2l:compiler) and dev.k2l:lua-api
 ```
 
 The compiler's own POM lists JetBrains-only artifacts (the Kotlin Analysis API) that Maven Central does not have, so
 depend on `dev.k2l:compiler` from a Maven build only after adding the JetBrains repositories shown in
-`settings.gradle.kts`. The Gradle plugin does not need them: it resolves `compiler-<version>-runtime-libs.zip`, a
+`settings.gradle.kts`. The Gradle plugin does not need them: it resolves `compiler-0.2.0-runtime-libs.zip`, a
 self-contained archive of everything the compiler runs with.
 
 To build from a checkout instead, see [Quick start](#quick-start).
@@ -214,10 +229,10 @@ it is 21 or newer, otherwise a toolchain).
 `ULong` compares with `math.ult` and an unsigned remainder on 5.3/5.4; a range of other Comparables, such as enum entries or
 classes of the program, compares with `compareTo`). The range's operands are evaluated before `x`, as in Kotlin |
 | `for (x in list)` | `for i = 1, list.size do local x = list[i] ... end` (checked for changes of the list, see below) |
-| `for ((k, v) in map)` | `for k, v in map:iter()` |
+| `for ((k, v) in map)`, `for (k in map.keys)` | a numeric `for` over the map's arrays: `local keys, values, n = map:____arrays()`, then `for i = 1, n do local k, v = keys[i], values[i] ... end` |
 | `for (c in s)` with `s: CharSequence`, or a `StringBuilder` | `for c in __K2L_Text.chars(s) do`: the chars of a string, else the value's `get(i)` while `i < length`, both read at each step like the JVM's iterator. `length`, `s[i]`, `lastIndex` and `indices` of a `CharSequence` (`__K2L_Text.charsLength(s)`, `charsGet`) call the members of a `StringBuilder` or a class of the program; the String functions (`contains`, `split`, ...) run on its text, also for a `StringBuilder` passed where they take a `CharSequence` (`"abc".contains(sb)`) |
 | `continue`, labeled `break`/`continue` | `goto` (flags and `repeat ... until true` on Lua 5.1); a label on anything but a loop only names a lambda for `return@label` and is otherwise ignored |
-| `a / b` on `Int`, `a % b` | `__K2L_IDiv(a, b)` (truncating), `math.fmod(a, b)`, or `__K2L_IRem(a, b)` when the divisor is not a nonzero literal; integer division by zero throws `ArithmeticException("/ by zero")` |
+| `a / b` on `Int`, `a % b` | `__K2L_IDiv(a, b)` (truncating); `a % b` is `b ~= 0 and fmod(a, b) or __K2L_IRem(a, b)`. By a positive literal both use Lua's operators (`a >= 0 and a // 4 or 0 - -a // 4` on 5.3/5.4). Integer division by zero throws `ArithmeticException("/ by zero")` |
 | string templates | `..` concatenation; values formatted like Kotlin's `toString()` |
 | `class`, `interface`, `object`, `enum class`, `data class` | metatable-based classes named with their JVM binary name: `local Point = __K2L_Class("app.Point")`, `Point.new(1, 2)`, `p:distance(q)` |
 | `object : Greeter { ... }`, `object : Base(1), I { }`, `object { val x = 1 }` | a local object declared where the expression is evaluated (`local ____object = __K2L_Class("app.MainKt$main$1", nil, Greeter)`), initialized right away; like a named `object`, its table is the instance. Its methods are closures, so they read and assign captured locals; `this@Outer` is kept in a local (`local ____this = self`). Members of the anonymous type, `by` delegation and overriding work as for classes |
@@ -232,7 +247,7 @@ classes of the program, compares with `compareTo`). The range's operands are eva
 | enum entries with bodies, `values()`, `entries`, `valueOf` | each body is an anonymous subclass of the enum: `Op.PLUS = ____PLUS.new("PLUS", 0, "+")`; `__K2L_EnumValues(Op)` (also through the companion's implicit receiver). Enums are `Comparable` by ordinal: every enum class has `compareTo`, so `<`, `sorted()`, `maxOf`, `TreeSet` and `compareBy { it.level }` work |
 | `data object Quit`, `value class Id(val raw: Int)` | a `data object` gets `toString()` (its name) and `hashCode()` (the hash of its qualified name, as Kotlin generates). A value class is not unboxed: it is a table holding the value, with a data class's `equals`, `hashCode` and `toString` (`Id(raw=7)`), so it works as a map key and in sets |
 | `==` | `==` for primitives/enums/objects, `equals()` when a class may override it |
-| `is`, `as?` | `__K2L_InstanceOf(x, Class)`, `type(x) == "string"`, ...; `is Number`, `is Comparable<*>` and `is CharSequence` are `__K2L_IsNumber(x)` (a Lua number, `BigInteger`, `BigDecimal`), `__K2L_IsComparable(x)` (numbers, strings, booleans, enums, `BigInteger`/`BigDecimal`, `StringBuilder` (Comparable since Java 11) and classes of the program implementing `Comparable`, directly or through a superclass or interface: their table has `____comparable = true`, so objects count and a class with only an `operator fun compareTo` does not; a companion sharing the table of such a class is marked `____companion`, as it is not Comparable itself) and `__K2L_IsCharSequence(x)` (strings, `StringBuilder` and objects with `subSequence`: a class of the program implementing `CharSequence` is told by its methods). `Number.toInt()`, `toDouble()`, ... pick the conversion at run time |
+| `is`, `as?` | `getmetatable(x) == Class` for a final class (read once per `when`), else `__K2L_InstanceOf(x, Class)`; `type(x) == "string"`, ...; `is Number`, `is Comparable<*>` and `is CharSequence` are `__K2L_IsNumber(x)` (a Lua number, `BigInteger`, `BigDecimal`), `__K2L_IsComparable(x)` (numbers, strings, booleans, enums, `BigInteger`/`BigDecimal`, `StringBuilder` (Comparable since Java 11) and classes of the program implementing `Comparable`, directly or through a superclass or interface: their table has `____comparable = true`, so objects count and a class with only an `operator fun compareTo` does not; a companion sharing the table of such a class is marked `____companion`, as it is not Comparable itself) and `__K2L_IsCharSequence(x)` (strings, `StringBuilder` and objects with `subSequence`: a class of the program implementing `CharSequence` is told by its methods). `Number.toInt()`, `toDouble()`, ... pick the conversion at run time |
 | `x as T`, `x as T?` | a check unless the static type already guarantees it (upcasts, smart casts, type parameters): `__K2L_CastFail` throws `ClassCastException` (`class A cannot be cast to class B (...)`, JVM wording) or `NullPointerException` for null. Only the erased class is checked (`as List<String>` accepts any list, `as T` of an erased `T` checks nothing); the values such unchecked casts pass on are checked later, where the JVM checks them (see [Other semantic differences](#other-semantic-differences)) |
 | `object`, companion objects, enums | initialized where they are declared when that is unobservable (constants, literals, collection factories, plain constructors); otherwise on first access, see [Lazy initialization](#lazy-initialization) |
 | `x?.y`, `x ?: y`, `x!!` | `x and x.y`, `x or y` (when safe), `__K2L_NotNull(x)` |
@@ -255,7 +270,7 @@ classes of the program, compares with `compareTo`). The range's operands are eva
 | `var (a, b) = pair` | two locals, which can be reassigned |
 | `throw`, `try`/`catch`/`finally` | `error(exception)`, `pcall`; JVM exception classes and messages. A `return`, `break` or `continue` (labeled too) out of the `try` or a `catch` returns a code from the `pcall`ed function (`return true, x` for `return`, `return 1` for the first jump, ...); after the `pcall` and the `finally` code, the matching `return`/`break`/`goto` is re-issued |
 | `x::class`, `Foo::class`, `T::class` (reified), `.simpleName`, `.qualifiedName`, `isInstance`, `javaClass` | `__K2L_KClassOfValue(x)`, `__K2L_KClassOf(Foo)`, `__K2L_KClassNamed("kotlin.String")`: one object per class, so `==` is identity; `javaClass` is `__K2L_JavaClass(...)` of it; see [Reflection](#reflection) |
-| `return` inside `map { }`, `filter { }`, `any { }`, `first { }`, `fold`, ... | a lambda with a `return` out of the enclosing function (or a `break`/`continue` of a loop around the call) makes the call an inlined loop: `local r = __K2L_ListOf(); for _, it in ipairs(xs) do ... return ... r:add(v) end`. Without such a `return` they are ordinary method calls (byte-identical output). Expanded this way: `map`, `mapNotNull`, `filter`, `filterNot`, `takeWhile`, `flatMap`, `any`, `all`, `none`, `count`, `first`, `firstOrNull`, `find`, `sumOf`, `onEach`, `fold`, `associate*`, `groupBy`, `partition`, `maxBy`/`minBy`(`OrNull`), `maxOf`/`minOf`(`OrNull`), `reduce`/`reduceOrNull`, `distinctBy`, `filterIndexed`, `mapIndexed`, `indexOfFirst`/`indexOfLast`, `last`/`lastOrNull`/`findLast`, `single`/`singleOrNull`, `takeLastWhile`/`dropLastWhile`/`dropWhile`, `zip(other) { }`, the collecting forms `mapTo`, `filterTo`, `filterNotTo`, `mapNotNullTo`, `flatMapTo`, `associateTo`, `associateByTo`, `associateWithTo`, `groupByTo`, `filterIndexedTo`, `mapIndexedTo`, `mapIndexedNotNull`, `flatMapIndexed`, `foldIndexed`, `reduceIndexed`, `foldRight`, `reduceRight`, `runningFold`/`scan`/`runningReduce`, `sumBy`, `onEachIndexed`, `firstNotNullOf`/`firstNotNullOfOrNull`, `getOrPut`/`getOrElse` (maps, lists, arrays), `ifEmpty`/`ifBlank`, on a `Map` `filter`, `filterNot`, `onEach`, `mapValues`, `mapKeys`, `filterKeys`, `filterValues`, `mapTo`/`mapValuesTo`/`mapKeysTo`/`filterTo`, `maxBy`/`minBy`; on a `String` (walked as its chars; `filter`, `takeWhile` and `dropWhile` give a String again) `map`, `filter`, `count`, `any`, `all`, `indexOfFirst`, `takeWhile`, `dropWhile`, `sumOf`, `fold`, `forEachIndexed`, ...; on a `Result` `getOrElse`, `onSuccess`, `onFailure`, `fold`, `map`, `recover`; and `runCatching`, `measureTimeMillis`/`measureNanoTime`. `forEach`/`forEachIndexed`, `repeat`, `buildList`/`buildString`/`buildMap`, `use` and `synchronized` always are expanded. `sortedBy`'s selector is `crossinline` in Kotlin, so it cannot contain a `return`. Lists and arrays are walked from the end where the JVM does so (`last { }`, `indexOfLast { }`, `takeLastWhile { }`, `foldRight`) |
+| `return` inside `map { }`, `filter { }`, `any { }`, `first { }`, `fold`, ... | a lambda with a `return` out of the enclosing function (or a `break`/`continue` of a loop around the call) makes the call an inlined loop: `local r = __K2L_ListOf(); for _, it in ipairs(xs) do ... return ... r:add(v) end`. Without such a `return`, `map`, `mapIndexed`, `mapNotNull`, `filter`, `filterNot`, `filterIndexed`, `flatMap`, `count`, `any`, `all`, `none`, `sumOf`, `first`, `firstOrNull`, `find`, `maxOf`, `minOf`, `groupBy`, `associateBy` and `associateWith` with lambda literals on lists, arrays and sets are still loops (over `xs:____array()`, wrapped with `__K2L_ListWrap`), and the rest are ordinary method calls. Expanded this way: `map`, `mapNotNull`, `filter`, `filterNot`, `takeWhile`, `flatMap`, `any`, `all`, `none`, `count`, `first`, `firstOrNull`, `find`, `sumOf`, `onEach`, `fold`, `associate*`, `groupBy`, `partition`, `maxBy`/`minBy`(`OrNull`), `maxOf`/`minOf`(`OrNull`), `reduce`/`reduceOrNull`, `distinctBy`, `filterIndexed`, `mapIndexed`, `indexOfFirst`/`indexOfLast`, `last`/`lastOrNull`/`findLast`, `single`/`singleOrNull`, `takeLastWhile`/`dropLastWhile`/`dropWhile`, `zip(other) { }`, the collecting forms `mapTo`, `filterTo`, `filterNotTo`, `mapNotNullTo`, `flatMapTo`, `associateTo`, `associateByTo`, `associateWithTo`, `groupByTo`, `filterIndexedTo`, `mapIndexedTo`, `mapIndexedNotNull`, `flatMapIndexed`, `foldIndexed`, `reduceIndexed`, `foldRight`, `reduceRight`, `runningFold`/`scan`/`runningReduce`, `sumBy`, `onEachIndexed`, `firstNotNullOf`/`firstNotNullOfOrNull`, `getOrPut`/`getOrElse` (maps, lists, arrays), `ifEmpty`/`ifBlank`, on a `Map` `filter`, `filterNot`, `onEach`, `mapValues`, `mapKeys`, `filterKeys`, `filterValues`, `mapTo`/`mapValuesTo`/`mapKeysTo`/`filterTo`, `maxBy`/`minBy`; on a `String` (walked as its chars; `filter`, `takeWhile` and `dropWhile` give a String again) `map`, `filter`, `count`, `any`, `all`, `indexOfFirst`, `takeWhile`, `dropWhile`, `sumOf`, `fold`, `forEachIndexed`, ...; on a `Result` `getOrElse`, `onSuccess`, `onFailure`, `fold`, `map`, `recover`; and `runCatching`, `measureTimeMillis`/`measureNanoTime`. `forEach`/`forEachIndexed`, `repeat`, `buildList`/`buildString`/`buildMap`, `use` and `synchronized` always are expanded. `sortedBy`'s selector is `crossinline` in Kotlin, so it cannot contain a `return`. Lists and arrays are walked from the end where the JVM does so (`last { }`, `indexOfLast { }`, `takeLastWhile { }`, `foldRight`) |
 | `return`, `break` or `continue` out of a lambda passed to another inline library function (`trim { }`, `mapCatching`, `recoverCatching`, `List(n) { }`, `Array(n) { }`, `zipWithNext { }`, the terminal functions of a `Sequence` such as `any`, `first`, `fold`, `sumOf`, `maxOf`, ...) | the lambda stays a Lua function. The call runs in a `pcall` (`__K2L_CoPcall` on Lua 5.1 when the lambda can suspend) after `local ____jump = __K2L_NewJump()`; the jump is `__K2L_Jump(____jump, code, value)`, which raises the token, and after the `pcall` `if ____result == ____jump then return ____jump.value end` (or the `break`, `goto`, or the jump of another code) makes it. A jump through several such lambdas is passed on from call to call. Every runtime function that catches errors (`catch` blocks, `runCatching`, `mapCatching`, coroutines) raises a token again, so no `catch (e: Throwable)` sees it, while `finally` blocks run and `use` closes its resource normally on the way out, as on the JVM. Calls of inline functions without such jumps are unchanged |
 | `closeable.use { }`, `synchronized(lock) { }`, `runCatching { }` | `use` runs the block in a `pcall` and closes the resource afterwards, also when the block fails, returns or jumps (an error of `close()` after a failed block does not replace the block's error); `Closeable` and `AutoCloseable` are interfaces without members to implement, `close()` is an ordinary method. `synchronized` runs the block (there are no threads). `runCatching` without a non-local `return` is `__K2L_RunCatching` |
 | `List`, `MutableList`, `Array` | a lualib class: elements in the array part, explicit `size` (nil-safe) |
@@ -274,7 +289,7 @@ classes of the program, compares with `compareTo`). The range's operands are eva
 | `class Letters : CharSequence`, `class Count : Iterator<Int>`, `MutableIterator`, `ListIterator`, `Map.Entry`, `Comparable` | the class's own members; `for` loops and the library functions use them (the String functions read the chars of a CharSequence object through its `length` and `get`, not its `toString()`) |
 | `class DateRange(...) : ClosedRange<Date>, Iterable<Date>` | `contains` and `isEmpty` come from the interface (a mixin comparing `start` and `endInclusive`), also next to a collection base; `start`/`endInclusive` of a value typed as `ClosedRange` read the class's properties or a library range's bounds |
 | `class Stack : ArrayList<Int>()`, `HashMap`, `LinkedHashMap`, `HashSet`, `LinkedHashSet`, `TreeMap`, `TreeSet`, `PriorityQueue`, `java.util.ArrayDeque`, `LinkedList` | the class extends the lualib collection; `super.add(x)` calls the library member (`__K2L_List.add(self, x)`). The library's methods call the overridable ones exactly where the JDK's do: `ArrayList.addAll` does not call an overridden `add` while `HashSet.addAll` and `HashSet(elements)` do; `PriorityQueue.add` calls `offer`, `addAll` calls `add`, `remove()` calls `poll` and `element()` `peek`; `ArrayDeque.add`, `offer`, `addAll` and `ArrayDeque(elements)` call `addLast`, `push` calls `addFirst`, `pop`/`remove()`/`removeFirst` call `pollFirst`; `LinkedList.offer` calls `add`, `LinkedList(c)` calls `addAll(c)`, which calls `addAll(size, c)`, `push` calls `addFirst`; `TreeMap.putAll` and `TreeMap(map)` call `put` (TreeMap's `putIfAbsent`, `merge` and `compute*` do not), `TreeSet.addAll` and `TreeSet(elements)` call `add`, `getOrPut` and `getValue` call `get`, `AbstractSet.equals`/`removeAll` call `contains`/`remove`. `LinkedHashMap(capacity, loadFactor, true)` with `removeEldestEntry` makes an LRU cache. A class overriding a member the library's own operations call on the JVM (`size`, `iterator()`, `get`, `contains`, `isEmpty`, `indexOf`, `listIterator`, `entries`, `keys`, `values`, `containsKey`) gets `__K2L_HonorOverrides(C, base)`: versions of those operations (see `CollectionOverrides.lua`) that call the overrides exactly where the JDK and the stdlib do, e.g. `toString`, `for` loops and `filter` call `iterator()`, `map` and `toSet` call `size` first, `first()` of a list `isEmpty` and `get(0)`, `ArrayList.contains` calls `indexOf`, `isEmpty` calls `size` in a `LinkedList`, `PriorityQueue` and `TreeMap` but not in an `ArrayList`, `AbstractSet.equals` calls `size` and `contains`, a map's `toString`, loops and `map` read `entries`. Classes without such overrides, and the library's own collections, keep their direct paths |
-| `xs.filter { }.map { }`, `groupBy`, `joinToString`, ... | methods of the same name: `xs:filter(f):map(g)` |
+| `xs.filter(f).map(g)`, `groupBy`, `joinToString`, ... | methods of the same name: `xs:filter(f):map(g)`; with lambda literals on lists, arrays and sets the common ones are loops, see the `return` row above |
 | `Pair`, `Triple`, destructuring | lualib classes; `local a, b = p.first, p.second` |
 | `Sequence`, `asSequence()`, `generateSequence`, `sequenceOf` | a lazy lualib class: `__K2L_AsSequence(xs):map(f):take(3):toList()` |
 | `seq.asIterable()`, `seq.toCollection(c)` | `asIterable()` is an `Iterable` that reads the sequence again for each operation (a `constrainOnce` sequence fails the second time), pulling only what `first`, `firstOrNull`, `find`, `any`, `all`, `none`, `contains`, `indexOf` and `take` need, so those also work on infinite sequences; other operations and `for` loops read all of it. `list.asIterable().asSequence()` returns the sequence |
@@ -638,32 +653,50 @@ promise.
 
 ## Performance
 
-Numbers from `benchmarks/` on one 8-core Linux machine (JDK 21, Lua 5.4.x, LuaJIT 2.1); expect them to vary by machine.
+Timings depend on the machine; compare runs on the same one. Lower is faster throughout.
+
+**The generated code: the benchmark suite.** `./gradlew :compiler:bench` (see [Benchmarks](#benchmarks)) runs 17
+programs on every target and compares the median times with `compiler/src/bench/baseline.json`, which was measured
+before the optimization work of 0.2.0 (at commit `32a3468`; Linux, 16 cores, Lua 5.1.5, 5.2.4, 5.3.6, 5.4.9, LuaJIT 2.1).
+Geometric mean over the programs:
+
+| | Lua 5.1 | Lua 5.2 | Lua 5.3 | Lua 5.4 | LuaJIT |
+|---|---:|---:|---:|---:|---:|
+| baseline (median ms) | 1931 | 1503 | 1085 | 894 | 347 |
+| 0.2.0, relative to the baseline | 0.46 | 0.55 | 0.55 | 0.54 | 0.50 |
+
+The ratios are geometric means of the medians of 5 runs on an otherwise idle machine; they move by several percent
+with load. The largest gains are in bit operations and `Long` arithmetic on Lua 5.1 (about 0.1), collections and
+sorting with comparators (0.35 to 0.55) and `String.format` (about 0.4). The JSON and UTF-16 text programs gained
+least (about 0.8 to 0.9). `compiler/src/bench/PROFILE.md` has the baseline of each
+program and the measurements behind each change.
+
+**The generated code: microbenchmarks.** Seconds, `lua5.4 / luajit`, from `benchmarks/rt.sh -c`. `benchmarks/hand.sh`
+times hand-written Lua versions of some of them. Measured for 0.2.0 on a shared 16-core Linux machine:
+
+| program | k2l 0.2.0 | hand-written Lua |
+|---|---|---|
+| n-body (500k steps) | 1.04 / 0.06 | 0.98 / 0.06 |
+| binary trees (depth 15) | 0.57 / 0.31 | 0.36 / 0.25 |
+| 200k-object collection pipeline (filter, groupBy, sortedBy, ...) | 1.18 / 0.46 | |
+| `HashMap`/`HashSet` workload with removals | 1.43 / 0.18 | |
+| plain classes and virtual calls | 0.27 / 0.02 | |
+| delegated properties, 1M iterations | 0.25 / 0.01 | |
+| string building and splitting | 0.38 / 0.24 | |
 
 **The compiler.** The JVM starts slowly, so the start script keeps an AppCDS archive of the loaded classes in
 `${XDG_CACHE_HOME:-~/.cache}/k2l` (set `K2L_CDS_DIR` to move it, `K2L_NO_CDS=1` to turn it off; it is skipped when the
-directory is not writable). The first run writes it; later runs start about twice as fast.
+directory is not writable). The first run writes it; later runs start about twice as fast. Compile times before and
+after the 0.2.0 changes, on an 8-core Linux machine:
 
-| | before | after |
+| | before | 0.2.0 |
 |---|---|---|
 | `examples/hello` | 2.0 s | 1.1 s |
 | 40 synthetic files (about 8k lines) | 287 s | 16 s |
 | 200 synthetic files (about 70k lines) | 19 min 41 s | 52 s |
 
-Compile time is now roughly linear in the number of files (about 0.2 s per 350-line file), dominated by the Kotlin
+Compile time is roughly linear in the number of files (about 0.2 s per 350-line file), dominated by the Kotlin
 front end (type resolution and checks). `K2L_PROFILE=1` prints the time of each phase.
-
-**The generated code.** Seconds, `lua5.4 / luajit`, after the runtime improvements below
-(`benchmarks/rt.sh -c` reruns them; `benchmarks/hand.sh` times hand-written Lua versions):
-
-| program | before | after | hand-written Lua |
-|---|---|---|---|
-| n-body (500k steps) | 1.27 / 0.07 | 1.27 / 0.07 | 1.36 / 0.07 |
-| binary trees (depth 15) | 0.71 / 0.41 | 0.71 / 0.41 | 0.55 / 0.30 |
-| 200k-object collection pipeline (filter, groupBy, sortedBy, ...) | 4.08 / 1.60 | 1.64 / 0.64 | |
-| `HashMap`/`HashSet` workload with removals | 6.37 / 1.51 | 2.27 / 0.20 | |
-| delegated properties, 1M iterations | 0.52 / 0.01 | 0.27 / 0.01 | |
-| string building and splitting | 0.49 / 0.39 | 0.49 / 0.34 | |
 
 Tips:
 
@@ -787,7 +820,7 @@ and checks them against the JVM (see the `stdlib_*` test cases):
   `incrementExact`/`decrementExact`/`toIntExact`/`absExact`, `rotateLeft`/`rotateRight` (also of `Byte`, `Short`, `UByte`, `UShort`; `ULong.toString(radix)`), `takeHighestOneBit`/`takeLowestOneBit`,
   `Long` bit counts, `withSign`, `ulp`, `nextUp`/`nextDown`/`nextTowards`, `toBits`/`toRawBits`/`fromBits`,
   `Random.nextLong(bound)`, `nextLong(from, until)`, `nextUInt` and `nextULong` (seeded sequences match the JVM on 5.3+, and with `--long64 emulate` everywhere).
-- `java.math`: `BigInteger` (sign and magnitude over base 10^7 limbs, so every product is exact in doubles; Knuth division,
+- `java.math`: `BigInteger` (sign and magnitude over base 10^7 limbs, 10^9 with the integers of Lua 5.3+, so every product is exact; Knuth division,
   `modPow`, `gcd`, `sqrt`, `isProbablePrime`, two's complement `and`/`or`/`xor`/shifts, JVM `hashCode`, `toInt`/`toLong` wrap
   like the JVM), `BigDecimal` (unscaled value plus scale; all `RoundingMode`s, `MathContext` division and rounding,
   scale-sensitive `equals`, JVM `toString`/`toPlainString`, `stripTrailingZeros`, and `sqrt(MathContext)`: the JDK's own Newton
