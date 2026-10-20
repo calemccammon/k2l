@@ -36,7 +36,16 @@ local function primes()
         local found = __K2L_ListOf()
         local n = 2
         while true do
-            if found:none(function(it) return __K2L_IRem(n, it) == 0 end) then
+            local ____result = true
+            local ____items, ____n = found:____array()
+            for ____i = 1, ____n do
+                local it = ____items[____i]
+                if __K2L_IRem(n, it) == 0 then
+                    ____result = false
+                    break
+                end
+            end
+            if ____result then
                 found:add(n)
                 ____this:yield(n)
             end
@@ -53,21 +62,21 @@ end
 local function classify(xs)
     return __K2L_SequenceBuilder(function(____this_2)
         local ____mod = xs.____modCount
-        for ____i = 1, xs.size do
-            local x = xs[____i]
+        for ____i_1 = 1, xs.size do
+            local x = xs[____i_1]
             do
                 if x < 0 then
                     ____this_2:yield("negative " .. x)
                 elseif x == 0 then
                     goto ____continue
-                elseif math.fmod(x, 2) == 0 then
+                elseif (x >= 0 and x % 2 or 0 - -x % 2) == 0 then
                     emitPair(____this_2, "even", tostring(x))
                 else
                     ____this_2:yield("odd " .. x)
                 end
             end
             ::____continue::
-            if xs.____modCount ~= ____mod and xs:____comodified(____i) then
+            if xs.____modCount ~= ____mod and xs:____comodified(____i_1) then
                 break
             end
         end
@@ -124,13 +133,13 @@ end
 
 local function guarded()
     return __K2L_SequenceBuilder(function(____this_6)
-        local ____ok, ____result = pcall(function()
+        local ____ok, ____result_1 = pcall(function()
             ____this_6:yield("inside try")
             error(__K2L_IllegalArgumentException.new("oops"))
         end)
         if not ____ok then
-            ____ok, ____result = pcall(function()
-                local ____error = __K2L_ToThrowable(____result)
+            ____ok, ____result_1 = pcall(function()
+                local ____error = __K2L_ToThrowable(____result_1)
                 if __K2L_InstanceOf(____error, __K2L_IllegalArgumentException) then
                     local e = ____error
                     ____this_6:yield("caught " .. __K2L_Str(e.message))
@@ -141,15 +150,15 @@ local function guarded()
         end
         print("  finally runs")
         if not ____ok then
-            error(____result, 0)
+            error(____result_1, 0)
         end
         local label
-        local ____ok_1, ____result_1 = pcall(function()
+        local ____ok_1, ____result_2 = pcall(function()
             ____this_6:yield("before")
             label = "value"
         end)
         if not ____ok_1 then
-            local ____error_1 = __K2L_ToThrowable(____result_1)
+            local ____error_1 = __K2L_ToThrowable(____result_2)
             if __K2L_InstanceOf(____error_1, __K2L_Exception) then
                 local e = ____error_1
                 label = "never"
@@ -168,6 +177,10 @@ function Repeater:____init(word, times)
     self.times = times
 end
 
+function Repeater.new(word, times)
+    return setmetatable({word = word, times = times}, Repeater)
+end
+
 function Repeater:words()
     return __K2L_SequenceBuilder(function(____this_7)
         for i = 0, self.times - 1 do
@@ -176,13 +189,20 @@ function Repeater:words()
     end)
 end
 
+local ____lambda_1 = function(it)
+    return (it >= 0 and it % 2 or 0 - -it % 2) == 1
+end
+local ____lambda_2 = function(it) return it * 10 end
+local ____lambda_3 = function(it) return it * 2 end
+local ____lambda_4 = function(it) return it < 8 and it + 1 or nil end
+local ____lambda_5 = function(it) return #it end
 local function main()
     print(__K2L_Str(fibonacci():take(10):toList()))
     print(primes():take(8):joinToString())
     print(__K2L_Str(classify(__K2L_ReadOnlyListOf(3, 0, -2, 4)):toList()))
     local tree = Tree.new(4, Tree.new(2, Tree.new(1), Tree.new(3)), Tree.new(6, Tree.new(5)))
     print(__K2L_Str(tree:inOrder():toList()))
-    print(__K2L_Str(tree:inOrder():filter(function(it) return math.fmod(it, 2) == 1 end):map(function(it) return it * 10 end):toList()))
+    print(__K2L_Str(tree:inOrder():filter(____lambda_1):map(____lambda_2):toList()))
     print("-- interleaving")
     local logged = __K2L_SequenceBuilder(function(____this_8)
         for i = 1, 3 do
@@ -191,7 +211,7 @@ local function main()
         end
         print("  end")
     end)
-    for _, x in logged:map(function(it) return it * 2 end):iter() do
+    for _, x in logged:map(____lambda_3):iter() do
         print("consumed " .. x)
     end
     print(logged:first())
@@ -200,7 +220,7 @@ local function main()
         ____this_9:yieldAll(__K2L_ReadOnlyListOf(1, 2))
         ____this_9:yieldAll(__K2L_ReadOnlySetOf(3))
         ____this_9:yieldAll(__K2L_SequenceOf(4, 5))
-        ____this_9:yieldAll(__K2L_GenerateSequence(6, function(it) return it < 8 and it + 1 or nil end))
+        ____this_9:yieldAll(__K2L_GenerateSequence(6, ____lambda_4))
         ____this_9:yieldAll(__K2L_IteratorOf(__K2L_ReadOnlyListOf(9, 10)))
         ____this_9:yieldAll(__K2L_ReadOnlyListOf())
     end)
@@ -209,10 +229,11 @@ local function main()
     local nested = __K2L_SequenceBuilder(function(____this_10)
         ____this_10:yield(0)
         ____this_10:yieldAll(__K2L_SequenceBuilder(function(____this_11)
-            for c in ("ab"):gmatch(".") do
+            for ____i_2 = 1, #"ab" do
+                local c = ("ab"):sub(____i_2, ____i_2)
                 ____this_11:yield(c)
             end
-        end):map(function(it) return #it end))
+        end):map(____lambda_5))
         ____this_10:yield(-1)
     end)
     print(__K2L_Str(nested:toList()))
@@ -221,11 +242,11 @@ local function main()
     while it:hasNext() do
         print("got " .. it:next())
     end
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_3 = pcall(function()
         it:next()
     end)
     if not ____ok_2 then
-        local ____error_2 = __K2L_ToThrowable(____result_2)
+        local ____error_2 = __K2L_ToThrowable(____result_3)
         if __K2L_InstanceOf(____error_2, __K2L_NoSuchElementException) then
             local e = ____error_2
             print("exhausted")
@@ -237,13 +258,13 @@ local function main()
         print("loop " .. n)
     end
     print("-- exceptions")
-    local ____ok_3, ____result_3 = pcall(function()
+    local ____ok_3, ____result_4 = pcall(function()
         for _, x in failing():iter() do
             print("value " .. x)
         end
     end)
     if not ____ok_3 then
-        local ____error_3 = __K2L_ToThrowable(____result_3)
+        local ____error_3 = __K2L_ToThrowable(____result_4)
         if __K2L_InstanceOf(____error_3, __K2L_IllegalStateException) then
             local e = ____error_3
             print("caught: " .. __K2L_Str(e.message))

@@ -15,6 +15,31 @@ local __K2L_Stream = ____lualib.__K2L_Stream
 local __K2L_Streams = ____lualib.__K2L_Streams
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
+local ____lambda_1 = function(it)
+    return (it >= 0 and it % 2 or 0 - -it % 2) == 1
+end
+local ____lambda_2 = function(it) return __K2L_Equals(it, 2) end
+local ____lambda_3 = function(it) return it < 3 end
+local ____lambda_4 = function(it) return __K2L_Equals(it, 3) end
+local ____lambda_5 = function(it) return it > 1 end
+local ____lambda_6 = function(it) return it > 1 end
+local ____lambda_7 = function() return "x" end
+local ____lambda_8 = function(it) return it * 2 end
+local ____lambda_9 = function(it) return it > 100 end
+local ____lambda_10 = function(n)
+    return __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(n, n * 10)):peek(function(it)
+        print("inner " .. it)
+    end)
+end
+local ____lambda_11 = function(it) return it > 1 end
+local ____lambda_12 = function(it) return it * 2 end
+local ____lambda_13 = function(it) return it + 1 end
+local ____lambda_14 = function()
+    return __K2L_IllegalStateException.new("none")
+end
+local ____lambda_15 = function()
+    return __K2L_IllegalStateException.new("none")
+end
 local function main()
     local result = __K2L_Streams.of(__K2L_Stream, __K2L_ListOf("a", "bb", "ccc", "dddd")):filter(function(it)
         print("filter " .. it)
@@ -38,20 +63,20 @@ local function main()
     end):limit(2):toList()))
     print(__K2L_Str(__K2L_Streams.range(0, 100):peek(function(it)
         print("int " .. it)
-    end):filter(function(it) return math.fmod(it, 2) == 1 end):findFirst()))
+    end):filter(____lambda_1):findFirst()))
     print(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3, 4)):peek(function(it)
         print("any " .. it)
-    end):anyMatch(function(it) return __K2L_Equals(it, 2) end))
+    end):anyMatch(____lambda_2))
     print(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3, 4)):peek(function(it)
         print("all " .. it)
-    end):allMatch(function(it) return it < 3 end))
+    end):allMatch(____lambda_3))
     print(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3, 4)):peek(function(it)
         print("none " .. it)
-    end):noneMatch(function(it) return __K2L_Equals(it, 3) end))
+    end):noneMatch(____lambda_4))
     local pending = __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3)):map(function(it)
         print("never " .. it)
         return it
-    end):filter(function(it) return it > 1 end)
+    end):filter(____lambda_5)
     print("built")
     print(pending:count())
     print(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3)):peek(function(it)
@@ -69,7 +94,7 @@ local function main()
     end):skip(1):limit(2):count())
     print(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3, 4)):peek(function(it)
         print("filtered " .. it)
-    end):filter(function(it) return it > 1 end):count())
+    end):filter(____lambda_6):count())
     print(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3)):peek(function(it)
         print("sorted " .. it)
     end):sorted():count())
@@ -82,13 +107,9 @@ local function main()
         return it + 1
     end):limit(3):toList()))
     print(calls)
-    print(__K2L_Str(__K2L_Streams.generate(__K2L_Stream, function() return "x" end):limit(3):toList()))
-    print(__K2L_Streams.iterate(__K2L_Stream, 1, function(it) return it * 2 end):filter(function(it) return it > 100 end):findFirst():get())
-    print(__K2L_Str(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3)):flatMap(function(n)
-        return __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(n, n * 10)):peek(function(it)
-            print("inner " .. it)
-        end)
-    end):limit(3):toList()))
+    print(__K2L_Str(__K2L_Streams.generate(__K2L_Stream, ____lambda_7):limit(3):toList()))
+    print(__K2L_Streams.iterate(__K2L_Stream, 1, ____lambda_8):filter(____lambda_9):findFirst():get())
+    print(__K2L_Str(__K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3)):flatMap(____lambda_10):limit(3):toList()))
     local once = __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3))
     print(once:count())
     local ____ok, ____result = pcall(function()
@@ -105,10 +126,10 @@ local function main()
             error(____error, 0)
         end
     end
-    local filtered = __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3)):filter(function(it) return it > 1 end)
+    local filtered = __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2, 3)):filter(____lambda_11)
     print(__K2L_Str(filtered:toList()))
     local ____ok_1, ____result_1 = pcall(function()
-        filtered:map(function(it) return it * 2 end)
+        filtered:map(____lambda_12)
     end)
     if not ____ok_1 then
         local ____error_1 = __K2L_ToThrowable(____result_1)
@@ -120,7 +141,7 @@ local function main()
         end
     end
     local ints = __K2L_Streams.range(0, 3)
-    local mapped = ints:map(function(it) return it + 1 end)
+    local mapped = ints:map(____lambda_13)
     local ____ok_2, ____result_2 = pcall(function()
         ints:sum()
     end)
@@ -159,12 +180,8 @@ local function main()
         end
     end
     local ____ok_5, ____result_5 = pcall(function()
-        __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2)):findFirst():orElseThrow(function()
-            return __K2L_IllegalStateException.new("none")
-        end)
-        __K2L_Streams.empty(__K2L_Stream):findFirst():orElseThrow(function()
-            return __K2L_IllegalStateException.new("none")
-        end)
+        __K2L_Streams.of(__K2L_Stream, __K2L_ListOf(1, 2)):findFirst():orElseThrow(____lambda_14)
+        __K2L_Streams.empty(__K2L_Stream):findFirst():orElseThrow(____lambda_15)
     end)
     if not ____ok_5 then
         local ____error_5 = __K2L_ToThrowable(____result_5)

@@ -879,6 +879,41 @@ Layout:
   similar files are target-specific variants.
 - `lua-api`: the `dev.k2l.lua` interop declarations.
 - `gradle-plugin`: the `dev.k2l` Gradle plugin and its TestKit tests (`src/functionalTest`).
+- `compiler/src/bench`: the benchmark harness (`kotlin`) and its programs (`programs`), see below.
+
+### Benchmarks
+
+`compiler/src/bench/programs` holds 17 programs adapted from the `realworld_*` test cases and scaled up (a `SIZE` constant at
+the top of each) to run for roughly 0.5 to 2.5 s on Lua 5.4: collections (`coll_*`), strings (`str_*`), classes and lambdas
+(`oop_*`), numbers (`num_*`, including `--int-overflow wrap` and `--long64 emulate`) and `--strings utf16` text. Each one
+prints a small checksum; its `stdout.txt` comes from Kotlin/JVM, like a test case's (`options.txt` works the same way).
+
+```sh
+./gradlew :compiler:bench                          # every program x every Lua found, 5 runs, compared with the baseline
+./gradlew :compiler:bench -PbenchRuns=3 -PbenchOnly=coll_grid,str_parse -PbenchTargets=5.4,JIT
+./gradlew :compiler:bench -PbenchSave              # also write compiler/src/bench/baseline.json (or -PbenchSave=other.json)
+./gradlew :compiler:bench -PbenchCompare=other.json   # compare with another file (-PbenchCompare=none: no comparison)
+./gradlew :compiler:bench -PbenchProfile           # sampling profile on 5.4 and LuaJIT instead of timings (-PbenchTargets=...)
+./gradlew :compiler:benchOracle -PupdateOracle     # rewrite the programs' stdout.txt from Kotlin/JVM
+```
+
+Each run transpiles the programs with the current compiler, runs each on each target and fails a cell whose output differs
+from `stdout.txt`. It prints the median and minimum wall time per program and target, writes them to
+`compiler/build/bench/results.json` and `results.csv`, and, when `compiler/src/bench/baseline.json` exists, prints the
+ratio of each median to the baseline's and the geometric mean per target (below 1.00 is faster). Wall times depend on
+the machine, so compare runs from the same one, and keep the baseline in step with the code it measures.
+
+With `-PbenchProfile` each program runs once (ten times on LuaJIT) under `compiler/src/bench/resources/.../profiler.lua`
+and `compiler/build/bench/profile/<target>/` gets a report per program plus `summary.txt`: functions by self and inclusive
+samples, the hottest lines, and the Kotlin lines that call the hottest lualib functions. Program lines are mapped back
+to Kotlin through the source map, and lines of `lualib_bundle.lua` to the lualib file and function they come from
+(`Collections.lua:3886 siftDown`). On PUC Lua the profiler is a count hook every 1000 VM instructions
+(`-PbenchInterval=...`), which does not see time spent inside C functions such as `string.format` or `table.concat`;
+on LuaJIT it is `jit.profile` (1 ms), which keeps the JIT compiler on and also reports the VM states (compiled,
+interpreted, GC). `compiler/src/bench/PROFILE.md` is the latest analysis of these profiles.
+
+The harness is not part of `check` (only `BenchProgramsTest`, which checks that the programs transpile on every target).
+The older shell scripts in `benchmarks/` time the compiler itself and a few runtime microbenchmarks.
 
 The Analysis API artifacts come from JetBrains' `intellij-dependencies` repository and must match the
 Kotlin version exactly; see the comments in `gradle/libs.versions.toml` before upgrading.

@@ -1,10 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
-local __K2L_IDiv = ____lualib.__K2L_IDiv
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_Num = ____lualib.__K2L_Num
-local __K2L_Shl = ____lualib.__K2L_Shl
-local __K2L_Shr = ____lualib.__K2L_Shr
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
@@ -14,13 +12,18 @@ function Counter:____init(value)
     self.value = value
 end
 
+function Counter.new(value)
+    return setmetatable({value = value}, Counter)
+end
+
 function Counter:bump()
     self.value = (self.value + 1 + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 local function hash(s)
     local h = 7
-    for c in s:gmatch(".") do
+    for ____i = 1, #s do
+        local c = s:sub(____i, ____i)
         h = (31 * h + c:byte() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
     end
     return h
@@ -87,8 +90,8 @@ local function main()
     c.value = (c.value + 5 + 0x80000000 & 0xFFFFFFFF) - 0x80000000
     print(c.value)
     local arr = __K2L_TypedArrayOf("[I", 2147483647, 1)
-    arr:set(0, (arr:get(0) + arr:get(1) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
-    print(arr:get(0))
+    arr[1] = ((arr[1] or __K2L_IndexError(0, arr.size, "array")) + (arr[2] or __K2L_IndexError(1, arr.size, "array")) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    print(arr[1] or __K2L_IndexError(0, arr.size, "array"))
     local l = 5000000000 + id(1)
     print(__K2L_ToInt32(l))
     print(__K2L_ToInt32(l * 3))
@@ -111,13 +114,15 @@ local function main()
     by = __K2L_Num.toByte(by + 1)
     print(by)
     print((by + 1 + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
-    print(__K2L_IDiv(id(7), 2))
-    print(math.fmod(id(-7), 3))
+    local ____dividend = id(7)
+    print(____dividend >= 0 and ____dividend // 2 or 0 - -____dividend // 2)
+    local ____dividend_1 = id(-7)
+    print(____dividend_1 >= 0 and ____dividend_1 % 3 or 0 - -____dividend_1 % 3)
     print(-2147483648)
     print(2147483647)
     print(-2147483648)
-    print(__K2L_Shl(id(1), 31))
-    print(__K2L_Shr(__K2L_Shl(id(1), 31), 31))
+    print(((id(1) << 31) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
+    print((((id(1) << 31) + 0x80000000 & 0xFFFFFFFF) - 0x80000000) // 2147483648)
     print(max ~ min)
     local sum = 0
     for n = 1, 100000 do

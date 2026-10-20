@@ -3,7 +3,6 @@ local __K2L_BigDecimal = ____lualib.__K2L_BigDecimal
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_MathContext = ____lualib.__K2L_MathContext
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -16,8 +15,9 @@ local ____exports = {}
 ____exports.seed = 123457
 
 local function ____next(bound)
-    ____exports.seed = math.fmod(____exports.seed * 1103 + 12345, 1000003)
-    return __K2L_IRem(__K2L_IDiv(____exports.seed, 7), bound)
+    local ____dividend = ____exports.seed * 1103 + 12345
+    ____exports.seed = ____dividend >= 0 and ____dividend % 1000003 or 0 - -____dividend % 1000003
+    return __K2L_IRem(____exports.seed >= 0 and ____exports.seed // 7 or 0 - -____exports.seed // 7, bound)
 end
 
 local function digits(length)

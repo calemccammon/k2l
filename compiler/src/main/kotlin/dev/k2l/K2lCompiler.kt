@@ -1,8 +1,11 @@
 package dev.k2l
 
+import dev.k2l.codegen.LambdaHoisting
 import dev.k2l.codegen.LuaChunk
 import dev.k2l.codegen.LuaPrinter
+import dev.k2l.codegen.LuaStmt
 import dev.k2l.codegen.Lualib
+import dev.k2l.codegen.UpvalueLimit
 import dev.k2l.frontend.SourceModule
 import dev.k2l.frontend.SourceSession
 import dev.k2l.transform.FileTransformer
@@ -72,7 +75,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
 
     private fun render(chunk: LuaChunk, ctx: TransformContext, luaPath: String, sourcePath: Path): LuaOutput {
         if (!options.sourceMap) return LuaOutput(luaPath, renderPlain(chunk, ctx))
-        val (code, mappings) = LuaPrinter(origins = ctx.origins).printMapped(chunk)
+        val (code, mappings) = printer(chunk, ctx, ctx.origins).printMapped(chunk)
         if (mappings.isEmpty()) return LuaOutput(luaPath, renderPlain(chunk, ctx))
         ctx.lualib += SOURCE_MAP_FEATURE
         ctx.lualibNames += REGISTER_NAME
@@ -92,8 +95,16 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         return LuaOutput(luaPath, top + register + "\n" + code + "--# sourceMappingURL=${luaPath.substringAfterLast('/')}.map\n", map)
     }
 
+    /** Lambdas without captures are created once ([LambdaHoisting]); Lua 5.1 and LuaJIT limit upvalues ([UpvalueLimit]). */
+    private fun printer(chunk: LuaChunk, ctx: TransformContext, origins: Map<LuaStmt, Origin>?): LuaPrinter {
+        val limited = options.luaTarget == LuaTarget.Lua51 || options.luaTarget == LuaTarget.LuaJIT
+        val hoisting = LambdaHoisting.plan(chunk, ctx.lualibNames, limited)
+        val prologues = if (limited) UpvalueLimit.prologues(chunk, ctx.lualibNames, hoisting.upvalues) else emptyMap()
+        return LuaPrinter(origins = origins, prologues = prologues, hoisting = hoisting)
+    }
+
     private fun renderPlain(chunk: LuaChunk, ctx: TransformContext): String {
-        val code = LuaPrinter().print(chunk)
+        val code = printer(chunk, ctx, null).print(chunk)
         if (ctx.lualib.isEmpty()) return code
         return when (options.luaLibImport) {
             LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget, options.emulatesLong64) + "\n" + code

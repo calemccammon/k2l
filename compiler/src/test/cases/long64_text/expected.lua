@@ -3,10 +3,11 @@ local __K2L_BigDecimal = ____lualib.__K2L_BigDecimal
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IDiv = ____lualib.__K2L_IDiv
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -16,7 +17,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local P = __K2L_Class("P")
@@ -26,12 +26,16 @@ function P:____init(a, b)
     self.b = b
 end
 
+function P.new(a, b)
+    return setmetatable({a = a, b = b}, P)
+end
+
 function P:toString()
     return "P(a=" .. self.a .. ", b=" .. __K2L_Str(self.b) .. ")"
 end
 
 function P:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.a) + __K2L_Hash(self.b))
+    return (31 * __K2L_Hash(self.a) + __K2L_Hash(self.b) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function P:equals(other)
@@ -45,6 +49,13 @@ local function sum3(a, b)
     return b
 end
 
+local ____lambda_1 = function(it) return tostring(it) end
+local ____lambda_2 = function(it) return "<" .. it .. ">" end
+local ____lambda_3 = function(it) return -it end
+local ____lambda_4 = function(it)
+    return it >= 0 and it % 1000 or (it % 1000 - 1000) % (-1000)
+end
+local ____lambda_5 = function(it) return it end
 local function main()
     local big = 5000000000000000000
     local max = 9223372036854775807
@@ -57,8 +68,8 @@ local function main()
     ____builder:append(tostring(max))
     print(____builder:toString())
     print(__K2L_ReadOnlyListOf(big, max):joinToString(","))
-    print(__K2L_ReadOnlyListOf(big, max):joinToString(nil, nil, nil, nil, nil, function(it) return tostring(it) end))
-    print(__K2L_ReadOnlyListOf(big, max):joinToString(nil, nil, nil, nil, nil, function(it) return "<" .. it .. ">" end))
+    print(__K2L_ReadOnlyListOf(big, max):joinToString(nil, nil, nil, nil, nil, ____lambda_1))
+    print(__K2L_ReadOnlyListOf(big, max):joinToString(nil, nil, nil, nil, nil, ____lambda_2))
     print(__K2L_Str(__K2L_Pair.new(big, max)))
     print(__K2L_Str(__K2L_ReadOnlyMapOf(__K2L_Pair.new(big, max), __K2L_Pair.new(1, 2))))
     print(__K2L_Str(P.new(big, nil)))
@@ -80,21 +91,65 @@ local function main()
     print(__K2L_NotNull(m) - 1)
     print(__K2L_Str(__K2L_ReadOnlyListOf(big, max, 5):average()))
     print(__K2L_Str(__K2L_TypedArrayOf("[J", big, max):average()))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1, 2):sortedBy(function(it) return -it end, true)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(big, max, 5):maxByOrNull(function(it) return math.fmod(it, 1000) end)))
-    print(__K2L_ReadOnlyListOf(big, max, 5):maxOf(function(it) return math.fmod(it, 1000) end))
-    print(__K2L_ReadOnlyListOf(big, max, 5):minOf(function(it) return it end))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(big, 1):sortedByDescending(function(it) return it end, true)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(big, max):sumOf(function(it) return it + 0.0 end, 0.0)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1, 2):sortedBy(____lambda_3, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(big, max, 5):maxByOrNull(____lambda_4)))
+    local ____list = __K2L_ReadOnlyListOf(big, max, 5)
+    local ____best
+    local ____has = false
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        local ____key = it >= 0 and it % 1000 or (it % 1000 - 1000) % (-1000)
+        if not ____has or ____best < ____key then
+            ____best = ____key
+            ____has = true
+        end
+    end
+    if not ____has then
+        error(__K2L_NoSuchElementException.new(nil))
+    end
+    print(____best)
+    local ____list_1 = __K2L_ReadOnlyListOf(big, max, 5)
+    local ____best_1
+    local ____has_1 = false
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        if not ____has_1 or ____best_1 > it then
+            ____best_1 = it
+            ____has_1 = true
+        end
+    end
+    if not ____has_1 then
+        error(__K2L_NoSuchElementException.new(nil))
+    end
+    print(____best_1)
+    print(__K2L_Str(__K2L_ReadOnlyListOf(big, 1):sortedByDescending(____lambda_5, true)))
+    local ____list_2 = __K2L_ReadOnlyListOf(big, max)
+    local ____sum = 0.0
+    local ____items_2, ____n_2 = ____list_2:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_2[____i_2]
+        ____sum = ____sum + (it + 0.0)
+    end
+    print(__K2L_Str(____sum))
     local ms = __K2L_Num.currentTimeMillis()
     local elapsed = __K2L_Num.currentTimeMillis() - ms
     print(elapsed >= 0)
     print(elapsed < 1000)
     local arr = __K2L_ListOfSize(3, 0, "[J")
-    arr:set(0, max)
-    arr:set(1, __K2L_IDiv(arr:get(0), 2))
-    arr:set(2, arr:get(2) + big)
-    arr:set(2, arr:get(2) - 1)
+    if 0 < 0 or 0 >= arr.size then
+        __K2L_IndexError(0, arr.size, "array")
+    end
+    arr[1] = max
+    local ____dividend = arr[1] or __K2L_IndexError(0, arr.size, "array")
+    local ____value = ____dividend >= 0 and ____dividend // 2 or (____dividend + 1) // 2
+    if 1 < 0 or 1 >= arr.size then
+        __K2L_IndexError(1, arr.size, "array")
+    end
+    arr[2] = ____value
+    arr[3] = (arr[3] or __K2L_IndexError(2, arr.size, "array")) + big
+    arr[3] = (arr[3] or __K2L_IndexError(2, arr.size, "array")) - 1
     print(__K2L_Str(arr:toList()))
     arr:fill(big)
     print(__K2L_Str(arr:toList()))

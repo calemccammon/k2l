@@ -11,6 +11,10 @@ function Logged:____init(tag)
     self.tag = tag
 end
 
+function Logged.new(tag)
+    return setmetatable({tag = tag}, Logged)
+end
+
 function Logged:provideDelegate(thisRef, property)
     print("providing " .. self.tag .. "." .. property.name .. " for " .. (thisRef == nil and "nothing" or "an object"))
     return Cell.new(self.tag .. ":" .. property.name)
@@ -39,6 +43,10 @@ function Bare:____init(raw)
     self.raw = raw
 end
 
+function Bare.new(raw)
+    return setmetatable({raw = raw}, Bare)
+end
+
 local function getValue(self, thisRef, property)
     return property.name .. "=" .. self.raw
 end
@@ -53,6 +61,10 @@ function Counter:____init(n)
     self.n = n
 end
 
+function Counter.new(n)
+    return setmetatable({n = n}, Counter)
+end
+
 local function getValue__1(____this_1, thisRef, property)
     local ____old = ____this_1.n
     ____this_1.n = ____this_1.n + 1
@@ -65,10 +77,18 @@ function Named:____init(prefix)
     self.prefix = prefix
 end
 
+function Named.new(prefix)
+    return setmetatable({prefix = prefix}, Named)
+end
+
 local Fixed = __K2L_Class("Fixed")
 
 function Fixed:____init(text)
     self.text = text
+end
+
+function Fixed.new(text)
+    return setmetatable({text = text}, Fixed)
 end
 
 function Fixed:getValue(thisRef, property)
@@ -138,9 +158,10 @@ end
 
 local Plain = __K2L_Class("Plain")
 
+local ____lambda_1 = function() return "from lazy" end
 function Plain:____init()
     self.size = 1
-    self.____note_delegate = __K2L_Lazy(function() return "from lazy" end)
+    self.____note_delegate = __K2L_Lazy(____lambda_1)
 end
 
 function Plain:getSize()
@@ -153,9 +174,10 @@ end
 
 local Delegating = __K2L_Class("Delegating", Plain)
 
+local ____lambda_2 = function() return 42 end
 function Delegating:____init()
     Plain.____init(self)
-    self.____size_delegate__Delegating = __K2L_Lazy(function() return 42 end)
+    self.____size_delegate__Delegating = __K2L_Lazy(____lambda_2)
     self.note = "plain now"
 end
 
@@ -170,8 +192,9 @@ end
 local HasName = __K2L_Class("HasName")
 local Lazily = __K2L_Class("Lazily", nil, HasName)
 
+local ____lambda_3 = function() return "lazy name" end
 function Lazily:____init()
-    self.____name_delegate__Lazily = __K2L_Lazy(function() return "lazy name" end)
+    self.____name_delegate__Lazily = __K2L_Lazy(____lambda_3)
 end
 
 function Lazily:getName()

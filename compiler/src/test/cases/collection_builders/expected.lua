@@ -11,6 +11,7 @@ local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListBuilderOf = ____lualib.__K2L_ListBuilderOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapBuilderOf = ____lualib.__K2L_MapBuilderOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
@@ -120,7 +121,15 @@ local function main()
         return __K2L_JavaClass(__K2L_KClassOfValue(__K2L_JdkCollections.listIterator(l))).name
     end)
     t("map", function()
-        return __K2L_JavaClass(__K2L_KClassOfValue(l:map(function(it) return it * 2 end))).name
+        local ____out = {}
+        local ____count = 0
+        local ____items, ____n = l:____array()
+        for ____i = 1, ____n do
+            local it = ____items[____i]
+            ____count = ____count + 1
+            ____out[____count] = it * 2
+        end
+        return __K2L_JavaClass(__K2L_KClassOfValue(__K2L_ListWrap(____out, ____count))).name
     end)
     t("toList", function()
         return __K2L_JavaClass(__K2L_KClassOfValue(l:toList())).name

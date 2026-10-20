@@ -29,6 +29,10 @@ function Temperature:____init(celsius)
     self.celsius = celsius
 end
 
+function Temperature.new(celsius)
+    return setmetatable({celsius = celsius}, Temperature)
+end
+
 function Temperature:getCelsius()
     return self.celsius
 end

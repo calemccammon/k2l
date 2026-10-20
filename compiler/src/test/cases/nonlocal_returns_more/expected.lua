@@ -24,6 +24,10 @@ function Res:____init(name)
     self.name = name
 end
 
+function Res.new(name)
+    return setmetatable({name = name}, Res)
+end
+
 function Res:close()
     print("closed " .. self.name)
 end
@@ -52,7 +56,7 @@ local function toVariants(xs, which)
         if which == 1 and it == 3 then
             return "filterTo stopped, kept " .. __K2L_Str(kept)
         else
-            ____result_1 = math.fmod(it, 2) == 0
+            ____result_1 = (it >= 0 and it % 2 or 0 - -it % 2) == 0
         end
         if ____result_1 then
             kept:add(it)
@@ -64,7 +68,7 @@ local function toVariants(xs, which)
         if which == 2 and it == 3 then
             return "filterNotTo stopped, kept " .. __K2L_Str(dropped)
         else
-            ____result_2 = math.fmod(it, 2) == 0
+            ____result_2 = (it >= 0 and it % 2 or 0 - -it % 2) == 0
         end
         if not ____result_2 then
             dropped:add(it)
@@ -76,7 +80,7 @@ local function toVariants(xs, which)
         if which == 3 and it == 3 then
             return "mapNotNullTo stopped, kept " .. __K2L_Str(nn)
         else
-            ____result_3 = math.fmod(it, 2) == 0 and "e" .. it or nil
+            ____result_3 = (it >= 0 and it % 2 or 0 - -it % 2) == 0 and "e" .. it or nil
         end
         local ____value = ____result_3
         if ____value ~= nil then
@@ -132,7 +136,7 @@ local function toVariants(xs, which)
         if which == 8 and it == 3 then
             return "groupByTo stopped, kept " .. __K2L_Str(groups)
         else
-            ____result_8 = math.fmod(it, 3)
+            ____result_8 = it >= 0 and it % 3 or 0 - -it % 3
         end
         local ____value_4 = ____result_8
         local ____group = groups:get(____value_4)
@@ -150,7 +154,7 @@ local function toVariants(xs, which)
         if which == 9 and x == 3 then
             return "filterIndexedTo stopped, kept " .. __K2L_Str(idx)
         else
-            ____result_9 = math.fmod(i, 2) == 0
+            ____result_9 = (i >= 0 and i % 2 or 0 - -i % 2) == 0
         end
         if ____result_9 then
             idx:add(x)
@@ -180,7 +184,7 @@ local function indexedAndRunning(xs, which)
         if which == 0 and x == 3 then
             return "mapIndexedNotNull stopped at " .. i
         else
-            ____result_12 = math.fmod(i, 2) == 0 and x or nil
+            ____result_12 = (i >= 0 and i % 2 or 0 - -i % 2) == 0 and x or nil
         end
         local ____value_5 = ____result_12
         if ____value_5 ~= nil then
@@ -313,6 +317,9 @@ local function indexedAndRunning(xs, which)
     return "finished " .. __K2L_Str(a) .. " " .. __K2L_Str(b) .. " " .. c .. " " .. d .. " " .. __K2L_Str(e) .. " " .. __K2L_Str(f) .. " " .. __K2L_Str(g) .. " " .. h
 end
 
+local ____lambda_1 = function()
+    return __K2L_SingletonMapOf(__K2L_Pair.new("fallback", 1))
+end
 local function lookups(m, xs, key, i)
     local ____value_6
     ____value_6 = m:get(key)
@@ -362,9 +369,7 @@ local function lookups(m, xs, key, i)
         ____value_9 = xs
     end
     local d = ____value_9
-    local e = __K2L_ReadOnlyMapOf():ifEmpty(function()
-        return __K2L_SingletonMapOf(__K2L_Pair.new("fallback", 1))
-    end)
+    local e = __K2L_ReadOnlyMapOf():ifEmpty(____lambda_1)
     return "a=" .. a .. " b=" .. b .. " c=" .. c .. " d=" .. __K2L_Str(d) .. " e=" .. __K2L_Str(e) .. " m=" .. __K2L_Str(m)
 end
 

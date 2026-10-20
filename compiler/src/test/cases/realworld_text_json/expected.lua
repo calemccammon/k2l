@@ -6,9 +6,10 @@ local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -16,7 +17,6 @@ local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
@@ -40,12 +40,16 @@ function Json.Bool:____init(value)
     self.value = value
 end
 
+function Json.Bool.new(value)
+    return setmetatable({value = value}, Json.Bool)
+end
+
 function Json.Bool:toString()
     return "Bool(value=" .. tostring(self.value) .. ")"
 end
 
 function Json.Bool:hashCode()
-    return __K2L_Hash(self.value)
+    return self.value and 1231 or 1237
 end
 
 function Json.Bool:equals(other)
@@ -57,6 +61,10 @@ __K2L_ClassInfo(Json.Num, "Json.Num", "Json$Num", "class")
 
 function Json.Num:____init(value)
     self.value = value
+end
+
+function Json.Num.new(value)
+    return setmetatable({value = value}, Json.Num)
 end
 
 function Json.Num:toString()
@@ -78,6 +86,10 @@ function Json.Str:____init(value)
     self.value = value
 end
 
+function Json.Str.new(value)
+    return setmetatable({value = value}, Json.Str)
+end
+
 function Json.Str:toString()
     return "Str(value=" .. self.value .. ")"
 end
@@ -97,6 +109,10 @@ function Json.Arr:____init(items)
     self.items = items
 end
 
+function Json.Arr.new(items)
+    return setmetatable({items = items}, Json.Arr)
+end
+
 function Json.Arr:toString()
     return "Arr(items=" .. __K2L_Str(self.items) .. ")"
 end
@@ -114,6 +130,10 @@ __K2L_ClassInfo(Json.Obj, "Json.Obj", "Json$Obj", "class")
 
 function Json.Obj:____init(fields)
     self.fields = fields
+end
+
+function Json.Obj.new(fields)
+    return setmetatable({fields = fields}, Json.Obj)
 end
 
 function Json.Obj:toString()
@@ -148,13 +168,14 @@ function Parser:parse()
     local v = self:value()
     self:skipWs()
     if self.pos < #self.src then
-        self:fail("unexpected trailing '" .. __K2L_StringCharAt(self.src, self.pos) .. "'")
+        self:fail("unexpected trailing '" .. (self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")) .. "'")
     end
     return v
 end
 
+local ____lambda_1 = function(it) return it == "\n" end
 function Parser:fail(msg)
-    local line = __K2L_StringToList(__K2L_Text.substring(self.src, 0, math.min(self.pos, #self.src))):count(function(it) return it == "\n" end) + 1
+    local line = __K2L_StringToList(__K2L_Text.substring(self.src, 0, math.min(self.pos, #self.src))):count(____lambda_1) + 1
     local ____arg = self.pos
     local ____value = __K2L_Text.lastIndexOf(self.src, "\n", self.pos - 1)
     local ____result
@@ -164,19 +185,19 @@ function Parser:fail(msg)
 end
 
 function Parser:skipWs()
-    while self.pos < #self.src and __K2L_StringCharAt(self.src, self.pos):match("^%s$") ~= nil do
+    while self.pos < #self.src and (self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")):match("^%s$") ~= nil do
         self.pos = self.pos + 1
     end
 end
 
 function Parser:peek()
-    return self.pos < #self.src and __K2L_StringCharAt(self.src, self.pos) or "\000"
+    return self.pos < #self.src and (self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")) or "\000"
 end
 
 function Parser:expect(c)
     self:skipWs()
     if self:peek() ~= c then
-        self:fail("expected '" .. c .. "' but found " .. (self.pos < #self.src and "'" .. __K2L_StringCharAt(self.src, self.pos) .. "'" or "end of input"))
+        self:fail("expected '" .. c .. "' but found " .. (self.pos < #self.src and "'" .. (self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")) .. "'" or "end of input"))
     end
     self.pos = self.pos + 1
 end
@@ -256,14 +277,14 @@ function Parser:string()
         local ____arg_1 = self.src
         local ____old = self.pos
         self.pos = self.pos + 1
-        local c = __K2L_StringCharAt(____arg_1, ____old)
+        local c = ____old >= 0 and ____old < #____arg_1 and ____arg_1:sub(____old + 1, ____old + 1) or __K2L_IndexError(____old, #____arg_1, "string")
         if c == "\"" then
             return sb:toString()
         elseif c == "\\" then
             local ____arg_2 = self.src
             local ____old_1 = self.pos
             self.pos = self.pos + 1
-            local e = __K2L_StringCharAt(____arg_2, ____old_1)
+            local e = ____old_1 >= 0 and ____old_1 < #____arg_2 and ____arg_2:sub(____old_1 + 1, ____old_1 + 1) or __K2L_IndexError(____old_1, #____arg_2, "string")
             if e == "n" then
                 sb:append("\n")
             elseif e == "t" then
@@ -343,7 +364,8 @@ end
 local function quote(s)
     local ____builder = __K2L_StringBuilder.new()
     ____builder:append("\"")
-    for c in s:gmatch(".") do
+    for ____i_1 = 1, #s do
+        local c = s:sub(____i_1, ____i_1)
         if c == "\"" then
             ____builder:append("\\\"")
         elseif c == "\\" then
@@ -367,17 +389,18 @@ local function formatNumber(d)
 end
 
 local function compact(self)
+    local ____mt = getmetatable(self)
     if __K2L_Equals(self, Json.Null) then
         return "null"
-    elseif __K2L_InstanceOf(self, Json.Bool) then
+    elseif ____mt == Json.Bool then
         return tostring(self.value)
-    elseif __K2L_InstanceOf(self, Json.Num) then
+    elseif ____mt == Json.Num then
         return formatNumber(self.value)
-    elseif __K2L_InstanceOf(self, Json.Str) then
+    elseif ____mt == Json.Str then
         return quote(self.value)
-    elseif __K2L_InstanceOf(self, Json.Arr) then
+    elseif ____mt == Json.Arr then
         return self.items:joinToString(",", "[", "]", nil, nil, function(it) return compact(it) end)
-    elseif __K2L_InstanceOf(self, Json.Obj) then
+    elseif ____mt == Json.Obj then
         return self.fields:getEntries():joinToString(",", "{", "}", nil, nil, function(____destructured)
             local k, v = ____destructured.key, ____destructured.value
             return quote(k) .. ":" .. compact(v)
@@ -394,7 +417,8 @@ local function pretty(____this, indent, step)
     end
     local pad = __K2L_Text.repeatCount(step, indent)
     local inner = __K2L_Text.repeatCount(step, indent + 1)
-    if __K2L_InstanceOf(____this, Json.Arr) then
+    local ____mt_1 = getmetatable(____this)
+    if ____mt_1 == Json.Arr then
         if ____this.items:isEmpty() then
             return "[]"
         else
@@ -402,7 +426,7 @@ local function pretty(____this, indent, step)
                 return inner .. pretty(it, indent + 1, step)
             end)
         end
-    elseif __K2L_InstanceOf(____this, Json.Obj) then
+    elseif ____mt_1 == Json.Obj then
         if ____this.fields:isEmpty() then
             return "{}"
         else
@@ -423,17 +447,18 @@ local function pointer(____this_1, path)
     local cur = ____this_1
     local ____list_1 = __K2L_StringSplit(__K2L_Text.removePrefix(path, "/"), "/")
     local ____mod = ____list_1.____modCount
-    for ____i_1 = 1, ____list_1.size do
-        local raw = ____list_1[____i_1]
+    for ____i_2 = 1, ____list_1.size do
+        local raw = ____list_1[____i_2]
         local token = __K2L_StringReplace(__K2L_StringReplace(raw, "~1", "/"), "~0", "~")
         local c = cur
-        if __K2L_InstanceOf(c, Json.Obj) then
+        local ____mt_2 = getmetatable(c)
+        if ____mt_2 == Json.Obj then
             local ____value_3 = c.fields:get(token)
             if ____value_3 == nil then
                 return nil
             end
             cur = ____value_3
-        elseif __K2L_InstanceOf(c, Json.Arr) then
+        elseif ____mt_2 == Json.Arr then
             local ____receiver = __K2L_StringToIntOrNull(token)
             local ____value_2 = ____receiver and c.items:getOrNull(____receiver)
             if ____value_2 == nil then
@@ -443,7 +468,7 @@ local function pointer(____this_1, path)
         else
             return nil
         end
-        if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_1) then
+        if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_2) then
             break
         end
     end
@@ -460,24 +485,25 @@ local function stats(j, depth, acc)
     local kind = __K2L_KClassOfValue(j).simpleName or "?"
     acc:set(kind, (acc:get(kind) or 0) + 1)
     acc:set("maxDepth", math.max(acc:get("maxDepth") or 0, depth))
-    if __K2L_InstanceOf(j, Json.Arr) then
+    local ____mt_3 = getmetatable(j)
+    if ____mt_3 == Json.Arr then
         local ____list_2 = j.items
         local ____mod_2 = ____list_2.____modCount
-        for ____i_3 = 1, ____list_2.size do
-            local it = ____list_2[____i_3]
+        for ____i_4 = 1, ____list_2.size do
+            local it = ____list_2[____i_4]
             stats(it, depth + 1, acc)
-            if ____list_2.____modCount ~= ____mod_2 and ____list_2:____comodified(____i_3) then
+            if ____list_2.____modCount ~= ____mod_2 and ____list_2:____comodified(____i_4) then
                 break
             end
         end
-    elseif __K2L_InstanceOf(j, Json.Obj) then
+    elseif ____mt_3 == Json.Obj then
         local ____collection = j.fields:getValues()
         local ____items, ____n = ____collection:____array()
         local ____mod_1 = ____collection.____modCount
-        for ____i_2 = 1, ____n do
-            local it = ____items[____i_2]
+        for ____i_3 = 1, ____n do
+            local it = ____items[____i_3]
             stats(it, depth + 1, acc)
-            if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_2, ____n) then
+            if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_3, ____n) then
                 break
             end
         end
@@ -487,14 +513,15 @@ end
 
 local DOC = __K2L_Text.trimIndent("\n{\n  \"name\": \"k2l\",\n  \"version\": \"0.2.0\",\n  \"tags\": [\"kotlin\", \"lua\", \"transpiler\"],\n  \"stars\": 1234,\n  \"ratio\": 0.875,\n  \"big\": 1.5e20,\n  \"neg\": -42.25e-3,\n  \"nested\": {\"a/b\": {\"m~n\": [1, 2, {\"deep\": true}]}, \"empty\": {}, \"none\": null},\n  \"escaped\": \"line1\\nline2\\t\\\"quoted\\\" \\\\ éA\",\n  \"matrix\": [[1, 2], [3, 4], []]\n}\n")
 
+local ____lambda_2 = function() return "-" end
 local function main()
     local doc = Parser.new(DOC):parse()
     print(pretty(doc))
     print(compact(doc))
     print(__K2L_StringLines(pretty(doc, nil, "\t")):take(4):joinToString("|"))
     local ____list_3 = __K2L_ReadOnlyListOf("/name", "/tags/1", "/nested/a~1b/m~0n/2/deep", "/matrix/1/0", "/missing", "/tags/9", "")
-    for ____i_4 = 1, ____list_3.size do
-        local p = ____list_3[____i_4]
+    for ____i_5 = 1, ____list_3.size do
+        local p = ____list_3[____i_5]
         local r = pointer(doc, p)
         local ____receiver_1 = r and compact(r)
         print(__K2L_StringFormat("pointer '%s' -> %s", p, ____receiver_1 and __K2L_Text.take(____receiver_1, 30) or "<none>"))
@@ -504,71 +531,90 @@ local function main()
     print("round trip equal: " .. tostring(__K2L_Equals(roundTrip, doc)))
     local bad = __K2L_ReadOnlyListOf("{\"a\": 1,}", "[1, 2", "{\"a\" 1}", "\"unterminated", "[1.]", "{\n  \"x\": tru\n}", "[1] 2", "@")
     local ____mod_3 = bad.____modCount
-    for ____i_5 = 1, bad.size do
-        local b = bad[____i_5]
+    for ____i_6 = 1, bad.size do
+        local b = bad[____i_6]
         local ____ok, ____result_1 = pcall(function()
             Parser.new(b):parse()
             print("parsed?! " .. b)
         end)
         if not ____ok then
             local ____error = __K2L_ToThrowable(____result_1)
-            if __K2L_InstanceOf(____error, JsonError) then
+            if getmetatable(____error) == JsonError then
                 local e = ____error
                 print("error: " .. __K2L_Str(e.message) .. " (offset " .. e.offset .. ")")
             else
                 error(____error, 0)
             end
         end
-        if bad.____modCount ~= ____mod_3 and bad:____comodified(____i_5) then
+        if bad.____modCount ~= ____mod_3 and bad:____comodified(____i_6) then
             break
         end
     end
     local people = Parser.new("[{\"n\":\"Ada\",\"age\":36,\"langs\":[\"en\",\"fr\"]},{\"n\":\"Linus\",\"age\":54.5,\"langs\":[]},{\"n\":\"Grace\",\"age\":85,\"langs\":[\"en\"]}]"):parse()
-    if not __K2L_InstanceOf(people, Json.Arr) then
+    if getmetatable(people) ~= Json.Arr then
         __K2L_CastFail(people, "Json$Arr", "Json.Arr")
     end
-    local rows = people.items:map(function(it)
-        if not __K2L_InstanceOf(it, Json.Obj) then
+    local ____list_4 = people.items
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = ____list_4:____array()
+    for ____i_7 = 1, ____n_1 do
+        local it = ____items_1[____i_7]
+        local ____result_2
+        if getmetatable(it) ~= Json.Obj then
             __K2L_CastFail(it, "Json$Obj", "Json.Obj")
         end
-        return it
-    end)
+        ____result_2 = it
+        ____count = ____count + 1
+        ____out[____count] = ____result_2
+    end
+    local rows = __K2L_ListWrap(____out, ____count)
     print(__K2L_StringFormat("%-8s|%6s|%s", "name", "age", "langs"))
     local ____mod_4 = rows.____modCount
-    for ____i_6 = 1, rows.size do
-        local r = rows[____i_6]
+    for ____i_8 = 1, rows.size do
+        local r = rows[____i_8]
         local ____cast = r.fields:get("n")
-        if not __K2L_InstanceOf(____cast, Json.Str) then
+        if getmetatable(____cast) ~= Json.Str then
             __K2L_CastFail(____cast, "Json$Str", "Json.Str")
         end
         local name = ____cast.value
         local ____cast_1 = r.fields:get("age")
-        if not __K2L_InstanceOf(____cast_1, Json.Num) then
+        if getmetatable(____cast_1) ~= Json.Num then
             __K2L_CastFail(____cast_1, "Json$Num", "Json.Num")
         end
         local age = ____cast_1.value
         local ____cast_2 = r.fields:get("langs")
-        if not __K2L_InstanceOf(____cast_2, Json.Arr) then
+        if getmetatable(____cast_2) ~= Json.Arr then
             __K2L_CastFail(____cast_2, "Json$Arr", "Json.Arr")
         end
         local langs = __K2L_Text.ifEmpty(____cast_2.items:joinToString("+", nil, nil, nil, nil, function(it)
-            if not __K2L_InstanceOf(it, Json.Str) then
+            if getmetatable(it) ~= Json.Str then
                 __K2L_CastFail(it, "Json$Str", "Json.Str")
             end
             return it.value
-        end), function() return "-" end)
+        end), ____lambda_2)
         print(__K2L_StringFormat("%-8s|%6.1f|%s", name, age, langs))
-        if rows.____modCount ~= ____mod_4 and rows:____comodified(____i_6) then
+        if rows.____modCount ~= ____mod_4 and rows:____comodified(____i_8) then
             break
         end
     end
-    local avg = rows:map(function(it)
-        local ____cast_3 = it.fields:get("age")
-        if not __K2L_InstanceOf(____cast_3, Json.Num) then
-            __K2L_CastFail(____cast_3, "Json$Num", "Json.Num")
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_2, ____n_2 = rows:____array()
+    for ____i_9 = 1, ____n_2 do
+        local it = ____items_2[____i_9]
+        local ____result_3
+        do
+            local ____cast_3 = it.fields:get("age")
+            if getmetatable(____cast_3) ~= Json.Num then
+                __K2L_CastFail(____cast_3, "Json$Num", "Json.Num")
+            end
+            ____result_3 = ____cast_3.value
         end
-        return ____cast_3.value
-    end):average()
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = ____result_3
+    end
+    local avg = __K2L_ListWrap(____out_1, ____count_1):average()
     print(__K2L_StringFormat("average age %.3f, %e, %g", avg, avg, avg))
 end
 

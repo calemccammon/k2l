@@ -1,8 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Spread = ____lualib.__K2L_Spread
@@ -87,9 +87,15 @@ local function main()
     print(__K2L_Str(Batch.new(3, __K2L_Spread("s.", xs, 9))))
     print(__K2L_Str(Batch.new1("four", 1, 2)))
     print(__K2L_Str(Labeled.new("ab", 4, 4)))
-    print(__K2L_Str(__K2L_EnumValues(Chord):map(function(it)
-        return it.name .. "=" .. it.notes:joinToString("")
-    end)))
+    local ____values = Chord.____values
+    local ____out = {}
+    local ____count = 0
+    for ____i = 1, #____values do
+        local it = ____values[____i]
+        ____count = ____count + 1
+        ____out[____count] = it.name .. "=" .. it.notes:joinToString("")
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     spreads()
 end
 

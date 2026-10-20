@@ -3,10 +3,11 @@
 -- complement pattern is split into 32-bit halves, so the results are exact for values below 2^53 in magnitude
 -- (`crc.toLong() and 0xFFFFFFFFL`, 40-bit masks). Shifts multiply and divide by powers of two.
 local T32 = 4294967296
+local floor = math.floor
 
 local function split(x)
-    local hi = math.floor(x / T32)
-    return hi, x - hi * T32
+    local lo = x % T32
+    return (x - lo) / T32, lo
 end
 
 -- hi: the signed high half (as the 32-bit operations return it), lo: the low half in any 32-bit form
@@ -14,7 +15,23 @@ local function join(hi, lo)
     return hi * T32 + lo % T32
 end
 
+-- 2^k - 1 -> 2^k: x and (2^k - 1) is the floored x % 2^k, also for negative x. Not on LuaJIT, where the hash lookup
+-- of an arbitrary number costs more than the two bit.band calls.
+local MASKS
+if not jit then
+    MASKS = {}
+    for k = 1, 53 do
+        MASKS[2 ^ k - 1] = 2 ^ k
+    end
+end
+
 local function __K2L_LBAnd(a, b)
+    if MASKS ~= nil then
+        local m = MASKS[b]
+        if m ~= nil then
+            return a % m
+        end
+    end
     local ah, al = split(a)
     local bh, bl = split(b)
     return join(__K2L_BAnd(ah, bh), __K2L_BAnd(al, bl))
@@ -41,30 +58,35 @@ local function __K2L_LShl(a, n)
 end
 
 local function __K2L_LShr(a, n)
-    return math.floor(a / 2 ^ (n % 64))
+    return floor(a / 2 ^ (n % 64))
 end
 
 local function __K2L_LUshr(a, n)
     n = n % 64
     if a >= 0 or n == 0 then
-        return math.floor(a / 2 ^ n)
+        return floor(a / 2 ^ n)
     end
     local hi, lo = split(a)
     hi = hi % T32
     if n >= 32 then
-        return math.floor(hi / 2 ^ (n - 32))
+        return floor(hi / 2 ^ (n - 32))
     end
-    return hi * 2 ^ (32 - n) + math.floor(lo / 2 ^ n)
+    return hi * 2 ^ (32 - n) + floor(lo / 2 ^ n)
 end
 
 -- bit counts of a Long, from its halves
+-- POP8[b + 1]: the number of one bits of the byte b
+local POP8 = {}
+for b = 0, 255 do
+    POP8[b + 1] = b % 2 + (POP8[(b - b % 2) / 2 + 1] or 0)
+end
+
 local function ones32(n)
     n = n % T32
     local count = 0
     while n > 0 do
-        local b = n % 2
-        count = count + b
-        n = (n - b) / 2
+        local b = n % 256
+        count, n = count + POP8[b + 1], (n - b) / 256
     end
     return count
 end
@@ -74,7 +96,7 @@ local function length32(n)
     local length = 0
     while n > 0 do
         length = length + 1
-        n = math.floor(n / 2)
+        n = floor(n / 2)
     end
     return length
 end

@@ -19,6 +19,10 @@ function Person:____init(name, age)
     self.age = age
 end
 
+function Person.new(name, age)
+    return setmetatable({name = name, age = age}, Person)
+end
+
 function Person:greet(other)
     return "hi " .. other
 end
@@ -94,124 +98,176 @@ end
 
 local ____top_delegate = Logged.new()
 
+local ____lambda_1 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_2 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_3 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_4 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("later", "/later()", later))
+end
+local ____lambda_5 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice), 2)
+end
+local ____lambda_6 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice), __K2L_ReadOnlyMapOf())
+end
+local ____lambda_7 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_8 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_9 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_10 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_11 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_12 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_13 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_14 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_15 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_16 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
+end
+local ____lambda_17 = function(self, ...) return self:greet(...) end
+local ____lambda_18 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("greet", "/Person.greet(kotlin.String)", ____lambda_17))
+end
+local ____lambda_19 = function()
+    return __K2L_NeedsReflect(__K2L_FunctionRef.new("<init>", "/Person.<init>(kotlin.String,kotlin.Int)", Person.new))
+end
+local ____lambda_20 = function() return "<init>" end
+local ____lambda_21 = function() return "twice" end
+local ____lambda_22 = function(receiver) return receiver.name end
+local ____lambda_23 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", ____lambda_22))
+end
+local ____lambda_24 = function(receiver) return receiver.name end
+local ____lambda_25 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", ____lambda_24))
+end
+local ____lambda_26 = function(receiver) return receiver.age end
+local ____lambda_27 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("age", "age@275", ____lambda_26, function(receiver, value)
+        receiver.age = value
+    end))
+end
+local ____lambda_28 = function(receiver) return receiver.name end
+local ____lambda_29 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", ____lambda_28), Person.new("bob", 1))
+end
+local ____lambda_30 = function(receiver) return receiver.name end
+local ____lambda_31 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", ____lambda_30))
+end
+local ____lambda_32 = function(receiver) return receiver.name end
+local ____lambda_33 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", ____lambda_32))
+end
+local ____lambda_34 = function(receiver) return receiver.name end
+local ____lambda_35 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", ____lambda_34))
+end
+local ____lambda_36 = function(receiver) return receiver.name end
+local ____lambda_37 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", ____lambda_36), Person.new("bob", 1))
+end
+local ____lambda_38 = function() return LIMIT end
+local ____lambda_39 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("LIMIT", "/LIMIT", ____lambda_38))
+end
+local ____lambda_40 = function() return ____exports.late end
+local ____lambda_41 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("late", "/late", ____lambda_40, function(value)
+        ____exports.late = value
+    end))
+end
+local ____lambda_42 = function() return ____exports.counter end
+local ____lambda_43 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("counter", "/counter", ____lambda_42, function(value)
+        ____exports.counter = value
+    end))
+end
+local ____lambda_44 = function() return ____exports.counter end
+local ____lambda_45 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("counter", "/counter", ____lambda_44, function(value)
+        ____exports.counter = value
+    end))
+end
+local ____lambda_46 = function() return "age" end
+local ____lambda_47 = function(____p1) return ____p1:upper() end
+local ____lambda_48 = function(____p1) return #____p1 end
+local ____lambda_49 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("length", "kotlin/String.length", ____lambda_48))
+end
+local ____lambda_50 = function(____p1) return #____p1 end
+local ____lambda_51 = function()
+    return __K2L_NeedsReflect(__K2L_PropertyRef.new("length", "kotlin/String.length", ____lambda_50))
+end
+local ____lambda_52 = function() return "length" end
 local function main()
-    probe("parameters", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("returnType", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("isSuspend", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("suspend isSuspend", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("later", "/later()", later))
-    end)
-    probe("call", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice), 2)
-    end)
-    probe("callBy", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice), __K2L_ReadOnlyMapOf())
-    end)
-    probe("visibility", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("isOpen", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("isFinal", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("isAbstract", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("isInline", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("isExternal", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("isOperator", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("isInfix", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("typeParameters", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("annotations", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("twice", "/twice(kotlin.Int)", twice))
-    end)
-    probe("method parameters", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("greet", "/Person.greet(kotlin.String)", function(self, ...) return self:greet(...) end))
-    end)
-    probe("constructor parameters", function()
-        return __K2L_NeedsReflect(__K2L_FunctionRef.new("<init>", "/Person.<init>(kotlin.String,kotlin.Int)", Person.new))
-    end)
-    probe("constructor name", function() return "<init>" end)
-    probe("name", function() return "twice" end)
+    probe("parameters", ____lambda_1)
+    probe("returnType", ____lambda_2)
+    probe("isSuspend", ____lambda_3)
+    probe("suspend isSuspend", ____lambda_4)
+    probe("call", ____lambda_5)
+    probe("callBy", ____lambda_6)
+    probe("visibility", ____lambda_7)
+    probe("isOpen", ____lambda_8)
+    probe("isFinal", ____lambda_9)
+    probe("isAbstract", ____lambda_10)
+    probe("isInline", ____lambda_11)
+    probe("isExternal", ____lambda_12)
+    probe("isOperator", ____lambda_13)
+    probe("isInfix", ____lambda_14)
+    probe("typeParameters", ____lambda_15)
+    probe("annotations", ____lambda_16)
+    probe("method parameters", ____lambda_18)
+    probe("constructor parameters", ____lambda_19)
+    probe("constructor name", ____lambda_20)
+    probe("name", ____lambda_21)
     probe("bound method returnType", function()
         local ____receiver = person()
         return __K2L_NeedsReflect(__K2L_FunctionRef.new("greet", "/Person.greet(kotlin.String)", function(...) return ____receiver:greet(...) end, ____receiver))
     end)
     print("receiver evaluated " .. ____exports.evaluated .. " time(s)")
-    probe("property returnType", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", function(receiver) return receiver.name end))
-    end)
-    probe("property getter", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", function(receiver) return receiver.name end))
-    end)
-    probe("property setter", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("age", "age@275", function(receiver) return receiver.age end, function(receiver, value)
-            receiver.age = value
-        end))
-    end)
-    probe("property call", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", function(receiver) return receiver.name end), Person.new("bob", 1))
-    end)
-    probe("property parameters", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", function(receiver) return receiver.name end))
-    end)
-    probe("property visibility", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", function(receiver) return receiver.name end))
-    end)
-    probe("property isSuspend", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", function(receiver) return receiver.name end))
-    end)
-    probe("property getDelegate", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("name", "name@257", function(receiver) return receiver.name end), Person.new("bob", 1))
-    end)
-    probe("isConst", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("LIMIT", "/LIMIT", function() return LIMIT end))
-    end)
-    probe("isLateinit", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("late", "/late", function() return ____exports.late end, function(value)
-            ____exports.late = value
-        end))
-    end)
-    probe("top-level getter", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("counter", "/counter", function() return ____exports.counter end, function(value)
-            ____exports.counter = value
-        end))
-    end)
-    probe("top-level setter", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("counter", "/counter", function() return ____exports.counter end, function(value)
-            ____exports.counter = value
-        end))
-    end)
-    probe("property name", function() return "age" end)
-    local f = __K2L_FunctionRef.new("uppercase", "kotlin.String.kotlin/text/uppercase()", function(____p1) return ____p1:upper() end)
+    probe("property returnType", ____lambda_23)
+    probe("property getter", ____lambda_25)
+    probe("property setter", ____lambda_27)
+    probe("property call", ____lambda_29)
+    probe("property parameters", ____lambda_31)
+    probe("property visibility", ____lambda_33)
+    probe("property isSuspend", ____lambda_35)
+    probe("property getDelegate", ____lambda_37)
+    probe("isConst", ____lambda_39)
+    probe("isLateinit", ____lambda_41)
+    probe("top-level getter", ____lambda_43)
+    probe("top-level setter", ____lambda_45)
+    probe("property name", ____lambda_46)
+    local f = __K2L_FunctionRef.new("uppercase", "kotlin.String.kotlin/text/uppercase()", ____lambda_47)
     probe("library function name", function() return f.name end)
     probe("library function parameters", function() return __K2L_NeedsReflect(f) end)
     probe("library function returnType", function() return __K2L_NeedsReflect(f) end)
-    probe("library property returnType", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("length", "kotlin/String.length", function(____p1) return #____p1 end))
-    end)
-    probe("library property getter", function()
-        return __K2L_NeedsReflect(__K2L_PropertyRef.new("length", "kotlin/String.length", function(____p1) return #____p1 end))
-    end)
-    probe("library property name", function() return "length" end)
+    probe("library property returnType", ____lambda_49)
+    probe("library property getter", ____lambda_51)
+    probe("library property name", ____lambda_52)
     local holder = Holder.new()
     print(holder:getX())
     holder:setY(5)

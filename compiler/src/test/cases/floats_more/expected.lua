@@ -7,6 +7,7 @@ local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_FloatToString = ____lualib.__K2L_FloatToString
 local __K2L_Fround = ____lualib.__K2L_Fround
 local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -14,7 +15,6 @@ local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Vec = __K2L_Class("Vec")
@@ -22,6 +22,10 @@ local Vec = __K2L_Class("Vec")
 function Vec:____init(x, y)
     self.x = x
     self.y = y
+end
+
+function Vec.new(x, y)
+    return setmetatable({x = x, y = y}, Vec)
 end
 
 function Vec:plus(o)
@@ -41,7 +45,7 @@ function Vec:toString()
 end
 
 function Vec:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.x) + __K2L_Hash(self.y))
+    return (31 * __K2L_Hash(self.x) + __K2L_Hash(self.y) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Vec:equals(other)
@@ -66,9 +70,13 @@ local function main()
     print(__K2L_FloatToString(average(arr)))
     print(__K2L_Str(arr:toList()))
     local zeros = __K2L_ListOfSize(2, 0.0, "[F")
-    print(__K2L_FloatToString(zeros:get(0)))
-    zeros:set(1, __K2L_Fround(2.5 / 3))
-    print(__K2L_FloatToString(zeros:get(1)))
+    print(__K2L_FloatToString(zeros[1] or __K2L_IndexError(0, zeros.size, "array")))
+    local ____value = __K2L_Fround(2.5 / 3)
+    if 1 < 0 or 1 >= zeros.size then
+        __K2L_IndexError(1, zeros.size, "array")
+    end
+    zeros[2] = ____value
+    print(__K2L_FloatToString(zeros[2] or __K2L_IndexError(1, zeros.size, "array")))
     print(__K2L_FloatToString(math.abs(-1.100000023841858)))
     print(__K2L_FloatToString(math.max(1.100000023841858, 2.200000047683716)))
     print(__K2L_FloatToString(math.min(1.100000023841858, 2.200000047683716)))
@@ -111,7 +119,14 @@ local function main()
     print(__K2L_FloatToString(big))
     print(__K2L_FloatToString(__K2L_Fround(3 * 0.10000000149011612)))
     print(__K2L_Fround(0.10000000149011612 * 3) == 0.30000001192092896)
-    local total = __K2L_ReadOnlyListOf(0.10000000149011612, 0.20000000298023224, 0.30000001192092896):sumOf(function(it) return __K2L_Fround(it * 2) end, 0.0)
+    local ____list = __K2L_ReadOnlyListOf(0.10000000149011612, 0.20000000298023224, 0.30000001192092896)
+    local ____sum = 0.0
+    local ____items, ____n = ____list:____array()
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
+        ____sum = ____sum + __K2L_Fround(it * 2)
+    end
+    local total = ____sum
     print(__K2L_DoubleToString(total))
     print(__K2L_DoubleToString(__K2L_ReadOnlyListOf(0.10000000149011612, 0.20000000298023224, 0.30000001192092896):average()))
     print(__K2L_FloatToString(__K2L_ReadOnlyListOf(3.299999952316284, 1.100000023841858):max()))

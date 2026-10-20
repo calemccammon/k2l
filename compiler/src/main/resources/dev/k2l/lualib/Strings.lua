@@ -913,11 +913,24 @@ local function decimalDigits(x)
         return "0", 0
     end
     local s
-    -- at least two digits, as Java writes them: 4.9E-324, not 5E-324
-    for precision = 1, 16 do
-        s = string.format("%." .. precision .. "e", x)
-        if tonumber(s) == x then
-            break
+    if x >= 2.2250738585072014e-308 then
+        -- A normal double that some decimal of at most 15 digits reads back as lies within half an ulp of it, much
+        -- closer than half a unit of the 15th digit: its 15-digit rounding is that decimal padded with zeros. So the
+        -- shortest digits are those of %.14e (zeros dropped) when it reads back, else of %.15e or %.16e.
+        s = string.format("%.14e", x)
+        if tonumber(s) ~= x then
+            s = string.format("%.15e", x)
+            if tonumber(s) ~= x then
+                s = string.format("%.16e", x)
+            end
+        end
+    else
+        -- at least two digits, as Java writes them: 4.9E-324, not 5E-324
+        for precision = 1, 16 do
+            s = string.format("%." .. precision .. "e", x)
+            if tonumber(s) == x then
+                break
+            end
         end
     end
     local int, frac, exp = s:match("^(%d)%.?(%d*)e([-+]%d+)$")
@@ -1269,6 +1282,9 @@ function __K2L_Text.sized(value, bits)
     return setmetatable({value = value, bits = bits}, Sized)
 end
 
+-- the flags only numbers take, in the order the JDK checks them
+local NUMERIC_FLAGS = {{"alt", "#"}, {"plus", "+"}, {"space", " "}, {"zero", "0"}, {"comma", ","}, {"paren", "("}}
+
 -- One conversion of an argument (anything but %% and %n).
 local function convert(spec, conv, value, bits, flags, width, precision)
     local lower = conv:lower()
@@ -1281,7 +1297,7 @@ local function convert(spec, conv, value, bits, flags, width, precision)
     end
     if not numeric then
         -- flags only numbers take, checked in the JDK's order (# is rejected too: no argument is Formattable here)
-        for _, flag in ipairs({{"alt", "#"}, {"plus", "+"}, {"space", " "}, {"zero", "0"}, {"comma", ","}, {"paren", "("}}) do
+        for _, flag in ipairs(NUMERIC_FLAGS) do
             if flags[flag[1]] then
                 formatError("FormatFlagsConversionMismatch", "Conversion = " .. conv .. ", Flags = " .. flag[2])
             end
@@ -1331,25 +1347,27 @@ local function convert(spec, conv, value, bits, flags, width, precision)
     return pad(text, width, flags.left)
 end
 
-local function formatText(format, ...)
-    local n = select("#", ...)
-    local args = {...}
-    local out = {}
-    local nextArg, lastArg = 0, nil
+-- A format string parsed once into its pieces: literal text, and for each specifier a table of its parts (or of the
+-- error it raises when the formatting reaches it). Formats are cached by their text; the cache is dropped when full.
+local parsedFormats, parsedCount = {}, 0
+
+local function parseFormat(format)
+    local pieces = {}
     local pos = 1
     while pos <= #format do
         local percent = format:find("%", pos, true)
         if percent == nil then
-            out[#out + 1] = format:sub(pos)
+            pieces[#pieces + 1] = format:sub(pos)
             break
         end
-        out[#out + 1] = format:sub(pos, percent - 1)
+        pieces[#pieces + 1] = format:sub(pos, percent - 1)
         local spec, index, flagText, widthText, precisionText, conv =
             format:match("^(%%(%d*%$?)([-#+ 0,(<]*)(%d*)%.?(%d*)([a-zA-Z%%]))", percent)
         if spec == nil or not conv:find("^[bBhHsScCdoxXeEfgGn%%]$") then
             -- checked before the argument, as the JDK parses the whole specifier first
             local after = conv or format:match("^%%[-#+ 0,(<%d$.]*(.)", percent)
-            formatError("UnknownFormatConversion", "Conversion = '" .. (after or "%") .. "'")
+            pieces[#pieces + 1] = { error = "Conversion = '" .. (after or "%") .. "'" }
+            break
         end
         -- "1$" is an argument index; a bare number belongs to flags/width
         local argIndex
@@ -1373,31 +1391,65 @@ local function formatText(format, ...)
             flags.zero = true
             widthText = widthText:gsub("^0+", "")
         end
-        local width = tonumber(widthText)
-        local precision = hasPrecision and tonumber(precisionText) or nil
-        if conv == "%" then
-            out[#out + 1] = pad("%", width, flags.left)
-        elseif conv == "n" then
-            out[#out + 1] = "\n"
-        else
-            -- "%<s" reuses the previous specifier's argument; explicit indices do not move the ordinary one
-            if flagText:find("<", 1, true) then
-                argIndex = lastArg
-            elseif argIndex == nil then
-                nextArg = nextArg + 1
-                argIndex = nextArg
-            end
-            if argIndex == nil or argIndex > n then
-                formatError("MissingFormatArgument", "Format specifier '" .. spec .. "'")
-            end
-            lastArg = argIndex
-            local value, bits = args[argIndex], nil
-            if getmetatable(value) == Sized then
-                value, bits = value.value, value.bits
-            end
-            out[#out + 1] = convert(spec, conv, value, bits, flags, width, precision)
-        end
+        pieces[#pieces + 1] = {
+            spec = spec,
+            conv = conv,
+            argIndex = argIndex,
+            previous = flagText:find("<", 1, true) ~= nil,
+            flags = flags,
+            width = tonumber(widthText),
+            precision = hasPrecision and tonumber(precisionText) or nil,
+        }
         pos = percent + #spec
+    end
+    return pieces
+end
+
+local function formatText(format, ...)
+    local pieces = parsedFormats[format]
+    if pieces == nil then
+        pieces = parseFormat(format)
+        if parsedCount >= 256 then
+            parsedFormats, parsedCount = {}, 0
+        end
+        parsedFormats[format], parsedCount = pieces, parsedCount + 1
+    end
+    local n = select("#", ...)
+    local args = {...}
+    local out = {}
+    local nextArg, lastArg = 0, nil
+    for i = 1, #pieces do
+        local piece = pieces[i]
+        if type(piece) == "string" then
+            out[i] = piece
+        elseif piece.error then
+            formatError("UnknownFormatConversion", piece.error)
+        else
+            local conv = piece.conv
+            if conv == "%" then
+                out[i] = pad("%", piece.width, piece.flags.left)
+            elseif conv == "n" then
+                out[i] = "\n"
+            else
+                -- "%<s" reuses the previous specifier's argument; explicit indices do not move the ordinary one
+                local argIndex = piece.argIndex
+                if piece.previous then
+                    argIndex = lastArg
+                elseif argIndex == nil then
+                    nextArg = nextArg + 1
+                    argIndex = nextArg
+                end
+                if argIndex == nil or argIndex > n then
+                    formatError("MissingFormatArgument", "Format specifier '" .. piece.spec .. "'")
+                end
+                lastArg = argIndex
+                local value, bits = args[argIndex], nil
+                if getmetatable(value) == Sized then
+                    value, bits = value.value, value.bits
+                end
+                out[i] = convert(piece.spec, conv, value, bits, piece.flags, piece.width, piece.precision)
+            end
+        end
     end
     return table.concat(out)
 end
@@ -1424,6 +1476,13 @@ end
 ------------------------------------------------------------------ StringBuilder
 local __K2L_StringBuilder = __K2L_Class("java.lang.StringBuilder")
 
+-- The content is a list of pieces, concatenated when it is read. setText makes it one piece (and forgets the UTF-16
+-- length that Utf16.lua keeps in ____units).
+local function setText(self, s)
+    self.____parts, self.____units = {s}, nil
+end
+__K2L_StringBuilder.____setText = setText
+
 function __K2L_StringBuilder:____init(initial)
     self.____parts = {initial or ""}
 end
@@ -1439,7 +1498,11 @@ function __K2L_StringBuilder:appendLine(text)
 end
 
 function __K2L_StringBuilder:toString()
-    local s = table.concat(self.____parts)
+    local parts = self.____parts
+    if parts[2] == nil then
+        return parts[1]
+    end
+    local s = table.concat(parts)
     self.____parts = {s}
     return s
 end
@@ -1449,12 +1512,12 @@ function __K2L_StringBuilder:getLength()
 end
 
 function __K2L_StringBuilder:clear()
-    self.____parts = {""}
+    setText(self, "")
     return self
 end
 
 function __K2L_StringBuilder:reverse()
-    self.____parts = {self:toString():reverse()}
+    setText(self, self:toString():reverse())
     return self
 end
 
@@ -1483,7 +1546,7 @@ function __K2L_StringBuilder:set(index, char)
     if index < 0 or index >= #s then
         outOfBounds("index " .. index .. ",length " .. #s)
     end
-    self.____parts = {s:sub(1, index) .. char .. s:sub(index + 2)}
+    setText(self, s:sub(1, index) .. char .. s:sub(index + 2))
 end
 
 function __K2L_StringBuilder:insert(index, text)
@@ -1491,7 +1554,7 @@ function __K2L_StringBuilder:insert(index, text)
     if index < 0 or index > #s then
         outOfBounds("offset " .. index .. ", length " .. #s)
     end
-    self.____parts = {s:sub(1, index) .. text .. s:sub(index + 1)}
+    setText(self, s:sub(1, index) .. text .. s:sub(index + 1))
     return self
 end
 
@@ -1500,7 +1563,7 @@ function __K2L_StringBuilder:deleteCharAt(index)
     if index < 0 or index >= #s then
         outOfBounds("index " .. index .. ",length " .. #s)
     end
-    self.____parts = {s:sub(1, index) .. s:sub(index + 2)}
+    setText(self, s:sub(1, index) .. s:sub(index + 2))
     return self
 end
 
@@ -1510,7 +1573,7 @@ function __K2L_StringBuilder:delete(from, to)
     if from < 0 or from > to then
         outOfBounds("start " .. from .. ", end " .. to .. ", length " .. #s)
     end
-    self.____parts = {s:sub(1, from) .. s:sub(to + 1)}
+    setText(self, s:sub(1, from) .. s:sub(to + 1))
     return self
 end
 
@@ -1520,7 +1583,7 @@ function __K2L_StringBuilder:replace(from, to, text)
     if from < 0 or from > #s or from > to then
         outOfBounds("start " .. from .. ", end " .. to .. ", length " .. #s)
     end
-    self.____parts = {s:sub(1, from) .. text .. s:sub(to + 1)}
+    setText(self, s:sub(1, from) .. text .. s:sub(to + 1))
     return self
 end
 
@@ -1529,7 +1592,7 @@ function __K2L_StringBuilder:setLength(length)
     if length < 0 then
         outOfBounds(tostring(length))
     end
-    self.____parts = {#s >= length and s:sub(1, length) or s .. string.rep("\0", length - #s)}
+    setText(self, #s >= length and s:sub(1, length) or s .. string.rep("\0", length - #s))
 end
 
 function __K2L_StringBuilder:substring(from, to)

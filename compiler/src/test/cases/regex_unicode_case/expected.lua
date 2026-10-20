@@ -5,11 +5,12 @@ local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Utf16 = ____lualib.__K2L_Utf16
 
+local ____lambda_1 = function(it) return it.value end
 local function show(pattern, input, ...)
     local options = __K2L_ArrayOf(...)
     local regex = __K2L_Regex.new(pattern, options:toSet())
     local found = regex:find(input)
-    return pattern .. " ~ " .. input .. ": " .. __K2L_Str(found and found.value) .. " at " .. __K2L_Str(found and found.range) .. " matches=" .. tostring(regex:matches(input)) .. " all=" .. __K2L_Str(__K2L_Sequence.new(regex:findAllFactory(input)):map(function(it) return it.value end):toList())
+    return pattern .. " ~ " .. input .. ": " .. __K2L_Str(found and found.value) .. " at " .. __K2L_Str(found and found.range) .. " matches=" .. tostring(regex:matches(input)) .. " all=" .. __K2L_Str(__K2L_Sequence.new(regex:findAllFactory(input)):map(____lambda_1):toList())
 end
 
 local function main()

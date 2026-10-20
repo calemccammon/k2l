@@ -5,7 +5,6 @@ local __K2L_CoroutineContext = ____lualib.__K2L_CoroutineContext
 local __K2L_CreateCoroutine = ____lualib.__K2L_CreateCoroutine
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -75,10 +74,11 @@ local function completion(name)
     end)
 end
 
+local ____lambda_1 = function()
+    return true, failLater()
+end
 local function recovering()
-    local ____ok, ____result, ____returned = pcall(function()
-        return true, failLater()
-    end)
+    local ____ok, ____result, ____returned = pcall(____lambda_1)
     if not ____ok then
         ____ok, ____result, ____returned = pcall(function()
             local ____error = __K2L_ToThrowable(____result)
@@ -106,7 +106,8 @@ function Counter:____init()
 end
 
 function Counter:tick()
-    self.count = self.count + __K2L_IDiv(immediate(1), 2)
+    local ____dividend = immediate(1)
+    self.count = self.count + (____dividend >= 0 and ____dividend // 2 or 0 - -____dividend // 2)
     return self.count
 end
 
@@ -115,7 +116,7 @@ local function loopAndWhen(n)
     for i = 1, n do
         local doubled = immediate(i)
         local ____temp
-        if math.fmod(doubled, 4) == 0 then
+        if (doubled >= 0 and doubled % 4 or 0 - -doubled % 4) == 0 then
             ____temp = "four:" .. doubled
         else
             ____temp = "other:" .. doubled
@@ -134,9 +135,20 @@ local function loopAndWhen(n)
     return out
 end
 
+local ____lambda_2 = function() return sum() end
+local ____lambda_3 = function() return failLater() end
+local ____lambda_4 = function() return recovering() end
+local ____lambda_5 = function() return awaitValue("rejected") end
+local ____lambda_6 = function(self) return self:tick() + self:tick() end
+local ____lambda_7 = function() return loopAndWhen(3) end
+local ____lambda_8 = function() return __K2L_Str(__K2L_EmptyCoroutineContext) end
+local ____lambda_9 = function(it) return -1 end
+local ____lambda_10 = function(it) return it * 10 end
+local ____lambda_11 = function(it) return 7 end
+local ____lambda_12 = function() return #"fine" end
 local function main()
     print("-- start and resume")
-    local block = function() return sum() end
+    local block = ____lambda_2
     __K2L_StartCoroutine(block, Printer.new("sum"))
     print("main: coroutine is parked")
     local cont = __K2L_NotNull(____exports.parked)
@@ -157,14 +169,14 @@ local function main()
         end
     end
     print("-- exceptions")
-    __K2L_StartCoroutine(function() return failLater() end, completion("failLater"))
-    __K2L_StartCoroutine(function() return recovering() end, completion("recovering"))
+    __K2L_StartCoroutine(____lambda_3, completion("failLater"))
+    __K2L_StartCoroutine(____lambda_4, completion("recovering"))
     __K2L_StartCoroutine(function()
         awaitValue("thrower")
         error(__K2L_IllegalArgumentException.new("thrown after resume"))
     end, completion("thrower"))
     __K2L_NotNull(____exports.parked):resumeWith(__K2L_Result.success(1))
-    __K2L_StartCoroutine(function() return awaitValue("rejected") end, completion("rejected"))
+    __K2L_StartCoroutine(____lambda_5, completion("rejected"))
     __K2L_NotNull(____exports.parked):resumeWith(__K2L_Result.failure(__K2L_RuntimeException.new("rejected by main")))
     print("-- createCoroutine")
     local created = __K2L_CreateCoroutine(function()
@@ -187,11 +199,11 @@ local function main()
     end
     print("-- receivers, members and loops")
     local counter = Counter.new()
-    local withReceiver = function(self) return self:tick() + self:tick() end
+    local withReceiver = ____lambda_6
     __K2L_StartCoroutine(withReceiver, completion("receiver"), counter)
     print("count = " .. counter.count)
-    __K2L_StartCoroutine(function() return loopAndWhen(3) end, completion("loops"))
-    __K2L_StartCoroutine(function() return __K2L_Str(__K2L_EmptyCoroutineContext) end, completion("context"))
+    __K2L_StartCoroutine(____lambda_7, completion("loops"))
+    __K2L_StartCoroutine(____lambda_8, completion("context"))
     __K2L_StartCoroutine(sumOfImmediates, completion("reference"))
     nested()
     print("-- Result")
@@ -203,9 +215,9 @@ local function main()
     local ____arg_1 = bad:getOrNull()
     local ____receiver = bad:exceptionOrNull()
     print(__K2L_Str(____arg) .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(____receiver and ____receiver.message))
-    print(ok:getOrDefault(0) .. " " .. bad:getOrDefault(0) .. " " .. bad:getOrElse(function(it) return -1 end))
-    print(__K2L_Str(ok:map(function(it) return it * 10 end)))
-    print(bad:recover(function(it) return 7 end):getOrThrow())
+    print(ok:getOrDefault(0) .. " " .. bad:getOrDefault(0) .. " " .. bad:getOrElse(____lambda_9))
+    print(__K2L_Str(ok:map(____lambda_10)))
+    print(bad:recover(____lambda_11):getOrThrow())
     ok:onSuccess(function(it)
         print("onSuccess " .. it)
     end):onFailure(function(it)
@@ -214,7 +226,7 @@ local function main()
     bad:onFailure(function(it)
         print("onFailure " .. __K2L_Str(it.message))
     end)
-    print(__K2L_Str(__K2L_RunCatching(function() return #"fine" end)))
+    print(__K2L_Str(__K2L_RunCatching(____lambda_12)))
     print(__K2L_Str(__K2L_RunCatching(function()
         error(__K2L_IllegalStateException.new("broken"))
     end):exceptionOrNull()))
@@ -258,6 +270,10 @@ function Parked:next()
     end)
 end
 
+local ____lambda_13 = function(it) return immediate(it) + 1 end
+local ____lambda_14 = function() return twice(____lambda_13) end
+local ____lambda_15 = function() return shout("hey") end
+local ____lambda_16 = function() return __K2L_Str(__K2L_CoroutineContext()) end
 function nested()
     print("-- nested coroutines")
     local source = Parked.new()
@@ -274,11 +290,9 @@ function nested()
         print("  outer: back")
         return "outer done"
     end, completion("outer"))
-    __K2L_StartCoroutine(function()
-        return twice(function(it) return immediate(it) + 1 end)
-    end, completion("twice"))
-    __K2L_StartCoroutine(function() return shout("hey") end, completion("extension"))
-    __K2L_StartCoroutine(function() return __K2L_Str(__K2L_CoroutineContext()) end, completion("coroutineContext"))
+    __K2L_StartCoroutine(____lambda_14, completion("twice"))
+    __K2L_StartCoroutine(____lambda_15, completion("extension"))
+    __K2L_StartCoroutine(____lambda_16, completion("coroutineContext"))
     local caught = Parked.new()
     __K2L_StartCoroutine(function()
         local r = __K2L_RunCatching(function()

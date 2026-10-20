@@ -65,6 +65,10 @@ function Impl:____init(id)
     self.id = id
 end
 
+function Impl.new(id)
+    return setmetatable({id = id}, Impl)
+end
+
 function Impl:getId()
     return self.id
 end

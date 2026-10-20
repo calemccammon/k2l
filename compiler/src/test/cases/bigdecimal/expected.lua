@@ -7,6 +7,7 @@ local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MathContext = ____lualib.__K2L_MathContext
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -217,6 +218,8 @@ local function formatting()
     print(__K2L_Str(__K2L_ReadOnlyListOf(__K2L_BigDecimal.parse("1.5"), __K2L_BigDecimal.parse("2.50"))))
 end
 
+local ____lambda_1 = function(acc, v) return acc:add(v) end
+local ____lambda_2 = function(it) return __K2L_BigDecimal.parse(it) end
 local function comparisons()
     print("-- comparisons")
     local a = __K2L_BigDecimal.parse("1.0")
@@ -235,22 +238,40 @@ local function comparisons()
     print(__K2L_BigDecimal.parse("-3.25"):hashCode())
     print(__K2L_BigDecimal.parse("0"):hashCode())
     print(__K2L_ReadOnlySetOf(a, b, __K2L_BigDecimal.parse("1.0")).size)
-    print(__K2L_ReadOnlyListOf(a, b):map(function(it) return it:stripTrailingZeros() end):toSet().size)
+    local ____list_1 = __K2L_ReadOnlyListOf(a, b)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list_1:____array()
+    for ____i_4 = 1, ____n do
+        local it = ____items[____i_4]
+        ____count = ____count + 1
+        ____out[____count] = it:stripTrailingZeros()
+    end
+    print(__K2L_ListWrap(____out, ____count):toSet().size)
     print(__K2L_Str(__K2L_ReadOnlyListOf(c, a, __K2L_BigDecimal.parse("-3"), __K2L_BigDecimal.parse("1.5")):sorted()))
     print(__K2L_Str(__K2L_ReadOnlyListOf(c, a, __K2L_BigDecimal.parse("-3")):maxOrNull()))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("1.1", "2.2", "3.3"):map(function(it) return __K2L_BigDecimal.parse(it) end):fold(__K2L_BigDecimal.ZERO, function(acc, v) return acc:add(v) end)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("1.1", "2.2", "3.3"):sumOf(function(it) return __K2L_BigDecimal.parse(it) end, __K2L_BigDecimal.ZERO)))
+    local ____list_2 = __K2L_ReadOnlyListOf("1.1", "2.2", "3.3")
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_2:____array()
+    for ____i_5 = 1, ____n_1 do
+        local it = ____items_1[____i_5]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = __K2L_BigDecimal.parse(it)
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1):fold(__K2L_BigDecimal.ZERO, ____lambda_1)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf("1.1", "2.2", "3.3"):sumOf(____lambda_2, __K2L_BigDecimal.ZERO)))
 end
 
 local function conversions()
     print("-- conversions")
     local values = __K2L_ReadOnlyListOf("0", "1.5", "-1.5", "123.999", "1E+3", "123456789012345678901.5", "1e-5", "-2147483649.5", "0.1", "3.14159265358979323846")
     local ____mod_3 = values.____modCount
-    for ____i_4 = 1, values.size do
-        local v = values[____i_4]
+    for ____i_6 = 1, values.size do
+        local v = values[____i_6]
         local x = __K2L_BigDecimal.parse(v)
         print(v .. ": int=" .. x:toInt() .. " double=" .. __K2L_Str(x:toDouble()))
-        if values.____modCount ~= ____mod_3 and values:____comodified(____i_4) then
+        if values.____modCount ~= ____mod_3 and values:____comodified(____i_6) then
             break
         end
     end
@@ -259,6 +280,44 @@ local function conversions()
     print(__K2L_Str(__K2L_BigDecimal.parse("1e400"):toDouble()))
 end
 
+local ____lambda_3 = function()
+    return __K2L_BigDecimal.ONE:div(__K2L_BigDecimal.ZERO)
+end
+local ____lambda_4 = function()
+    return __K2L_BigDecimal.ZERO:divide(__K2L_BigDecimal.ZERO)
+end
+local ____lambda_5 = function()
+    return __K2L_BigDecimal.ONE:divide(__K2L_BigDecimal.ZERO)
+end
+local ____lambda_6 = function()
+    return __K2L_BigDecimal.ONE:divide(__K2L_BigDecimal.parse("3"))
+end
+local ____lambda_7 = function()
+    return __K2L_BigDecimal.ONE:divide(__K2L_BigDecimal.ZERO, 2, __K2L_RoundingMode.HALF_UP)
+end
+local ____lambda_8 = function()
+    return __K2L_BigDecimal.ONE:divide(__K2L_BigDecimal.ZERO, __K2L_MathContext.DECIMAL32)
+end
+local ____lambda_9 = function()
+    return __K2L_BigDecimal.ONE:remainder(__K2L_BigDecimal.ZERO)
+end
+local ____lambda_10 = function()
+    return __K2L_BigDecimal.fromBigInteger(__K2L_BigInteger.TEN:pow(30)):divide(__K2L_BigDecimal.ZERO, 2, __K2L_RoundingMode.UP)
+end
+local ____lambda_11 = function() return __K2L_BigDecimal.TEN:pow(-1) end
+local ____lambda_12 = function() return __K2L_BigDecimal.parse("") end
+local ____lambda_13 = function() return __K2L_BigDecimal.parse("-") end
+local ____lambda_14 = function() return __K2L_BigDecimal.parse("abc") end
+local ____lambda_15 = function() return __K2L_BigDecimal.parse("1.2.3") end
+local ____lambda_16 = function() return __K2L_BigDecimal.parse("1e") end
+local ____lambda_17 = function() return __K2L_BigDecimal.parse("1e+") end
+local ____lambda_18 = function() return __K2L_BigDecimal.parse("1ex") end
+local ____lambda_19 = function() return __K2L_BigDecimal.fromDouble(0.0 / 0.0) end
+local ____lambda_20 = function() return __K2L_BigDecimal.fromDouble(math.huge) end
+local ____lambda_21 = function()
+    return __K2L_BigDecimal.valueOfDouble(0.0 / 0.0)
+end
+local ____lambda_22 = function() return __K2L_RoundingMode.valueOf("SIDEWAYS") end
 local function failures()
     print("-- failures")
     local function attempt(label, block)
@@ -275,44 +334,26 @@ local function failures()
             end
         end
     end
-    attempt("div0", function()
-        return __K2L_BigDecimal.ONE:div(__K2L_BigDecimal.ZERO)
-    end)
-    attempt("0div0", function()
-        return __K2L_BigDecimal.ZERO:divide(__K2L_BigDecimal.ZERO)
-    end)
-    attempt("exact1", function()
-        return __K2L_BigDecimal.ONE:divide(__K2L_BigDecimal.ZERO)
-    end)
-    attempt("exact2", function()
-        return __K2L_BigDecimal.ONE:divide(__K2L_BigDecimal.parse("3"))
-    end)
-    attempt("scaled0", function()
-        return __K2L_BigDecimal.ONE:divide(__K2L_BigDecimal.ZERO, 2, __K2L_RoundingMode.HALF_UP)
-    end)
-    attempt("mc0", function()
-        return __K2L_BigDecimal.ONE:divide(__K2L_BigDecimal.ZERO, __K2L_MathContext.DECIMAL32)
-    end)
-    attempt("rem0", function()
-        return __K2L_BigDecimal.ONE:remainder(__K2L_BigDecimal.ZERO)
-    end)
-    attempt("big0", function()
-        return __K2L_BigDecimal.fromBigInteger(__K2L_BigInteger.TEN:pow(30)):divide(__K2L_BigDecimal.ZERO, 2, __K2L_RoundingMode.UP)
-    end)
-    attempt("pow", function() return __K2L_BigDecimal.TEN:pow(-1) end)
-    attempt("empty", function() return __K2L_BigDecimal.parse("") end)
-    attempt("sign", function() return __K2L_BigDecimal.parse("-") end)
-    attempt("letters", function() return __K2L_BigDecimal.parse("abc") end)
-    attempt("twoDots", function() return __K2L_BigDecimal.parse("1.2.3") end)
-    attempt("exp", function() return __K2L_BigDecimal.parse("1e") end)
-    attempt("exp2", function() return __K2L_BigDecimal.parse("1e+") end)
-    attempt("exp3", function() return __K2L_BigDecimal.parse("1ex") end)
-    attempt("nan", function() return __K2L_BigDecimal.fromDouble(0.0 / 0.0) end)
-    attempt("inf", function() return __K2L_BigDecimal.fromDouble(math.huge) end)
-    attempt("valueOfNan", function()
-        return __K2L_BigDecimal.valueOfDouble(0.0 / 0.0)
-    end)
-    attempt("enum", function() return __K2L_RoundingMode.valueOf("SIDEWAYS") end)
+    attempt("div0", ____lambda_3)
+    attempt("0div0", ____lambda_4)
+    attempt("exact1", ____lambda_5)
+    attempt("exact2", ____lambda_6)
+    attempt("scaled0", ____lambda_7)
+    attempt("mc0", ____lambda_8)
+    attempt("rem0", ____lambda_9)
+    attempt("big0", ____lambda_10)
+    attempt("pow", ____lambda_11)
+    attempt("empty", ____lambda_12)
+    attempt("sign", ____lambda_13)
+    attempt("letters", ____lambda_14)
+    attempt("twoDots", ____lambda_15)
+    attempt("exp", ____lambda_16)
+    attempt("exp2", ____lambda_17)
+    attempt("exp3", ____lambda_18)
+    attempt("nan", ____lambda_19)
+    attempt("inf", ____lambda_20)
+    attempt("valueOfNan", ____lambda_21)
+    attempt("enum", ____lambda_22)
 end
 
 local function main()

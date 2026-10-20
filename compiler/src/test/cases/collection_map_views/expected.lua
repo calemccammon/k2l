@@ -12,6 +12,7 @@ local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -40,6 +41,10 @@ local function t(name, f)
     print(name .. " -> " .. __K2L_Str(r))
 end
 
+local ____lambda_1 = function(it)
+    return (it >= 0 and it % 2 or 0 - -it % 2) == 0
+end
+local ____lambda_2 = function(it) return it.key == "g" end
 local function views(label, m)
     local keys = m:getKeys()
     local values = m:getValues()
@@ -61,12 +66,12 @@ local function views(label, m)
     m:set("e", 5)
     m:set("f", 6)
     t(label .. " values.removeIf", function()
-        return tostring(values:removeIf(function(it) return math.fmod(it, 2) == 0 end)) .. " " .. __K2L_Str(m)
+        return tostring(values:removeIf(____lambda_1)) .. " " .. __K2L_Str(m)
     end)
     m:set("g", 7)
     m:set("h", 8)
     t(label .. " entries.removeIf", function()
-        return tostring(entries:removeIf(function(it) return it.key == "g" end)) .. " " .. __K2L_Str(m)
+        return tostring(entries:removeIf(____lambda_2)) .. " " .. __K2L_Str(m)
     end)
     local it = m:iterator()
     it:next()
@@ -95,7 +100,17 @@ local function views(label, m)
     t(label .. " keys add", function() return keys:add("x") end)
     t(label .. " values add", function() return values:add(1) end)
     t(label .. " entries contains", function()
-        return tostring(entries:contains(m:getEntries():first())) .. " " .. tostring(entries:any(function(it) return it.key == "h" end))
+        local ____arg = entries:contains(m:getEntries():first())
+        local ____result_1 = false
+        local ____items_1, ____n_1 = entries:____array()
+        for ____i_1 = 1, ____n_1 do
+            local it = ____items_1[____i_1]
+            if it.key == "h" then
+                ____result_1 = true
+                break
+            end
+        end
+        return tostring(____arg) .. " " .. tostring(____result_1)
     end)
     t(label .. " keys eq", function()
         return tostring(__K2L_Equals(keys, m:getKeys():toSet())) .. " " .. tostring(__K2L_Hash(keys) == __K2L_Hash(m:getKeys():toSet())) .. " " .. tostring(__K2L_Equals(values, values))
@@ -113,10 +128,30 @@ local function views(label, m)
         return __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(__K2L_IteratorOf(keys))).name) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(__K2L_IteratorOf(values))).name) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(__K2L_IteratorOf(entries))).name)
     end)
     t(label .. " keys ops", function()
-        return __K2L_Str(keys:map(function(it) return it:upper() end)) .. " " .. __K2L_Str(keys:sorted()) .. " " .. keys:first() .. " " .. keys:joinToString("|") .. " " .. __K2L_Str(keys:toList())
+        local ____out = {}
+        local ____count = 0
+        local ____items_2, ____n_2 = keys:____array()
+        for ____i_2 = 1, ____n_2 do
+            local it = ____items_2[____i_2]
+            ____count = ____count + 1
+            ____out[____count] = it:upper()
+        end
+        return __K2L_Str(__K2L_ListWrap(____out, ____count)) .. " " .. __K2L_Str(keys:sorted()) .. " " .. keys:first() .. " " .. keys:joinToString("|") .. " " .. __K2L_Str(keys:toList())
     end)
     t(label .. " values ops", function()
-        return values:sum() .. " " .. __K2L_Str(values:maxOrNull()) .. " " .. __K2L_Str(values:filter(function(it) return it > 50 end)) .. " " .. tostring(values:contains(80))
+        local ____arg_1 = values:sum()
+        local ____arg_2 = values:maxOrNull()
+        local ____out_1 = {}
+        local ____count_1 = 0
+        local ____items_3, ____n_3 = values:____array()
+        for ____i_3 = 1, ____n_3 do
+            local it = ____items_3[____i_3]
+            if it > 50 then
+                ____count_1 = ____count_1 + 1
+                ____out_1[____count_1] = it
+            end
+        end
+        return ____arg_1 .. " " .. __K2L_Str(____arg_2) .. " " .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)) .. " " .. tostring(values:contains(80))
     end)
     t(label .. " keys retainAll", function()
         return tostring(keys:retainAll(__K2L_ReadOnlyListOf("h", "e"))) .. " " .. __K2L_Str(m)
@@ -137,6 +172,12 @@ local function views(label, m)
     end)
 end
 
+local ____lambda_3 = function(it)
+    return __K2L_Str(it.key) .. ":" .. __K2L_Str(it.value)
+end
+local ____lambda_4 = function() return "d" end
+local ____lambda_5 = function(_, _) return nil end
+local ____lambda_6 = function(it) return it.value end
 local function main()
     views("linked", __K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2), __K2L_Pair.new("c", 3)))
     views("hash", __K2L_HashMapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2), __K2L_Pair.new("c", 3)))
@@ -167,31 +208,27 @@ local function main()
     end)
     dk:remove(2)
     t("dk remove", function() return __K2L_Str(tm) .. " " .. __K2L_Str(dk) end)
-    local ____items_1, ____n_1 = dm:____entryArray()
+    local ____items_4, ____n_4 = dm:____entryArray()
     local ____mod_1 = dm.____modCount
-    for ____i_1 = 1, ____n_1 do
-        local e = ____items_1[____i_1]
+    for ____i_4 = 1, ____n_4 do
+        local e = ____items_4[____i_4]
         e:setValue(e.value .. "!")
-        if dm.____modCount ~= ____mod_1 and dm:____comodified(____i_1, ____n_1) then
+        if dm.____modCount ~= ____mod_1 and dm:____comodified(____i_4, ____n_4) then
             break
         end
     end
     t("dm setValue", function() return tm end)
-    t("dm iterate", function()
-        return dm:map(function(it)
-            return __K2L_Str(it.key) .. ":" .. __K2L_Str(it.value)
-        end)
-    end)
+    t("dm iterate", function() return dm:map(____lambda_3) end)
     t("dm headMap", function()
         return __K2L_Str(dm:headMap(0)) .. " " .. __K2L_Str(dm:ceilingKey(1)) .. " " .. __K2L_Str(dm:higherKey(3)) .. " " .. __K2L_Str(dm:floorKey(1))
     end)
     local sm = __K2L_SingletonMapOf(__K2L_Pair.new("x", 1))
     t("single views", function()
-        local ____arg = sm:getKeys()
-        local ____arg_1 = sm:getValues()
-        local ____arg_2 = sm:getEntries()
+        local ____arg_3 = sm:getKeys()
+        local ____arg_4 = sm:getValues()
+        local ____arg_5 = sm:getEntries()
         local ____value = sm:getValues()
-        return __K2L_Str(____arg) .. " " .. __K2L_Str(____arg_1) .. " " .. __K2L_Str(____arg_2) .. " " .. tostring(__K2L_InstanceOf(____value, __K2L_Set)) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(sm:getValues())).name)
+        return __K2L_Str(____arg_3) .. " " .. __K2L_Str(____arg_4) .. " " .. __K2L_Str(____arg_5) .. " " .. tostring(__K2L_InstanceOf(____value, __K2L_Set)) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(sm:getValues())).name)
     end)
     t("single remove", function()
         local ____cast = sm:getKeys()
@@ -202,11 +239,11 @@ local function main()
     end)
     local em = __K2L_ReadOnlyMapOf()
     t("empty views", function()
-        local ____arg_3 = em:getKeys()
-        local ____arg_4 = em:getValues()
-        local ____arg_5 = em:getEntries()
+        local ____arg_6 = em:getKeys()
+        local ____arg_7 = em:getValues()
+        local ____arg_8 = em:getEntries()
         local ____value_1 = em:getValues()
-        return __K2L_Str(____arg_3) .. " " .. __K2L_Str(____arg_4) .. " " .. __K2L_Str(____arg_5) .. " " .. tostring(__K2L_InstanceOf(____value_1, __K2L_List)) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(em:getKeys())).name)
+        return __K2L_Str(____arg_6) .. " " .. __K2L_Str(____arg_7) .. " " .. __K2L_Str(____arg_8) .. " " .. tostring(__K2L_InstanceOf(____value_1, __K2L_List)) .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(em:getKeys())).name)
     end)
     local um = __K2L_JdkCollections.unmodifiableMap(__K2L_MapOf(__K2L_Pair.new("a", 1)))
     t("unmodifiable keys", function()
@@ -217,8 +254,8 @@ local function main()
     local m = __K2L_MapOf(__K2L_Pair.new(1, "a"), __K2L_Pair.new(2, "b"))
     local k = m:getKeys()
     m:putAll(__K2L_SingletonMapOf(__K2L_Pair.new(3, "c")))
-    m:getOrPut(4, function() return "d" end)
-    m:compute(1, function(_, _) return nil end)
+    m:getOrPut(4, ____lambda_4)
+    m:compute(1, ____lambda_5)
     t("compute live", function()
         return __K2L_Str(k) .. " " .. __K2L_Str(m:getValues())
     end)
@@ -228,34 +265,43 @@ local function main()
     nested:getValues():first():add(2)
     t("nested", function() return nested end)
     local sum = 0
-    local ____items_2, ____n_2 = m:____keyArray()
-    for ____i_2 = 1, ____n_2 do
-        local key = ____items_2[____i_2]
+    local ____items_5, ____n_5 = m:____keyArray()
+    for ____i_5 = 1, ____n_5 do
+        local key = ____items_5[____i_5]
         sum = sum + key
     end
-    local ____items_3, ____n_3 = m:____valueArray()
-    for ____i_3 = 1, ____n_3 do
-        local value = ____items_3[____i_3]
+    local ____items_6, ____n_6 = m:____valueArray()
+    for ____i_6 = 1, ____n_6 do
+        local value = ____items_6[____i_6]
         sum = sum + #value
     end
-    local ____keys, ____values, ____n_4 = m:____arrays()
-    for ____i_4 = 1, ____n_4 do
-        local key, value = ____keys[____i_4], ____values[____i_4]
+    local ____keys, ____values, ____n_7 = m:____arrays()
+    for ____i_7 = 1, ____n_7 do
+        local key, value = ____keys[____i_7], ____values[____i_7]
         sum = sum + (key + #value)
     end
     t("loops", function() return sum end)
     local counts = __K2L_MapOf()
     local ____list = __K2L_StringSplit("a b a c b a", " ")
     local ____mod_2 = ____list.____modCount
-    for ____i_5 = 1, ____list.size do
-        local w = ____list[____i_5]
+    for ____i_8 = 1, ____list.size do
+        local w = ____list[____i_8]
         counts:set(w, (counts:get(w) or 0) + 1)
-        if ____list.____modCount ~= ____mod_2 and ____list:____comodified(____i_5) then
+        if ____list.____modCount ~= ____mod_2 and ____list:____comodified(____i_8) then
             break
         end
     end
     t("counts", function()
-        return __K2L_Str(counts:getEntries():sortedByDescending(function(it) return it.value end):map(function(it) return it.key end)) .. " " .. __K2L_Str(counts:getValues():sorted())
+        local ____list_1 = counts:getEntries():sortedByDescending(____lambda_6)
+        local ____out_2 = {}
+        local ____count_2 = 0
+        local ____items_7, ____n_8 = ____list_1:____array()
+        for ____i_9 = 1, ____n_8 do
+            local it = ____items_7[____i_9]
+            ____count_2 = ____count_2 + 1
+            ____out_2[____count_2] = it.key
+        end
+        return __K2L_Str(__K2L_ListWrap(____out_2, ____count_2)) .. " " .. __K2L_Str(counts:getValues():sorted())
     end)
 end
 

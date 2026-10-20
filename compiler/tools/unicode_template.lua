@@ -1,5 +1,6 @@
     -- The tables are decoded the first time they are used.
     local decodedSets, decodedMaps, decodedSpecial = {}, {}, {}
+    local floor = math.floor
 
     local function decodeSet(name)
         local starts, ends, n = {}, {}, 0
@@ -19,20 +20,44 @@
         return set
     end
 
-    -- The index of the range of the set holding cp, or nil.
-    local function find(name, cp)
-        local set = decodedSets[name] or decodeSet(name)
+    -- The index of the range of the set holding cp, or nil, by binary search.
+    local function search(set, cp)
         local starts, ends = set.starts, set.ends
         local lo, hi = 1, set.n
         while lo <= hi do
-            local mid = math.floor((lo + hi) / 2)
+            local mid = floor((lo + hi) / 2)
             if cp < starts[mid] then
                 hi = mid - 1
             elseif cp > ends[mid] then
                 lo = mid + 1
             else
-                return mid, starts
+                return mid
             end
+        end
+        return nil
+    end
+
+    -- The index of the range of the set holding cp, or nil; the answers for Latin-1 are a table made with the set.
+    local function find(name, cp)
+        local set = decodedSets[name] or decodeSet(name)
+        if cp < 256 then
+            local latin = set.latin
+            if latin == nil then
+                latin = {}
+                for c = 0, 255 do
+                    latin[c] = search(set, c) or false
+                end
+                set.latin = latin
+            end
+            local i = latin[cp]
+            if i then
+                return i, set.starts
+            end
+            return nil
+        end
+        local i = search(set, cp)
+        if i then
+            return i, set.starts
         end
         return nil
     end

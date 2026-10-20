@@ -14,7 +14,6 @@ local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
@@ -25,12 +24,16 @@ function Item:____init(name, price)
     self.price = price
 end
 
+function Item.new(name, price)
+    return setmetatable({name = name, price = price}, Item)
+end
+
 function Item:toString()
     return "Item(name=" .. self.name .. ", price=" .. self.price .. ")"
 end
 
 function Item:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.name) + __K2L_Hash(self.price))
+    return (31 * __K2L_Hash(self.name) + self.price + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Item:equals(other)
@@ -74,7 +77,7 @@ local function filtered(xs)
         if it < 0 then
             return __K2L_SingletonListOf(-1)
         end
-        ____result_5 = math.fmod(it, 2) == 0
+        ____result_5 = (it >= 0 and it % 2 or 0 - -it % 2) == 0
         if ____result_5 then
             ____result_4:add(it)
         end
@@ -86,7 +89,7 @@ local function filtered(xs)
         if it == 7 then
             return __K2L_SingletonListOf(7)
         end
-        ____result_7 = math.fmod(it, 2) == 0
+        ____result_7 = (it >= 0 and it % 2 or 0 - -it % 2) == 0
         if not ____result_7 then
             ____result_6:add(it)
         end
@@ -347,7 +350,7 @@ local function grouping(xs)
         if it == 0 then
             return "zero"
         end
-        ____result_37 = math.fmod(it, 3)
+        ____result_37 = it >= 0 and it % 3 or 0 - -it % 3
         local ____value_6 = ____result_37
         local ____group = ____result_36:get(____value_6)
         if ____group == nil then
@@ -363,7 +366,7 @@ local function grouping(xs)
         if it == 0 then
             return "zero"
         end
-        ____result_39 = math.fmod(it, 2)
+        ____result_39 = it >= 0 and it % 2 or 0 - -it % 2
         local ____value_7 = ____result_39
         local ____value_8 = "v" .. it
         local ____group_1 = ____result_38:get(____value_7)

@@ -46,8 +46,10 @@ local function rounding()
     print(__K2L_Num.roundToLong(2.5))
     print(__K2L_Str((7 + 0.0) / 2))
     print(__K2L_IDiv(7, 2))
-    print(__K2L_IDiv(-7, 2))
-    print(math.fmod(-7, 3))
+    local ____dividend = -7
+    print(____dividend >= 0 and ____dividend // 2 or 0 - -____dividend // 2)
+    local ____dividend_1 = -7
+    print(____dividend_1 >= 0 and ____dividend_1 % 3 or 0 - -____dividend_1 % 3)
     print(__K2L_Num.mod(7, -3))
     print(__K2L_Num.mod(-7, 3))
     print(-__K2L_FloorDiv(7, 2))

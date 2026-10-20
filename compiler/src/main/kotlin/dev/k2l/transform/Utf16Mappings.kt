@@ -51,9 +51,20 @@ internal fun CallSite.requireRegexProperties(pattern: LuaExpr) {
 /** Wraps [text] so that surrogate halves joined by concatenation become one character. */
 internal fun FileTransformer.u16Norm(text: LuaExpr): LuaExpr = u16("norm", text)
 
-/** The iterator over the chars of [text]: a byte pattern, or the UTF-16 units with `--strings utf16`. */
-internal fun FileTransformer.stringChars(text: LuaExpr): LuaExpr =
-    if (utf16) u16("each", text) else LuaMethodCall(text, "gmatch", listOf(LuaString(".")))
+/**
+ * `for (c in s)`: over the UTF-16 units with `--strings utf16`, else by byte index, `local c = s:sub(i, i)` (LuaJIT
+ * compiles `sub`, not the `gmatch(".")` iterator).
+ */
+internal fun FileTransformer.eachChar(text: LuaExpr, variable: String, body: List<LuaStmt>) {
+    if (utf16) {
+        emit(LuaGenericFor(listOf(variable), listOf(u16("each", text)), body))
+        return
+    }
+    val s = cache(text, "text")
+    val i = LuaName(ctx.temp("i"))
+    val char = LuaLocal(listOf(variable), listOf(LuaMethodCall(s, "sub", listOf(i, i))))
+    emit(LuaNumericFor(i.name, LuaNumber("1"), LuaUnary(LuaUnOp.Len, s), null, listOf(char) + body))
+}
 
 /** A Char's code and the Char of a code, as bytes or UTF-16 units. */
 internal fun FileTransformer.charCode(c: LuaExpr): LuaExpr = if (utf16) u16("code", c) else LuaMethodCall(c, "byte", emptyList())

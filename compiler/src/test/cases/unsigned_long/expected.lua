@@ -7,7 +7,8 @@ local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 
 local function fnv(s)
     local h = 0xcbf29ce484222325
-    for c in s:gmatch(".") do
+    for ____i = 1, #s do
+        local c = s:sub(____i, ____i)
         h = h ~ c:byte()
         h = h * 1099511628211
     end

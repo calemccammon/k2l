@@ -2,7 +2,6 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Response = __K2L_Class("Response")
 
@@ -25,7 +24,7 @@ function Response:toString()
 end
 
 function Response:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.status) + __K2L_Hash(self.body)) + __K2L_Hash(self.note))
+    return (31 * (31 * self.status + __K2L_Hash(self.body)) + __K2L_Hash(self.note) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Response:equals(other)
@@ -55,6 +54,10 @@ local Counter = __K2L_Class("Counter")
 
 function Counter:____init(count)
     self.count = count
+end
+
+function Counter.new(count)
+    return setmetatable({count = count}, Counter)
 end
 
 function Counter:count__1(by)

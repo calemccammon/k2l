@@ -6,7 +6,6 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Map = ____lualib.__K2L_Map
@@ -47,6 +46,10 @@ function TStr:____init(v)
     self.v = v
 end
 
+function TStr.new(v)
+    return setmetatable({v = v}, TStr)
+end
+
 function TStr:toString()
     return "TStr(v=" .. self.v .. ")"
 end
@@ -64,6 +67,10 @@ __K2L_ClassInfo(TInt, "TInt", "TInt", "class")
 
 function TInt:____init(v)
     self.v = v
+end
+
+function TInt.new(v)
+    return setmetatable({v = v}, TInt)
 end
 
 function TInt:toString()
@@ -85,6 +92,10 @@ function TFloat:____init(v)
     self.v = v
 end
 
+function TFloat.new(v)
+    return setmetatable({v = v}, TFloat)
+end
+
 function TFloat:toString()
     return "TFloat(v=" .. __K2L_Str(self.v) .. ")"
 end
@@ -104,12 +115,16 @@ function TBool:____init(v)
     self.v = v
 end
 
+function TBool.new(v)
+    return setmetatable({v = v}, TBool)
+end
+
 function TBool:toString()
     return "TBool(v=" .. tostring(self.v) .. ")"
 end
 
 function TBool:hashCode()
-    return __K2L_Hash(self.v)
+    return self.v and 1231 or 1237
 end
 
 function TBool:equals(other)
@@ -121,6 +136,10 @@ __K2L_ClassInfo(TArr, "TArr", "TArr", "class")
 
 function TArr:____init(v)
     self.v = v
+end
+
+function TArr.new(v)
+    return setmetatable({v = v}, TArr)
 end
 
 function TArr:toString()
@@ -260,8 +279,9 @@ function ValueReader:basicString()
     end
 end
 
+local ____lambda_1 = function(it) return __K2L_Utf16Case.isLetter(it) end
 function ValueReader:keyword()
-    local word = __K2L_Text.takeWhile(__K2L_Text.substring(self.s, self.i), function(it) return __K2L_Utf16Case.isLetter(it) end)
+    local word = __K2L_Text.takeWhile(__K2L_Text.substring(self.s, self.i), ____lambda_1)
     self.i = self.i + __K2L_Utf16.len(word)
     if word == "true" then
         return TBool.new(true)
@@ -276,6 +296,7 @@ function ValueReader:keyword()
     end
 end
 
+local ____lambda_2 = function(it) return it == "." or it == "e" or it == "E" end
 function ValueReader:number()
     local ____receiver = __K2L_Regex.new("[-+0-9a-zA-Z_.]+"):matchAt(self.s, self.i)
     local ____value_5 = ____receiver and ____receiver.value
@@ -306,7 +327,7 @@ function ValueReader:number()
             self:fail("bad binary '" .. token .. "'")
         end
         return TInt.new(____value_8)
-    elseif __K2L_Text.toList(clean):any(function(it) return it == "." or it == "e" or it == "E" end) then
+    elseif __K2L_Text.toList(clean):any(____lambda_2) then
         local ____value_7 = __K2L_StringToDoubleOrNull(clean)
         if ____value_7 == nil then
             self:fail("bad float '" .. token .. "'")
@@ -344,6 +365,9 @@ function ValueReader:array()
     end
 end
 
+local ____lambda_3 = function(it)
+    return __K2L_Utf16Case.isLetterOrDigit(it) or it == "_" or it == "-"
+end
 function ValueReader:inline()
     self.i = self.i + 1
     local t = TTable.new()
@@ -353,9 +377,7 @@ function ValueReader:inline()
             self.i = self.i + 1
             return t
         end
-        local key = __K2L_Text.takeWhile(__K2L_Text.substring(self.s, self.i), function(it)
-            return __K2L_Utf16Case.isLetterOrDigit(it) or it == "_" or it == "-"
-        end)
+        local key = __K2L_Text.takeWhile(__K2L_Text.substring(self.s, self.i), ____lambda_3)
         if #key == 0 then
             self:fail("expected key in inline table")
         end
@@ -433,7 +455,7 @@ local function parseConfig(text)
                             ____object_1:set(part, ____value_11)
                         end
                         current = ____value_11
-                    elseif __K2L_InstanceOf(existing, TTable) then
+                    elseif getmetatable(existing) == TTable then
                         current = existing
                     else
                         error(ConfigError.new(lineNo, "'" .. part .. "' is not a table"))
@@ -473,28 +495,29 @@ end
 
 local function lookup(self, path)
     return __K2L_StringSplit(path, "."):fold(self, function(acc, k)
-        local ____receiver_1 = __K2L_InstanceOf(acc, TTable) and acc or nil
-        local ____receiver_2 = ____receiver_1 and (__K2L_InstanceOf(acc, TTable) and acc or nil).v
+        local ____receiver_1 = getmetatable(acc) == TTable and acc or nil
+        local ____receiver_2 = ____receiver_1 and (getmetatable(acc) == TTable and acc or nil).v
         return ____receiver_2 and ____receiver_2:get(k)
     end)
 end
 
 local function render(v)
-    if __K2L_InstanceOf(v, TStr) then
+    local ____mt = getmetatable(v)
+    if ____mt == TStr then
         return "\"" .. __K2L_StringReplace(__K2L_StringReplace(__K2L_StringReplace(__K2L_StringReplace(v.v, "\\", "\\\\"), "\"", "\\\""), "\n", "\\n"), "\t", "\\t") .. "\""
-    elseif __K2L_InstanceOf(v, TInt) then
+    elseif ____mt == TInt then
         return tostring(v.v)
-    elseif __K2L_InstanceOf(v, TFloat) then
+    elseif ____mt == TFloat then
         if v.v ~= v.v then
             return "nan"
         else
             return __K2L_Num.isInfinite(v.v) and "inf" or __K2L_Str(v.v)
         end
-    elseif __K2L_InstanceOf(v, TBool) then
+    elseif ____mt == TBool then
         return tostring(v.v)
-    elseif __K2L_InstanceOf(v, TArr) then
+    elseif ____mt == TArr then
         return __K2L_Utf16.norm(v.v:joinToString(", ", "[", "]", nil, nil, function(it) return render(it) end))
-    elseif __K2L_InstanceOf(v, TTable) then
+    elseif ____mt == TTable then
         return __K2L_Utf16.norm(v.v:getEntries():joinToString(", ", "{ ", " }", nil, nil, function(it) return it.key .. " = " .. render(it.value) end))
     end
 end
@@ -508,38 +531,52 @@ local function serialize(t, prefix, out)
     end
     local ____destructured = t.v:getEntries():partition(function(it)
         local ____value_12 = it.value
-        local ____cond_2 = __K2L_InstanceOf(____value_12, TTable) and it.value.v:getValues():any(function(v) return __K2L_InstanceOf(v, TTable) end)
-        if not ____cond_2 then
-            local ____cond_1 = #prefix == 0
-            if ____cond_1 then
-                local ____value_13 = it.value
-                ____cond_1 = __K2L_InstanceOf(____value_13, TTable)
+        local ____cond_1 = getmetatable(____value_12) == TTable
+        if ____cond_1 then
+            local ____list_2 = it.value.v:getValues()
+            local ____result = false
+            local ____items_1, ____n_1 = ____list_2:____array()
+            for ____i_3 = 1, ____n_1 do
+                local v = ____items_1[____i_3]
+                if getmetatable(v) == TTable then
+                    ____result = true
+                    break
+                end
             end
-            ____cond_2 = ____cond_1
+            ____cond_1 = ____result
         end
-        return ____cond_2
+        local ____cond_3 = ____cond_1
+        if not ____cond_3 then
+            local ____cond_2 = #prefix == 0
+            if ____cond_2 then
+                local ____value_13 = it.value
+                ____cond_2 = getmetatable(____value_13) == TTable
+            end
+            ____cond_3 = ____cond_2
+        end
+        return ____cond_3
     end)
     local tables, values = ____destructured.first, ____destructured.second
     local ____mod_3 = values.____modCount
-    for ____i_3 = 1, values.size do
-        local ____item_1 = values[____i_3]
+    for ____i_4 = 1, values.size do
+        local ____item_1 = values[____i_4]
         local k, v = ____item_1.key, ____item_1.value
         out:append(k):append(" = "):append(render(v)):append("\n")
-        if values.____modCount ~= ____mod_3 and values:____comodified(____i_3) then
+        if values.____modCount ~= ____mod_3 and values:____comodified(____i_4) then
             break
         end
     end
     local ____mod_4 = tables.____modCount
-    for ____i_4 = 1, tables.size do
-        local ____item_2 = tables[____i_4]
+    for ____i_5 = 1, tables.size do
+        local ____item_2 = tables[____i_5]
         local k, v = ____item_2.key, ____item_2.value
         local name = #prefix == 0 and k or prefix .. "." .. k
         out:append("\n"):append("["):append(name):append("]\n")
-        if not __K2L_InstanceOf(v, TTable) then
+        if getmetatable(v) ~= TTable then
             __K2L_CastFail(v, "TTable", "TTable")
         end
         serialize(v, name, out)
-        if tables.____modCount ~= ____mod_4 and tables:____comodified(____i_4) then
+        if tables.____modCount ~= ____mod_4 and tables:____comodified(____i_5) then
             break
         end
     end
@@ -550,37 +587,37 @@ local CONFIG = __K2L_Text.trimIndent("\n# Service configuration\ntitle = \"k2l \
 
 local function main()
     local cfg = parseConfig(CONFIG)
-    local ____list_2 = __K2L_ReadOnlyListOf("title", "version", "pi_ish", "big", "mask", "perms", "flags", "ratio", "enabled", "path", "greeting", "ports", "matrix", "owner.roles", "owner.id", "database.port", "database.timeout", "database.pool.max", "logging.level", "nope", "owner.nope")
-    for ____i_5 = 1, ____list_2.size do
-        local path = ____list_2[____i_5]
+    local ____list_3 = __K2L_ReadOnlyListOf("title", "version", "pi_ish", "big", "mask", "perms", "flags", "ratio", "enabled", "path", "greeting", "ports", "matrix", "owner.roles", "owner.id", "database.port", "database.timeout", "database.pool.max", "logging.level", "nope", "owner.nope")
+    for ____i_6 = 1, ____list_3.size do
+        local path = ____list_3[____i_6]
         local ____receiver_3 = lookup(cfg, path)
         local ____arg_3 = ____receiver_3 and __K2L_KClassOfValue(____receiver_3).simpleName or "-"
         local ____receiver_4 = lookup(cfg, path)
-        local ____result_1
+        local ____result_2
         if ____receiver_4 ~= nil then
-            local ____result
-            ____result = render(____receiver_4)
-            ____result_1 = ____result
+            local ____result_1
+            ____result_1 = render(____receiver_4)
+            ____result_2 = ____result_1
         end
-        print(__K2L_Utf16.out(__K2L_StringFormat("%-18s %-7s %s", path, ____arg_3, ____result_1 or "<missing>")))
+        print(__K2L_Utf16.out(__K2L_StringFormat("%-18s %-7s %s", path, ____arg_3, ____result_2 or "<missing>")))
     end
     local ____cast = lookup(cfg, "database.pool.max")
-    if not __K2L_InstanceOf(____cast, TInt) then
+    if getmetatable(____cast) ~= TInt then
         __K2L_CastFail(____cast, "TInt", "TInt")
     end
     local ____arg_4 = ____cast.v
     local ____cast_1 = lookup(cfg, "ports")
-    if not __K2L_InstanceOf(____cast_1, TArr) then
+    if getmetatable(____cast_1) ~= TArr then
         __K2L_CastFail(____cast_1, "TArr", "TArr")
     end
     local maxConn = ____arg_4 * ____cast_1.v.size
     local ____cast_2 = lookup(cfg, "mask")
-    if not __K2L_InstanceOf(____cast_2, TInt) then
+    if getmetatable(____cast_2) ~= TInt then
         __K2L_CastFail(____cast_2, "TInt", "TInt")
     end
     local ____arg_5 = __K2L_Bits.ones64(____cast_2.v)
     local ____cast_3 = lookup(cfg, "perms")
-    if not __K2L_InstanceOf(____cast_3, TInt) then
+    if getmetatable(____cast_3) ~= TInt then
         __K2L_CastFail(____cast_3, "TInt", "TInt")
     end
     print(__K2L_Utf16.out("max connections: " .. maxConn .. ", mask bits: " .. ____arg_5 .. ", perms: " .. __K2L_Num.toRadix(____cast_3.v, 8)))
@@ -590,43 +627,43 @@ local function main()
     local again = parseConfig(serialize(cfg))
     print(__K2L_Utf16.out(serialize(again) == serialize(cfg)))
     local env = __K2L_ReadOnlyMapOf(__K2L_Pair.new("APP_DATABASE_PORT", "6543"), __K2L_Pair.new("APP_LOGGING_LEVEL", "debug"), __K2L_Pair.new("APP_UNKNOWN", "x"))
-    local ____keys, ____values, ____n_1 = env:____arrays()
+    local ____keys, ____values, ____n_2 = env:____arrays()
     local ____mod_5 = env.____modCount
-    for ____i_6 = 1, ____n_1 do
-        local k, v = ____keys[____i_6], ____values[____i_6]
+    for ____i_7 = 1, ____n_2 do
+        local k, v = ____keys[____i_7], ____values[____i_7]
         local path = __K2L_StringReplace(__K2L_Utf16Case.lowercase(__K2L_Text.removePrefix(k, "APP_")), "_", ".")
         local old = lookup(cfg, path)
-        local ____result_3
+        local ____result_4
         if old ~= nil then
-            local ____result_2
-            ____result_2 = render(old)
-            ____result_3 = ____result_2
+            local ____result_3
+            ____result_3 = render(old)
+            ____result_4 = ____result_3
         end
-        local ____arg_6 = ____result_3 or "(none)"
+        local ____arg_6 = ____result_4 or "(none)"
         local ____receiver_5 = __K2L_StringToIntOrNull(v, nil, true)
         print(__K2L_Utf16.out(k .. " -> " .. path .. ": " .. ____arg_6 .. " => " .. (____receiver_5 and __K2L_Str(____receiver_5) or "\"" .. __K2L_Utf16Case.uppercase(v) .. "\"")))
-        if env.____modCount ~= ____mod_5 and env:____comodified(____i_6, ____n_1) then
+        if env.____modCount ~= ____mod_5 and env:____comodified(____i_7, ____n_2) then
             break
         end
     end
     local broken = __K2L_ReadOnlyListOf("a = 1\na = 2", "x = [1, 2", "s = \"abc", "n = 12__3", "h = 0xZZ", "[t]\nv = 1\n[t.v]\n", "just some words", "k = \"bad \\q escape\"", "u = \"\\u12\"", "f = 1.2.3", "w = yes", "t = { a = 1 b = 2 }", "ok = 1 2")
     local ____mod_6 = broken.____modCount
-    for ____i_7 = 1, broken.size do
-        local b = broken[____i_7]
-        local ____ok, ____result_4 = pcall(function()
+    for ____i_8 = 1, broken.size do
+        local b = broken[____i_8]
+        local ____ok, ____result_5 = pcall(function()
             parseConfig(b)
             print(__K2L_Utf16.out("accepted: " .. __K2L_StringReplace(b, "\n", "\\n")))
         end)
         if not ____ok then
-            local ____error = __K2L_ToThrowable(____result_4)
-            if __K2L_InstanceOf(____error, ConfigError) then
+            local ____error = __K2L_ToThrowable(____result_5)
+            if getmetatable(____error) == ConfigError then
                 local e = ____error
                 print(__K2L_Utf16.out("error " .. __K2L_Str(e.message)))
             else
                 error(____error, 0)
             end
         end
-        if broken.____modCount ~= ____mod_6 and broken:____comodified(____i_7) then
+        if broken.____modCount ~= ____mod_6 and broken:____comodified(____i_8) then
             break
         end
     end

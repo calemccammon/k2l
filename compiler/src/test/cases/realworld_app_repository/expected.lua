@@ -7,21 +7,20 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Entity = __K2L_Class("shop.domain.Entity")
 __K2L_ClassInfo(Entity, "shop.domain.Entity", "shop.domain.Entity", "interface")
 local Named = __K2L_Class("shop.domain.Named")
 __K2L_ClassInfo(Named, "shop.domain.Named", "shop.domain.Named", "interface")
 
+local ____lambda_1 = function(it) return it:upper() end
 function Named:label()
-    return __K2L_Text.replaceFirstChar(self.name, function(it) return it:upper() end)
+    return __K2L_Text.replaceFirstChar(self.name, ____lambda_1)
 end
 
 local Versioned = __K2L_Class("shop.domain.Versioned")
@@ -62,8 +61,14 @@ function CustomerId:____init(region, number)
     self.number = number
 end
 
+function CustomerId.new(region, number)
+    return setmetatable({region = region, number = number}, CustomerId)
+end
+
+local ____lambda_2 = function(receiver) return receiver.region end
+local ____lambda_3 = function(receiver) return receiver.number end
 function CustomerId:compareTo(other)
-    return __K2L_CompareBy(__K2L_PropertyRef.new("region", "region@599", function(receiver) return receiver.region end), __K2L_PropertyRef.new("number", "number@619", function(receiver) return receiver.number end))(self, other)
+    return __K2L_CompareBy(__K2L_PropertyRef.new("region", "region@599", ____lambda_2), __K2L_PropertyRef.new("number", "number@619", ____lambda_3))(self, other)
 end
 
 function CustomerId:toString()
@@ -71,7 +76,7 @@ function CustomerId:toString()
 end
 
 function CustomerId:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.region) + __K2L_Hash(self.number))
+    return (31 * __K2L_Hash(self.region) + self.number + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function CustomerId:equals(other)
@@ -96,7 +101,7 @@ function Product:toString()
 end
 
 function Product:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.id) + __K2L_Hash(self.name)) + __K2L_Hash(self.priceCents)) + __K2L_Hash(self.version))
+    return (31 * (31 * (31 * __K2L_Hash(self.id) + __K2L_Hash(self.name)) + __K2L_Hash(self.priceCents)) + self.version + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Product:equals(other)
@@ -124,7 +129,7 @@ function Customer:toString()
 end
 
 function Customer:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.id) + __K2L_Hash(self.name)) + __K2L_Hash(self.vip))
+    return (31 * (31 * __K2L_Hash(self.id) + __K2L_Hash(self.name)) + (self.vip and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Customer:equals(other)
@@ -140,8 +145,19 @@ function Order:____init(id, customer, lines)
     self.lines = lines
 end
 
+function Order.new(id, customer, lines)
+    return setmetatable({id = id, customer = customer, lines = lines}, Order)
+end
+
 function Order:quantity()
-    return self.lines:sumOf(function(it) return it.second end)
+    local ____list = self.lines
+    local ____sum = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____sum = ____sum + it.second
+    end
+    return ____sum
 end
 
 function Order:toString()
@@ -149,7 +165,7 @@ function Order:toString()
 end
 
 function Order:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.id) + __K2L_Hash(self.customer)) + __K2L_Hash(self.lines))
+    return (31 * (31 * self.id + __K2L_Hash(self.customer)) + __K2L_Hash(self.lines) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Order:equals(other)
@@ -163,6 +179,10 @@ Money.____comparable = true
 
 function Money:____init(cents)
     self.cents = cents
+end
+
+function Money.new(cents)
+    return setmetatable({cents = cents}, Money)
 end
 
 function Money:plus(other)
@@ -180,7 +200,7 @@ end
 function Money:toString()
     local abs = self.cents < 0 and -self.cents or self.cents
     local sign = self.cents < 0 and "-" or ""
-    return sign .. "$" .. __K2L_IDiv(abs, 100) .. "." .. __K2L_StringPadStart(tostring(math.fmod(abs, 100)), 2, "0")
+    return sign .. "$" .. (abs >= 0 and abs // 100 or (abs + 99) // 100) .. "." .. __K2L_StringPadStart(tostring(abs >= 0 and abs % 100 or (abs % 100 - 100) % (-100)), 2, "0")
 end
 
 function Money:hashCode()
@@ -210,12 +230,14 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsComparable = ____lualib.__K2L_IsComparable
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
@@ -263,6 +285,10 @@ function Pricing:____init(products)
     self.products = products
 end
 
+function Pricing.new(products)
+    return setmetatable({products = products}, Pricing)
+end
+
 function Pricing:total(order)
     return order.lines:fold(____Entities.Money.ZERO, function(acc, ____destructured)
         local sku, qty = ____destructured.first, ____destructured.second
@@ -270,9 +296,10 @@ function Pricing:total(order)
     end)
 end
 
+local ____lambda_1 = function(it) return __K2L_Str(it) end
 local function printAll(title, items, show)
     if show == nil then
-        show = function(it) return __K2L_Str(it) end
+        show = ____lambda_1
     end
     print(title .. " (" .. items.size .. "):")
     local ____items, ____n = items:____array()
@@ -287,28 +314,54 @@ local function printAll(title, items, show)
 end
 
 local function countNamed(repo)
-    return repo:all():count(function(it)
-        return __K2L_InstanceOf(it, ____Entities.Named)
-    end)
+    local ____list = repo:all()
+    local ____result = 0
+    local ____items_1, ____n_1 = ____list:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        if __K2L_InstanceOf(it, ____Entities.Named) then
+            ____result = ____result + 1
+        end
+    end
+    return ____result
 end
 
+local ____lambda_2 = function(it)
+    return __K2L_Str(it.id) .. " " .. it:label() .. " " .. __K2L_Str(____Entities.getPrice(it)) .. " v" .. it.version
+end
+local ____lambda_3 = function(it) return it.name end
+local ____lambda_4 = function(it) return it.id end
+local ____lambda_5 = function(it)
+    return __K2L_Str(it.id) .. " " .. it:label()
+end
+local ____lambda_6 = function(it) return it.priceCents < 5000 end
+local ____lambda_7 = function(it) return it.name end
+local ____lambda_8 = function(it) return it.priceCents end
+local ____lambda_9 = function(receiver) return receiver.priceCents end
+local ____lambda_10 = function(it) return -it.priceCents end
+local ____lambda_11 = function(self, ...) return self:plus(...) end
+local ____lambda_12 = function(it) return it.name end
+local ____lambda_13 = function(it) return ____Entities.getPrice(it) end
+local ____lambda_14 = function(it)
+    return it.priceCents >= 0 and it.priceCents // 5000 or (it.priceCents + 4999) // 5000
+end
 local function main()
     local products = ProductRepository.new()
-    local ____list = __K2L_ReadOnlyListOf(____Entities.Product.new(____Entities.Sku.new("KB0001"), "keyboard", 4999), ____Entities.Product.new(____Entities.Sku.new("MS0001"), "mouse", 1999), ____Entities.Product.new(____Entities.Sku.new("MN0002"), "monitor", 18900), ____Entities.Product.new(____Entities.Sku.new("CB0003"), "cable", 499), ____Entities.Product.new(____Entities.Sku.new("HD0001"), "headset", 7450))
-    local ____mod_1 = ____list.____modCount
-    for ____i_1 = 1, ____list.size do
-        local it = ____list[____i_1];
+    local ____list_1 = __K2L_ReadOnlyListOf(____Entities.Product.new(____Entities.Sku.new("KB0001"), "keyboard", 4999), ____Entities.Product.new(____Entities.Sku.new("MS0001"), "mouse", 1999), ____Entities.Product.new(____Entities.Sku.new("MN0002"), "monitor", 18900), ____Entities.Product.new(____Entities.Sku.new("CB0003"), "cable", 499), ____Entities.Product.new(____Entities.Sku.new("HD0001"), "headset", 7450))
+    local ____mod_1 = ____list_1.____modCount
+    for ____i_2 = 1, ____list_1.size do
+        local it = ____list_1[____i_2];
         (function(...) return products:save(...) end)(it)
-        if ____list.____modCount ~= ____mod_1 and ____list:____comodified(____i_1) then
+        if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_2) then
             break
         end
     end
     print(__K2L_Str(products))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result_1 = pcall(function()
         products:save(____Entities.Product.new(____Entities.Sku.new("XX0000"), "free", 0))
     end)
     if not ____ok then
-        local ____error = __K2L_ToThrowable(____result)
+        local ____error = __K2L_ToThrowable(____result_1)
         if __K2L_InstanceOf(____error, __K2L_IllegalArgumentException) then
             local e = ____error
             print("rejected: " .. __K2L_Str(e.message))
@@ -316,12 +369,12 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_1 = pcall(function()
+    local ____ok_1, ____result_2 = pcall(function()
         products:save(____Entities.Product.new(____Entities.Sku.new("KB0001"), "keyboard", 5499, 1))
     end)
     if not ____ok_1 then
-        local ____error_1 = __K2L_ToThrowable(____result_1)
-        if __K2L_InstanceOf(____error_1, ____Repository.ConflictException) then
+        local ____error_1 = __K2L_ToThrowable(____result_2)
+        if getmetatable(____error_1) == ____Repository.ConflictException then
             local e = ____error_1
             print("conflict on " .. __K2L_Str(e.entityId) .. ": " .. __K2L_Str(e.message))
         else
@@ -329,11 +382,11 @@ local function main()
         end
     end
     products:save(____Entities.Product.new(____Entities.Sku.new("KB0001"), "keyboard", 5499, 2))
-    local ____ok_2, ____result_2 = pcall(function()
+    local ____ok_2, ____result_3 = pcall(function()
         ____Entities.Sku.new("bad")
     end)
     if not ____ok_2 then
-        local ____error_2 = __K2L_ToThrowable(____result_2)
+        local ____error_2 = __K2L_ToThrowable(____result_3)
         if __K2L_InstanceOf(____error_2, __K2L_IllegalArgumentException) then
             local e = ____error_2
             print("bad sku: " .. __K2L_Str(e.message))
@@ -341,27 +394,50 @@ local function main()
             error(____error_2, 0)
         end
     end
-    printAll("all products", products:all(), function(it)
-        return __K2L_Str(it.id) .. " " .. it:label() .. " " .. __K2L_Str(____Entities.getPrice(it)) .. " v" .. it.version
-    end)
-    printAll("range HD..MS", products:range(____Entities.Sku.new("HD0000"), ____Entities.Sku.new("MS0000")), function(it) return it.name end)
+    printAll("all products", products:all(), ____lambda_2)
+    printAll("range HD..MS", products:range(____Entities.Sku.new("HD0000"), ____Entities.Sku.new("MS0000")), ____lambda_3)
     local customers = ____Repository.BoundedRepository.new("customer", 3)
     customers:save(____Entities.Customer.new(____Entities.CustomerId.new("eu", 7), "ines"))
     customers:save(____Entities.Customer.new(____Entities.CustomerId.new("us", 2), "bob", true))
     customers:save(____Entities.Customer.new(____Entities.CustomerId.new("eu", 3), "olga"))
     customers:save(____Entities.Customer.new(____Entities.CustomerId.new("ap", 1), "kenji"))
     print(__K2L_Str(customers:history()))
-    printAll("customers", customers:all():sortedBy(function(it) return it.id end, true), function(it)
-        return __K2L_Str(it.id) .. " " .. it:label()
-    end)
-    local cheap = __K2L_FunInterface(____Query.Spec, "test", function(it) return it.priceCents < 5000 end)
+    printAll("customers", customers:all():sortedBy(____lambda_4, true), ____lambda_5)
+    local cheap = __K2L_FunInterface(____Query.Spec, "test", ____lambda_6)
     local m = ____Query.nameStarts("m")
-    print("cheap or m*: " .. __K2L_Str(____Query.query(products):where(____Query.____or(cheap, m)):orderBy(function(it) return it.name end):run():map(function(it) return it.name end)))
-    print("not cheap: " .. __K2L_Str(____Query.query(products):where(cheap:____not()):run():map(function(it) return it.name end)))
-    print("cheap and m*, by price desc: " .. __K2L_Str(____Query.query(products):where(____Query.____and(cheap, m)):orderByDescending(__K2L_CompareBy(function(it) return it.priceCents end)):run()))
-    local ____receiver = ____Query.query(products):orderByDescending(__K2L_CompareBy(__K2L_PropertyRef.new("priceCents", "priceCents@904", function(receiver) return receiver.priceCents end))):first()
+    local ____list_2 = ____Query.query(products):where(____Query.____or(cheap, m)):orderBy(____lambda_7):run()
+    local ____out = {}
+    local ____count = 0
+    local ____items_2, ____n_2 = ____list_2:____array()
+    for ____i_3 = 1, ____n_2 do
+        local it = ____items_2[____i_3]
+        ____count = ____count + 1
+        ____out[____count] = it.name
+    end
+    print("cheap or m*: " .. __K2L_Str(__K2L_ListWrap(____out, ____count)))
+    local ____list_3 = ____Query.query(products):where(cheap:____not()):run()
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_3, ____n_3 = ____list_3:____array()
+    for ____i_4 = 1, ____n_3 do
+        local it = ____items_3[____i_4]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it.name
+    end
+    print("not cheap: " .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
+    print("cheap and m*, by price desc: " .. __K2L_Str(____Query.query(products):where(____Query.____and(cheap, m)):orderByDescending(__K2L_CompareBy(____lambda_8)):run()))
+    local ____receiver = ____Query.query(products):orderByDescending(__K2L_CompareBy(__K2L_PropertyRef.new("priceCents", "priceCents@904", ____lambda_9))):first()
     print("priciest: " .. __K2L_Str(____receiver and ____receiver.name))
-    print("top 2: " .. __K2L_Str(____Query.query(products):orderBy(function(it) return -it.priceCents end):limit__1(2):run():map(function(it) return it.id end)))
+    local ____list_4 = ____Query.query(products):orderBy(____lambda_10):limit__1(2):run()
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_4, ____n_4 = ____list_4:____array()
+    for ____i_5 = 1, ____n_4 do
+        local it = ____items_4[____i_5]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = it.id
+    end
+    print("top 2: " .. __K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
     local pricing = Pricing.new(products)
     local orders = ____Repository.SortedRepository.new("order")
     orders:save(____Entities.Order.new(3, ____Entities.CustomerId.new("eu", 7), __K2L_ReadOnlyListOf(__K2L_Pair.new(____Entities.Sku.new("KB0001"), 1), __K2L_Pair.new(____Entities.Sku.new("CB0003"), 3))))
@@ -370,11 +446,11 @@ local function main()
     printAll("orders", orders:all(), function(it)
         return "#" .. it.id .. " " .. __K2L_Str(it.customer) .. " qty=" .. it:quantity() .. " total=" .. __K2L_Str(pricing:total(it))
     end)
-    local ____ok_3, ____result_3 = pcall(function()
+    local ____ok_3, ____result_4 = pcall(function()
         pricing:total(____Entities.Order.new(9, ____Entities.CustomerId.new("eu", 7), __K2L_SingletonListOf(__K2L_Pair.new(____Entities.Sku.new("ZZ9999"), 1))))
     end)
     if not ____ok_3 then
-        local ____error_3 = __K2L_ToThrowable(____result_3)
+        local ____error_3 = __K2L_ToThrowable(____result_4)
         if __K2L_InstanceOf(____error_3, __K2L_NoSuchElementException) then
             local e = ____error_3
             print("pricing failed: " .. __K2L_Str(e.message))
@@ -385,14 +461,31 @@ local function main()
     local totals = orders:all():associate(function(it)
         return __K2L_Pair.new(it.id, pricing:total(it))
     end)
-    print("totals: " .. __K2L_Str(totals) .. ", max " .. __K2L_Str(totals:getValues():max()) .. ", sum " .. __K2L_Str(totals:getValues():fold(____Entities.Money.ZERO, function(self, ...) return self:plus(...) end)))
+    print("totals: " .. __K2L_Str(totals) .. ", max " .. __K2L_Str(totals:getValues():max()) .. ", sum " .. __K2L_Str(totals:getValues():fold(____Entities.Money.ZERO, ____lambda_11)))
     print("first by key: " .. __K2L_Str(____Query.firstByKey(totals)))
-    print("max name: " .. __K2L_Str(____Query.maxValue(products:all(), function(it) return it.name end)) .. ", max price: " .. __K2L_Str(____Query.maxValue(products:all(), function(it) return ____Entities.getPrice(it) end)))
-    print("buckets: " .. __K2L_Str(____Query.bucket(products:all(), function(it) return __K2L_IDiv(it.priceCents, 5000) end):mapValues(function(____destructured_1)
+    print("max name: " .. __K2L_Str(____Query.maxValue(products:all(), ____lambda_12)) .. ", max price: " .. __K2L_Str(____Query.maxValue(products:all(), ____lambda_13)))
+    print("buckets: " .. __K2L_Str(____Query.bucket(products:all(), ____lambda_14):mapValues(function(____destructured_1)
         local v = ____destructured_1.value
-        return v:map(function(it) return it.name end)
+        local ____out_3 = {}
+        local ____count_3 = 0
+        local ____items_5, ____n_5 = v:____array()
+        for ____i_6 = 1, ____n_5 do
+            local it = ____items_5[____i_6]
+            ____count_3 = ____count_3 + 1
+            ____out_3[____count_3] = it.name
+        end
+        return __K2L_ListWrap(____out_3, ____count_3)
     end)))
-    print("pages: " .. __K2L_Str(____Query.pages(products:all():map(function(it) return it.name end), 2)))
+    local ____list_5 = products:all()
+    local ____out_4 = {}
+    local ____count_4 = 0
+    local ____items_6, ____n_6 = ____list_5:____array()
+    for ____i_7 = 1, ____n_6 do
+        local it = ____items_6[____i_7]
+        ____count_4 = ____count_4 + 1
+        ____out_4[____count_4] = it.name
+    end
+    print("pages: " .. __K2L_Str(____Query.pages(__K2L_ListWrap(____out_4, ____count_4), 2)))
     local audit = AuditLog.new()
     print("copied " .. ____Repository.copyAll(products, audit) .. " products, " .. ____Repository.copyAll(customers, audit) .. " customers")
     print(__K2L_Str(audit.seen))
@@ -400,21 +493,41 @@ local function main()
     print("named: " .. countNamed(anyRepo) .. ", " .. ____Repository.describe(anyRepo) .. ", " .. ____Repository.describe(orders))
     local repos = __K2L_ReadOnlyListOf(products, customers, orders)
     local ____mod_2 = repos.____modCount
-    for ____i_2 = 1, repos.size do
-        local r = repos[____i_2]
+    for ____i_8 = 1, repos.size do
+        local r = repos[____i_8]
         print(__K2L_Str(r) .. ": " .. __K2L_Str(r:history():takeLast(2)))
-        if repos.____modCount ~= ____mod_2 and repos:____comodified(____i_2) then
+        if repos.____modCount ~= ____mod_2 and repos:____comodified(____i_8) then
             break
         end
     end
-    local byKind = repos:groupBy(function(it) return #it.kind end)
+    local ____result_5 = __K2L_Map.new()
+    local ____items_7, ____n_7 = repos:____array()
+    for ____i_9 = 1, ____n_7 do
+        local it = ____items_7[____i_9]
+        local ____value = #it.kind
+        local ____group = ____result_5:get(____value)
+        if ____group == nil then
+            ____group = __K2L_List.new()
+            ____result_5:put(____value, ____group)
+        end
+        ____group:add(it)
+    end
+    local byKind = ____result_5
     print(__K2L_Str(byKind:mapValues(function(____destructured_2)
         local v = ____destructured_2.value
-        return v:map(function(it) return it.kind end)
+        local ____out_5 = {}
+        local ____count_5 = 0
+        local ____items_8, ____n_8 = v:____array()
+        for ____i_10 = 1, ____n_8 do
+            local it = ____items_8[____i_10]
+            ____count_5 = ____count_5 + 1
+            ____out_5[____count_5] = it.kind
+        end
+        return __K2L_ListWrap(____out_5, ____count_5)
     end)))
     local first = products:find(____Entities.Sku.new("CB0003"))
-    local ____receiver_1 = __K2L_InstanceOf(first, ____Entities.Product) and first or nil
-    print("found " .. __K2L_Str(____receiver_1 and (__K2L_InstanceOf(first, ____Entities.Product) and first or nil).name) .. " " .. tostring(__K2L_InstanceOf(first, ____Entities.Named)) .. " " .. tostring(__K2L_IsComparable(first)))
+    local ____receiver_1 = getmetatable(first) == ____Entities.Product and first or nil
+    print("found " .. __K2L_Str(____receiver_1 and (getmetatable(first) == ____Entities.Product and first or nil).name) .. " " .. tostring(__K2L_InstanceOf(first, ____Entities.Named)) .. " " .. tostring(__K2L_IsComparable(first)))
 end
 
 main()
@@ -429,6 +542,7 @@ local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReverseComparator = ____lualib.__K2L_ReverseComparator
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
@@ -486,9 +600,32 @@ function Query:limit__1(n)
 end
 
 function Query:run()
-    local matching = self.source:all():filter(function(e)
-        return self.specs:all(function(it) return it:test(e) end)
-    end)
+    local ____list = self.source:all()
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = ____list:____array()
+    for ____i_1 = 1, ____n_1 do
+        local e = ____items_1[____i_1]
+        local ____result
+        do
+            local ____list_1 = self.specs
+            local ____result_1 = true
+            local ____items, ____n = ____list_1:____array()
+            for ____i = 1, ____n do
+                local it = ____items[____i]
+                if not it:test(e) then
+                    ____result_1 = false
+                    break
+                end
+            end
+            ____result = ____result_1
+        end
+        if ____result then
+            ____count = ____count + 1
+            ____out[____count] = e
+        end
+    end
+    local matching = __K2L_ListWrap(____out, ____count)
     local ____receiver = self.order
     local sorted = ____receiver and matching:sortedWith(____receiver) or matching
     return sorted:take(self.limit)
@@ -504,15 +641,15 @@ end
 
 local function maxValue(____this_2, selector)
     local best = nil
-    local ____items, ____n = ____this_2:____array()
+    local ____items_2, ____n_2 = ____this_2:____array()
     local ____mod = ____this_2.____modCount
-    for ____i = 1, ____n do
-        local item = ____items[____i]
+    for ____i_2 = 1, ____n_2 do
+        local item = ____items_2[____i_2]
         local v = selector(item)
         if best == nil or __K2L_Compare(v, best) > 0 then
             best = v
         end
-        if ____this_2.____modCount ~= ____mod and ____this_2:____comodified(____i, ____n) then
+        if ____this_2.____modCount ~= ____mod and ____this_2:____comodified(____i_2, ____n_2) then
             break
         end
     end
@@ -524,14 +661,15 @@ local function firstByKey(____this_3)
     return ____receiver_1 and __K2L_Pair.new(____receiver_1, ____this_3:getValue(____receiver_1))
 end
 
+local ____lambda_1 = function() return __K2L_ListOf() end
 local function bucket(____this_4, key)
     local result = __K2L_SortedMapOf()
-    local ____items_1, ____n_1 = ____this_4:____array()
+    local ____items_3, ____n_3 = ____this_4:____array()
     local ____mod_1 = ____this_4.____modCount
-    for ____i_1 = 1, ____n_1 do
-        local item = ____items_1[____i_1]
-        result:getOrPut(key(item), function() return __K2L_ListOf() end):add(item)
-        if ____this_4.____modCount ~= ____mod_1 and ____this_4:____comodified(____i_1, ____n_1) then
+    for ____i_3 = 1, ____n_3 do
+        local item = ____items_3[____i_3]
+        result:getOrPut(key(item), ____lambda_1):add(item)
+        if ____this_4.____modCount ~= ____mod_1 and ____this_4:____comodified(____i_3, ____n_3) then
             break
         end
     end

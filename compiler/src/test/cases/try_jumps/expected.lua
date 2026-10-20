@@ -40,7 +40,7 @@ local function continueInTry()
     for i = 1, 5 do
         do
             local ____ok_1, ____result_1 = pcall(function()
-                if math.fmod(i, 2) == 0 then
+                if (i >= 0 and i % 2 or 0 - -i % 2) == 0 then
                     return 1
                 end
                 print("odd " .. i)
@@ -374,7 +374,7 @@ local function firstEven(xs)
     for ____i_1 = 1, xs.size do
         local x = xs[____i_1]
         local ____ok_14, ____result_14, ____returned_14 = pcall(function()
-            if math.fmod(x, 2) == 0 then
+            if (x >= 0 and x % 2 or 0 - -x % 2) == 0 then
                 return true, x
             end
         end)

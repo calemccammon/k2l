@@ -1,12 +1,13 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -16,7 +17,6 @@ local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringEqualsIgnoreCase = ____lualib.__K2L_StringEqualsIgnoreCase
 local __K2L_StringTrim = ____lualib.__K2L_StringTrim
 local __K2L_Unit = ____lualib.__K2L_Unit
@@ -57,9 +57,16 @@ Direction.____values = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direct
 Direction.____companion = true
 
 function Direction:parse(word)
-    return __K2L_EnumValues(Direction):firstOrNull(function(it)
-        return __K2L_StringEqualsIgnoreCase(it.name, word) or #word == 1 and it.short == __K2L_StringCharAt(word, 0)
-    end)
+    local ____values = Direction.____values
+    local ____result
+    for ____i = 1, #____values do
+        local it = ____values[____i]
+        if __K2L_StringEqualsIgnoreCase(it.name, word) or #word == 1 and it.short == (0 >= 0 and 0 < #word and word:sub(0 + 1, 0 + 1) or __K2L_IndexError(0, #word, "string")) then
+            ____result = it
+            break
+        end
+    end
+    return ____result
 end
 
 local Item = __K2L_Class("adventure.Item")
@@ -67,6 +74,10 @@ local Item = __K2L_Class("adventure.Item")
 function Item:____init(name, weight)
     self.name = name
     self.weight = weight
+end
+
+function Item.new(name, weight)
+    return setmetatable({name = name, weight = weight}, Item)
 end
 
 Item.Key = __K2L_Class("adventure.Item$Key", Item)
@@ -109,6 +120,10 @@ function Monster:____init(name, hp, attack)
     self.attack = attack
 end
 
+function Monster.new(name, hp, attack)
+    return setmetatable({name = name, hp = hp, attack = attack}, Monster)
+end
+
 function Monster:getAlive()
     return self.hp > 0
 end
@@ -132,6 +147,7 @@ function Room:connect(dir, other)
     ____object_1:set(____key, self)
 end
 
+local ____lambda_1 = function(it) return it.name:lower() end
 function Room:toString()
     local ____builder = __K2L_StringBuilder.new()
     do
@@ -144,7 +160,7 @@ function Room:toString()
         if ____receiver_1 ~= nil then
             ____builder:append(" A " .. ____receiver_1.name .. " blocks the way (hp " .. ____receiver_1.hp .. ").")
         end
-        ____builder:append(" Exits: " .. self.exits:getKeys():sorted():joinToString(nil, nil, nil, nil, nil, function(it) return it.name:lower() end) .. ".")
+        ____builder:append(" Exits: " .. self.exits:getKeys():sorted():joinToString(nil, nil, nil, nil, nil, ____lambda_1) .. ".")
     end
     return ____builder:toString()
 end
@@ -161,11 +177,20 @@ function Player:____init(room)
 end
 
 function Player:getCarried()
-    return self.inventory:sumOf(function(it) return it.weight end)
+    local ____list = self.inventory
+    local ____sum = 0
+    local ____items, ____n = ____list:____array()
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
+        ____sum = ____sum + it.weight
+    end
+    return ____sum
 end
 
+local ____lambda_2 = function(x) return getmetatable(x) == Item.Weapon end
+local ____lambda_3 = function(it) return it.damage.last end
 function Player:getBestWeapon()
-    return self.inventory:filter(function(x) return __K2L_InstanceOf(x, Item.Weapon) end):maxByOrNull(function(it) return it.damage.last end)
+    return self.inventory:filter(____lambda_2):maxByOrNull(____lambda_3)
 end
 
 local Command = __K2L_Class("adventure.Command")
@@ -173,6 +198,10 @@ Command.Go = __K2L_Class("adventure.Command$Go", nil, Command)
 
 function Command.Go:____init(dir)
     self.dir = dir
+end
+
+function Command.Go.new(dir)
+    return setmetatable({dir = dir}, Command.Go)
 end
 
 function Command.Go:toString()
@@ -193,6 +222,10 @@ function Command.Take:____init(item)
     self.item = item
 end
 
+function Command.Take.new(item)
+    return setmetatable({item = item}, Command.Take)
+end
+
 function Command.Take:toString()
     return "Take(item=" .. self.item .. ")"
 end
@@ -211,6 +244,10 @@ function Command.Drop:____init(item)
     self.item = item
 end
 
+function Command.Drop.new(item)
+    return setmetatable({item = item}, Command.Drop)
+end
+
 function Command.Drop:toString()
     return "Drop(item=" .. self.item .. ")"
 end
@@ -227,6 +264,10 @@ Command.Use = __K2L_Class("adventure.Command$Use", nil, Command)
 
 function Command.Use:____init(item)
     self.item = item
+end
+
+function Command.Use.new(item)
+    return setmetatable({item = item}, Command.Use)
 end
 
 function Command.Use:toString()
@@ -277,6 +318,10 @@ function Command.Unknown:____init(text)
     self.text = text
 end
 
+function Command.Unknown.new(text)
+    return setmetatable({text = text}, Command.Unknown)
+end
+
 function Command.Unknown:toString()
     return "Unknown(text=" .. self.text .. ")"
 end
@@ -290,9 +335,18 @@ function Command.Unknown:equals(other)
 end
 
 local function parseCommand(line)
-    local words = __K2L_Regex.new("\\s+"):split(__K2L_StringTrim(line):lower()):filter(function(it)
-        return #it > 0 and not __K2L_ReadOnlySetOf("the", "a", "an"):contains(it)
-    end)
+    local ____list_1 = __K2L_Regex.new("\\s+"):split(__K2L_StringTrim(line):lower())
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
+        if #it > 0 and not __K2L_ReadOnlySetOf("the", "a", "an"):contains(it) then
+            ____count = ____count + 1
+            ____out[____count] = it
+        end
+    end
+    local words = __K2L_ListWrap(____out, ____count)
     if words:isEmpty() then
         return Command.Unknown.new(line)
     end
@@ -340,7 +394,15 @@ function Game:____init(seed)
     cellar.monster = Monster.new("rat king", 12, __K2L_IntRange.new(1, 4))
     vault.lockedBy = "vault"
     vault.items:addAll(__K2L_ReadOnlyListOf(Item.Treasure.new("crown", 50), Item.Treasure.new("coins", 20)))
-    self.rooms = __K2L_ReadOnlyListOf(hall, armory, cellar, vault):associateBy(function(it) return it.id end)
+    local ____list_2 = __K2L_ReadOnlyListOf(hall, armory, cellar, vault)
+    local ____result_1 = __K2L_Map.new()
+    local ____items_2, ____n_2 = ____list_2:____array()
+    for ____i_3 = 1, ____n_2 do
+        local it = ____items_2[____i_3]
+        local ____value = it.id
+        ____result_1:put(____value, it)
+    end
+    self.rooms = ____result_1
     self.player = Player.new(hall)
 end
 
@@ -351,14 +413,14 @@ end
 function Game:run(script)
     self:say(self.player.room:toString())
     local ____mod = script.____modCount
-    for ____i = 1, script.size do
-        local line = script[____i]
+    for ____i_4 = 1, script.size do
+        local line = script[____i_4]
         if self.over then
             break
         end
         self:say("> " .. line)
         self:step(parseCommand(line))
-        if script.____modCount ~= ____mod and script:____comodified(____i) then
+        if script.____modCount ~= ____mod and script:____comodified(____i_4) then
             break
         end
     end
@@ -367,49 +429,59 @@ function Game:run(script)
 end
 
 function Game:findItem(items, name)
-    return items:firstOrNull(function(it) return it.name == name end)
+    local ____result_2
+    local ____items_3, ____n_3 = items:____array()
+    for ____i_5 = 1, ____n_3 do
+        local it = ____items_3[____i_5]
+        if it.name == name then
+            ____result_2 = it
+            break
+        end
+    end
+    return ____result_2
 end
 
 function Game:step(cmd)
     local ____object_2 = self.player
     ____object_2.moves = ____object_2.moves + 1
-    if __K2L_InstanceOf(cmd, Command.Go) then
+    local ____mt = getmetatable(cmd)
+    if ____mt == Command.Go then
         self:move(cmd.dir)
-    elseif __K2L_InstanceOf(cmd, Command.Take) then
-        local ____value_1 = self:findItem(self.player.room.items, cmd.item)
-        if ____value_1 == nil then
+    elseif ____mt == Command.Take then
+        local ____value_2 = self:findItem(self.player.room.items, cmd.item)
+        if ____value_2 == nil then
             return self:say("There is no " .. cmd.item .. " here.")
         end
-        local item = ____value_1
+        local item = ____value_2
         if self.player:getCarried() + item.weight > self.player.maxWeight then
             return self:say("The " .. item.name .. " is too heavy.")
         end
         self.player.room.items:remove(item)
         self.player.inventory:add(item)
-        if __K2L_InstanceOf(item, Item.Treasure) then
+        if getmetatable(item) == Item.Treasure then
             local ____object_4 = self.player
             ____object_4.score = ____object_4.score + item.value
         end
         self:say("Taken: " .. __K2L_Str(item) .. ".")
-    elseif __K2L_InstanceOf(cmd, Command.Drop) then
+    elseif ____mt == Command.Drop then
         local ____receiver_3 = self:findItem(self.player.inventory, cmd.item)
-        local ____result
+        local ____result_3
         if ____receiver_3 ~= nil then
             self.player.inventory:remove(____receiver_3)
             self.player.room.items:add(____receiver_3)
-            if __K2L_InstanceOf(____receiver_3, Item.Treasure) then
+            if getmetatable(____receiver_3) == Item.Treasure then
                 local ____object_3 = self.player
                 ____object_3.score = ____object_3.score - ____receiver_3.value
             end
             self:say("Dropped " .. __K2L_Str(____receiver_3) .. ".")
-            ____result = __K2L_Unit
+            ____result_3 = __K2L_Unit
         end
-        local ____value = ____result
-        if ____value == nil then
+        local ____value_1 = ____result_3
+        if ____value_1 == nil then
             self:say("You have no " .. cmd.item .. ".")
-            ____value = __K2L_Unit
+            ____value_1 = __K2L_Unit
         end
-    elseif __K2L_InstanceOf(cmd, Command.Use) then
+    elseif ____mt == Command.Use then
         self:use(cmd.item)
     elseif __K2L_Equals(cmd, Command.Look) then
         self:say(self.player.room:toString())
@@ -417,17 +489,18 @@ function Game:step(cmd)
         self:say(self.player.inventory:isEmpty() and "You carry nothing." or "You carry: " .. self.player.inventory:joinToString())
     elseif __K2L_Equals(cmd, Command.Attack) then
         self:attack()
-    elseif __K2L_InstanceOf(cmd, Command.Unknown) then
+    elseif ____mt == Command.Unknown then
         self:say("I don't understand '" .. cmd.text .. "'.")
     end
 end
 
+local ____lambda_4 = function(x) return getmetatable(x) == Item.Key end
 function Game:move(dir)
-    local ____value_2 = self.player.room.exits:get(dir)
-    if ____value_2 == nil then
+    local ____value_3 = self.player.room.exits:get(dir)
+    if ____value_3 == nil then
         return self:say("You can't go " .. dir.name:lower() .. ".")
     end
-    local ____next = ____value_2
+    local ____next = ____value_3
     local blocker = self.player.room.monster
     if blocker ~= nil and blocker:getAlive() and dir ~= Direction.NORTH then
         return self:say("The " .. blocker.name .. " won't let you pass.")
@@ -435,11 +508,20 @@ function Game:move(dir)
     local ____receiver_4 = ____next.lockedBy
     if ____receiver_4 ~= nil then
         do
-            local ____value_3 = self.player.inventory:filter(function(x) return __K2L_InstanceOf(x, Item.Key) end):find(function(it) return it.opens == ____receiver_4 end)
-            if ____value_3 == nil then
+            local ____list_3 = self.player.inventory:filter(____lambda_4)
+            local ____result_4
+            local ____items_4, ____n_4 = ____list_3:____array()
+            for ____i_6 = 1, ____n_4 do
+                local it = ____items_4[____i_6]
+                if it.opens == ____receiver_4 then
+                    ____result_4 = it
+                    break
+                end
+            end
+            if ____result_4 == nil then
                 return self:say("The door to the " .. ____next.id .. " is locked.")
             end
-            local key = ____value_3
+            local key = ____result_4
             ____next.lockedBy = nil
             self:say("You unlock the door with the " .. key.name .. ".")
         end
@@ -453,7 +535,7 @@ function Game:use(name)
     local item = self:findItem(self.player.inventory, name)
     if item == nil then
         self:say("You have no " .. name .. ".")
-    elseif __K2L_InstanceOf(item, Item.Potion) then
+    elseif getmetatable(item) == Item.Potion then
         local before = self.player.hp
         local ____object_6 = self.player
         ____object_6.hp = math.min(20, self.player.hp + item.heal)
@@ -495,15 +577,16 @@ function Game:roomCount()
     return self.rooms.size
 end
 
+local ____lambda_5 = function(____p1) return print(__K2L_Str(____p1)) end
 local function main()
     local script = __K2L_ReadOnlyListOf("look", "take potion", "go east", "take sword", "take dagger", "i", "w", "s", "e", "attack", "attack", "attack", "attack", "attack", "drink potion", "attack", "take the key", "e", "take crown", "take coins", "drop dagger", "take coins", "dance", "go up", "n")
     local game = Game.new(42)
-    local ____list = game:run(script)
-    local ____mod_1 = ____list.____modCount
-    for ____i_1 = 1, ____list.size do
-        local it = ____list[____i_1];
-        (function(____p1) return print(__K2L_Str(____p1)) end)(it)
-        if ____list.____modCount ~= ____mod_1 and ____list:____comodified(____i_1) then
+    local ____list_4 = game:run(script)
+    local ____mod_1 = ____list_4.____modCount
+    for ____i_7 = 1, ____list_4.size do
+        local it = ____list_4[____i_7];
+        (____lambda_5)(it)
+        if ____list_4.____modCount ~= ____mod_1 and ____list_4:____comodified(____i_7) then
             break
         end
     end

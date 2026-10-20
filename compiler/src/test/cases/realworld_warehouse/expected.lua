@@ -5,12 +5,14 @@ local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
@@ -19,7 +21,6 @@ local __K2L_RunCatching = ____lualib.__K2L_RunCatching
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringPadEnd = ____lualib.__K2L_StringPadEnd
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
 local Priced = __K2L_Class("warehouse.Priced")
@@ -31,13 +32,15 @@ end
 local Discounted = __K2L_Class("warehouse.Discounted", nil, Priced)
 
 function Discounted:price(quantity)
-    return __K2L_IDiv(Priced.price(self, quantity) * (100 - self.discountPercent), 100)
+    local ____dividend = Priced.price(self, quantity) * (100 - self.discountPercent)
+    return ____dividend >= 0 and ____dividend // 100 or 0 - -____dividend // 100
 end
 
 local Taxed = __K2L_Class("warehouse.Taxed", nil, Priced)
 
 function Taxed:price(quantity)
-    return __K2L_IDiv(Priced.price(self, quantity) * 108, 100)
+    local ____dividend_1 = Priced.price(self, quantity) * 108
+    return ____dividend_1 >= 0 and ____dividend_1 // 100 or 0 - -____dividend_1 // 100
 end
 
 local Product = __K2L_Class("warehouse.Product", nil, Priced)
@@ -129,6 +132,10 @@ function Slot:____init(row, col)
     self.col = col
 end
 
+function Slot.new(row, col)
+    return setmetatable({row = row, col = col}, Slot)
+end
+
 function Slot:minus(o)
     return math.abs(self.row - o.row) + math.abs(self.col - o.col)
 end
@@ -138,7 +145,7 @@ function Slot:toString()
 end
 
 function Slot:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.row) + __K2L_Hash(self.col))
+    return (31 * self.row + self.col + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Slot:equals(other)
@@ -166,7 +173,7 @@ function Grid:store(product, quantity)
         for c = 0, self.cols - 1 do
             if __K2L_Equals(self.cells:get(r):get(c), product) then
                 local ____object = self.counts:get(r)
-                ____object:set(c, ____object:get(c) + quantity)
+                ____object[c + 1] = (____object[c + 1] or __K2L_IndexError(c, ____object.size, "array")) + quantity
                 return Slot.new(r, c)
             end
         end
@@ -183,7 +190,10 @@ function Grid:store(product, quantity)
                 local ____object_1 = self.cells:get(r)
                 ____object_1:set(c, product)
                 local ____object_2 = self.counts:get(r)
-                ____object_2:set(c, quantity)
+                if c < 0 or c >= ____object_2.size then
+                    __K2L_IndexError(c, ____object_2.size, "array")
+                end
+                ____object_2[c + 1] = quantity
                 return Slot.new(r, c)
             end
             ::____continue::
@@ -198,7 +208,7 @@ function Grid:take(slot, quantity)
     local taken = math.min(quantity, have)
     local ____object_3 = self.counts:get(slot.row)
     local ____key = slot.col
-    ____object_3:set(____key, ____object_3:get(____key) - taken)
+    ____object_3[____key + 1] = (____object_3[____key + 1] or __K2L_IndexError(____key, ____object_3.size, "array")) - taken
     if self.counts:get(slot.row):get(slot.col) == 0 then
         local ____object_4 = self.cells:get(slot.row)
         local ____key_1 = slot.col
@@ -233,7 +243,14 @@ function Grid:render()
 end
 
 function Grid:getTotalUnits()
-    return self.counts:sumOf(function(it) return it:sum() end)
+    local ____list_1 = self.counts
+    local ____sum = 0
+    local ____items, ____n = ____list_1:____array()
+    for ____i_2 = 1, ____n do
+        local it = ____items[____i_2]
+        ____sum = ____sum + it:sum()
+    end
+    return ____sum
 end
 
 local Order = __K2L_Class("warehouse.Order")
@@ -257,12 +274,14 @@ end
 
 Order:____initCompanion()
 
+local ____lambda_1 = function(it) return it.row end
+local ____lambda_2 = function(it) return it.col end
 local function route(start, stops)
     local remaining = stops:toMutableList()
     local path = __K2L_ListOf()
     local at = start
     while remaining:isNotEmpty() do
-        local nearest = remaining:minWith(__K2L_ThenBy(__K2L_ThenBy(__K2L_CompareBy(function(it) return it:minus(at) end), function(it) return it.row end), function(it) return it.col end))
+        local nearest = remaining:minWith(__K2L_ThenBy(__K2L_ThenBy(__K2L_CompareBy(function(it) return it:minus(at) end), ____lambda_1), ____lambda_2))
         remaining:remove(nearest)
         path:add(nearest)
         at = nearest
@@ -270,6 +289,11 @@ local function route(start, stops)
     return path
 end
 
+local ____lambda_3 = function() return Tool.new1("bad", 1) end
+local ____lambda_4 = function(it) return it.row .. it.col end
+local ____lambda_5 = function(it) return it.fragile end
+local ____lambda_6 = function(it) return it:price(1) end
+local ____lambda_7 = function(it) return it.name end
 local function main()
     local hammer = Tool.new("TL-001", "hammer", 1200)
     local wrench = Tool.new1("TL-002", 900)
@@ -277,23 +301,41 @@ local function main()
     local vase = Glassware.new("GL-007", "vase", 2500, 20)
     local glasses = Glassware.new("GL-008", "glasses", 400, 5)
     local products = __K2L_ReadOnlyListOf(hammer, wrench, drill, vase, glasses)
-    local ____receiver_2 = __K2L_RunCatching(function() return Tool.new1("bad", 1) end):exceptionOrNull()
+    local ____receiver_2 = __K2L_RunCatching(____lambda_3):exceptionOrNull()
     print(__K2L_Str(____receiver_2 and ____receiver_2.message))
     local ____mod = products.____modCount
-    for ____i_2 = 1, products.size do
-        local p = products[____i_2]
+    for ____i_3 = 1, products.size do
+        local p = products[____i_3]
         print(__K2L_StringPadEnd(p:getLabel(), 24) .. " 1=" .. p:price(1) .. " 10=" .. p:price(10))
-        if products.____modCount ~= ____mod and products:____comodified(____i_2) then
+        if products.____modCount ~= ____mod and products:____comodified(____i_3) then
             break
         end
     end
     local grid = Grid.new(3, 4)
     local stock = __K2L_ReadOnlyListOf(__K2L_Pair.new(hammer, 10), __K2L_Pair.new(drill, 2), __K2L_Pair.new(vase, 4), __K2L_Pair.new(glasses, 30), __K2L_Pair.new(wrench, 15), __K2L_Pair.new(hammer, 5))
-    local slots = stock:map(function(____destructured)
-        local p, q = ____destructured.first, ____destructured.second
-        return grid:store(p, q)
-    end)
-    print(__K2L_Str(slots:map(function(it) return it.row .. "," .. it.col end)))
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = stock:____array()
+    for ____i_4 = 1, ____n_1 do
+        local ____it = ____items_1[____i_4]
+        local ____result
+        do
+            local p, q = ____it.first, ____it.second
+            ____result = grid:store(p, q)
+        end
+        ____count = ____count + 1
+        ____out[____count] = ____result
+    end
+    local slots = __K2L_ListWrap(____out, ____count)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_2, ____n_2 = slots:____array()
+    for ____i_5 = 1, ____n_2 do
+        local it = ____items_2[____i_5]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it.row .. "," .. it.col
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     local ____receiver_3 = __K2L_RunCatching(function()
         return grid:store(Glassware.new("GL-009", "bowl", 300, 0), 1)
     end):exceptionOrNull()
@@ -302,44 +344,98 @@ local function main()
     print("units=" .. grid:getTotalUnits())
     local orders = __K2L_ReadOnlyListOf(Order:invoke(__K2L_Pair.new(hammer, 3), __K2L_Pair.new(vase, 1)), Order:invoke(__K2L_Pair.new(glasses, 12), __K2L_Pair.new(drill, 1), __K2L_Pair.new(wrench, 2)), Order:invoke(__K2L_Pair.new(vase, 10)))
     local ____mod_1 = orders.____modCount
-    for ____i_3 = 1, orders.size do
-        local order = orders[____i_3]
-        local stops = order.lines:mapNotNull(function(____destructured_1)
-            local p = ____destructured_1.first
-            return grid:find(p)
-        end)
+    for ____i_8 = 1, orders.size do
+        local order = orders[____i_8]
+        local ____list_2 = order.lines
+        local ____out_2 = {}
+        local ____count_2 = 0
+        local ____items_3, ____n_3 = ____list_2:____array()
+        for ____i_6 = 1, ____n_3 do
+            local ____it_1 = ____items_3[____i_6]
+            local ____result_1
+            do
+                local p = ____it_1.first
+                ____result_1 = grid:find(p)
+            end
+            local ____value = ____result_1
+            if ____value ~= nil then
+                ____count_2 = ____count_2 + 1
+                ____out_2[____count_2] = ____value
+            end
+        end
+        local stops = __K2L_ListWrap(____out_2, ____count_2)
         local path = route(Slot.new(2, 0), stops)
         local total = 0
-        local picked = order.lines:map(function(____destructured_2)
-            local p, q = ____destructured_2.first, ____destructured_2.second
-            local ____value = grid:find(p)
-            if ____value == nil then
-                return p.sku .. ": none"
+        local ____list_3 = order.lines
+        local ____out_3 = {}
+        local ____count_3 = 0
+        local ____items_4, ____n_4 = ____list_3:____array()
+        for ____i_7 = 1, ____n_4 do
+            local ____it_2 = ____items_4[____i_7]
+            local ____result_2
+            do
+                local p, q = ____it_2.first, ____it_2.second
+                local ____value_1 = grid:find(p)
+                if ____value_1 == nil then
+                    ____result_2 = p.sku .. ": none"
+                    goto ____inline_end
+                end
+                local slot = ____value_1
+                local got = grid:take(slot, q)
+                total = total + p:price(got)
+                ____result_2 = p.sku .. ": " .. got .. "/" .. q
+                ::____inline_end::
             end
-            local slot = ____value
-            local got = grid:take(slot, q)
-            total = total + p:price(got)
-            return p.sku .. ": " .. got .. "/" .. q
-        end)
-        print("order " .. order.id .. " route=" .. path:joinToString(">", nil, nil, nil, nil, function(it) return it.row .. it.col end) .. " " .. __K2L_Str(picked) .. " total=" .. total)
-        if orders.____modCount ~= ____mod_1 and orders:____comodified(____i_3) then
+            ____count_3 = ____count_3 + 1
+            ____out_3[____count_3] = ____result_2
+        end
+        local picked = __K2L_ListWrap(____out_3, ____count_3)
+        print("order " .. order.id .. " route=" .. path:joinToString(">", nil, nil, nil, nil, ____lambda_4) .. " " .. __K2L_Str(picked) .. " total=" .. total)
+        if orders.____modCount ~= ____mod_1 and orders:____comodified(____i_8) then
             break
         end
     end
     print(grid:render())
     print(__K2L_Str(grid:get(Slot.new(0, 0))))
     print(__K2L_Str(grid:get(Slot.new(2, 2))))
-    local bySku = products:associateBy(function(it) return it.sku end)
+    local ____result_3 = __K2L_Map.new()
+    local ____items_5, ____n_5 = products:____array()
+    for ____i_9 = 1, ____n_5 do
+        local it = ____items_5[____i_9]
+        local ____value_2 = it.sku
+        ____result_3:put(____value_2, it)
+    end
+    local bySku = ____result_3
     print(bySku:get("GL-007") == vase)
     print(products:toSet().size == __K2L_ReadOnlySetOf(Tool.new1("TL-001", 1), hammer).size + 3)
-    local ____destructured_3 = products:partition(function(it) return it.fragile end)
-    local fragile, sturdy = ____destructured_3.first, ____destructured_3.second
+    local ____destructured = products:partition(____lambda_5)
+    local fragile, sturdy = ____destructured.first, ____destructured.second
     print("fragile=" .. __K2L_Str(fragile) .. " sturdy=" .. __K2L_Str(sturdy))
-    print(__K2L_Str(products:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(function(it) return it:price(1) end), function(it) return it.name end)):map(function(it) return it.name end)))
-    print(__K2L_Str(products:windowed(2):map(function(____destructured_4)
-        local a, b = ____destructured_4[1], ____destructured_4[2]
-        return a:price(1) - b:price(1)
-    end)))
+    local ____list_4 = products:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_6), ____lambda_7))
+    local ____out_4 = {}
+    local ____count_4 = 0
+    local ____items_6, ____n_6 = ____list_4:____array()
+    for ____i_10 = 1, ____n_6 do
+        local it = ____items_6[____i_10]
+        ____count_4 = ____count_4 + 1
+        ____out_4[____count_4] = it.name
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_4, ____count_4)))
+    local ____list_5 = products:windowed(2)
+    local ____out_5 = {}
+    local ____count_5 = 0
+    local ____items_7, ____n_7 = ____list_5:____array()
+    for ____i_11 = 1, ____n_7 do
+        local ____it_3 = ____items_7[____i_11]
+        local ____result_4
+        do
+            local a, b = ____it_3[1], ____it_3[2]
+            ____result_4 = a:price(1) - b:price(1)
+        end
+        ____count_5 = ____count_5 + 1
+        ____out_5[____count_5] = ____result_4
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_5, ____count_5)))
 end
 
 main()

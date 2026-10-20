@@ -6,7 +6,9 @@ local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -77,10 +79,43 @@ local function main()
     end
     print(__K2L_Str(seen))
     print(total(view))
-    print(__K2L_Str(view:map(function(it) return it + 1 end)))
-    print(__K2L_Str(view:filter(function(it) return it > 3 end)))
-    print(view:any(function(it) return it > 9 end))
-    print(view:sumOf(function(it) return it end))
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = view:____array()
+    for ____i_4 = 1, ____n do
+        local it = ____items[____i_4]
+        ____count = ____count + 1
+        ____out[____count] = it + 1
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = view:____array()
+    for ____i_5 = 1, ____n_1 do
+        local it = ____items_1[____i_5]
+        if it > 3 then
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = it
+        end
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
+    local ____result_1 = false
+    local ____items_2, ____n_2 = view:____array()
+    for ____i_6 = 1, ____n_2 do
+        local it = ____items_2[____i_6]
+        if it > 9 then
+            ____result_1 = true
+            break
+        end
+    end
+    print(____result_1)
+    local ____sum = 0
+    local ____items_3, ____n_3 = view:____array()
+    for ____i_7 = 1, ____n_3 do
+        local it = ____items_3[____i_7]
+        ____sum = ____sum + it
+    end
+    print(____sum)
     print(__K2L_Str(view:getIndices()))
     print(__K2L_Str(view:withIndex():map(function(____destructured)
         local i, x = ____destructured.index, ____destructured.value
@@ -89,7 +124,21 @@ local function main()
     print(__K2L_Str(view:sorted()))
     print(view:joinToString("-"))
     print(view:sum())
-    local firstBig = view:first(function(it) return it > 3 end)
+    local ____result_2
+    local ____found = false
+    local ____items_4, ____n_4 = view:____array()
+    for ____i_8 = 1, ____n_4 do
+        local it = ____items_4[____i_8]
+        if it > 3 then
+            ____result_2 = it
+            ____found = true
+            break
+        end
+    end
+    if not ____found then
+        error(__K2L_NoSuchElementException.new("Collection contains no element matching the predicate."))
+    end
+    local firstBig = ____result_2
     print(__K2L_NotNull(firstBig))
     for i = 0, view.size - 1 do
         local x = view[i + 1]
@@ -138,12 +187,12 @@ local function main()
     nullable:add("c")
     local count = 0
     local ____mod_3 = nullView.____modCount
-    for ____i_4 = 1, nullView.size do
-        local s = nullView[____i_4]
+    for ____i_9 = 1, nullView.size do
+        local s = nullView[____i_9]
         if s == nil then
             count = count + 1
         end
-        if nullView.____modCount ~= ____mod_3 and nullView:____comodified(____i_4) then
+        if nullView.____modCount ~= ____mod_3 and nullView:____comodified(____i_9) then
             break
         end
     end
@@ -153,9 +202,9 @@ local function main()
     s:add(9)
     s:remove(1)
     print(__K2L_Str(sv) .. " " .. sv.size .. " " .. tostring(sv:contains(9)) .. " " .. tostring(sv:contains(1)))
-    local ____items, ____n = sv:____array()
-    for ____i_5 = 1, ____n do
-        local x = ____items[____i_5]
+    local ____items_5, ____n_5 = sv:____array()
+    for ____i_10 = 1, ____n_5 do
+        local x = ____items_5[____i_10]
         io.write(__K2L_Str(__K2L_NotNull(x)))
     end
     print()
@@ -168,23 +217,40 @@ local function main()
     attempt("setClear", function()
         sv:clear()
     end)
-    print(__K2L_Str(sv:map(function(it) return it * 2 end)))
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_6, ____n_6 = sv:____array()
+    for ____i_11 = 1, ____n_6 do
+        local it = ____items_6[____i_11]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = it * 2
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
     local m = __K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2))
     local mv = __K2L_JdkCollections.unmodifiableMap(m)
     m:set("c", 3)
     m:remove("a")
     print(__K2L_Str(mv) .. " " .. mv.size .. " " .. __K2L_Str(mv:get("c")) .. " " .. tostring(mv:containsKey("a")) .. " " .. __K2L_Str(mv:getKeys()) .. " " .. __K2L_Str(mv:getValues()))
-    local ____keys, ____values, ____n_1 = mv:____arrays()
+    local ____keys, ____values, ____n_7 = mv:____arrays()
     local ____mod_4 = mv.____modCount
-    for ____i_6 = 1, ____n_1 do
-        local k, v = ____keys[____i_6], ____values[____i_6]
+    for ____i_12 = 1, ____n_7 do
+        local k, v = ____keys[____i_12], ____values[____i_12]
         io.write(__K2L_Str(k) .. __K2L_Str(v) .. " ")
-        if mv.____modCount ~= ____mod_4 and mv:____comodified(____i_6, ____n_1) then
+        if mv.____modCount ~= ____mod_4 and mv:____comodified(____i_12, ____n_7) then
             break
         end
     end
     print()
-    print(__K2L_Str(mv:getEntries():map(function(it) return it.key .. __K2L_Str(it.value) end)))
+    local ____list = mv:getEntries()
+    local ____out_3 = {}
+    local ____count_3 = 0
+    local ____items_7, ____n_8 = ____list:____array()
+    for ____i_13 = 1, ____n_8 do
+        local it = ____items_7[____i_13]
+        ____count_3 = ____count_3 + 1
+        ____out_3[____count_3] = it.key .. __K2L_Str(it.value)
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_3, ____count_3)))
     attempt("put", function()
         mv:set("z", 0)
     end)

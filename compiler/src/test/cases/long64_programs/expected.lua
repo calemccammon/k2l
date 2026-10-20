@@ -1,9 +1,9 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
@@ -42,6 +42,10 @@ function Sq:____init(side)
     self.side = side
 end
 
+function Sq.new(side)
+    return setmetatable({side = side}, Sq)
+end
+
 function Sq:getArea()
     return self.side * self.side
 end
@@ -68,14 +72,22 @@ local function modPow(base, exp, mod)
     return result
 end
 
+local ____lambda_1 = function(acc, i) return acc * i end
+local ____lambda_2 = function(it) return it * it end
+local ____lambda_3 = function(it) return it end
+local ____lambda_4 = function(a, b) return a * b end
+local ____lambda_5 = function(it) return it - 1000000000000000000 end
+local ____lambda_6 = function(it) return it >= 0 end
+local ____lambda_7 = function(it) return it >= 0 and it // 3 or (it + 2) // 3 end
+local ____lambda_8 = function(it) return it.first end
 local function main()
     local big = 5000000000000000000
     local max = 9223372036854775807
     print(big + big)
     print(big - -big)
     print(big * 3)
-    print(__K2L_IDiv(big, 7))
-    print(math.fmod(big, 7))
+    print(big >= 0 and big // 7 or (big + 6) // 7)
+    print(big >= 0 and big % 7 or (big % 7 - 7) % (-7))
     print(big + 1)
     print(big - 1)
     print(-big)
@@ -105,7 +117,8 @@ local function main()
     print(modPow(3, big, 998244353))
     print(modPow(123456789, 987654321, max))
     local h = 1125899906842597
-    for ch in ("hello world"):gmatch(".") do
+    for ____i = 1, #"hello world" do
+        local ch = ("hello world"):sub(____i, ____i)
         h = 31 * h + ch:byte()
     end
     print(h)
@@ -116,29 +129,40 @@ local function main()
         x = x ~ x << 17
         print(x)
     end
-    local fact = __K2L_IntRange.new(1, 25):fold(1, function(acc, i) return acc * i end)
+    local fact = __K2L_IntRange.new(1, 25):fold(1, ____lambda_1)
     print(fact)
-    local sumSq = __K2L_IntRange.new(1, 2000000):sumOf(function(it) return it * it end)
+    local sumSq = __K2L_IntRange.new(1, 2000000):sumOf(____lambda_2)
     print(sumSq)
-    print(__K2L_IntRange.new(1, 20):map(function(it) return it end):reduce(function(a, b) return a * b end))
+    print(__K2L_IntRange.new(1, 20):map(____lambda_3):reduce(____lambda_4))
     print(__K2L_Str(__K2L_IntRange.new(big, big - 3, -1):toList()))
     print(__K2L_Str(__K2L_IntRange.new(1, 3):reversed():toList()))
     print(__K2L_IntRange.new(big, big + 2):count())
-    print(__K2L_IDiv(__K2L_ReadOnlyListOf(1, 2, 3):sum(), 2))
-    print(__K2L_Str(__K2L_GenerateSequence(big, function(it) return it - 1000000000000000000 end):takeWhile(function(it) return it >= 0 end):toList()))
+    local ____dividend = __K2L_ReadOnlyListOf(1, 2, 3):sum()
+    print(____dividend >= 0 and ____dividend // 2 or (____dividend + 1) // 2)
+    print(__K2L_Str(__K2L_GenerateSequence(big, ____lambda_5):takeWhile(____lambda_6):toList()))
     local seq = __K2L_SequenceBuilder(function(self)
         self:yield(big)
         self:yield(max)
     end)
     print(__K2L_Str(seq:toList()))
-    print(seq:map(function(it) return __K2L_IDiv(it, 3) end):sum())
+    print(seq:map(____lambda_7):sum())
     local ____pairs = __K2L_ReadOnlyListOf(__K2L_Pair.new(big, 1), __K2L_Pair.new(max, 2))
-    print(__K2L_Str(____pairs:map(function(____destructured)
-        local a, b = ____destructured.first, ____destructured.second
-        return a + b
-    end)))
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____pairs:____array()
+    for ____i_1 = 1, ____n do
+        local ____it = ____items[____i_1]
+        local ____result
+        do
+            local a, b = ____it.first, ____it.second
+            ____result = a + b
+        end
+        ____count = ____count + 1
+        ____out[____count] = ____result
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(__K2L_Str(____pairs:toMap()))
-    print(__K2L_Str(____pairs:maxByOrNull(function(it) return it.first end)))
+    print(__K2L_Str(____pairs:maxByOrNull(____lambda_8)))
     local nested = __K2L_SingletonMapOf(__K2L_Pair.new(big, __K2L_SingletonMapOf(__K2L_Pair.new(max, __K2L_ReadOnlyListOf(1, big)))))
     print(__K2L_Str(nested))
     local ____receiver = nested:get(big)

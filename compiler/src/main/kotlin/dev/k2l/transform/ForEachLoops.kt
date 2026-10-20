@@ -49,7 +49,7 @@ internal fun FileTransformer.forEachLoop(collection: LuaExpr, type: KaType?, lam
 private fun FileTransformer.forEachChar(collection: LuaExpr, lambda: KtExpression, indexed: Boolean, params: List<KtParameter>) {
     if (!indexed) {
         val c = forEachVar(params, 0, "char")
-        emit(LuaGenericFor(listOf(c), listOf(stringChars(collection)), forEachBody(lambda, c)))
+        eachChar(collection, c, forEachBody(lambda, c))
         return
     }
     val list = cache(charList(collection), "chars")

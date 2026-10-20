@@ -5,13 +5,13 @@ local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_GenerateSequenceLazy = ____lualib.__K2L_GenerateSequenceLazy
-local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PriorityQueue = ____lualib.__K2L_PriorityQueue
@@ -21,7 +21,6 @@ local __K2L_SortedSetOf = ____lualib.__K2L_SortedSetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Customer
@@ -32,8 +31,14 @@ function SimEvent:____init(time)
     self.time = time
 end
 
+function SimEvent.new(time)
+    return setmetatable({time = time}, SimEvent)
+end
+
+local ____lambda_1 = function(it) return it.time end
+local ____lambda_2 = function(it) return it.priority end
 function SimEvent:compareTo(other)
-    return __K2L_CompareBy(function(it) return it.time end, function(it) return it.priority end)(self, other)
+    return __K2L_CompareBy(____lambda_1, ____lambda_2)(self, other)
 end
 
 SimEvent.Arrival = __K2L_Class("SimEvent$Arrival", SimEvent)
@@ -62,12 +67,16 @@ function Customer:____init(id, arrival, serviceTime, vip)
     self.vip = vip
 end
 
+function Customer.new(id, arrival, serviceTime, vip)
+    return setmetatable({id = id, arrival = arrival, serviceTime = serviceTime, vip = vip}, Customer)
+end
+
 function Customer:toString()
     return "Customer(id=" .. self.id .. ", arrival=" .. self.arrival .. ", serviceTime=" .. self.serviceTime .. ", vip=" .. tostring(self.vip) .. ")"
 end
 
 function Customer:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.id) + __K2L_Hash(self.arrival)) + __K2L_Hash(self.serviceTime)) + __K2L_Hash(self.vip))
+    return (31 * (31 * (31 * self.id + self.arrival) + self.serviceTime) + (self.vip and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Customer:equals(other)
@@ -119,7 +128,7 @@ function Bank:startService(teller, c)
     local ____object = self.busy
     ____object:set(teller, true)
     local ____object_1 = self.busyTime
-    ____object_1:set(teller, ____object_1:get(teller) + c.serviceTime)
+    ____object_1[teller + 1] = (____object_1[teller + 1] or __K2L_IndexError(teller, ____object_1.size, "array")) + c.serviceTime
     self.stats:record(self.clock - c.arrival)
     self:schedule(SimEvent.Departure.new(self.clock + c.serviceTime, teller, c))
     if self.log then
@@ -127,12 +136,14 @@ function Bank:startService(teller, c)
     end
 end
 
+local ____lambda_3 = function(it) return not it end
 function Bank:run()
     while self.events:isNotEmpty() do
         local e = self.events:poll()
         self.clock = e.time
-        if __K2L_InstanceOf(e, SimEvent.Arrival) then
-            local free = self.busy:indexOfFirst(function(it) return not it end)
+        local ____mt = getmetatable(e)
+        if ____mt == SimEvent.Arrival then
+            local free = self.busy:indexOfFirst(____lambda_3)
             if free >= 0 then
                 self:startService(free, e.customer)
             else
@@ -144,7 +155,7 @@ function Bank:run()
                 local ____object_3 = self.stats
                 ____object_3.maxQueue = math.max(self.stats.maxQueue, self.queue.size)
             end
-        elseif __K2L_InstanceOf(e, SimEvent.Departure) then
+        elseif ____mt == SimEvent.Departure then
             local ____object_2 = self.busy
             local ____key = e.teller
             ____object_2:set(____key, false)
@@ -158,9 +169,16 @@ function Bank:run()
 end
 
 function Bank:utilisation()
-    return self.busyTime:map(function(it)
-        return __K2L_StringFormat("%.0f%%", 100.0 * it / self.clock)
-    end)
+    local ____list = self.busyTime
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_StringFormat("%.0f%%", 100.0 * it / self.clock)
+    end
+    return __K2L_ListWrap(____out, ____count)
 end
 
 local function customers(n, seed)
@@ -184,9 +202,26 @@ function Life:____init(w, h, alive)
 end
 
 function Life:getPopulation()
-    return self.cells:sumOf(function(row)
-        return row:count(function(it) return it end)
-    end)
+    local ____list_1 = self.cells
+    local ____sum = 0
+    local ____items_2, ____n_2 = ____list_1:____array()
+    for ____i_2 = 1, ____n_2 do
+        local row = ____items_2[____i_2]
+        local ____result
+        do
+            local ____result_1 = 0
+            local ____items_1, ____n_1 = row:____array()
+            for ____i_1 = 1, ____n_1 do
+                local it = ____items_1[____i_1]
+                if it then
+                    ____result_1 = ____result_1 + 1
+                end
+            end
+            ____result = ____result_1
+        end
+        ____sum = ____sum + ____result
+    end
+    return ____sum
 end
 
 function Life:neighbours(x, y)
@@ -207,10 +242,12 @@ function Life:step()
     self.generation = self.generation + 1
 end
 
+local ____lambda_4 = function(it) return it and "#" or "." end
+local ____lambda_5 = function(row)
+    return row:joinToString("", nil, nil, nil, nil, ____lambda_4)
+end
 function Life:toString()
-    return self.cells:joinToString("\n", nil, nil, nil, nil, function(row)
-        return row:joinToString("", nil, nil, nil, nil, function(it) return it and "#" or "." end)
-    end)
+    return self.cells:joinToString("\n", nil, nil, nil, nil, ____lambda_5)
 end
 
 local Motion = __K2L_Class("Motion")
@@ -256,14 +293,46 @@ function Elevator:tick()
         self.motion = Motion.DOORS_OPEN
     elseif self.requests:isEmpty() then
         self.motion = Motion.IDLE
-    elseif self.motion == Motion.UP and self.requests:any(function(it) return it > self.floor end) then
-        self.motion = Motion.UP
-    elseif self.motion == Motion.DOWN and self.requests:any(function(it) return it < self.floor end) then
-        self.motion = Motion.DOWN
-    elseif self.requests:first() > self.floor or self.requests:last() > self.floor and self.floor - self.requests:first() > self.requests:last() - self.floor then
-        self.motion = Motion.UP
     else
-        self.motion = Motion.DOWN
+        local ____cond_1 = self.motion == Motion.UP
+        if ____cond_1 then
+            local ____list_3 = self.requests
+            local ____result_3 = false
+            local ____items_4, ____n_4 = ____list_3:____array()
+            for ____i_4 = 1, ____n_4 do
+                local it = ____items_4[____i_4]
+                if it > self.floor then
+                    ____result_3 = true
+                    break
+                end
+            end
+            ____cond_1 = ____result_3
+        end
+        if ____cond_1 then
+            self.motion = Motion.UP
+        else
+            local ____cond = self.motion == Motion.DOWN
+            if ____cond then
+                local ____list_2 = self.requests
+                local ____result_2 = false
+                local ____items_3, ____n_3 = ____list_2:____array()
+                for ____i_3 = 1, ____n_3 do
+                    local it = ____items_3[____i_3]
+                    if it < self.floor then
+                        ____result_2 = true
+                        break
+                    end
+                end
+                ____cond = ____result_2
+            end
+            if ____cond then
+                self.motion = Motion.DOWN
+            elseif self.requests:first() > self.floor or self.requests:last() > self.floor and self.floor - self.requests:first() > self.requests:last() - self.floor then
+                self.motion = Motion.UP
+            else
+                self.motion = Motion.DOWN
+            end
+        end
     end
     local ____subject = self.motion
     if ____subject == Motion.UP then
@@ -274,32 +343,54 @@ function Elevator:tick()
     self.trace:add(__K2L_Text.first(self.motion.name) .. self.floor)
 end
 
+local ____lambda_6 = function(it) return __K2L_Text.first(it) end
 local function main()
     local people = customers(40, 2024)
     print("first customers: " .. __K2L_Str(people:take(3)))
-    print("vips: " .. __K2L_Str(people:filter(function(it) return it.vip end):map(function(it) return it.id end)))
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_5, ____n_5 = people:____array()
+    for ____i_5 = 1, ____n_5 do
+        local it = ____items_5[____i_5]
+        if it.vip then
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = it
+        end
+    end
+    local ____list_4 = __K2L_ListWrap(____out_1, ____count_1)
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_6, ____n_6 = ____list_4:____array()
+    for ____i_6 = 1, ____n_6 do
+        local it = ____items_6[____i_6]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = it.id
+    end
+    print("vips: " .. __K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
     for tellers = 1, 3 do
         local bank = Bank.new(tellers)
         local ____mod = people.____modCount
-        for ____i = 1, people.size do
-            local it = people[____i]
+        for ____i_7 = 1, people.size do
+            local it = people[____i_7]
             bank:schedule(SimEvent.Arrival.new(it.arrival, it))
-            if people.____modCount ~= ____mod and people:____comodified(____i) then
+            if people.____modCount ~= ____mod and people:____comodified(____i_7) then
                 break
             end
         end
         bank:run()
         local s = bank.stats
-        local p90 = s.waits:sorted():get(__K2L_IDiv(s.waits.size * 9, 10))
+        local ____arg = s.waits:sorted()
+        local ____dividend = s.waits.size * 9
+        local p90 = ____arg:get(____dividend >= 0 and ____dividend // 10 or 0 - -____dividend // 10)
         print("tellers=" .. tellers .. " served=" .. s.served .. " avgWait=" .. __K2L_StringFormat("%.2f", s:getAverageWait()) .. " maxWait=" .. s.maxWait .. " " .. "p90=" .. p90 .. " maxQueue=" .. s.maxQueue .. " end=" .. bank.clock .. " util=" .. __K2L_Str(bank:utilisation()))
     end
     local small = Bank.new(2, true)
-    local ____list = customers(6, 7)
-    local ____mod_1 = ____list.____modCount
-    for ____i_1 = 1, ____list.size do
-        local it = ____list[____i_1]
+    local ____list_5 = customers(6, 7)
+    local ____mod_1 = ____list_5.____modCount
+    for ____i_8 = 1, ____list_5.size do
+        local it = ____list_5[____i_8]
         small:schedule(SimEvent.Arrival.new(it.arrival, it))
-        if ____list.____modCount ~= ____mod_1 and ____list:____comodified(____i_1) then
+        if ____list_5.____modCount ~= ____mod_1 and ____list_5:____comodified(____i_8) then
             break
         end
     end
@@ -312,10 +403,20 @@ local function main()
     for it = 0, 599 do
         do
             local ____key_1 = __K2L_Random.seeded(it):nextInt(6)
-            histogram:set(____key_1, histogram:get(____key_1) + 1)
+            histogram[____key_1 + 1] = (histogram[____key_1 + 1] or __K2L_IndexError(____key_1, histogram.size, "array")) + 1
         end
     end
-    print("histogram total=" .. histogram:sum() .. " min>50=" .. tostring(histogram:all(function(it) return it > 50 end)))
+    local ____arg_1 = histogram:sum()
+    local ____result_4 = true
+    local ____items_7, ____n_7 = histogram:____array()
+    for ____i_9 = 1, ____n_7 do
+        local it = ____items_7[____i_9]
+        if not (it > 50) then
+            ____result_4 = false
+            break
+        end
+    end
+    print("histogram total=" .. ____arg_1 .. " min>50=" .. tostring(____result_4))
     local glider = __K2L_ReadOnlySetOf(__K2L_Pair.new(1, 0), __K2L_Pair.new(2, 1), __K2L_Pair.new(0, 2), __K2L_Pair.new(1, 2), __K2L_Pair.new(2, 2))
     local life = Life.new(8, 6, glider)
     print("gen " .. life.generation .. ", population " .. life:getPopulation() .. "\n" .. __K2L_Str(life))
@@ -342,11 +443,11 @@ local function main()
     end
     print("elevator: " .. elevator.trace:joinToString(" "))
     print("ended at " .. elevator.floor .. " " .. __K2L_Str(elevator.motion))
-    local ____ok, ____result = pcall(function()
+    local ____ok, ____result_5 = pcall(function()
         elevator:call(12)
     end)
     if not ____ok then
-        local ____error = __K2L_ToThrowable(____result)
+        local ____error = __K2L_ToThrowable(____result_5)
         if __K2L_InstanceOf(____error, __K2L_IllegalArgumentException) then
             local e = ____error
             print("rejected: " .. __K2L_Str(e.message))
@@ -354,7 +455,7 @@ local function main()
             error(____error, 0)
         end
     end
-    local counts = elevator.trace:groupingBy(function(it) return __K2L_Text.first(it) end):eachCount()
+    local counts = elevator.trace:groupingBy(____lambda_6):eachCount()
     print("motion counts: " .. __K2L_Str(__K2L_EnumValues(Motion):associate(function(m)
         return __K2L_Pair.new(m, counts:get(__K2L_Text.first(m.name)) or 0)
     end)))

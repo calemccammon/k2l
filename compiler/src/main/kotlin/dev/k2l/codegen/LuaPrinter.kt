@@ -3,9 +3,17 @@ package dev.k2l.codegen
 import dev.k2l.LineMapping
 import dev.k2l.Origin
 
-/** Renders a [LuaChunk] as readable Lua source. */
+/**
+ * Renders a [LuaChunk] as readable Lua source. [prologues]: statements printed at the start of a function's body (see
+ * UpvalueLimit); [hoisting]: see LambdaHoisting.
+ */
 @Suppress("TooManyFunctions") // one small method per Lua construct; splitting would scatter the printer
-class LuaPrinter(private val indentUnit: String = "    ", private val origins: Map<LuaStmt, Origin>? = null) {
+class LuaPrinter(
+    private val indentUnit: String = "    ",
+    private val origins: Map<LuaStmt, Origin>? = null,
+    private val prologues: Map<LuaFunction, List<LuaStmt>> = emptyMap(),
+    private val hoisting: LambdaHoisting = LambdaHoisting.NONE,
+) {
     private val out = StringBuilder()
     private var indent = 0
 
@@ -79,8 +87,10 @@ class LuaPrinter(private val indentUnit: String = "    ", private val origins: M
         body.forEachIndexed { i, stmt ->
             val isLast = i == body.lastIndex
             // Top-level functions get breathing room, like hand-written modules.
-            val spaced = topLevel && stmt is LuaFunctionDecl
+            val hoisted = if (topLevel) hoisting.preludes[stmt] else null
+            val spaced = topLevel && (stmt is LuaFunctionDecl || hoisted != null)
             if (spaced && i > 0) blankLine()
+            hoisted?.forEach(::printStatement)
             pendingOrigin = origins?.get(stmt)
             if (!isLast && (stmt is LuaReturn || stmt is LuaBreak)) {
                 // Lua only allows `return`/`break` as the last statement of a block.
@@ -213,7 +223,7 @@ class LuaPrinter(private val indentUnit: String = "    ", private val origins: M
             return
         }
         line("$header($params)")
-        nested(fn.body)
+        nested(prologues[fn].orEmpty() + fn.body)
         line("end")
     }
 
@@ -254,7 +264,7 @@ class LuaPrinter(private val indentUnit: String = "    ", private val origins: M
             if (parentPrecedence > UNARY_PRECEDENCE) "($text)" else text
         }
 
-        is LuaFunction -> functionExpr(e)
+        is LuaFunction -> hoisting.names[e] ?: functionExpr(e)
 
         is LuaTable -> table(e)
     }
@@ -276,18 +286,20 @@ class LuaPrinter(private val indentUnit: String = "    ", private val origins: M
         else -> "(${expr(e)})"
     }
 
+    private fun isShortReturn(stmt: LuaReturn) = stmt.values.size <= 1 && stmt.values.none { it is LuaFunction }
+
     private fun functionExpr(fn: LuaFunction): String {
         val params = paramList(fn)
         if (fn.body.isEmpty()) return "function($params) end"
         // Short single-expression lambdas stay on one line: function(it) return it * 2 end
         val single = fn.body.singleOrNull()
-        if (single is LuaReturn && single.values.size <= 1 && single.values.none { it is LuaFunction }) {
+        if (single is LuaReturn && isShortReturn(single) && fn !in prologues) {
             val text = "function($params) ${returnText(single)} end"
             if (text.length <= MAX_INLINE_FUNCTION_LENGTH && '\n' !in text) return text
         }
-        val sub = LuaPrinter(indentUnit, origins)
+        val sub = LuaPrinter(indentUnit, origins, prologues, hoisting)
         sub.indent = indent + 1
-        sub.printBlock(fn.body, topLevel = false)
+        sub.printBlock(prologues[fn].orEmpty() + fn.body, topLevel = false)
         return "function($params)\n${sub.out}${indentUnit.repeat(indent)}end"
     }
 
@@ -296,7 +308,7 @@ class LuaPrinter(private val indentUnit: String = "    ", private val origins: M
         return t.fields.joinToString(", ", "{", "}") { f ->
             when (f) {
                 is LuaField.Positional -> expr(f.value)
-                is LuaField.Named -> "${f.name} = ${expr(f.value)}"
+                is LuaField.Named -> if (isIdentifier(f.name)) "${f.name} = ${expr(f.value)}" else "[${quote(f.name)}] = ${expr(f.value)}"
                 is LuaField.Keyed -> "[${expr(f.key)}] = ${expr(f.value)}"
             }
         }

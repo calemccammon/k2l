@@ -711,9 +711,26 @@ local function singleStep(node)
             end
             return false
         end
+        -- whether a byte below 0xC0 matches (with neg applied), when there is no Unicode case folding
+        local accepts
+        if fold == nil then
+            accepts = {}
+            for b = 0, 0xBF do
+                local hit = hasByte(b)
+                if not hit and ci then
+                    hit = hasByte(lowerByte(b)) or (b >= 97 and b <= 122 and hasByte(b - 32))
+                end
+                accepts[b] = (hit and not neg) or (not hit and neg)
+            end
+        end
         return function(st, i)
             local b = st.bytes[i]
             if b == nil then
+                return nil
+            elseif accepts ~= nil and b < 0xC0 then
+                if accepts[b] then
+                    return i + 1
+                end
                 return nil
             end
             local hit
@@ -766,18 +783,55 @@ local function singleStep(node)
     return nil
 end
 
-local function compileSequence(fns)
-    if #fns == 0 then
-        return function(st, i, k) return k(i) end
+-- One step for a run of single steps, in order.
+local function stepRun(steps)
+    if #steps == 1 then
+        return steps[1]
     end
-    local f = fns[#fns]
-    for j = #fns - 1, 1, -1 do
-        local a, b = fns[j], f
-        f = function(st, i, k)
-            return a(st, i, function(i2) return b(st, i2, k) end)
+    return function(st, i)
+        for j = 1, #steps do
+            i = steps[j](st, i)
+            if i == nil then
+                return nil
+            end
+        end
+        return i
+    end
+end
+
+-- The items of a sequence are runs of single steps ({steps = ...}) or compiled nodes ({fn = ...}). A run goes on to the
+-- rest of the sequence directly; only a compiled node needs a continuation closure for it.
+local function compileSequence(items)
+    local f
+    for j = #items, 1, -1 do
+        local item, rest = items[j], f
+        if item.steps ~= nil then
+            local run = stepRun(item.steps)
+            if rest == nil then
+                f = function(st, i, k)
+                    local after = run(st, i)
+                    if after then
+                        return k(after)
+                    end
+                end
+            else
+                f = function(st, i, k)
+                    local after = run(st, i)
+                    if after then
+                        return rest(st, after, k)
+                    end
+                end
+            end
+        elseif rest == nil then
+            f = item.fn
+        else
+            local a = item.fn
+            f = function(st, i, k)
+                return a(st, i, function(i2) return rest(st, i2, k) end)
+            end
         end
     end
-    return f
+    return f or function(st, i, k) return k(i) end
 end
 
 local function compileRep(node)
@@ -896,11 +950,19 @@ function compile(node)
             end
         end
     elseif t == "seq" then
-        local fns = {}
-        for j, item in ipairs(node.items) do
-            fns[j] = compile(item)
+        local items = {}
+        for _, item in ipairs(node.items) do
+            local itemStep = singleStep(item)
+            local last = items[#items]
+            if itemStep == nil then
+                items[#items + 1] = {fn = compile(item)}
+            elseif last ~= nil and last.steps ~= nil then
+                last.steps[#last.steps + 1] = itemStep
+            else
+                items[#items + 1] = {steps = {itemStep}}
+            end
         end
-        return compileSequence(fns)
+        return compileSequence(items)
     elseif t == "alt" then
         local fns = {}
         for j, alt in ipairs(node.alts) do
@@ -1152,7 +1214,10 @@ function __K2L_Regex:toString()
 end
 
 local function newState(self, s)
-    -- st.bytes[i] is the byte at index i, filled lazily so long inputs are not copied
+    -- st.bytes[i] is the byte at index i: read at once for a short input, else filled lazily so long inputs are not copied
+    if #s <= 256 then
+        return {s = s, bytes = {s:byte(1, -1)}, starts = {}, ends = {}, names = self.____names}
+    end
     local bytes = setmetatable({}, {__index = function(t, i)
         if i < 1 or i > #s then
             return nil

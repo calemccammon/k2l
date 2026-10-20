@@ -5,11 +5,11 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -32,7 +32,6 @@ local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Source = __K2L_Class("containers.Source", __K2L_IterableBase)
@@ -202,9 +201,10 @@ end
 
 local Matrix = __K2L_Class("containers.Matrix")
 
+local ____lambda_1 = function(_, _) return 0.0 end
 function Matrix:____init(rows, cols, init)
     if init == nil then
-        init = function(_, _) return 0.0 end
+        init = ____lambda_1
     end
     self.rows = rows
     self.cols = cols
@@ -214,13 +214,16 @@ function Matrix:____init(rows, cols, init)
 end
 
 function Matrix:get(r, c)
-    return self.data:get(r * self.cols + c)
+    return self.data[r * self.cols + c + 1] or __K2L_IndexError(r * self.cols + c, self.data.size, "array")
 end
 
 function Matrix:set(r, c, v)
     local ____object_3 = self.data
     local ____key_2 = r * self.cols + c
-    ____object_3:set(____key_2, v)
+    if ____key_2 < 0 or ____key_2 >= ____object_3.size then
+        __K2L_IndexError(____key_2, ____object_3.size, "array")
+    end
+    ____object_3[____key_2 + 1] = v
 end
 
 function Matrix:times(o)
@@ -248,8 +251,9 @@ function Matrix.Row:iterator()
     return __K2L_IteratorOf(__K2L_IntRange.new(0, self.____outer.cols - 1):map(function(it) return self.____outer:get(self.r, it) end))
 end
 
+local ____lambda_2 = function(it) return __K2L_StringFormat("%.1f", it) end
 function Matrix.Row:toString()
-    return self:joinToString(" ", "(", ")", nil, nil, function(it) return __K2L_StringFormat("%.1f", it) end)
+    return self:joinToString(" ", "(", ")", nil, nil, ____lambda_2)
 end
 
 function Matrix:toString()
@@ -297,9 +301,11 @@ function Graph:____init()
     self.edges = __K2L_MapOf()
 end
 
+local ____lambda_3 = function() return __K2L_SetOf() end
+local ____lambda_4 = function() return __K2L_SetOf() end
 function Graph:edge(a, b)
-    self.edges:getOrPut(a, function() return __K2L_SetOf() end):add(b)
-    self.edges:getOrPut(b, function() return __K2L_SetOf() end)
+    self.edges:getOrPut(a, ____lambda_3):add(b)
+    self.edges:getOrPut(b, ____lambda_4)
 end
 
 function Graph:bfs(start)
@@ -323,8 +329,10 @@ function Graph:bfs(start)
     return seen:toList()
 end
 
+local ____lambda_5 = function(it) return 0 end
+local ____lambda_6 = function(it) return it == 0 end
 function Graph:topo()
-    local inDegree = self.edges:getKeys():associateWith(function(it) return 0 end):toMutableMap()
+    local inDegree = self.edges:getKeys():associateWith(____lambda_5):toMutableMap()
     local ____list = self.edges:getValues():flatten()
     local ____mod_5 = ____list.____modCount
     for ____i_6 = 1, ____list.size do
@@ -334,7 +342,7 @@ function Graph:topo()
             break
         end
     end
-    local ready = inDegree:filterValues(function(it) return it == 0 end):getKeys():toMutableList()
+    local ready = inDegree:filterValues(____lambda_6):getKeys():toMutableList()
     local out = __K2L_ListOf()
     while ready:isNotEmpty() do
         local n = ready:removeAt(0)
@@ -367,8 +375,14 @@ function Version:____init(major, minor)
     self.minor = minor
 end
 
+function Version.new(major, minor)
+    return setmetatable({major = major, minor = minor}, Version)
+end
+
+local ____lambda_7 = function(receiver) return receiver.major end
+local ____lambda_8 = function(receiver) return receiver.minor end
 function Version:compareTo(other)
-    return __K2L_CompareBy(__K2L_PropertyRef.new("major", "major@5176", function(receiver) return receiver.major end), __K2L_PropertyRef.new("minor", "minor@5192", function(receiver) return receiver.minor end))(self, other)
+    return __K2L_CompareBy(__K2L_PropertyRef.new("major", "major@5176", ____lambda_7), __K2L_PropertyRef.new("minor", "minor@5192", ____lambda_8))(self, other)
 end
 
 function Version:toString()
@@ -376,20 +390,27 @@ function Version:toString()
 end
 
 function Version:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.major) + __K2L_Hash(self.minor))
+    return (31 * self.major + self.minor + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Version:equals(other)
     return getmetatable(other) == Version and self.major == other.major and self.minor == other.minor
 end
 
+local ____lambda_9 = function(it) return it * 2 end
+local ____lambda_10 = function(x) return math.type(x) == "integer" end
+local ____lambda_11 = function(x) return __K2L_IsCharSequence(x) end
+local ____lambda_12 = function(it) return type(it) == "string" end
+local ____lambda_13 = function(r, c) return r * 3 + c + 0.0 end
+local ____lambda_14 = function(r, c) return r == c and 1.0 or 0.0 end
+local ____lambda_15 = function(it) return it.minor end
 local function main()
     local v = Vec.new(1)
     putAll(v, __K2L_ReadOnlyListOf(5, 3, 8, 1))
     v:plusAssign(9)
     print(__K2L_Str(v) .. " size=" .. v.size .. " growths=" .. v.growths .. " max=" .. __K2L_Str(maxOrNull(v)) .. " has8=" .. tostring(v:contains(8)) .. " has4=" .. tostring(v:contains(4)))
     v:set(1, 30)
-    print("removed " .. v:removeAt(0) .. " -> " .. __K2L_Str(v) .. ", doubled " .. __K2L_Str(v:mapTo(function(it) return it * 2 end)))
+    print("removed " .. v:removeAt(0) .. " -> " .. __K2L_Str(v) .. ", doubled " .. __K2L_Str(v:mapTo(____lambda_9)))
     local ____ok, ____result_1 = pcall(function()
         v:get(10)
     end)
@@ -412,18 +433,18 @@ local function main()
     local src = anything
     local ____arg_2 = src.size
     local ____result_2
-    ____result_2 = anything:filter(function(x) return math.type(x) == "integer" end)
+    ____result_2 = anything:filter(____lambda_10)
     local ____arg_3 = ____result_2
     local ____result_3
-    ____result_3 = anything:filter(function(x) return __K2L_IsCharSequence(x) end)
+    ____result_3 = anything:filter(____lambda_11)
     local ____arg_4 = ____result_3
     local ____result_4
-    ____result_4 = src:count(function(it) return type(it) == "string" end)
+    ____result_4 = src:count(____lambda_12)
     print(____arg_2 .. " ints=" .. __K2L_Str(____arg_3) .. " texts=" .. __K2L_Str(____arg_4) .. " strings=" .. ____result_4)
     print(__K2L_Str(maxOrNull(Vec:of(Version.new(1, 2), Version.new(1, 10), Version.new(0, 9)))))
     print(Vec.new():isEmpty() and maxOrNull(Vec.new()) == nil)
-    local m = Matrix.new(2, 3, function(r, c) return r * 3 + c + 0.0 end)
-    local id = Matrix.new(3, 3, function(r, c) return r == c and 1.0 or 0.0 end)
+    local m = Matrix.new(2, 3, ____lambda_13)
+    local id = Matrix.new(3, 3, ____lambda_14)
     id:set(0, 2, 2.0)
     print(__K2L_Str(m:times(id)))
     print(__K2L_Str(m:invoke(1):sum()))
@@ -454,7 +475,7 @@ local function main()
     g:edge("jacket", "shirt")
     local ____receiver_2 = __K2L_RunCatching(function() return g:topo() end):exceptionOrNull()
     print(__K2L_Str(____receiver_2 and ____receiver_2.message))
-    local comparators = __K2L_ReadOnlyListOf(__K2L_NaturalOrder, __K2L_ReverseOrder, __K2L_CompareBy(function(it) return it.minor end))
+    local comparators = __K2L_ReadOnlyListOf(__K2L_NaturalOrder, __K2L_ReverseOrder, __K2L_CompareBy(____lambda_15))
     local versions = __K2L_ReadOnlyListOf(Version.new(2, 0), Version.new(1, 5), Version.new(1, 12))
     local ____mod_8 = comparators.____modCount
     for ____i_9 = 1, comparators.size do

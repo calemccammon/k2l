@@ -2,7 +2,6 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
@@ -33,6 +32,10 @@ Cmd.Say = __K2L_Class("app.cmds.Cmd$Say", nil, Cmd)
 
 function Cmd.Say:____init(text)
     self.text = text
+end
+
+function Cmd.Say.new(text)
+    return setmetatable({text = text}, Cmd.Say)
 end
 
 function Cmd.Say:toString()
@@ -77,7 +80,7 @@ local function describe(c)
         return "look"
     elseif __K2L_Equals(c, Cmd.Quit) then
         return "quit"
-    elseif __K2L_InstanceOf(c, Cmd.Say) then
+    elseif getmetatable(c) == Cmd.Say then
         return "say " .. c.text
     end
 end

@@ -1,7 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_NeedsReflect = ____lualib.__K2L_NeedsReflect
@@ -15,12 +14,16 @@ function D:____init(x)
     self.x = x
 end
 
+function D.new(x)
+    return setmetatable({x = x}, D)
+end
+
 function D:toString()
     return "D(x=" .. self.x .. ")"
 end
 
 function D:hashCode()
-    return __K2L_Hash(self.x)
+    return self.x
 end
 
 function D:equals(other)
@@ -47,17 +50,27 @@ local function probe(name, f)
     end
 end
 
+local ____lambda_1 = function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end
+local ____lambda_2 = function() return __K2L_NeedsReflect(__K2L_KClassOf(O)) end
+local ____lambda_3 = function() return __K2L_NeedsReflect(__K2L_KClassOf(S)) end
+local ____lambda_4 = function() return __K2L_NeedsReflect(__K2L_KClassOf(Op)) end
+local ____lambda_5 = function() return __K2L_NeedsReflect(__K2L_KClassOf(Ab)) end
+local ____lambda_6 = function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end
+local ____lambda_7 = function() return __K2L_NeedsReflect(__K2L_KClassOf(S)) end
+local ____lambda_8 = function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end
+local ____lambda_9 = function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end
+local ____lambda_10 = function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end
 local function main()
-    probe("isData", function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end)
-    probe("objectInstance", function() return __K2L_NeedsReflect(__K2L_KClassOf(O)) end)
-    probe("sealedSubclasses", function() return __K2L_NeedsReflect(__K2L_KClassOf(S)) end)
-    probe("isOpen", function() return __K2L_NeedsReflect(__K2L_KClassOf(Op)) end)
-    probe("isAbstract", function() return __K2L_NeedsReflect(__K2L_KClassOf(Ab)) end)
-    probe("isFinal", function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end)
-    probe("isSealed", function() return __K2L_NeedsReflect(__K2L_KClassOf(S)) end)
-    probe("isCompanion", function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end)
-    probe("isInner", function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end)
-    probe("supertypes", function() return __K2L_NeedsReflect(__K2L_KClassOf(D)) end)
+    probe("isData", ____lambda_1)
+    probe("objectInstance", ____lambda_2)
+    probe("sealedSubclasses", ____lambda_3)
+    probe("isOpen", ____lambda_4)
+    probe("isAbstract", ____lambda_5)
+    probe("isFinal", ____lambda_6)
+    probe("isSealed", ____lambda_7)
+    probe("isCompanion", ____lambda_8)
+    probe("isInner", ____lambda_9)
+    probe("supertypes", ____lambda_10)
 end
 
 main()

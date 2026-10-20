@@ -13,10 +13,30 @@ import org.jetbrains.kotlin.psi.*
  */
 internal fun KtClass.hasDataMembers(): Boolean = isData() || hasModifier(KtTokens.VALUE_KEYWORD) || hasModifier(KtTokens.INLINE_KEYWORD)
 
-/** `field.hashCode()`: a `Double` that holds an integral value hashes like the JVM's Double where numbers are doubles too. */
+/**
+ * `field.hashCode()`: an `Int` (`Short`, `Byte`) is its own hash and a `Boolean` 1231 or 1237; a `Double` that holds an
+ * integral value hashes like the JVM's Double where numbers are doubles too.
+ */
 private fun FileTransformer.fieldHash(p: KtParameter, value: LuaExpr): LuaExpr = with(session) {
-    val isDouble = p.returnType.withoutFlexibility.let { it.isDoubleType && !it.isMarkedNullable }
-    if (isDouble && !target.hasIntegers) LuaCall(lualibRef("Hash", "__K2L_DoubleHash"), listOf(value)) else lualibCall("Hash", value)
+    val type = p.returnType.withoutFlexibility
+    when {
+        type.isMarkedNullable -> lualibCall("Hash", value)
+        type.isIntType || type.isShortType || type.isByteType -> value
+        type.isBooleanType -> LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.And, value, LuaNumber("1231")), LuaNumber("1237"))
+        type.isDoubleType && !target.hasIntegers -> LuaCall(lualibRef("Hash", "__K2L_DoubleHash"), listOf(value))
+        else -> lualibCall("Hash", value)
+    }
+}
+
+/**
+ * `result = 31 * result + h` over the field hashes, wrapped to 32 bits: once at the end where integers wrap modulo 2^64
+ * (5.3/5.4), else at each step (doubles are exact only below 2^53).
+ */
+private fun FileTransformer.combinedHash(hashes: List<LuaExpr>): LuaExpr {
+    if (hashes.isEmpty()) return LuaNumber("0")
+    val step = { acc: LuaExpr, h: LuaExpr -> LuaBinary(LuaBinOp.Add, LuaBinary(LuaBinOp.Mul, LuaNumber("31"), acc), h) }
+    if (target.hasIntegers) return if (hashes.size == 1) hashes[0] else wrapInt32(hashes.reduce(step))
+    return hashes.reduce { acc, h -> lualibCall("ToInt32", step(acc, h)) }
 }
 
 internal fun FileTransformer.dataClassMembers(c: KtClass, ref: LuaExpr): Unit = with(session) {
@@ -37,9 +57,7 @@ internal fun FileTransformer.dataClassMembers(c: KtClass, ref: LuaExpr): Unit = 
     }
     if (c.declaredFunction("hashCode") == null) {
         // result = 31 * result + field.hashCode(), as the Kotlin compiler generates.
-        val hash = props.map { p -> fieldHash(p, LuaIndex(selfRef(), LuaString(p.name!!))) }
-            .reduceOrNull { acc, h -> lualibCall("ToInt32", LuaBinary(LuaBinOp.Add, LuaBinary(LuaBinOp.Mul, LuaNumber("31"), acc), h)) }
-            ?: LuaNumber("0")
+        val hash = combinedHash(props.map { p -> fieldHash(p, LuaIndex(selfRef(), LuaString(p.name!!))) })
         emitMethod(ref, "hashCode", emptyList(), listOf(LuaReturn(listOf(hash))))
     }
     if (c.declaredFunction("equals") == null) {

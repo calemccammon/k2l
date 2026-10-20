@@ -91,12 +91,15 @@ end
 
 __K2L_PropertyOverride(Logged, "size", "getSize")
 
+local ____lambda_1 = function(it) return it + 1 end
+local ____lambda_2 = function(it) return it > 15 end
+local ____lambda_3 = function(it) return #it end
 local function readOnlyList()
     local t = Tens.new(5)
     print(__K2L_Str(t) .. " size=" .. t:getSize() .. " [2]=" .. t:get(2) .. " get=" .. t:get(4) .. " (" .. t.reads .. ")")
     print("contains " .. tostring(t:contains(30)) .. " " .. tostring(t:contains(35)) .. " indexOf " .. t:indexOf(20) .. " " .. t:lastIndexOf(40) .. " " .. t:indexOf(7) .. " (" .. t.reads .. ")")
     print("first " .. t:first() .. " last " .. t:last() .. " getOrNull " .. __K2L_Str(t:getOrNull(9)) .. " " .. __K2L_Str(t:getOrNull(1)) .. " isEmpty " .. tostring(t:isEmpty()) .. " (" .. t.reads .. ")")
-    print("map " .. __K2L_Str(t:map(function(it) return it + 1 end)) .. " filter " .. __K2L_Str(t:filter(function(it) return it > 15 end)) .. " sum " .. t:sum() .. " reversed " .. __K2L_Str(t:reversed()) .. " (" .. t.reads .. ")")
+    print("map " .. __K2L_Str(t:map(____lambda_1)) .. " filter " .. __K2L_Str(t:filter(____lambda_2)) .. " sum " .. t:sum() .. " reversed " .. __K2L_Str(t:reversed()) .. " (" .. t.reads .. ")")
     print("join " .. t:joinToString("-") .. " sortedDesc " .. __K2L_Str(t:sortedDescending()) .. " take " .. __K2L_Str(t:take(2)) .. " drop " .. __K2L_Str(t:drop(3)) .. " (" .. t.reads .. ")")
     print("subList " .. __K2L_Str(t:subList(1, 3)) .. " slice " .. __K2L_Str(t:slice(__K2L_ReadOnlyListOf(0, 4))) .. " chunked " .. __K2L_Str(t:chunked(2)) .. " (" .. t.reads .. ")")
     print("equals " .. tostring(t:equals(__K2L_ReadOnlyListOf(0, 10, 20, 30, 40))) .. " " .. tostring(__K2L_Equals(__K2L_ReadOnlyListOf(0, 10, 20, 30, 40), t)) .. " " .. tostring(t:equals(Tens.new(5))) .. " " .. tostring(t:equals(Tens.new(4))) .. " (" .. t.reads .. ")")
@@ -136,10 +139,13 @@ local function readOnlyList()
         local i, v = ____destructured.index, ____destructured.value
         return i + v
     end)) .. " (" .. t.reads .. ")")
-    print("Fixed " .. __K2L_Str(Fixed.new(3)) .. " " .. __K2L_Str(Fixed.new(2):map(function(it) return #it end)) .. " " .. __K2L_Str(Fixed.new(0)) .. " (" .. t.reads .. ")")
+    print("Fixed " .. __K2L_Str(Fixed.new(3)) .. " " .. __K2L_Str(Fixed.new(2):map(____lambda_3)) .. " " .. __K2L_Str(Fixed.new(0)) .. " (" .. t.reads .. ")")
     print("reads " .. t.reads)
 end
 
+local ____lambda_4 = function(it)
+    return (it >= 0 and it % 2 or 0 - -it % 2) == 0
+end
 local function mutableList()
     local l = Logged.new()
     l:add(1)
@@ -155,7 +161,7 @@ local function mutableList()
     print("set and += " .. __K2L_Str(l) .. " " .. l:drain())
     l:remove(3)
     print("remove " .. __K2L_Str(l) .. " " .. l:drain())
-    l:removeAll(function(it) return math.fmod(it, 2) == 0 end)
+    l:removeAll(____lambda_4)
     print("removeAll " .. __K2L_Str(l) .. " " .. l:drain())
     l:addAll(__K2L_ReadOnlyListOf(9, 7, 8))
     l:drain()

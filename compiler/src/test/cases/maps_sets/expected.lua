@@ -1,8 +1,10 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
+local __K2L_List = ____lualib.__K2L_List
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -11,7 +13,6 @@ local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Key = __K2L_Class("Key")
 
@@ -20,18 +21,25 @@ function Key:____init(x, y)
     self.y = y
 end
 
+function Key.new(x, y)
+    return setmetatable({x = x, y = y}, Key)
+end
+
 function Key:toString()
     return "Key(x=" .. self.x .. ", y=" .. self.y .. ")"
 end
 
 function Key:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.x) + __K2L_Hash(self.y))
+    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Key:equals(other)
     return getmetatable(other) == Key and self.x == other.x and self.y == other.y
 end
 
+local ____lambda_1 = function(it) return it.value > 30 end
+local ____lambda_2 = function(it) return it.value + 1 end
+local ____lambda_3 = function() return 3 end
 local function main()
     local ages = __K2L_ReadOnlyMapOf(__K2L_Pair.new("ann", 31), __K2L_Pair.new("bob", 25))
     print(__K2L_Str(ages))
@@ -65,11 +73,21 @@ local function main()
         local k, v = ____destructured.key, ____destructured.value
         return k .. v
     end)))
-    print(__K2L_Str(ages:filter(function(it) return it.value > 30 end)))
-    print(__K2L_Str(ages:mapValues(function(it) return it.value + 1 end)))
-    print(__K2L_Str(ages:getEntries():map(function(it) return it.key end)))
+    print(__K2L_Str(ages:filter(____lambda_1)))
+    print(__K2L_Str(ages:mapValues(____lambda_2)))
+    local ____list = ages:getEntries()
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_2 = ____list:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_1[____i_2]
+        ____count = ____count + 1
+        ____out[____count] = it.key
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     local counts = __K2L_MapOf()
-    for c in ("mississippi"):gmatch(".") do
+    for ____i_3 = 1, #"mississippi" do
+        local c = ("mississippi"):sub(____i_3, ____i_3)
         counts:set(c, (counts:get(c) or 0) + 1)
     end
     print(__K2L_Str(counts))
@@ -78,7 +96,7 @@ local function main()
     m:put("b", 2)
     m:remove("a")
     print(__K2L_Str(m))
-    print(m:getOrPut("c", function() return 3 end))
+    print(m:getOrPut("c", ____lambda_3))
     print(__K2L_Str(m))
     local grid = __K2L_MapOf()
     local ____key = Key.new(1, 2)
@@ -101,14 +119,35 @@ local function main()
     print(__K2L_Equals(__K2L_ReadOnlySetOf(1, 2), __K2L_ReadOnlySetOf(2, 1)))
     print(__K2L_Str(__K2L_ReadOnlyListOf(3, 3, 1):toSet()))
     local sum = 0
-    local ____items_1, ____n_2 = s:____array()
-    for ____i_2 = 1, ____n_2 do
-        local x = ____items_1[____i_2]
+    local ____items_2, ____n_3 = s:____array()
+    for ____i_4 = 1, ____n_3 do
+        local x = ____items_2[____i_4]
         sum = sum + x
     end
     print(sum)
-    print(__K2L_Str(__K2L_ReadOnlyListOf("apple", "avocado", "banana"):groupBy(function(it) return __K2L_Text.first(it) end)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("a", "bb", "ccc"):associateWith(function(it) return #it end)))
+    local ____list_1 = __K2L_ReadOnlyListOf("apple", "avocado", "banana")
+    local ____result = __K2L_Map.new()
+    local ____items_3, ____n_4 = ____list_1:____array()
+    for ____i_5 = 1, ____n_4 do
+        local it = ____items_3[____i_5]
+        local ____value = __K2L_Text.first(it)
+        local ____group = ____result:get(____value)
+        if ____group == nil then
+            ____group = __K2L_List.new()
+            ____result:put(____value, ____group)
+        end
+        ____group:add(it)
+    end
+    print(__K2L_Str(____result))
+    local ____list_2 = __K2L_ReadOnlyListOf("a", "bb", "ccc")
+    local ____result_1 = __K2L_Map.new()
+    local ____items_4, ____n_5 = ____list_2:____array()
+    for ____i_6 = 1, ____n_5 do
+        local it = ____items_4[____i_6]
+        local ____value_1 = #it
+        ____result_1:put(it, ____value_1)
+    end
+    print(__K2L_Str(____result_1))
 end
 
 main()

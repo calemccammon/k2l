@@ -604,6 +604,8 @@ object CollectionMappings {
                     site.receiverType,
                 ) -> index(self, site.arg(0))
 
+                site.transformer.isPrimitiveArray(site.receiverType) -> site.transformer.primitiveArrayRead(self, site.arg(0))
+
                 else -> LuaMethodCall(self, "get", site.args)
             }
 

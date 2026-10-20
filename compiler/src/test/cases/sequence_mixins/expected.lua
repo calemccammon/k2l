@@ -16,6 +16,10 @@ function Base:____init(tag)
     self.tag = tag
 end
 
+function Base.new(tag)
+    return setmetatable({tag = tag}, Base)
+end
+
 function Base:describe()
     return "Base(" .. self.tag .. ")"
 end
@@ -103,6 +107,9 @@ function Both:iterator()
     return __K2L_IteratorOf(__K2L_IntRange.new(1, self.n))
 end
 
+local ____lambda_1 = function(it) return it + 1 end
+local ____lambda_2 = function(it) return it > 3 end
+local ____lambda_3 = function(it) return it * 2 end
 local function main()
     local both = Both.new(3)
     print(__K2L_Str(both:toList()))
@@ -112,7 +119,7 @@ local function main()
     local e = Evens.new(10)
     print(e:describe())
     print(__K2L_Str(e:toList()))
-    print(__K2L_Str(e:map(function(it) return it + 1 end):filter(function(it) return it > 3 end):toList()))
+    print(__K2L_Str(e:map(____lambda_1):filter(____lambda_2):toList()))
     print(e:sum())
     for _, x in e:iter() do
         io.write(tostring(x))
@@ -129,7 +136,7 @@ local function main()
     print(q:area())
     print(__K2L_Str(q:toList()))
     print(q:describe())
-    print(__K2L_Str(q:map(function(it) return it * 2 end):toList()))
+    print(__K2L_Str(q:map(____lambda_3):toList()))
 end
 
 main()

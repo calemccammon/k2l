@@ -3,6 +3,7 @@ local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsExcepti
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
@@ -43,25 +44,49 @@ local function tokens(src)
     return out
 end
 
+local ____lambda_1 = function(it) return it.value end
+local ____lambda_2 = function(it) return it.value end
+local ____lambda_3 = function(it) return it.value end
+local ____lambda_4 = function(it) return it.value end
 local function main()
     print(__K2L_Str(tokens("x1 = 3.25*(y+42) / z_9 ? 7")))
     local word = __K2L_Regex.new("\\w+")
     local text = "hello world"
-    print(__K2L_Str(__K2L_ReadOnlyListOf(0, 1, 5, 6, 11):map(function(it)
-        local ____receiver_1 = word:matchAt(text, it)
-        return ____receiver_1 and ____receiver_1.value
-    end)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(0, 5, 6, 11):map(function(it) return word:matchesAt(text, it) end)))
+    local ____list = __K2L_ReadOnlyListOf(0, 1, 5, 6, 11)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        local ____result_1
+        do
+            local ____receiver_1 = word:matchAt(text, it)
+            ____result_1 = ____receiver_1 and ____receiver_1.value
+        end
+        ____count = ____count + 1
+        ____out[____count] = ____result_1
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
+    local ____list_1 = __K2L_ReadOnlyListOf(0, 5, 6, 11)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = word:matchesAt(text, it)
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     local ____receiver_2 = __K2L_Regex.new("(?<=o)r"):matchAt("world", 2)
     print(__K2L_Str(____receiver_2 and ____receiver_2.range) .. " " .. __K2L_Str(__K2L_Regex.new("^w"):matchAt("a world", 2)) .. " " .. tostring(__K2L_Regex.new("\\bw"):matchesAt("a world", 2)))
-    local ____list = __K2L_ReadOnlyListOf(-1, 12)
-    for ____i = 1, ____list.size do
-        local bad = ____list[____i]
-        local ____ok, ____result_1 = pcall(function()
+    local ____list_2 = __K2L_ReadOnlyListOf(-1, 12)
+    for ____i_2 = 1, ____list_2.size do
+        local bad = ____list_2[____i_2]
+        local ____ok, ____result_2 = pcall(function()
             word:matchAt(text, bad)
         end)
         if not ____ok then
-            local ____error = __K2L_ToThrowable(____result_1)
+            local ____error = __K2L_ToThrowable(____result_2)
             if __K2L_InstanceOf(____error, __K2L_IndexOutOfBoundsException) then
                 local e = ____error
                 print("matchAt(" .. bad .. "): " .. __K2L_Str(__K2L_KClassOfValue(e).simpleName))
@@ -70,10 +95,10 @@ local function main()
             end
         end
     end
-    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[a-z&&[^aeiou]]+"):findAllFactory("programming language")):map(function(it) return it.value end):toList()))
-    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[\\w&&\\D]+"):findAllFactory("abc123def_45")):map(function(it) return it.value end):toList()))
-    print(__K2L_Sequence.new(__K2L_Regex.new("[a-m&&h-z]"):findAllFactory("abcdefghijklmnopqrstuvwxyz")):joinToString("", nil, nil, nil, nil, function(it) return it.value end))
-    print(__K2L_Regex.new("[A-Z&&[^H]]"):replace("Hello World", "#") .. " " .. __K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[0-9&&[^5]]{2}"):findAllFactory("12345567")):map(function(it) return it.value end):toList()))
+    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[a-z&&[^aeiou]]+"):findAllFactory("programming language")):map(____lambda_1):toList()))
+    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[\\w&&\\D]+"):findAllFactory("abc123def_45")):map(____lambda_2):toList()))
+    print(__K2L_Sequence.new(__K2L_Regex.new("[a-m&&h-z]"):findAllFactory("abcdefghijklmnopqrstuvwxyz")):joinToString("", nil, nil, nil, nil, ____lambda_3))
+    print(__K2L_Regex.new("[A-Z&&[^H]]"):replace("Hello World", "#") .. " " .. __K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("[0-9&&[^5]]{2}"):findAllFactory("12345567")):map(____lambda_4):toList()))
     print(tostring(__K2L_Sequence.new(__K2L_Regex.new("\\p{Z}"):findAllFactory("a b\tc")):count()) .. " " .. __K2L_Sequence.new(__K2L_Regex.new("\\p{IsWhite_Space}"):findAllFactory("a b\tc\nd")):count() .. " " .. __K2L_Str(__K2L_Regex.new("\\p{javaWhitespace}+"):split("a \t b\031c")))
 end
 

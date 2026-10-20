@@ -11,6 +11,7 @@ local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -202,6 +203,8 @@ function Mode:compareTo(other)
     return self.ordinal - other.ordinal
 end
 
+local ____lambda_1 = function() return "mode a" end
+local ____lambda_2 = function() return "mode b" end
 function Mode:____initEnum()
     do
         local ____A = __K2L_Class("Mode", Mode)
@@ -251,7 +254,15 @@ local function main()
     print(Quiet.made)
     print("before Level")
     print(Level.HIGH.code)
-    print(__K2L_Str(__K2L_EnumValues(Level):map(function(it) return it.name end)))
+    local ____values = Level.____values
+    local ____out = {}
+    local ____count = 0
+    for ____i = 1, #____values do
+        local it = ____values[____i]
+        ____count = ____count + 1
+        ____out[____count] = it.name
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(__K2L_Str(Level.default))
     print(__K2L_EnumValueOf(Level, "LOW").code)
     print("before Mode")

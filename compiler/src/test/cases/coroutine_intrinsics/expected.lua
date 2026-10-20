@@ -63,9 +63,10 @@ local function nested()
     end)
 end
 
+local ____lambda_1 = function() return immediate(5) + 1 end
 local function nestedSync()
     return __K2L_SuspendCoroutineUninterceptedOrReturn(function(cont)
-        local block = function() return immediate(5) + 1 end
+        local block = ____lambda_1
         return __K2L_StartCoroutineUninterceptedOrReturn(block, cont)
     end)
 end

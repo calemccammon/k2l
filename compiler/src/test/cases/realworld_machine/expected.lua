@@ -9,11 +9,13 @@ local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotNull = ____lualib.__K2L_NotNull
@@ -26,7 +28,6 @@ local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_Shl = ____lualib.__K2L_Shl
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
@@ -51,12 +52,16 @@ function Instr.Set:____init(reg, value)
     self.value = value
 end
 
+function Instr.Set.new(reg, value)
+    return setmetatable({reg = reg, value = value}, Instr.Set)
+end
+
 function Instr.Set:toString()
     return "Set(reg=" .. self.reg .. ", value=" .. __K2L_Str(self.value) .. ")"
 end
 
 function Instr.Set:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value))
+    return (31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Instr.Set:equals(other)
@@ -71,12 +76,16 @@ function Instr.Add:____init(reg, value)
     self.value = value
 end
 
+function Instr.Add.new(reg, value)
+    return setmetatable({reg = reg, value = value}, Instr.Add)
+end
+
 function Instr.Add:toString()
     return "Add(reg=" .. self.reg .. ", value=" .. __K2L_Str(self.value) .. ")"
 end
 
 function Instr.Add:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value))
+    return (31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Instr.Add:equals(other)
@@ -91,12 +100,16 @@ function Instr.Mul:____init(reg, value)
     self.value = value
 end
 
+function Instr.Mul.new(reg, value)
+    return setmetatable({reg = reg, value = value}, Instr.Mul)
+end
+
 function Instr.Mul:toString()
     return "Mul(reg=" .. self.reg .. ", value=" .. __K2L_Str(self.value) .. ")"
 end
 
 function Instr.Mul:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value))
+    return (31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Instr.Mul:equals(other)
@@ -111,12 +124,16 @@ function Instr.Mod:____init(reg, value)
     self.value = value
 end
 
+function Instr.Mod.new(reg, value)
+    return setmetatable({reg = reg, value = value}, Instr.Mod)
+end
+
 function Instr.Mod:toString()
     return "Mod(reg=" .. self.reg .. ", value=" .. __K2L_Str(self.value) .. ")"
 end
 
 function Instr.Mod:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value))
+    return (31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Instr.Mod:equals(other)
@@ -131,12 +148,16 @@ function Instr.Jnz:____init(test, offset)
     self.offset = offset
 end
 
+function Instr.Jnz.new(test, offset)
+    return setmetatable({test = test, offset = offset}, Instr.Jnz)
+end
+
 function Instr.Jnz:toString()
     return "Jnz(test=" .. __K2L_Str(self.test) .. ", offset=" .. __K2L_Str(self.offset) .. ")"
 end
 
 function Instr.Jnz:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.test) + __K2L_Hash(self.offset))
+    return (31 * __K2L_Hash(self.test) + __K2L_Hash(self.offset) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Instr.Jnz:equals(other)
@@ -148,6 +169,10 @@ __K2L_ClassInfo(Instr.Out, "Instr.Out", "Instr$Out", "class")
 
 function Instr.Out:____init(value)
     self.value = value
+end
+
+function Instr.Out.new(value)
+    return setmetatable({value = value}, Instr.Out)
 end
 
 function Instr.Out:toString()
@@ -178,6 +203,10 @@ function Operand.Lit:____init(v)
     self.v = v
 end
 
+function Operand.Lit.new(v)
+    return setmetatable({v = v}, Operand.Lit)
+end
+
 function Operand.Lit:toString()
     return "Lit(v=" .. self.v .. ")"
 end
@@ -195,6 +224,10 @@ __K2L_ClassInfo(Operand.Reg, "Operand.Reg", "Operand$Reg", "class")
 
 function Operand.Reg:____init(r)
     self.r = r
+end
+
+function Operand.Reg.new(r)
+    return setmetatable({r = r}, Operand.Reg)
 end
 
 function Operand.Reg:toString()
@@ -217,50 +250,81 @@ end
 local INSTR = __K2L_Regex.new("^(\\w{3})(?:\\s+(\\S+))?(?:\\s+(\\S+))?$")
 
 local function parseProgram(text)
-    return __K2L_StringLines(text):map(function(it)
-        return __K2L_StringTrim(__K2L_Text.substringBefore(it, "#"))
-    end):filter(function(it) return #it > 0 end):map(function(line)
-        local ____value = INSTR:matchEntire(line)
-        if ____value == nil then
-            error(__K2L_IllegalArgumentException.new("bad line: '" .. line .. "'"))
+    local ____list = __K2L_StringLines(text)
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_StringTrim(__K2L_Text.substringBefore(it, "#"))
+    end
+    local ____list_1 = __K2L_ListWrap(____out, ____count)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        if #it > 0 then
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = it
         end
-        local match = ____value
-        local ____destructured = match.destructured
-        local op, a, b = ____destructured[1], ____destructured[2], ____destructured[3]
-        if op == "set" then
-            return Instr.Set.new(__K2L_StringCharAt(a, 0), parseOperand(b))
-        elseif op == "add" then
-            return Instr.Add.new(__K2L_StringCharAt(a, 0), parseOperand(b))
-        elseif op == "mul" then
-            return Instr.Mul.new(__K2L_StringCharAt(a, 0), parseOperand(b))
-        elseif op == "mod" then
-            return Instr.Mod.new(__K2L_StringCharAt(a, 0), parseOperand(b))
-        elseif op == "jnz" then
-            return Instr.Jnz.new(parseOperand(a), parseOperand(b))
-        elseif op == "out" then
-            return Instr.Out.new(parseOperand(a))
-        elseif op == "hlt" then
-            return Instr.Halt
-        else
-            error(__K2L_IllegalStateException.new("unknown op " .. op))
+    end
+    local ____list_2 = __K2L_ListWrap(____out_1, ____count_1)
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_2, ____n_2 = ____list_2:____array()
+    for ____i_2 = 1, ____n_2 do
+        local line = ____items_2[____i_2]
+        local ____result
+        do
+            local ____value = INSTR:matchEntire(line)
+            if ____value == nil then
+                error(__K2L_IllegalArgumentException.new("bad line: '" .. line .. "'"))
+            end
+            local match = ____value
+            local ____destructured = match.destructured
+            local op, a, b = ____destructured[1], ____destructured[2], ____destructured[3]
+            if op == "set" then
+                ____result = Instr.Set.new(0 >= 0 and 0 < #a and a:sub(0 + 1, 0 + 1) or __K2L_IndexError(0, #a, "string"), parseOperand(b))
+            elseif op == "add" then
+                ____result = Instr.Add.new(0 >= 0 and 0 < #a and a:sub(0 + 1, 0 + 1) or __K2L_IndexError(0, #a, "string"), parseOperand(b))
+            elseif op == "mul" then
+                ____result = Instr.Mul.new(0 >= 0 and 0 < #a and a:sub(0 + 1, 0 + 1) or __K2L_IndexError(0, #a, "string"), parseOperand(b))
+            elseif op == "mod" then
+                ____result = Instr.Mod.new(0 >= 0 and 0 < #a and a:sub(0 + 1, 0 + 1) or __K2L_IndexError(0, #a, "string"), parseOperand(b))
+            elseif op == "jnz" then
+                ____result = Instr.Jnz.new(parseOperand(a), parseOperand(b))
+            elseif op == "out" then
+                ____result = Instr.Out.new(parseOperand(a))
+            elseif op == "hlt" then
+                ____result = Instr.Halt
+            else
+                error(__K2L_IllegalStateException.new("unknown op " .. op))
+            end
         end
-    end)
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = ____result
+    end
+    return __K2L_ListWrap(____out_2, ____count_2)
 end
 
 local Machine = __K2L_Class("Machine")
 __K2L_ClassInfo(Machine, "Machine", "Machine", "class")
 
+local ____lambda_1 = function(it) return 0 end
 function Machine:____init(program)
     self.program = program
-    self.registers = __K2L_JdkCollections.withDefault(__K2L_MapOf(), function(it) return 0 end)
+    self.registers = __K2L_JdkCollections.withDefault(__K2L_MapOf(), ____lambda_1)
     self.output = __K2L_ListOf()
     self.steps = 0
 end
 
 function Machine:value(____this)
-    if __K2L_InstanceOf(____this, Operand.Lit) then
+    local ____mt = getmetatable(____this)
+    if ____mt == Operand.Lit then
         return ____this.v
-    elseif __K2L_InstanceOf(____this, Operand.Reg) then
+    elseif ____mt == Operand.Reg then
         return self.registers:getValue(____this.r)
     end
 end
@@ -275,28 +339,29 @@ function Machine:run(limit)
             do
                 self.steps = self.steps + 1
                 local ins = self.program:get(pc)
-                if __K2L_InstanceOf(ins, Instr.Set) then
+                local ____mt_1 = getmetatable(ins)
+                if ____mt_1 == Instr.Set then
                     local ____object_3 = self.registers
                     local ____key_3 = ins.reg
                     ____object_3:set(____key_3, self:value(ins.value))
-                elseif __K2L_InstanceOf(ins, Instr.Add) then
+                elseif ____mt_1 == Instr.Add then
                     local ____object_2 = self.registers
                     local ____key_2 = ins.reg
                     ____object_2:set(____key_2, self.registers:getValue(ins.reg) + self:value(ins.value))
-                elseif __K2L_InstanceOf(ins, Instr.Mul) then
+                elseif ____mt_1 == Instr.Mul then
                     local ____object_1 = self.registers
                     local ____key_1 = ins.reg
                     ____object_1:set(____key_1, self.registers:getValue(ins.reg) * self:value(ins.value))
-                elseif __K2L_InstanceOf(ins, Instr.Mod) then
+                elseif ____mt_1 == Instr.Mod then
                     local ____object = self.registers
                     local ____key = ins.reg
                     ____object:set(____key, __K2L_IRem(self.registers:getValue(ins.reg), self:value(ins.value)))
-                elseif __K2L_InstanceOf(ins, Instr.Jnz) then
+                elseif ____mt_1 == Instr.Jnz then
                     if self:value(ins.test) ~= 0 then
                         pc = pc + __K2L_ToInt32(self:value(ins.offset))
                         goto ____continue
                     end
-                elseif __K2L_InstanceOf(ins, Instr.Out) then
+                elseif ____mt_1 == Instr.Out then
                     self.output:add(self:value(ins.value))
                 elseif __K2L_Equals(ins, Instr.Halt) then
                     goto ____inline_end
@@ -326,11 +391,22 @@ local function applyMask(mask, value)
     return result
 end
 
+local ____lambda_2 = function(bit, acc, c)
+    return c == "1" and acc | 1 << bit or acc
+end
+local ____lambda_3 = function(it) return it.value == "X" end
 local function floatingAddresses(mask, address)
-    local base = __K2L_StringToList(mask:reverse()):foldIndexed(address, function(bit, acc, c)
-        return c == "1" and acc | 1 << bit or acc
-    end)
-    local floating = __K2L_StringToList(mask:reverse()):withIndex():filter(function(it) return it.value == "X" end):map(function(it) return it.index end)
+    local base = __K2L_StringToList(mask:reverse()):foldIndexed(address, ____lambda_2)
+    local ____list_3 = __K2L_StringToList(mask:reverse()):withIndex():filter(____lambda_3)
+    local ____out_3 = {}
+    local ____count_3 = 0
+    local ____items_3, ____n_3 = ____list_3:____array()
+    for ____i_3 = 1, ____n_3 do
+        local it = ____items_3[____i_3]
+        ____count_3 = ____count_3 + 1
+        ____out_3[____count_3] = it.index
+    end
+    local floating = __K2L_ListWrap(____out_3, ____count_3)
     return __K2L_IntRange.new(0, __K2L_Shl(1, floating.size) - 1):map(function(combo)
         return floating:foldIndexed(base, function(i, acc, bit)
             return combo & __K2L_Shl(1, i) ~= 0 and acc | 1 << bit or acc & ~(1 << bit)
@@ -340,6 +416,9 @@ end
 
 local MEMORY = __K2L_Text.trimIndent("\n    mask = XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X\n    mem[8] = 11\n    mem[7] = 101\n    mem[8] = 0\n    mask = 000000000000000000000000000000X1001X\n    mem[42] = 100\n")
 
+local ____lambda_4 = function(____p1)
+    return __K2L_StringToInt(____p1, nil, true)
+end
 local function runMemory(text)
     local mem = __K2L_SortedMapOf()
     local mask = ""
@@ -350,9 +429,7 @@ local function runMemory(text)
                 mask = __K2L_Text.substringAfter(line, "= ")
                 goto ____continue_1
             end
-            local ____destructured_1 = __K2L_NotNull(memLine:find(line)).groupValues:drop(1):map(function(____p1)
-                return __K2L_StringToInt(____p1, nil, true)
-            end)
+            local ____destructured_1 = __K2L_NotNull(memLine:find(line)).groupValues:drop(1):map(____lambda_4)
             local addr, value = ____destructured_1[1], ____destructured_1[2]
             mem:set(addr, applyMask(mask, value))
         end
@@ -378,7 +455,7 @@ end
 function Circuit:signal(wire)
     local ____receiver_1 = __K2L_StringToIntOrNull(wire)
     if ____receiver_1 ~= nil then
-        local ____result
+        local ____result_1
         return ____receiver_1
     end
     return self.cache:getOrPut(wire, function()
@@ -412,21 +489,23 @@ function Circuit:signal(wire)
     end)
 end
 
+local ____lambda_5 = function(it) return __K2L_KClassOfValue(it).simpleName end
+local ____lambda_6 = function(it) return __K2L_Num.countOneBits(it) end
 local function main()
     local program = parseProgram(PROGRAM)
     print(program.size .. " instructions; first: " .. __K2L_Str(program:first()) .. ", last: " .. __K2L_Str(program:last()))
-    print(__K2L_Str(program:groupingBy(function(it) return __K2L_KClassOfValue(it).simpleName end):eachCount()))
+    print(__K2L_Str(program:groupingBy(____lambda_5):eachCount()))
     local m = Machine.new(program):run()
     print("output=" .. __K2L_Str(m.output))
     print("registers=" .. __K2L_Str(m.registers:toSortedMap()) .. " steps=" .. m.steps)
     print("a=" .. m.registers:getValue("a") .. " z=" .. m.registers:getValue("z"))
     local looping = parseProgram("set a 1\njnz a 0")
     print("looping steps: " .. Machine.new(looping):run(50).steps)
-    local ____ok, ____result_1 = pcall(function()
+    local ____ok, ____result_2 = pcall(function()
         parseProgram("set a\nfoo")
     end)
     if not ____ok then
-        local ____error = __K2L_ToThrowable(____result_1)
+        local ____error = __K2L_ToThrowable(____result_2)
         if __K2L_InstanceOf(____error, __K2L_RuntimeException) then
             local e = ____error
             print("error: " .. __K2L_Str(e))
@@ -434,11 +513,11 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_2 = pcall(function()
+    local ____ok_1, ____result_3 = pcall(function()
         parseProgram("set a 1\nfoo bar baz qux")
     end)
     if not ____ok_1 then
-        local ____error_1 = __K2L_ToThrowable(____result_2)
+        local ____error_1 = __K2L_ToThrowable(____result_3)
         if __K2L_InstanceOf(____error_1, __K2L_IllegalArgumentException) then
             local e = ____error_1
             print("error: " .. __K2L_Str(e.message))
@@ -446,11 +525,11 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_3 = pcall(function()
+    local ____ok_2, ____result_4 = pcall(function()
         parseProgram("xyz a 1")
     end)
     if not ____ok_2 then
-        local ____error_2 = __K2L_ToThrowable(____result_3)
+        local ____error_2 = __K2L_ToThrowable(____result_4)
         if __K2L_InstanceOf(____error_2, __K2L_IllegalStateException) then
             local e = ____error_2
             print("error: " .. __K2L_Str(e.message))
@@ -463,12 +542,12 @@ local function main()
     print("memory sum=" .. sum .. " mem=" .. __K2L_Str(mem))
     print("floating: " .. __K2L_Str(floatingAddresses("000000000000000000000000000000X1001X", 42)))
     print("mask bits: " .. #__K2L_Num.toRadix(applyMask(("1"):rep(36), 0), 2) .. " " .. __K2L_Str(__K2L_Unsigned.toRadix(applyMask("X1X0", 9), 2)))
-    local bits = __K2L_IntRange.new(0, 16):map(function(it) return __K2L_Num.countOneBits(it) end)
+    local bits = __K2L_IntRange.new(0, 16):map(____lambda_6)
     print("bit counts: " .. __K2L_Str(bits) .. " highest=" .. __K2L_Bits.highest32(100) .. " trailing=" .. __K2L_Num.countTrailingZeroBits(96))
     local circuit = Circuit.new(CIRCUIT)
-    local ____list = __K2L_ReadOnlyListOf("d", "e", "f", "g", "h", "i", "x", "y", "a")
-    for ____i = 1, ____list.size do
-        local w = ____list[____i]
+    local ____list_4 = __K2L_ReadOnlyListOf("d", "e", "f", "g", "h", "i", "x", "y", "a")
+    for ____i_4 = 1, ____list_4.size do
+        local w = ____list_4[____i_4]
         io.write(w .. "=" .. circuit:signal(w) .. " ")
     end
     print()

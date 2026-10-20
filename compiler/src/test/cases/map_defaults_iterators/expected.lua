@@ -32,10 +32,15 @@ local function attempt(label, block)
     end
 end
 
+local ____lambda_1 = function(it) return #it * 10 end
+local ____lambda_2 = function(it) return 0 end
+local ____lambda_3 = function(it) return __K2L_ReadOnlyListOf() end
+local ____lambda_4 = function(it) return it.key end
+local ____lambda_5 = function(it) return 99 end
 local function defaults()
     print("-- withDefault")
     local base = __K2L_ReadOnlyMapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2))
-    local m = __K2L_JdkCollections.withDefault(base, function(it) return #it * 10 end)
+    local m = __K2L_JdkCollections.withDefault(base, ____lambda_1)
     print(m:getValue("a"))
     print(m:getValue("missing"))
     print(__K2L_Str(m:get("missing")))
@@ -53,7 +58,7 @@ local function defaults()
     end
     print(base:getValue("a"))
     attempt("noDefault", function() return base:getValue("zz") end)
-    local counts = __K2L_JdkCollections.withDefault(__K2L_MapOf(), function(it) return 0 end)
+    local counts = __K2L_JdkCollections.withDefault(__K2L_MapOf(), ____lambda_2)
     local ____list = __K2L_StringSplit("a b a c b a", " ")
     local ____mod = ____list.____modCount
     for ____i_1 = 1, ____list.size do
@@ -66,16 +71,19 @@ local function defaults()
     print(__K2L_Str(counts))
     print(counts:getValue("nothing"))
     print(counts.size)
-    local lists = __K2L_JdkCollections.withDefault(__K2L_MapOf(), function(it) return __K2L_ReadOnlyListOf() end)
+    local lists = __K2L_JdkCollections.withDefault(__K2L_MapOf(), ____lambda_3)
     lists:set(1, __K2L_SingletonListOf("x"))
     print(__K2L_Str(lists:getValue(1)))
     print(__K2L_Str(lists:getValue(2)))
-    print(__K2L_Str(lists:map(function(it) return it.key end):sorted()))
-    local sorted = __K2L_JdkCollections.withDefault(__K2L_SortedMapOf(__K2L_Pair.new("z", 1), __K2L_Pair.new("y", 2)), function(it) return 99 end)
+    print(__K2L_Str(lists:map(____lambda_4):sorted()))
+    local sorted = __K2L_JdkCollections.withDefault(__K2L_SortedMapOf(__K2L_Pair.new("z", 1), __K2L_Pair.new("y", 2)), ____lambda_5)
     print(__K2L_NotNull(sorted:getValue("q")))
     print(__K2L_Str(sorted:getKeys()))
 end
 
+local ____lambda_6 = function()
+    return __K2L_JdkCollections.listIterator(__K2L_ListOf()):next()
+end
 local function iterators()
     print("-- listIterator")
     local list = __K2L_ListOf(1, 2, 3, 4, 5)
@@ -84,7 +92,7 @@ local function iterators()
     while it:hasNext() do
         local idx = it:nextIndex()
         local v = it:next()
-        if math.fmod(v, 2) == 0 then
+        if (v >= 0 and v % 2 or 0 - -v % 2) == 0 then
             it:set(v * 10)
         end
         if v == 3 then
@@ -105,9 +113,7 @@ local function iterators()
     local ____end = __K2L_JdkCollections.listIterator(list, list.size)
     print(____end:hasNext())
     print(____end:previous())
-    attempt("empty", function()
-        return __K2L_JdkCollections.listIterator(__K2L_ListOf()):next()
-    end)
+    attempt("empty", ____lambda_6)
     attempt("noPrev", function()
         return __K2L_JdkCollections.listIterator(list):previous()
     end)

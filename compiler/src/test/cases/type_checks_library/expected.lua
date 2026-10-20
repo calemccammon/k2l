@@ -3,10 +3,11 @@ local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_CharSequenceText = ____lualib.__K2L_CharSequenceText
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IsCharSequence = ____lualib.__K2L_IsCharSequence
 local __K2L_IsComparable = ____lualib.__K2L_IsComparable
 local __K2L_IsNumber = ____lualib.__K2L_IsNumber
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NumberTo = ____lualib.__K2L_NumberTo
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyOverride = ____lualib.__K2L_PropertyOverride
@@ -14,7 +15,6 @@ local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_Text = ____lualib.__K2L_Text
 
 local Name = __K2L_Class("Name")
@@ -23,12 +23,16 @@ function Name:____init(s)
     self.s = s
 end
 
+function Name.new(s)
+    return setmetatable({s = s}, Name)
+end
+
 function Name:getLength()
     return #self.s
 end
 
 function Name:get(index)
-    return __K2L_StringCharAt(self.s, index)
+    return index >= 0 and index < #self.s and self.s:sub(index + 1, index + 1) or __K2L_IndexError(index, #self.s, "string")
 end
 
 function Name:subSequence(startIndex, endIndex)
@@ -47,6 +51,10 @@ function Score:____init(n)
     self.n = n
 end
 
+function Score.new(n)
+    return setmetatable({n = n}, Score)
+end
+
 function Score:compareTo(other)
     return self.n - other.n
 end
@@ -56,7 +64,7 @@ function Score:toString()
 end
 
 function Score:hashCode()
-    return __K2L_Hash(self.n)
+    return self.n
 end
 
 function Score:equals(other)
@@ -96,12 +104,22 @@ local function kind(x)
     end
 end
 
+local ____lambda_1 = function(x) return __K2L_IsComparable(x) end
+local ____lambda_2 = function(x) return __K2L_IsCharSequence(x) end
+local ____lambda_3 = function(x) return __K2L_IsNumber(x) end
 local function main()
     local values = __K2L_ReadOnlyListOf(1, 2.5, 3, "abc", __K2L_StringBuilder.new("xy"), __K2L_CharSequenceText(Name.new("name")), Score.new(1), Dir.S, true, __K2L_SingletonListOf(1), __K2L_Pair.new(1, 2), nil, __K2L_BigInteger.TEN)
     print(__K2L_Str(values:map(kind)))
-    print(values:filter(function(x) return __K2L_IsComparable(x) end).size)
-    print(values:filter(function(x) return __K2L_IsCharSequence(x) end):joinToString("|"))
-    print(__K2L_Str(values:filter(function(x) return __K2L_IsNumber(x) end):sumOf(function(it) return __K2L_NumberTo(it, "toDouble") end, 0.0)))
+    print(values:filter(____lambda_1).size)
+    print(values:filter(____lambda_2):joinToString("|"))
+    local ____list = values:filter(____lambda_3)
+    local ____sum = 0.0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____sum = ____sum + __K2L_NumberTo(it, "toDouble")
+    end
+    print(__K2L_Str(____sum))
     local any = "text"
     if not __K2L_IsCharSequence(any) then
         __K2L_CastFail(any, "java.lang.CharSequence", "kotlin.CharSequence")
@@ -113,9 +131,15 @@ local function main()
     local ____cast_1 = __K2L_SingletonListOf(1)
     print((__K2L_IsComparable(____cast_1) and ____cast_1 or nil) == nil)
     local numbers = __K2L_ReadOnlyListOf(2.7, -3, 10, __K2L_BigInteger.valueOf(300), -3.3000000005E9)
-    print(__K2L_Str(numbers:map(function(it)
-        return __K2L_NumberTo(it, "toInt") .. " " .. __K2L_NumberTo(it, "toLong") .. " " .. __K2L_NumberTo(it, "toShort") .. " " .. __K2L_NumberTo(it, "toByte") .. " " .. __K2L_Str(__K2L_NumberTo(it, "toDouble"))
-    end)))
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = numbers:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_NumberTo(it, "toInt") .. " " .. __K2L_NumberTo(it, "toLong") .. " " .. __K2L_NumberTo(it, "toShort") .. " " .. __K2L_NumberTo(it, "toByte") .. " " .. __K2L_Str(__K2L_NumberTo(it, "toDouble"))
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
 end
 
 main()

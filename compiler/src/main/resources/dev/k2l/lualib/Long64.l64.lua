@@ -1,4 +1,4 @@
--- requires: Exceptions
+-- requires: Exceptions, UAnd32
 -- Exact 64-bit Long and ULong without integers (--long64 emulate on Lua 5.1 and 5.2).
 -- A value is a Lua number while it is a safe integer (|v| < 2^53) and a box {hi, lo} beyond: hi the signed high 32 bits,
 -- lo the unsigned low 32 bits. The two forms never overlap (a value always has the same form), so == is exact.
@@ -13,6 +13,11 @@ local type, setmetatable, tostring = type, setmetatable, tostring
 local floor, fmod = math.floor, math.fmod
 local format = string.format
 local T32, T31, LIM = 4294967296, 2147483648, 9007199254740992
+
+local POW2 = {}
+for n = 0, 64 do
+    POW2[n] = 2 ^ n
+end
 
 local function divZero()
     error(__K2L_ArithmeticException.new("/ by zero"))
@@ -36,7 +41,13 @@ end
 
 -- the same pair with an unsigned high half
 local function uparts(x)
-    local hi, lo = parts(x)
+    local hi, lo
+    if type(x) == "number" then
+        lo = x % T32
+        hi = (x - lo) / T32
+    else
+        hi, lo = x[1], x[2]
+    end
     if hi < 0 then
         hi = hi + T32
     end
@@ -47,7 +58,10 @@ local function makeU(hi, lo)
     if hi >= T31 then
         hi = hi - T32
     end
-    return make(hi, lo)
+    if hi >= -2097152 and hi < 2097152 and (hi ~= -2097152 or lo ~= 0) then
+        return hi * T32 + lo
+    end
+    return setmetatable({ hi, lo }, B)
 end
 
 local function wrapHi(hi)
@@ -75,7 +89,8 @@ local function subp(ah, al, bh, bl)
     return make(wrapHi(hi), lo)
 end
 
--- the low 64 bits of the product, from 16-bit limbs
+-- the low 64 bits of the product: the full 64-bit al * bl plus the low 32 bits of the cross terms al * bh + ah * bl,
+-- with al and ah split into 16-bit halves so that every partial product is below 2^48
 local function mulp(ah, al, bh, bl)
     if ah < 0 then
         ah = ah + T32
@@ -83,34 +98,15 @@ local function mulp(ah, al, bh, bl)
     if bh < 0 then
         bh = bh + T32
     end
-    local a0 = al % 65536
+    local a0, h0 = al % 65536, ah % 65536
     local a1 = (al - a0) / 65536
-    local a2 = ah % 65536
-    local a3 = (ah - a2) / 65536
-    local b0 = bl % 65536
-    local b1 = (bl - b0) / 65536
-    local b2 = bh % 65536
-    local b3 = (bh - b2) / 65536
-    local c00 = a0 * b0
-    local c16 = floor(c00 / 65536)
-    c00 = c00 % 65536
-    c16 = c16 + a1 * b0
-    local c32 = floor(c16 / 65536)
-    c16 = c16 % 65536
-    c16 = c16 + a0 * b1
-    c32 = c32 + floor(c16 / 65536)
-    c16 = c16 % 65536
-    c32 = c32 + a2 * b0
-    local c48 = floor(c32 / 65536)
-    c32 = c32 % 65536
-    c32 = c32 + a1 * b1
-    c48 = c48 + floor(c32 / 65536)
-    c32 = c32 % 65536
-    c32 = c32 + a0 * b2
-    c48 = c48 + floor(c32 / 65536)
-    c32 = c32 % 65536
-    c48 = (c48 + a3 * b0 + a2 * b1 + a1 * b2 + a0 * b3) % 65536
-    return makeU(c48 * 65536 + c32, c16 * 65536 + c00)
+    local p0, p1 = a0 * bl, a1 * bl
+    local p0l, p1l = p0 % T32, p1 % 65536
+    local lo = p0l + p1l * 65536
+    local lo32 = lo % T32
+    local hi = (p0 - p0l) / T32 + (p1 - p1l) / 65536 + (lo - lo32) / T32
+        + a1 * bh % 65536 * 65536 + a0 * bh + (ah - h0) / 65536 * bl % 65536 * 65536 + h0 * bl
+    return makeU(hi % T32, lo32)
 end
 
 -- one step of the long division: the quotient limb and remainder of (r * 65536 + limb) / d
@@ -126,8 +122,20 @@ local function limbStep(r, limb, d)
     return q, r
 end
 
--- unsigned a / d and a % d for 0 < d < 2^32, in 16-bit limbs: qh, ql, r
+-- unsigned a / d and a % d for 0 < d < 2^32, in 16-bit limbs (32-bit limbs when d <= 2^21): qh, ql, r
 local function udivSmall(ah, al, d)
+    if d <= 2097152 then
+        local qh = floor(ah / d)
+        local cur = (ah - qh * d) * T32 + al
+        local ql = floor(cur / d)
+        local r = cur - ql * d
+        if r < 0 then
+            return qh, ql - 1, r + d
+        elseif r >= d then
+            return qh, ql + 1, r - d
+        end
+        return qh, ql, r
+    end
     local a0 = al % 65536
     local a2 = ah % 65536
     local q3, r = limbStep(0, (ah - a2) / 65536, d)
@@ -239,17 +247,20 @@ local function divmodSlow(a, b, wantRemainder)
         divZero()
     end
     local aneg, bneg = ah < 0, bh < 0
+    -- the magnitudes as unsigned pairs (MIN_VALUE's is 2^63)
     if aneg then
-        ah, al = parts(negp(ah, al))
+        if al == 0 then
+            ah = -ah
+        else
+            ah, al = -ah - 1, T32 - al
+        end
     end
     if bneg then
-        bh, bl = parts(negp(bh, bl))
-    end
-    if ah < 0 then
-        ah = ah + T32
-    end
-    if bh < 0 then
-        bh = bh + T32
+        if bl == 0 then
+            bh = -bh
+        else
+            bh, bl = -bh - 1, T32 - bl
+        end
     end
     local qh, ql, rh, rl = udivmod(ah, al, bh, bl)
     if wantRemainder then
@@ -339,35 +350,9 @@ local band32, bor32, bxor32
 if bit32 then
     band32, bor32, bxor32 = bit32.band, bit32.bor, bit32.bxor
 else
-    local AND, XOR = {}, {}
-    for x = 0, 15 do
-        for y = 0, 15 do
-            local a, b, r, s, p = x, y, 0, 0, 1
-            for _ = 1, 4 do
-                local ba, bb = a % 2, b % 2
-                if ba == 1 and bb == 1 then
-                    r = r + p
-                end
-                if ba ~= bb then
-                    s = s + p
-                end
-                a, b, p = (a - ba) / 2, (b - bb) / 2, p * 2
-            end
-            AND[x * 16 + y], XOR[x * 16 + y] = r, s
-        end
-    end
-    local function logic(tbl, a, b)
-        local result, p = 0, 1
-        for _ = 1, 8 do
-            local x, y = a % 16, b % 16
-            result = result + tbl[x * 16 + y] * p
-            a, b, p = (a - x) / 16, (b - y) / 16, p * 16
-        end
-        return result
-    end
-    band32 = function(a, b) return logic(AND, a, b) end
-    bxor32 = function(a, b) return logic(XOR, a, b) end
-    bor32 = function(a, b) return a + b - logic(AND, a, b) end
+    band32 = __K2L_UAnd32
+    bxor32 = function(a, b) return a + b - 2 * __K2L_UAnd32(a, b) end
+    bor32 = function(a, b) return a + b - __K2L_UAnd32(a, b) end
 end
 
 local function band(a, b)
@@ -400,10 +385,10 @@ local function shl(a, n)
     end
     local hi, lo = uparts(a)
     if n < 32 then
-        local p = 2 ^ n
+        local p = POW2[n]
         return makeU((hi * p) % T32 + floor(lo / (T32 / p)), (lo * p) % T32)
     end
-    return makeU((lo * 2 ^ (n - 32)) % T32, 0)
+    return makeU((lo * POW2[n - 32]) % T32, 0)
 end
 
 local function ushr(a, n)
@@ -413,10 +398,10 @@ local function ushr(a, n)
     end
     local hi, lo = uparts(a)
     if n < 32 then
-        local p = 2 ^ n
+        local p = POW2[n]
         return makeU(floor(hi / p), floor(lo / p) + (hi % p) * (T32 / p))
     end
-    return makeU(0, floor(hi / 2 ^ (n - 32)))
+    return makeU(0, floor(hi / POW2[n - 32]))
 end
 
 local function shr(a, n)
@@ -426,10 +411,10 @@ local function shr(a, n)
     end
     local hi, lo = parts(a)
     if n < 32 then
-        local p = 2 ^ n
+        local p = POW2[n]
         return make(floor(hi / p), floor(lo / p) + (hi % p) * (T32 / p))
     end
-    local low = floor(hi / 2 ^ (n - 32))
+    local low = floor(hi / POW2[n - 32])
     return make(hi < 0 and -1 or 0, low % T32)
 end
 

@@ -53,12 +53,15 @@ tasks.named<JavaExec>("run") {
 }
 
 val testCases = layout.projectDirectory.dir("src/test/cases")
+val benchPrograms = layout.projectDirectory.dir("src/bench/programs")
 
 tasks.test {
     useJUnitPlatform()
     maxHeapSize = "2g"
     inputs.dir(testCases)
+    inputs.dir(benchPrograms)
     systemProperty("k2l.casesDir", testCases.asFile.absolutePath)
+    systemProperty("k2l.benchDir", benchPrograms.asFile.absolutePath)
     systemProperty("k2l.updateGolden", providers.gradleProperty("updateGolden").isPresent)
     providers.gradleProperty("lua").orNull?.let { systemProperty("k2l.lua", it) }
     providers.gradleProperty("only").orNull?.let { systemProperty("k2l.only", it) } // -Ponly=casts,objects_enums
@@ -137,6 +140,45 @@ tasks.register<KotlinOracle>("kotlinOracle") {
     workDir.set(layout.buildDirectory.dir("oracle"))
     update.set(providers.gradleProperty("updateOracle").isPresent)
     only.set(providers.gradleProperty("only").orElse(providers.gradleProperty("oracleCases")).orElse(""))
+}
+
+tasks.register<KotlinOracle>("benchOracle") {
+    description = "Runs every benchmark program on Kotlin/JVM and checks (or with -PupdateOracle, writes) its stdout.txt."
+    group = "verification"
+    compilerClasspath.from(oracleCompiler)
+    casesDir.set(benchPrograms)
+    workDir.set(layout.buildDirectory.dir("bench-oracle"))
+    update.set(providers.gradleProperty("updateOracle").isPresent)
+    only.set(providers.gradleProperty("benchOnly").orElse(""))
+}
+
+// ---- Benchmarks: ./gradlew :compiler:bench (local only, see "Benchmarks" in the README) ----
+
+val bench: SourceSet = sourceSets.create("bench") {
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().output
+}
+configurations["benchImplementation"].extendsFrom(configurations.implementation.get())
+configurations["benchRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
+
+// Keeps the harness compiling; the programs themselves are transpiled by BenchProgramsTest.
+tasks.check { dependsOn(tasks.named("compileBenchKotlin")) }
+
+tasks.register<JavaExec>("bench") {
+    description = "Transpiles and times the programs in src/bench/programs on every Lua found (-PbenchRuns, -PbenchOnly, " +
+        "-PbenchTargets, -PbenchSave, -PbenchCompare, -PbenchProfile)."
+    group = "benchmark"
+    classpath = bench.runtimeClasspath
+    mainClass.set("dev.k2l.bench.BenchKt")
+    jvmArgs("-Xss8m", "-XX:+UseParallelGC")
+    maxHeapSize = "2g"
+    systemProperty("k2l.bench.projectDir", layout.projectDirectory.asFile.absolutePath)
+    systemProperty("k2l.bench.out", layout.buildDirectory.dir("bench").get().asFile.absolutePath)
+    val names = listOf("benchRuns", "benchOnly", "benchTargets", "benchSave", "benchCompare", "benchProfile", "benchInterval", "benchTop") +
+        listOf("benchProfileRepeat") +
+        listOf("lua51", "lua52", "lua53", "lua54", "luajit")
+    names.forEach { name -> providers.gradleProperty(name).orNull?.let { systemProperty("k2l.$name", it) } }
+    outputs.upToDateWhen { false }
 }
 
 // ---- The compiler's runtime classpath as one consumable directory, for the Gradle plugin (`dev.k2l`) ----

@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Locale = ____lualib.__K2L_Locale
 local __K2L_LocaleFormat = ____lualib.__K2L_LocaleFormat
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -27,9 +28,15 @@ local function main()
     print(__K2L_Utf16.out(__K2L_LocaleFormat.format("fr_FR", __K2L_Utf16Case.uppercase, "%S %,d", "été", 1234567)))
     print(__K2L_Utf16.out(__K2L_LocaleFormat.format(tr, __K2L_Utf16Locale.uppercase, "%S %,.2f", "i", 1234567.891)))
     local locales = __K2L_ReadOnlyListOf("en_US", tr, __K2L_Locale.of("az", "AZ"), "de_DE")
-    print(__K2L_Utf16.out(__K2L_Str(locales:map(function(it)
-        return __K2L_LocaleFormat.format(it, __K2L_Utf16Locale.uppercase, "%S", "iI")
-    end))))
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = locales:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = __K2L_LocaleFormat.format(it, __K2L_Utf16Locale.uppercase, "%S", "iI")
+    end
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ListWrap(____out, ____count))))
     print(__K2L_Utf16.out(__K2L_Text.formatWith(nil, __K2L_Utf16Case.uppercase, "%s %S", "ß", "ß")))
     print(__K2L_Utf16.out(__K2L_LocaleFormat.format(__K2L_Locale.of("ar", "EG"), __K2L_Utf16Locale.uppercase, "%S %d", "abc", 42)))
 end

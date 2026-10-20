@@ -150,6 +150,10 @@ function Outer:____init(tag)
     self.tag = tag
 end
 
+function Outer.new(tag)
+    return setmetatable({tag = tag}, Outer)
+end
+
 Outer.Inner = __K2L_Class("Outer$Inner")
 
 function Outer.Inner:____init(____outer, id)
@@ -211,6 +215,10 @@ function Maybe:____init(value)
     self.value = value
 end
 
+function Maybe.new(value)
+    return setmetatable({value = value}, Maybe)
+end
+
 function Maybe:orDash(____this_20)
     return ____this_20 or "-"
 end
@@ -225,6 +233,10 @@ local Vec = __K2L_Class("Vec")
 
 function Vec:____init(x)
     self.x = x
+end
+
+function Vec.new(x)
+    return setmetatable({x = x}, Vec)
 end
 
 function Vec:unaryMinus()

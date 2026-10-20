@@ -6,7 +6,7 @@ local function shout(self)
 end
 
 local function isEven(____this)
-    return math.fmod(____this, 2) == 0
+    return (____this >= 0 and ____this % 2 or 0 - -____this % 2) == 0
 end
 
 local function orEmptyText(____this_1)
@@ -18,6 +18,10 @@ local Vec = __K2L_Class("Vec")
 function Vec:____init(x, y)
     self.x = x
     self.y = y
+end
+
+function Vec.new(x, y)
+    return setmetatable({x = x, y = y}, Vec)
 end
 
 local function length2(____this_2)

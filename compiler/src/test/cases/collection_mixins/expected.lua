@@ -4,6 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CollectionBase = ____lualib.__K2L_CollectionBase
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_Iterable = ____lualib.__K2L_Iterable
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
@@ -25,6 +26,10 @@ local Named = __K2L_Class("Named")
 
 function Named:____init(name)
     self.name = name
+end
+
+function Named.new(name)
+    return setmetatable({name = name}, Named)
 end
 
 function Named:describe()
@@ -141,7 +146,7 @@ function Scores:getSize()
 end
 
 function Scores:get(index)
-    return self.values:get(index)
+    return self.values[index + 1] or __K2L_IndexError(index, self.values.size, "array")
 end
 
 function Scores:isEmpty()
@@ -239,9 +244,12 @@ function Settings:get(key)
     return self.____delegate_MutableMap:get(key)
 end
 
+local ____lambda_1 = function(it) return it * 10 end
+local ____lambda_2 = function(it) return it > 5 end
+local ____lambda_3 = function(it) return it.value end
 local function main()
     local m = Mixed.new()
-    print(m.name .. " " .. m:describe() .. " " .. __K2L_Str(m:toList()) .. " " .. __K2L_Str(m:sorted()) .. " " .. m:sum() .. " " .. __K2L_Str(m:map(function(it) return it * 10 end)) .. " " .. m:count() .. " " .. m:first())
+    print(m.name .. " " .. m:describe() .. " " .. __K2L_Str(m:toList()) .. " " .. __K2L_Str(m:sorted()) .. " " .. m:sum() .. " " .. __K2L_Str(m:map(____lambda_1)) .. " " .. m:count() .. " " .. m:first())
     local total = 0
     local ____items, ____n = m:____array()
     for ____i = 1, ____n do
@@ -259,7 +267,7 @@ local function main()
         if __K2L_InstanceOf(____error, __K2L_Exception) then
             local e = ____error
             local ____arg = e.message
-            if not __K2L_InstanceOf(e, Wrapped) then
+            if getmetatable(e) ~= Wrapped then
                 __K2L_CastFail(e, "Wrapped", "Wrapped")
             end
             print("caught " .. __K2L_Str(____arg) .. " " .. e:getSize())
@@ -276,7 +284,7 @@ local function main()
     end
     print()
     local s = Scores.new(__K2L_TypedArrayOf("[I", 5, 7, 9))
-    print(s:getSize() .. " " .. s:get(2) .. " " .. s:max() .. " " .. __K2L_Str(s:subList(0, 2)) .. " " .. __K2L_Str(s:filter(function(it) return it > 5 end)) .. " " .. s:describe() .. " " .. s:getLastIndex() .. " " .. __K2L_Str(s:getOrNull(5)))
+    print(s:getSize() .. " " .. s:get(2) .. " " .. s:max() .. " " .. __K2L_Str(s:subList(0, 2)) .. " " .. __K2L_Str(s:filter(____lambda_2)) .. " " .. s:describe() .. " " .. s:getLastIndex() .. " " .. __K2L_Str(s:getOrNull(5)))
     local sum = 0
     for i = 0, s.size - 1 do
         sum = sum + s:get(i)
@@ -284,7 +292,7 @@ local function main()
     print("sum " .. sum .. " " .. tostring(__K2L_Equals(s:toList(), __K2L_ReadOnlyListOf(5, 7, 9))))
     local settings = Settings.new(__K2L_MapOf(__K2L_Pair.new("theme", "dark")))
     settings:set("font", "mono")
-    print(settings.size .. " " .. __K2L_Str(settings:get("theme")) .. " " .. __K2L_Str(settings:getKeys()) .. " " .. __K2L_Str(settings:getEntries():map(function(it) return it.value end)) .. " " .. settings:describe())
+    print(settings.size .. " " .. __K2L_Str(settings:get("theme")) .. " " .. __K2L_Str(settings:getKeys()) .. " " .. __K2L_Str(settings:getEntries():map(____lambda_3)) .. " " .. settings:describe())
     local ____keys, ____values, ____n_2 = settings:____arrays()
     for ____i_2 = 1, ____n_2 do
         local k, v = ____keys[____i_2], ____values[____i_2]

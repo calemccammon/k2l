@@ -24,6 +24,10 @@ local function attempt(label, block)
     end
 end
 
+local ____lambda_1 = function()
+    return __K2L_StringToUnsigned("18446744073709551616", nil, 64)
+end
+local ____lambda_2 = function() return __K2L_StringToUnsigned("-1", nil, 64) end
 local function main()
     print(__K2L_Unsigned.toString(__K2L_StringToUnsigned("18446744073709551615", nil, 64)))
     print(__K2L_Unsigned.toString(__K2L_StringToUnsigned("9223372036854775808", nil, 64)))
@@ -35,10 +39,8 @@ local function main()
     print(__K2L_Str(__K2L_StringToUnsignedOrNull("ffffffffffffffff0", 16, 64)))
     print(__K2L_Str(__K2L_StringToUnsignedOrNull("-1", nil, 64)))
     print(__K2L_Unsigned.toString(__K2L_NotNull(__K2L_StringToUnsignedOrNull("+18446744073709551615", nil, 64))))
-    attempt("overflow", function()
-        return __K2L_StringToUnsigned("18446744073709551616", nil, 64)
-    end)
-    attempt("negative", function() return __K2L_StringToUnsigned("-1", nil, 64) end)
+    attempt("overflow", ____lambda_1)
+    attempt("negative", ____lambda_2)
     print(__K2L_Unsigned.toRadix(0xffffffffffffffff, 16))
     print(__K2L_Unsigned.toRadix(0xffffffffffffffff, 36))
     print(__K2L_Unsigned.toRadix(0xffffffffffffffff, 2))

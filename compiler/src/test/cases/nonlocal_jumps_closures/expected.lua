@@ -61,8 +61,9 @@ local function maxOrStop(xs)
     return m
 end
 
+local ____lambda_1 = function(it) return it + 1 end
 local function firstSquareOver(limit)
-    for _, it in __K2L_GenerateSequence(1, function(it) return it + 1 end):iter() do
+    for _, it in __K2L_GenerateSequence(1, ____lambda_1):iter() do
         if it * it > limit then
             return it
         end
@@ -138,7 +139,7 @@ local function sequenceTerminals()
                 if it > 3 then
                     __K2L_Jump(____jump_5, 1, -1)
                 end
-                return math.fmod(it, 2) == 0
+                return (it >= 0 and it % 2 or 0 - -it % 2) == 0
             end)
         end)
         if not ____ok_5 then
@@ -606,6 +607,10 @@ function Resource:____init(name, log)
     self.log = log
 end
 
+function Resource.new(name, log)
+    return setmetatable({name = name, log = log}, Resource)
+end
+
 function Resource:close()
     self.log:add("close " .. self.name)
 end
@@ -678,15 +683,16 @@ local function throughRunCatching()
     return __K2L_Str(r)
 end
 
-local function failureStillCaught()
-    local r = __K2L_RunCatching(function()
-        return __K2L_Text.trimWith("abc", 3, function(it)
-            if it == "c" then
-                error(__K2L_IllegalStateException.new("boom"))
-            end
-            return false
-        end)
+local ____lambda_2 = function()
+    return __K2L_Text.trimWith("abc", 3, function(it)
+        if it == "c" then
+            error(__K2L_IllegalStateException.new("boom"))
+        end
+        return false
     end)
+end
+local function failureStillCaught()
+    local r = __K2L_RunCatching(____lambda_2)
     local ____receiver = r:exceptionOrNull()
     return ____receiver and ____receiver.message or "?"
 end

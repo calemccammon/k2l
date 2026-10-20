@@ -5,6 +5,7 @@ local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
@@ -24,10 +25,11 @@ local __K2L_Utf16Case = ____lualib.__K2L_Utf16Case
 
 local code0
 
+local ____lambda_1 = function(it)
+    return __K2L_Num.toRadix(__K2L_Utf16.code(it), 16)
+end
 local function hex(s)
-    return __K2L_Utf16.norm(__K2L_Text.toList(s):map(function(it)
-        return __K2L_Num.toRadix(__K2L_Utf16.code(it), 16)
-    end):joinToString(" "))
+    return __K2L_Utf16.norm(__K2L_Text.toList(s):map(____lambda_1):joinToString(" "))
 end
 
 local function lengthsAndIndexing()
@@ -73,6 +75,10 @@ function code0(self)
     return __K2L_Utf16.code(__K2L_Text.get(self, 0))
 end
 
+local ____lambda_2 = function(it) return it ~= " " end
+local ____lambda_3 = function(it) return it ~= " " end
+local ____lambda_4 = function(it) return it ~= " " end
+local ____lambda_5 = function(it) return it ~= " " end
 local function substrings()
     local s = "héllo wörld 日本語 😀!"
     print(__K2L_Utf16.out(__K2L_Utf16.len(s)))
@@ -87,10 +93,10 @@ local function substrings()
     print(__K2L_Utf16.out(__K2L_Text.drop(s, 12)))
     print(__K2L_Utf16.out(__K2L_Text.takeLast(s, 3)))
     print(__K2L_Utf16.out(__K2L_Text.dropLast(s, 3)))
-    print(__K2L_Utf16.out(__K2L_Text.takeWhile(s, function(it) return it ~= " " end)))
-    print(__K2L_Utf16.out(__K2L_Text.dropWhile(s, function(it) return it ~= " " end)))
-    print(__K2L_Utf16.out(__K2L_Text.takeLastWhile(s, function(it) return it ~= " " end)))
-    print(__K2L_Utf16.out(__K2L_Text.dropLastWhile(s, function(it) return it ~= " " end)))
+    print(__K2L_Utf16.out(__K2L_Text.takeWhile(s, ____lambda_2)))
+    print(__K2L_Utf16.out(__K2L_Text.dropWhile(s, ____lambda_3)))
+    print(__K2L_Utf16.out(__K2L_Text.takeLastWhile(s, ____lambda_4)))
+    print(__K2L_Utf16.out(__K2L_Text.dropLastWhile(s, ____lambda_5)))
     print(__K2L_Utf16.out(__K2L_Text.removeRange(s, 1, 5)))
     print(__K2L_Utf16.out(__K2L_Text.replaceRange(s, 0, 5, "HELLO")))
     print(__K2L_Utf16.out(__K2L_Text.slice(s, __K2L_IntRange.new(0, 4))))
@@ -126,6 +132,7 @@ local function substrings()
     print(__K2L_Utf16.out(__K2L_Text.commonSuffixWith("a😀", "b😀")))
 end
 
+local ____lambda_6 = function(it) return it == "a" end
 local function searching()
     local s = "日本語 and 日本語 and 😀 and 😀"
     print(__K2L_Utf16.out(__K2L_StringIndexOf(s, "日本語")))
@@ -148,12 +155,13 @@ local function searching()
     print(__K2L_Utf16.out(__K2L_Str(__K2L_StringSplit("日本語", ""))))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_StringSplit("a😀", ""))))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_StringSplit("é-😀-x", "-"))))
-    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(function(it) return it == "a" end)))
+    print(__K2L_Utf16.out(__K2L_Text.toList(s):count(____lambda_6)))
     print(__K2L_Utf16.out(__K2L_Utf16.len(s)))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_StringLines(s))))
     print(__K2L_Utf16.out(__K2L_Text.regionMatches(s, 0, "日本語 x", 0, 3)))
 end
 
+local ____lambda_7 = function(it) return __K2L_Utf16.code(it) end
 local function chars()
     for c in __K2L_Utf16.each("aé日😀") do
         print(__K2L_Utf16.out(__K2L_Utf16.norm(c .. " " .. __K2L_Utf16.code(c) .. " " .. tostring(__K2L_Utf16.isSurrogate(c)))))
@@ -168,7 +176,7 @@ local function chars()
     print(__K2L_Utf16.out(__K2L_Utf16.code("日") - __K2L_Utf16.code("本")))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_Utf16.CharRange.new("a", "e"):toList())))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_Utf16.CharRange.new("à", "å"):toList())))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_Utf16.CharRange.new("à", "å"):map(function(it) return __K2L_Utf16.code(it) end))))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Utf16.CharRange.new("à", "å"):map(____lambda_7))))
     print(__K2L_Utf16.out("é" >= "a" and "é" <= "z"))
     print(__K2L_Utf16.out("é" >= "a" and "é" <= "ÿ"))
     for ____code = __K2L_Utf16.code("α"), __K2L_Utf16.code("ε") do
@@ -237,6 +245,11 @@ local function builders()
     print(__K2L_Utf16.out(parts:toString() == emoji))
 end
 
+local ____lambda_8 = function(it) return __K2L_Utf16.code(it) end
+local ____lambda_9 = function(it) return it ~= "x" end
+local ____lambda_10 = function(it) return __K2L_Utf16.code(it) < 128 end
+local ____lambda_11 = function(it) return __K2L_Utf16.code(it) < 128 end
+local ____lambda_12 = function(it) return it end
 local function templatesAndConversion()
     local s = "x😀y"
     print(__K2L_Utf16.out(__K2L_Utf16.norm(__K2L_Utf16.len(s) .. " " .. __K2L_Utf16.code(__K2L_Text.get(s, 1)) .. " " .. __K2L_Text.first(s) .. __K2L_Text.last(s))))
@@ -250,19 +263,37 @@ local function templatesAndConversion()
     print(__K2L_Utf16.out(__K2L_Text.string(__K2L_Text.toCharArray(s))))
     print(__K2L_Utf16.out(__K2L_Utf16.norm(__K2L_Text.toCharArray(s):joinToString(""))))
     print(__K2L_Utf16.out(__K2L_Text.toList(s).size))
-    print(__K2L_Utf16.out(__K2L_Text.toList(s):map(function(it) return __K2L_Utf16.code(it) end).size))
+    print(__K2L_Utf16.out(__K2L_Text.toList(s):map(____lambda_8).size))
     print(__K2L_Utf16.out(__K2L_Text.string(__K2L_TypedArrayOf("[C", "é", "日"))))
-    print(__K2L_Utf16.out(__K2L_Text.filter(s, function(it) return it ~= "x" end)))
-    print(__K2L_Utf16.out(__K2L_Text.filter(s, function(it) return __K2L_Utf16.code(it) < 128 end)))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_Text.partition(s, function(it) return __K2L_Utf16.code(it) < 128 end))))
-    print(__K2L_Utf16.out(__K2L_Utf16.len(__K2L_Utf16.norm(__K2L_Text.toList(s):map(function(it) return it end):joinToString("|")))))
+    print(__K2L_Utf16.out(__K2L_Text.filter(s, ____lambda_9)))
+    print(__K2L_Utf16.out(__K2L_Text.filter(s, ____lambda_10)))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Text.partition(s, ____lambda_11))))
+    print(__K2L_Utf16.out(__K2L_Utf16.len(__K2L_Utf16.norm(__K2L_Text.toList(s):map(____lambda_12):joinToString("|")))))
     print(__K2L_Utf16.out(__K2L_Text.toList(s):zip(__K2L_Text.toList("ab")).size))
 end
 
 local function ordering()
     local items = __K2L_ReadOnlyListOf("￿", "😀", "z", "é", "日", "", "𝄞")
-    print(__K2L_Utf16.out(__K2L_Str(items:sorted():map(function(it) return hex(it) end))))
-    print(__K2L_Utf16.out(__K2L_Str(items:sortedDescending():map(function(it) return __K2L_Utf16.len(it) end))))
+    local ____list = items:sorted()
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list:____array()
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = hex(it)
+    end
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ListWrap(____out, ____count))))
+    local ____list_1 = items:sortedDescending()
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = __K2L_Utf16.len(it)
+    end
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1))))
     print(__K2L_Utf16.out(__K2L_Compare("😀", "￿") < 0))
     print(__K2L_Utf16.out(__K2L_Text.compare("😀", "￿") < 0))
     local ____receiver = items:maxOrNull()
@@ -271,14 +302,23 @@ local function ordering()
     print(__K2L_Utf16.out(__K2L_Str(____receiver_1 and __K2L_Utf16.len(____receiver_1))))
     print(__K2L_Utf16.out(__K2L_Utf16Case.equalsIgnoreCase("a", "A")))
     local map = __K2L_HashMap.new()
-    local ____list = __K2L_ReadOnlyListOf("héllo", "日本語", "😀", "wörld", "zebra", "café", "ñandú")
-    for i = 0, ____list.size - 1 do
-        local w = ____list[i + 1]
+    local ____list_2 = __K2L_ReadOnlyListOf("héllo", "日本語", "😀", "wörld", "zebra", "café", "ñandú")
+    for i = 0, ____list_2.size - 1 do
+        local w = ____list_2[i + 1]
         map:set(w, i)
     end
     print(__K2L_Utf16.out(__K2L_Str(map)))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_ReadOnlySetOf("é", "日", "😀", "ab"):toList())))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_ReadOnlyListOf("héllo", "日本語", "😀"):map(function(it) return __K2L_Hash(it) end))))
+    local ____list_3 = __K2L_ReadOnlyListOf("héllo", "日本語", "😀")
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_2, ____n_2 = ____list_3:____array()
+    for ____i_3 = 1, ____n_2 do
+        local it = ____items_2[____i_3]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = __K2L_Hash(it)
+    end
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_ListWrap(____out_2, ____count_2))))
     print(__K2L_Utf16.out(__K2L_Hash("é")))
     print(__K2L_Utf16.out(__K2L_Hash("😀")))
     print(__K2L_Utf16.out(__K2L_Hash("日本語テキスト")))

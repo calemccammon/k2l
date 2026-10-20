@@ -1,7 +1,5 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Map = ____lualib.__K2L_Map
@@ -12,7 +10,6 @@ local __K2L_Set = ____lualib.__K2L_Set
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Pt = __K2L_Class("Pt")
 
@@ -21,12 +18,16 @@ function Pt:____init(x, y)
     self.y = y
 end
 
+function Pt.new(x, y)
+    return setmetatable({x = x, y = y}, Pt)
+end
+
 function Pt:toString()
     return "Pt(x=" .. self.x .. ", y=" .. self.y .. ")"
 end
 
 function Pt:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.x) + __K2L_Hash(self.y))
+    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Pt:equals(other)
@@ -39,18 +40,30 @@ function Mutable:____init(v)
     self.v = v
 end
 
+function Mutable.new(v)
+    return setmetatable({v = v}, Mutable)
+end
+
 function Mutable:hashCode()
     return self.v
 end
 
 function Mutable:equals(other)
-    return __K2L_InstanceOf(other, Mutable) and other.v == self.v
+    return getmetatable(other) == Mutable and other.v == self.v
 end
 
 function Mutable:toString()
     return "M" .. self.v
 end
 
+local ____lambda_1 = function(it) return #it end
+local ____lambda_2 = function(it) return #it end
+local ____lambda_3 = function(it) return __K2L_Text.first(it) end
+local ____lambda_4 = function(it) return it.x end
+local ____lambda_5 = function(it) return it end
+local ____lambda_6 = function(it) return it end
+local ____lambda_7 = function(it) return it end
+local ____lambda_8 = function(it) return -it end
 local function main()
     local m = __K2L_Map.new()
     for i = 0, 9 do
@@ -119,13 +132,13 @@ local function main()
     print(__K2L_Str(__K2L_ReadOnlyListOf(3.5, -1.5, 2.25):sortedDescending()))
     print(__K2L_Str(__K2L_ReadOnlyListOf("pear", "apple", "fig"):sorted()))
     local words = __K2L_ReadOnlyListOf("bb", "a", "ccc", "dd", "e")
-    print(__K2L_Str(words:sortedBy(function(it) return #it end, true)))
-    print(__K2L_Str(words:sortedByDescending(function(it) return #it end, true)))
-    print(__K2L_Str(words:sortedBy(function(it) return __K2L_Text.first(it) end)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(Pt.new(2, 1), Pt.new(1, 5), Pt.new(2, 0), Pt.new(1, 2)):sortedBy(function(it) return it.x end, true)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(3, nil, 1):sortedBy(function(it) return it end, true)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(3, nil, 1):sortedByDescending(function(it) return it end, true)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(true, false, true):sortedBy(function(it) return it end, true)))
+    print(__K2L_Str(words:sortedBy(____lambda_1, true)))
+    print(__K2L_Str(words:sortedByDescending(____lambda_2, true)))
+    print(__K2L_Str(words:sortedBy(____lambda_3)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(Pt.new(2, 1), Pt.new(1, 5), Pt.new(2, 0), Pt.new(1, 2)):sortedBy(____lambda_4, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3, nil, 1):sortedBy(____lambda_5, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(3, nil, 1):sortedByDescending(____lambda_6, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(true, false, true):sortedBy(____lambda_7, true)))
     local calls = __K2L_List.new()
     local sortedWithCalls = __K2L_ReadOnlyListOf("x", "y"):sortedBy(function(it)
         calls:add(it)
@@ -133,7 +146,7 @@ local function main()
     end)
     print(__K2L_Str(sortedWithCalls))
     local mutable = __K2L_ListOf(5, 2, 9)
-    mutable:sortBy(function(it) return -it end, true)
+    mutable:sortBy(____lambda_8, true)
     print(__K2L_Str(mutable))
 end
 

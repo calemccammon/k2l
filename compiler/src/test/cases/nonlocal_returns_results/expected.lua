@@ -429,7 +429,7 @@ local function maps(m, which)
         if which == 2 and it.value == 2 then
             return "filterTo returned, kept " .. __K2L_Str(kept)
         else
-            ____result_25 = math.fmod(it.value, 2) == 1
+            ____result_25 = (it.value >= 0 and it.value % 2 or 0 - -it.value % 2) == 1
         end
         if ____result_25 then
             kept:put(it.key, it.value)

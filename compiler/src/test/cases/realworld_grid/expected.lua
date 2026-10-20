@@ -9,7 +9,11 @@ local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_HashSet = ____lualib.__K2L_HashSet
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
+local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -22,7 +26,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local Dir
 local Pos = __K2L_Class("Pos")
@@ -30,6 +33,10 @@ local Pos = __K2L_Class("Pos")
 function Pos:____init(row, col)
     self.row = row
     self.col = col
+end
+
+function Pos.new(row, col)
+    return setmetatable({row = row, col = col}, Pos)
 end
 
 function Pos:plus(d)
@@ -45,7 +52,7 @@ function Pos:toString()
 end
 
 function Pos:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.row) + __K2L_Hash(self.col))
+    return (31 * self.row + self.col + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Pos:equals(other)
@@ -63,11 +70,15 @@ function Dir:____init(name, ordinal, dr, dc, symbol)
 end
 
 function Dir:turnRight()
-    return __K2L_EnumValues(Dir):get(__K2L_IRem(self.ordinal + 1, __K2L_EnumValues(Dir).size))
+    local ____values = Dir.____values
+    local ____index = __K2L_IRem(self.ordinal + 1, __K2L_EnumValues(Dir).size)
+    return ____values[____index + 1] or __K2L_IndexError(____index, #____values)
 end
 
 function Dir:turnLeft()
-    return __K2L_EnumValues(Dir):get(__K2L_IRem(self.ordinal + 3, __K2L_EnumValues(Dir).size))
+    local ____values_1 = Dir.____values
+    local ____index_1 = __K2L_IRem(self.ordinal + 3, __K2L_EnumValues(Dir).size)
+    return ____values_1[____index_1 + 1] or __K2L_IndexError(____index_1, #____values_1)
 end
 
 function Dir:toString()
@@ -86,13 +97,26 @@ Dir.____values = {Dir.UP, Dir.RIGHT, Dir.DOWN, Dir.LEFT}
 Dir.____companion = true
 
 function Dir:of(c)
-    return __K2L_EnumValues(Dir):firstOrNull(function(it) return it.symbol == c end)
+    local ____values_2 = Dir.____values
+    local ____result
+    for ____i = 1, #____values_2 do
+        local it = ____values_2[____i]
+        if it.symbol == c then
+            ____result = it
+            break
+        end
+    end
+    return ____result
 end
 
 local Grid = __K2L_Class("Grid")
 
 function Grid:____init(cells)
     self.cells = cells
+end
+
+function Grid.new(cells)
+    return setmetatable({cells = cells}, Grid)
 end
 
 function Grid:getHeight()
@@ -111,7 +135,10 @@ end
 function Grid:set(p, c)
     local ____object = self.cells:get(p.row)
     local ____key = p.col
-    ____object:set(____key, c)
+    if ____key < 0 or ____key >= ____object.size then
+        __K2L_IndexError(____key, ____object.size, "array")
+    end
+    ____object[____key + 1] = c
 end
 
 function Grid:contains(p)
@@ -141,19 +168,57 @@ function Grid:find(c)
 end
 
 function Grid:neighbours(p)
-    return __K2L_EnumValues(Dir):map(function(it) return p:plus(it) end):filter(function(it) return self:contains(it) end)
+    local ____values_3 = Dir.____values
+    local ____out = {}
+    local ____count = 0
+    for ____i_1 = 1, #____values_3 do
+        local it = ____values_3[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = p:plus(it)
+    end
+    local ____list = __K2L_ListWrap(____out, ____count)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items, ____n = ____list:____array()
+    for ____i_2 = 1, ____n do
+        local it = ____items[____i_2]
+        if self:contains(it) then
+            ____count_1 = ____count_1 + 1
+            ____out_1[____count_1] = it
+        end
+    end
+    return __K2L_ListWrap(____out_1, ____count_1)
 end
 
 function Grid:copy()
-    return Grid.new(self.cells:map(function(it) return it:toTypedArray() end))
+    local ____list_1 = self.cells
+    local ____out_2 = {}
+    local ____count_2 = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_3 = 1, ____n_1 do
+        local it = ____items_1[____i_3]
+        ____count_2 = ____count_2 + 1
+        ____out_2[____count_2] = it:toTypedArray()
+    end
+    return Grid.new(__K2L_ListWrap(____out_2, ____count_2))
 end
 
+local ____lambda_1 = function(it) return __K2L_Text.string(it) end
 function Grid:render()
-    return self.cells:joinToString("\n", nil, nil, nil, nil, function(it) return __K2L_Text.string(it) end)
+    return self.cells:joinToString("\n", nil, nil, nil, nil, ____lambda_1)
 end
 
 function Grid:parse(text)
-    return Grid.new(__K2L_StringLines(__K2L_Text.trimIndent(text)):map(function(it) return __K2L_Text.toCharArray(it) end))
+    local ____list_2 = __K2L_StringLines(__K2L_Text.trimIndent(text))
+    local ____out_3 = {}
+    local ____count_3 = 0
+    local ____items_2, ____n_2 = ____list_2:____array()
+    for ____i_4 = 1, ____n_2 do
+        local it = ____items_2[____i_4]
+        ____count_3 = ____count_3 + 1
+        ____out_3[____count_3] = __K2L_Text.toCharArray(it)
+    end
+    return Grid.new(__K2L_ListWrap(____out_3, ____count_3))
 end
 
 local MAZE = "\n    #################\n    #S..#.....#.....#\n    #.#.#.###.#.###.#\n    #.#...#...#...#.#\n    #.#####.#####.#.#\n    #.....#.....#.#.#\n    #####.#####.#.#.#\n    #...#.....#...#E#\n    #.#.#####.#####.#\n    #.#.......#.....#\n    #################\n"
@@ -174,10 +239,10 @@ local function bfs(grid, start, goal)
             end
             return path:asReversed()
         end
-        local ____list = grid:neighbours(cur)
-        local ____mod = ____list.____modCount
-        for ____i = 1, ____list.size do
-            local n = ____list[____i]
+        local ____list_3 = grid:neighbours(cur)
+        local ____mod = ____list_3.____modCount
+        for ____i_5 = 1, ____list_3.size do
+            local n = ____list_3[____i_5]
             do
                 if grid:get(n) == "#" or not seen:add(n) then
                     goto ____continue
@@ -186,7 +251,7 @@ local function bfs(grid, start, goal)
                 queue:addLast(n)
             end
             ::____continue::
-            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
+            if ____list_3.____modCount ~= ____mod and ____list_3:____comodified(____i_5) then
                 break
             end
         end
@@ -201,21 +266,26 @@ function State:____init(pos, dir)
     self.dir = dir
 end
 
+function State.new(pos, dir)
+    return setmetatable({pos = pos, dir = dir}, State)
+end
+
 function State:toString()
     return "State(pos=" .. __K2L_Str(self.pos) .. ", dir=" .. __K2L_Str(self.dir) .. ")"
 end
 
 function State:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.pos) + __K2L_Hash(self.dir))
+    return (31 * __K2L_Hash(self.pos) + __K2L_Hash(self.dir) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function State:equals(other)
     return getmetatable(other) == State and self.pos:equals(other.pos) and self.dir == other.dir
 end
 
+local ____lambda_2 = function(it) return it.first end
 local function cheapestRoute(grid, start, goal)
     local best = __K2L_MapOf()
-    local pq = __K2L_PriorityQueue.new(__K2L_CompareBy(function(it) return it.first end))
+    local pq = __K2L_PriorityQueue.new(__K2L_CompareBy(____lambda_2))
     local first = State.new(start, Dir.RIGHT)
     best:set(first, 0)
     pq:add(__K2L_Pair.new(0, first))
@@ -231,8 +301,8 @@ local function cheapestRoute(grid, start, goal)
             end
             local moves = __K2L_ReadOnlyListOf(__K2L_Pair.new(State.new(state.pos:plus(state.dir), state.dir), 1), __K2L_Pair.new(State.new(state.pos, state.dir:turnLeft()), 1000), __K2L_Pair.new(State.new(state.pos, state.dir:turnRight()), 1000))
             local ____mod_1 = moves.____modCount
-            for ____i_1 = 1, moves.size do
-                local ____item = moves[____i_1]
+            for ____i_6 = 1, moves.size do
+                local ____item = moves[____i_6]
                 local ____next, step = ____item.first, ____item.second
                 do
                     if grid:get(____next.pos) == "#" then
@@ -245,7 +315,7 @@ local function cheapestRoute(grid, start, goal)
                     end
                 end
                 ::____continue_2::
-                if moves.____modCount ~= ____mod_1 and moves:____comodified(____i_1) then
+                if moves.____modCount ~= ____mod_1 and moves:____comodified(____i_6) then
                     break
                 end
             end
@@ -264,6 +334,10 @@ function Region:____init(plant, area, perimeter)
     self.perimeter = perimeter
 end
 
+function Region.new(plant, area, perimeter)
+    return setmetatable({plant = plant, area = area, perimeter = perimeter}, Region)
+end
+
 function Region:getPrice()
     return self.area * self.perimeter
 end
@@ -273,7 +347,7 @@ function Region:toString()
 end
 
 function Region:hashCode()
-    return __K2L_ToInt32(31 * __K2L_ToInt32(31 * __K2L_Hash(self.plant) + __K2L_Hash(self.area)) + __K2L_Hash(self.perimeter))
+    return (31 * (31 * __K2L_Hash(self.plant) + self.area) + self.perimeter + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Region:equals(other)
@@ -296,9 +370,9 @@ local function regions(grid)
             while stack:isNotEmpty() do
                 local p = stack:removeLast()
                 area = area + 1
-                local ____list_1 = __K2L_EnumValues(Dir)
-                for ____i_2 = 1, ____list_1.size do
-                    local d = ____list_1[____i_2]
+                local ____values_4 = Dir.____values
+                for ____i_7 = 1, #____values_4 do
+                    local d = ____values_4[____i_7]
                     local n = p:plus(d)
                     if grid:get(n) ~= plant then
                         perimeter = perimeter + 1
@@ -340,6 +414,8 @@ local function patrol(grid)
     end
 end
 
+local ____lambda_3 = function(it) return it:getPrice() end
+local ____lambda_4 = function(it) return it.plant end
 local function main()
     local maze = Grid:parse(MAZE)
     print("maze " .. maze:getWidth() .. "x" .. maze:getHeight())
@@ -354,10 +430,10 @@ local function main()
     print("shortest path: " .. path.size - 1 .. " steps")
     print("first steps: " .. path:take(5):joinToString(" -> "))
     local drawn = maze:copy()
-    local ____list_2 = path:zipWithNext()
-    local ____mod_2 = ____list_2.____modCount
-    for ____i_3 = 1, ____list_2.size do
-        local ____it = ____list_2[____i_3]
+    local ____list_4 = path:zipWithNext()
+    local ____mod_2 = ____list_4.____modCount
+    for ____i_8 = 1, ____list_4.size do
+        local ____it = ____list_4[____i_8]
         do
             local a, b = ____it.first, ____it.second
             local d = __K2L_EnumValues(Dir):single(function(it) return a:plus(it):equals(b) end)
@@ -365,7 +441,7 @@ local function main()
                 drawn:set(b, d.symbol)
             end
         end
-        if ____list_2.____modCount ~= ____mod_2 and ____list_2:____comodified(____i_3) then
+        if ____list_4.____modCount ~= ____mod_2 and ____list_4:____comodified(____i_8) then
             break
         end
     end
@@ -374,17 +450,35 @@ local function main()
     print("walled-in: " .. __K2L_Str(bfs(maze, start, Pos.new(0, 0))))
     local garden = Grid:parse(GARDEN)
     local rs = regions(garden)
-    local ____list_3 = rs:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(function(it) return it:getPrice() end), function(it) return it.plant end))
-    local ____mod_3 = ____list_3.____modCount
-    for ____i_4 = 1, ____list_3.size do
-        local it = ____list_3[____i_4]
+    local ____list_5 = rs:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_3), ____lambda_4))
+    local ____mod_3 = ____list_5.____modCount
+    for ____i_9 = 1, ____list_5.size do
+        local it = ____list_5[____i_9]
         print("  " .. it.plant .. ": area=" .. it.area .. " perimeter=" .. it.perimeter .. " price=" .. it:getPrice())
-        if ____list_3.____modCount ~= ____mod_3 and ____list_3:____comodified(____i_4) then
+        if ____list_5.____modCount ~= ____mod_3 and ____list_5:____comodified(____i_9) then
             break
         end
     end
-    print("total price: " .. rs:sumOf(function(it) return it:getPrice() end))
-    local byPlant = rs:groupBy(function(it) return it.plant end, function(it) return it.area end)
+    local ____sum = 0
+    local ____items_3, ____n_3 = rs:____array()
+    for ____i_10 = 1, ____n_3 do
+        local it = ____items_3[____i_10]
+        ____sum = ____sum + it:getPrice()
+    end
+    print("total price: " .. ____sum)
+    local ____result_1 = __K2L_Map.new()
+    local ____items_4, ____n_4 = rs:____array()
+    for ____i_11 = 1, ____n_4 do
+        local it = ____items_4[____i_11]
+        local ____value_3 = it.plant
+        local ____group = ____result_1:get(____value_3)
+        if ____group == nil then
+            ____group = __K2L_List.new()
+            ____result_1:put(____value_3, ____group)
+        end
+        ____group:add(it.area)
+    end
+    local byPlant = ____result_1
     print("areas by plant: " .. __K2L_Str(byPlant))
     local lab = Grid:parse(PATROL)
     local ____destructured_1 = patrol(lab)

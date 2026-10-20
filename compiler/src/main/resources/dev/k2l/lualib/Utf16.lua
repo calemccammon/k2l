@@ -60,7 +60,9 @@ do
                 i = i + 1
             end
         end
-        u.n = n
+        -- clean: the last sequence ended at the end of s, so the units of s followed by another string are those of s
+        -- followed by the other's (a StringBuilder adds up the units of its pieces)
+        u.n, u.clean = n, i == len + 1
         return u
     end
 
@@ -1235,28 +1237,66 @@ do
     end
 
     ---------------------------------------------------------------- StringBuilder
-    local toString = SB.toString
+    local toString, append, setText = SB.toString, SB.append, SB.____setText
 
     function SB:toString()
         local s = toString(self)
         local fixed = norm(s)
         if fixed ~= s then
-            self.____parts = {fixed}
+            -- joined surrogate halves: the same units
+            local count = self.____units
+            setText(self, fixed)
+            self.____units = count
         end
         return fixed
     end
 
     SB.__tostring = SB.toString
 
+    -- ____units is the length in UTF-16 units while it is known: the sum of the units of the pieces, as long as every
+    -- piece is ASCII or a clean sequence of characters (see decode); unknown after the other edits, until measured
+    function SB:append(text)
+        local count = self.____units
+        if count ~= nil then
+            local u = units(text)
+            if u == nil then
+                self.____units = count + #text
+            elseif u.clean then
+                self.____units = count + u.n
+            else
+                self.____units = nil
+            end
+        end
+        return append(self, text)
+    end
+
+    function SB:appendLine(text)
+        return self:append((text or "") .. "\n")
+    end
+
     function SB:getLength()
-        return length(self:toString())
+        local count = self.____units
+        if count == nil then
+            local s = self:toString()
+            local u = units(s)
+            if u == nil then
+                count = #s
+                self.____units = count
+            else
+                count = u.n
+                if u.clean then
+                    self.____units = count
+                end
+            end
+        end
+        return count
     end
 
     function SB:isEmpty() return self:getLength() == 0 end
     function SB:isNotEmpty() return self:getLength() > 0 end
 
     function SB:reverse()
-        self.____parts = {Text.reversed(self:toString())}
+        setText(self, Text.reversed(self:toString()))
         return self
     end
 
@@ -1284,7 +1324,7 @@ do
         if index < 0 or index >= n then
             outOfBounds("index " .. index .. ",length " .. n)
         end
-        self.____parts = {norm(part(s, 0, index) .. c .. part(s, index + 1, n))}
+        setText(self, norm(part(s, 0, index) .. c .. part(s, index + 1, n)))
     end
 
     function SB:insert(index, text)
@@ -1293,7 +1333,7 @@ do
         if index < 0 or index > n then
             outOfBounds("offset " .. index .. ", length " .. n)
         end
-        self.____parts = {norm(part(s, 0, index) .. text .. part(s, index, n))}
+        setText(self, norm(part(s, 0, index) .. text .. part(s, index, n)))
         return self
     end
 
@@ -1303,7 +1343,7 @@ do
         if index < 0 or index >= n then
             outOfBounds("index " .. index .. ",length " .. n)
         end
-        self.____parts = {norm(part(s, 0, index) .. part(s, index + 1, n))}
+        setText(self, norm(part(s, 0, index) .. part(s, index + 1, n)))
         return self
     end
 
@@ -1314,7 +1354,7 @@ do
         if from < 0 or from > to then
             outOfBounds("start " .. from .. ", end " .. to .. ", length " .. n)
         end
-        self.____parts = {norm(part(s, 0, from) .. part(s, to, n))}
+        setText(self, norm(part(s, 0, from) .. part(s, to, n)))
         return self
     end
 
@@ -1325,7 +1365,7 @@ do
         if from < 0 or from > n or from > to then
             outOfBounds("start " .. from .. ", end " .. to .. ", length " .. n)
         end
-        self.____parts = {norm(part(s, 0, from) .. text .. part(s, to, n))}
+        setText(self, norm(part(s, 0, from) .. text .. part(s, to, n)))
         return self
     end
 
@@ -1335,7 +1375,7 @@ do
         if len < 0 then
             outOfBounds(tostring(len))
         end
-        self.____parts = {n >= len and part(s, 0, len) or s .. rep("\0", len - n)}
+        setText(self, n >= len and part(s, 0, len) or s .. rep("\0", len - n))
     end
 
     function SB:substring(from, to)

@@ -6,6 +6,10 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
 ## [Unreleased] (0.2.0)
 
 ### Added
+- A benchmark harness for the generated code: `./gradlew :compiler:bench` runs 17 programs (`compiler/src/bench/programs`,
+  checked against Kotlin/JVM) on every Lua found and compares them with a committed baseline; `-PbenchProfile` reports the
+  hottest functions per program with a sampling profiler (count hook on PUC Lua, `jit.profile` on LuaJIT), mapped back to
+  Kotlin lines and lualib files. `compiler/src/bench/PROFILE.md` ranks the optimization opportunities found.
 - Release engineering: the version is defined once (`gradle.properties`) and `k2l --version` reports it; the CLI
   distribution (`./gradlew :compiler:distZip`) now includes the README (and a LICENSE once the repository has one);
   a tag-triggered GitHub Release workflow; Maven Central (Central Portal) and Gradle Plugin Portal publishing
@@ -152,6 +156,16 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   test the class itself.
 
 ### Changed
+- Faster generated code and runtime (benchmark geomean vs the 0.1 baseline, lower is faster: 5.1 0.51, 5.2 0.63,
+  5.3 0.62, 5.4 0.60, LuaJIT 0.56). Generated code: `is`/`when` on final classes compares metatables; `map`/`filter`/
+  `sumOf`/`any`/... with a lambda literal on lists, arrays and sets compile to loops; `entries[i]` and loops over
+  `entries` read the enum's values without copying; primitive array access and string `s[i]` index directly with an
+  inline bounds check; `%` and `/` by positive literals, constant shifts and masks use operators; plain constructors
+  build the instance with one table constructor; non-capturing single-expression lambdas are hoisted; Int wrapping
+  uses `bit.tobit` on LuaJIT. Runtime: table-driven bitwise ops on Lua 5.1 (up to 8x faster), faster emulated Long64,
+  SWAR bit counts, comparator and hash map fast paths, counting-sort HashMap normalization, 4-byte string hashing,
+  cached `String.format` specs and a shorter double-digits search, single-limb BigInteger paths, fewer closures in the
+  regex engine, incremental UTF-16 StringBuilder length, leaner Sequence operations.
 - `println(x)` and `print(x)` of a platform-typed primitive (`treeMap.higherKey(k)` is `Int!`) throw `NullPointerException` for
   null, as the JVM's unboxing for `println(Int)` does (`__K2L_NotNull(x)`).
 - A map's `keys`, `values` and `entries` are live views (they were copies that only wrote removals back): they see later
@@ -198,6 +212,7 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   an `operator fun compareTo` is not.
 
 ### Fixed
+- Int division by a constant on Lua 5.1 no longer prints `-0` for a zero quotient of a negative dividend.
 - `"%s %s".format(null, x)` and `"%s".format(null)` resolve to the `Locale` overload, as in Kotlin, so they throw
   `MissingFormatArgumentException` like the JVM instead of printing `null`.
 - `String.format`: `%g` picks fixed or scientific notation after rounding (`999.9999` is `1000.00`), `%#010x` puts the zeros after

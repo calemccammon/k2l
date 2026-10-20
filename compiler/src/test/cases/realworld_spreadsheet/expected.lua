@@ -6,10 +6,8 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMapOf = ____lualib.__K2L_HashMapOf
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
-local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_IteratorBuilder = ____lualib.__K2L_IteratorBuilder
@@ -34,7 +32,6 @@ local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_StringTrim = ____lualib.__K2L_StringTrim
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
 
@@ -47,6 +44,10 @@ function Col:____init(index)
     self.index = index
 end
 
+function Col.new(index)
+    return setmetatable({index = index}, Col)
+end
+
 function Col:getLetters()
     return Col:toLetters(self.index)
 end
@@ -56,7 +57,7 @@ function Col:toString()
 end
 
 function Col:hashCode()
-    return __K2L_Hash(self.index)
+    return self.index
 end
 
 function Col:equals(other)
@@ -67,13 +68,14 @@ function Col:toLetters(i, acc)
     if acc == nil then
         acc = ""
     end
-    return i < 0 and acc or self:toLetters(__K2L_IDiv(i, 26) - 1, string.char(("A"):byte() + math.fmod(i, 26)) .. acc)
+    return i < 0 and acc or self:toLetters((i >= 0 and i // 26 or 0 - -i // 26) - 1, string.char(("A"):byte() + (i >= 0 and i % 26 or 0 - -i % 26)) .. acc)
 end
 
+local ____lambda_1 = function(acc, c)
+    return acc * 26 + (c:byte() - ("A"):byte() + 1)
+end
 function Col:parse(s)
-    return Col.new(__K2L_StringToList(s):fold(0, function(acc, c)
-        return acc * 26 + (c:byte() - ("A"):byte() + 1)
-    end) - 1)
+    return Col.new(__K2L_StringToList(s):fold(0, ____lambda_1) - 1)
 end
 
 local Ref = __K2L_Class("sheet.Ref")
@@ -86,12 +88,18 @@ function Ref:____init(col, row)
     self.row = row
 end
 
+function Ref.new(col, row)
+    return setmetatable({col = col, row = row}, Ref)
+end
+
 function Ref:toString()
     return self.col:getLetters() .. self.row
 end
 
+local ____lambda_2 = function(it) return it.row end
+local ____lambda_3 = function(it) return it.col.index end
 function Ref:compareTo(other)
-    return __K2L_CompareBy(function(it) return it.row end, function(it) return it.col.index end)(self, other)
+    return __K2L_CompareBy(____lambda_2, ____lambda_3)(self, other)
 end
 
 function Ref:rangeTo(other)
@@ -99,7 +107,7 @@ function Ref:rangeTo(other)
 end
 
 function Ref:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.col) + __K2L_Hash(self.row))
+    return (31 * __K2L_Hash(self.col) + self.row + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Ref:equals(other)
@@ -164,6 +172,10 @@ function Formula.Const:____init(value)
     self.value = value
 end
 
+function Formula.Const.new(value)
+    return setmetatable({value = value}, Formula.Const)
+end
+
 function Formula.Const:refs()
     return __K2L_ReadOnlySetOf()
 end
@@ -177,6 +189,10 @@ __K2L_ClassInfo(Formula.Cell, "sheet.Formula.Cell", "sheet.Formula$Cell", "class
 
 function Formula.Cell:____init(ref)
     self.ref = ref
+end
+
+function Formula.Cell.new(ref)
+    return setmetatable({ref = ref}, Formula.Cell)
 end
 
 function Formula.Cell:refs()
@@ -196,6 +212,10 @@ function Formula.Op:____init(op, left, right)
     self.right = right
 end
 
+function Formula.Op.new(op, left, right)
+    return setmetatable({op = op, left = left, right = right}, Formula.Op)
+end
+
 function Formula.Op:refs()
     return self.left:refs():plusAll(self.right:refs())
 end
@@ -210,6 +230,10 @@ __K2L_ClassInfo(Formula.Fn, "sheet.Formula.Fn", "sheet.Formula$Fn", "class")
 function Formula.Fn:____init(name, area)
     self.name = name
     self.area = area
+end
+
+function Formula.Fn.new(name, area)
+    return setmetatable({name = name, area = area}, Formula.Fn)
 end
 
 function Formula.Fn:refs()
@@ -343,11 +367,12 @@ end
 
 function Sheet:eval(f)
     self.evaluations = self.evaluations + 1
-    if __K2L_InstanceOf(f, Formula.Const) then
+    local ____mt = getmetatable(f)
+    if ____mt == Formula.Const then
         return f.value
-    elseif __K2L_InstanceOf(f, Formula.Cell) then
+    elseif ____mt == Formula.Cell then
         return self.values:get(f.ref) or 0.0
-    elseif __K2L_InstanceOf(f, Formula.Op) then
+    elseif ____mt == Formula.Op then
         local ____destructured_2 = __K2L_Pair.new(self:eval(f.left), self:eval(f.right))
         local l, r = ____destructured_2.first, ____destructured_2.second
         local ____subject_1 = f.op
@@ -362,7 +387,7 @@ function Sheet:eval(f)
         else
             error(__K2L_IllegalStateException.new("unknown operator " .. f.op))
         end
-    elseif __K2L_InstanceOf(f, Formula.Fn) then
+    elseif ____mt == Formula.Fn then
         local xs = self:get__1(f.area)
         local ____subject = f.name
         if ____subject == "SUM" then
@@ -377,8 +402,9 @@ function Sheet:eval(f)
     end
 end
 
+local ____lambda_4 = function(it) return it.row end
 function Sheet:render(area)
-    local rows = area:groupBy(function(it) return it.row end)
+    local rows = area:groupBy(____lambda_4)
     return rows:getEntries():joinToString("\n", nil, nil, nil, nil, function(____destructured_3)
         local row, refs = ____destructured_3.key, ____destructured_3.value
         return __K2L_StringFormat("%3d | ", row) .. refs:joinToString(" ", nil, nil, nil, nil, function(it)
@@ -394,13 +420,19 @@ function Sheet:describe()
     end)
 end
 
+local ____lambda_5 = function(it) return Col.new(it):getLetters() end
+local ____lambda_6 = function(it) return Col:toLetters(it) end
+local ____lambda_7 = function(it) return Col:parse(it).index end
+local ____lambda_8 = function() return Ref:parse("1A") end
+local ____lambda_9 = function(____p1) return print(__K2L_Str(____p1)) end
+local ____lambda_10 = function(it) return __K2L_Str(it) end
 local function main()
-    print(__K2L_Str(__K2L_IntRange.new(0, 3):map(function(it) return Col.new(it):getLetters() end):plusAll(__K2L_ReadOnlyListOf(25, 26, 27, 51, 52, 701, 702):map(function(it) return Col:toLetters(it) end))))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("A", "Z", "AA", "AZ", "ZZ", "AAA"):map(function(it) return Col:parse(it).index end)))
+    print(__K2L_Str(__K2L_IntRange.new(0, 3):map(____lambda_5):plusAll(__K2L_ReadOnlyListOf(25, 26, 27, 51, 52, 701, 702):map(____lambda_6))))
+    print(__K2L_Str(__K2L_ReadOnlyListOf("A", "Z", "AA", "AZ", "ZZ", "AAA"):map(____lambda_7)))
     local ____destructured_5 = Ref:parse("bc12")
     local letters, row = ____destructured_5.col, ____destructured_5.row
     print(__K2L_Str(letters) .. " " .. row .. " " .. tostring(__K2L_Compare(Ref:parse("C3"), Ref:parse("A4")) < 0) .. " " .. __K2L_Str(Ref:parse("A1"):rangeTo(Ref:parse("B2")):toList()))
-    local ____receiver_5 = __K2L_RunCatching(function() return Ref:parse("1A") end):exceptionOrNull()
+    local ____receiver_5 = __K2L_RunCatching(____lambda_8):exceptionOrNull()
     print(__K2L_Str(____receiver_5 and ____receiver_5.message))
     local s = Sheet.new()
     s:set("A1", "10")
@@ -417,7 +449,7 @@ local function main()
     local ____mod_3 = ____list_2.____modCount
     for ____i_4 = 1, ____list_2.size do
         local it = ____list_2[____i_4];
-        (function(____p1) return print(__K2L_Str(____p1)) end)(it)
+        (____lambda_9)(it)
         if ____list_2.____modCount ~= ____mod_3 and ____list_2:____comodified(____i_4) then
             break
         end
@@ -425,7 +457,7 @@ local function main()
     print("order: " .. __K2L_Str(s.lastOrder or __K2L_Uninitialized("lastOrder")))
     print(s:render(Ref:parse("A1"):rangeTo(Ref:parse("C3"))))
     print("C2 is NaN: " .. tostring(__K2L_Num.isNaN(s:get("C2"))) .. ", evaluations=" .. s.evaluations)
-    print(__K2L_Str(s:get__1(Ref:parse("A1"):rangeTo(Ref:parse("A3"))):map(function(it) return __K2L_Str(it) end)))
+    print(__K2L_Str(s:get__1(Ref:parse("A1"):rangeTo(Ref:parse("A3"))):map(____lambda_10)))
     local built = times(plus(Formula.Const.new(2.0), Formula.Cell.new(Ref:parse("A1"))), Formula.Const.new(3.0))
     print(__K2L_Str(built) .. " refs=" .. __K2L_Str(built:refs()))
     s:set("A1", "C3")
@@ -434,7 +466,7 @@ local function main()
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result_2)
-        if __K2L_InstanceOf(____error, CycleException) then
+        if getmetatable(____error) == CycleException then
             local e = ____error
             print(__K2L_Str(e.message) .. " (length " .. e.path.size .. ")")
         else

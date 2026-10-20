@@ -168,7 +168,7 @@ private fun FileTransformer.iterationLoop(e: KtForExpression, frame: LoopFrame, 
 
             type?.isStringType == true && destructuring == null -> {
                 val text = expression(rangeExpr)
-                emit(LuaGenericFor(listOf(naming.of(param)), listOf(stringChars(text)), loopBody(frame, e.body)))
+                eachChar(text, naming.of(param), loopBody(frame, e.body))
             }
 
             else -> unsupported(rangeExpr, "Iterating over '${type.pretty()}'")
@@ -251,7 +251,7 @@ private fun FileTransformer.collectionLoop(
 ): Unit = with(session) {
     val destructuring = param.destructuringDeclaration
     val checked = loopChecked(e, rangeExpr)
-    val source = mapViewSource(rangeExpr, checked) ?: run {
+    val source = mapViewSource(rangeExpr, checked) ?: enumEntriesSource(rangeExpr) ?: run {
         val collection = expression(rangeExpr)
         when {
             kind == CollectionKind.Array -> listSource(collection, false)

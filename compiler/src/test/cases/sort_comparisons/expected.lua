@@ -5,7 +5,6 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
@@ -14,6 +13,7 @@ local __K2L_JavaRandom = ____lualib.__K2L_JavaRandom
 local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -24,7 +24,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ThenBy = ____lualib.__K2L_ThenBy
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Log
@@ -36,11 +35,16 @@ function Item:____init(key, id)
     self.id = id
 end
 
+function Item.new(key, id)
+    return setmetatable({key = key, id = id}, Item)
+end
+
 function Item:compareTo(other)
     local ____object = Log
     ____object.calls = ____object.calls + 1
     local ____object_1 = Log
-    ____object_1.hash = math.fmod(Log.hash * 31 + self.key * 7 + other.key, 999983)
+    local ____dividend = Log.hash * 31 + self.key * 7 + other.key
+    ____object_1.hash = ____dividend >= 0 and ____dividend % 999983 or 0 - -____dividend % 999983
     return __K2L_Compare(self.key, other.key)
 end
 
@@ -49,7 +53,7 @@ function Item:toString()
 end
 
 function Item:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.key) + __K2L_Hash(self.id))
+    return (31 * self.key + self.id + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Item:equals(other)
@@ -70,7 +74,8 @@ end
 
 function Log:record(a, b)
     self.calls = self.calls + 1
-    self.hash = math.fmod(self.hash * 31 + a * 7 + b, 999983)
+    local ____dividend_1 = self.hash * 31 + a * 7 + b
+    self.hash = ____dividend_1 >= 0 and ____dividend_1 % 999983 or 0 - -____dividend_1 % 999983
 end
 
 function Log:summary()
@@ -84,15 +89,24 @@ function Lcg:____init(state)
     self.state = state
 end
 
+function Lcg.new(state)
+    return setmetatable({state = state}, Lcg)
+end
+
 function Lcg:next(bound)
-    self.state = math.fmod(self.state * 75 + 74, 65537)
+    local ____dividend_2 = self.state * 75 + 74
+    self.state = ____dividend_2 >= 0 and ____dividend_2 % 65537 or 0 - -____dividend_2 % 65537
     return __K2L_IRem(self.state, bound)
 end
 
+local ____lambda_1 = function(it) return it end
 local function shapes(n, seed)
     local rnd = Lcg.new(seed)
-    return __K2L_ReadOnlyListOf(__K2L_ListOfSize(n, function(it) return rnd:next(1000) end), __K2L_ListOfSize(n, function(it) return rnd:next(4) end), __K2L_ListOfSize(n, function(it) return it end), __K2L_ListOfSize(n, function(it) return n - it end), __K2L_ListOfSize(n, function(it) return math.fmod(it * 7, 13) end), __K2L_ListOfSize(n, function(it)
-        return math.fmod(it, 50) < 25 and it or n - it
+    return __K2L_ReadOnlyListOf(__K2L_ListOfSize(n, function(it) return rnd:next(1000) end), __K2L_ListOfSize(n, function(it) return rnd:next(4) end), __K2L_ListOfSize(n, ____lambda_1), __K2L_ListOfSize(n, function(it) return n - it end), __K2L_ListOfSize(n, function(it)
+        local ____dividend_3 = it * 7
+        return ____dividend_3 >= 0 and ____dividend_3 % 13 or 0 - -____dividend_3 % 13
+    end), __K2L_ListOfSize(n, function(it)
+        return (it >= 0 and it % 50 or 0 - -it % 50) < 25 and it or n - it
     end), __K2L_ListOfSize(n, function(it)
         return rnd:next(10) == 0 and rnd:next(1000) or it
     end))
@@ -197,15 +211,30 @@ local function selectors()
     print("compareBy.thenBy " .. __K2L_Str(chained) .. " selector=" .. selected)
 end
 
+local ____lambda_2 = function(it) return it end
+local ____lambda_3 = function(it) return it end
 local function comparables()
     local rnd = Lcg.new(7)
     local items = __K2L_ListOfSize(80, function(it) return Item.new(rnd:next(20), it) end)
     Log:reset()
     local sorted = items:sorted()
-    print("sorted() " .. Log:summary() .. " stable=" .. tostring(sorted:zipWithNext():all(function(____destructured)
-        local a, b = ____destructured.first, ____destructured.second
-        return a.key < b.key or a.key == b.key and a.id < b.id
-    end)))
+    local ____arg = Log:summary()
+    local ____list_1 = sorted:zipWithNext()
+    local ____result = true
+    local ____items, ____n = ____list_1:____array()
+    for ____i_1 = 1, ____n do
+        local ____it = ____items[____i_1]
+        local ____result_1
+        do
+            local a, b = ____it.first, ____it.second
+            ____result_1 = a.key < b.key or a.key == b.key and a.id < b.id
+        end
+        if not ____result_1 then
+            ____result = false
+            break
+        end
+    end
+    print("sorted() " .. ____arg .. " stable=" .. tostring(____result))
     Log:reset()
     local desc = items:sortedDescending()
     print("sortedDescending() " .. Log:summary() .. " first=" .. __K2L_Str(desc:first()))
@@ -225,9 +254,9 @@ local function comparables()
     Log:reset()
     print("maxOrNull " .. __K2L_Str(items:maxOrNull()) .. " minOrNull " .. __K2L_Str(items:minOrNull()) .. " " .. Log:summary())
     Log:reset()
-    print("sortedBy item " .. __K2L_Str(items:sortedBy(function(it) return it end, true):first()) .. " " .. Log:summary())
+    print("sortedBy item " .. __K2L_Str(items:sortedBy(____lambda_2, true):first()) .. " " .. Log:summary())
     Log:reset()
-    print("maxBy " .. __K2L_Str(items:maxBy(function(it) return it end)) .. " " .. Log:summary())
+    print("maxBy " .. __K2L_Str(items:maxBy(____lambda_3)) .. " " .. Log:summary())
 end
 
 local function javaSorts()
@@ -275,12 +304,12 @@ local function brokenComparators()
         local values = __K2L_ListOfSize(400, function(it) return rnd:next(100) end)
         local coin = Lcg.new(seed * 13)
         local result
-        local ____ok, ____result = pcall(function()
+        local ____ok, ____result_2 = pcall(function()
             values:sortedWith(function(_, _) return coin:next(3) - 1 end)
             result = "sorted"
         end)
         if not ____ok then
-            local ____error = __K2L_ToThrowable(____result)
+            local ____error = __K2L_ToThrowable(____result_2)
             if __K2L_InstanceOf(____error, __K2L_IllegalArgumentException) then
                 local e = ____error
                 result = e.message
@@ -298,10 +327,14 @@ function Counted:____init(raw)
     self.raw = raw
 end
 
+function Counted.new(raw)
+    return setmetatable({raw = raw}, Counted)
+end
+
 function Counted:getKey()
     local ____object_2 = Log
     ____object_2.calls = ____object_2.calls + 1
-    return math.fmod(self.raw, 5)
+    return self.raw >= 0 and self.raw % 5 or 0 - -self.raw % 5
 end
 
 local Suit = __K2L_Class("Suit")
@@ -324,33 +357,71 @@ Suit.HEARTS = Suit.new("HEARTS", 1)
 Suit.SPADES = Suit.new("SPADES", 2)
 Suit.____values = {Suit.CLUBS, Suit.HEARTS, Suit.SPADES}
 
+local ____lambda_4 = function(it) return it.key end
+local ____lambda_5 = function(it) return it.key * 2 - it.id end
+local ____lambda_6 = function(receiver) return receiver.id end
+local ____lambda_7 = function(it) return #it end
+local ____lambda_8 = function(it) return it.first end
+local ____lambda_9 = function(it) return it.ordinal end
+local ____lambda_10 = function(it) return it end
+local ____lambda_11 = function(it) return __K2L_Str(it) end
+local ____lambda_12 = function(it) return __K2L_Str(it) end
+local ____lambda_13 = function(it) return __K2L_Str(it) end
+local ____lambda_14 = function(it) return it.value end
+local ____lambda_15 = function(it)
+    return it.id >= 0 and it.id % 7 or 0 - -it.id % 7
+end
+local ____lambda_16 = function(it) return -it.id end
+local ____lambda_17 = function(it) return it:getKey() end
 local function pureSelectors()
     local rnd = Lcg.new(11)
     local items = __K2L_ListOfSize(60, function(it) return Item.new(rnd:next(9), it) end)
-    print(__K2L_Str(items:sortedBy(function(it) return it.key end, true):take(6)))
-    print(__K2L_Str(items:sortedByDescending(function(it) return it.key * 2 - it.id end, true):take(4)))
-    print(__K2L_Str(items:sortedBy(__K2L_PropertyRef.new("id", "id@145", function(receiver) return receiver.id end), true):take(3)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("bb", "a", "ccc", "dd"):sortedBy(function(it) return #it end, true)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(__K2L_Pair.new(1, "z"), __K2L_Pair.new(0, "y"), __K2L_Pair.new(1, "x")):sortedBy(function(it) return it.first end, true)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(Suit.SPADES, Suit.CLUBS, Suit.HEARTS):sortedByDescending(function(it) return it.ordinal end, true)))
-    print(__K2L_ReadOnlyListOf(2.5, -0.0, 0.0, 0.0 / 0.0, -1.0):sortedBy(function(it) return it end, true):joinToString(nil, nil, nil, nil, nil, function(it) return __K2L_Str(it) end))
-    print(__K2L_ReadOnlyListOf(0.0, 0.0 / 0.0, -0.0, -3.5):sorted():joinToString(nil, nil, nil, nil, nil, function(it) return __K2L_Str(it) end))
+    print(__K2L_Str(items:sortedBy(____lambda_4, true):take(6)))
+    print(__K2L_Str(items:sortedByDescending(____lambda_5, true):take(4)))
+    print(__K2L_Str(items:sortedBy(__K2L_PropertyRef.new("id", "id@145", ____lambda_6), true):take(3)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf("bb", "a", "ccc", "dd"):sortedBy(____lambda_7, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(__K2L_Pair.new(1, "z"), __K2L_Pair.new(0, "y"), __K2L_Pair.new(1, "x")):sortedBy(____lambda_8, true)))
+    print(__K2L_Str(__K2L_ReadOnlyListOf(Suit.SPADES, Suit.CLUBS, Suit.HEARTS):sortedByDescending(____lambda_9, true)))
+    print(__K2L_ReadOnlyListOf(2.5, -0.0, 0.0, 0.0 / 0.0, -1.0):sortedBy(____lambda_10, true):joinToString(nil, nil, nil, nil, nil, ____lambda_11))
+    print(__K2L_ReadOnlyListOf(0.0, 0.0 / 0.0, -0.0, -3.5):sorted():joinToString(nil, nil, nil, nil, nil, ____lambda_12))
     print(__K2L_ListOfSize(40, function(it)
-        if math.fmod(it, 7) == 0 then
+        if (it >= 0 and it % 7 or 0 - -it % 7) == 0 then
             return 0.0 / 0.0
         else
-            return math.fmod(it, 2) == 0 and -0.0 or 0.0
+            return (it >= 0 and it % 2 or 0 - -it % 2) == 0 and -0.0 or 0.0
         end
-    end):sortedDescending():joinToString(nil, nil, nil, nil, nil, function(it) return __K2L_Str(it) end))
+    end):sortedDescending():joinToString(nil, nil, nil, nil, nil, ____lambda_13))
     print(__K2L_Compare(-0.0, 0.0) .. " " .. __K2L_Compare(0.0 / 0.0, 1.0) .. " " .. __K2L_CompareValues(0.0 / 0.0, 0.0 / 0.0) .. " " .. __K2L_CompareValues(0.0, -0.0))
-    print(__K2L_Str(__K2L_ReadOnlyMapOf(__K2L_Pair.new("b", 2), __K2L_Pair.new("a", 1)):getEntries():sortedBy(function(it) return it.value end, true):map(function(it) return it.key end)))
+    local ____list_2 = __K2L_ReadOnlyMapOf(__K2L_Pair.new("b", 2), __K2L_Pair.new("a", 1)):getEntries():sortedBy(____lambda_14, true)
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = ____list_2:____array()
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
+        ____count = ____count + 1
+        ____out[____count] = it.key
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     local mutable = items:toMutableList()
-    mutable:sortBy(function(it) return math.fmod(it.id, 7) end)
+    mutable:sortBy(____lambda_15)
     print(__K2L_Str(mutable:take(5)))
-    print(__K2L_Str(__K2L_AsSequence(items):sortedBy(function(it) return -it.id end, true):take(2):toList()))
+    print(__K2L_Str(__K2L_AsSequence(items):sortedBy(____lambda_16, true):take(2):toList()))
     Log:reset()
-    local counted = __K2L_ListOfSize(40, function(it) return Counted.new(math.fmod(it * 37, 41)) end):sortedBy(function(it) return it:getKey() end)
-    print("getter selector calls=" .. Log.calls .. " " .. __K2L_Str(counted:take(5):map(function(it) return it.raw end)))
+    local counted = __K2L_ListOfSize(40, function(it)
+        local ____dividend_4 = it * 37
+        return Counted.new(____dividend_4 >= 0 and ____dividend_4 % 41 or 0 - -____dividend_4 % 41)
+    end):sortedBy(____lambda_17)
+    local ____arg_1 = Log.calls
+    local ____list_3 = counted:take(5)
+    local ____out_1 = {}
+    local ____count_1 = 0
+    local ____items_2, ____n_2 = ____list_3:____array()
+    for ____i_3 = 1, ____n_2 do
+        local it = ____items_2[____i_3]
+        ____count_1 = ____count_1 + 1
+        ____out_1[____count_1] = it.raw
+    end
+    print("getter selector calls=" .. ____arg_1 .. " " .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
 end
 
 local function main()

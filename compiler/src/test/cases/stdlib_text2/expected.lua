@@ -60,6 +60,9 @@ local function splitting()
     print(__K2L_StringReplace("abc", "", "-"))
 end
 
+local ____lambda_1 = function(it) return it ~= "," end
+local ____lambda_2 = function(it) return it ~= "," end
+local ____lambda_3 = function(it) return it == "W" end
 local function substrings()
     local s = "Hello, World"
     print(__K2L_Text.substringBefore(s, ","))
@@ -69,8 +72,8 @@ local function substrings()
     print(__K2L_Text.substringAfter(s, "zz", "none"))
     print(__K2L_Text.take(s, 3) .. __K2L_Text.takeLast(s, 3))
     print(__K2L_Text.drop(s, 7) .. __K2L_Text.dropLast(s, 7))
-    print(__K2L_Text.takeWhile(s, function(it) return it ~= "," end))
-    print(__K2L_Text.dropWhile(s, function(it) return it ~= "," end))
+    print(__K2L_Text.takeWhile(s, ____lambda_1))
+    print(__K2L_Text.dropWhile(s, ____lambda_2))
     print(__K2L_Text.removePrefix(s, "Hello") .. __K2L_Text.removeSuffix(s, "World"))
     print(__K2L_Text.removeSurrounding("[x]", "[", "]"))
     print(__K2L_Text.removeRange(s, 0, 7))
@@ -81,49 +84,66 @@ local function substrings()
     print(__K2L_Str(__K2L_Text.substring(s, 2, 4)))
     print(__K2L_Text.first(s))
     print(__K2L_Text.last(s))
-    print(__K2L_StringToList(s):single(function(it) return it == "W" end))
+    print(__K2L_StringToList(s):single(____lambda_3))
 end
 
+local ____lambda_4 = function(it) return it:match("^%d$") ~= nil end
+local ____lambda_5 = function() return "empty" end
+local ____lambda_6 = function() return "blank" end
 local function trimming()
     print("[" .. __K2L_StringTrim("  x  ") .. "]")
     print("[" .. __K2L_Text.trimChars("xxaxx", 3, "x") .. "]")
     print("[" .. __K2L_Text.trimChars("xxaxx", 1, "x") .. "]")
     print("[" .. __K2L_Text.trimChars("xxaxx", 2, "x") .. "]")
-    print("[" .. __K2L_Text.trimWith("12ab34", 3, function(it) return it:match("^%d$") ~= nil end) .. "]")
+    print("[" .. __K2L_Text.trimWith("12ab34", 3, ____lambda_4) .. "]")
     print(__K2L_Text.trimIndent("  a\n    b"))
     print(__K2L_Text.trimMargin("   |a\n   |b"))
     print(__K2L_Text.prependIndent("a\nb", ">"))
     print(__K2L_StringPadStart("7", 3, "0") .. __K2L_StringPadEnd("7", 3, "."))
-    print(__K2L_Text.ifEmpty("", function() return "empty" end))
-    print(__K2L_Text.ifBlank("  ", function() return "blank" end))
+    print(__K2L_Text.ifEmpty("", ____lambda_5))
+    print(__K2L_Text.ifBlank("  ", ____lambda_6))
     print("x" == nil or "x" == "")
     local n = nil
     print(n == nil or __K2L_StringIsBlank(n))
     print(#(n or ""))
 end
 
+local ____lambda_7 = function(it) return it:upper() end
+local ____lambda_8 = function(it) return it:upper() end
+local ____lambda_9 = function(w)
+    return __K2L_Text.replaceFirstChar(w, ____lambda_8)
+end
+local ____lambda_10 = function(it)
+    return not __K2L_StringContains("aeiou", it)
+end
+local ____lambda_11 = function(it) return it == "l" end
+local ____lambda_12 = function(it) return it:upper() end
+local ____lambda_13 = function(it) return it == "o" end
+local ____lambda_14 = function(it) return it end
+local ____lambda_15 = function(it) return it.value.size end
+local ____lambda_16 = function(it) return it.value > 1 end
+local ____lambda_17 = function(it) return __K2L_StringContains("aeiou", it) end
+local ____lambda_18 = function(it) return it == "w" end
+local ____lambda_19 = function(it) return it:match("^%a$") ~= nil end
+local ____lambda_20 = function(it) return it ~= " " end
 local function transforming()
     local s = "hello world"
-    print(__K2L_Text.replaceFirstChar(s, function(it) return it:upper() end))
-    print(__K2L_StringSplit(s, " "):joinToString(" ", nil, nil, nil, nil, function(w)
-        return __K2L_Text.replaceFirstChar(w, function(it) return it:upper() end)
-    end))
-    print(__K2L_Text.filter(s, function(it)
-        return not __K2L_StringContains("aeiou", it)
-    end))
-    print(__K2L_Text.filterNot(s, function(it) return it == "l" end))
-    print(__K2L_Str(__K2L_StringToList(s):map(function(it) return it:upper() end)))
-    print(__K2L_StringToList(s):count(function(it) return it == "o" end))
+    print(__K2L_Text.replaceFirstChar(s, ____lambda_7))
+    print(__K2L_StringSplit(s, " "):joinToString(" ", nil, nil, nil, nil, ____lambda_9))
+    print(__K2L_Text.filter(s, ____lambda_10))
+    print(__K2L_Text.filterNot(s, ____lambda_11))
+    print(__K2L_Str(__K2L_StringToList(s):map(____lambda_12)))
+    print(__K2L_StringToList(s):count(____lambda_13))
     print(__K2L_StringToList(s):distinct().size)
-    print(__K2L_Str(__K2L_StringToList(s):groupBy(function(it) return it end):mapValues(function(it) return it.value.size end):filter(function(it) return it.value > 1 end)))
-    print(__K2L_Str(__K2L_Text.partition(s, function(it) return __K2L_StringContains("aeiou", it) end)))
+    print(__K2L_Str(__K2L_StringToList(s):groupBy(____lambda_14):mapValues(____lambda_15):filter(____lambda_16)))
+    print(__K2L_Str(__K2L_Text.partition(s, ____lambda_17)))
     print(s:reverse())
-    print(__K2L_StringToList(s):any(function(it) return it == "w" end))
-    print(__K2L_StringToList(s):all(function(it) return it:match("^%a$") ~= nil end))
+    print(__K2L_StringToList(s):any(____lambda_18))
+    print(__K2L_StringToList(s):all(____lambda_19))
     print(__K2L_StringToList(s):toSet().size)
     print(__K2L_Str(__K2L_StringToList(s):toSortedSet()))
     print(__K2L_Str(__K2L_StringToList(s):zip(__K2L_StringToList("abc"))))
-    print(__K2L_AsSequence(s):filter(function(it) return it ~= " " end):take(3):joinToString(""))
+    print(__K2L_AsSequence(s):filter(____lambda_20):take(3):joinToString(""))
     print(__K2L_Str(__K2L_StringToList(s):maxOrNull()))
     print(__K2L_Str(__K2L_IntRange.new(0, #s - 1)))
     print(#s - 1)

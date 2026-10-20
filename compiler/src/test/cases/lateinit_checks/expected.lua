@@ -29,6 +29,9 @@ function Service:cacheSize()
     return self.cache ~= nil and (self.cache or __K2L_Uninitialized("cache")).size or -1
 end
 
+local ____lambda_1 = function()
+    return (____exports.config or __K2L_Uninitialized("config")):get("x")
+end
 local function main()
     local s = Service.new()
     print(tostring(s:ready()) .. " " .. s:cacheSize())
@@ -51,9 +54,7 @@ local function main()
     s:warm()
     s:warm()
     print(tostring(s:ready()) .. " " .. (s.name or __K2L_Uninitialized("name")) .. " " .. s:cacheSize())
-    local ____receiver = __K2L_RunCatching(function()
-        return (____exports.config or __K2L_Uninitialized("config")):get("x")
-    end):exceptionOrNull()
+    local ____receiver = __K2L_RunCatching(____lambda_1):exceptionOrNull()
     print(__K2L_Str(____receiver and ____receiver.message))
     print(____exports.config ~= nil)
     ____exports.config = __K2L_SingletonMapOf(__K2L_Pair.new("x", "1"))

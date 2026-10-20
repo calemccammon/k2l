@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 
@@ -31,6 +32,10 @@ function Inbox:____init(items)
     self.items = items
 end
 
+function Inbox.new(items)
+    return setmetatable({items = items}, Inbox)
+end
+
 function Inbox:items__1()
     return self.items:toList()
 end
@@ -40,7 +45,16 @@ function Inbox:count()
 end
 
 function Inbox:count__1(prefix)
-    return self.items:count(function(it) return __K2L_StringStartsWith(it, prefix) end)
+    local ____list = self.items
+    local ____result = 0
+    local ____items, ____n = ____list:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        if __K2L_StringStartsWith(it, prefix) then
+            ____result = ____result + 1
+        end
+    end
+    return ____result
 end
 
 local Holder = __K2L_Class("Holder")
@@ -50,9 +64,19 @@ function Holder:____init()
 end
 
 function Holder:values__1()
-    return self.values:map(function(it) return it * 2 end)
+    local ____list_1 = self.values
+    local ____out = {}
+    local ____count = 0
+    local ____items_1, ____n_1 = ____list_1:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = it * 2
+    end
+    return __K2L_ListWrap(____out, ____count)
 end
 
+local ____lambda_1 = function(self, ...) return self:values__1(...) end
 local function main()
     local box = Inbox.new(__K2L_ListOf("a", "ab"))
     local s = box
@@ -62,7 +86,7 @@ local function main()
     print(Derived.new():total())
     print(Derived.new().size)
     print(__K2L_Str(Holder.new():values__1()))
-    local f = function(self, ...) return self:values__1(...) end
+    local f = ____lambda_1
     print(__K2L_Str(f(Holder.new())))
 end
 

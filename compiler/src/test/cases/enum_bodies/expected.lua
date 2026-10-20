@@ -4,6 +4,7 @@ local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
@@ -227,10 +228,12 @@ local function classify(op)
     end
 end
 
+local ____lambda_1 = function(it) return it.weight end
+local ____lambda_2 = function(it) return it.name:lower() end
 local function main()
-    local ____list = __K2L_EnumValues(Op)
-    for ____i = 1, ____list.size do
-        local op = ____list[____i]
+    local ____values = Op.____values
+    for ____i = 1, #____values do
+        local op = ____values[____i]
         print(op.name .. " " .. op.ordinal .. " " .. op.symbol .. " " .. op:apply(6, 3) .. " " .. op:describe() .. " " .. classify(op))
     end
     print(__K2L_Str(Op.PLUS))
@@ -247,7 +250,15 @@ local function main()
     local any = Op.TIMES
     print(__K2L_InstanceOf(any, Op))
     print(__K2L_InstanceOf(any, Level))
-    print(__K2L_Str(__K2L_EnumValues(Op):map(function(it) return it.symbol end)))
+    local ____values_1 = Op.____values
+    local ____out = {}
+    local ____count = 0
+    for ____i_1 = 1, #____values_1 do
+        local it = ____values_1[____i_1]
+        ____count = ____count + 1
+        ____out[____count] = it.symbol
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(__K2L_EnumValues(Op).size)
     print("-- levels")
     print(Level.LOW:score())
@@ -257,21 +268,27 @@ local function main()
     print(Level.HIGH:score())
     print(Level.HIGH:twice())
     print(Level.NONE:twice())
-    local total = __K2L_EnumValues(Level):sumOf(function(it) return it.weight end)
+    local ____values_2 = Level.____values
+    local ____sum = 0
+    for ____i_2 = 1, #____values_2 do
+        local it = ____values_2[____i_2]
+        ____sum = ____sum + it.weight
+    end
+    local total = ____sum
     print(total)
-    local best = __K2L_EnumValues(Level):maxByOrNull(function(it) return it.weight end)
+    local best = __K2L_EnumValues(Level):maxByOrNull(____lambda_1)
     print(__K2L_Str(best))
-    print(__K2L_EnumValues(Level):joinToString(nil, nil, nil, nil, nil, function(it) return it.name:lower() end))
+    print(__K2L_EnumValues(Level):joinToString(nil, nil, nil, nil, nil, ____lambda_2))
     print("-- shapes")
-    local ____list_1 = __K2L_EnumValues(Shape)
-    for ____i_1 = 1, ____list_1.size do
-        local s = ____list_1[____i_1]
+    local ____values_3 = Shape.____values
+    for ____i_3 = 1, #____values_3 do
+        local s = ____values_3[____i_3]
         print(s.name .. " " .. s.sides .. " " .. s:name2())
     end
     print("-- planets")
-    local ____list_2 = __K2L_EnumValues(Planet)
-    for ____i_2 = 1, ____list_2.size do
-        local p = ____list_2[____i_2]
+    local ____values_4 = Planet.____values
+    for ____i_4 = 1, #____values_4 do
+        local p = ____values_4[____i_4]
         print(p:describe())
     end
     local d = Planet.MARS

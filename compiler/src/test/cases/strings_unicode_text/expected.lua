@@ -15,10 +15,11 @@ local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 local __K2L_Utf16 = ____lualib.__K2L_Utf16
 local __K2L_Utf16Case = ____lualib.__K2L_Utf16Case
 
+local ____lambda_1 = function(it)
+    return __K2L_Utf16Case.isWhitespace(it) and it ~= "\n" and it ~= " " and "[" .. __K2L_Utf16.code(it) .. "]" or it
+end
 local function show(s)
-    return __K2L_Utf16.norm(__K2L_Text.toList(s):map(function(it)
-        return __K2L_Utf16Case.isWhitespace(it) and it ~= "\n" and it ~= " " and "[" .. __K2L_Utf16.code(it) .. "]" or it
-    end):joinToString(""))
+    return __K2L_Utf16.norm(__K2L_Text.toList(s):map(____lambda_1):joinToString(""))
 end
 
 local function attempt(label, block)
@@ -36,6 +37,7 @@ local function attempt(label, block)
     end
 end
 
+local ____lambda_2 = function() return __K2L_Text.trimMargin("a", " ") end
 local function indents()
     local nbsp = " "
     local em = " "
@@ -51,7 +53,7 @@ local function indents()
     print(__K2L_Utf16.out(show(__K2L_Text.trimMargin(nbsp .. ">one\n" .. em .. ">two\n three", ">"))))
     print(__K2L_Utf16.out(show(__K2L_Text.trimMargin("\n" .. nbsp .. nbsp .. "|x\n" .. nbsp .. nbsp .. "|y\n"))))
     print(__K2L_Utf16.out(show(__K2L_Text.trimMargin(ideographic .. "|z\n " .. nbsp .. "|w", "|"))))
-    attempt("margin", function() return __K2L_Text.trimMargin("a", " ") end)
+    attempt("margin", ____lambda_2)
     attempt("marginNbsp", function() return __K2L_Text.trimMargin("a", nbsp) end)
     print(__K2L_Utf16.out(show(__K2L_Text.prependIndent("a\n\n" .. nbsp .. "\nb", "> "))))
     print(__K2L_Utf16.out(show(__K2L_Text.prependIndent("a\n" .. nbsp .. nbsp .. "\n", ">>>"))))
@@ -61,6 +63,13 @@ local function indents()
     print(__K2L_Utf16.out(__K2L_Text.trimIndent("    ünï\n      cödé")))
 end
 
+local ____lambda_3 = function() return __K2L_StringToInt("١٢x") end
+local ____lambda_4 = function() return __K2L_StringToInt("ｚ", 16) end
+local ____lambda_5 = function() return __K2L_StringToInt("") end
+local ____lambda_6 = function() return __K2L_StringToInt("٣٤٥٦٧٨٩٠١٢٣") end
+local ____lambda_7 = function() return __K2L_StringToInt("٤٢") end
+local ____lambda_8 = function() return __K2L_StringToInt("-٤٢٠", nil, true) end
+local ____lambda_9 = function() return __K2L_StringToInt("٧") end
 local function digits()
     print(__K2L_Utf16.out(__K2L_StringToInt("١٢٣")))
     print(__K2L_Utf16.out(__K2L_StringToInt("-١٢٣")))
@@ -100,13 +109,13 @@ local function digits()
     print(__K2L_Utf16.out(__K2L_Str(__K2L_Num.digitToIntOrNull("ｚ", 16))))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_Num.digitToIntOrNull("९"))))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_Num.digitToIntOrNull("²"))))
-    attempt("bad", function() return __K2L_StringToInt("١٢x") end)
-    attempt("badRadix", function() return __K2L_StringToInt("ｚ", 16) end)
-    attempt("empty", function() return __K2L_StringToInt("") end)
-    attempt("arabicMessage", function() return __K2L_StringToInt("٣٤٥٦٧٨٩٠١٢٣") end)
-    attempt("parseInt", function() return __K2L_StringToInt("٤٢") end)
-    attempt("parseLong", function() return __K2L_StringToInt("-٤٢٠", nil, true) end)
-    attempt("valueOf", function() return __K2L_StringToInt("٧") end)
+    attempt("bad", ____lambda_3)
+    attempt("badRadix", ____lambda_4)
+    attempt("empty", ____lambda_5)
+    attempt("arabicMessage", ____lambda_6)
+    attempt("parseInt", ____lambda_7)
+    attempt("parseLong", ____lambda_8)
+    attempt("valueOf", ____lambda_9)
     local ____receiver = __K2L_StringToIntOrNull("٤٢")
     print(__K2L_Utf16.out(__K2L_Str(____receiver and ____receiver + 1)))
     print(__K2L_Utf16.out(__K2L_Str(__K2L_StringToDoubleOrNull("١٢٣"))))

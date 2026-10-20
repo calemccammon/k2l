@@ -438,6 +438,7 @@ local function guards(mode)
     return "r=" .. r
 end
 
+local ____lambda_1 = function(it) return it > 100 end
 local function order(xs)
     local log = __K2L_ListOf()
     local function note(s)
@@ -448,7 +449,7 @@ local function order(xs)
         note("c")
         return it > 1
     end) * note("ddd")
-    local flag = xs:isEmpty() or firstOr(xs, 0, function(it) return it > 100 end) == 0
+    local flag = xs:isEmpty() or firstOr(xs, 0, ____lambda_1) == 0
     return total .. " " .. tostring(flag) .. " " .. __K2L_Str(log)
 end
 
@@ -460,9 +461,11 @@ local function letIf(____this_1, cond, f)
     return cond and f(____this_1) or ____this_1
 end
 
+local ____lambda_2 = function(____this_2) return ____this_2:upper() end
+local ____lambda_3 = function(it) return it .. "y" end
 local function receivers()
-    local a = withBang("hi", function(____this_2) return ____this_2:upper() end)
-    local b = letIf("x", true, function(it) return it .. "y" end)
+    local a = withBang("hi", ____lambda_2)
+    local b = letIf("x", true, ____lambda_3)
     local ____result_12
     if false then
         local ____result_13
@@ -479,6 +482,10 @@ local Animal = __K2L_Class("Animal")
 
 function Animal:____init(name)
     self.name = name
+end
+
+function Animal.new(name)
+    return setmetatable({name = name}, Animal)
 end
 
 local Dog = __K2L_Class("Dog", Animal)
@@ -502,7 +509,7 @@ local function reified()
         local ____mod_7 = items.____modCount
         for ____i_8 = 1, items.size do
             local i = items[____i_8]
-            if __K2L_InstanceOf(i, Dog) then
+            if getmetatable(i) == Dog then
                 n = n + 1
             end
             if items.____modCount ~= ____mod_7 and items:____comodified(____i_8) then
@@ -581,7 +588,7 @@ local function reified()
         local ____mod_12 = items.____modCount
         for ____i_13 = 1, items.size do
             local i = items[____i_13]
-            if __K2L_InstanceOf(i, Cat) then
+            if getmetatable(i) == Cat then
                 ____result_19 = i
                 goto ____inline_end_5
             end
@@ -631,26 +638,26 @@ local function reified()
     local ____result_22
     do
         local x = Dog.new("x")
-        ____result_22 = __K2L_InstanceOf(x, Dog) and "yes" or "no"
+        ____result_22 = getmetatable(x) == Dog and "yes" or "no"
     end
     out:add(____result_22)
     local ____result_23
     do
         local x = Dog.new("x")
-        ____result_23 = __K2L_InstanceOf(x, Cat) and "yes" or "no"
+        ____result_23 = getmetatable(x) == Cat and "yes" or "no"
     end
     out:add(____result_23)
     local ____result_24
     do
         local x = Dog.new("z")
-        ____result_24 = __K2L_InstanceOf(x, Dog) and x or nil
+        ____result_24 = getmetatable(x) == Dog and x or nil
     end
     local ____receiver_1 = ____result_24
     out:add(__K2L_Str(____receiver_1 and ____receiver_1.name))
     local ____result_25
     do
         local x = Cat.new("z")
-        ____result_25 = __K2L_InstanceOf(x, Dog) and x or nil
+        ____result_25 = getmetatable(x) == Dog and x or nil
     end
     out:add(__K2L_Str(____result_25))
     local ____result_26
@@ -692,6 +699,7 @@ local function reified()
     return out:joinToString(",")
 end
 
+local ____lambda_4 = function() return "given" end
 local function elsewhere(stopAt)
     local a = ____tools.attempt(3, function(n)
         if n < 2 then
@@ -716,7 +724,7 @@ local function elsewhere(stopAt)
         ::____inline_end_8::
     end
     local b = ____result_29
-    local c = ____tools.fallback("none", function() return "given" end)
+    local c = ____tools.fallback("none", ____lambda_4)
     local ____result_31
     do
         for i = 0, 2 do
@@ -915,6 +923,7 @@ local function chain()
     return sb:toString() .. t.count
 end
 
+local ____lambda_5 = function(it) return #it end
 local function whenUse(n)
     local v
     if n == 0 then
@@ -944,7 +953,7 @@ local function whenUse(n)
         end
         v = ____result_40
     else
-        v = mapNotNullFirst(__K2L_SingletonListOf("abc"), function(it) return #it end)
+        v = mapNotNullFirst(__K2L_SingletonListOf("abc"), ____lambda_5)
     end
     return "v=" .. __K2L_Str(v)
 end

@@ -5,7 +5,6 @@ local __K2L_ClosedRangeMixin = ____lualib.__K2L_ClosedRangeMixin
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_RangeEnd = ____lualib.__K2L_RangeEnd
@@ -21,6 +20,10 @@ function Day:____init(n)
     self.n = n
 end
 
+function Day.new(n)
+    return setmetatable({n = n}, Day)
+end
+
 function Day:compareTo(other)
     return __K2L_Compare(self.n, other.n)
 end
@@ -34,7 +37,7 @@ function Day:toString()
 end
 
 function Day:hashCode()
-    return __K2L_Hash(self.n)
+    return self.n
 end
 
 function Day:equals(other)
@@ -60,8 +63,9 @@ function Week:____init(start, endInclusive)
     self.endInclusive = endInclusive
 end
 
+local ____lambda_1 = function(it) return Day.new(it.n + 2) end
 function Week:iterator()
-    return __K2L_GenerateSequence(self.start, function(it) return Day.new(it.n + 2) end):takeWhile(function(it)
+    return __K2L_GenerateSequence(self.start, ____lambda_1):takeWhile(function(it)
         return __K2L_Compare(it, self.endInclusive) <= 0
     end):iterator()
 end
@@ -84,11 +88,15 @@ local function describe(r)
     return __K2L_Str(__K2L_RangeStart(r)) .. ".." .. __K2L_Str(__K2L_RangeEnd(r)) .. " empty=" .. tostring(r:isEmpty())
 end
 
+local ____lambda_2 = function(it) return it.n end
+local ____lambda_3 = function(it)
+    return __K2L_RangeEnd(it) - __K2L_RangeStart(it)
+end
 local function main()
     local span = Span.new(1.5, 4.25)
     print(tostring(span:contains(2.0)) .. " " .. tostring(span:contains(4.5)) .. " " .. tostring(span:isEmpty()) .. " " .. tostring(Span.new(3.0, 1.0):isEmpty()))
     local week = Day.new(1):rangeTo(Day.new(6))
-    print(__K2L_Str(week:map(function(it) return it.n end)) .. " " .. tostring(week:contains(Day.new(2))) .. " " .. tostring(week:contains(Day.new(7))) .. " " .. tostring(week:isEmpty()))
+    print(__K2L_Str(week:map(____lambda_2)) .. " " .. tostring(week:contains(Day.new(2))) .. " " .. tostring(week:contains(Day.new(7))) .. " " .. tostring(week:isEmpty()))
     local grades = Grades.new("A", "C")
     print(tostring(grades:contains("b")) .. " " .. tostring(grades:contains("d")) .. " " .. tostring(grades:isEmpty()))
     print(describe(span))
@@ -98,9 +106,7 @@ local function main()
     print(describe(__K2L_IntRange.new(3, 1)))
     print(describe(__K2L_ClosedRange.new("a", "f")))
     local ranges = __K2L_ReadOnlyListOf(span, __K2L_ClosedRange.new(0.25, 1.5, __K2L_DoubleToString))
-    print(__K2L_Str(ranges:map(function(it)
-        return __K2L_RangeEnd(it) - __K2L_RangeStart(it)
-    end)))
+    print(__K2L_Str(ranges:map(____lambda_3)))
 end
 
 main()

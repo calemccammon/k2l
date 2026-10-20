@@ -4,6 +4,7 @@ local __K2L_BigDecimal = ____lualib.__K2L_BigDecimal
 local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_JavaRandom = ____lualib.__K2L_JavaRandom
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MathContext = ____lualib.__K2L_MathContext
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RoundingMode = ____lualib.__K2L_RoundingMode
@@ -81,7 +82,18 @@ local function main()
     print(root("-0.0001", __K2L_MathContext.UNLIMITED))
     print("== random")
     local random = __K2L_JavaRandom.new(20240607)
-    local modes = __K2L_RoundingMode.values():filter(function(it) return it ~= __K2L_RoundingMode.UNNECESSARY end)
+    local ____list_3 = __K2L_RoundingMode.values()
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = ____list_3:____array()
+    for ____i_5 = 1, ____n do
+        local it = ____items[____i_5]
+        if it ~= __K2L_RoundingMode.UNNECESSARY then
+            ____count = ____count + 1
+            ____out[____count] = it
+        end
+    end
+    local modes = __K2L_ListWrap(____out, ____count)
     for it = 0, 249 do
         do
             local digits = 1 + random:nextInt(30)

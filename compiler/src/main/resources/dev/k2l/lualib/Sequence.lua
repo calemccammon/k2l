@@ -190,14 +190,18 @@ end
 -- generateSequence({ seed }) { next } and, without `nextFunction`, the single-use
 -- generateSequence { next }. `next` runs only when the following element is pulled; null ends it.
 local function __K2L_GenerateSequenceLazy(seedFunction, nextFunction)
+    local step = nextFunction or seedFunction
     local sequence = __K2L_Sequence.new(function()
         local started, current = false, nil
         return function()
-            if not started then
+            if started then
+                if current == nil then
+                    return
+                end
+                current = step(current)
+            else
                 started = true
                 current = seedFunction()
-            elseif current ~= nil then
-                current = (nextFunction or seedFunction)(current)
             end
             if current ~= nil then
                 return true, current
@@ -326,16 +330,37 @@ function __K2L_Sequence:filterIndexed(predicate)
     end)
 end
 
+-- the elements for which keep(value) is `want`
+local function filtered(source, keep, want)
+    return derive(source, function(gen)
+        return function()
+            while true do
+                local has, value = gen()
+                if not has then
+                    return
+                end
+                if (not keep(value)) ~= want then
+                    return true, value
+                end
+            end
+        end
+    end)
+end
+
+local function notNil(value)
+    return value ~= nil
+end
+
 function __K2L_Sequence:filter(predicate)
-    return self:filterIndexed(function(_, value) return predicate(value) end)
+    return filtered(self, predicate, true)
 end
 
 function __K2L_Sequence:filterNot(predicate)
-    return self:filterIndexed(function(_, value) return not predicate(value) end)
+    return filtered(self, predicate, false)
 end
 
 function __K2L_Sequence:filterNotNull()
-    return self:filterIndexed(function(_, value) return value ~= nil end)
+    return filtered(self, notNil, true)
 end
 
 function __K2L_Sequence:mapNotNull(transform)
@@ -525,22 +550,33 @@ function __K2L_Sequence:windowed(size, step, partialWindows, transform)
         error(__K2L_IllegalArgumentException.new(message))
     end
     return derive(self, function(gen)
-        local buffer, done = __K2L_List.new(), false
+        -- the pending elements, buffer[first..last]
+        local buffer, first, last, done = {}, 1, 0, false
         return function()
-            while buffer.size < size and not done do
+            while last - first + 1 < size and not done do
                 local has, value = gen()
                 if has then
-                    buffer:add(value)
+                    last = last + 1
+                    buffer[last] = value
                 else
                     done = true
                 end
             end
-            if buffer.size == 0 or (buffer.size < size and not partialWindows) then
+            local n = last - first + 1
+            if n == 0 or (n < size and not partialWindows) then
                 return
             end
-            local window = buffer:toMutableList()
-            local dropped = math.min(step, buffer.size)
-            buffer = buffer:drop(dropped):toMutableList()
+            local window = {}
+            for i = 1, n do
+                window[i] = buffer[first + i - 1]
+            end
+            window.size, window.____modCount = n, 0
+            setmetatable(window, __K2L_List)
+            local dropped = math.min(step, n)
+            for i = first, first + dropped - 1 do
+                buffer[i] = nil
+            end
+            first = first + dropped
             -- With step > size, the elements between windows are skipped.
             for _ = dropped + 1, step do
                 if done or not gen() then
@@ -895,8 +931,14 @@ end
 
 function __K2L_Sequence:count(predicate)
     local n = 0
+    if predicate == nil then
+        for _ in self:iter() do
+            n = n + 1
+        end
+        return n
+    end
     for _, value in self:iter() do
-        if predicate == nil or predicate(value) then
+        if predicate(value) then
             n = n + 1
         end
     end

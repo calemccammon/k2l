@@ -10,6 +10,10 @@ function Logged:____init(value)
     self.value = value
 end
 
+function Logged.new(value)
+    return setmetatable({value = value}, Logged)
+end
+
 function Logged:getValue(thisRef, property)
     print("get " .. property.name)
     return self.value
@@ -49,6 +53,10 @@ local Tracking = __K2L_Class("app.Tracking")
 
 function Tracking:____init(value)
     self.value = value
+end
+
+function Tracking.new(value)
+    return setmetatable({value = value}, Tracking)
 end
 
 function Tracking:getValue(thisRef, property)
@@ -256,6 +264,9 @@ end
 
 WithCompanion:____initCompanion()
 
+local ____lambda_1 = function() return 7 end
+local ____lambda_2 = function() return "no sync" end
+local ____lambda_3 = function(_, _, new) return new < 100 end
 local function main()
     local ____lazyLocal_delegate = __K2L_Lazy(function()
         print("computing lazyLocal")
@@ -264,12 +275,12 @@ local function main()
     print("before lazyLocal")
     print(____lazyLocal_delegate:getValue())
     print(____lazyLocal_delegate:getValue())
-    local explicit = __K2L_Lazy(function() return 7 end)
+    local explicit = __K2L_Lazy(____lambda_1)
     print(explicit:isInitialized())
     print(explicit:getValue())
     print(explicit:isInitialized())
     print(explicit:getValue() + 1)
-    local ____modeLazy_delegate = __K2L_Lazy(function() return "no sync" end)
+    local ____modeLazy_delegate = __K2L_Lazy(____lambda_2)
     print(____modeLazy_delegate:getValue())
     print("before topLazy")
     print(____topLazy_delegate:getValue())
@@ -283,7 +294,7 @@ local function main()
     ____counter_delegate:setValue(nil, __K2L_KProperty("counter", "counter@3261"), ____counter_delegate:getValue(nil, __K2L_KProperty("counter", "counter@3261")) + 1)
     ____counter_delegate:setValue(nil, __K2L_KProperty("counter", "counter@3261"), ____counter_delegate:getValue(nil, __K2L_KProperty("counter", "counter@3261")) * 2)
     print(____counter_delegate:getValue(nil, __K2L_KProperty("counter", "counter@3261")))
-    local ____limited_delegate = __K2L_VetoableProperty(0, function(_, _, new) return new < 100 end)
+    local ____limited_delegate = __K2L_VetoableProperty(0, ____lambda_3)
     ____limited_delegate:setValue(nil, __K2L_KProperty("limited", "limited@3417"), 50)
     ____limited_delegate:setValue(nil, __K2L_KProperty("limited", "limited@3417"), 500)
     print(____limited_delegate:getValue(nil, __K2L_KProperty("limited", "limited@3417")))

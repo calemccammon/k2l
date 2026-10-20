@@ -46,19 +46,38 @@ local function main()
     print(n)
     local big = __K2L_ReadOnlyListOf(2147483647, 1, 2147483647, 5)
     print((big:sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
-    print((big:sumOf(function(it) return it end) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
-    print((big:sumOf(function(it)
-        return (it * 2 + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-    end) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
+    local ____sum_1 = 0
+    local ____items, ____n = big:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____sum_1 = ____sum_1 + it
+    end
+    ____sum_1 = (____sum_1 + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    print(____sum_1)
+    local ____sum_2 = 0
+    local ____items_1, ____n_1 = big:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
+        ____sum_2 = ____sum_2 + ((it * 2 + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
+    end
+    ____sum_2 = (____sum_2 + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    print(____sum_2)
     print((__K2L_AsSequence(big):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print((__K2L_TypedArrayOf("[Ljava.lang.Integer;", 2147483647, 2147483647):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print((__K2L_TypedArrayOf("[I", 2147483647, 2):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print(firstBig(big))
-    print(big:sumOf(function(it) return it end))
+    local ____sum_3 = 0
+    local ____items_2, ____n_2 = big:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_2[____i_2]
+        ____sum_3 = ____sum_3 + it
+    end
+    print(____sum_3)
     print((__K2L_ReadOnlyListOf(1, 2, 3):sum() + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print(__K2L_Str(__K2L_ReadOnlyListOf(1.5, 2.5):sum(0.0)))
     local h = 0
-    for c in ("hello world, this is a long string"):gmatch(".") do
+    for ____i_3 = 1, #"hello world, this is a long string" do
+        local c = ("hello world, this is a long string"):sub(____i_3, ____i_3)
         h = (31 * h + c:byte() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
     end
     print(h)

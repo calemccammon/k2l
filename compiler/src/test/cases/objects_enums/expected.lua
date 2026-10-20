@@ -80,6 +80,10 @@ function Point:____init(x, y)
     self.y = y
 end
 
+function Point.new(x, y)
+    return setmetatable({x = x, y = y}, Point)
+end
+
 function Point:plus(other)
     return Point:of(self.x + other.x, self.y + other.y)
 end

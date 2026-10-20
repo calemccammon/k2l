@@ -3,9 +3,17 @@
 -- compareValues.
 
 local function __K2L_CompareBy(...)
+    local n = select("#", ...)
+    if n == 1 then
+        local selector = ...
+        return function(a, b)
+            return __K2L_CompareValues(selector(a), selector(b))
+        end
+    end
     local selectors = {...}
     return function(a, b)
-        for _, selector in ipairs(selectors) do
+        for i = 1, n do
+            local selector = selectors[i]
             local c = __K2L_CompareValues(selector(a), selector(b))
             if c ~= 0 then
                 return c

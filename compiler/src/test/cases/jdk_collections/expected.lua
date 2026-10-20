@@ -9,6 +9,7 @@ local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -37,6 +38,9 @@ local function attempt(label, block)
     end
 end
 
+local ____lambda_1 = function(it) return it >= 0 and it % 4 or 0 - -it % 4 end
+local ____lambda_2 = function(a, b) return #a - #b end
+local ____lambda_3 = function(a, b) return #a - #b end
 local function sorting()
     print("-- sorting")
     local list = __K2L_ListOf(5, 3, 9, 1, 7, 3)
@@ -44,14 +48,14 @@ local function sorting()
     print(__K2L_Str(list))
     __K2L_JdkCollections.sort(list, __K2L_JdkCollections.reverseOrder())
     print(__K2L_Str(list))
-    __K2L_JdkCollections.sort(list, __K2L_CompareBy(function(it) return math.fmod(it, 4) end))
+    __K2L_JdkCollections.sort(list, __K2L_CompareBy(____lambda_1))
     print(__K2L_Str(list))
     local words = __K2L_ListOf("pear", "fig", "banana", "kiwi", "apple")
     __K2L_JdkCollections.sort(words)
     print(__K2L_Str(words))
-    __K2L_JdkCollections.sort(words, function(a, b) return #a - #b end)
+    __K2L_JdkCollections.sort(words, ____lambda_2)
     print(__K2L_Str(words))
-    __K2L_JdkCollections.sort(words, __K2L_JdkCollections.reverseOrder(function(a, b) return #a - #b end))
+    __K2L_JdkCollections.sort(words, __K2L_JdkCollections.reverseOrder(____lambda_3))
     print(__K2L_Str(words))
     __K2L_JdkCollections.reverse(words)
     print(__K2L_Str(words))
@@ -67,25 +71,28 @@ local function sorting()
     print(__K2L_JdkCollections.binarySearch_array(__K2L_ReadOnlyListOf(9, 7, 5, 3, 1), 7, __K2L_JdkCollections.reverseOrder()))
 end
 
+local ____lambda_4 = function(it) return #it end
+local ____lambda_5 = function()
+    return __K2L_JdkCollections.max(__K2L_ReadOnlyListOf())
+end
+local ____lambda_6 = function()
+    return __K2L_JdkCollections.min(__K2L_ReadOnlyListOf())
+end
 local function queries()
     print("-- queries")
     local list = __K2L_ReadOnlyListOf(4, 8, 15, 16, 23, 42, 8)
     print(__K2L_NotNull(__K2L_JdkCollections.max(list)))
     print(__K2L_NotNull(__K2L_JdkCollections.min(list)))
     print(__K2L_NotNull(__K2L_JdkCollections.max(list, __K2L_JdkCollections.reverseOrder())))
-    print(__K2L_Str(__K2L_JdkCollections.max(__K2L_ReadOnlyListOf("b", "abc", "zz"), __K2L_CompareBy(function(it) return #it end))))
+    print(__K2L_Str(__K2L_JdkCollections.max(__K2L_ReadOnlyListOf("b", "abc", "zz"), __K2L_CompareBy(____lambda_4))))
     print(__K2L_JdkCollections.frequency(list, 8))
     print(__K2L_JdkCollections.frequency(list, 99))
     print(__K2L_JdkCollections.frequency(__K2L_ReadOnlyListOf("a", "b", "a", nil), nil))
     print(__K2L_NotNull(__K2L_JdkCollections.max(__K2L_ReadOnlySetOf(3, 1, 2))))
     print(__K2L_JdkCollections.disjoint(__K2L_ReadOnlyListOf(1, 2), __K2L_ReadOnlyListOf(3, 4)))
     print(__K2L_JdkCollections.disjoint(__K2L_ReadOnlyListOf(1, 2), __K2L_ReadOnlyListOf(2, 4)))
-    attempt("emptyMax", function()
-        return __K2L_JdkCollections.max(__K2L_ReadOnlyListOf())
-    end)
-    attempt("emptyMin", function()
-        return __K2L_JdkCollections.min(__K2L_ReadOnlyListOf())
-    end)
+    attempt("emptyMax", ____lambda_5)
+    attempt("emptyMin", ____lambda_6)
 end
 
 local function mutations()
@@ -122,6 +129,13 @@ local function mutations()
     print(__K2L_Str(shuffled:sorted()))
 end
 
+local ____lambda_7 = function() return __K2L_JdkCollections.nCopies(-1, 0) end
+local ____lambda_8 = function()
+    return __K2L_JdkCollections.emptyList():add(1)
+end
+local ____lambda_9 = function()
+    return __K2L_JdkCollections.singletonList(1):add(1)
+end
 local function factories()
     print("-- factories")
     print(__K2L_Str(__K2L_JdkCollections.nCopies(3, "ab")))
@@ -134,12 +148,20 @@ local function factories()
     print(__K2L_Str(__K2L_JdkCollections.singletonMap("k", 1)))
     print(__K2L_JdkCollections.nCopies(3, 1).size)
     print(__K2L_JdkCollections.nCopies(2, "z"):joinToString("+"))
-    attempt("nCopies", function() return __K2L_JdkCollections.nCopies(-1, 0) end)
+    attempt("nCopies", ____lambda_7)
     local source = __K2L_ListOf(1, 2, 3)
     local view = __K2L_JdkCollections.unmodifiableList(source)
     print(__K2L_Str(view))
     print(view.size)
-    print(__K2L_Str(view:map(function(it) return it * 2 end)))
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = view:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = it * 2
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     attempt("add", function() return view:add(4) end)
     attempt("set", function() return view:set(0, 9) end)
     attempt("remove", function() return view:removeAt(0) end)
@@ -147,12 +169,8 @@ local function factories()
         __K2L_JdkCollections.sort(view)
         return __K2L_Unit
     end)
-    attempt("emptyAdd", function()
-        return __K2L_JdkCollections.emptyList():add(1)
-    end)
-    attempt("single", function()
-        return __K2L_JdkCollections.singletonList(1):add(1)
-    end)
+    attempt("emptyAdd", ____lambda_8)
+    attempt("single", ____lambda_9)
     local set = __K2L_JdkCollections.unmodifiableSet(__K2L_SetOf(3, 1, 2))
     print(__K2L_Str(set))
     print(set:contains(3))
@@ -164,6 +182,8 @@ local function factories()
     print(__K2L_Str(__K2L_JdkCollections.identity(__K2L_ListOf(1, 2))))
 end
 
+local ____lambda_10 = function(a, b) return #b - #a end
+local ____lambda_11 = function(it) return it * it end
 local function arrays()
     print("-- arrays")
     local ints = __K2L_TypedArrayOf("[I", 5, 2, 8, 1, 9, 3)
@@ -191,7 +211,7 @@ local function arrays()
     local strings = __K2L_TypedArrayOf("[Ljava.lang.String;", "pear", "fig", "banana")
     __K2L_JdkCollections.sort_array(strings)
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(strings)))
-    __K2L_JdkCollections.sort_array(strings, function(a, b) return #b - #a end)
+    __K2L_JdkCollections.sort_array(strings, ____lambda_10)
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(strings)))
     local filled = __K2L_ListOfSize(5, 0, "[I")
     __K2L_JdkCollections.fill_array(filled, 7)
@@ -223,7 +243,7 @@ local function arrays()
     print(__K2L_JdkCollections.binarySearch_array(sorted, 2, 5, 11))
     print(__K2L_JdkCollections.binarySearch_array(__K2L_TypedArrayOf("[Ljava.lang.String;", "a", "c", "e"), "c"))
     local squares = __K2L_ListOfSize(5, 0, "[I")
-    __K2L_JdkCollections.setAll(squares, function(it) return it * it end)
+    __K2L_JdkCollections.setAll(squares, ____lambda_11)
     print(__K2L_Str(__K2L_JdkCollections.arrayToString(squares)))
     local list = __K2L_JdkCollections.asList(3, 1, 2)
     print(__K2L_Str(list))

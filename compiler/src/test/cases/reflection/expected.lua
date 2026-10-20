@@ -5,7 +5,6 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
@@ -14,6 +13,7 @@ local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -22,7 +22,6 @@ local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
 local ____model = require("model.model")
 local Plain = __K2L_Class("app.Plain")
@@ -35,12 +34,16 @@ function Point:____init(x, y)
     self.y = y
 end
 
+function Point.new(x, y)
+    return setmetatable({x = x, y = y}, Point)
+end
+
 function Point:toString()
     return "Point(x=" .. self.x .. ", y=" .. self.y .. ")"
 end
 
 function Point:hashCode()
-    return __K2L_ToInt32(31 * __K2L_Hash(self.x) + __K2L_Hash(self.y))
+    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Point:equals(other)
@@ -192,7 +195,15 @@ local function main()
     print(kindOf(3))
     print(kindOf(3.5))
     local classes = __K2L_ReadOnlyListOf(__K2L_KClassOf(Dog), __K2L_KClassOf(Cat), __K2L_KClassOf(Dog))
-    print(__K2L_Str(classes:map(function(it) return it.simpleName end)))
+    local ____out = {}
+    local ____count = 0
+    local ____items, ____n = classes:____array()
+    for ____i = 1, ____n do
+        local it = ____items[____i]
+        ____count = ____count + 1
+        ____out[____count] = it.simpleName
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(classes:distinct().size)
     print(classes:toSet().size)
     print(classes:contains(__K2L_KClassOf(Dog)))
@@ -226,11 +237,19 @@ function Circle:____init(r)
     self.r = r
 end
 
+function Circle.new(r)
+    return setmetatable({r = r}, Circle)
+end
+
 local Square = __K2L_Class("app.model.Square", nil, Shape)
 __K2L_ClassInfo(Square, "app.model.Square", "app.model.Square", "class")
 
 function Square:____init(side)
     self.side = side
+end
+
+function Square.new(side)
+    return setmetatable({side = side}, Square)
 end
 
 local Registry = __K2L_Class("app.model.Registry")

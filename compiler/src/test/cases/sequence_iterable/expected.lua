@@ -22,6 +22,10 @@ function CountdownIterator:____init(current)
     self.current = current
 end
 
+function CountdownIterator.new(current)
+    return setmetatable({current = current}, CountdownIterator)
+end
+
 function CountdownIterator:hasNext()
     return self.current > 0
 end
@@ -42,20 +46,36 @@ function Countdown:iterator()
     return CountdownIterator.new(self.from)
 end
 
+local ____lambda_1 = function(it) return it * 2 end
+local ____lambda_2 = function(it) return it + 1 end
+local ____lambda_3 = function(it)
+    return (it >= 0 and it % 2 or 0 - -it % 2) == 0
+end
+local ____lambda_4 = function(it) return it * 2 end
+local ____lambda_5 = function(it) return it * 10 end
+local ____lambda_6 = function(it) return it > 1 end
+local ____lambda_7 = function(it) return it + 1 end
+local ____lambda_8 = function(it) return it > 41 end
+local ____lambda_9 = function(it)
+    return (it >= 0 and it % 7 or 0 - -it % 7) == 0
+end
+local ____lambda_10 = function(it) return it > 100 end
+local ____lambda_11 = function(it) return it + 1 end
+local ____lambda_12 = function(it) return it == 4 end
 local function main()
     local s = __K2L_SequenceOf(1, 2, 3, 4)
     local it = s:asIterable()
-    print(__K2L_Str(it:map(function(it) return it * 2 end)))
+    print(__K2L_Str(it:map(____lambda_1)))
     local ____items, ____n = it:____array()
     for ____i = 1, ____n do
         local x = ____items[____i]
         io.write(tostring(x))
     end
     print()
-    local back = __K2L_AsSequence(__K2L_ReadOnlyListOf(5, 6, 7):asIterable()):map(function(it) return it + 1 end):toList()
+    local back = __K2L_AsSequence(__K2L_ReadOnlyListOf(5, 6, 7):asIterable()):map(____lambda_2):toList()
     print(__K2L_Str(back))
     local dest = __K2L_ListOf(0)
-    s:filter(function(it) return math.fmod(it, 2) == 0 end):toCollection(dest)
+    s:filter(____lambda_3):toCollection(dest)
     print(__K2L_Str(dest))
     local set = s:toCollection(__K2L_SetOf())
     print(__K2L_Str(set))
@@ -64,7 +84,7 @@ local function main()
         io.write(tostring(itr:next()))
     end
     print()
-    local lazyIter = __K2L_GenerateSequence(1, function(it) return it * 2 end):asIterable()
+    local lazyIter = __K2L_GenerateSequence(1, ____lambda_4):asIterable()
     print(__K2L_Str(lazyIter:take(4):toList()))
     print(lazyIter:first())
     local ii = __K2L_IteratorOf(it)
@@ -95,20 +115,20 @@ local function main()
         end
     end
     local countdown = Countdown.new(3):asIterable()
-    print(__K2L_Str(countdown:map(function(it) return it * 10 end)))
-    print(countdown:count(function(it) return it > 1 end))
+    print(__K2L_Str(countdown:map(____lambda_5)))
+    print(countdown:count(____lambda_6))
     print(__K2L_Str(Countdown.new(2):toCollection(__K2L_ListOf(9))))
-    local naturals = __K2L_GenerateSequence(1, function(it) return it + 1 end):asIterable()
-    print(naturals:first(function(it) return it > 41 end))
-    print(__K2L_Str(naturals:firstOrNull(function(it) return math.fmod(it, 7) == 0 end)))
-    print(naturals:any(function(it) return it > 100 end))
+    local naturals = __K2L_GenerateSequence(1, ____lambda_7):asIterable()
+    print(naturals:first(____lambda_8))
+    print(__K2L_Str(naturals:firstOrNull(____lambda_9)))
+    print(naturals:any(____lambda_10))
     print(__K2L_Str(naturals:take(3)))
     print(naturals:contains(5))
     local seen = 0
-    local counting = __K2L_GenerateSequence(1, function(it) return it + 1 end):onEach(function(it)
+    local counting = __K2L_GenerateSequence(1, ____lambda_11):onEach(function(it)
         seen = seen + 1
     end):asIterable()
-    counting:first(function(it) return it == 4 end)
+    counting:first(____lambda_12)
     print("pulled " .. seen)
     local ____ok_1, ____result_1 = pcall(function()
         __K2L_SequenceOf():asIterable():first()
