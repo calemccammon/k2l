@@ -6,7 +6,6 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
@@ -594,7 +593,18 @@ local function main()
     print("rooms=" .. game:roomCount() .. " alive=" .. tostring(game.player.hp > 0))
     local r1 = __K2L_Random.seeded(7)
     local r2 = __K2L_Random.seeded(7)
-    print(__K2L_Equals(__K2L_ListOfSize(5, function(it) return r1:nextInt(100) end), __K2L_ListOfSize(5, function(it) return r2:nextInt(100) end)))
+    local ____out_1 = {}
+    for ____i_8 = 1, 5 do
+        local it = ____i_8 - 1
+        ____out_1[____i_8] = r1:nextInt(100)
+    end
+    local ____arg = __K2L_ListWrap(____out_1, 5)
+    local ____out_2 = {}
+    for ____i_9 = 1, 5 do
+        local it = ____i_9 - 1
+        ____out_2[____i_9] = r2:nextInt(100)
+    end
+    print(__K2L_Equals(____arg, __K2L_ListWrap(____out_2, 5)))
     print(__K2L_Str(__K2L_ReadOnlyListOf("n", "go west", "take", "hit", "   ", "walk e"):map(parseCommand)))
 end
 

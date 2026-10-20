@@ -933,12 +933,14 @@ local function decimalDigits(x)
             end
         end
     end
-    local int, frac, exp = s:match("^(%d)%.?(%d*)e([-+]%d+)$")
-    local digits = (int .. frac):gsub("0+$", "")
-    if digits == "" then
-        digits = "0"
+    -- s is "d.ddd...e+XX" (the precision is at least 1): the digits without the point and trailing zeros, and the exponent
+    local e = s:find("e", 3, true)
+    local last = e - 1
+    while last > 2 and s:byte(last) == 48 do
+        last = last - 1
     end
-    return digits, tonumber(exp)
+    local digits = last > 2 and s:sub(1, 1) .. s:sub(3, last) or s:sub(1, 1)
+    return digits, tonumber(s:sub(e + 1))
 end
 
 -- Adds one to a string of decimal digits: "199" -> "200", "99" -> "100".
@@ -1330,29 +1332,26 @@ end
 -- the flags only numbers take, in the order the JDK checks them
 local NUMERIC_FLAGS = {{"alt", "#"}, {"plus", "+"}, {"space", " "}, {"zero", "0"}, {"comma", ","}, {"paren", "("}}
 
--- One conversion of an argument (anything but %% and %n).
-local function convert(spec, conv, value, bits, class, flags, width, precision)
-    local lower = conv:lower()
-    local numeric = lower == "d" or lower == "x" or lower == "o" or lower == "f" or lower == "e" or lower == "g"
+-- One conversion of an argument (anything but %% and %n), by a specifier parsed by parseFormat.
+local function convert(piece, value, bits, class)
+    local spec, conv, lower, flags, width, precision =
+        piece.spec, piece.conv, piece.lower, piece.flags, piece.width, piece.precision
+    local numeric = piece.numeric
     if (flags.left or (numeric and flags.zero)) and width == nil then
         formatError("MissingFormatWidth", spec)
     end
-    if precision and (lower == "d" or lower == "x" or lower == "o" or lower == "c") then
+    if precision and (piece.integral or lower == "c") then
         formatError("IllegalFormatPrecision", tostring(precision))
     end
-    if not numeric then
+    if not numeric and piece.numericFlag then
         -- flags only numbers take, checked in the JDK's order (# is rejected too: no argument is Formattable here)
-        for _, flag in ipairs(NUMERIC_FLAGS) do
-            if flags[flag[1]] then
-                formatError("FormatFlagsConversionMismatch", "Conversion = " .. conv .. ", Flags = " .. flag[2])
-            end
-        end
+        formatError("FormatFlagsConversionMismatch", "Conversion = " .. conv .. ", Flags = " .. piece.numericFlag)
     end
     if numeric then
         if value == nil then
             return pad("null", width, flags.left)
         end
-        local integral = lower == "d" or lower == "x" or lower == "o"
+        local integral = piece.integral
         local rejected = rejectedClass(value, integral and "integral" or "float", class)
         if rejected then
             formatError("IllegalFormatConversion", conv .. " != " .. rejected)
@@ -1440,9 +1439,23 @@ local function parseFormat(format)
             flags.zero = true
             widthText = widthText:gsub("^0+", "")
         end
+        local lower = conv:lower()
+        -- the first of the flags only numbers take that is set, in the order the JDK checks them
+        local numericFlag
+        for _, flag in ipairs(NUMERIC_FLAGS) do
+            if flags[flag[1]] then
+                numericFlag = flag[2]
+                break
+            end
+        end
+        local integral = lower == "d" or lower == "x" or lower == "o"
         pieces[#pieces + 1] = {
             spec = spec,
             conv = conv,
+            lower = lower,
+            integral = integral,
+            numeric = integral or lower == "f" or lower == "e" or lower == "g",
+            numericFlag = numericFlag,
             argIndex = argIndex,
             previous = flagText:find("<", 1, true) ~= nil,
             flags = flags,
@@ -1496,7 +1509,7 @@ local function formatText(format, ...)
                 if getmetatable(value) == Sized then
                     value, bits, class = value.value, value.bits, value.class
                 end
-                out[i] = convert(piece.spec, conv, value, bits, class, piece.flags, piece.width, piece.precision)
+                out[i] = convert(piece, value, bits, class)
             end
         end
     end

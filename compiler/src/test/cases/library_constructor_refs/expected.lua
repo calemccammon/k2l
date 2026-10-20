@@ -10,7 +10,6 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -25,7 +24,12 @@ local __K2L_Triple = ____lualib.__K2L_Triple
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
 
 local function build(n, make)
-    return __K2L_ListOfSize(n, function(it) return make() end)
+    local ____out = {}
+    for ____i = 1, n do
+        local it = ____i - 1
+        ____out[____i] = make()
+    end
+    return __K2L_ListWrap(____out, n)
 end
 
 local function apply(a, f)
@@ -112,28 +116,28 @@ local function main()
     print(__K2L_Str(empty():append("x"):append(tostring(1))))
     print(__K2L_Str(fromText("hi"):append("!")))
     local ____list = __K2L_ReadOnlyListOf("a", "b"):map(____lambda_10)
-    local ____out = {}
+    local ____out_1 = {}
     local ____count = 0
     local ____items, ____n = ____list:____array()
-    for ____i = 1, ____n do
-        local it = ____items[____i]
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
         ____count = ____count + 1
-        ____out[____count] = it:reverse():append("?"):toString()
+        ____out_1[____count] = it:reverse():append("?"):toString()
     end
-    print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
+    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count)))
     print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2, 3):zip(__K2L_ReadOnlyListOf("one", "two", "three"), ____lambda_11)))
     local triple = ____lambda_12
     print(__K2L_Str(triple(1, "t", true)))
     local errors = __K2L_ReadOnlyListOf("bad", "worse"):map(____lambda_13)
-    local ____out_1 = {}
+    local ____out_2 = {}
     local ____count_1 = 0
     local ____items_1, ____n_1 = errors:____array()
-    for ____i_1 = 1, ____n_1 do
-        local it = ____items_1[____i_1]
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
         ____count_1 = ____count_1 + 1
-        ____out_1[____count_1] = it.message
+        ____out_2[____count_1] = it.message
     end
-    print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
+    print(__K2L_Str(__K2L_ListWrap(____out_2, ____count_1)))
     local wrap = ____lambda_14
     local wrapped = wrap("outer", errors:get(0))
     local ____receiver = wrapped.cause
@@ -153,15 +157,15 @@ local function main()
         end
     end
     local patterns = __K2L_ReadOnlyListOf("a+b", "[0-9]+"):map(____lambda_17)
-    local ____out_2 = {}
+    local ____out_3 = {}
     local ____count_2 = 0
     local ____items_2, ____n_2 = patterns:____array()
-    for ____i_2 = 1, ____n_2 do
-        local it = ____items_2[____i_2]
+    for ____i_3 = 1, ____n_2 do
+        local it = ____items_2[____i_3]
         ____count_2 = ____count_2 + 1
-        ____out_2[____count_2] = it:matches("aab")
+        ____out_3[____count_2] = it:matches("aab")
     end
-    print(__K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
+    print(__K2L_Str(__K2L_ListWrap(____out_3, ____count_2)))
     local holder = Holder.new
     print(__K2L_Str(holder(__K2L_ListOf("x")).items))
     local ref = ____lambda_18

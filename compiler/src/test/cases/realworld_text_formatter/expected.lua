@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -72,7 +73,7 @@ local function justify(line, width)
     end
     local spaces = width - ____sum
     local each = __K2L_IDiv(spaces, gaps)
-    local extra = __K2L_IRem(spaces, gaps)
+    local extra = gaps ~= 0 and __K2L_Fmod(spaces, gaps) + 0 or __K2L_IRem(spaces, gaps)
     local ____builder = __K2L_StringBuilder.new()
     do
         local ____mod_1 = words.____modCount

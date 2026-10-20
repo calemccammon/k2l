@@ -6,7 +6,6 @@ local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
-local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Str = ____lualib.__K2L_Str
@@ -88,34 +87,41 @@ local function main()
         end
         return __K2L_StringFormat("%.1f", ____sum)
     end))
-    local counters = __K2L_ListOfSize(3, function(it)
-        local ____object_2 = __K2L_Class("app.MainKt$main$counters$1$1")
-        __K2L_ClassInfo(____object_2, nil, "app.MainKt$main$counters$1$1", "class", false)
-        function ____object_2:____init()
-            self.hits = it
-        end
-        ____object_2:____init()
-        return ____object_2
-    end)
     local ____out_1 = {}
+    for ____i_3 = 1, 3 do
+        local it = ____i_3 - 1
+        local ____result_1
+        do
+            local ____object_2 = __K2L_Class("app.MainKt$main$counters$1$1")
+            __K2L_ClassInfo(____object_2, nil, "app.MainKt$main$counters$1$1", "class", false)
+            function ____object_2:____init()
+                self.hits = it
+            end
+            ____object_2:____init()
+            ____result_1 = ____object_2
+        end
+        ____out_1[____i_3] = ____result_1
+    end
+    local counters = __K2L_ListWrap(____out_1, 3)
+    local ____out_2 = {}
     local ____count_1 = 0
     local ____items_3, ____n_3 = counters:____array()
-    for ____i_3 = 1, ____n_3 do
-        local it = ____items_3[____i_3]
+    for ____i_4 = 1, ____n_3 do
+        local it = ____items_3[____i_4]
         ____count_1 = ____count_1 + 1
-        ____out_1[____count_1] = __K2L_JavaClass(__K2L_KClassOfValue(it))
+        ____out_2[____count_1] = __K2L_JavaClass(__K2L_KClassOfValue(it))
     end
-    print(__K2L_ListWrap(____out_1, ____count_1):toSet().size)
+    print(__K2L_ListWrap(____out_2, ____count_1):toSet().size)
     local locals = __K2L_IntRange.new(1, 4):map(makeLocal)
-    local ____out_2 = {}
+    local ____out_3 = {}
     local ____count_2 = 0
     local ____items_4, ____n_4 = locals:____array()
-    for ____i_4 = 1, ____n_4 do
-        local it = ____items_4[____i_4]
+    for ____i_5 = 1, ____n_4 do
+        local it = ____items_4[____i_5]
         ____count_2 = ____count_2 + 1
-        ____out_2[____count_2] = __K2L_JavaClass(__K2L_KClassOfValue(it)).name
+        ____out_3[____count_2] = __K2L_JavaClass(__K2L_KClassOfValue(it)).name
     end
-    print(__K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
+    print(__K2L_Str(__K2L_ListWrap(____out_3, ____count_2)))
     print(__K2L_Equals(__K2L_KClassOfValue(locals:get(0)), __K2L_KClassOfValue(locals:get(2))))
     print(__K2L_KClassOfValue(locals:get(1)):isInstance(locals:get(3)))
     print(__K2L_KClassOfValue(locals:get(0)):isInstance(locals:get(1)))

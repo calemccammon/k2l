@@ -6,6 +6,7 @@ local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
+local __K2L_IsLowerCase = ____lualib.__K2L_IsLowerCase
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
@@ -39,7 +40,9 @@ end
 local Rule = __K2L_Class("lib.Rule")
 __K2L_ClassInfo(Rule, "lib.Rule", "lib.Rule", "interface")
 
-local ____lambda_1 = function(____p1) return ____p1:match("^%l$") ~= nil end
+local ____lambda_1 = function(____p1)
+    return __K2L_IsLowerCase[____p1] == true
+end
 local ____lambda_2 = function(media)
     return __K2L_StringToList(media.id):any(____lambda_1) and "id must be upper case" or nil
 end
@@ -481,7 +484,7 @@ function Loan:toString()
 end
 
 function Loan:hashCode()
-    return (31 * (31 * __K2L_Hash(self.media) + __K2L_Hash(self.member)) + self.day + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    return (31 * (31 * __K2L_Hash(self.media) + self.member:hashCode()) + self.day + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Loan:equals(other)

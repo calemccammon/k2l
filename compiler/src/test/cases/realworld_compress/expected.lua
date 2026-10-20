@@ -17,6 +17,7 @@ local __K2L_Shl = ____lualib.__K2L_Shl
 local __K2L_Shr = ____lualib.__K2L_Shr
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
@@ -121,13 +122,13 @@ local function decode(tree, bits)
     do
         local node = tree
         for ____i_1 = 1, #bits do
-            local b = bits:sub(____i_1, ____i_1)
+            local b = __K2L_StrByte(bits, ____i_1)
             local ____cast = node
             if getmetatable(____cast) ~= Node.Branch then
                 __K2L_CastFail(____cast, "Node$Branch", "Node.Branch")
             end
             local ____result
-            ____result = b == "0" and ____cast.left or ____cast.right
+            ____result = b == 48 and ____cast.left or ____cast.right
             node = ____result
             local ____value = node
             if getmetatable(____value) == Node.Leaf then
@@ -289,7 +290,7 @@ local function crc32(bytes)
     local ____mod_2 = bytes.____modCount
     for ____i_4 = 1, bytes.size do
         local b = bytes[____i_4]
-        crc = CRC_TABLE:get((crc ~ b) & 255) ~ (crc & 0xFFFFFFFF) >> 8
+        crc = (CRC_TABLE[((crc ~ b) & 255) + 1] or __K2L_IndexError((crc ~ b) & 255, CRC_TABLE.size, "array")) ~ (crc & 0xFFFFFFFF) >> 8
         if bytes.____modCount ~= ____mod_2 and bytes:____comodified(____i_4) then
             break
         end

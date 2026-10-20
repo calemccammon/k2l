@@ -16,7 +16,10 @@ data class LuaCall(val fn: LuaExpr, val args: List<LuaExpr>) : LuaExpr
 data class LuaMethodCall(val target: LuaExpr, val method: String, val args: List<LuaExpr>) : LuaExpr
 data class LuaBinary(val op: LuaBinOp, val left: LuaExpr, val right: LuaExpr) : LuaExpr
 data class LuaUnary(val op: LuaUnOp, val operand: LuaExpr) : LuaExpr
-data class LuaFunction(val params: List<String>, val body: List<LuaStmt>, val isVararg: Boolean = false) : LuaExpr
+
+/** [hoistable]: may be created once at chunk level when it captures nothing, though its body is more than one `return`. */
+data class LuaFunction(val params: List<String>, val body: List<LuaStmt>, val isVararg: Boolean = false, val hoistable: Boolean = false) :
+    LuaExpr
 data class LuaTable(val fields: List<LuaField>) : LuaExpr
 
 sealed interface LuaField {

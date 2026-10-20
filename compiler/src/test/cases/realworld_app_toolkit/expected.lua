@@ -18,7 +18,6 @@ local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_NotImplementedError = ____lualib.__K2L_NotImplementedError
@@ -615,17 +614,24 @@ local function main()
     local grid = __K2L_ReadOnlyListOf(__K2L_ReadOnlyListOf(1, 2, 3), __K2L_ReadOnlyListOf(4, 5, 6))
     print(__K2L_Str(findIndex(grid, 5)) .. " " .. __K2L_Str(findIndex(grid, 9)) .. " " .. __K2L_Str(firstNegativeSums(__K2L_ReadOnlyListOf(__K2L_ReadOnlyListOf(1, 2, -1, 5), __K2L_ReadOnlyListOf(3, 4), __K2L_SingletonListOf(-2)))))
     local counters = makeCounters()
-    print(__K2L_Str(__K2L_ListOfSize(2, function(it)
-        local ____out_1 = {}
-        local ____count_1 = 0
-        local ____items_3, ____n_3 = counters:____array()
-        for ____i_12 = 1, ____n_3 do
-            local it = ____items_3[____i_12]
-            ____count_1 = ____count_1 + 1
-            ____out_1[____count_1] = it()
+    local ____out_1 = {}
+    for ____i_12 = 1, 2 do
+        local it = ____i_12 - 1
+        local ____result_28
+        do
+            local ____out_2 = {}
+            local ____count_1 = 0
+            local ____items_3, ____n_3 = counters:____array()
+            for ____i_13 = 1, ____n_3 do
+                local it = ____items_3[____i_13]
+                ____count_1 = ____count_1 + 1
+                ____out_2[____count_1] = it()
+            end
+            ____result_28 = __K2L_ListWrap(____out_2, ____count_1)
         end
-        return __K2L_ListWrap(____out_1, ____count_1)
-    end)))
+        ____out_1[____i_12] = ____result_28
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out_1, 2)))
     print("fib(60) = " .. fib(60))
     local outcome = __K2L_RunCatching(function()
         fatal("disk full")
@@ -638,13 +644,13 @@ local function main()
     end)
     local ____receiver_1 = lazyTodo:exceptionOrNull()
     print(__K2L_Str(____receiver_1 and __K2L_Str(__K2L_KClassOfValue(____receiver_1).simpleName) .. ": " .. __K2L_Str(____receiver_1.message)))
-    local ____ok_7, ____result_28 = __K2L_DeepPcall(function()
+    local ____ok_7, ____result_29 = __K2L_DeepPcall(function()
         if not (users.size > 5) then
             error(__K2L_IllegalArgumentException.new("need more than 5 users, got " .. users.size))
         end
     end)
     if not ____ok_7 then
-        local ____error_7 = __K2L_ToThrowable(____result_28)
+        local ____error_7 = __K2L_ToThrowable(____result_29)
         if __K2L_InstanceOf(____error_7, __K2L_IllegalArgumentException) then
             local e = ____error_7
             print(__K2L_Str(e.message))

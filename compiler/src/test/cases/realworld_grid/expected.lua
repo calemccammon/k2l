@@ -1,8 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
-local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
@@ -25,7 +24,6 @@ local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 
 local Dir
 local Pos = __K2L_Class("Pos")
@@ -275,17 +273,23 @@ function State:toString()
 end
 
 function State:hashCode()
-    return (31 * __K2L_Hash(self.pos) + __K2L_Hash(self.dir) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    return (31 * self.pos:hashCode() + __K2L_Hash(self.dir) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function State:equals(other)
     return getmetatable(other) == State and self.pos:equals(other.pos) and self.dir == other.dir
 end
 
-local ____lambda_2 = function(it) return it.first end
+local ____lambda_2 = function(____a, ____b)
+    local ____x, ____y = ____a.first, ____b.first
+    if ____x ~= ____y then
+        return ____x < ____y and -1 or 1
+    end
+    return 0
+end
 local function cheapestRoute(grid, start, goal)
     local best = __K2L_MapOf()
-    local pq = __K2L_PriorityQueue.new(__K2L_CompareBy(____lambda_2))
+    local pq = __K2L_PriorityQueue.new(____lambda_2)
     local first = State.new(start, Dir.RIGHT)
     best:set(first, 0)
     pq:add(__K2L_Pair.new(0, first))
@@ -414,8 +418,13 @@ local function patrol(grid)
     end
 end
 
-local ____lambda_3 = function(it) return it:getPrice() end
-local ____lambda_4 = function(it) return it.plant end
+local ____lambda_3 = function(____a_1, ____b_1)
+    local ____x_2, ____y_2 = ____b_1:getPrice(), ____a_1:getPrice()
+    if ____x_2 ~= ____y_2 then
+        return ____x_2 < ____y_2 and -1 or 1
+    end
+    return __K2L_CompareValues(____a_1.plant, ____b_1.plant)
+end
 local function main()
     local maze = Grid:parse(MAZE)
     print("maze " .. maze:getWidth() .. "x" .. maze:getHeight())
@@ -450,7 +459,7 @@ local function main()
     print("walled-in: " .. __K2L_Str(bfs(maze, start, Pos.new(0, 0))))
     local garden = Grid:parse(GARDEN)
     local rs = regions(garden)
-    local ____list_5 = rs:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_3), ____lambda_4))
+    local ____list_5 = rs:sortedWith(____lambda_3)
     local ____mod_3 = ____list_5.____modCount
     for ____i_9 = 1, ____list_5.size do
         local it = ____list_5[____i_9]

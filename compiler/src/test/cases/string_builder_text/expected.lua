@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
@@ -15,7 +16,7 @@ local __K2L_StringTrim = ____lualib.__K2L_StringTrim
 local __K2L_Text = ____lualib.__K2L_Text
 
 local ____lambda_1 = function(it) return it == "," end
-local ____lambda_2 = function(it) return it:match("^%d$") ~= nil end
+local ____lambda_2 = function(it) return __K2L_IsDigit[it] == true end
 local ____lambda_3 = function(it) return it ~= "a" end
 local function main()
     local sb = __K2L_StringBuilder.new()

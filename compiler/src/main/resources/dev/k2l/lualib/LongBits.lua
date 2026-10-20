@@ -10,11 +10,6 @@ local function split(x)
     return (x - lo) / T32, lo
 end
 
--- hi: the signed high half (as the 32-bit operations return it), lo: the low half in any 32-bit form
-local function join(hi, lo)
-    return hi * T32 + lo % T32
-end
-
 -- 2^k - 1 -> 2^k: x and (2^k - 1) is the floored x % 2^k, also for negative x. Not on LuaJIT, where the hash lookup
 -- of an arbitrary number costs more than the two bit.band calls.
 local MASKS
@@ -32,21 +27,20 @@ local function __K2L_LBAnd(a, b)
             return a % m
         end
     end
-    local ah, al = split(a)
-    local bh, bl = split(b)
-    return join(__K2L_BAnd(ah, bh), __K2L_BAnd(al, bl))
+    -- split into halves and joined again: the signed high half (as the 32-bit operations return it) * 2^32 plus the
+    -- low half in any 32-bit form
+    local al, bl = a % T32, b % T32
+    return __K2L_BAnd((a - al) / T32, (b - bl) / T32) * T32 + __K2L_BAnd(al, bl) % T32
 end
 
 local function __K2L_LBOr(a, b)
-    local ah, al = split(a)
-    local bh, bl = split(b)
-    return join(__K2L_BOr(ah, bh), __K2L_BOr(al, bl))
+    local al, bl = a % T32, b % T32
+    return __K2L_BOr((a - al) / T32, (b - bl) / T32) * T32 + __K2L_BOr(al, bl) % T32
 end
 
 local function __K2L_LBXor(a, b)
-    local ah, al = split(a)
-    local bh, bl = split(b)
-    return join(__K2L_BXor(ah, bh), __K2L_BXor(al, bl))
+    local al, bl = a % T32, b % T32
+    return __K2L_BXor((a - al) / T32, (b - bl) / T32) * T32 + __K2L_BXor(al, bl) % T32
 end
 
 local function __K2L_LBNot(a)

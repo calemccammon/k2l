@@ -957,6 +957,9 @@ class FileTransformer(
     /** `getmetatable(subject)` read once before a `when`, by its subject, see [hoistSubjectMetatable]. */
     internal val subjectMetatables: MutableMap<LuaExpr, LuaExpr> = IdentityHashMap()
 
+    /** The comparators built by [fusedComparator], for a `thenBy` on them to extend. */
+    internal val fusedComparators: MutableMap<LuaExpr, FusedComparator> = IdentityHashMap()
+
     /** Values substituted for receiver expressions, e.g. the cached receiver of `a?.b`. */
     internal val overrides = HashMap<KtExpression, LuaExpr>()
 
@@ -1308,7 +1311,7 @@ class FileTransformer(
 
             KtTokens.EQEQ, KtTokens.EXCLEQ -> {
                 val (l, r) = ordered(listOf(left, right)).let { it[0] to it[1] }
-                equality(l, left.expressionType, r, right.expressionType, negated = token == KtTokens.EXCLEQ)
+                byteComparison(equality(l, left.expressionType, r, right.expressionType, negated = token == KtTokens.EXCLEQ))
             }
 
             in BINARY_OPERATORS -> {
@@ -1574,6 +1577,7 @@ class FileTransformer(
         return delegateFactory(id, call)
             ?: dataClassMember(call, receiverExpr, implicit)
             ?: inlinedCollectionCall(id, call, receiverExpr, implicit, full)
+            ?: loopedListOfSize(id, call)
             ?: scopeFunction(id, call, receiverExpr, implicit)
             ?: declaredCall(call, receiverExpr, implicit, receiverValue?.type, full)
     }

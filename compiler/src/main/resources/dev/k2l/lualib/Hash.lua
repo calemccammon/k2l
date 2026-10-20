@@ -28,28 +28,30 @@ local function hashUtf8(s)
     return __K2L_ToInt32(h)
 end
 
-local byte, find = string.byte, string.find
+local byte = string.byte
 
--- String.hashCode(), four bytes per step (h * 31^4 + ...: below 2^53, so exact with doubles too)
+-- String.hashCode(), four bytes per step (h * 31^4 + ...: below 2^53, so exact with doubles too); a string with a
+-- non-ASCII byte hashes its UTF-16 units instead (testing the bytes here is cheaper than a find, which LuaJIT cannot compile)
 local function hashString(s)
-    local h
-    if find(s, "[\128-\255]") then
-        h = hashUtf8(s)
-    else
-        h = 0
-        local i, n = 1, #s
-        while i + 3 <= n do
-            local b1, b2, b3, b4 = byte(s, i, i + 3)
-            h = (h * 923521 + b1 * 29791 + b2 * 961 + b3 * 31 + b4) & 0xFFFFFFFF
-            i = i + 4
+    local h, i, n = 0, 1, #s
+    while i + 3 <= n do
+        local b1, b2, b3, b4 = byte(s, i, i + 3)
+        if b1 > 127 or b2 > 127 or b3 > 127 or b4 > 127 then
+            return hashUtf8(s)
         end
-        while i <= n do
-            h = (31 * h + byte(s, i)) & 0xFFFFFFFF
-            i = i + 1
+        h = (h * 923521 + b1 * 29791 + b2 * 961 + b3 * 31 + b4) & 0xFFFFFFFF
+        i = i + 4
+    end
+    while i <= n do
+        local b = byte(s, i)
+        if b > 127 then
+            return hashUtf8(s)
         end
-        if h >= 2147483648 then
-            h = h - 4294967296
-        end
+        h = (31 * h + b) & 0xFFFFFFFF
+        i = i + 1
+    end
+    if h >= 2147483648 then
+        h = h - 4294967296
     end
     return h
 end

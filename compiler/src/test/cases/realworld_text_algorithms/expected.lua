@@ -1,10 +1,13 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_IsLowerCase = ____lualib.__K2L_IsLowerCase
+local __K2L_IsUpperCase = ____lualib.__K2L_IsUpperCase
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
@@ -23,7 +26,6 @@ local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ThenByDescending = ____lualib.__K2L_ThenByDescending
 
 local swapCase
 
@@ -84,7 +86,7 @@ local function rabinKarp(text, p, base, mod)
     end
     local high = 1
     for it = 0, #p - 1 - 1 do
-        high = __K2L_IRem(high * base, mod)
+        high = mod ~= 0 and __K2L_Fmod(high * base, mod) + 0 or __K2L_IRem(high * base, mod)
     end
     local hp = 0
     local ht = 0
@@ -131,14 +133,14 @@ end
 local function levenshtein(a, b)
     local d = __K2L_ListOfSize(#a + 1, function(it) return __K2L_ListOfSize(#b + 1, 0, "[I") end, "[[I")
     for i = 0, #a do
-        local ____object = d:get(i)
+        local ____object = d[i + 1] or __K2L_IndexError(i, d.size, "array")
         if 0 < 0 or 0 >= ____object.size then
             __K2L_IndexError(0, ____object.size, "array")
         end
         ____object[1] = i
     end
     for j = 0, #b do
-        local ____object_1 = d:get(0)
+        local ____object_1 = d[1] or __K2L_IndexError(0, d.size, "array")
         if j < 0 or j >= ____object_1.size then
             __K2L_IndexError(j, ____object_1.size, "array")
         end
@@ -147,8 +149,8 @@ local function levenshtein(a, b)
     for i = 1, #a do
         for j = 1, #b do
             local cost = __K2L_StringEqualsIgnoreCase(i - 1 >= 0 and i - 1 < #a and a:sub(i - 1 + 1, i - 1 + 1) or __K2L_IndexError(i - 1, #a, "string"), j - 1 >= 0 and j - 1 < #b and b:sub(j - 1 + 1, j - 1 + 1) or __K2L_IndexError(j - 1, #b, "string")) and 0 or 1
-            local ____object_2 = d:get(i)
-            local ____value_1 = math.min(d:get(i - 1):get(j) + 1, d:get(i):get(j - 1) + 1, d:get(i - 1):get(j - 1) + cost)
+            local ____object_2 = d[i + 1] or __K2L_IndexError(i, d.size, "array")
+            local ____value_1 = math.min((d[i] or __K2L_IndexError(i - 1, d.size, "array")):get(j) + 1, (d[i + 1] or __K2L_IndexError(i, d.size, "array")):get(j - 1) + 1, (d[i] or __K2L_IndexError(i - 1, d.size, "array")):get(j - 1) + cost)
             if j < 0 or j >= ____object_2.size then
                 __K2L_IndexError(j, ____object_2.size, "array")
             end
@@ -159,11 +161,11 @@ local function levenshtein(a, b)
     local i = #a
     local j = #b
     while i > 0 or j > 0 do
-        if i > 0 and j > 0 and d:get(i):get(j) == d:get(i - 1):get(j - 1) + (__K2L_StringEqualsIgnoreCase(i - 1 >= 0 and i - 1 < #a and a:sub(i - 1 + 1, i - 1 + 1) or __K2L_IndexError(i - 1, #a, "string"), j - 1 >= 0 and j - 1 < #b and b:sub(j - 1 + 1, j - 1 + 1) or __K2L_IndexError(j - 1, #b, "string")) and 0 or 1) then
+        if i > 0 and j > 0 and (d[i + 1] or __K2L_IndexError(i, d.size, "array")):get(j) == (d[i] or __K2L_IndexError(i - 1, d.size, "array")):get(j - 1) + (__K2L_StringEqualsIgnoreCase(i - 1 >= 0 and i - 1 < #a and a:sub(i - 1 + 1, i - 1 + 1) or __K2L_IndexError(i - 1, #a, "string"), j - 1 >= 0 and j - 1 < #b and b:sub(j - 1 + 1, j - 1 + 1) or __K2L_IndexError(j - 1, #b, "string")) and 0 or 1) then
             script:append(__K2L_StringEqualsIgnoreCase(i - 1 >= 0 and i - 1 < #a and a:sub(i - 1 + 1, i - 1 + 1) or __K2L_IndexError(i - 1, #a, "string"), j - 1 >= 0 and j - 1 < #b and b:sub(j - 1 + 1, j - 1 + 1) or __K2L_IndexError(j - 1, #b, "string")) and "=" or "~")
             i = i - 1
             j = j - 1
-        elseif i > 0 and d:get(i):get(j) == d:get(i - 1):get(j) + 1 then
+        elseif i > 0 and (d[i + 1] or __K2L_IndexError(i, d.size, "array")):get(j) == (d[i] or __K2L_IndexError(i - 1, d.size, "array")):get(j) + 1 then
             script:append("-")
             i = i - 1
         else
@@ -180,8 +182,8 @@ local function lcs(a, b)
     for i = ____range_1.first, ____range_1.last, ____range_1.step do
         local ____range_2 = __K2L_IntRange.new(0, #b - 1):reversed()
         for j = ____range_2.first, ____range_2.last, ____range_2.step do
-            local ____object_3 = dp:get(i)
-            local ____value_2 = (i >= 0 and i < #a and a:sub(i + 1, i + 1) or __K2L_IndexError(i, #a, "string")) == (j >= 0 and j < #b and b:sub(j + 1, j + 1) or __K2L_IndexError(j, #b, "string")) and dp:get(i + 1):get(j + 1) + 1 or math.max(dp:get(i + 1):get(j), dp:get(i):get(j + 1))
+            local ____object_3 = dp[i + 1] or __K2L_IndexError(i, dp.size, "array")
+            local ____value_2 = (i >= 0 and i < #a and a:sub(i + 1, i + 1) or __K2L_IndexError(i, #a, "string")) == (j >= 0 and j < #b and b:sub(j + 1, j + 1) or __K2L_IndexError(j, #b, "string")) and (dp[i + 1 + 1] or __K2L_IndexError(i + 1, dp.size, "array")):get(j + 1) + 1 or math.max((dp[i + 1 + 1] or __K2L_IndexError(i + 1, dp.size, "array")):get(j), (dp[i + 1] or __K2L_IndexError(i, dp.size, "array")):get(j + 1))
             if j < 0 or j >= ____object_3.size then
                 __K2L_IndexError(j, ____object_3.size, "array")
             end
@@ -196,7 +198,7 @@ local function lcs(a, b)
             sb:append(i >= 0 and i < #a and a:sub(i + 1, i + 1) or __K2L_IndexError(i, #a, "string"))
             i = i + 1
             j = j + 1
-        elseif dp:get(i + 1):get(j) >= dp:get(i):get(j + 1) then
+        elseif (dp[i + 1 + 1] or __K2L_IndexError(i + 1, dp.size, "array")):get(j) >= (dp[i + 1] or __K2L_IndexError(i, dp.size, "array")):get(j + 1) then
             i = i + 1
         else
             j = j + 1
@@ -283,8 +285,8 @@ local ____lambda_2 = function(it) return it:upper() end
 local ____lambda_3 = function(w)
     return __K2L_Text.replaceFirstChar(w, ____lambda_2)
 end
-local ____lambda_4 = function(it) return it:match("^%u$") ~= nil end
-local ____lambda_5 = function(it) return it:match("^%l$") ~= nil end
+local ____lambda_4 = function(it) return __K2L_IsUpperCase[it] == true end
+local ____lambda_5 = function(it) return __K2L_IsLowerCase[it] == true end
 local function surgery()
     local sb = __K2L_StringBuilder.new("Hello, World")
     sb:insert(0, ">> "):insert(sb:getLength(), "!"):insert(8, tostring(123)):insert(3, __K2L_Str(4.5)):insert(3, tostring(true))
@@ -319,7 +321,7 @@ local function surgery()
 end
 
 local ____lambda_6 = function(it)
-    return it:match("^%u$") ~= nil and it:lower() or it:upper()
+    return __K2L_IsUpperCase[it] == true and it:lower() or it:upper()
 end
 function swapCase(self)
     return __K2L_StringToList(self):map(____lambda_6):joinToString("")
@@ -328,8 +330,13 @@ end
 local ____lambda_7 = function(it) return it >= 0 end
 local ____lambda_8 = function(it) return it.value end
 local ____lambda_9 = function(it) return it.size > 1 end
-local ____lambda_10 = function(it) return #it end
-local ____lambda_11 = function(it) return it end
+local ____lambda_10 = function(____a, ____b)
+    local ____x_1, ____y_1 = #____a, #____b
+    if ____x_1 ~= ____y_1 then
+        return ____x_1 < ____y_1 and -1 or 1
+    end
+    return __K2L_CompareValues(____b, ____a)
+end
 local function main()
     local text = "abracadabra abracadabra cadabra"
     local ____list = __K2L_ReadOnlyListOf("abra", "cad", "a", "zzz", "abracadabra c")
@@ -400,7 +407,7 @@ local function main()
             break
         end
     end
-    print(words:sortedWith(__K2L_ThenByDescending(__K2L_CompareBy(____lambda_10), ____lambda_11)):joinToString())
+    print(words:sortedWith(____lambda_10):joinToString())
     local ____out_1 = {}
     local ____count_1 = 0
     local ____items_4, ____n_4 = words:____array()

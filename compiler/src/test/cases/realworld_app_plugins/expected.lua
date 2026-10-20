@@ -180,6 +180,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
+local __K2L_IsLowerCase = ____lualib.__K2L_IsLowerCase
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringReplace = ____lualib.__K2L_StringReplace
@@ -199,7 +200,7 @@ function UpperPlugin:____init(priority)
     ____Plugin.initLog:add("UpperPlugin.init")
 end
 
-local ____lambda_1 = function(it) return it:match("^%l$") ~= nil end
+local ____lambda_1 = function(it) return __K2L_IsLowerCase[it] == true end
 function UpperPlugin:process(input)
     if __K2L_StringToList(input):any(____lambda_1) then
         return input:upper()

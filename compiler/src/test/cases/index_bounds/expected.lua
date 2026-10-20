@@ -160,7 +160,10 @@ local function main()
     end)
     t("arr[3]=", function()
         local ____key_2 = id(3)
-        arr:set(____key_2, 1)
+        if ____key_2 < 0 or ____key_2 >= arr.size then
+            __K2L_IndexError(____key_2, arr.size, "array")
+        end
+        arr[____key_2 + 1] = 1
         return __K2L_Unit
     end)
     t("ia[5]=", function()

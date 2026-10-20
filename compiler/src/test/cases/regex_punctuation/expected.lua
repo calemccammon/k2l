@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
@@ -23,7 +24,7 @@ local function main()
     local ____items, ____n = ____list:____array()
     for ____i = 1, ____n do
         local it = ____items[____i]
-        if it:match("^%w$") == nil then
+        if __K2L_IsLetterOrDigit[it] ~= true then
             ____count = ____count + 1
             ____out[____count] = it
         end

@@ -2,8 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Num = ____lualib.__K2L_Num
@@ -97,7 +97,7 @@ end
 local ____lambda_3 = function(v)
     return __K2L_ReadOnlySetOf("amb", "blu", "brn", "gry", "grn", "hzl", "oth"):contains(v)
 end
-local ____lambda_4 = function(____p1) return ____p1:match("^%d$") ~= nil end
+local ____lambda_4 = function(____p1) return __K2L_IsDigit[____p1] == true end
 local ____lambda_5 = function(v)
     return #v == 9 and __K2L_StringToList(v):all(____lambda_4)
 end
@@ -226,61 +226,65 @@ local function syntaxScore(lines)
     return __K2L_Pair.new(errors, completions:sorted():get(completions.size >= 0 and completions.size // 2 or 0 - -completions.size // 2))
 end
 
-local ____lambda_6 = function(it) return __K2L_ArrayDeque.new() end
 local function crates(input, multi)
     local ____destructured_2 = __K2L_StringSplit(input, "\n\n")
     local drawing, moves = ____destructured_2[1], ____destructured_2[2]
     local rows = __K2L_StringLines(drawing)
     local count = __K2L_Regex.new("\\s+"):split(__K2L_StringTrim(rows:last())).size
-    local stacks = __K2L_ListOfSize(count, ____lambda_6)
+    local ____out_2 = {}
+    for ____i_8 = 1, count do
+        local it = ____i_8 - 1
+        ____out_2[____i_8] = __K2L_ArrayDeque.new()
+    end
+    local stacks = __K2L_ListWrap(____out_2, count)
     local ____list_3 = rows:dropLast(1)
     local ____mod_2 = ____list_3.____modCount
-    for ____i_8 = 1, ____list_3.size do
-        local row = ____list_3[____i_8]
+    for ____i_9 = 1, ____list_3.size do
+        local row = ____list_3[____i_9]
         for i = 0, count - 1 do
             local c = __K2L_Text.getOrNull(row, 1 + 4 * i)
             if c ~= nil and c ~= " " then
                 stacks:get(i):addFirst(c)
             end
         end
-        if ____list_3.____modCount ~= ____mod_2 and ____list_3:____comodified(____i_8) then
+        if ____list_3.____modCount ~= ____mod_2 and ____list_3:____comodified(____i_9) then
             break
         end
     end
     for _, m in __K2L_Sequence.new(__K2L_Regex.new("move (\\d+) from (\\d+) to (\\d+)"):findAllFactory(moves)):iter() do
         local ____list_4 = m.destructured:toList()
-        local ____out_2 = {}
+        local ____out_3 = {}
         local ____count_2 = 0
         local ____items_5, ____n_5 = ____list_4:____array()
-        for ____i_9 = 1, ____n_5 do
-            local it = ____items_5[____i_9]
+        for ____i_10 = 1, ____n_5 do
+            local it = ____items_5[____i_10]
             ____count_2 = ____count_2 + 1
-            ____out_2[____count_2] = __K2L_StringToInt(it)
+            ____out_3[____count_2] = __K2L_StringToInt(it)
         end
-        local ____destructured_3 = __K2L_ListWrap(____out_2, ____count_2)
+        local ____destructured_3 = __K2L_ListWrap(____out_3, ____count_2)
         local n, from, to = ____destructured_3[1], ____destructured_3[2], ____destructured_3[3]
         local taken = __K2L_IntRange.new(1, n):map(function(it) return stacks:get(from - 1):removeLast() end)
         local ____list_5 = multi and taken:reversed() or taken
         local ____mod_3 = ____list_5.____modCount
-        for ____i_10 = 1, ____list_5.size do
-            local it = ____list_5[____i_10]
+        for ____i_11 = 1, ____list_5.size do
+            local it = ____list_5[____i_11]
             stacks:get(to - 1):addLast(it)
-            if ____list_5.____modCount ~= ____mod_3 and ____list_5:____comodified(____i_10) then
+            if ____list_5.____modCount ~= ____mod_3 and ____list_5:____comodified(____i_11) then
                 break
             end
         end
     end
-    local ____out_3 = {}
+    local ____out_4 = {}
     local ____count_3 = 0
     local ____items_6, ____n_6 = stacks:____array()
-    for ____i_11 = 1, ____n_6 do
-        local it = ____items_6[____i_11]
+    for ____i_12 = 1, ____n_6 do
+        local it = ____items_6[____i_12]
         local ____result_8
         ____result_8 = it:lastOrNull() or " "
         ____count_3 = ____count_3 + 1
-        ____out_3[____count_3] = ____result_8
+        ____out_4[____count_3] = ____result_8
     end
-    return __K2L_ListWrap(____out_3, ____count_3):joinToString("")
+    return __K2L_ListWrap(____out_4, ____count_3):joinToString("")
 end
 
 local function stream(s)
@@ -310,20 +314,20 @@ local function stream(s)
     return __K2L_Pair.new(score, garbage)
 end
 
-local ____lambda_7 = function(it) return "_" end
+local ____lambda_6 = function(it) return "_" end
 local function decodedLength(lit)
-    return #__K2L_Regex.new("\\\\x[0-9a-f]{2}|\\\\."):replace(__K2L_Text.substring(lit, 1, #lit - 1), ____lambda_7)
+    return #__K2L_Regex.new("\\\\x[0-9a-f]{2}|\\\\."):replace(__K2L_Text.substring(lit, 1, #lit - 1), ____lambda_6)
 end
 
-local ____lambda_8 = function(it)
+local ____lambda_7 = function(it)
     return (it == "\"" or it == "\\") and 2 or 1
 end
 local function encodedLength(lit)
-    return 2 + __K2L_StringToList(lit):sumOf(____lambda_8)
+    return 2 + __K2L_StringToList(lit):sumOf(____lambda_7)
 end
 
-local ____lambda_9 = function(it) return __K2L_StringContains("iol", it) end
-local ____lambda_10 = function(it) return it.value end
+local ____lambda_8 = function(it) return __K2L_StringContains("iol", it) end
+local ____lambda_9 = function(it) return it.value end
 local function nextPassword(current)
     local function inc(s)
         local i = s.size - 1
@@ -351,14 +355,14 @@ local function nextPassword(current)
         local ____list_6 = __K2L_Text.windowed(s, 3)
         local ____result_9 = false
         local ____items_7, ____n_7 = ____list_6:____array()
-        for ____i_12 = 1, ____n_7 do
-            local it = ____items_7[____i_12]
+        for ____i_13 = 1, ____n_7 do
+            local it = ____items_7[____i_13]
             if (1 >= 0 and 1 < #it and it:sub(1 + 1, 1 + 1) or __K2L_IndexError(1, #it, "string")) == string.char((0 >= 0 and 0 < #it and it:sub(0 + 1, 0 + 1) or __K2L_IndexError(0, #it, "string")):byte() + 1) and (2 >= 0 and 2 < #it and it:sub(2 + 1, 2 + 1) or __K2L_IndexError(2, #it, "string")) == string.char((1 >= 0 and 1 < #it and it:sub(1 + 1, 1 + 1) or __K2L_IndexError(1, #it, "string")):byte() + 1) then
                 ____result_9 = true
                 break
             end
         end
-        return ____result_9 and __K2L_StringToList(s):none(____lambda_9) and __K2L_Sequence.new(__K2L_Regex.new("(.)\\1"):findAllFactory(s)):map(____lambda_10):distinct():count() >= 2
+        return ____result_9 and __K2L_StringToList(s):none(____lambda_8) and __K2L_Sequence.new(__K2L_Regex.new("(.)\\1"):findAllFactory(s)):map(____lambda_9):distinct():count() >= 2
     end
     local p = inc(__K2L_Text.toCharArray(current))
     while not valid(__K2L_Text.string(p)) do
@@ -387,7 +391,7 @@ local function calibration(line, words)
     return digits:first() * 10 + digits:last()
 end
 
-local ____lambda_11 = function(it)
+local ____lambda_10 = function(it)
     return __K2L_Pair.new(__K2L_Text.substringBefore(it, ":"), __K2L_Text.substringAfter(it, ":"))
 end
 local function main()
@@ -395,21 +399,21 @@ local function main()
     print("nice: " .. words:count(niceOld) .. " / " .. words:count(niceNew) .. " -> " .. __K2L_Str(words:filter(niceNew)))
     print("passwords: " .. __K2L_Str(passwordPolicies(__K2L_ReadOnlyListOf("1-3 a: abcde", "1-3 b: cdefg", "2-9 c: ccccccccc", "3-4 x: xxyx", "2-2 z: zz"))))
     local ____list_7 = __K2L_Regex.new("\n\\s*\n"):split(__K2L_Text.trimIndent("\n        eyr:1972 cid:100\n        hcl:#18171d ecl:amb hgt:170 pid:186cm iyr:2018 byr:1926\n\n        pid:087499704 hgt:74in ecl:grn iyr:2012 eyr:2030 byr:1980\n        hcl:#623a2f\n\n        hcl:#888785\n        hgt:164cm byr:2001 iyr:2015 cid:88\n        pid:545766238 ecl:hzl\n        eyr:2022\n\n        iyr:2010 hgt:158cm hcl:#b6652a ecl:blu byr:1944 eyr:2021 pid:093154719\n\n        hgt:59cm ecl:zzz eyr:2038 hcl:74454a iyr:2023 pid:3556412378 byr:2007\n    "))
-    local ____out_4 = {}
+    local ____out_5 = {}
     local ____count_4 = 0
     local ____items_8, ____n_8 = ____list_7:____array()
-    for ____i_13 = 1, ____n_8 do
-        local block = ____items_8[____i_13]
+    for ____i_14 = 1, ____n_8 do
+        local block = ____items_8[____i_14]
         local ____result_10
-        ____result_10 = __K2L_Regex.new("\\s+"):split(block):associate(____lambda_11)
+        ____result_10 = __K2L_Regex.new("\\s+"):split(block):associate(____lambda_10)
         ____count_4 = ____count_4 + 1
-        ____out_4[____count_4] = ____result_10
+        ____out_5[____count_4] = ____result_10
     end
-    local passports = __K2L_ListWrap(____out_4, ____count_4)
+    local passports = __K2L_ListWrap(____out_5, ____count_4)
     local ____result_11 = 0
     local ____items_9, ____n_9 = passports:____array()
-    for ____i_14 = 1, ____n_9 do
-        local it = ____items_9[____i_14]
+    for ____i_15 = 1, ____n_9 do
+        local it = ____items_9[____i_15]
         if it:getKeys():containsAll(__K2L_ReadOnlyListOf("byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid")) then
             ____result_11 = ____result_11 + 1
         end
@@ -422,31 +426,31 @@ local function main()
     local crateInput = "    [D]    \n[N] [C]    \n[Z] [M] [P]\n 1   2   3 \n\nmove 1 from 2 to 1\nmove 3 from 1 to 3\nmove 2 from 2 to 1\nmove 1 from 1 to 2"
     print("crates: " .. crates(crateInput, false) .. " " .. crates(crateInput, true))
     local ____list_8 = __K2L_ReadOnlyListOf("{}", "{{{}}}", "{{<!!>},{<!!>},{<!!>},{<!!>}}", "{{<a!>},{<a!>},{<a!>},{<ab>}}", "<{o\"i!a,<{i<a>", "{{<ab>},{<ab>},{<ab>},{<ab>}}")
-    for ____i_15 = 1, ____list_8.size do
-        local s = ____list_8[____i_15]
+    for ____i_16 = 1, ____list_8.size do
+        local s = ____list_8[____i_16]
         print("stream " .. s .. " -> " .. __K2L_Str(stream(s)))
     end
     local literals = __K2L_ReadOnlyListOf("\"\"", "\"abc\"", "\"aaa\\\"aaa\"", "\"\\x27\"", "\"\\\\x41\"")
-    local ____out_5 = {}
+    local ____out_6 = {}
     local ____count_5 = 0
     local ____items_10, ____n_10 = literals:____array()
-    for ____i_16 = 1, ____n_10 do
-        local it = ____items_10[____i_16]
+    for ____i_17 = 1, ____n_10 do
+        local it = ____items_10[____i_17]
         ____count_5 = ____count_5 + 1
-        ____out_5[____count_5] = #it .. "/" .. decodedLength(it) .. "/" .. encodedLength(it)
+        ____out_6[____count_5] = #it .. "/" .. decodedLength(it) .. "/" .. encodedLength(it)
     end
-    local ____arg = "escapes: " .. __K2L_Str(__K2L_ListWrap(____out_5, ____count_5)) .. " total="
+    local ____arg = "escapes: " .. __K2L_Str(__K2L_ListWrap(____out_6, ____count_5)) .. " total="
     local ____sum = 0
     local ____items_11, ____n_11 = literals:____array()
-    for ____i_17 = 1, ____n_11 do
-        local it = ____items_11[____i_17]
+    for ____i_18 = 1, ____n_11 do
+        local it = ____items_11[____i_18]
         ____sum = ____sum + (#it - decodedLength(it))
     end
     local ____arg_1 = ____arg .. ____sum .. ","
     local ____sum_1 = 0
     local ____items_12, ____n_12 = literals:____array()
-    for ____i_18 = 1, ____n_12 do
-        local it = ____items_12[____i_18]
+    for ____i_19 = 1, ____n_12 do
+        local it = ____items_12[____i_19]
         ____sum_1 = ____sum_1 + (encodedLength(it) - #it)
     end
     print(____arg_1 .. ____sum_1)
@@ -455,26 +459,26 @@ local function main()
     local ____list_9 = cal:take(4)
     local ____sum_2 = 0
     local ____items_13, ____n_13 = ____list_9:____array()
-    for ____i_19 = 1, ____n_13 do
-        local it = ____items_13[____i_19]
+    for ____i_20 = 1, ____n_13 do
+        local it = ____items_13[____i_20]
         ____sum_2 = ____sum_2 + calibration(it, false)
     end
     local ____list_10 = cal:drop(4)
     local ____sum_3 = 0
     local ____items_14, ____n_14 = ____list_10:____array()
-    for ____i_20 = 1, ____n_14 do
-        local it = ____items_14[____i_20]
+    for ____i_21 = 1, ____n_14 do
+        local it = ____items_14[____i_21]
         ____sum_3 = ____sum_3 + calibration(it, true)
     end
-    local ____out_6 = {}
+    local ____out_7 = {}
     local ____count_6 = 0
     local ____items_15, ____n_15 = cal:____array()
-    for ____i_21 = 1, ____n_15 do
-        local it = ____items_15[____i_21]
+    for ____i_22 = 1, ____n_15 do
+        local it = ____items_15[____i_22]
         ____count_6 = ____count_6 + 1
-        ____out_6[____count_6] = calibration(it, true)
+        ____out_7[____count_6] = calibration(it, true)
     end
-    print("calibration: " .. ____sum_2 .. " " .. ____sum_3 .. " " .. __K2L_Str(__K2L_ListWrap(____out_6, ____count_6)))
+    print("calibration: " .. ____sum_2 .. " " .. ____sum_3 .. " " .. __K2L_Str(__K2L_ListWrap(____out_7, ____count_6)))
 end
 
 main()

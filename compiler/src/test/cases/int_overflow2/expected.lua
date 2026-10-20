@@ -1,9 +1,11 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function divide(a, b)
@@ -32,8 +34,8 @@ local function main()
     print((__K2L_IDiv(min, minusOne) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print(divide(-2147483648, -1))
     print(divide(7, -2))
-    print(__K2L_IRem(min, minusOne))
-    print(__K2L_IRem(min, minusOne))
+    print(minusOne ~= 0 and __K2L_Fmod(min, minusOne) + 0 or __K2L_IRem(min, minusOne))
+    print(minusOne ~= 0 and __K2L_Fmod(min, minusOne) + 0 or __K2L_IRem(min, minusOne))
     print((__K2L_IDiv(min, minusOne) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print((math.abs(min) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
     print((math.abs(min) + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
@@ -77,8 +79,8 @@ local function main()
     print(__K2L_Str(__K2L_ReadOnlyListOf(1.5, 2.5):sum(0.0)))
     local h = 0
     for ____i_3 = 1, #"hello world, this is a long string" do
-        local c = ("hello world, this is a long string"):sub(____i_3, ____i_3)
-        h = (31 * h + c:byte() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+        local c = __K2L_StrByte("hello world, this is a long string", ____i_3)
+        h = (31 * h + c + 0x80000000 & 0xFFFFFFFF) - 0x80000000
     end
     print(h)
     print((-min + 0x80000000 & 0xFFFFFFFF) - 0x80000000)

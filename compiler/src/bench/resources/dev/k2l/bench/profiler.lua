@@ -23,6 +23,13 @@ local function clean(source)
     return source
 end
 
+-- a chunk loaded from a string (the lualib compiles some code with `load`) has its text as source: one name for all
+local function named(source)
+    local c = sub(source, 1, 1)
+    if c == "@" or c == "=" then return source end
+    return "[string]"
+end
+
 local function isProgram(source)
     return sub(source, 1, 1) == "@" and not find(source, "lualib_bundle", 1, true) and not find(source, "k2l_profiler", 1, true)
 end
@@ -33,7 +40,7 @@ local function record(th, first, samples, cName)
     if th then info = getinfo(th, first, "Sl") else info = getinfo(first, "Sl") end
     if not info then return end
     total = total + samples
-    local src = info.what == "C" and ("[C]" .. (cName or "")) or info.source
+    local src = info.what == "C" and ("[C]" .. (cName or "")) or named(info.source)
     local selfFn = src .. "\t" .. info.linedefined
     local key = src .. "\t" .. info.currentline .. "\t" .. info.linedefined
     selfCounts[key] = (selfCounts[key] or 0) + samples
@@ -44,7 +51,7 @@ local function record(th, first, samples, cName)
         if th then f = getinfo(th, level, "Sl") else f = getinfo(level, "Sl") end
         if not f then break end
         if f.what ~= "C" and not find(f.source, "k2l_profiler", 1, true) then
-            local fn = f.source .. "\t" .. f.linedefined
+            local fn = named(f.source) .. "\t" .. f.linedefined
             if not seen[fn] then
                 seen[fn] = true
                 inclCounts[fn] = (inclCounts[fn] or 0) + samples

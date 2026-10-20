@@ -1,5 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_IndexError = ____lualib.__K2L_IndexError
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
+local __K2L_IsLetter = ____lualib.__K2L_IsLetter
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
@@ -51,8 +53,8 @@ local function main()
     print(c:byte())
     print(string.char(("a"):byte() + 2))
     print(("z"):byte() - ("a"):byte())
-    print(c:match("^%a$") ~= nil)
-    print(("7"):match("^%d$") ~= nil)
+    print(__K2L_IsLetter[c] == true)
+    print(__K2L_IsDigit["7"] == true)
     print(__K2L_Num.digitToInt("7") * 2)
     print(c:upper())
     print(string.char(97))

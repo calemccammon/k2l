@@ -4,7 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -38,7 +38,6 @@ local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_StringTrim = ____lualib.__K2L_StringTrim
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Triple = ____lualib.__K2L_Triple
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
@@ -437,10 +436,15 @@ function Bank:totalHoldings()
     return self.accounts:getValues():fold(Money.ZERO, ____lambda_4)
 end
 
-local ____lambda_5 = function(it) return it:getBalance() end
-local ____lambda_6 = function(it) return it.id end
+local ____lambda_5 = function(____a, ____b)
+    local ____c = __K2L_CompareValues(____b:getBalance(), ____a:getBalance())
+    if ____c ~= 0 then
+        return ____c
+    end
+    return __K2L_CompareValues(____a.id, ____b.id)
+end
 function Bank:report()
-    local ____list_1 = self.accounts:getValues():sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_5), ____lambda_6))
+    local ____list_1 = self.accounts:getValues():sortedWith(____lambda_5)
     local ____out_1 = {}
     local ____count_1 = 0
     local ____items_2, ____n_2 = ____list_1:____array()
@@ -469,7 +473,7 @@ function Bank:getByOwner()
     return ____result_2
 end
 
-local ____lambda_7 = function(____p1) return print(__K2L_Str(____p1)) end
+local ____lambda_6 = function(____p1) return print(__K2L_Str(____p1)) end
 local function main()
     local bank = Bank.new("Lua Savings & Loan")
     local alice = Customer.new("Alice  van Dyke", "ALICE@example.com")
@@ -558,7 +562,7 @@ local function main()
     local ____mod_2 = ____list_4.____modCount
     for ____i_5 = 1, ____list_4.size do
         local it = ____list_4[____i_5];
-        (____lambda_7)(it)
+        (____lambda_6)(it)
         if ____list_4.____modCount ~= ____mod_2 and ____list_4:____comodified(____i_5) then
             break
         end

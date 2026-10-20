@@ -1,8 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
-local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -21,7 +20,6 @@ local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringPadEnd = ____lualib.__K2L_StringPadEnd
-local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
 local Priced = __K2L_Class("warehouse.Priced")
@@ -165,15 +163,15 @@ function Grid:____init(rows, cols)
 end
 
 function Grid:get(slot)
-    local ____receiver = self.cells:get(slot.row):get(slot.col)
-    return ____receiver and __K2L_Pair.new(____receiver, self.counts:get(slot.row):get(slot.col))
+    local ____receiver = (self.cells[slot.row + 1] or __K2L_IndexError(slot.row, self.cells.size, "array")):get(slot.col)
+    return ____receiver and __K2L_Pair.new(____receiver, (self.counts[slot.row + 1] or __K2L_IndexError(slot.row, self.counts.size, "array")):get(slot.col))
 end
 
 function Grid:store(product, quantity)
     for r = 0, self.rows - 1 do
         for c = 0, self.cols - 1 do
-            if __K2L_Equals(self.cells:get(r):get(c), product) then
-                local ____object = self.counts:get(r)
+            if __K2L_Equals((self.cells[r + 1] or __K2L_IndexError(r, self.cells.size, "array")):get(c), product) then
+                local ____object = self.counts[r + 1] or __K2L_IndexError(r, self.counts.size, "array")
                 ____object[c + 1] = (____object[c + 1] or __K2L_IndexError(c, ____object.size, "array")) + quantity
                 return Slot.new(r, c)
             end
@@ -182,15 +180,15 @@ function Grid:store(product, quantity)
     for r = 0, self.rows - 1 do
         for c = 0, self.cols - 1 do
             do
-                if self.cells:get(r):get(c) ~= nil then
+                if (self.cells[r + 1] or __K2L_IndexError(r, self.cells.size, "array")):get(c) ~= nil then
                     goto ____continue
                 end
                 if product.fragile and r > 0 then
                     goto ____break
                 end
-                local ____object_1 = self.cells:get(r)
+                local ____object_1 = self.cells[r + 1] or __K2L_IndexError(r, self.cells.size, "array")
                 ____object_1:set(c, product)
-                local ____object_2 = self.counts:get(r)
+                local ____object_2 = self.counts[r + 1] or __K2L_IndexError(r, self.counts.size, "array")
                 if c < 0 or c >= ____object_2.size then
                     __K2L_IndexError(c, ____object_2.size, "array")
                 end
@@ -205,13 +203,13 @@ function Grid:store(product, quantity)
 end
 
 function Grid:take(slot, quantity)
-    local have = self.counts:get(slot.row):get(slot.col)
+    local have = (self.counts[slot.row + 1] or __K2L_IndexError(slot.row, self.counts.size, "array")):get(slot.col)
     local taken = math.min(quantity, have)
-    local ____object_3 = self.counts:get(slot.row)
+    local ____object_3 = self.counts[slot.row + 1] or __K2L_IndexError(slot.row, self.counts.size, "array")
     local ____key = slot.col
     ____object_3[____key + 1] = (____object_3[____key + 1] or __K2L_IndexError(____key, ____object_3.size, "array")) - taken
-    if self.counts:get(slot.row):get(slot.col) == 0 then
-        local ____object_4 = self.cells:get(slot.row)
+    if (self.counts[slot.row + 1] or __K2L_IndexError(slot.row, self.counts.size, "array")):get(slot.col) == 0 then
+        local ____object_4 = self.cells[slot.row + 1] or __K2L_IndexError(slot.row, self.cells.size, "array")
         local ____key_1 = slot.col
         ____object_4:set(____key_1, nil)
     end
@@ -236,9 +234,9 @@ end
 
 function Grid:render()
     return self.cells:getIndices():joinToString("\n", nil, nil, nil, nil, function(r)
-        return self.cells:get(r):getIndices():joinToString(" | ", nil, nil, nil, nil, function(c)
-            local ____receiver_1 = self.cells:get(r):get(c)
-            return ____receiver_1 and __K2L_StringPadEnd(____receiver_1.sku .. " x" .. self.counts:get(r):get(c), 10) or __K2L_StringPadEnd("-", 10)
+        return (self.cells[r + 1] or __K2L_IndexError(r, self.cells.size, "array")):getIndices():joinToString(" | ", nil, nil, nil, nil, function(c)
+            local ____receiver_1 = (self.cells[r + 1] or __K2L_IndexError(r, self.cells.size, "array")):get(c)
+            return ____receiver_1 and __K2L_StringPadEnd(____receiver_1.sku .. " x" .. (self.counts[r + 1] or __K2L_IndexError(r, self.counts.size, "array")):get(c), 10) or __K2L_StringPadEnd("-", 10)
         end)
     end)
 end
@@ -275,14 +273,26 @@ end
 
 Order:____initCompanion()
 
-local ____lambda_1 = function(it) return it.row end
-local ____lambda_2 = function(it) return it.col end
 local function route(start, stops)
     local remaining = stops:toMutableList()
     local path = __K2L_ListOf()
     local at = start
     while remaining:isNotEmpty() do
-        local nearest = remaining:minWith(__K2L_ThenBy(__K2L_ThenBy(__K2L_CompareBy(function(it) return it:minus(at) end), ____lambda_1), ____lambda_2))
+        local nearest = remaining:minWith(function(____a, ____b)
+            local ____x_3, ____y_3 = ____a:minus(at), ____b:minus(at)
+            if ____x_3 ~= ____y_3 then
+                return ____x_3 < ____y_3 and -1 or 1
+            end
+            local ____x_4, ____y_4 = ____a.row, ____b.row
+            if ____x_4 ~= ____y_4 then
+                return ____x_4 < ____y_4 and -1 or 1
+            end
+            local ____x_5, ____y_5 = ____a.col, ____b.col
+            if ____x_5 ~= ____y_5 then
+                return ____x_5 < ____y_5 and -1 or 1
+            end
+            return 0
+        end)
         remaining:remove(nearest)
         path:add(nearest)
         at = nearest
@@ -290,11 +300,16 @@ local function route(start, stops)
     return path
 end
 
-local ____lambda_3 = function() return Tool.new1("bad", 1) end
-local ____lambda_4 = function(it) return it.row .. it.col end
-local ____lambda_5 = function(it) return it.fragile end
-local ____lambda_6 = function(it) return it:price(1) end
-local ____lambda_7 = function(it) return it.name end
+local ____lambda_1 = function() return Tool.new1("bad", 1) end
+local ____lambda_2 = function(it) return it.row .. it.col end
+local ____lambda_3 = function(it) return it.fragile end
+local ____lambda_4 = function(____a_1, ____b_1)
+    local ____x_7, ____y_7 = ____b_1:price(1), ____a_1:price(1)
+    if ____x_7 ~= ____y_7 then
+        return ____x_7 < ____y_7 and -1 or 1
+    end
+    return __K2L_CompareValues(____a_1.name, ____b_1.name)
+end
 local function main()
     local hammer = Tool.new("TL-001", "hammer", 1200)
     local wrench = Tool.new1("TL-002", 900)
@@ -302,7 +317,7 @@ local function main()
     local vase = Glassware.new("GL-007", "vase", 2500, 20)
     local glasses = Glassware.new("GL-008", "glasses", 400, 5)
     local products = __K2L_ReadOnlyListOf(hammer, wrench, drill, vase, glasses)
-    local ____receiver_2 = __K2L_RunCatching(____lambda_3):exceptionOrNull()
+    local ____receiver_2 = __K2L_RunCatching(____lambda_1):exceptionOrNull()
     print(__K2L_Str(____receiver_2 and ____receiver_2.message))
     local ____mod = products.____modCount
     for ____i_3 = 1, products.size do
@@ -391,7 +406,7 @@ local function main()
             ____out_3[____count_3] = ____result_2
         end
         local picked = __K2L_ListWrap(____out_3, ____count_3)
-        print("order " .. order.id .. " route=" .. path:joinToString(">", nil, nil, nil, nil, ____lambda_4) .. " " .. __K2L_Str(picked) .. " total=" .. total)
+        print("order " .. order.id .. " route=" .. path:joinToString(">", nil, nil, nil, nil, ____lambda_2) .. " " .. __K2L_Str(picked) .. " total=" .. total)
         if orders.____modCount ~= ____mod_1 and orders:____comodified(____i_8) then
             break
         end
@@ -409,10 +424,10 @@ local function main()
     local bySku = ____result_3
     print(bySku:get("GL-007") == vase)
     print(products:toSet().size == __K2L_ReadOnlySetOf(Tool.new1("TL-001", 1), hammer).size + 3)
-    local ____destructured = products:partition(____lambda_5)
+    local ____destructured = products:partition(____lambda_3)
     local fragile, sturdy = ____destructured.first, ____destructured.second
     print("fragile=" .. __K2L_Str(fragile) .. " sturdy=" .. __K2L_Str(sturdy))
-    local ____list_4 = products:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_6), ____lambda_7))
+    local ____list_4 = products:sortedWith(____lambda_4)
     local ____out_4 = {}
     local ____count_4 = 0
     local ____items_6, ____n_6 = ____list_4:____array()

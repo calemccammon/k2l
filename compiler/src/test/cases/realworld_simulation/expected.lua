@@ -186,10 +186,15 @@ end
 local function customers(n, seed)
     local rnd = __K2L_Random.seeded(seed)
     local t = 0
-    return __K2L_ListOfSize(n, function(id)
+    local ____out_1 = {}
+    for ____i_1 = 1, n do
+        local id = ____i_1 - 1
+        local ____result
         t = t + rnd:nextInt(1, 6)
-        return Customer.new(id + 1, t, rnd:nextInt(2, 12), rnd:nextInt(10) == 0)
-    end)
+        ____result = Customer.new(id + 1, t, rnd:nextInt(2, 12), rnd:nextInt(10) == 0)
+        ____out_1[____i_1] = ____result
+    end
+    return __K2L_ListWrap(____out_1, n)
 end
 
 local Life = __K2L_Class("Life")
@@ -207,21 +212,21 @@ function Life:getPopulation()
     local ____list_1 = self.cells
     local ____sum = 0
     local ____items_2, ____n_2 = ____list_1:____array()
-    for ____i_2 = 1, ____n_2 do
-        local row = ____items_2[____i_2]
-        local ____result
+    for ____i_3 = 1, ____n_2 do
+        local row = ____items_2[____i_3]
+        local ____result_1
         do
-            local ____result_1 = 0
+            local ____result_2 = 0
             local ____items_1, ____n_1 = row:____array()
-            for ____i_1 = 1, ____n_1 do
-                local it = ____items_1[____i_1]
+            for ____i_2 = 1, ____n_1 do
+                local it = ____items_1[____i_2]
                 if it then
-                    ____result_1 = ____result_1 + 1
+                    ____result_2 = ____result_2 + 1
                 end
             end
-            ____result = ____result_1
+            ____result_1 = ____result_2
         end
-        ____sum = ____sum + ____result
+        ____sum = ____sum + ____result_1
     end
     return ____sum
 end
@@ -299,16 +304,16 @@ function Elevator:tick()
         local ____cond_1 = self.motion == Motion.UP
         if ____cond_1 then
             local ____list_3 = self.requests
-            local ____result_3 = false
+            local ____result_4 = false
             local ____items_4, ____n_4 = ____list_3:____array()
-            for ____i_4 = 1, ____n_4 do
-                local it = ____items_4[____i_4]
+            for ____i_5 = 1, ____n_4 do
+                local it = ____items_4[____i_5]
                 if it > self.floor then
-                    ____result_3 = true
+                    ____result_4 = true
                     break
                 end
             end
-            ____cond_1 = ____result_3
+            ____cond_1 = ____result_4
         end
         if ____cond_1 then
             self.motion = Motion.UP
@@ -316,16 +321,16 @@ function Elevator:tick()
             local ____cond = self.motion == Motion.DOWN
             if ____cond then
                 local ____list_2 = self.requests
-                local ____result_2 = false
+                local ____result_3 = false
                 local ____items_3, ____n_3 = ____list_2:____array()
-                for ____i_3 = 1, ____n_3 do
-                    local it = ____items_3[____i_3]
+                for ____i_4 = 1, ____n_3 do
+                    local it = ____items_3[____i_4]
                     if it < self.floor then
-                        ____result_2 = true
+                        ____result_3 = true
                         break
                     end
                 end
-                ____cond = ____result_2
+                ____cond = ____result_3
             end
             if ____cond then
                 self.motion = Motion.DOWN
@@ -349,33 +354,33 @@ local ____lambda_6 = function(it) return __K2L_Text.first(it) end
 local function main()
     local people = customers(40, 2024)
     print("first customers: " .. __K2L_Str(people:take(3)))
-    local ____out_1 = {}
+    local ____out_2 = {}
     local ____count_1 = 0
     local ____items_5, ____n_5 = people:____array()
-    for ____i_5 = 1, ____n_5 do
-        local it = ____items_5[____i_5]
+    for ____i_6 = 1, ____n_5 do
+        local it = ____items_5[____i_6]
         if it.vip then
             ____count_1 = ____count_1 + 1
-            ____out_1[____count_1] = it
+            ____out_2[____count_1] = it
         end
     end
-    local ____list_4 = __K2L_ListWrap(____out_1, ____count_1)
-    local ____out_2 = {}
+    local ____list_4 = __K2L_ListWrap(____out_2, ____count_1)
+    local ____out_3 = {}
     local ____count_2 = 0
     local ____items_6, ____n_6 = ____list_4:____array()
-    for ____i_6 = 1, ____n_6 do
-        local it = ____items_6[____i_6]
+    for ____i_7 = 1, ____n_6 do
+        local it = ____items_6[____i_7]
         ____count_2 = ____count_2 + 1
-        ____out_2[____count_2] = it.id
+        ____out_3[____count_2] = it.id
     end
-    print("vips: " .. __K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
+    print("vips: " .. __K2L_Str(__K2L_ListWrap(____out_3, ____count_2)))
     for tellers = 1, 3 do
         local bank = Bank.new(tellers)
         local ____mod = people.____modCount
-        for ____i_7 = 1, people.size do
-            local it = people[____i_7]
+        for ____i_8 = 1, people.size do
+            local it = people[____i_8]
             bank:schedule(SimEvent.Arrival.new(it.arrival, it))
-            if people.____modCount ~= ____mod and people:____comodified(____i_7) then
+            if people.____modCount ~= ____mod and people:____comodified(____i_8) then
                 break
             end
         end
@@ -389,16 +394,29 @@ local function main()
     local small = Bank.new(2, true)
     local ____list_5 = customers(6, 7)
     local ____mod_1 = ____list_5.____modCount
-    for ____i_8 = 1, ____list_5.size do
-        local it = ____list_5[____i_8]
+    for ____i_9 = 1, ____list_5.size do
+        local it = ____list_5[____i_9]
         small:schedule(SimEvent.Arrival.new(it.arrival, it))
-        if ____list_5.____modCount ~= ____mod_1 and ____list_5:____comodified(____i_8) then
+        if ____list_5.____modCount ~= ____mod_1 and ____list_5:____comodified(____i_9) then
             break
         end
     end
     small:run()
     local rnd = __K2L_Random.seeded(99)
-    print("dice: " .. __K2L_Str(__K2L_ListOfSize(10, function(it) return rnd:nextInt(1, 7) end)) .. " coin: " .. __K2L_ListOfSize(8, function(it) return rnd:nextBoolean() and "H" or "T" end):joinToString(""))
+    local ____out_4 = {}
+    for ____i_10 = 1, 10 do
+        local it = ____i_10 - 1
+        ____out_4[____i_10] = rnd:nextInt(1, 7)
+    end
+    local ____arg_1 = __K2L_Str(__K2L_ListWrap(____out_4, 10))
+    local ____out_5 = {}
+    for ____i_11 = 1, 8 do
+        local it = ____i_11 - 1
+        local ____result_5
+        ____result_5 = rnd:nextBoolean() and "H" or "T"
+        ____out_5[____i_11] = ____result_5
+    end
+    print("dice: " .. ____arg_1 .. " coin: " .. __K2L_ListWrap(____out_5, 8):joinToString(""))
     local shuffled = __K2L_IntRange.new(1, 10):shuffled(__K2L_Random.seeded(5))
     print("shuffled: " .. __K2L_Str(shuffled) .. " sorted back: " .. tostring(__K2L_Equals(shuffled:sorted(), __K2L_IntRange.new(1, 10):toList())))
     local histogram = __K2L_ListOfSize(6, 0, "[I")
@@ -408,17 +426,17 @@ local function main()
             histogram[____key_1 + 1] = (histogram[____key_1 + 1] or __K2L_IndexError(____key_1, histogram.size, "array")) + 1
         end
     end
-    local ____arg_1 = histogram:sum()
-    local ____result_4 = true
+    local ____arg_2 = histogram:sum()
+    local ____result_6 = true
     local ____items_7, ____n_7 = histogram:____array()
-    for ____i_9 = 1, ____n_7 do
-        local it = ____items_7[____i_9]
+    for ____i_12 = 1, ____n_7 do
+        local it = ____items_7[____i_12]
         if not (it > 50) then
-            ____result_4 = false
+            ____result_6 = false
             break
         end
     end
-    print("histogram total=" .. ____arg_1 .. " min>50=" .. tostring(____result_4))
+    print("histogram total=" .. ____arg_2 .. " min>50=" .. tostring(____result_6))
     local glider = __K2L_ReadOnlySetOf(__K2L_Pair.new(1, 0), __K2L_Pair.new(2, 1), __K2L_Pair.new(0, 2), __K2L_Pair.new(1, 2), __K2L_Pair.new(2, 2))
     local life = Life.new(8, 6, glider)
     print("gen " .. life.generation .. ", population " .. life:getPopulation() .. "\n" .. __K2L_Str(life))
@@ -445,11 +463,11 @@ local function main()
     end
     print("elevator: " .. elevator.trace:joinToString(" "))
     print("ended at " .. elevator.floor .. " " .. __K2L_Str(elevator.motion))
-    local ____ok, ____result_5 = __K2L_DeepPcall(function()
+    local ____ok, ____result_7 = __K2L_DeepPcall(function()
         elevator:call(12)
     end)
     if not ____ok then
-        local ____error = __K2L_ToThrowable(____result_5)
+        local ____error = __K2L_ToThrowable(____result_7)
         if __K2L_InstanceOf(____error, __K2L_IllegalArgumentException) then
             local e = ____error
             print("rejected: " .. __K2L_Str(e.message))

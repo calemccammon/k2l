@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -21,8 +22,8 @@ function Grid:____init(...)
         ____out[____count] = it:toTypedArray()
     end
     self.cells = __K2L_ListWrap(____out, ____count)
-    self.width = rows:get(0).size
-    self.corner = rows:get(0):get(0)
+    self.width = (rows[1] or __K2L_IndexError(0, rows.size, "array")).size
+    self.corner = (rows[1] or __K2L_IndexError(0, rows.size, "array")):get(0)
 end
 
 function Grid:equals(other)
@@ -60,7 +61,7 @@ local function total(rows)
         local it = ____items_2[____i_2]
         ____sum = ____sum + it.size
     end
-    return ____sum + rows:get(rows.size - 1):sum()
+    return ____sum + (rows[rows.size] or __K2L_IndexError(rows.size - 1, rows.size, "array")):sum()
 end
 
 local function widest(...)

@@ -4,12 +4,14 @@ local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IndexError = ____lualib.__K2L_IndexError
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringEndsWith = ____lualib.__K2L_StringEndsWith
@@ -111,7 +113,7 @@ end
 local ____lambda_4 = function(it) return it == "#" end
 local ____lambda_5 = function(it) return "" end
 local ____lambda_6 = function(it) return "" end
-local ____lambda_7 = function(it) return it:match("^%d$") ~= nil end
+local ____lambda_7 = function(it) return __K2L_IsDigit[it] == true end
 function Converter:convert(md)
     local lines = __K2L_StringLines(md)
     local i = 0
@@ -210,7 +212,7 @@ function Converter:convert(md)
             end
             self.out:append("</table>\n")
         elseif __K2L_Regex.new("^\\s*([-*+]|\\d+[.)]) "):find(line) ~= nil then
-            local ordered = __K2L_Text.first(__K2L_StringTrimStart(line)):match("^%d$") ~= nil
+            local ordered = __K2L_IsDigit[__K2L_Text.first(__K2L_StringTrimStart(line))] == true
             local start
             if ordered then
                 start = __K2L_StringToInt(__K2L_Text.takeWhile(__K2L_StringTrim(line), ____lambda_7))
@@ -230,7 +232,7 @@ function Converter:convert(md)
                 local box
                 if #check == 0 then
                     box = ""
-                elseif (1 >= 0 and 1 < #check and check:sub(1 + 1, 1 + 1) or __K2L_IndexError(1, #check, "string")) == " " then
+                elseif (1 >= 0 and __K2L_StrByte(check, 1 + 1) or __K2L_IndexError(1, #check, "string")) == 32 then
                     box = "<input type=\"checkbox\" disabled> "
                 else
                     box = "<input type=\"checkbox\" checked disabled> "

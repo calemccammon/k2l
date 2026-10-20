@@ -11,7 +11,9 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   `length`, `s[i]`, `lastIndex` and `indices` of a `CharSequence` call the members of a `StringBuilder` or a class of the program.
 - Recursion through `try` blocks on Lua 5.2 to 5.4 goes some 20000 levels deep instead of failing with "C stack overflow" after
   about 190: every hundredth nested protected call runs in a coroutine resumed by a driver around `main` (`DeepPcall.lua`). An
-  overflow of the Lua or the C stack is caught as `StackOverflowError` (an `Error`) rather than `RuntimeException`.
+  overflow of the Lua or the C stack is caught as `StackOverflowError` (an `Error`) rather than `RuntimeException`. Lua 5.1
+  keeps its limit of about 190 levels: its `coroutine.resume` counts as a nested C call as `pcall` does, and it cannot yield
+  across the C calls in between (the README's "Other semantic differences" explains why this cannot be worked around).
 - Unchecked casts are checked where the JVM's CHECKCAST would throw: results of functions and getters of the program that cast to
   a type parameter, and reads through a local `val` cast to a generic type, when they meet a concrete type (`ClassCastException`
   with the JVM's message, `java.lang.Number` for numbers).
@@ -166,6 +168,15 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   test the class itself.
 
 ### Changed
+- A second performance round (benchmark geomean vs the 0.1 baseline: 5.1 0.45, 5.2 0.55, 5.3 0.54, 5.4 0.53, LuaJIT 0.49, from
+  0.51/0.64/0.62/0.61/0.53). Generated code: `compareBy {}.thenBy {}` chains with lambda selectors compile to one comparator
+  function; `isDigit`/`isLetter`/`isWhitespace`/... of a Char look it up in tables in bytes mode; `for (c in s)` reads bytes
+  when the body only uses `c.code` or compares with ASCII literals, and `s[i] == 'x'` compares bytes; `List(n) { }` with a
+  lambda literal is a loop; `Array<T>` of non-null elements is indexed inline like primitive arrays; data-class `hashCode`
+  calls a data-class field's own `hashCode`. Runtime: BigInteger base 10^9 limbs on Lua 5.3/5.4, regex repetition and
+  groups without per-step tables or closures, cached `String.format` conversion details, faster 5.1/5.2 bit operations and
+  emulated Long64, string hashing without a pattern search, ASCII fast paths for UTF-16 `first`/`last`, `joinToString` with
+  one `table.concat`.
 - `for` loops and `forEach` over a value that may be a `java.util.ArrayDeque` (one, or a `Deque`, `Queue`, `Collection` or
   `Iterable`) whose body may change a collection read it through `__K2L_LoopItems`, which walks a `java.util.ArrayDeque`
   through its iterator; `java.util.ArrayDeque(numElements)` passes the capacity on, as it decides when the deque's array grows.
@@ -227,6 +238,15 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   an `operator fun compareTo` is not.
 
 ### Fixed
+- Reading a still-null element of an `Array<T>` (`arrayOfNulls<T>(n) as Array<T>`) gives null instead of throwing.
+- A single-expression lambda whose value caches an operand (`{ it * 37 % 41 }`) no longer refers to an undefined local.
+- `yieldAll` of another `sequence { }` or `iterator { }` (a recursive tree walk) no longer ends in "C stack overflow" after
+  some 200 nested levels on PUC Lua: the generator keeps a stack of the builders' coroutines and resumes the innermost
+  directly instead of nesting resumes (also some 25% faster per element). As on the JVM, an exception the inner block throws
+  after its first element now reaches the consumer past the `try` blocks around the `yieldAll` (one thrown before its first
+  element still comes out of the `yieldAll`).
+- `toCharArray()`, `toFloatArray()`, `toByteArray()` and `toShortArray()` of a collection (`List<Char>.toCharArray()`,
+  `Set<Float>`, `map.keys`, ...) are no longer reported as unsupported.
 - A string template turns each entry into text where the JVM appends it: a later entry with a safe call
   (`"$list ${list.removeLastOrNull()?.x}"`) no longer changes what an earlier object prints.
 - A local or parameter named like a top-level function (`val total = total(xs)`) no longer hides the function in its scope, and a

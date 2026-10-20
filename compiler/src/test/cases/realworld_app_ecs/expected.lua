@@ -200,6 +200,7 @@ return {Component = Component, Entity = Entity, Store = Store, System = System, 
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -580,7 +581,7 @@ function Regeneration:____init(every)
 end
 
 function Regeneration:update(world, dt)
-    if __K2L_IRem(world.tick, self.every) ~= 0 then
+    if (self.every ~= 0 and __K2L_Fmod(world.tick, self.every) + 0 or __K2L_IRem(world.tick, self.every)) ~= 0 then
         return
     end
     local ____result_10
@@ -637,56 +638,61 @@ end
 
 local ____lambda_1 = function(it) return "." end
 local function render(____this, width, height)
-    local grid = __K2L_ListOfSize(height, function(it)
-        return __K2L_ListOfSize(width, ____lambda_1, "[C")
-    end)
-    local ____result_12
+    local ____out_11 = {}
+    for ____i_16 = 1, height do
+        local it = ____i_16 - 1
+        local ____result_12
+        ____result_12 = __K2L_ListOfSize(width, ____lambda_1, "[C")
+        ____out_11[____i_16] = ____result_12
+    end
+    local grid = __K2L_ListWrap(____out_11, height)
+    local ____result_13
     do
         local s = ____this:store(__K2L_KClassOf(Position))
         local ____list_14 = s:ids()
-        local ____out_11 = {}
+        local ____out_12 = {}
         local ____count_11 = 0
         local ____items_11, ____n_11 = ____list_14:____array()
-        for ____i_16 = 1, ____n_11 do
-            local it = ____items_11[____i_16]
+        for ____i_17 = 1, ____n_11 do
+            local it = ____items_11[____i_17]
             if ____this:isAlive(it) then
                 ____count_11 = ____count_11 + 1
-                ____out_11[____count_11] = it
+                ____out_12[____count_11] = it
             end
         end
-        local ____list_15 = __K2L_ListWrap(____out_11, ____count_11)
-        local ____out_12 = {}
+        local ____list_15 = __K2L_ListWrap(____out_12, ____count_11)
+        local ____out_13 = {}
         local ____count_12 = 0
         local ____items_12, ____n_12 = ____list_15:____array()
-        for ____i_17 = 1, ____n_12 do
-            local it = ____items_12[____i_17]
+        for ____i_18 = 1, ____n_12 do
+            local it = ____items_12[____i_18]
             ____count_12 = ____count_12 + 1
-            ____out_12[____count_12] = __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
+            ____out_13[____count_12] = __K2L_Pair.new(____World.Entity.new(it), __K2L_NotNull(s:get(____World.Entity.new(it))))
         end
-        ____result_12 = __K2L_ListWrap(____out_12, ____count_12)
+        ____result_13 = __K2L_ListWrap(____out_13, ____count_12)
     end
-    local ____list_16 = ____result_12
+    local ____list_16 = ____result_13
     local ____mod_5 = ____list_16.____modCount
-    for ____i_18 = 1, ____list_16.size do
-        local ____item_3 = ____list_16[____i_18]
+    for ____i_19 = 1, ____list_16.size do
+        local ____item_3 = ____list_16[____i_19]
         local e, pos = ____item_3.first, ____item_3.second
         local c
-        local ____result_15
+        local ____result_16
         do
-            local ____result_16
-            ____result_16 = ____this:store(__K2L_KClassOf(Player)):get(e)
-            ____result_15 = ____result_16 ~= nil
+            local ____result_17
+            ____result_17 = ____this:store(__K2L_KClassOf(Player)):get(e)
+            ____result_16 = ____result_17 ~= nil
         end
-        if ____result_15 then
+        if ____result_16 then
             c = "@"
         else
-            local ____result_13
+            local ____result_14
             do
-                local ____result_14
-                ____result_14 = ____this:store(__K2L_KClassOf(Damage)):get(e)
-                ____result_13 = ____result_14 ~= nil
+                local ____result_15
+                ____result_15 = ____this:store(__K2L_KClassOf(Damage)):get(e)
+                ____result_14 = ____result_15 ~= nil
             end
-            if ____result_13 then
+            if ____result_14 then
                 c = "M"
             else
                 c = __K2L_Text.first(nameOf(____this, e)):lower()
@@ -698,19 +704,19 @@ local function render(____this, width, height)
             __K2L_IndexError(____key, ____object.size, "array")
         end
         ____object[____key + 1] = c
-        if ____list_16.____modCount ~= ____mod_5 and ____list_16:____comodified(____i_18) then
+        if ____list_16.____modCount ~= ____mod_5 and ____list_16:____comodified(____i_19) then
             break
         end
     end
-    local ____out_13 = {}
+    local ____out_14 = {}
     local ____count_13 = 0
     local ____items_13, ____n_13 = grid:____array()
-    for ____i_19 = 1, ____n_13 do
-        local it = ____items_13[____i_19]
+    for ____i_20 = 1, ____n_13 do
+        local it = ____items_13[____i_20]
         ____count_13 = ____count_13 + 1
-        ____out_13[____count_13] = __K2L_Text.string(it)
+        ____out_14[____count_13] = __K2L_Text.string(it)
     end
-    return __K2L_ListWrap(____out_13, ____count_13)
+    return __K2L_ListWrap(____out_14, ____count_13)
 end
 
 return {Position = Position, Velocity = Velocity, Health = Health, Name = Name, Damage = Damage, Player = Player, Movement = Movement, Combat = Combat, Reaper = Reaper, Regeneration = Regeneration, distance = distance, nameOf = nameOf, render = render}

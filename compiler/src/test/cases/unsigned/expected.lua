@@ -10,6 +10,7 @@ local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
@@ -19,8 +20,8 @@ local sumOfSquares
 local function hash(s)
     local h = 2166136261
     for ____i = 1, #s do
-        local c = s:sub(____i, ____i)
-        h = h ~ c:byte() & 0xFFFFFFFF
+        local c = __K2L_StrByte(s, ____i)
+        h = h ~ c & 0xFFFFFFFF
         h = h * 16777619 & 0xFFFFFFFF
     end
     return h

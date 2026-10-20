@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
@@ -191,31 +191,36 @@ local ____lambda_36 = function(it) return it.name end
 local ____lambda_37 = function(it) return it.name end
 local ____lambda_38 = function(it) return it.price end
 local ____lambda_39 = function(it) return it.price end
-local ____lambda_40 = function(it) return it.price end
+local ____lambda_40 = function(____a, ____b)
+    local ____x, ____y = ____a.price, ____b.price
+    if ____x ~= ____y then
+        return ____x < ____y and -1 or 1
+    end
+    return __K2L_CompareValues(____a.name, ____b.name)
+end
 local ____lambda_41 = function(it) return it.name end
-local ____lambda_42 = function(it) return it.name end
-local ____lambda_43 = function(it) return __K2L_Pair.new(it.name, it.price) end
-local ____lambda_44 = function(it) return __K2L_Text.first(it.name) end
-local ____lambda_45 = function(it) return it.price end
-local ____lambda_46 = function(it) return __K2L_Pair.new(it.name, it.price) end
-local ____lambda_47 = function(it) return it.price > 3 end
-local ____lambda_48 = function(it) return it.price end
-local ____lambda_49 = function(a, b) return a * b end
-local ____lambda_50 = function(it) return it.price == 2 end
-local ____lambda_51 = function(it) return it.price == 5 end
-local ____lambda_52 = function(it) return it.price > 100 end
-local ____lambda_53 = function(it) return it.name == "fig" end
-local ____lambda_54 = function(it) return it.price == 5 end
-local ____lambda_55 = function(it) return it.name end
-local ____lambda_56 = function(it) return it:sum() end
-local ____lambda_57 = function(n, s) return s .. n end
-local ____lambda_58 = function(acc, x) return acc + x end
-local ____lambda_59 = function(acc, x) return acc * x end
-local ____lambda_60 = function(acc, x) return acc + x end
-local ____lambda_61 = function(i, _) return i == 1 end
-local ____lambda_62 = function(i, acc, x) return acc + i * x end
+local ____lambda_42 = function(it) return __K2L_Pair.new(it.name, it.price) end
+local ____lambda_43 = function(it) return __K2L_Text.first(it.name) end
+local ____lambda_44 = function(it) return it.price end
+local ____lambda_45 = function(it) return __K2L_Pair.new(it.name, it.price) end
+local ____lambda_46 = function(it) return it.price > 3 end
+local ____lambda_47 = function(it) return it.price end
+local ____lambda_48 = function(a, b) return a * b end
+local ____lambda_49 = function(it) return it.price == 2 end
+local ____lambda_50 = function(it) return it.price == 5 end
+local ____lambda_51 = function(it) return it.price > 100 end
+local ____lambda_52 = function(it) return it.name == "fig" end
+local ____lambda_53 = function(it) return it.price == 5 end
+local ____lambda_54 = function(it) return it.name end
+local ____lambda_55 = function(it) return it:sum() end
+local ____lambda_56 = function(n, s) return s .. n end
+local ____lambda_57 = function(acc, x) return acc + x end
+local ____lambda_58 = function(acc, x) return acc * x end
+local ____lambda_59 = function(acc, x) return acc + x end
+local ____lambda_60 = function(i, _) return i == 1 end
+local ____lambda_61 = function(i, acc, x) return acc + i * x end
+local ____lambda_62 = function() return __K2L_SequenceOf(0) end
 local ____lambda_63 = function() return __K2L_SequenceOf(0) end
-local ____lambda_64 = function() return __K2L_SequenceOf(0) end
 local function operations()
     print("-- operations")
     local items = __K2L_ReadOnlyListOf(Item.new("apple", 3), Item.new("pear", 5), Item.new("fig", 2), Item.new("kiwi", 5))
@@ -248,15 +253,15 @@ local function operations()
     print(seq:sortedByDescending(____lambda_37, true):first().name)
     print(__K2L_Str(seq:map(____lambda_38):sorted():toList()))
     print(__K2L_Str(seq:map(____lambda_39):sortedDescending():toList()))
-    print(__K2L_Str(seq:sortedWith(__K2L_CompareBy(____lambda_40, ____lambda_41)):map(____lambda_42):toList()))
-    print(__K2L_Str(seq:associate(____lambda_43)))
-    print(__K2L_Str(seq:associateBy(____lambda_44):getKeys()))
-    print(__K2L_Str(seq:groupBy(____lambda_45):mapValues(function(____destructured_2)
+    print(__K2L_Str(seq:sortedWith(____lambda_40):map(____lambda_41):toList()))
+    print(__K2L_Str(seq:associate(____lambda_42)))
+    print(__K2L_Str(seq:associateBy(____lambda_43):getKeys()))
+    print(__K2L_Str(seq:groupBy(____lambda_44):mapValues(function(____destructured_2)
         local v = ____destructured_2.value
         return v.size
     end)))
-    print(__K2L_Str(seq:map(____lambda_46):toMap()))
-    local ____list = seq:partition(____lambda_47).first
+    print(__K2L_Str(seq:map(____lambda_45):toMap()))
+    local ____list = seq:partition(____lambda_46).first
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list:____array()
@@ -266,26 +271,26 @@ local function operations()
         ____out[____count] = it.name
     end
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
-    print(seq:map(____lambda_48):reduce(____lambda_49))
-    print(__K2L_Str(seq:find(____lambda_50)))
-    print(__K2L_Str(seq:findLast(____lambda_51)))
+    print(seq:map(____lambda_47):reduce(____lambda_48))
+    print(__K2L_Str(seq:find(____lambda_49)))
+    print(__K2L_Str(seq:findLast(____lambda_50)))
     print(seq:last().name)
-    print(__K2L_Str(seq:lastOrNull(____lambda_52)))
-    print(__K2L_Str(seq:single(____lambda_53)))
-    print(__K2L_Str(seq:singleOrNull(____lambda_54)))
-    print(__K2L_Str(seq:map(____lambda_55):chunked(3):toList()))
+    print(__K2L_Str(seq:lastOrNull(____lambda_51)))
+    print(__K2L_Str(seq:single(____lambda_52)))
+    print(__K2L_Str(seq:singleOrNull(____lambda_53)))
+    print(__K2L_Str(seq:map(____lambda_54):chunked(3):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_IntRange.new(1, 7)):windowed(3, 2):toList()))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_IntRange.new(1, 7)):windowed(3, 3, true):map(____lambda_56):toList()))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_IntRange.new(1, 7)):windowed(3, 3, true):map(____lambda_55):toList()))
     print(__K2L_Str(__K2L_SequenceOf(1, 2, 3):plus(4):plusAll(__K2L_ReadOnlyListOf(5, 6)):plusAll(__K2L_SequenceOf(7)):toList()))
     print(__K2L_Str(__K2L_SequenceOf(1, 2, 3, 2):minus(2):toList()))
-    print(__K2L_Str(__K2L_SequenceOf(3, 1, 2):zip(__K2L_SequenceOf("c", "a"), ____lambda_57):toList()))
+    print(__K2L_Str(__K2L_SequenceOf(3, 1, 2):zip(__K2L_SequenceOf("c", "a"), ____lambda_56):toList()))
     print(__K2L_Str(__K2L_SequenceOf(1, 2, 3):zipWithNext():toList()))
-    print(__K2L_Str(__K2L_SequenceOf(1, 2, 3, 4):runningFold(0, ____lambda_58):toList()))
-    print(__K2L_Str(__K2L_SequenceOf(1, 2, 3, 4):scan(1, ____lambda_59):toList()))
-    print(__K2L_Str(__K2L_SequenceOf(1, 2, 3, 4):runningReduce(____lambda_60):toList()))
+    print(__K2L_Str(__K2L_SequenceOf(1, 2, 3, 4):runningFold(0, ____lambda_57):toList()))
+    print(__K2L_Str(__K2L_SequenceOf(1, 2, 3, 4):scan(1, ____lambda_58):toList()))
+    print(__K2L_Str(__K2L_SequenceOf(1, 2, 3, 4):runningReduce(____lambda_59):toList()))
     print(__K2L_Str(__K2L_SequenceOf(1, nil, 2, nil):filterNotNull():toList()))
-    print(__K2L_Str(__K2L_SequenceOf("x", "y"):filterIndexed(____lambda_61):toList()))
-    print(__K2L_SequenceOf(1, 2, 3):foldIndexed(0, ____lambda_62))
+    print(__K2L_Str(__K2L_SequenceOf("x", "y"):filterIndexed(____lambda_60):toList()))
+    print(__K2L_SequenceOf(1, 2, 3):foldIndexed(0, ____lambda_61))
     __K2L_SequenceOf("p", "q"):forEachIndexed(function(i, s)
         print(i .. "=" .. s)
     end)
@@ -294,29 +299,29 @@ local function operations()
     local ____value = __K2L_SequenceOf(1, 2):toMutableList()
     ____value:add(3)
     print(__K2L_Str(____value))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlyListOf(3, 4)):ifEmpty(____lambda_63):toList()))
-    print(__K2L_Str(__K2L_SequenceOf():ifEmpty(____lambda_64):toList()))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlyListOf(3, 4)):ifEmpty(____lambda_62):toList()))
+    print(__K2L_Str(__K2L_SequenceOf():ifEmpty(____lambda_63):toList()))
 end
 
-local ____lambda_65 = function(it) return it:upper() end
-local ____lambda_66 = function(it) return it.key .. "=" .. it.value end
-local ____lambda_67 = function(it) return it ~= 6 end
-local ____lambda_68 = function()
+local ____lambda_64 = function(it) return it:upper() end
+local ____lambda_65 = function(it) return it.key .. "=" .. it.value end
+local ____lambda_66 = function(it) return it ~= 6 end
+local ____lambda_67 = function()
     return __K2L_IteratorOf(__K2L_ReadOnlyListOf(1, 2, 3))
 end
-local ____lambda_69 = function(it) return it * 2 end
-local ____lambda_70 = function(it) return it + 1 end
-local ____lambda_71 = function() return Countdown.new(3) end
-local ____lambda_72 = function(it) return it * 10 end
+local ____lambda_68 = function(it) return it * 2 end
+local ____lambda_69 = function(it) return it + 1 end
+local ____lambda_70 = function() return Countdown.new(3) end
+local ____lambda_71 = function(it) return it * 10 end
 local function sources()
     print("-- sources")
-    print(__K2L_AsSequence("hey"):map(____lambda_65):joinToString(""))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlyMapOf(__K2L_Pair.new(1, "one"), __K2L_Pair.new(2, "two"))):map(____lambda_66):toList()))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 5, 6, 7)):filter(____lambda_67):toList()))
+    print(__K2L_AsSequence("hey"):map(____lambda_64):joinToString(""))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlyMapOf(__K2L_Pair.new(1, "one"), __K2L_Pair.new(2, "two"))):map(____lambda_65):toList()))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 5, 6, 7)):filter(____lambda_66):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlySetOf("s", "t")):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_IntRange.new(10, 1, -1):withStep(3)):toList()))
-    local custom = __K2L_SequenceFromIterator(____lambda_68)
-    print(__K2L_Str(custom:map(____lambda_69):toList()))
+    local custom = __K2L_SequenceFromIterator(____lambda_67)
+    print(__K2L_Str(custom:map(____lambda_68):toList()))
     print(__K2L_Str(custom:toList()))
     local it = __K2L_SequenceOf(4, 5, 6):iterator()
     while it:hasNext() do
@@ -337,7 +342,7 @@ local function sources()
             error(____error_1, 0)
         end
     end
-    local reusable = __K2L_AsSequence(__K2L_ReadOnlyListOf(1, 2)):map(____lambda_70)
+    local reusable = __K2L_AsSequence(__K2L_ReadOnlyListOf(1, 2)):map(____lambda_69)
     print(__K2L_Str(reusable:toList():plusAll(reusable:toList())))
     local s = reusable
     print(__K2L_InstanceOf(s, __K2L_Sequence))
@@ -349,7 +354,7 @@ local function sources()
     local target = __K2L_ListOf(1)
     target:addAll(__K2L_SequenceOf(2, 3))
     print(__K2L_Str(target))
-    print(__K2L_Str(__K2L_SequenceFromIterator(____lambda_71):map(____lambda_72):toList()))
+    print(__K2L_Str(__K2L_SequenceFromIterator(____lambda_70):map(____lambda_71):toList()))
     print(__K2L_Str(__K2L_AsSequence(Countdown.new(2)):toList()))
     local manual = Countdown.new(2)
     for _, x in __K2L_Iterator.iter(manual) do
@@ -377,7 +382,7 @@ function Countdown:next()
     return ____old_1
 end
 
-local ____lambda_73 = function(a, b) return a + b end
+local ____lambda_72 = function(a, b) return a + b end
 local function errors()
     print("-- errors")
     local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
@@ -417,7 +422,7 @@ local function errors()
         end
     end
     local ____ok_5, ____result_5 = __K2L_DeepPcall(function()
-        __K2L_SequenceOf():reduce(____lambda_73)
+        __K2L_SequenceOf():reduce(____lambda_72)
     end)
     if not ____ok_5 then
         local ____error_5 = __K2L_ToThrowable(____result_5)

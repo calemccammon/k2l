@@ -1,5 +1,5 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -40,7 +40,13 @@ local function attempt(label, block)
     end
 end
 
-local ____lambda_1 = function(it) return it >= 0 and it % 4 or 0 - -it % 4 end
+local ____lambda_1 = function(____a, ____b)
+    local ____x, ____y = ____a >= 0 and ____a % 4 or 0 - -____a % 4, ____b >= 0 and ____b % 4 or 0 - -____b % 4
+    if ____x ~= ____y then
+        return ____x < ____y and -1 or 1
+    end
+    return 0
+end
 local ____lambda_2 = function(a, b) return #a - #b end
 local ____lambda_3 = function(a, b) return #a - #b end
 local function sorting()
@@ -50,7 +56,7 @@ local function sorting()
     print(__K2L_Str(list))
     __K2L_JdkCollections.sort(list, __K2L_JdkCollections.reverseOrder())
     print(__K2L_Str(list))
-    __K2L_JdkCollections.sort(list, __K2L_CompareBy(____lambda_1))
+    __K2L_JdkCollections.sort(list, ____lambda_1)
     print(__K2L_Str(list))
     local words = __K2L_ListOf("pear", "fig", "banana", "kiwi", "apple")
     __K2L_JdkCollections.sort(words)
@@ -73,7 +79,13 @@ local function sorting()
     print(__K2L_JdkCollections.binarySearch_array(__K2L_ReadOnlyListOf(9, 7, 5, 3, 1), 7, __K2L_JdkCollections.reverseOrder()))
 end
 
-local ____lambda_4 = function(it) return #it end
+local ____lambda_4 = function(____a_1, ____b_1)
+    local ____x_1, ____y_1 = #____a_1, #____b_1
+    if ____x_1 ~= ____y_1 then
+        return ____x_1 < ____y_1 and -1 or 1
+    end
+    return 0
+end
 local ____lambda_5 = function()
     return __K2L_JdkCollections.max(__K2L_ReadOnlyListOf())
 end
@@ -86,7 +98,7 @@ local function queries()
     print(__K2L_NotNull(__K2L_JdkCollections.max(list)))
     print(__K2L_NotNull(__K2L_JdkCollections.min(list)))
     print(__K2L_NotNull(__K2L_JdkCollections.max(list, __K2L_JdkCollections.reverseOrder())))
-    print(__K2L_Str(__K2L_JdkCollections.max(__K2L_ReadOnlyListOf("b", "abc", "zz"), __K2L_CompareBy(____lambda_4))))
+    print(__K2L_Str(__K2L_JdkCollections.max(__K2L_ReadOnlyListOf("b", "abc", "zz"), ____lambda_4)))
     print(__K2L_JdkCollections.frequency(list, 8))
     print(__K2L_JdkCollections.frequency(list, 99))
     print(__K2L_JdkCollections.frequency(__K2L_ReadOnlyListOf("a", "b", "a", nil), nil))

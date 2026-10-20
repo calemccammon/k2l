@@ -1,0 +1,42 @@
+CharArray abc 3
+x, y
+IntArray 6
+LongArray 3
+DoubleArray 3.5
+FloatArray 3.5
+BooleanArray [true, false]
+ByteArray [1, 2]
+ShortArray [1, 2]
+[a, b, c]
+[z, y]
+[3, 4]
+kj 4.0
+bc
+3
+[true]
+[1.25]
+0
+qr
+IntArray [1, 2]
+[1.5, 2.5]
+[true]
+[7]
+[7]
+ollhe
+true
+true
+4
+ollhe
+[o, l, l, h, e, !]
+[o, l, h, e]
+[o, l, l, h, e]
+[e, h, l, l, o]
+[o, l, l, h, e]
+3
+ol
+[1, 2]
+[1, 2]
+[1, 2]
+a
+2
+abc

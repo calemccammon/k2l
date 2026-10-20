@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -9,6 +10,7 @@ local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
 local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
@@ -55,18 +57,18 @@ local function parse(s)
 end
 
 local function gcd(a, b)
-    return b == 0 and a or gcd(b, __K2L_IRem(a, b))
+    return b == 0 and a or gcd(b, b ~= 0 and __K2L_Fmod(a, b) + 0 or __K2L_IRem(a, b))
 end
 
 local function modPow(base, exp, mod)
     local result = 1
-    local b = __K2L_IRem(base, mod)
+    local b = mod ~= 0 and __K2L_Fmod(base, mod) + 0 or __K2L_IRem(base, mod)
     local e = exp
     while e > 0 do
         if e & 1 == 1 then
-            result = __K2L_IRem(result * b, mod)
+            result = mod ~= 0 and __K2L_Fmod(result * b, mod) + 0 or __K2L_IRem(result * b, mod)
         end
-        b = __K2L_IRem(b * b, mod)
+        b = mod ~= 0 and __K2L_Fmod(b * b, mod) + 0 or __K2L_IRem(b * b, mod)
         e = e // (1 << 1)
     end
     return result
@@ -118,8 +120,8 @@ local function main()
     print(modPow(123456789, 987654321, max))
     local h = 1125899906842597
     for ____i = 1, #"hello world" do
-        local ch = ("hello world"):sub(____i, ____i)
-        h = 31 * h + ch:byte()
+        local ch = __K2L_StrByte("hello world", ____i)
+        h = 31 * h + ch
     end
     print(h)
     local x = 88172645463325252

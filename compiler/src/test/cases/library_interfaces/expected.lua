@@ -7,6 +7,7 @@ local __K2L_ComparatorMixin = ____lualib.__K2L_ComparatorMixin
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareByWith = ____lualib.__K2L_CompareByWith
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_FunctionMixin = ____lualib.__K2L_FunctionMixin
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -314,7 +315,9 @@ local ____lambda_11 = function(it) return it > 1 end
 local ____lambda_12 = function(it)
     return (it >= 0 and it % 2 or 0 - -it % 2) == 1
 end
-local ____lambda_13 = function(it) return it end
+local ____lambda_13 = function(____a, ____b)
+    return __K2L_CompareValues(____a, ____b)
+end
 local function more()
     twice(function()
         print("sam lambda")
@@ -332,7 +335,7 @@ local function more()
         seen:add(s)
     end
     print(__K2L_Str(seen) .. " " .. tostring(b:hasPrevious()) .. " " .. b:previous() .. " " .. b:nextIndex())
-    print(__K2L_Str(__K2L_Num.coerceAtLeast(Version.new(1, 5), Version.new(2, 0))) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf(Version.new(0, 1), Version.new(0, 0)):sortedWith(__K2L_CompareBy(____lambda_13))))
+    print(__K2L_Str(__K2L_Num.coerceAtLeast(Version.new(1, 5), Version.new(2, 0))) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf(Version.new(0, 1), Version.new(0, 0)):sortedWith(____lambda_13)))
 end
 
 local function main()

@@ -512,3 +512,127 @@ end
 - Two transpiler gaps met while writing the suite (worked around in the programs): iterating a `CharSequence` parameter
   (`for (c in s)` with `s: CharSequence`) is "not supported yet"; and string lengths with non-ASCII text differ in the
   default `--strings bytes` mode, as documented.
+
+## Round 2
+
+### Round 2: generated code (profile of `1c6b0f0`, all five targets)
+
+Profiled on 2026-10-20 at `1c6b0f0` (round 1 merged) on 5.1, 5.2, 5.3, 5.4 and LuaJIT
+(`-PbenchProfile -PbenchTargets=5.1,5.2,5.3,5.4,JIT`). 5.2 and 5.3 had not been profiled before; the profiler now names
+chunks compiled with `load` (BigInteger on 5.3/5.4) instead of writing their source text into the samples file.
+5.2 follows 5.1 except where `bit32` helps, 5.3 follows 5.4 except for `IRem`. What was left in generated code, by
+share of samples (5.1 / 5.2 / 5.3 / 5.4 / JIT where they differ):
+
+1. `compareBy { }.thenBy { }` chains: `__K2L_CompareValues` plus the `CompareBy`/`ThenBy` closures, 45-60% of
+   coll_dijkstra and coll_sort, 12-16% of coll_grid on every PUC target (6-17% on JIT).
+2. `a % b` with a variable divisor through `__K2L_IRem`: **num_long 30% on 5.3** (`gcd`), 23% on 5.4, coll_pipeline
+   8-10% (`Lcg.next`) and oop_shapes 4% everywhere, 15% of num_long on JIT (where IRem is already compiled `%`).
+3. Strings read a Char at a time: `for (c in s)` with `c.code` (str_builder `hash` 38%, str_format 20%), `s[i]` with
+   `isWhitespace()`/`isDigit()` as `match` patterns (str_json `Parser.skip` 18-20%, oop_interpreter `Lexer` 10%), and
+   `s[i] == 'x'` as one-character strings.
+4. `List(n) { }`: `__K2L_ListOfSize` calling a closure per element, **40 points summed on JIT** (coll_pipeline 15%,
+   oop_shapes 12%), a few % on PUC Lua.
+5. Array reads round 1 left as `:get()`: an index with `xor`/`or`/shifts (`CRC_TABLE[(crc xor b) and 0xFF]`,
+   num_hash_wrap 8% on 5.4) and `Array<CharArray>` (coll_grid 4%).
+6. Data class `hashCode` hashing a data class field with `__K2L_Hash` (coll_grid `State`, 6%).
+7. Smaller: `is`/`as`/`catch` against open classes and interfaces (`__K2L_InstanceOf`) at most 2-3% (oop_interpreter's
+   `catch (e: LangException)`, oop_shapes' `as Health`); the per-iteration comodification check, ~6% of oop_shapes on
+   JIT (`for (c in e.components)` calling a virtual `update`, which no local analysis can clear); nested class lookups
+   (`Shape.Circle.new`) about 1%.
+
+The rest is lualib (Long64 emulation is 85% of num_long64 on 5.2, `__K2L_UAnd32`/`LongBits` most of num_long and
+num_hash_wrap on 5.1/5.2, `List.contains` of strings through `__K2L_Equals` 10-12% of oop_interpreter on 5.2/5.3).
+
+What was done (paired, alternating runs of the old and new generated code, median ms, 7 runs; ratio < 1 is faster):
+
+- Items 1: `compareBy`/`compareByDescending`/`thenBy`/`thenByDescending` with lambda selectors compile to one function
+  with the selector bodies inlined; Int keys compare with `<`, other keys with `__K2L_CompareValues`. When it captures
+  nothing it is created once at chunk level. coll_dijkstra 921 -> 625 (5.1), 987 -> 641, 815 -> 551, 697 -> 484,
+  177 -> 180 (JIT); coll_sort 974 -> 792, 979 -> 785, 829 -> 681, 668 -> 552, 231 -> 205.
+- Item 2: `b ~= 0 and fmod(a, b) + 0 or __K2L_IRem(a, b)` with `fmod` a runtime local (not on LuaJIT). num_long
+  3197 -> 3173, 1856 -> 1812, 508 -> 437, 342 -> 325; coll_pipeline 1309 -> 1225 (5.1), others within noise.
+- Item 3: Char tests in bytes mode index tables built from the same patterns (`CharClasses.lua`); `for (c in s)` reads
+  `byte(s, i)` when the body only uses `c.code` and comparisons with ASCII literals; `s[i] == 'x'` compares bytes.
+  str_builder 717 -> 572, 746 -> 599, 749 -> 603, 635 -> 502, 206 -> 213; str_json 951 -> 901, 963 -> 921,
+  949 -> 917, 935 -> 904, 280 -> 256; str_format 579 -> 534, 587 -> 558, 557 -> 513, 471 -> 422.
+- Item 4: `List(n) { }` with a lambda literal is a loop with the lambda inlined, wrapped with `__K2L_ListWrap`.
+  coll_pipeline on JIT 444 -> 399.
+- Item 5: bitwise operators count as pure index reads; `Array<T>` of non-null numbers, Chars, Strings, arrays and
+  program classes is read and written inline like the primitive arrays. num_hash_wrap 476 -> 451 (5.4).
+- Item 6: data class fields typed as a data class of the program hash with their own `hashCode()`. coll_grid
+  752 -> 741, 794 -> 774, 745 -> 728, 613 -> 591, 178 -> 172 (this change alone).
+
+All together, paired against `1c6b0f0`: geomean 0.93 (5.1), 0.93 (5.2), 0.92 (5.3), 0.92 (5.4), 0.98 (JIT).
+Not done (item 7): open-class `is` (needs every subclass, which other modules may add), dropping the comodification
+check across virtual calls, nested class locals, and keeping int64 cdata through chains on LuaJIT `--long64 emulate`
+(num_long64 there is `norm`/`bxor` in `Long64.l64jit.lua`, mostly lualib work).
+
+### Round 2: lualib
+
+Profiled on 2026-10-20 at `1c6b0f0` (main after PR #13) on all five targets, 5.2 and 5.3 for the first time
+(`-PbenchProfile -PbenchTargets=5.1,5.2,5.3,5.4,JIT`). `profiler.lua` now names a chunk compiled with `load` from a string
+`=[string]`: its source is its code, whose tabs and newlines broke the records (the 5.3 and 5.4 runs of num_bigint failed).
+
+Hottest lualib functions after round 1 (sum of self % over the programs, 5.4 / 5.1 / JIT where it differs):
+
+- `__K2L_CompareValues` and the `compareBy`/`thenBy` closures (60 / 58 / 20 + 33 / 32): coll_sort, coll_dijkstra, coll_grid.
+  Already a single fast path; what is left is the call per comparison.
+- BigInteger `mulSmall`/`divSmall`/`make` (52 / 53 / 62): the `binomial` loop multiplies and divides by one-limb numbers.
+- `__K2L_IRem` (41 on 5.4, 49 on 5.3): calls from generated code (A).
+- `findSlot`/`Map:get`/`addSlot` (64 / 45 / 43): hash map lookups, mostly with data class or Long keys.
+- 5.1 and 5.2 only: `__K2L_UAnd32` (109 on 5.1) and the emulated Long (`uparts`/`makeU`/`mulp`/`parts`, 60 on 5.2):
+  num_long64 6.4 s / 5.1 s, num_long 3.2 s / 1.9 s. 5.2 has `bit32`, so its cost was the calls splitting and joining the
+  halves, not the logic.
+- `generateSequence` closure (36 / 30 / 13): `collatz(it).count()` in oop_sequences.
+- `hashString` (28 on 5.4, 44 on JIT): the `find(s, "[\128-\255]")` before the loop, a C call LuaJIT cannot compile.
+- Regex `compileRep`/`singleStep`/`stepRun`/`MatchResult` (52 / 49 / 60 of str_parse): 13 MatchGroups and IntRanges made
+  per `matchEntire`, a table of positions per repetition, a closure per group attempt.
+- JIT only: `__K2L_ListOfSize` (46: `List(n) { }`, a growing table), `decimalDigits` (28 of str_format), `units` (12 of
+  text_utf16: `last()` of a growing StringBuilder decoded every new string), `__K2L_Num.toRadix` (15).
+- `Utf16.decode` (20 / 19 / 10 of text_utf16), `StringBuilder:append` (24 / 21 / 27) and `cls.new` (16 / 17 / 27) are
+  still there; nothing tried on them gave a measurable gain (see below).
+
+PR #13 cost: `__K2L_DeepPcall` is 1.7% self of oop_interpreter on 5.4 (plain `pcall` on 5.1 and LuaJIT). Paired runs of
+the PR #12 build against main, 21 runs: oop_interpreter +1-2% on PUC Lua and +5% on LuaJIT; on LuaJIT the PR #12
+Collections.lua alone takes the 5% back (the live-entry bookkeeping in `put`/`removeSlot`/`normalize` is the only
+change on that program's path; not pinned down further). Other programs: within noise.
+
+How the changes below were measured: both builds side by side, run alternately (A B, B A, ...) pinned to one core, CPU time
+of the child (user + system), 9-31 runs, comparing medians and minimums; a change was kept only when both moved. Risky
+rewrites were checked against the old bundle with random inputs (BigInteger operations, emulated Long and Int bit
+operations, String.format of doubles, toString(radix), random regexes on random strings): identical output.
+
+| change | program | 5.1 | 5.2 | 5.3 | 5.4 | JIT |
+|---|---|---|---|---|---|---|
+| BigInteger: base 10^9 limbs with integers (5.3+), `%` instead of `floor` calls (5.1/5.2) | num_bigint | 1370 -> 1269 | 1442 -> 1281 | 1198 -> 1100 | 935 -> 861 | = |
+| `List(n) { }`: one loop per kind of init; `table.new` for lists of known size (JIT) | oop_shapes / coll_pipeline | | | | = | 87 -> 83 / 424 -> 412 |
+| `hashString`: non-ASCII test in the byte loop, no `find` | num_hash_wrap | 1711 -> 1665 | | | 472 -> 419 | 185 -> 146 |
+| Utf16 `first()`/`last()` of a string starting/ending in ASCII without decoding it | text_utf16 | 970 -> 948 | | | 878 -> 862 | 327 -> 287 |
+| String.format: lowercase conversion, its kind and the first numeric-only flag parsed once | str_format | | 797 -> 733 | | 524 -> 512 | 271 -> 248 |
+| Regex: MatchResult's range, groupValues, groups, destructured made when first read | str_parse | | 898 -> 862 (min) | | 659 -> 625 (min) | 425 -> 381 (min) |
+| Regex: greedy repetition of one-byte steps without a positions table | str_parse | 824 -> 768 | | | 603 -> 573 | 358 -> 324 |
+| Regex: group of single steps / of a greedy repetition without a continuation closure | str_parse | 746 -> 713 | | | 567 -> 539 | 308 -> 283 |
+| `generateSequence(seed) { }.count()` in a plain loop | oop_sequences | 869 -> 795 | | | 586 -> 517 | 219 -> 213 |
+| `joinToString`: one `table.concat` with the separator, no `__K2L_Str` call for strings | str_builder / coll_sort | | | | 634 -> 616 / 636 -> 611 | 207 -> 202 |
+| Long64 (5.1/5.2): and/or/xor/shifts/mul/add split and join the halves in place (three commits, summed) | num_long64 | 5679 -> 5055 | 5633 -> 4167 | | | |
+| LongBits: Long and/or/xor split and join in place | num_long | 3146 -> 2868 | 1790 -> 1456 | | | = |
+| Bit (5.1): and/or/xor do UAnd32's table steps in place; Long64 xor/or from new `__K2L_UXor32`/`__K2L_UOr32` | num_long / num_long64 / num_hash_wrap | 3164 -> 2725 / 5560 -> 4892 / 1589 -> 1523 | | | | |
+| `toString(16)`/`toString(8)` of magnitudes below 2^53 with `string.format` | str_format | | 547 -> 521 | | 438 -> 421 | 187 -> 175 |
+| `decimalDigits`: digits and exponent cut from the `%e` text by position | str_format | 519 -> 512 | | | 421 -> 416 | 176 -> 160 |
+
+(ms, paired medians unless marked; "=" means measured and unchanged; blank: not measured on its own, the code is shared
+or does not run there.) Main against the end of the round, all 85 cells, 5 paired runs each: geomean 0.955 (5.1),
+0.944 (5.2), 0.956 (5.3), 0.957 (5.4), 0.934 (JIT); largest: str_parse 0.72-0.86, num_long64 0.83/0.88 (5.2/5.1),
+num_long 0.82/0.86, str_format 0.84-0.92, num_hash_wrap 0.78 (JIT), oop_sequences 0.88-0.91 on PUC Lua.
+
+Tried and reverted (no measurable gain): a string/number fast path at the top of `Map:get`/`put`/`containsKey` and a
+numeric loop over a hash bucket (0.99-1.00 on oop_interpreter, coll_pipeline, coll_grid); a two-generation Utf16 unit
+cache instead of dropping it when full (1.00-1.02); `Utf16.decode` four ASCII bytes per step (0.99 on PUC, 1.01 on JIT);
+`local floor` in the PriorityQueue sifts; one field read less in `StringBuilder:append` (0.99-1.00); an unrolled bit count
+for the emulated Long (LuaJIT bimodal, 0.99 on 5.2); a number fast path in the `compareBy`/`thenBy` closures (1.00-1.04).
+The `%`-instead-of-`floor` BigInteger loops are 4.5% slower on LuaJIT, where `floor` compiles to one instruction, so
+LuaJIT keeps the `floor` versions.
+
+Left for later: the StringBuilder length in bytes mode (no benchmark program measures itself), the emulated Long on
+LuaJIT (`norm` 22% of num_long64, trace aborts "loop unroll limit reached" in `div`/`ushr`: keeping cdata through a chain
+needs the codegen), and a regex sequence whose items run without continuation closures.

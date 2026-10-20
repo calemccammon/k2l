@@ -317,7 +317,10 @@ end
 local function arrayViews()
     local arr = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2, 3)
     local view = arr:asList()
-    arr:set(0, 10)
+    if 0 < 0 or 0 >= arr.size then
+        __K2L_IndexError(0, arr.size, "array")
+    end
+    arr[1] = 10
     t("asList read", function() return view end)
     if not (__K2L_InstanceOf(view, __K2L_List) and not view.____readOnly) then
         __K2L_CastFail(view, "java.util.List", "kotlin.collections.MutableList")

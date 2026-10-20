@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_CompareByDescending = ____lualib.__K2L_CompareByDescending
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -12,7 +12,6 @@ local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_SortedSet = ____lualib.__K2L_SortedSet
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_ThenBy = ____lualib.__K2L_ThenBy
 
 local companions
 local E = __K2L_Class("E")
@@ -88,9 +87,14 @@ function Task:equals(other)
 end
 
 local ____lambda_1 = function(it) return it.key end
-local ____lambda_2 = function(it) return it.level end
-local ____lambda_3 = function(it) return it.name end
-local ____lambda_4 = function(it) return it.level end
+local ____lambda_2 = function(____a, ____b)
+    local ____c = __K2L_CompareValues(____b.level, ____a.level)
+    if ____c ~= 0 then
+        return ____c
+    end
+    return __K2L_CompareValues(____a.name, ____b.name)
+end
+local ____lambda_3 = function(it) return it.level end
 local function main()
     print(__K2L_Compare(E.A, E.B) < 0)
     print(__K2L_Compare(E.C, E.A))
@@ -114,8 +118,8 @@ local function main()
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(__K2L_Compare(Level.HIGH, Level.LOW) > 0)
     local tasks = __K2L_ReadOnlyListOf(Task.new("x", Level.HIGH), Task.new("y", Level.LOW), Task.new("z", Level.HIGH))
-    print(__K2L_Str(tasks:sortedWith(__K2L_ThenBy(__K2L_CompareByDescending(____lambda_2), ____lambda_3))))
-    print(tasks:maxBy(____lambda_4).name)
+    print(__K2L_Str(tasks:sortedWith(____lambda_2)))
+    print(tasks:maxBy(____lambda_3).name)
     companions()
 end
 

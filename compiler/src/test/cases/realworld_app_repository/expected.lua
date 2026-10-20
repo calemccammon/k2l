@@ -129,7 +129,7 @@ function Customer:toString()
 end
 
 function Customer:hashCode()
-    return (31 * (31 * __K2L_Hash(self.id) + __K2L_Hash(self.name)) + (self.vip and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    return (31 * (31 * self.id:hashCode() + __K2L_Hash(self.name)) + (self.vip and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Customer:equals(other)
@@ -165,7 +165,7 @@ function Order:toString()
 end
 
 function Order:hashCode()
-    return (31 * (31 * self.id + __K2L_Hash(self.customer)) + __K2L_Hash(self.lines) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    return (31 * (31 * self.id + self.customer:hashCode()) + __K2L_Hash(self.lines) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Order:equals(other)
@@ -229,6 +229,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
@@ -339,7 +340,9 @@ local ____lambda_5 = function(it)
 end
 local ____lambda_6 = function(it) return it.priceCents < 5000 end
 local ____lambda_7 = function(it) return it.name end
-local ____lambda_8 = function(it) return it.priceCents end
+local ____lambda_8 = function(____a, ____b)
+    return __K2L_CompareValues(____a.priceCents, ____b.priceCents)
+end
 local ____lambda_9 = function(receiver) return receiver.priceCents end
 local ____lambda_10 = function(it) return -it.priceCents end
 local ____lambda_11 = function(self, ...) return self:plus(...) end
@@ -428,7 +431,7 @@ local function main()
         ____out_1[____count_1] = it.name
     end
     print("not cheap: " .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
-    print("cheap and m*, by price desc: " .. __K2L_Str(____Query.query(products):where(____Query.____and(cheap, m)):orderByDescending(__K2L_CompareBy(____lambda_8)):run()))
+    print("cheap and m*, by price desc: " .. __K2L_Str(____Query.query(products):where(____Query.____and(cheap, m)):orderByDescending(____lambda_8):run()))
     local ____receiver = ____Query.query(products):orderByDescending(__K2L_CompareBy(__K2L_PropertyRef.new("priceCents", "priceCents@904", ____lambda_9))):first()
     print("priciest: " .. __K2L_Str(____receiver and ____receiver.name))
     local ____list_4 = ____Query.query(products):orderBy(____lambda_10):limit__1(2):run()

@@ -1,6 +1,7 @@
 package dev.k2l.transform
 
 import dev.k2l.IntOverflow
+import dev.k2l.LuaTarget
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.types.KaType
@@ -146,8 +147,21 @@ private fun FileTransformer.narrowRemainder(l: LuaExpr, lt: KaType?, r: LuaExpr,
     (unsignedLongDivision(remainder = true, l, lt, r, rt) ?: divisionByConstant(remainder = true, l, lt, r, rt))?.let { return it }
     val integral = with(session) { lt != null && rt != null && lt.isIntegral && rt.isIntegral }
     val literal = (r as? LuaNumber)?.text?.toDoubleOrNull()?.let { it != 0.0 } == true
-    if (integral && !literal) return lualibCall("IRem", l, r)
+    if (integral && !literal) return inlineRemainder(l, r) ?: lualibCall("IRem", l, r)
     val fmod = luaCall(luaPath("math", "fmod"), l, r)
     // fmod(-4, 2) is -0 when numbers are floats, and an Int must print as 0
     return if (integral && !target.hasIntegers) LuaBinary(LuaBinOp.Add, fmod, LuaNumber("0")) else fmod
+}
+
+/**
+ * `a % b` of integers, which `__K2L_IRem` computes after a zero check (as `fmod(a, b) + 0` on Lua 5.1/5.2; on 5.3/5.4
+ * `math.fmod` of integers truncates like Kotlin): inline, `b ~= 0 and fmod(a, b) + 0 or __K2L_IRem(a, b)` (the call only
+ * throws; `+ 0` turns the -0.0 of a float dividend into 0.0, as IRem's `%` gives), when reading `a` and `b` again is
+ * harmless. Not on LuaJIT, which compiles `%` but not `fmod`.
+ */
+private fun FileTransformer.inlineRemainder(l: LuaExpr, r: LuaExpr): LuaExpr? {
+    if (target == LuaTarget.LuaJIT || !isPureRead(l) || !isPureRead(r)) return null
+    val fmod = LuaBinary(LuaBinOp.Add, LuaCall(lualibRef("Natives", "__K2L_Fmod"), listOf(l, r)), LuaNumber("0"))
+    val nonZero = LuaBinary(LuaBinOp.Ne, r, LuaNumber("0"))
+    return LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.And, nonZero, fmod), lualibCall("IRem", l, r))
 }

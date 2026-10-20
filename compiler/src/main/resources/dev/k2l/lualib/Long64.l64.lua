@@ -106,7 +106,14 @@ local function mulp(ah, al, bh, bl)
     local lo32 = lo % T32
     local hi = (p0 - p0l) / T32 + (p1 - p1l) / 65536 + (lo - lo32) / T32
         + a1 * bh % 65536 * 65536 + a0 * bh + (ah - h0) / 65536 * bl % 65536 * 65536 + h0 * bl
-    return makeU(hi % T32, lo32)
+    hi = hi % T32
+    if hi >= T31 then
+        hi = hi - T32
+    end
+    if hi >= -2097152 and hi < 2097152 and (hi ~= -2097152 or lo32 ~= 0) then
+        return hi * T32 + lo32
+    end
+    return setmetatable({ hi, lo32 }, B)
 end
 
 -- one step of the long division: the quotient limb and remainder of (r * 65536 + limb) / d
@@ -204,12 +211,40 @@ local function slowSub(a, b)
     return subp(ah, al, bh, bl)
 end
 
+-- (the pairs added in place, as addp does)
 local function add(a, b)
-    local r = a + b
-    if type(r) == "number" and (r >= LIM or r <= -LIM) then
-        return slowAdd(a, b)
+    local ah, al, bh, bl
+    if type(a) == "number" then
+        if type(b) == "number" then
+            local r = a + b
+            if r < LIM and r > -LIM then
+                return r
+            end
+        end
+        al = a % T32
+        ah = (a - al) / T32
+    else
+        ah, al = a[1], a[2]
     end
-    return r
+    if type(b) == "number" then
+        bl = b % T32
+        bh = (b - bl) / T32
+    else
+        bh, bl = b[1], b[2]
+    end
+    local lo, hi = al + bl, ah + bh
+    if lo >= T32 then
+        lo, hi = lo - T32, hi + 1
+    end
+    if hi >= T31 then
+        hi = hi - T32
+    elseif hi < -T31 then
+        hi = hi + T32
+    end
+    if hi >= -2097152 and hi < 2097152 and (hi ~= -2097152 or lo ~= 0) then
+        return hi * T32 + lo
+    end
+    return setmetatable({ hi, lo }, B)
 end
 
 local function sub(a, b)
@@ -221,14 +256,25 @@ local function sub(a, b)
 end
 
 local function mul(a, b)
-    if type(a) == "number" and type(b) == "number" then
-        local r = a * b
-        if r < LIM and r > -LIM then
-            return r + 0
+    local ah, al, bh, bl
+    if type(a) == "number" then
+        if type(b) == "number" then
+            local r = a * b
+            if r < LIM and r > -LIM then
+                return r + 0
+            end
         end
+        al = a % T32
+        ah = (a - al) / T32
+    else
+        ah, al = a[1], a[2]
     end
-    local ah, al = parts(a)
-    local bh, bl = parts(b)
+    if type(b) == "number" then
+        bl = b % T32
+        bh = (b - bl) / T32
+    else
+        bh, bl = b[1], b[2]
+    end
     return mulp(ah, al, bh, bl)
 end
 
@@ -351,26 +397,99 @@ if bit32 then
     band32, bor32, bxor32 = bit32.band, bit32.bor, bit32.bxor
 else
     band32 = __K2L_UAnd32
-    bxor32 = function(a, b) return a + b - 2 * __K2L_UAnd32(a, b) end
-    bor32 = function(a, b) return a + b - __K2L_UAnd32(a, b) end
+    bxor32, bor32 = __K2L_UXor32, __K2L_UOr32
 end
 
+-- (the and, or and xor of the unsigned halves, with uparts and makeU written out: they are the hot operations of
+-- 64-bit hashing and random generators)
 local function band(a, b)
-    local ah, al = uparts(a)
-    local bh, bl = uparts(b)
-    return makeU(band32(ah, bh), band32(al, bl))
+    local ah, al, bh, bl
+    if type(a) == "number" then
+        al = a % T32
+        ah = (a - al) / T32
+    else
+        ah, al = a[1], a[2]
+    end
+    if ah < 0 then
+        ah = ah + T32
+    end
+    if type(b) == "number" then
+        bl = b % T32
+        bh = (b - bl) / T32
+    else
+        bh, bl = b[1], b[2]
+    end
+    if bh < 0 then
+        bh = bh + T32
+    end
+    local hi, lo = band32(ah, bh), band32(al, bl)
+    if hi >= T31 then
+        hi = hi - T32
+    end
+    if hi >= -2097152 and hi < 2097152 and (hi ~= -2097152 or lo ~= 0) then
+        return hi * T32 + lo
+    end
+    return setmetatable({ hi, lo }, B)
 end
 
 local function bor(a, b)
-    local ah, al = uparts(a)
-    local bh, bl = uparts(b)
-    return makeU(bor32(ah, bh), bor32(al, bl))
+    local ah, al, bh, bl
+    if type(a) == "number" then
+        al = a % T32
+        ah = (a - al) / T32
+    else
+        ah, al = a[1], a[2]
+    end
+    if ah < 0 then
+        ah = ah + T32
+    end
+    if type(b) == "number" then
+        bl = b % T32
+        bh = (b - bl) / T32
+    else
+        bh, bl = b[1], b[2]
+    end
+    if bh < 0 then
+        bh = bh + T32
+    end
+    local hi, lo = bor32(ah, bh), bor32(al, bl)
+    if hi >= T31 then
+        hi = hi - T32
+    end
+    if hi >= -2097152 and hi < 2097152 and (hi ~= -2097152 or lo ~= 0) then
+        return hi * T32 + lo
+    end
+    return setmetatable({ hi, lo }, B)
 end
 
 local function bxor(a, b)
-    local ah, al = uparts(a)
-    local bh, bl = uparts(b)
-    return makeU(bxor32(ah, bh), bxor32(al, bl))
+    local ah, al, bh, bl
+    if type(a) == "number" then
+        al = a % T32
+        ah = (a - al) / T32
+    else
+        ah, al = a[1], a[2]
+    end
+    if ah < 0 then
+        ah = ah + T32
+    end
+    if type(b) == "number" then
+        bl = b % T32
+        bh = (b - bl) / T32
+    else
+        bh, bl = b[1], b[2]
+    end
+    if bh < 0 then
+        bh = bh + T32
+    end
+    local hi, lo = bxor32(ah, bh), bxor32(al, bl)
+    if hi >= T31 then
+        hi = hi - T32
+    end
+    if hi >= -2097152 and hi < 2097152 and (hi ~= -2097152 or lo ~= 0) then
+        return hi * T32 + lo
+    end
+    return setmetatable({ hi, lo }, B)
 end
 
 local function bnot(a)
@@ -383,12 +502,29 @@ local function shl(a, n)
     if n == 0 then
         return a
     end
-    local hi, lo = uparts(a)
+    local hi, lo
+    if type(a) == "number" then
+        lo = a % T32
+        hi = (a - lo) / T32
+    else
+        hi, lo = a[1], a[2]
+    end
+    if hi < 0 then
+        hi = hi + T32
+    end
     if n < 32 then
         local p = POW2[n]
-        return makeU((hi * p) % T32 + floor(lo / (T32 / p)), (lo * p) % T32)
+        hi, lo = (hi * p) % T32 + floor(lo / (T32 / p)), (lo * p) % T32
+    else
+        hi, lo = (lo * POW2[n - 32]) % T32, 0
     end
-    return makeU((lo * POW2[n - 32]) % T32, 0)
+    if hi >= T31 then
+        hi = hi - T32
+    end
+    if hi >= -2097152 and hi < 2097152 and (hi ~= -2097152 or lo ~= 0) then
+        return hi * T32 + lo
+    end
+    return setmetatable({ hi, lo }, B)
 end
 
 local function ushr(a, n)
@@ -396,12 +532,27 @@ local function ushr(a, n)
     if n == 0 then
         return a
     end
-    local hi, lo = uparts(a)
+    local hi, lo
+    if type(a) == "number" then
+        lo = a % T32
+        hi = (a - lo) / T32
+    else
+        hi, lo = a[1], a[2]
+    end
+    if hi < 0 then
+        hi = hi + T32
+    end
     if n < 32 then
         local p = POW2[n]
-        return makeU(floor(hi / p), floor(lo / p) + (hi % p) * (T32 / p))
+        hi, lo = floor(hi / p), floor(lo / p) + (hi % p) * (T32 / p)
+    else
+        hi, lo = 0, floor(hi / POW2[n - 32])
     end
-    return makeU(0, floor(hi / POW2[n - 32]))
+    -- hi < 2^31 here: the value is a safe integer when hi < 2^21
+    if hi < 2097152 then
+        return hi * T32 + lo
+    end
+    return setmetatable({ hi, lo }, B)
 end
 
 local function shr(a, n)

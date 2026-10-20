@@ -26,6 +26,9 @@ if not bit32 then
     end
 end
 
+-- the table itself, for the operations of Bit.51 that do these steps in place
+local __K2L_AND8 = AND8
+
 -- the unsigned and of two unsigned 32-bit patterns, stopping when either operand has no bits left
 local function __K2L_UAnd32(a, b)
     local x, y = a % 256, b % 256
@@ -44,4 +47,42 @@ local function __K2L_UAnd32(a, b)
     r = r + AND8[x * 256 + y + 1] * 65536
     a, b = (a - x) / 256, (b - y) / 256
     return r + AND8[a * 256 + b + 1] * 16777216
+end
+
+-- the unsigned xor and or, from the and of the same steps (a + b = (a xor b) + 2 (a and b), a or b = a + b - (a and b)),
+-- for Long64.l64
+local function __K2L_UXor32(a, b)
+    local x, y = a % 256, b % 256
+    local n = AND8[x * 256 + y + 1]
+    local p, q = (a - x) / 256, (b - y) / 256
+    if p ~= 0 and q ~= 0 then
+        x, y = p % 256, q % 256
+        n = n + AND8[x * 256 + y + 1] * 256
+        p, q = (p - x) / 256, (q - y) / 256
+        if p ~= 0 and q ~= 0 then
+            x, y = p % 256, q % 256
+            n = n + AND8[x * 256 + y + 1] * 65536
+            p, q = (p - x) / 256, (q - y) / 256
+            n = n + AND8[p * 256 + q + 1] * 16777216
+        end
+    end
+    return a + b - 2 * n
+end
+
+local function __K2L_UOr32(a, b)
+    local x, y = a % 256, b % 256
+    local n = AND8[x * 256 + y + 1]
+    local p, q = (a - x) / 256, (b - y) / 256
+    if p ~= 0 and q ~= 0 then
+        x, y = p % 256, q % 256
+        n = n + AND8[x * 256 + y + 1] * 256
+        p, q = (p - x) / 256, (q - y) / 256
+        if p ~= 0 and q ~= 0 then
+            x, y = p % 256, q % 256
+            n = n + AND8[x * 256 + y + 1] * 65536
+            p, q = (p - x) / 256, (q - y) / 256
+            n = n + AND8[p * 256 + q + 1] * 16777216
+        end
+    end
+    return a + b - n
 end

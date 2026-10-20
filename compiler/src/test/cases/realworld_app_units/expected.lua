@@ -346,6 +346,7 @@ return {Mode = Mode, Leg = Leg, SpeedingException = SpeedingException, Trip = Tr
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
@@ -365,7 +366,7 @@ local function fixed(self, decimals)
     if decimals == 0 then
         return sign .. whole
     end
-    local frac = __K2L_StringPadStart(tostring(__K2L_IRem(abs, factor)), decimals, "0")
+    local frac = __K2L_StringPadStart(tostring(factor ~= 0 and __K2L_Fmod(abs, factor) + 0 or __K2L_IRem(abs, factor)), decimals, "0")
     return sign .. whole .. "." .. frac
 end
 

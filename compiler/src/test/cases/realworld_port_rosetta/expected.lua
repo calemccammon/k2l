@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
@@ -9,6 +10,7 @@ local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Num = ____lualib.__K2L_Num
@@ -93,7 +95,7 @@ local function spell(n)
     end
     local ____destructured = SCALES:last(function(it) return it.second <= n end)
     local name, size = ____destructured.first, ____destructured.second
-    local rest = __K2L_IRem(n, size)
+    local rest = size ~= 0 and __K2L_Fmod(n, size) + 0 or __K2L_IRem(n, size)
     local ____arg = spell(__K2L_IDiv(n, size)) .. " " .. name
     local ____temp
     if rest == 0 then
@@ -151,7 +153,7 @@ local function balanced(s)
     return ____receiver and "unclosed '" .. ____receiver.first .. "' at " .. ____receiver.second or "ok"
 end
 
-local ____lambda_1 = function(it) return it:match("^%d$") ~= nil end
+local ____lambda_1 = function(it) return __K2L_IsDigit[it] == true end
 local ____lambda_2 = function(it) return __K2L_Num.digitToInt(it) end
 local function luhn(number)
     local digits = __K2L_StringToList(__K2L_Text.filter(number, ____lambda_1)):map(____lambda_2)
@@ -181,7 +183,7 @@ local function luhn(number)
     return (____dividend >= 0 and ____dividend % 10 or 0 - -____dividend % 10) == 0
 end
 
-local ____lambda_3 = function(____p1) return ____p1:match("^%d$") ~= nil end
+local ____lambda_3 = function(____p1) return __K2L_IsDigit[____p1] == true end
 local ____lambda_4 = function(i, c)
     return __K2L_Num.digitToInt(c) * ((i >= 0 and i % 2 or 0 - -i % 2) == 0 and 1 or 3)
 end
@@ -382,7 +384,7 @@ local function main()
         local ____items_6, ____n_6 = ____list_8:____array()
         for ____i_12 = 1, ____n_6 do
             local it = ____items_6[____i_12]
-            if __K2L_IRem(i, it.first) == 0 then
+            if (it.first ~= 0 and __K2L_Fmod(i, it.first) + 0 or __K2L_IRem(i, it.first)) == 0 then
                 ____count_4 = ____count_4 + 1
                 ____out_4[____count_4] = it
             end

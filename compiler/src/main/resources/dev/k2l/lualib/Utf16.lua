@@ -483,7 +483,13 @@ do
         return U.charAt(s, index)
     end
 
+    -- an ASCII first byte is the first unit; the last byte is the last unit when it and the three bytes before it are
+    -- ASCII (no lead byte can reach it), without decoding (or caching) the string
     function Text.first(s)
+        local b = byte(s, 1)
+        if b ~= nil and b < 0x80 then
+            return sub(s, 1, 1)
+        end
         local u = units(s)
         if not u then
             return orig.first(s)
@@ -492,6 +498,13 @@ do
     end
 
     function Text.last(s)
+        local n = #s
+        if n >= 4 then
+            local b1, b2, b3, b4 = byte(s, n - 3, n)
+            if b1 < 0x80 and b2 < 0x80 and b3 < 0x80 and b4 < 0x80 then
+                return sub(s, n)
+            end
+        end
         local u = units(s)
         if not u then
             return orig.last(s)

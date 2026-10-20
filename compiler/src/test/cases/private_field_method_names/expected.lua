@@ -4,7 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Iterator = ____lualib.__K2L_Iterator
 local __K2L_List = ____lualib.__K2L_List
-local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
 local __K2L_Str = ____lualib.__K2L_Str
@@ -95,7 +95,12 @@ local function main()
     print(__K2L_Str(__K2L_AsSequence(c):toList()) .. " " .. tostring(c:hasNext()) .. " " .. c:from__1())
     print(__K2L_Str(__K2L_RunCatching(function() return c:next() end):exceptionOrNull()))
     local f = Fib.new()
-    print(__K2L_Str(__K2L_ListOfSize(10, function(it) return f:next() end)) .. " " .. f:current__1())
+    local ____out = {}
+    for ____i = 1, 10 do
+        local it = ____i - 1
+        ____out[____i] = f:next()
+    end
+    print(__K2L_Str(__K2L_ListWrap(____out, 10)) .. " " .. f:current__1())
     local b = Buffer.new(2):add("a"):add("b"):add("c")
     print(b:size__1() .. " " .. b:capacity() .. " " .. __K2L_Str(b:items__1()))
     for _, x in __K2L_Iterator.iter(Countdown.new(2)) do

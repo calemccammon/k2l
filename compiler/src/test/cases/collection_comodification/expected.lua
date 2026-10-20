@@ -6,6 +6,7 @@ local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_HashMapOf = ____lualib.__K2L_HashMapOf
 local __K2L_HashSetOf = ____lualib.__K2L_HashSetOf
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
@@ -727,7 +728,10 @@ local function main()
         local a = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2, 3)
         for ____i_39 = 1, a.size do
             local x = a[____i_39]
-            a:set(0, x)
+            if 0 < 0 or 0 >= a.size then
+                __K2L_IndexError(0, a.size, "array")
+            end
+            a[1] = x
         end
         return a:toList()
     end)

@@ -7,6 +7,7 @@ local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_FloatToString = ____lualib.__K2L_FloatToString
+local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_Fround = ____lualib.__K2L_Fround
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IDiv = ____lualib.__K2L_IDiv
@@ -69,7 +70,7 @@ local function duration(totalSeconds)
         if q > 0 then
             parts:add(q .. name)
         end
-        rest = __K2L_IRem(rest, size)
+        rest = size ~= 0 and __K2L_Fmod(rest, size) + 0 or __K2L_IRem(rest, size)
     end
     return parts:joinToString(" ")
 end

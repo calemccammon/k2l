@@ -275,7 +275,7 @@ function Shift:toString()
 end
 
 function Shift:hashCode()
-    return (31 * (31 * (31 * __K2L_Hash(self.date) + __K2L_Hash(self.start)) + __K2L_Hash(self["end"])) + self.breakMinutes + 0x80000000 & 0xFFFFFFFF) - 0x80000000
+    return (31 * (31 * (31 * self.date:hashCode() + __K2L_Hash(self.start)) + __K2L_Hash(self["end"])) + self.breakMinutes + 0x80000000 & 0xFFFFFFFF) - 0x80000000
 end
 
 function Shift:equals(other)

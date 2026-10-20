@@ -4,6 +4,8 @@ local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
+local __K2L_IsLetter = ____lualib.__K2L_IsLetter
 local __K2L_NumberFormatException = ____lualib.__K2L_NumberFormatException
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -89,7 +91,7 @@ local function substrings()
     print(__K2L_StringToList(s):single(____lambda_3))
 end
 
-local ____lambda_4 = function(it) return it:match("^%d$") ~= nil end
+local ____lambda_4 = function(it) return __K2L_IsDigit[it] == true end
 local ____lambda_5 = function() return "empty" end
 local ____lambda_6 = function() return "blank" end
 local function trimming()
@@ -126,7 +128,7 @@ local ____lambda_15 = function(it) return it.value.size end
 local ____lambda_16 = function(it) return it.value > 1 end
 local ____lambda_17 = function(it) return __K2L_StringContains("aeiou", it) end
 local ____lambda_18 = function(it) return it == "w" end
-local ____lambda_19 = function(it) return it:match("^%a$") ~= nil end
+local ____lambda_19 = function(it) return __K2L_IsLetter[it] == true end
 local ____lambda_20 = function(it) return it ~= " " end
 local function transforming()
     local s = "hello world"

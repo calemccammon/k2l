@@ -4,6 +4,8 @@
 -- `for _, x in seq:iter() do ... end` and null elements are fine. Intermediate operations wrap the
 -- generator and run nothing until a terminal operation pulls elements, one at a time, as on the JVM.
 local __K2L_Iterator -- below
+local __K2L_IteratorBuilder -- below
+local __K2L_SequenceBuilder -- below
 local __K2L_Sequence = __K2L_Class("kotlin.sequences.Sequence")
 
 function __K2L_Sequence:____init(factory)
@@ -101,6 +103,10 @@ function __K2L_Sequence:____array()
 end
 
 function __K2L_Sequence:iterator()
+    local block = rawget(self, "____block")
+    if block ~= nil then
+        return __K2L_IteratorBuilder(block) -- one that yieldAll can flatten
+    end
     return __K2L_Iterator.new(self:iter())
 end
 
@@ -208,7 +214,19 @@ local function __K2L_GenerateSequenceLazy(seedFunction, nextFunction)
             end
         end
     end)
-    return nextFunction and sequence or sequence:constrainOnce()
+    if nextFunction == nil then
+        return sequence:constrainOnce()
+    end
+    -- count() runs the functions in a plain loop, in the order the generator calls them
+    function sequence.____count()
+        local n, current = 0, seedFunction()
+        while current ~= nil do
+            n = n + 1
+            current = nextFunction(current)
+        end
+        return n
+    end
+    return sequence
 end
 
 -- generateSequence(seed) { next }
@@ -219,42 +237,160 @@ end
 ------------------------------------------------------------------ sequence { } and iterator { }
 -- The builder block runs in a Lua coroutine, and yield(x) is coroutine.yield(x): each element is
 -- computed when the consumer asks for it. Exceptions thrown by the block reach the consumer.
+-- yieldAll of another builder's sequence or iterator does not resume the inner coroutine from the outer one: each resume
+-- counts as a C call, so a recursion such as a tree walk would end in "C stack overflow" after some 200 levels. It hands
+-- the inner builder to the generator instead, which keeps a stack of the active coroutines and resumes the innermost
+-- directly; when that one finishes, the one below goes on from its yieldAll. Exceptions go where the JVM's nested hasNext()
+-- calls take them: one thrown by an inner builder before it has produced an element is thrown by the yieldAll that started
+-- it, one thrown later (when the consumer's hasNext() reaches the inner builder through the outer ones) goes straight to
+-- the consumer, past the try blocks around the yieldAll calls.
 local SequenceScope = __K2L_Class("kotlin.sequences.SequenceBuilderIterator")
 
-function SequenceScope:yield(value)
-    coroutine.yield(value)
-end
+do
+    local create, resume, status, yield = coroutine.create, coroutine.resume, coroutine.status, coroutine.yield
+    local huge = math.huge
+    -- what yieldAll yields, with the builder to run: {block = block} until it starts, then its coroutines {stack, n}
+    local DELEGATE = {}
 
-function SequenceScope:yieldAll(elements)
-    for _, value in __K2L_Generator(elements) do
-        coroutine.yield(value)
+    function SequenceScope:yield(value)
+        yield(value)
     end
-end
 
-local function builderGenerator(block)
-    local co = coroutine.create(function() block(SequenceScope.new()) end)
-    return function()
-        if coroutine.status(co) == "dead" then
-            return
+    -- a builder's coroutine; the scope is the same for all of them
+    local scope
+
+    local function start(block)
+        scope = scope or SequenceScope.new()
+        return create(function() block(scope) end)
+    end
+
+    -- The builder behind `elements` (a fresh state for a builder sequence) or nil, and whether an element came first.
+    local function builderOf(elements)
+        local block = rawget(elements, "____block")
+        if block ~= nil then
+            return {block = block}
         end
-        local ok, value = coroutine.resume(co)
-        if not ok then
-            error(value, 0)
+        local state = rawget(elements, "____builder")
+        local ready = state and elements.____ready
+        if ready == false then
+            return {n = 0}
+        elseif ready then
+            -- hasNext() already pulled an element: it comes first
+            local value = elements.____value
+            elements.____ready, elements.____value = nil, nil
+            yield(value)
         end
-        if coroutine.status(co) ~= "dead" then
-            return true, value
+        return state, ready
+    end
+
+    function SequenceScope:yieldAll(elements)
+        if type(elements) == "table" then
+            if elements.____isSequence and elements.____factory == nil then
+                elements = elements:iterator()
+            end
+            local state, pulled = builderOf(elements)
+            if state ~= nil then
+                if state.n ~= 0 then
+                    local ok, e = yield(DELEGATE, state, pulled)
+                    if ok == false then
+                        error(e, 0)
+                    end
+                end
+                return
+            end
+        end
+        for _, value in __K2L_Generator(elements) do
+            yield(value)
         end
     end
-end
 
--- sequence { }: every iteration runs the block again.
-local function __K2L_SequenceBuilder(block)
-    return __K2L_Sequence.new(function() return builderGenerator(block) end)
-end
+    -- Moves the coroutines of `inner` onto `stack` (above n) and returns the new top.
+    local function splice(stack, n, inner)
+        local m = inner.n
+        if m == nil then
+            n = n + 1
+            stack[n] = start(inner.block)
+        else
+            local from = inner.stack
+            for i = 1, m do
+                stack[n + i], from[i] = from[i], nil
+            end
+            n = n + m
+        end
+        inner.n = 0
+        return n
+    end
 
--- iterator { }
-local function __K2L_IteratorBuilder(block)
-    return __K2L_Iterator.new(builderGenerator(block))
+    local function generator(state)
+        -- catchers[i]: the coroutine whose yieldAll gets the exceptions of coroutine i, for those spliced at low or above
+        -- since the last element (the others' go to the consumer)
+        local catchers = {}
+        return function()
+            local stack, n = state.stack, state.n
+            if n == nil then
+                stack, n = {start(state.block)}, 1
+                state.stack = stack
+            elseif n == 0 then
+                return
+            end
+            local low = huge
+            local co = stack[n]
+            local ok, value, inner, pulled = resume(co)
+            while true do
+                if ok and value == DELEGATE and inner ~= nil then
+                    local top = splice(stack, n, inner)
+                    if not pulled then
+                        for i = n + 1, top do
+                            catchers[i] = n
+                        end
+                        low = low < n + 1 and low or n + 1
+                    end
+                    n = top
+                    co = stack[n]
+                    ok, value, inner, pulled = resume(co)
+                elseif not ok and n >= low then
+                    -- thrown before the coroutine produced an element: by the yieldAll that started it
+                    local c = catchers[n]
+                    for i = c + 1, n do
+                        stack[i] = nil
+                    end
+                    n = c
+                    co = stack[n]
+                    ok, value, inner, pulled = resume(co, false, value)
+                elseif not ok then
+                    state.n, state.stack = 0, nil
+                    error(value, 0)
+                elseif status(co) ~= "dead" then
+                    state.n = n
+                    return true, value
+                else
+                    -- co finished: the one below goes on from its yieldAll
+                    stack[n], n = nil, n - 1
+                    if n == 0 then
+                        state.n = 0
+                        return
+                    end
+                    co = stack[n]
+                    ok, value, inner, pulled = resume(co)
+                end
+            end
+        end
+    end
+
+    -- sequence { }: every iteration runs the block again.
+    function __K2L_SequenceBuilder(block)
+        local sequence = __K2L_Sequence.new(function() return generator({block = block}) end)
+        sequence.____block = block
+        return sequence
+    end
+
+    -- iterator { }
+    function __K2L_IteratorBuilder(block)
+        local state = {block = block}
+        local iterator = __K2L_Iterator.new(generator(state))
+        iterator.____builder = state
+        return iterator
+    end
 end
 
 ------------------------------------------------------------------ intermediate operations
@@ -932,6 +1068,10 @@ end
 function __K2L_Sequence:count(predicate)
     local n = 0
     if predicate == nil then
+        local count = rawget(self, "____count")
+        if count ~= nil then
+            return count()
+        end
         for _ in self:iter() do
             n = n + 1
         end
