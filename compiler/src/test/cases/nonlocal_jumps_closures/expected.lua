@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_CloseAfter = ____lualib.__K2L_CloseAfter
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
@@ -632,7 +633,7 @@ local function throughUse(log)
             if ____ok_27 or __K2L_IsJump(____result_29) then
                 ____resource:close()
             else
-                pcall(____resource.close, ____resource)
+                __K2L_CloseAfter(____resource, ____result_29)
             end
             if not ____ok_27 then
                 error(____result_29, 0)

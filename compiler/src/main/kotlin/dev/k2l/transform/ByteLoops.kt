@@ -25,13 +25,13 @@ internal fun FileTransformer.byteLoop(text: LuaExpr, param: KtParameter, body: K
             }
         })
         if (other || uses.isEmpty()) return false
-        overrides += uses
+        callState.overrides += uses
         val s = cache(text, "text")
         val i = LuaName(ctx.temp("i"))
         val loopBody = try {
             translate()
         } finally {
-            uses.keys.forEach(overrides::remove)
+            uses.keys.forEach(callState.overrides::remove)
         }
         val byte = LuaLocal(listOf(variable), listOf(LuaCall(lualibRef("Natives", "__K2L_StrByte"), listOf(s, i))))
         emit(LuaNumericFor(i.name, LuaNumber("1"), LuaUnary(LuaUnOp.Len, s), null, listOf(byte) + loopBody))

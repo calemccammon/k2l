@@ -1,0 +1,37 @@
+ceilDiv = [4, -3, -3, 4, 2, -2147483648]
+ceilDiv long = [4, -3, 1000000001, 3]
+ceilMod = [-1, -1, 1, 1, 0]
+ceilMod long = [-1, -1, -3]
+ceilDiv zero EXC ArithmeticException: / by zero
+ceilDiv long zero EXC ArithmeticException: / by zero
+divideExact = [3, -3, -3, 4]
+divideExact overflow EXC ArithmeticException: integer overflow
+divideExact long overflow EXC ArithmeticException: long overflow
+divideExact zero EXC ArithmeticException: / by zero
+floorDivExact = [-4, -4, -4]
+floorDivExact overflow EXC ArithmeticException: integer overflow
+floorDivExact long overflow EXC ArithmeticException: long overflow
+ceilDivExact = [-3, 4, 4]
+ceilDivExact overflow EXC ArithmeticException: integer overflow
+clamp int = [5, 1, 10, 2147483647]
+clamp long = [5, 1, 10000000000]
+clamp double = [1.0, 0.0, 0.25, NaN, 0.0, 0.0]
+clamp float = [1.0, 0.1, -2.0]
+clamp reversed EXC IllegalArgumentException: 10 > 1
+clamp long reversed EXC IllegalArgumentException: 10 > 1
+clamp double reversed EXC IllegalArgumentException: 2.5 > 1.0
+clamp zeros EXC IllegalArgumentException: 0.0 > -0.0
+clamp float reversed EXC IllegalArgumentException: 0.1 > 0.05
+clamp NaN min EXC IllegalArgumentException: min is NaN
+clamp NaN max EXC IllegalArgumentException: max is NaN
+fma = [10.0, 5.551115123125783E-17, 1.1102230246251454E-16, 0.0, NaN]
+fma float = [10.0, 1.4901161E-8, 2.5]
+fma vs plain = 0.0
+getExponent = [0, 1, 1, -1, -997, 996, -1023, -1023, -1022, 1024, 1024, 10]
+getExponent float = [0, 1, -4, -127, -127, -126, 127, 128]
+scalb = [1024.0, 1.5, Infinity, 4.9E-324, 0.0, 1.5657565312570098E-294, 1.5E-323, -0.0]
+scalb float = [1024.0, 0.75, Infinity, 1.4E-45, 0.0, Infinity]
+multiplyFull = [10000000000, -2147488281, -42]
+multiplyHigh = [65536, -65536, 0, -1]
+unsignedMultiplyHigh = [65536, 0, 4]
+StrictMath = 4 8.0 3

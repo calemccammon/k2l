@@ -58,15 +58,15 @@ private fun FileTransformer.synchronizing(lock: KtExpression, lambda: KtExpressi
 }
 
 private fun FileTransformer.measuring(lambda: KtExpression, scale: String): LuaExpr {
-    val start = declare("start", luaCall(luaPath("os", "clock")))
+    val start = declare("start", lua("os.clock"))
     inlineLambda(lambda, emptyList(), null, null)
-    val elapsed = LuaBinary(LuaBinOp.Mul, LuaBinary(LuaBinOp.Sub, luaCall(luaPath("os", "clock")), start), LuaNumber(scale))
-    return luaCall(luaPath("math", "floor"), elapsed)
+    val elapsed = LuaBinary(LuaBinOp.Mul, LuaBinary(LuaBinOp.Sub, lua("os.clock"), start), LuaNumber(scale))
+    return lua("math.floor", elapsed)
 }
 
 /** The `pcall` to use: the coroutine-aware one on Lua 5.1 when the block can suspend. */
 private fun FileTransformer.pcallFor(lambda: KtExpression): LuaExpr = with(session) {
-    val suspends = target == LuaTarget.Lua51 && lambdaLiteral(lambda)?.let { containsSuspensionPoint(it) } == true
+    val suspends = !target.yieldsAcrossPcall && lambdaLiteral(lambda)?.let { containsSuspensionPoint(it) } == true
     if (suspends) lualibRef("CoPcall", "__K2L_CoPcall") else deepPcall()
 }
 
@@ -92,7 +92,7 @@ private fun FileTransformer.catching(receiver: LuaExpr?, lambda: KtExpression): 
 private fun FileTransformer.using(resource: LuaExpr, receiverExpr: KtExpression?, lambda: KtExpression): LuaExpr = with(session) {
     val value = declare("result")
     val nullable = receiverExpr?.expressionType?.isMarkedNullable == true
-    val raised = jumpsRaised
+    val raised = jumps.jumpsRaised
     fun closing(statement: LuaStmt): LuaStmt =
         if (nullable) LuaIf(LuaBinary(LuaBinOp.Ne, resource, LuaNil), listOf(statement)) else statement
     lowerTry(
@@ -110,10 +110,11 @@ private fun FileTransformer.using(resource: LuaExpr, receiverExpr: KtExpression?
             handler = { emptyList() },
             hasCatch = false,
             finally = { ok, outcome ->
-                // an error of close() must not hide the error of the block, but a jump out of a lambda in the block is no error
-                val quietly = LuaCallStmt(luaCall(LuaName("pcall"), LuaIndex(resource, LuaString("close")), resource))
+                // an error of close() must not hide the error of the block (it is added to its suppressed exceptions), but a
+                // jump out of a lambda in the block is no error
+                val quietly = LuaCallStmt(LuaCall(lualibRef("Suppressed", "__K2L_CloseAfter"), listOf(resource, LuaName(outcome))))
                 val plain = LuaCallStmt(LuaMethodCall(resource, "close", emptyList()))
-                val closesPlainly = if (jumpsRaised > raised) {
+                val closesPlainly = if (jumps.jumpsRaised > raised) {
                     LuaBinary(LuaBinOp.Or, LuaName(ok), LuaCall(lualibRef("Jump", "__K2L_IsJump"), listOf(LuaName(outcome))))
                 } else {
                     LuaName(ok)

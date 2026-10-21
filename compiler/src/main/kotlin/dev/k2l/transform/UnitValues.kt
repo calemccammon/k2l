@@ -26,7 +26,7 @@ internal fun FileTransformer.isUnitValued(e: KtExpression): Boolean = with(sessi
     val syntax = e is KtCallExpression || e is KtDotQualifiedExpression || e is KtIfExpression || e is KtWhenExpression ||
         e is KtTryExpression || e is KtArrayAccessExpression ||
         (e is KtBinaryExpression && e.operationToken == KtTokens.IDENTIFIER)
-    syntax && e !in overrides && e.expressionType.let { it != null && it.isUnitType && !it.isMarkedNullable }
+    syntax && e !in callState.overrides && e.expressionType.let { it != null && it.isUnitType && !it.isMarkedNullable }
 }
 
 /** Whether [e] names the `Unit` object. */
@@ -88,7 +88,7 @@ internal fun FileTransformer.noteUnitResult(parameter: KaValueParameterSymbol, a
     val declared = parameter.returnType as? KaFunctionType ?: return
     if (declared.returnType.isUnitType || lambdaLiteral(arg) != null) return
     val actual = (arg.expressionType as? KaFunctionType)?.returnType ?: return
-    if (actual.isUnitType && !actual.isMarkedNullable) unitResults += arg
+    if (actual.isUnitType && !actual.isMarkedNullable) callState.unitResults += arg
 }
 
 /**
@@ -98,7 +98,7 @@ internal fun FileTransformer.noteUnitResult(parameter: KaValueParameterSymbol, a
  */
 internal fun FileTransformer.convertsUnitFunction(e: KtExpression): Boolean = with(session) {
     if (e !is KtCallableReferenceExpression && e !is KtNameReferenceExpression && e !is KtDotQualifiedExpression) return false
-    if (e in unitResults) return false
+    if (e in callState.unitResults) return false
     val actual = (e.expressionType as? KaFunctionType)?.returnType ?: return false
     if (!actual.isUnitType || actual.isMarkedNullable) return false
     val expected = (e.expectedType as? KaFunctionType)?.returnType ?: return false

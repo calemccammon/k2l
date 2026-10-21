@@ -4,9 +4,6 @@ import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 
-/** Lua feature implementing `kotlin.time`, see `Duration.lua`. */
-internal const val DURATION_FEATURE = "Duration"
-
 /**
  * `kotlin.time`: Duration, DurationUnit, measureTime/measureTimedValue and TimedValue, TimeSource.Monotonic and
  * TestTimeSource with their time marks (see `Duration.lua`).
@@ -46,7 +43,7 @@ internal object TimeMappings {
     fun map(callableId: String?, site: CallSite): LuaExpr? {
         if (callableId == null || !callableId.startsWith(PACKAGE)) return null
         // Long-valued members would need an emulated Long: not translated with --long64 emulate
-        if (site.transformer.emulatesLong) return null
+        if (site.emulatesLong) return null
         return topLevel(callableId, site) ?: companion(callableId, site) ?: unit(callableId, site) ?: member(callableId, site)
     }
 
@@ -57,13 +54,12 @@ internal object TimeMappings {
             "kotlin/time/TimedValue" -> "__K2L_TimedValue"
             else -> return null
         }
-        return LuaCall(LuaIndex(site.ref(DURATION_FEATURE, luaClass), LuaString("new")), site.args)
+        return site.libNew(DURATION_FEATURE, luaClass, site.args)
     }
 
-    private fun CallSite.duration(member: String, vararg args: LuaExpr): LuaExpr =
-        LuaCall(LuaIndex(ref(DURATION_FEATURE, "__K2L_Duration"), LuaString(member)), args.toList())
+    private fun CallSite.duration(member: String, vararg args: LuaExpr): LuaExpr = libCall(DURATION_TABLE, member, args.toList())
 
-    private fun CallSite.unitValue(name: String): LuaExpr = LuaIndex(ref(DURATION_FEATURE, "__K2L_DurationUnit"), LuaString(name))
+    private fun CallSite.unitValue(name: String): LuaExpr = luaField(ref(DURATION_UNIT_TABLE), name)
 
     /** `x.seconds`, `x.toDuration(unit)`: a whole number of units, or a Double rounded to the nanosecond. */
     private fun CallSite.durationOf(value: LuaExpr, type: KaType?, unit: LuaExpr): LuaExpr =
@@ -89,7 +85,7 @@ internal object TimeMappings {
         val unit = UNIT_PROPERTIES[name]
         when {
             unit != null && receiver != null -> durationOf(self, receiverType, unitValue(unit))
-            name == "ZERO" || name == "INFINITE" -> LuaIndex(ref(DURATION_FEATURE, "__K2L_Duration"), LuaString(name))
+            name == "ZERO" || name == "INFINITE" -> luaField(ref(DURATION_TABLE), name)
             name.startsWith("parse") -> duration("parse", arg(0), LuaBool("Iso" in name), LuaBool(name.endsWith("OrNull")))
             else -> null
         }
@@ -99,8 +95,8 @@ internal object TimeMappings {
         val name = callableId.removePrefix("${PACKAGE}DurationUnit.").takeIf { it != callableId } ?: return null
         when (name) {
             in UNITS -> unitValue(name)
-            "values", "entries" -> LuaCall(LuaIndex(ref(DURATION_FEATURE, "__K2L_DurationUnit"), LuaString("values")), emptyList())
-            "valueOf" -> LuaCall(LuaIndex(ref(DURATION_FEATURE, "__K2L_DurationUnit"), LuaString("valueOf")), listOf(arg(0)))
+            "values", "entries" -> libCall(DURATION_UNIT_TABLE, "values", emptyList())
+            "valueOf" -> libCall(DURATION_UNIT_TABLE, "valueOf", listOf(arg(0)))
             else -> null
         }
     }

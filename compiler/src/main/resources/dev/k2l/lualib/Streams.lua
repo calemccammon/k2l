@@ -1,4 +1,4 @@
--- requires: Class, Collections, Exceptions, Compare, Equals, Str, ToInt32, DoubleToString, LongArith
+-- requires: Class, Collections, Exceptions, Compare, Equals, Str, ToInt32, DoubleToString, LongArith, Hash, Bit
 -- java.util.stream: Stream, IntStream, LongStream and DoubleStream, Optional, OptionalInt, OptionalLong and OptionalDouble,
 -- and Collectors. Long values are added with __K2L_LongArith, so they are exact with --long64 emulate.
 -- A stream is lazy like the JDK's: `____next()` returns `true, element` or `false`, and each stage pulls from the one
@@ -667,7 +667,8 @@ function DoubleStream:map(transform)
 end
 
 ---------------------------------------------------------------- Optional, OptionalInt, OptionalDouble
-local function defineOptional(class, name, valueMethod, format)
+-- `hash` is the hashCode() of a value, `stream` the stream class of stream()
+local function defineOptional(class, name, valueMethod, format, hash, stream)
     local EMPTY = setmetatable({____present = false}, class)
 
     function class.empty() return EMPTY end
@@ -739,12 +740,42 @@ local function defineOptional(class, name, valueMethod, format)
         return getmetatable(other) == class and self.____present == other.____present and
             (not self.____present or __K2L_Equals(self.____value, other.____value))
     end
+
+    function class:hashCode()
+        return self.____present and hash(self.____value) or 0
+    end
+
+    function class:stream()
+        if not self.____present then
+            return Streams.empty(stream)
+        end
+        return Streams.of(stream, __K2L_ListOf(self.____value))
+    end
 end
 
-defineOptional(Optional, "Optional", "get", __K2L_Str)
-defineOptional(OptionalInt, "OptionalInt", "getAsInt", tostring)
-defineOptional(OptionalDouble, "OptionalDouble", "getAsDouble", __K2L_DoubleToString)
-defineOptional(OptionalLong, "OptionalLong", "getAsLong", __K2L_Str)
+-- Long.hashCode: the halves xor-ed
+local function longHash(value)
+    local hi, lo = LongArith.halves(value)
+    local h = __K2L_BXor(hi, lo) % 4294967296
+    return h >= 2147483648 and h - 4294967296 or h
+end
+
+defineOptional(Optional, "Optional", "get", __K2L_Str, __K2L_Hash, Stream)
+defineOptional(OptionalInt, "OptionalInt", "getAsInt", tostring, function(value) return value end, IntStream)
+defineOptional(OptionalDouble, "OptionalDouble", "getAsDouble", __K2L_DoubleToString, __K2L_DoubleHash, DoubleStream)
+defineOptional(OptionalLong, "OptionalLong", "getAsLong", __K2L_Str, longHash, LongStream)
+
+-- or(supplier): this when a value is present, else the supplier's Optional
+function Optional:Or(supplier)
+    if self.____present then
+        return self
+    end
+    local other = supplier()
+    if other == nil then
+        error(__K2L_NullPointerException.new())
+    end
+    return other
+end
 
 function Optional.ofNullable(value)
     if value == nil then

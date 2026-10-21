@@ -145,7 +145,7 @@ internal fun declaredFieldNames(c: KtClassOrObject): Set<String> {
  * module. A method sharing one of these names would be hidden by the field (see `DeclarationNames.function`).
  */
 internal fun ClassHierarchy.fieldNames(c: KtClassOrObject): Set<String> {
-    val below = module.shared.getOrPut("fieldNamesBelow") {
+    val below = module.shared.getOrPut(FIELD_NAMES_BELOW) {
         val result = HashMap<KtClassOrObject, MutableSet<String>>()
         for (k in module.allClasses) {
             val names = declaredFieldNames(k)
@@ -153,6 +153,8 @@ internal fun ClassHierarchy.fieldNames(c: KtClassOrObject): Set<String> {
         }
         result
     }
-    @Suppress("UNCHECKED_CAST") // only this function writes the entry
-    return (below as Map<KtClassOrObject, Set<String>>)[c].orEmpty() + hierarchy(c).flatMap(::declaredFieldNames)
+    return below[c].orEmpty() + hierarchy(c).flatMap(::declaredFieldNames)
 }
+
+/** The field names of each class's subclasses, see [fieldNames]. */
+private val FIELD_NAMES_BELOW = SharedKey<Map<KtClassOrObject, Set<String>>>("fieldNamesBelow")

@@ -106,7 +106,7 @@ internal fun children(s: LuaStmt, stmt: (LuaStmt) -> Unit, expr: (LuaExpr) -> Un
 
         is LuaDo -> s.body.forEach(stmt)
 
-        LuaBreak, is LuaGoto, is LuaLabel, is LuaComment -> Unit
+        LuaBreak, is LuaGoto, is LuaLabel -> Unit
     }
 }
 

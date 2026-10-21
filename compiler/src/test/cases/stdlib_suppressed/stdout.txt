@@ -1,0 +1,15 @@
+[]
+main suppressed=[first, second]
+[IllegalArgumentException, UnsupportedOperationException]
+2
+self ignored: 2
+copy 2, now 3
+body failed suppressed=[close a failed]
+true
+thrown: close b failed suppressed=[]
+nested body suppressed=[close inner failed, close outer failed]
+[close inner failed suppressed=[], close outer failed suppressed=[]]
+plain suppressed=[]
+42
+[close a, close b, close inner, close outer, close c, close d]
+[1, 3]

@@ -12,7 +12,6 @@ import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.TimeUnit
 
 /**
  * An uncaught exception prints like on the JVM on every target: `Exception in thread "main" ...` and its `Caused by:` lines
@@ -43,7 +42,7 @@ class UncaughtTest {
             val result = K2lCompiler(CompilerOptions(luaTarget = target, sourceMap = sourceMap)).compile(session, module(name))
             assertEquals("", result.diagnostics.joinToString("\n"))
             result.writeTo(out)
-            val (status, stdout, stderr) = run(lua, out)
+            val (status, stdout, stderr) = runLua(lua, out, separateStderr = true)
             val label = "$name on $lua${if (sourceMap) " with source maps" else ""}:\n$stderr"
             assertEquals(1, status, label)
             assertEquals(program.stdout, stdout, label)
@@ -70,21 +69,9 @@ class UncaughtTest {
         DynamicTest.dynamicTest("on $lua") {
             val out = dir.resolve("merged-${target.id}")
             K2lCompiler(CompilerOptions(luaTarget = target)).compile(session, module("plain")).writeTo(out)
-            val process = ProcessBuilder(lua, "main.lua").directory(out.toFile()).redirectErrorStream(true).start()
-            val output = process.inputStream.readBytes().toString(Charsets.UTF_8)
-            check(process.waitFor(30, TimeUnit.SECONDS)) { "$lua timed out" }
+            val output = runLua(lua, out).stdout
             assertTrue(output.startsWith("start\nException in thread \"main\" "), output)
         }
-    }
-
-    private data class Run(val status: Int, val stdout: String, val stderr: String)
-
-    private fun run(lua: String, out: Path): Run {
-        val err = out.resolve("stderr.txt")
-        val process = ProcessBuilder(lua, "main.lua").directory(out.toFile()).redirectError(err.toFile()).start()
-        val stdout = process.inputStream.readBytes().toString(Charsets.UTF_8)
-        check(process.waitFor(30, TimeUnit.SECONDS)) { "$lua timed out" }
-        return Run(process.exitValue(), stdout, Files.readString(err))
     }
 
     companion object {
@@ -129,6 +116,30 @@ class UncaughtTest {
                     "Caused by: java.lang.NumberFormatException: For input string: \"x\"",
                 ),
                 13,
+            ),
+            // Suppressed: lines (an exception of close() in `use`) indented under the exception, before its cause
+            "suppressed" to Program(
+                """
+                |class Res(private val name: String) : AutoCloseable {
+                |    override fun close() = throw IllegalStateException("close ${'$'}name")
+                |}
+                |
+                |fun main() {
+                |    println("start")
+                |    val e = IllegalArgumentException("body", ArithmeticException("root"))
+                |    e.addSuppressed(UnsupportedOperationException("earlier", NumberFormatException("deeper")))
+                |    Res("a").use { throw e }
+                |}
+                """.trimMargin(),
+                "start\n",
+                listOf(
+                    "Exception in thread \"main\" java.lang.IllegalArgumentException: body",
+                    "\tSuppressed: java.lang.UnsupportedOperationException: earlier",
+                    "\tCaused by: java.lang.NumberFormatException: deeper",
+                    "\tSuppressed: java.lang.IllegalStateException: close a",
+                    "Caused by: java.lang.ArithmeticException: root",
+                ),
+                9,
             ),
             // deeper than one segment of the try driver on Lua 5.2 to 5.4 (DeepPcall.lua)
             "deep_try" to Program(

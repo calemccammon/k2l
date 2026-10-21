@@ -2,6 +2,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_CloseAfter = ____lualib.__K2L_CloseAfter
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
@@ -188,7 +189,7 @@ local function main()
     if ____ok_1 then
         outbox:close()
     else
-        pcall(outbox.close, outbox)
+        __K2L_CloseAfter(outbox, ____result_3)
     end
     if not ____ok_1 then
         error(____result_3, 0)

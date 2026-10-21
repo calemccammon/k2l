@@ -58,4 +58,4 @@ private fun wideNegative(remainder: Boolean, a: LuaExpr, r: LuaExpr, divisor: Lo
     LuaBinary(LuaBinOp.IDiv, LuaBinary(LuaBinOp.Add, a, LuaNumber("${divisor - 1}")), r)
 }
 
-private fun floor(x: LuaExpr): LuaExpr = luaCall(luaPath("math", "floor"), x)
+private fun floor(x: LuaExpr): LuaExpr = lua("math.floor", x)

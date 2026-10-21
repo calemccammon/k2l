@@ -4,9 +4,6 @@ import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 
-/** Lua feature implementing lazy sequences, iterators and the `sequence { }` builder, see `Sequence.lua`. */
-internal const val SEQUENCE_FEATURE = "Sequence"
-
 /** Lazy `kotlin.sequences`: sources, `Sequence` operations (methods of `__K2L_Sequence`) and iterators. */
 internal object SequenceMappings {
     /** Sequence operations implemented as methods of the same name. */
@@ -44,7 +41,7 @@ internal object SequenceMappings {
             "kotlin/sequences/Sequence" -> call("__K2L_SequenceFromIterator", arg(0))
             "kotlin/sequences/SequenceScope.yield" -> LuaMethodCall(self, "yield", args)
             "kotlin/sequences/SequenceScope.yieldAll" -> LuaMethodCall(self, "yieldAll", args)
-            in ASSEQUENCE_IDS -> if (receiverKind() == CollectionKind.Sequence) self else call("__K2L_AsSequence", self)
+            in ASSEQUENCE_IDS -> if (receiverKind == CollectionKind.Sequence) self else call("__K2L_AsSequence", self)
             else -> null
         }
     }
@@ -58,11 +55,9 @@ internal object SequenceMappings {
         }
     }
 
-    private fun CallSite.receiverKind(): CollectionKind? = receiverType?.let { with(session) { it.collectionKind() } }
-
     private fun byReceiver(site: CallSite): LuaExpr? {
         val name = site.name ?: return null
-        return when (site.receiverKind()) {
+        return when (site.receiverKind) {
             CollectionKind.Sequence -> sequenceMember(name, site)
 
             CollectionKind.Iterator -> if (name == "hasNext" || name == "next") LuaMethodCall(site.self, name, emptyList()) else null
@@ -77,13 +72,23 @@ internal object SequenceMappings {
     private fun sequenceMember(name: String, site: CallSite): LuaExpr? = with(site) {
         val elementType = with(session) { receiverType?.elementType }
         when (name) {
-            "sum" -> FloatMappings.sum(site) ?: LuaMethodCall(self, "sum", zeroFor(site, elementType))
-            "sumOf" -> LuaMethodCall(self, "sumOf", args + zeroFor(site, (argTypes.getOrNull(0) as? KaFunctionType)?.returnType))
+            "sum" -> FloatMappings.sum(site) ?: LuaMethodCall(self, "sum", CollectionMappings.zeroFor(site, elementType))
+
+            "sumOf" -> {
+                val selected = (argTypes.getOrNull(0) as? KaFunctionType)?.returnType
+                LuaMethodCall(self, "sumOf", args + CollectionMappings.zeroFor(site, selected))
+            }
+
             "plus", "minus" -> LuaMethodCall(self, if (isElements(site, elementType)) name + "All" else name, args)
+
             "plusElement", "minusElement" -> LuaMethodCall(self, name.removeSuffix("Element"), args)
+
             "sortedBy", "sortedByDescending" -> CollectionMappings.sortBySelector(name, site)
-            "shuffled" -> LuaMethodCall(self, "shuffled", listOf(args.firstOrNull() ?: libMember("Random", "__K2L_Random", "default")))
+
+            "shuffled" -> LuaMethodCall(self, "shuffled", listOf(args.firstOrNull() ?: defaultRandom()))
+
             "orEmpty" -> LuaBinary(LuaBinOp.Or, self, call("__K2L_SequenceOf"))
+
             else -> if (name in SEQUENCE_METHODS) LuaMethodCall(self, name, args) else null
         }
     }
@@ -92,18 +97,6 @@ internal object SequenceMappings {
     private fun isElements(site: CallSite, elementType: KaType?): Boolean = with(site.session) {
         val declared = site.parameterTypes.getOrNull(0)
         val kind = (declared ?: site.argTypes.getOrNull(0))?.collectionKind() ?: return false
-        val groups = setOf(
-            CollectionKind.List,
-            CollectionKind.Array,
-            CollectionKind.Set,
-            CollectionKind.Iterable,
-            CollectionKind.Range,
-            CollectionKind.Sequence,
-        )
-        kind in groups && (declared != null || elementType?.collectionKind() == null)
-    }
-
-    private fun zeroFor(site: CallSite, type: KaType?): List<LuaExpr> = with(site.session) {
-        if (type != null && (type.isDoubleType || type.isFloatType)) listOf(LuaNumber("0.0")) else emptyList()
+        kind in ELEMENT_GROUPS && (declared != null || elementType?.collectionKind() == null)
     }
 }

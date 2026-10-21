@@ -1,14 +1,13 @@
 package dev.k2l.bench
 
 import dev.k2l.CompilerOptions
-import dev.k2l.IntOverflow
 import dev.k2l.K2lCompiler
-import dev.k2l.Long64
 import dev.k2l.LuaOutput
 import dev.k2l.LuaTarget
-import dev.k2l.StringSemantics
+import dev.k2l.caseOptions
 import dev.k2l.frontend.SourceModule
 import dev.k2l.frontend.SourceSession
+import dev.k2l.luaVersionBanner
 import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
@@ -123,18 +122,7 @@ class BenchProgram(val name: String, val dir: File, val options: CompilerOptions
     companion object {
         fun discover(dir: File): List<BenchProgram> = dir.listFiles().orEmpty()
             .filter { File(it, "main.kt").isFile }.sortedBy { it.name }
-            .map { BenchProgram(it.name, it, options(it), File(it, "stdout.txt").takeIf(File::isFile)?.readText().orEmpty()) }
-
-        private fun options(dir: File): CompilerOptions {
-            val values = File(dir, "options.txt").takeIf { it.isFile }?.readLines().orEmpty().filter { '=' in it }
-                .associate { it.substringBefore('=').trim() to it.substringAfter('=').trim() }
-            require(values.keys.all { it in setOf("intOverflow", "strings", "long64") }) { "unknown option in ${dir.name}/options.txt" }
-            return CompilerOptions(
-                intOverflow = values["intOverflow"]?.let(IntOverflow::parse) ?: IntOverflow.Unchecked,
-                strings = values["strings"]?.let(StringSemantics::parse) ?: StringSemantics.Bytes,
-                long64 = values["long64"]?.let(Long64::parse) ?: Long64.AsDouble,
-            )
-        }
+            .map { BenchProgram(it.name, it, caseOptions(it), File(it, "stdout.txt").takeIf(File::isFile)?.readText().orEmpty()) }
     }
 }
 
@@ -154,16 +142,11 @@ class BenchTarget(val target: LuaTarget, val interpreter: String, val version: S
 
         fun discover(): List<BenchTarget> = candidates.mapNotNull { c ->
             (listOfNotNull(System.getProperty("k2l.${c.property}")) + c.names).firstNotNullOfOrNull { name ->
-                versionOf(name)?.takeIf {
+                luaVersionBanner(name)?.takeIf {
                     c.banner in it
                 }?.let { BenchTarget(c.target, name, it.substringBefore("  ").substringBefore(" --").trim()) }
             }
         }
-
-        private fun versionOf(interpreter: String): String? = runCatching {
-            val p = ProcessBuilder(interpreter, "-v").redirectErrorStream(true).start()
-            p.inputStream.readBytes().toString(Charsets.UTF_8).takeIf { p.waitFor() == 0 }
-        }.getOrNull()
     }
 }
 

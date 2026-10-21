@@ -45,7 +45,15 @@ subprojects {
     configure<dev.detekt.gradle.extensions.DetektExtension> {
         buildUponDefaultConfig.set(true)
         config.setFrom(rootProject.file("config/detekt.yml"))
-        source.setFrom("src/main/kotlin", "src/test/kotlin", "src/functionalTest/kotlin", "src/bench/kotlin", "src/oracle/kotlin", "src/coverage/kotlin")
+        source.setFrom(
+            "src/main/kotlin",
+            "src/test/kotlin",
+            "src/testShared/kotlin",
+            "src/functionalTest/kotlin",
+            "src/bench/kotlin",
+            "src/oracle/kotlin",
+            "src/coverage/kotlin",
+        )
     }
 }
 

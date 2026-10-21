@@ -48,6 +48,10 @@ tasks.named<JavaExec>("run") {
     workingDir = rootDir
 }
 
+// Reading options.txt and finding interpreters, shared by the tests and the benchmark harness (below).
+val testShared = "src/testShared/kotlin"
+kotlin.sourceSets.named("test") { kotlin.srcDir(testShared) }
+
 val testCases = layout.projectDirectory.dir("src/test/cases")
 val benchPrograms = layout.projectDirectory.dir("src/bench/programs")
 
@@ -60,7 +64,13 @@ tasks.test {
     systemProperty("k2l.benchDir", benchPrograms.asFile.absolutePath)
     systemProperty("k2l.updateGolden", providers.gradleProperty("updateGolden").isPresent)
     providers.gradleProperty("lua").orNull?.let { systemProperty("k2l.lua", it) }
+    // -Plua51=/path/to/lua5.1 (and lua52, lua53, lua54, luajit): the interpreter the run tests use for that target
+    for (name in listOf("lua51", "lua52", "lua53", "lua54", "luajit")) {
+        providers.gradleProperty(name).orNull?.let { systemProperty("k2l.$name", it) }
+    }
     providers.gradleProperty("only").orNull?.let { systemProperty("k2l.only", it) } // -Ponly=casts,objects_enums
+    // -Pk2l.snapshot=<dir>: SnapshotTest writes the output of every case on every target there (see "Development" in the README)
+    providers.gradleProperty("k2l.snapshot").orNull?.let { systemProperty("k2l.snapshot", rootProject.file(it).absolutePath) }
 }
 
 // ---- Kotlin/JVM oracle: the expected stdout of every test case comes from running it on the JVM ----
@@ -112,6 +122,7 @@ val bench: SourceSet = sourceSets.create("bench") {
     compileClasspath += sourceSets.main.get().output
     runtimeClasspath += sourceSets.main.get().output
 }
+kotlin.sourceSets.named("bench") { kotlin.srcDir(testShared) }
 configurations["benchImplementation"].extendsFrom(configurations.implementation.get())
 configurations["benchRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
 

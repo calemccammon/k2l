@@ -1,0 +1,12 @@
+alias 1
+topLevel 5 alias 5
+alias 7
+width 30 size 30 doubled 60
+settings 42 wrapper 42
+point 7 left 7
+observable 9 [topLevel: 0 -> 9]
+provided for topLevel
+NAME
+11
+8 8
+provided providedName

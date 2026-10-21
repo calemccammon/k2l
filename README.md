@@ -145,8 +145,9 @@ Each `.kt` file becomes a `.lua` file at the same relative path. The runtime sup
 ### Uncaught exceptions
 
 An exception that ends `main` prints the way the JVM prints it, the same on every target: on stderr,
-`Exception in thread "main"` and the exception's `toString()`, a `Caused by:` line for each cause, then the Lua traceback
-of the stack it was raised from. The program exits with status 1, after what it printed has been flushed:
+`Exception in thread "main"` and the exception's `toString()`, a `Caused by:` line for each cause, an indented
+`Suppressed:` line for each suppressed exception (under the exception it belongs to, with its own causes as `\tCaused by:`),
+then the Lua traceback of the stack it was raised from. The program exits with status 1, after what it printed has been flushed:
 
 ```
 Exception in thread "main" AppError: load failed
@@ -164,8 +165,9 @@ error that is not an exception (a string, as from `Lua.error` or a Lua runtime e
 traceback. This holds for `main()`, `main(args)` and `suspend fun main()`: `main` runs under `xpcall` (or in the
 coroutine driver of `try` blocks, see [Other semantic differences](#other-semantic-differences)), which costs nothing
 until something is thrown. Without it, Lua 5.1 would print `(error object is not a string)`, Lua 5.2 to 5.4 the
-`toString()` alone and LuaJIT the `toString()` and a traceback, each after the program's buffered output. Suppressed
-exceptions are not printed: k2l does not record them. The exit uses `os.exit(1)`, so a host embedding Lua that runs
+`toString()` alone and LuaJIT the `toString()` and a traceback, each after the program's buffered output.
+`addSuppressed`, `suppressedExceptions` and `use { }` record suppressed exceptions as Kotlin does (an exception of `close()`
+after the block failed is added to the block's exception; Kotlin's `addSuppressed` ignores the exception itself). The exit uses `os.exit(1)`, so a host embedding Lua that runs
 the main file stops as well.
 
 An overflow of the Lua stack (an endless recursion) prints `Exception in thread "main" java.lang.StackOverflowError`,
@@ -343,7 +345,8 @@ classes of the program, compares with `compareTo`). The range's operands are eva
 | extension functions and properties declared in a class | methods taking the extension receiver as their first argument: `function Builder:unaryPlus(____this)`, `builder:unaryPlus("x")`; `this` is `____this` and `this@Builder` is `self`. Properties are `builder:getTag(s)` / `builder:setTag(s, v)` (same-named ones, `val String.x` and `val Int.x`, are `getX` and `getX__1`); operators such as `+"x"` work, also inside `with(builder) { }` |
 | `super.toString()`, `super.equals(o)`, `super.hashCode()` | `__K2L_AnyToString(self)` (`Name@hex`, as on the JVM), `self == o` (identity), `__K2L_IdentityHash(self)` (the hash `Map`/`Set` give objects without `hashCode()`); on exceptions `super.toString()` is `Throwable.toString` and `super.message`/`super.cause` are fields |
 | delegated properties (`by`) | `provideDelegate` is called once when the delegate is stored, `getValue`/`setValue` may be extensions, open and overriding ones are accessor families with a delegate slot per class; the delegate lives in `self.____x_delegate` (a local `____x_delegate` outside classes); reads and writes call its `getValue`/`setValue` |
-| `by lazy { }`, `Delegates.observable`/`vetoable`/`notNull`, `ReadOnlyProperty { }`, `by map`, your own `getValue`/`setValue` | lualib objects with the same methods; `by map` reads `map:getValue("x")` |
+| `by lazy { }`, `Delegates.observable`/`vetoable`/`notNull`, `ReadOnlyProperty { }`, `PropertyDelegateProvider { }`, `by map`, your own `getValue`/`setValue` | lualib objects with the same methods; `by map` reads `map:getValue("x")` |
+| `by ::other`, `by obj::other`, `by Owner::other` | reads and writes go through the property reference's `get`/`set` |
 | default and named arguments | `if x == nil then x = default end` in the callee; callers pass `nil` for omitted ones. An override applies the defaults it inherits (`override fun render(indent: String)` of `fun render(indent: String = "")`), with the overridden function's parameter names mapped to its own |
 | overloads | `describe`, `describe__1`, ... (overrides keep their parent's name); a method named like a property of its class, a superclass or a subclass (`private val items` and `fun items()`) is `items__1`, as Lua tables hold fields and methods in one namespace |
 | `vararg`, `*spread` | Lua varargs packed into an array (also for constructors); `table.unpack`. A spread that is not last (`listOf(*xs, y)`, `f(*a, *b)`) makes the rest of the arguments one `__K2L_Spread("s.", xs, y)`, which returns all the elements. A `vararg` parameter that is not the last one still comes last in Lua (`fun row(vararg cells: String, width: Int = 5)` is `function row(width, ...)`, called `row(3, "a", "b")`). A reference to a function with a `vararg` used as a function taking the `Array` (`val f: (IntArray) -> Int = ::sum`) unpacks it: `function(____p1) return sum(__K2L_Unpack(____p1)) end` |
@@ -912,7 +915,9 @@ package, every public function and property and whether k2l translates it; `./gr
 - `kotlin.collections`: the usual `List`/`Set`/`Map`/`Array` operations (sorting with comparators, grouping,
   `windowed`/`chunked`/`zipWithNext`, folds and running folds, slicing, set operations, `buildList` ...),
   iterator `remove()`, `HashMap`/`HashSet` with the JVM's iteration order, `TreeMap`/`TreeSet`, `ArrayDeque`,
-  `PriorityQueue`, `java.util.EnumMap` and `EnumSet` (`noneOf`, `allOf`, `of`, `copyOf`, `range`, `complementOf`; a `TreeMap`
+  `PriorityQueue`, `isSorted`/`isSortedDescending`/`isSortedBy`/`isSortedByDescending`/`isSortedWith` (also of arrays and
+  sequences), Grouping's `eachCountTo`/`foldTo`/`reduceTo`/`aggregateTo`/`keyOf`/`sourceIterator`, `Map.onEachIndexed`/`mapTo`/
+  `filterNotTo`, `Iterator.withIndex`, `IndexedValue`, `Sequence.unzip`, `java.util.EnumMap` and `EnumSet` (`noneOf`, `allOf`, `of`, `copyOf`, `range`, `complementOf`; a `TreeMap`
   and `TreeSet` in ordinal order with the JDK's classes and messages), `filterIsInstance<T>()`/`filterIsInstanceTo`, `maxOfWith`/`minOfWith`(`OrNull`). Sorting with a comparator or `compareTo` (`sortedWith`, `sortBy`, `sorted()` of
   objects, `Collections.sort`, `Arrays.sort(array, comparator)`, ...) is a port of the JDK's TimSort, so comparators,
   `compareTo` and the selectors of `sortedBy`/`compareBy` run as often and in the same order as on the JVM (a comparator that
@@ -939,14 +944,32 @@ package, every public function and property and whether k2l translates it; `./gr
   (`foldRight`, `runningFold`/`scan`, `mapIndexedNotNull`, `associateByTo`, `toHashSet`, ...), `Char.isISOControl`,
   `toHexString()`/`hexToInt()`/`hexToLong()`/`hexToByteArray()`... with the default `HexFormat`, `Charsets.UTF_8` with
   `toByteArray(charset)`, `String(bytes)`/`decodeToString()`, the `StringBuilder` extensions `deleteAt`/`deleteRange`/`setRange`,
-  and `startsWith`/`endsWith`/`contains` with an `ignoreCase` that is a variable.
+  and `startsWith`/`endsWith`/`contains` with an `ignoreCase` that is a variable. `HexFormat` with its builders
+  (`HexFormat { upperCase = true; bytes { bytesPerLine = 16; byteSeparator = " " }; number { prefix = "0x" } }`,
+  `HexFormat.Default`/`UpperCase`) for formatting and parsing numbers and byte arrays (`toHexString(format)`,
+  `toHexString(start, end, format)`, `hexToInt(format)`, `hexToByteArray(format)`), also of the unsigned types
+  (`UInt.toHexString()`, `hexToUInt()`, ...). `findAnyOf`/`findLastAnyOf`/`lastIndexOfAny`, `filterTo`, `onEachIndexed`, the
+  right-to-left reductions and `replaceIndent`/`replaceIndentByMargin` of a string, `Appendable.append`/`appendLine`/
+  `appendRange` (a StringBuilder passed as an `Appendable`), `hasSurrogatePairAt`. `Char.category` with `CharCategory` (`code`,
+  `value`, `contains`, `entries`), `Char.directionality` with `CharDirectionality`, `isDefined`, `isTitleCase`,
+  `isJavaIdentifierStart`/`isJavaIdentifierPart`/`isIdentifierIgnorable`: without `--strings utf16` an ASCII character has its
+  Unicode category and directionality, a byte from 0x80 on is `UNASSIGNED`/`UNDEFINED`, and no byte is a surrogate or title
+  case; with it, the categories come from `UnicodeCategories.lua` and the directionalities from `UnicodeDirectionality.lua`
+  (about 6 KB, generated from the JDK), loaded only when used.
 - `kotlin.time`: `Duration` (`5.seconds`, `1.5.hours`, `toDuration(unit)`, `ZERO`/`INFINITE`, arithmetic and comparison,
   `inWhole...`, `toLong`/`toInt`/`toDouble(unit)`, `toComponents`, `toString()` and `toString(unit, decimals)` exactly as the JVM
   formats them, `toIsoString`, `parse`/`parseIsoString` and their `OrNull` forms), `DurationUnit`, `measureTime`/
   `measureTimedValue` with `TimedValue`, and the time marks of `TimeSource.Monotonic` and `TestTimeSource` (`markNow`,
   `elapsedNow`, `hasPassedNow`, `+`/`-`, comparison). A `Duration` keeps its nanoseconds: exact within ±104 days without Lua
   integers, ±146 years with them. `TimeSource.Monotonic` reads `os.clock()`, the processor time, as plain Lua has no monotonic
-  wall clock. Not translated with `--long64 emulate`; `Instant` and `Clock` are not supported.
+  wall clock. `Instant` (`fromEpochSeconds`/`fromEpochMilliseconds`, `epochSeconds`, `nanosecondsOfSecond`,
+  `toEpochMilliseconds`, `+`/`-` with a `Duration`, the `Duration` between two instants, comparison, `hashCode`,
+  `DISTANT_PAST`/`DISTANT_FUTURE`, `isDistantPast`/`isDistantFuture`, `toString()` and `parse`/`parseOrNull` in ISO-8601 exactly as
+  the JVM, offsets and error messages included), `Clock.System.now()` (with the precision of `os.time()`: whole seconds), a
+  `Clock` of the program, and `TimeSource.asClock(origin)`. An `Instant` is clamped to the JVM's range and is exact where a
+  `Long` is (everywhere on 5.3/5.4, within 2^53 seconds elsewhere); the `Duration` between instants more than about 285
+  years apart is a floating-point number of nanoseconds. Not translated with `--long64 emulate`; `java.time` conversions
+  (`toJavaInstant`, `toJavaDuration`) are not supported.
 - `kotlin.math`, `Int`/`Long`/`Double` operations (`coerceIn`, `mod`, `floorDiv`, bit counting,
   `roundToInt` ...), ranges and progressions, `Pair`/`Triple`, `require`/`check`/`error`, `Result`. `hypot`, `atan`, `atan2`,
   `asin`, `acos`, `cbrt`, `sinh`, `cosh`, `tanh`, `expm1`, `ln1p` and `IEEErem` are ports of fdlibm, the `StrictMath` code the
@@ -991,7 +1014,8 @@ package, every public function and property and whether k2l translates it; `./gr
   the unbounded forms Java accepts (`(?<=a+)`, `(?<=x.*)`) look back to the start of the input, as in Java.
 
 - Numbers: `Float` (single precision), `UByte`/`UShort`/`UInt`/`ULong` with literals, arithmetic, comparison, shifts, bit
-  operations, conversions, ranges and `UIntArray`s, `Math.addExact`/`subtractExact`/`multiplyExact`/`negateExact`/
+  operations, conversions, ranges and `UIntArray`s, `floorDiv`/`mod`, `UIntRange`/`UIntProgression` values of `UInt`, `UShort` and
+  `UByte` (not `ULongRange` values), `Math.addExact`/`subtractExact`/`multiplyExact`/`negateExact`/
   `incrementExact`/`decrementExact`/`toIntExact`/`absExact`, `rotateLeft`/`rotateRight` (also of `Byte`, `Short`, `UByte`, `UShort`; `ULong.toString(radix)`), `takeHighestOneBit`/`takeLowestOneBit`,
   `Long` bit counts, `withSign`, `ulp`, `nextUp`/`nextDown`/`nextTowards`, `toBits`/`toRawBits`/`fromBits`,
   `Random.nextLong(bound)`, `nextLong(from, until)`, `nextUInt` and `nextULong` (seeded sequences match the JVM on 5.3+, and with `--long64 emulate` everywhere).
@@ -1009,9 +1033,26 @@ package, every public function and property and whether k2l translates it; `./gr
   Arrays have `contentHashCode`, `contentDeepHashCode` and `contentDeepEquals`.
   `java.util.Stack` (a list with `push`/`pop`/`peek`/`empty`/`search`; an empty stack throws `EmptyStackException`),
   `StringJoiner` (`add`, `setEmptyValue`, `merge`, `length`, in UTF-16 units with `--strings utf16`) and
-  `Objects.requireNonNull` (with a message or a supplier), `requireNonNullElse`, `isNull`/`nonNull`, `toString(o, default)`,
-  `checkIndex` and `compare`. `Comparator.comparingInt`/`comparingLong`/`comparingDouble`, `thenComparingInt`/`Long`/`Double`
+  `Objects.requireNonNull` (with a message or a supplier), `requireNonNullElse`/`requireNonNullElseGet`, `isNull`/`nonNull`,
+  `toString(o, default)`, `checkIndex`/`checkFromToIndex`/`checkFromIndexSize`, `compare` and `deepEquals`.
+  `Comparator.comparingInt`/`comparingLong`/`comparingDouble`, `thenComparingInt`/`Long`/`Double`
   and `Comparator.nullsFirst`/`nullsLast`.
+  More of `Collections`: `unmodifiableSortedSet`/`NavigableSet`/`SequencedSet`/`SortedMap`/`NavigableMap`/`SequencedMap`/
+  `SequencedCollection` (views as below, which also refuse `pollFirst` and the like; the sub-sets and sub-maps they return are
+  the underlying collection's), `emptySortedSet`/`NavigableSet`/`SortedMap`/`NavigableMap`, `emptyIterator`/`emptyListIterator`,
+  `indexOfSubList`/`lastIndexOfSubList`, `newSetFromMap`/`newSequencedSetFromMap` (a set ordered as the map would be), and the
+  `synchronized*` and `checked*` wrappers, which return their argument (no element type checks). `Arrays.compare`/
+  `compareUnsigned`/`mismatch` (also over ranges and with a comparator), `parallelSort`/`parallelSetAll`/`parallelPrefix`
+  (sequential). `clone()` of `ArrayList`, `LinkedList`, `ArrayDeque`, `HashMap`, `LinkedHashMap`, `TreeMap`, `HashSet`,
+  `LinkedHashSet`, `TreeSet`, `EnumSet` and `EnumMap` (with the comparator), `comparator()`, `removeFirstOccurrence`/
+  `removeLastOccurrence`, `toArray()`/`toArray(array)`, `ensureCapacity`/`trimToSize` (no-ops), `Map.replace(key, value)` and
+  `replace(key, old, new)`, `HashMap.newHashMap(n)` and the like, `LinkedHashMap.putLast` and `sequencedKeySet`/`Values`/
+  `EntrySet`. `Optional.or`, `stream()` and `hashCode()` (also of `OptionalInt`/`Long`/`Double`). `StringBuilder.repeat`.
+- `java.util.BitSet`: all of it but the `LongBuffer`/`ByteBuffer` overloads of `valueOf` (`BitSet.lua`). The bits are 32-bit
+  words, read and written with arithmetic on every target; `size()` grows, doubles and is trimmed by `clone()` as the JDK's
+  `long[]` does, `hashCode()`, `toString()`, `equals`, the messages of the `IndexOutOfBoundsException`s and `toLongArray`/
+  `valueOf(longs)`/`toByteArray`/`valueOf(bytes)` match the JVM (words with bit 63 set are exact on 5.3+ and with
+  `--long64 emulate`), `bits[i]`, `bits[i] = v` and `bits[from, to] = v` are `get`/`set`, and `stream()` is an `IntStream`.
   Collections and boxed arrays convert to every primitive array (`toCharArray()`, `toIntArray()`, `toLongArray()`,
   `toDoubleArray()`, `toFloatArray()`, `toBooleanArray()`, `toByteArray()`, `toShortArray()`), and back with `toList()`,
   `toTypedArray()`, `asList()`, ...
@@ -1020,9 +1061,27 @@ package, every public function and property and whether k2l translates it; `./gr
   `toOctalString`, `Double.isNaN`/`isInfinite`/`valueOf`/`toString`, `Boolean.parseBoolean`, `Character.getNumericValue` (ASCII
   digits and letters), `String.valueOf` and `String.join`, `Boolean.compare`/`logicalAnd`/`logicalOr`/`logicalXor`/`valueOf`,
   `Character.digit`/`forDigit`, `Double.max`/`min`/`sum`, and the static `hashCode(x)` of each box.
+  Also `Integer.compareUnsigned`/`divideUnsigned`/`remainderUnsigned`/`toUnsignedLong`/`parseUnsignedInt`, `Long.compareUnsigned`/
+  `divideUnsigned`/`remainderUnsigned`/`toUnsignedString`/`parseUnsignedLong` (with the JDK's messages), `decode`, `reverseBytes`,
+  `compress`/`expand`, `Long.reverse`, `sum`, `getInteger`/`getLong`/`Boolean.getBoolean` (Lua has no system properties: the
+  default), `Double.toHexString`, `Character.compare`, and with `--strings utf16` `Character.highSurrogate`/`lowSurrogate`/
+  `isSurrogatePair`/`reverseBytes`/`codePointAt`/`codePointBefore`/`codePointCount`/`offsetByCodePoints` of a `CharSequence`.
+  `Math.ceilDiv`/`ceilMod`/`divideExact`/`floorDivExact`/`ceilDivExact` (Int and Long), `clamp` (the JDK's NaN and `-0.0`
+  rules and messages), `fma` (the product's and the sum's rounding errors added back: exact except near overflow or underflow),
+  `scalb` (rounded as the JDK does it), `getExponent`, `multiplyFull`, `multiplyHigh` and `unsignedMultiplyHigh` (on 16-bit limbs,
+  exact wherever a `Long` is).
 - `kotlin`: also `Boolean.and`/`or` (both operands evaluated), `lazyOf`, `enumValues<E>()`/`enumValueOf<E>(name)` (of the
   program's enums, also with a reified `E`), `setOfNotNull` and `reduceRightOrNull`/`reduceRightIndexed(OrNull)` of lists and
-  arrays.
+  arrays. `DeepRecursiveFunction` with `callRecursive` (also of another function, for mutual recursion) and `invoke`: the
+  block runs directly up to 100 levels deep in one coroutine, and every further 100 levels in a coroutine of their own,
+  resumed by a trampoline, so the recursion is bounded by memory (100000 levels deep run on every target) and exceptions
+  and `try`/`catch` work through it; a `callRecursive` across a C function (a `table.sort` comparator, a `gsub` callback, or a
+  `pcall` of Lua code on 5.1) fails with Lua's "attempt to yield". `KotlinVersion` (`CURRENT` is the Kotlin version k2l is
+  built with, 2.4.21), `Any()` (an object with only identity, printing as `java.lang.Object@...`), `String()`,
+  `AutoCloseable { }`, `assert` (disabled, as on the JVM by default: the condition is evaluated, the message is not),
+  `KotlinNullPointerException`, `NoWhenBranchMatchedException` and `TypeCastException`, the entries of
+  `LazyThreadSafetyMode` and `DeprecationLevel`, `Double`/`Float` `inc`/`dec`, the arrays' `clone()`, ranges of `Byte`,
+  `Short`, `Char` and `Long` with `..<`, and the primitive iterators' `nextInt()`, `nextChar()`, `nextBoolean()`, ...
 - `Number`: `is Number` (Lua numbers, emulated Longs, `BigInteger`, `BigDecimal`) and `toInt()`/`toLong()`/`toDouble()`/... of a
   `Number`-typed value; an integral number converts like a `Long`, a fractional one like a `Double`.
 
@@ -1110,6 +1169,7 @@ property). A `Double` read from an unchecked `Int` stays an integral number.
 ./gradlew test -PupdateGolden      # rewrite expected.lua files after an intended output change
 ./gradlew test -Ponly=casts,lazy_objects   # only these cases (also for kotlinOracle)
 ./gradlew :compiler:kotlinOracle   # check each stdout.txt against what Kotlin/JVM prints
+./gradlew :compiler:test --tests dev.k2l.SnapshotTest -Pk2l.snapshot=.scratch/before   # see below
 ./gradlew check                    # tests + Gradle plugin functional tests + ktlint (spotlessCheck) + detekt, as CI runs it
 ./gradlew :gradle-plugin:functionalTest   # only the TestKit tests of the Gradle plugin (about 15 s)
 ./gradlew spotlessApply            # reformat Kotlin sources with ktlint
@@ -1127,17 +1187,22 @@ Kotlin code is formatted with ktlint (settings in `build.gradle.kts`) and analyz
 Each directory in `compiler/src/test/cases` is a program: `main.kt` (plus any other `.kt` files),
 `expected.lua` (the exact Lua output for 5.4), and `stdout.txt`. The tests also run each program on
 Lua 5.1, 5.2, 5.3 and LuaJIT when those interpreters are installed (`lua5.1`, `lua5.2`, `lua5.3`,
-`luajit`; override with `-Dk2l.lua51=...` etc.). Expected output isn't written by hand: the
+`luajit`; override with `-Plua51=/path/to/lua` and likewise `-Plua52`, `-Plua53`, `-Plua54`, `-Pluajit`). Expected output isn't written by hand: the
 `kotlinOracle` task compiles and runs each case with the real Kotlin compiler (`-PupdateOracle`
 rewrites the files). A case with `errors.txt` instead checks the diagnostics; `targets-skip.txt`
 lists documented differences on specific targets (`5.4:` skips the run of the golden Lua); `jvm-skip` marks cases that call hand-written Lua; `options.txt` sets compiler options for a case, one
 `name=value` per line (`intOverflow=wrap`, `luaLibImport=inline`, `strings=utf16`, `long64=emulate`).
 
+A change that must not alter the generated Lua (a refactoring) is checked with snapshots: `-Pk2l.snapshot=<dir>`
+makes `SnapshotTest` write everything the compiler generates for every case and benchmark program, `lualib_bundle.lua`
+included, on every target, with `long64=emulate`, the inlined runtime and source maps, into `<dir>`. Take one
+before the change and one after, and `diff -r` them. Without the property the test does nothing.
+
 Layout:
 
 - `compiler/src/main/kotlin/dev/k2l/frontend`: the standalone Analysis API session.
-- `.../transform`: Kotlin PSI and types to a Lua syntax tree (`FileTransformer`, plus the
-  stdlib and collection mappings).
+- `.../transform`: Kotlin PSI and types to a Lua syntax tree (`FileTransformer` and one file of extensions per language
+  area, plus the stdlib and collection mappings, tried in the order `StdlibMappings.AREAS` lists).
 - `.../codegen`: the Lua syntax tree, its printer and the lualib loader.
 - `compiler/src/main/resources/dev/k2l/lualib`: the runtime, as plain Lua; `Name.float.lua` and
   similar files are target-specific variants.

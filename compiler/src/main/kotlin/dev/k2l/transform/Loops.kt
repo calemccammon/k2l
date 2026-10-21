@@ -50,12 +50,12 @@ internal fun FileTransformer.loop(e: KtLoopExpression, label: String?): Unit = w
 }
 
 internal fun FileTransformer.loopBody(frame: LoopFrame, body: KtExpression?): List<LuaStmt> = with(session) {
-    frame.owner = frames.lastOrNull()
-    loops.addLast(frame)
+    frame.owner = jumps.frames.lastOrNull()
+    jumps.loops.addLast(frame)
     val collected = try {
         collect { body?.let { block(it) } }
     } finally {
-        loops.removeLast()
+        jumps.loops.removeLast()
     }
     val stmts = ownExits(frame, collected)
     val cont = frame.continueLabel ?: return stmts
@@ -68,7 +68,7 @@ internal fun FileTransformer.loopBody(frame: LoopFrame, body: KtExpression?): Li
         when (s) {
             is LuaGoto -> if (s.label == cont && depth == 0) {
                 listOf(LuaBreak)
-            } else if (s.label in jumpLabels && s.label != cont) {
+            } else if (s.label in jumps.jumpLabels && s.label != cont) {
                 listOf(s) // an enclosing loop's or inlined body's, lowered there
             } else {
                 ctx.error(body ?: file, "continue to an outer loop needs goto, which Lua 5.1 lacks")
@@ -315,7 +315,7 @@ private fun FileTransformer.sequenceLoop(
 internal fun FileTransformer.generator(kind: CollectionKind, source: LuaExpr): LuaExpr = if (kind == CollectionKind.Sequence) {
     LuaMethodCall(source, "iter", emptyList())
 } else {
-    LuaCall(LuaIndex(lualibRef(SEQUENCE_FEATURE, "__K2L_Iterator"), LuaString("iter")), listOf(source))
+    libCall(SEQUENCE_FEATURE, "__K2L_Iterator", "iter", listOf(source))
 }
 
 /** `local a, b = <component1>, <component2>`; `_` entries are skipped. */

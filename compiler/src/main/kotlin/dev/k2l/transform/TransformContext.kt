@@ -5,6 +5,7 @@ import dev.k2l.CompilerOptions
 import dev.k2l.Diagnostic
 import dev.k2l.Origin
 import dev.k2l.Severity
+import dev.k2l.codegen.LuaExpr
 import dev.k2l.codegen.LuaPrinter
 import dev.k2l.codegen.LuaStmt
 import java.util.IdentityHashMap
@@ -24,10 +25,10 @@ class TransformContext(val options: CompilerOptions) {
     val imports = LinkedHashMap<String, String>()
 
     /** Expressions wrapped to 32 bits by `--int-overflow wrap`, by identity, mapped to what they wrap (see IntOverflow.kt). */
-    val int32Pending = java.util.IdentityHashMap<dev.k2l.codegen.LuaExpr, dev.k2l.codegen.LuaExpr>()
+    val int32Pending = IdentityHashMap<LuaExpr, LuaExpr>()
 
     /** Integer products made `x * y + 0` on float targets (never -0), by identity, mapped to the product (see IntOverflow.kt). */
-    val zeroPending = java.util.IdentityHashMap<dev.k2l.codegen.LuaExpr, dev.k2l.codegen.LuaExpr>()
+    val zeroPending = IdentityHashMap<LuaExpr, LuaExpr>()
     private val generated = mutableMapOf<String, Int>()
 
     /** Kotlin position of the statements the transformer emitted; only filled with [CompilerOptions.sourceMap]. */
@@ -83,6 +84,3 @@ object LuaNames {
         return if (safe in LuaPrinter.KEYWORDS || safe in RESERVED_GLOBALS) "____$safe" else safe
     }
 }
-
-/** Lualib feature with the source-map runtime: Lua positions in tracebacks rewritten to Kotlin ones. */
-internal const val SOURCE_MAP_FEATURE = "SourceMap"

@@ -76,13 +76,8 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val ctx = TransformContext(options)
         val chunk = FileTransformer(this, file, ctx, moduleContext).transformFile()
         // A file of only external declarations (Lua bindings) produces no Lua.
-        val output = if (emit &&
-            chunk.body.isNotEmpty()
-        ) {
-            render(chunk, ctx, outputPath(module, file), Paths.get(file.virtualFile.path))
-        } else {
-            null
-        }
+        val produces = emit && chunk.body.isNotEmpty()
+        val output = if (produces) render(chunk, ctx, outputPath(module, file), Paths.get(file.virtualFile.path)) else null
         FileResult(ctx.diagnostics.toList(), output, ctx.lualib.toSet())
     }
 
@@ -95,11 +90,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         // The runtime table is one line, so the code starts after the lines of the header plus that line.
         val top = when (options.luaLibImport) {
             LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget, options.emulatesLong64)
-
-            LuaLibImport.Require -> buildString {
-                append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")
-                ctx.lualibNames.forEach { append("local $it = ____lualib.$it\n") }
-            }
+            LuaLibImport.Require -> requireHeader(ctx)
         }
         val offset = top.count { it == '\n' } + REGISTER_LINES + 1
         val map = SourceMap(luaPath, sourcePath, mappings.map { it.copy(luaLine = it.luaLine + offset) })
@@ -110,7 +101,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
 
     /** Lambdas without captures are created once ([LambdaHoisting]); Lua 5.1 and LuaJIT limit upvalues ([UpvalueLimit]). */
     private fun printer(chunk: LuaChunk, ctx: TransformContext, origins: Map<LuaStmt, Origin>?): LuaPrinter {
-        val limited = options.luaTarget == LuaTarget.Lua51 || options.luaTarget == LuaTarget.LuaJIT
+        val limited = options.luaTarget.limitsUpvalues
         val hoisting = LambdaHoisting.plan(chunk, ctx.lualibNames, limited)
         val prologues = if (limited) UpvalueLimit.prologues(chunk, ctx.lualibNames, hoisting.upvalues) else emptyMap()
         return LuaPrinter(origins = origins, prologues = prologues, hoisting = hoisting)
@@ -121,13 +112,14 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         if (ctx.lualib.isEmpty()) return code
         return when (options.luaLibImport) {
             LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget, options.emulatesLong64) + "\n" + code
-
-            LuaLibImport.Require -> buildString {
-                append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")
-                ctx.lualibNames.forEach { append("local $it = ____lualib.$it\n") }
-                append("\n").append(code)
-            }
+            LuaLibImport.Require -> requireHeader(ctx) + "\n" + code
         }
+    }
+
+    /** `local ____lualib = require("lualib_bundle")`, then a local for each runtime name the file refers to. */
+    private fun requireHeader(ctx: TransformContext): String = buildString {
+        append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")
+        ctx.lualibNames.forEach { append("local $it = ____lualib.$it\n") }
     }
 
     /** Which files reference which: needed to break import cycles and to find entry points. */

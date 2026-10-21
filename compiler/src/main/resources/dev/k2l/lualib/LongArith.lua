@@ -18,3 +18,13 @@ end
 -- Long.MAX_VALUE and Long.MIN_VALUE (doubles without integers: 2^63, rounded)
 __K2L_LongArith.MAX = math.maxinteger or 2 ^ 63
 __K2L_LongArith.MIN = math.mininteger or -2 ^ 63
+
+-- the Long with the signed high and the unsigned low 32 bits given, and back (BitSet's words)
+function __K2L_LongArith.fromHalves(hi, lo)
+    return hi * 4294967296 + lo
+end
+
+function __K2L_LongArith.halves(x)
+    local lo = x % 4294967296
+    return math.floor((x - lo) / 4294967296), lo
+end

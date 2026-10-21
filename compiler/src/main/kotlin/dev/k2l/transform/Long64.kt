@@ -17,8 +17,6 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
  */
 internal val FileTransformer.emulatesLong: Boolean get() = ctx.options.emulatesLong64
 
-internal const val LONG64_FEATURE = "Long64"
-internal const val LONG64_EXT = "Long64Ext"
 private const val SAFE_LIMIT = 9007199254740992L
 private const val TWO_32 = 4294967296L
 private const val MAX_HOISTED = 40
@@ -42,17 +40,15 @@ internal fun FileTransformer.l64(op: String, vararg args: LuaExpr): LuaExpr =
     LuaCall(lualibRef(LONG64_FEATURE, "__K2L_L$op"), args.toList())
 
 /** `__K2L_Long64.member(...)`, the table of the less common core operations. */
-internal fun FileTransformer.l64Member(member: String, vararg args: LuaExpr): LuaExpr =
-    LuaCall(LuaIndex(lualibRef(LONG64_FEATURE, "__K2L_Long64"), LuaString(member)), args.toList())
+internal fun FileTransformer.l64Member(member: String, vararg args: LuaExpr): LuaExpr = libCall(LONG64_TABLE, member, args.toList())
 
 /** `__K2L_Long64X.member(...)`: parsing, bit counts, exact arithmetic and the like (`Long64Ext.l64.lua`). */
-internal fun FileTransformer.l64x(member: String, vararg args: LuaExpr): LuaExpr =
-    LuaCall(LuaIndex(lualibRef(LONG64_EXT, "__K2L_Long64X"), LuaString(member)), args.toList())
+internal fun FileTransformer.l64x(member: String, vararg args: LuaExpr): LuaExpr = libCall(LONG64_EXT_TABLE, member, args.toList())
 
 /** The `Long` constant [value] (or the bit pattern of a `ULong`) as an expression. */
 internal fun FileTransformer.long64Literal(value: Long): LuaExpr {
     if (value > -SAFE_LIMIT && value < SAFE_LIMIT) return LuaNumber(value.toString())
-    if (target == LuaTarget.LuaJIT) return LuaNumber(if (value == Long.MIN_VALUE) "-9223372036854775808LL" else "${value}LL")
+    if (target.hasInt64Literals) return LuaNumber(if (value == Long.MIN_VALUE) "-9223372036854775808LL" else "${value}LL")
     val hi = Math.floorDiv(value, TWO_32)
     val lo = value - hi * TWO_32
     // A box is a table, so a constant used in a loop is created once, in a local at the top of the file.
@@ -78,7 +74,7 @@ internal fun FileTransformer.long64Widen(l: LuaExpr, lt: KaType?, r: LuaExpr, rt
 }
 
 internal fun FileTransformer.toDouble(value: LuaExpr, type: KaType?): LuaExpr = if (with(session) { isULongType(type) }) {
-    LuaCall(LuaIndex(lualibRef("Unsigned", "__K2L_Unsigned"), LuaString("toDouble")), listOf(value))
+    libCall(UNSIGNED_TABLE, "toDouble", listOf(value))
 } else {
     l64("Double", value)
 }
@@ -127,7 +123,7 @@ internal fun FileTransformer.long64Comparison(op: LuaBinOp, l: LuaExpr, lt: KaTy
     return when {
         with(session) { isFloating(lt) || isFloating(rt) } -> long64Widen(l, lt, r, rt).let { (a, b) -> LuaBinary(op, a, b) }
         with(session) { isULongType(lt) || isULongType(rt) } -> LuaBinary(op, l64Member("ucmp", l, r), zero)
-        target == LuaTarget.Lua51 -> lua51Comparison(op, l, r)
+        !target.comparesMixedTypes -> lua51Comparison(op, l, r)
         else -> LuaBinary(op, l, r)
     }
 }

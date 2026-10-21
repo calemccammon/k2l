@@ -27,7 +27,7 @@ internal object NumberMappings {
         system(t)
     }
 
-    private fun CallSite.n(member: String, vararg args: LuaExpr) = libMember("Numbers", "__K2L_Num", member, *args)
+    private fun CallSite.n(member: String, vararg args: LuaExpr) = libMember(NUM_TABLE, member, *args)
 
     /** The JVM's StrictMath algorithms (see FdLibm.lua), where C's libm rounds differently. */
     private fun CallSite.fd(member: String, vararg args: LuaExpr) = libMember("FdLibm", "__K2L_FdLibm", member, *args)
@@ -88,7 +88,7 @@ internal object NumberMappings {
         return when {
             numeric && argTypes.any { isFloating(it) } -> args.reduce { acc, x -> n(fn + "D", acc, x) }
             numeric -> lua("math.$fn", *args.toTypedArray())
-            args.size == 2 -> libMember("Numbers", "__K2L_Num", fn + "Of", arg(0), arg(1))
+            args.size == 2 -> libMember(NUM_TABLE, fn + "Of", arg(0), arg(1))
             else -> null
         }
     }
@@ -137,16 +137,16 @@ internal object NumberMappings {
         else -> false
     }
 
-    private fun CallSite.isNumber(type: KaType?) =
+    private fun CallSite.isPrimitiveNumber(type: KaType?) =
         type != null && with(session) { type.isPrimitive && !type.isCharType && !type.isBooleanType }
 
     private fun coercions(t: MappingTable) {
         // math.max/min for numbers; Comparable objects go through compareTo
         t.def("kotlin/ranges/coerceAtLeast") {
-            if (isNumber(receiverType)) lua("math.max", self, arg(0)) else n("coerceAtLeast", self, arg(0))
+            if (isPrimitiveNumber(receiverType)) lua("math.max", self, arg(0)) else n("coerceAtLeast", self, arg(0))
         }
         t.def("kotlin/ranges/coerceAtMost") {
-            if (isNumber(receiverType)) lua("math.min", self, arg(0)) else n("coerceAtMost", self, arg(0))
+            if (isPrimitiveNumber(receiverType)) lua("math.min", self, arg(0)) else n("coerceAtMost", self, arg(0))
         }
         t.def("kotlin/ranges/coerceIn") {
             if (args.size == 2) n("coerceIn", self, arg(0), arg(1)) else n("coerceInRange", self, arg(0))
@@ -165,16 +165,8 @@ internal object NumberMappings {
         t.def("kotlin/Boolean.hashCode", "kotlin/String.hashCode") { lualib("Hash", self) }
         for (type in INTEGRAL) {
             t.def("kotlin/$type.div") {
-                if (isFloating(
-                        argTypes[0],
-                    )
-                ) {
-                    transformer.floatDivision(
-                        self,
-                        receiverType,
-                        arg(0),
-                        argTypes[0],
-                    )
+                if (isFloating(argTypes[0])) {
+                    transformer.floatDivision(self, receiverType, arg(0), argTypes[0])
                 } else {
                     transformer.integerDivision(self, receiverType, arg(0), argTypes[0])
                 }
@@ -195,15 +187,12 @@ internal object NumberMappings {
             if (isFloating(receiverType)) LuaBinary(LuaBinOp.Mod, self, arg(0)) else n("mod", self, arg(0))
         }
         t.def("kotlin/floorDiv") { lualib("FloorDiv", self, arg(0)) }
-        t.def("kotlin/countOneBits") { n("countOneBits", self) }
-        t.def("kotlin/countTrailingZeroBits") { n("countTrailingZeroBits", self) }
-        t.def("kotlin/countLeadingZeroBits") { n("countLeadingZeroBits", self) }
         t.def("kotlin/text/toString") {
             when {
                 args.size != 1 -> null
 
                 with(session) { unsignedOf(receiverType) } == Unsigned.ULong ->
-                    LuaCall(LuaIndex(ref("Unsigned", "__K2L_Unsigned"), LuaString("toRadix")), listOf(self, arg(0)))
+                    libCall(UNSIGNED_TABLE, "toRadix", listOf(self, arg(0)))
 
                 else -> n("toRadix", self, arg(0))
             }

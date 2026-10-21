@@ -1,42 +1,10 @@
 package dev.k2l.transform
 
 import dev.k2l.codegen.*
-import org.jetbrains.kotlin.analysis.api.KaSession
-import org.jetbrains.kotlin.analysis.api.types.KaCapturedType
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
-import org.jetbrains.kotlin.analysis.api.types.KaFlexibleType
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
-import org.jetbrains.kotlin.analysis.api.types.KaTypeArgumentWithVariance
-import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtClassOrObject
-import org.jetbrains.kotlin.types.Variance
-
-/** Runtime representation of a Kotlin library type, see `Collections.lua`. */
-enum class CollectionKind {
-    List,
-    Array,
-    Set,
-    Map,
-    Iterable,
-    Range,
-    Entry,
-    Pair,
-    Triple,
-    IndexedValue,
-    StringBuilder,
-    LuaTable,
-    Sequence,
-    Regex,
-    Match,
-    Iterator,
-    ClosedRange,
-    Grouping,
-    ;
-
-    /** Lists and arrays share one representation: a 1-based table with a `size` field. */
-    val isIndexable: Boolean get() = this == List || this == Array
-}
 
 /** The empty collection `null.orEmpty()` is, by kind. */
 private val EMPTY_OF = mapOf(CollectionKind.Set to "__K2L_ReadOnlySetOf", CollectionKind.Array to "__K2L_ArrayOf")
@@ -44,203 +12,6 @@ private const val EMPTY_LIST = "__K2L_ReadOnlyListOf"
 
 /** `StringBuilder.append(text, start, end)` */
 private const val APPEND_RANGE_ARITY = 3
-
-private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
-    fun kind(kind: CollectionKind, vararg ids: String) = ids.forEach { put(it, kind) }
-    kind(
-        CollectionKind.List,
-        "kotlin/collections/List",
-        "kotlin/collections/MutableList",
-        "java/util/ArrayList",
-        "java/util/List",
-        "kotlin/collections/ArrayList",
-        "java/util/AbstractList",
-        "java/util/LinkedList",
-        "java/util/Stack",
-        "java/util/Vector",
-        "kotlin/enums/EnumEntries",
-        "kotlin/collections/ArrayDeque",
-        "java/util/ArrayDeque",
-        "java/util/Queue",
-        "java/util/Deque",
-        "kotlin/text/MatchResult.Destructured",
-        "kotlin/text/MatchGroupCollection",
-        "kotlin/collections/AbstractList",
-        "kotlin/collections/AbstractMutableList",
-    )
-    val arrayTypes =
-        listOf(
-            "Array", "IntArray", "LongArray", "DoubleArray", "FloatArray", "BooleanArray", "CharArray", "ShortArray", "ByteArray",
-            "UIntArray", "ULongArray", "UByteArray", "UShortArray",
-        )
-    for (t in arrayTypes) {
-        put("kotlin/$t", CollectionKind.Array)
-    }
-    kind(
-        CollectionKind.Set,
-        "kotlin/collections/Set",
-        "kotlin/collections/MutableSet",
-        "java/util/HashSet",
-        "java/util/LinkedHashSet",
-        "java/util/Set",
-        "kotlin/collections/HashSet",
-        "kotlin/collections/LinkedHashSet",
-        "java/util/TreeSet",
-        "java/util/SortedSet",
-        "java/util/NavigableSet",
-        "java/util/EnumSet",
-        "kotlin/collections/AbstractSet",
-        "kotlin/collections/AbstractMutableSet",
-        "java/util/AbstractSet",
-    )
-    kind(
-        CollectionKind.Map,
-        "kotlin/collections/Map",
-        "kotlin/collections/MutableMap",
-        "java/util/HashMap",
-        "java/util/LinkedHashMap",
-        "java/util/Map",
-        "kotlin/collections/HashMap",
-        "kotlin/collections/LinkedHashMap",
-        "java/util/TreeMap",
-        "java/util/SortedMap",
-        "java/util/NavigableMap",
-        "java/util/EnumMap",
-        "kotlin/collections/AbstractMap",
-        "kotlin/collections/AbstractMutableMap",
-        "java/util/AbstractMap",
-    )
-    kind(
-        CollectionKind.Iterable,
-        "kotlin/collections/Iterable",
-        "kotlin/collections/MutableIterable",
-        "kotlin/collections/Collection",
-        "kotlin/collections/MutableCollection",
-        "java/util/Collection",
-        "java/lang/Iterable",
-        "java/util/PriorityQueue",
-        "kotlin/collections/AbstractCollection",
-        "kotlin/collections/AbstractMutableCollection",
-        "java/util/AbstractCollection",
-    )
-    kind(
-        CollectionKind.Range,
-        "kotlin/ranges/IntRange",
-        "kotlin/ranges/IntProgression",
-        "kotlin/ranges/LongRange",
-        "kotlin/ranges/LongProgression",
-        "kotlin/ranges/CharRange",
-        "kotlin/ranges/CharProgression",
-    )
-    kind(
-        CollectionKind.ClosedRange,
-        "kotlin/ranges/ClosedRange",
-        "kotlin/ranges/ClosedFloatingPointRange",
-    )
-    kind(CollectionKind.Grouping, "kotlin/collections/Grouping")
-    kind(CollectionKind.Regex, "kotlin/text/Regex")
-    kind(CollectionKind.Match, "kotlin/text/MatchResult", "kotlin/text/MatchGroup")
-    kind(
-        CollectionKind.Iterator,
-        "kotlin/collections/Iterator",
-        "kotlin/collections/MutableIterator",
-        "kotlin/collections/ListIterator",
-        "kotlin/collections/MutableListIterator",
-        "kotlin/collections/CharIterator",
-        "kotlin/collections/IntIterator",
-        "java/util/Iterator",
-        "java/util/PrimitiveIterator",
-        "java/util/PrimitiveIterator.OfInt",
-        "java/util/PrimitiveIterator.OfLong",
-        "java/util/PrimitiveIterator.OfDouble",
-        "kotlin/collections/AbstractIterator",
-    )
-    put("kotlin/collections/Map.Entry", CollectionKind.Entry)
-    put("kotlin/collections/MutableMap.MutableEntry", CollectionKind.Entry)
-    put("java/util/Map.Entry", CollectionKind.Entry)
-    put("kotlin/Pair", CollectionKind.Pair)
-    put("kotlin/Triple", CollectionKind.Triple)
-    put("kotlin/collections/IndexedValue", CollectionKind.IndexedValue)
-    put("java/lang/StringBuilder", CollectionKind.StringBuilder)
-    put("java/lang/StringBuffer", CollectionKind.StringBuilder)
-    put("kotlin/text/StringBuilder", CollectionKind.StringBuilder)
-    put("dev/k2l/lua/LuaTable", CollectionKind.LuaTable)
-    put("kotlin/sequences/Sequence", CollectionKind.Sequence)
-    kind(CollectionKind.Iterator, "kotlin/collections/Iterator", "kotlin/collections/MutableIterator", "java/util/Iterator")
-}
-
-/**
- * Java platform types (`T!`) are flexible; their lower bound is the Kotlin type. An element read from an `out`-projected
- * container (`rows[0]` of a `vararg rows: DoubleArray`, an `Array<out IntArray>`) has a captured type, which stands for its bound.
- */
-val KaType.withoutFlexibility: KaType get() = when (this) {
-    is KaFlexibleType -> lowerBound
-
-    is KaCapturedType -> (projection as? KaTypeArgumentWithVariance)?.takeIf { it.variance != Variance.IN_VARIANCE }?.type
-        ?.withoutFlexibility ?: this
-
-    else -> this
-}
-
-context(s: KaSession)
-fun KaType.collectionKind(): CollectionKind? = with(s) {
-    val direct = withoutFlexibility.expandedSymbol?.classId?.asString()?.let(KIND_BY_CLASS::get)
-    if (direct != null) return direct
-    // A class of the program implementing Sequence has all the Sequence operations; one extending or implementing a library
-    // collection (AbstractList, ArrayList, Map, ...) those of the collection.
-    val symbol = withoutFlexibility.expandedSymbol
-    if (symbol?.psi !is KtClassOrObject) return null
-    val supertypes = withoutFlexibility.allSupertypes.mapNotNull { it.expandedSymbol?.classId?.asString() }.toSet()
-    if (SEQUENCE_ID in supertypes) return CollectionKind.Sequence
-    val kinds = supertypes.mapNotNull(KIND_BY_CLASS::get).toSet()
-    return INHERITED_KINDS.firstOrNull { it in kinds }
-}
-
-private const val SEQUENCE_ID = "kotlin/sequences/Sequence"
-
-/** The collection kinds a class of the program can inherit, most specific first. */
-private val INHERITED_KINDS =
-    listOf(
-        CollectionKind.Map,
-        CollectionKind.List,
-        CollectionKind.Set,
-        CollectionKind.Iterator,
-        CollectionKind.Iterable,
-        CollectionKind.Entry,
-        CollectionKind.ClosedRange,
-    )
-
-context(s: KaSession)
-val KaType.elementType: KaType? get() = (withoutFlexibility as? KaClassType)?.typeArguments?.firstOrNull()?.type
-
-/** Lua class names for library types that can be constructed or type-checked. */
-val LIBRARY_COLLECTION_CLASSES = mapOf(
-    CollectionKind.List to "__K2L_List", CollectionKind.Array to "__K2L_Array", CollectionKind.Set to "__K2L_Set",
-    CollectionKind.Map to "__K2L_Map", CollectionKind.Iterable to "__K2L_Iterable", CollectionKind.Range to "__K2L_IntRange",
-    CollectionKind.Pair to "__K2L_Pair", CollectionKind.Triple to "__K2L_Triple", CollectionKind.Entry to "__K2L_Entry",
-    CollectionKind.StringBuilder to "__K2L_StringBuilder", CollectionKind.Sequence to "__K2L_Sequence",
-    CollectionKind.Regex to "__K2L_Regex",
-)
-
-fun featureOf(luaName: String) = when {
-    luaName == "__K2L_Pair" || luaName == "__K2L_Triple" -> "Pair"
-
-    luaName == "__K2L_StringBuilder" -> "Strings"
-
-    luaName == "__K2L_Sequence" -> SEQUENCE_FEATURE
-
-    luaName == "__K2L_Regex" -> "Regex"
-
-    luaName in DEQUE_CLASSES || luaName in DEQUE_INTERFACES -> DEQUES_FEATURE
-
-    luaName.startsWith("__K2L_Enum") -> ENUM_COLLECTIONS_FEATURE
-
-    luaName.startsWith("__K2L_Compare") || luaName.startsWith("__K2L_Then") || luaName.startsWith("__K2L_Nulls") ||
-        luaName == "__K2L_ReverseComparator" ||
-        luaName == "__K2L_NaturalOrder" || luaName == "__K2L_ReverseOrder" -> "Comparators"
-
-    else -> "Collections"
-}
 
 /** The number of the stdlib's class of `asList()` of each primitive array (`kotlin.collections.ArraysKt___ArraysJvmKt$asList$3`). */
 private val PRIMITIVE_AS_LIST = mapOf(
@@ -252,39 +23,6 @@ private val PRIMITIVE_AS_LIST = mapOf(
     "DoubleArray" to 6,
     "BooleanArray" to 7,
     "CharArray" to 8,
-)
-
-/** lualib feature with ArrayDeque and LinkedList, see `Deques.lua`. */
-internal const val DEQUES_FEATURE = "Deques"
-
-/** lualib feature with EnumMap and EnumSet, see `EnumCollections.lua`. */
-internal const val ENUM_COLLECTIONS_FEATURE = "EnumCollections"
-
-/** The lualib classes of `kotlin.collections.ArrayDeque`, `java.util.ArrayDeque` and `java.util.LinkedList`. */
-internal val DEQUE_CLASSES = setOf("__K2L_ArrayDeque", "__K2L_Deque", "__K2L_LinkedList")
-
-/** The lualib markers of `java.util.Queue` and `Deque`, which java.util.ArrayDeque, LinkedList and PriorityQueue implement. */
-private val DEQUE_INTERFACES = setOf("__K2L_QueueInterface", "__K2L_DequeInterface")
-
-/**
- * Lua classes for `is`/`as` against library collection classes and interfaces that share their kind's representation
- * with others (`is java.util.ArrayDeque` must not accept an ArrayList, `is Queue` a list): see `Deques.lua`.
- */
-val SPECIFIC_COLLECTION_CLASSES = mapOf(
-    "java/util/ArrayDeque" to "__K2L_Deque",
-    "java/util/LinkedList" to "__K2L_LinkedList",
-    "kotlin/collections/ArrayDeque" to "__K2L_ArrayDeque",
-    "java/util/Queue" to "__K2L_QueueInterface",
-    "java/util/Deque" to "__K2L_DequeInterface",
-    "java/util/PriorityQueue" to "__K2L_PriorityQueue",
-    "java/util/TreeSet" to "__K2L_SortedSet",
-    "java/util/SortedSet" to "__K2L_SortedSet",
-    "java/util/NavigableSet" to "__K2L_SortedSet",
-    "java/util/TreeMap" to "__K2L_SortedMap",
-    "java/util/SortedMap" to "__K2L_SortedMap",
-    "java/util/NavigableMap" to "__K2L_SortedMap",
-    "java/util/EnumSet" to "__K2L_EnumSet",
-    "java/util/EnumMap" to "__K2L_EnumMap",
 )
 
 /** Collection, string and pair functions of the Kotlin stdlib. */
@@ -351,10 +89,9 @@ object CollectionMappings {
     /** `Random` is passed explicitly to the lualib methods; calls without one use `Random.Default`. */
     private val RANDOM_METHODS = setOf("shuffled", "shuffle", "random", "randomOrNull")
 
-    fun map(callableId: String?, site: CallSite): LuaExpr? = FactoryMappings.factory(callableId, site) ?: byReceiver(callableId, site)
-
-    private fun byReceiver(callableId: String?, site: CallSite): LuaExpr? {
-        val kind = site.receiverType?.let { with(site.session) { it.collectionKind() } } ?: return TextMappings.map(callableId, site)
+    /** Members by the collection kind of the receiver; null for a receiver of no collection kind (see `StdlibMappings.AREAS`). */
+    fun byReceiver(callableId: String?, site: CallSite): LuaExpr? {
+        val kind = site.receiverKind ?: return null
         val name = site.name ?: return null
         return when (kind) {
             CollectionKind.List, CollectionKind.Array, CollectionKind.Set, CollectionKind.Iterable ->
@@ -372,22 +109,17 @@ object CollectionMappings {
 
             CollectionKind.StringBuilder -> stringBuilderMember(name, site) ?: builderAsText(callableId, site)
 
+            // see SequenceMappings
             CollectionKind.Sequence -> null
 
-            // see SequenceMappings
             CollectionKind.Regex -> RegexMappings.regexMember(name, site)
 
             CollectionKind.Match -> RegexMappings.matchMember(name, site)
 
             CollectionKind.Iterator -> iteratorMember(name, site)
 
-            CollectionKind.Grouping -> if (name in
-                setOf("eachCount", "fold", "reduce", "aggregate")
-            ) {
-                LuaMethodCall(site.self, name, site.args)
-            } else {
-                null
-            }
+            CollectionKind.Grouping ->
+                if (name in setOf("eachCount", "fold", "reduce", "aggregate")) LuaMethodCall(site.self, name, site.args) else null
         }
     }
 
@@ -399,7 +131,7 @@ object CollectionMappings {
             LuaIndex(site.self, LuaString(name))
         } else {
             // the range's `first` and `last` fields hide the Iterable methods of the same name
-            LuaCall(LuaIndex(site.ref("Collections", "__K2L_Iterable"), LuaString(name)), listOf(site.self) + site.args)
+            site.libCall("Collections", "__K2L_Iterable", name, listOf(site.self) + site.args)
         }
 
         "start" -> LuaIndex(site.self, LuaString("first"))
@@ -446,7 +178,7 @@ object CollectionMappings {
                 LuaCall(site.ref("Collections", "__K2L_ListOf"), fields.map { LuaIndex(site.self, LuaString(it)) })
 
             name == "toPair" && kind == CollectionKind.Entry ->
-                LuaCall(LuaIndex(site.ref("Pair", "__K2L_Pair"), LuaString("new")), fields.map { LuaIndex(site.self, LuaString(it)) })
+                site.libNew(PAIR_TABLE, fields.map { LuaIndex(site.self, LuaString(it)) })
 
             name == "setValue" && kind == CollectionKind.Entry -> LuaMethodCall(site.self, "setValue", site.args)
 
@@ -514,6 +246,21 @@ object CollectionMappings {
 
             "setCharAt" -> LuaMethodCall(self, "set", args)
 
+            // repeat(text, count) and repeat(codePoint, count) (JDK 21)
+            "repeat" -> LuaMethodCall(
+                self,
+                "append",
+                listOf(
+                    site.libMember(
+                        "JavaUtil",
+                        "__K2L_JavaUtil",
+                        if (site.isIntegral(site.argTypes[0])) "repeatCodePoint" else "repeatText",
+                        if (site.isIntegral(site.argTypes[0])) args[0] else site.str(args[0], site.argTypes[0]),
+                        args[1],
+                    ),
+                ),
+            )
+
             "appendCodePoint" ->
                 if (site.utf16) {
                     LuaMethodCall(
@@ -557,16 +304,10 @@ object CollectionMappings {
     private fun concatToString(site: CallSite, self: LuaExpr): LuaExpr =
         LuaMethodCall(self, "joinToString", listOf(LuaString(""))).let { if (site.utf16) site.transformer.u16Norm(it) else it }
 
-    private fun isCollection(site: CallSite, type: KaType?) = type != null && with(site.session) { type.collectionKind() } in setOf(
-        CollectionKind.List,
-        CollectionKind.Array,
-        CollectionKind.Set,
-        CollectionKind.Iterable,
-        CollectionKind.Range,
-        CollectionKind.Sequence,
-    )
+    private fun isCollection(site: CallSite, type: KaType?) = type != null && with(site.session) { type.collectionKind() } in ELEMENT_GROUPS
 
-    private fun zeroFor(site: CallSite, type: KaType?): List<LuaExpr> = with(site.session) {
+    /** The start value of `sum`/`sumOf` over elements of [type]: BigInteger/BigDecimal zero, `0.0`, or none (Lua's 0). */
+    internal fun zeroFor(site: CallSite, type: KaType?): List<LuaExpr> = with(site.session) {
         BigNumberMappings.zero(site, type)?.let { return listOf(it) }
         if (type != null && (type.isDoubleType || type.isFloatType)) listOf(LuaNumber("0.0")) else emptyList()
     }
@@ -590,13 +331,11 @@ object CollectionMappings {
         }
     }
 
-    private fun defaultRandom(site: CallSite): LuaExpr = site.libMember("Random", "__K2L_Random", "default")
-
     private fun iterable(kind: CollectionKind, name: String, site: CallSite): LuaExpr? {
         val self = site.self
         val component = name.removePrefix("component").toIntOrNull()
         return when {
-            name in RANDOM_METHODS -> LuaMethodCall(self, name, listOf(site.args.firstOrNull() ?: defaultRandom(site)))
+            name in RANDOM_METHODS -> LuaMethodCall(self, name, listOf(site.args.firstOrNull() ?: site.defaultRandom()))
             name == "joinToString" -> FloatMappings.joinToString(site) ?: iterableByName(kind, name, site)
             component != null && name.startsWith("component") -> LuaMethodCall(self, "elementAt", listOf(LuaNumber("${component - 1}")))
             else -> iterableByName(kind, name, site)

@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_CloseAfter = ____lualib.__K2L_CloseAfter
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -546,7 +547,7 @@ local function resources(fail, early)
     if ____ok then
         ____resource:close()
     else
-        pcall(____resource.close, ____resource)
+        __K2L_CloseAfter(____resource, ____result_46)
     end
     if not ____ok then
         error(____result_46, 0)
@@ -573,7 +574,7 @@ local function nested(early)
             if ____ok_2 then
                 ____resource_2:close()
             else
-                pcall(____resource_2.close, ____resource_2)
+                __K2L_CloseAfter(____resource_2, ____result_51)
             end
             if not ____ok_2 then
                 error(____result_51, 0)
@@ -586,7 +587,7 @@ local function nested(early)
     if ____ok_1 then
         ____resource_1:close()
     else
-        pcall(____resource_1.close, ____resource_1)
+        __K2L_CloseAfter(____resource_1, ____result_49)
     end
     if not ____ok_1 then
         error(____result_49, 0)
@@ -609,7 +610,7 @@ local function fussy()
         if ____ok_4 then
             ____resource_3:close()
         else
-            pcall(____resource_3.close, ____resource_3)
+            __K2L_CloseAfter(____resource_3, ____result_54)
         end
         if not ____ok_4 then
             error(____result_54, 0)

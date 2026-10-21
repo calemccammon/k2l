@@ -81,7 +81,6 @@ data object LuaBreak : LuaStmt
 data class LuaGoto(val label: String) : LuaStmt
 data class LuaLabel(val label: String) : LuaStmt
 data class LuaDo(val body: List<LuaStmt>) : LuaStmt
-data class LuaComment(val text: String) : LuaStmt
 
 data class LuaChunk(val body: List<LuaStmt>)
 

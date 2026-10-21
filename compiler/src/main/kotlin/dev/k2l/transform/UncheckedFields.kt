@@ -18,13 +18,15 @@ internal class UncheckedFields(val fields: Set<KtNamedDeclaration>) {
 
 /** The [UncheckedFields] of the module, resolved once (they hold only PSI). */
 internal fun FileTransformer.uncheckedFields(unchecked: UncheckedCasts): UncheckedFields =
-    classes.module.shared.getOrPut("uncheckedFields") {
+    classes.module.shared.getOrPut(UNCHECKED_FIELDS) {
         val fields = HashSet<KtNamedDeclaration>(unchecked.castFields)
         for (value in unchecked.passed) {
             if (isUncheckedLocalOrCast(value, unchecked)) fieldReceiving(value)?.let { fields += it }
         }
         UncheckedFields(fields)
-    } as UncheckedFields
+    }
+
+private val UNCHECKED_FIELDS = SharedKey<UncheckedFields>("uncheckedFields")
 
 /** The property of the program that [value] initializes as a constructor argument or is assigned to, if it is one. */
 private fun FileTransformer.fieldReceiving(value: KtExpression): KtNamedDeclaration? = with(session) {

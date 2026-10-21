@@ -50,7 +50,7 @@ internal object BigNumberMappings {
         libMember("BigDecimal", "__K2L_BigDecimal", member, *args)
 
     private fun CallSite.constant(feature: String, table: String, field: String? = name): LuaExpr =
-        LuaIndex(ref(feature, table), LuaString(field ?: return unsupported("constant")))
+        luaField(ref(feature, table), field ?: return unsupported("constant"))
 
     private fun isConstant(name: String?) = name != null && name.all { it.isUpperCase() || it == '_' || it.isDigit() }
 
@@ -166,7 +166,7 @@ internal object BigNumberMappings {
             BIG_DECIMAL -> constructDecimal(site, first)
 
             MATH_CONTEXT ->
-                LuaCall(LuaIndex(site.ref("BigDecimal", "__K2L_MathContext"), LuaString("new")), site.args)
+                site.libNew("BigDecimal", "__K2L_MathContext", site.args)
 
             else -> null
         }

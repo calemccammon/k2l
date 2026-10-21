@@ -11,8 +11,6 @@ import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 
-private const val KCLASS_FEATURE = "KClass"
-
 /** Builtin types whose runtime class cannot be told from the value (Long and Int, Char and String, ...): their class is static. */
 private val STATIC_CLASSES = setOf(
     "kotlin/Int", "kotlin/Long", "kotlin/Short", "kotlin/Byte", "kotlin/Double", "kotlin/Float", "kotlin/Boolean", "kotlin/Char",

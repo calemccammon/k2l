@@ -10,12 +10,12 @@ import org.jetbrains.kotlin.psi.*
 private fun FileTransformer.jumpTarget(e: KtExpressionWithLabel): LoopFrame? {
     val label = e.getLabelName()
     fun find(stack: ArrayDeque<LoopFrame>) = if (label != null) stack.lastOrNull { it.label == label } else stack.lastOrNull()
-    var stack = loops
+    var stack = jumps.loops
     var found = find(stack)
     // a lambda that is a Lua function starts with no loops: look in those around it, up to the function the jump is in
-    var i = frames.lastIndex
+    var i = jumps.frames.lastIndex
     while (found == null && i >= 0) {
-        val frame = frames[i--]
+        val frame = jumps.frames[i--]
         val outer = frame.outerLoops
         if (outer != null && outer !== stack) {
             if (frame.kind == FunctionFrame.Kind.Lambda) {
@@ -40,12 +40,12 @@ internal fun FileTransformer.continueStatement(e: KtContinueExpression) {
 
 internal fun FileTransformer.breakLabel(frame: LoopFrame): String = frame.breakLabel ?: ctx.temp("break").also {
     frame.breakLabel = it
-    jumpLabels += it
+    jumps.jumpLabels += it
 }
 
 internal fun FileTransformer.continueLabel(frame: LoopFrame): String = frame.continueLabel ?: ctx.temp("continue").also {
     frame.continueLabel = it
-    jumpLabels += it
+    jumps.jumpLabels += it
 }
 
 /**
@@ -55,7 +55,7 @@ internal fun FileTransformer.continueLabel(frame: LoopFrame): String = frame.con
 internal fun FileTransformer.breakLocally(frame: LoopFrame, leavesLambda: Boolean) {
     if (leavesLambda) {
         emit(LuaGoto(breakLabel(frame)))
-    } else if (frame === loops.last()) {
+    } else if (frame === jumps.loops.last()) {
         emit(LuaBreak)
     } else if (!target.hasGoto) {
         // break@outer without goto: set a flag, and have each loop in between break when it is set.
@@ -71,7 +71,7 @@ internal fun FileTransformer.breakLocally(frame: LoopFrame, leavesLambda: Boolea
 /** A `continue` of [frame]; like [breakLocally]. */
 internal fun FileTransformer.continueLocally(frame: LoopFrame, leavesLambda: Boolean) {
     val label = continueLabel(frame)
-    if (leavesLambda || target.hasGoto || frame === loops.last()) {
+    if (leavesLambda || target.hasGoto || frame === jumps.loops.last()) {
         emit(LuaGoto(label))
         return
     }
@@ -144,4 +144,4 @@ private fun FileTransformer.leaveNestedLoops(stmts: List<LuaStmt>, labels: Set<S
 }
 
 /** Loops nested inside [outer], innermost first. */
-private fun FileTransformer.innerFrames(outer: LoopFrame): List<LoopFrame> = loops.toList().takeLastWhile { it !== outer }.reversed()
+private fun FileTransformer.innerFrames(outer: LoopFrame): List<LoopFrame> = jumps.loops.toList().takeLastWhile { it !== outer }.reversed()

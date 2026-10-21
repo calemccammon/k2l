@@ -16,6 +16,13 @@ internal object JdkCollectionsMappings {
 
     private val ENUM_SET_FUNCTIONS = setOf("noneOf", "allOf", "of", "copyOf", "range", "complementOf")
 
+    /** The `synchronized*` wrappers, and the `checked*` ones, whose element type checks are left out. */
+    private val IDENTITIES = listOf(
+        "synchronizedSortedSet", "synchronizedNavigableSet", "synchronizedSortedMap", "synchronizedNavigableMap", "checkedList",
+        "checkedCollection", "checkedSet", "checkedSortedSet", "checkedNavigableSet", "checkedQueue", "checkedMap", "checkedSortedMap",
+        "checkedNavigableMap",
+    )
+
     /** `Collections.x(...)` is the Lua function of the same name, unless listed here. */
     private val COLLECTIONS_RENAMED = mapOf(
         "binarySearch" to "binarySearch_array",
@@ -23,13 +30,16 @@ internal object JdkCollectionsMappings {
         "synchronizedSet" to "identity",
         "synchronizedMap" to "identity",
         "synchronizedCollection" to "identity",
-        "checkedList" to "identity",
-    )
+        "newSequencedSetFromMap" to "newSetFromMap",
+    ) + IDENTITIES.associateWith { "identity" }
 
     private val COLLECTIONS_FUNCTIONS = setOf(
         "sort", "reverse", "shuffle", "swap", "max", "min", "frequency", "addAll", "fill", "rotate", "replaceAll", "copy", "disjoint",
         "nCopies", "emptyList", "emptySet", "emptyMap", "singletonList", "singleton", "singletonMap", "unmodifiableList",
-        "unmodifiableSet", "unmodifiableMap", "unmodifiableCollection", "reverseOrder",
+        "unmodifiableSet", "unmodifiableMap", "unmodifiableCollection", "reverseOrder", "indexOfSubList", "lastIndexOfSubList",
+        "emptyIterator", "emptyListIterator", "newSetFromMap", "unmodifiableSortedSet", "unmodifiableNavigableSet",
+        "unmodifiableSequencedSet", "unmodifiableSortedMap", "unmodifiableNavigableMap", "unmodifiableSequencedMap",
+        "unmodifiableSequencedCollection", "emptySortedSet", "emptySortedMap", "emptyNavigableSet", "emptyNavigableMap",
     ) + COLLECTIONS_RENAMED.keys
 
     private val ARRAYS_RENAMED = mapOf(
@@ -55,6 +65,8 @@ internal object JdkCollectionsMappings {
 
             callableId.startsWith(ARRAYS) && name in ARRAYS_FUNCTIONS -> arrays(site, name)
 
+            callableId.startsWith(ARRAYS) -> JdkCollectionMembers.arrays(name, site)
+
             callableId.startsWith(ENUM_SET) && name in ENUM_SET_FUNCTIONS && site.receiver == null ->
                 site.libMember(ENUM_COLLECTIONS_FEATURE, "__K2L_EnumSets", name, *site.args.toTypedArray())
 
@@ -62,17 +74,18 @@ internal object JdkCollectionsMappings {
                 name in RANDOM_METHODS && site.receiver != null ->
                 method(site.self, name, *site.args.toTypedArray())
 
-            callableId.startsWith("kotlin/collections/") || callableId.startsWith("java/util/") -> kotlinCollections(site, name)
+            callableId.startsWith("java/util/") -> JdkCollectionMembers.map(callableId, name, site) ?: kotlinCollections(site, name)
+
+            callableId.startsWith("kotlin/collections/") -> kotlinCollections(site, name)
 
             else -> null
         }
     }
 
-    private fun lib(site: CallSite, member: String, args: List<LuaExpr>): LuaExpr =
-        site.libMember("JdkCollections", "__K2L_JdkCollections", member, *args.toTypedArray())
+    private fun lib(site: CallSite, member: String, args: List<LuaExpr>): LuaExpr = site.libCall(JDK_COLLECTIONS_TABLE, member, args)
 
     private fun kotlinCollections(site: CallSite, name: String): LuaExpr? {
-        val kind = site.receiverType?.let { with(site.session) { it.collectionKind() } }
+        val kind = site.receiverKind
         return when {
             name == "withDefault" && kind == CollectionKind.Map -> lib(site, "withDefault", listOf(site.self, site.arg(0)))
             name == "listIterator" && kind == CollectionKind.List -> lib(site, "listIterator", listOf(site.self) + site.args)
@@ -99,7 +112,7 @@ internal object JdkCollectionsMappings {
 
     /** `java.util.Random()` and `java.util.Random(seed)`. */
     fun construct(classId: String?, site: CallSite): LuaExpr? = if (classId == RANDOM) {
-        LuaCall(LuaIndex(site.ref("JavaRandom", "__K2L_JavaRandom"), LuaString("new")), site.args)
+        site.libNew("JavaRandom", "__K2L_JavaRandom", site.args)
     } else {
         null
     }

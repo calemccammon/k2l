@@ -84,9 +84,9 @@ internal fun FileTransformer.libraryConstructorReference(e: KtCallableReferenceE
             collect {
                 val exception = LIBRARY_CLASSES[classId.asString()]
                 mapped = if (exception != null) {
-                    LuaCall(LuaIndex(lualibRef(EXCEPTIONS_FEATURE, exception), LuaString("new")), throwableParameters(args, types))
+                    libNew(EXCEPTIONS_FEATURE, exception, throwableParameters(args, types))
                 } else {
-                    FactoryMappings.construct(classId.asString(), site)
+                    LibraryConstructors.call(classId.asString(), site)
                 }
                 mapped?.let { emit(LuaReturn(listOf(it))) }
             }

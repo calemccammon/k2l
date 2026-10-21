@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.psi.*
  * suspend inside it.
  */
 internal fun FileTransformer.protectedCall(e: KtTryExpression): LuaExpr {
-    if (target != LuaTarget.Lua51) return deepPcall()
+    if (target.yieldsAcrossPcall) return deepPcall()
     val protected = listOf(e.tryBlock) + e.catchClauses
     return if (protected.any { containsSuspensionPoint(it) }) lualibRef("CoPcall", "__K2L_CoPcall") else deepPcall()
 }
@@ -42,13 +42,7 @@ internal fun FileTransformer.containsSuspensionPoint(element: KtElement): Boolea
     return found
 }
 
-/** Lua feature implementing `kotlin.coroutines` on Lua coroutines, see `Coroutines.lua`. */
-internal const val COROUTINES_FEATURE = "Coroutines"
-
-/** Lua feature implementing `kotlin.Result`, see `Result.lua`. */
-internal const val RESULT_FEATURE = "Result"
-
-/** Library objects used as values: `EmptyCoroutineContext`, `Result` (its companion), `Unit` and `TimeSource.Monotonic`. */
+/** Library objects used as values: `EmptyCoroutineContext`, `Result` (its companion), `Unit`, `TimeSource.Monotonic` and `Clock.System`. */
 internal val LIBRARY_OBJECTS = setOf(
     "kotlin/coroutines/EmptyCoroutineContext",
     "kotlin/Result",
@@ -57,6 +51,7 @@ internal val LIBRARY_OBJECTS = setOf(
     "kotlin/coroutines/ContinuationInterceptor",
     "kotlin/coroutines/ContinuationInterceptor.Key",
     "kotlin/time/TimeSource.Monotonic",
+    "kotlin/time/Clock.System",
 )
 
 /** The Lua value of one of the [LIBRARY_OBJECTS]. */
@@ -69,6 +64,8 @@ internal fun FileTransformer.libraryObject(classId: String): LuaExpr = when (cla
         lualibRef(COROUTINES_FEATURE, "__K2L_ContinuationInterceptor")
 
     "kotlin/time/TimeSource.Monotonic" -> lualibRef(DURATION_FEATURE, "__K2L_Monotonic")
+
+    "kotlin/time/Clock.System" -> lualibRef(INSTANT_FEATURE, "__K2L_SystemClock")
 
     else -> lualibRef(RESULT_FEATURE, "__K2L_Result")
 }
@@ -94,8 +91,7 @@ internal object CoroutineMappings {
         return LuaFunction(emptyList(), body, isVararg = true)
     }
 
-    private fun CallSite.resultOf(kind: String, value: LuaExpr): LuaExpr =
-        LuaCall(LuaIndex(ref(RESULT_FEATURE, "__K2L_Result"), LuaString(kind)), listOf(value))
+    private fun CallSite.resultOf(kind: String, value: LuaExpr): LuaExpr = libCall(RESULT_FEATURE, "__K2L_Result", kind, listOf(value))
 
     private val CONTEXT_OWNERS = setOf(
         "kotlin/coroutines/CoroutineContext",
@@ -142,7 +138,7 @@ internal object CoroutineMappings {
 
             "kotlin/coroutines/intrinsics/intercepted" -> call(COROUTINES_FEATURE, "__K2L_Intercepted", self)
 
-            "kotlin/coroutines/Continuation" -> LuaCall(LuaIndex(ref(COROUTINES_FEATURE, "__K2L_Continuation"), LuaString("new")), args)
+            "kotlin/coroutines/Continuation" -> libNew(COROUTINES_FEATURE, "__K2L_Continuation", args)
 
             "kotlin/coroutines/Continuation.resumeWith" -> LuaMethodCall(self, "resumeWith", args)
 

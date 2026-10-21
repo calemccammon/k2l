@@ -18,13 +18,13 @@ internal object RegexMappings {
             }
         }
         t.def("kotlin/text/Regex.Companion.escape") {
-            LuaCall(LuaIndex(ref("Regex", "__K2L_Regex"), LuaString("escape")), listOf(arg(0)))
+            libCall(REGEX_TABLE, "escape", listOf(arg(0)))
         }
         t.def("kotlin/text/Regex.Companion.escapeReplacement") {
-            LuaCall(LuaIndex(ref("Regex", "__K2L_Regex"), LuaString("escapeReplacement")), listOf(arg(0)))
+            libCall(REGEX_TABLE, "escapeReplacement", listOf(arg(0)))
         }
         t.def("kotlin/text/Regex.Companion.fromLiteral") {
-            LuaCall(LuaIndex(ref("Regex", "__K2L_Regex"), LuaString("new")), listOf(arg(0), LuaString("LITERAL")))
+            libNew(REGEX_TABLE, listOf(arg(0), LuaString("LITERAL")))
         }
         // groups["name"]
         t.def("kotlin/text/get") { if (isString(argTypes.firstOrNull())) method(self, "getNamed", arg(0)) else null }
@@ -34,10 +34,7 @@ internal object RegexMappings {
         name == "pattern" -> LuaIndex(site.self, LuaString("pattern"))
 
         // a lazy Sequence, as in Kotlin: matches are searched for as they are pulled
-        name == "findAll" -> LuaCall(
-            LuaIndex(site.ref(SEQUENCE_FEATURE, "__K2L_Sequence"), LuaString("new")),
-            listOf(LuaMethodCall(site.self, "findAllFactory", site.args)),
-        )
+        name == "findAll" -> site.libNew(SEQUENCE_FEATURE, "__K2L_Sequence", listOf(LuaMethodCall(site.self, "findAllFactory", site.args)))
 
         name in REGEX_METHODS -> LuaMethodCall(site.self, name, site.args)
 

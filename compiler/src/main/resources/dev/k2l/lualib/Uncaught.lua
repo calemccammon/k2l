@@ -1,5 +1,6 @@
--- An error that ends main prints as on the JVM, the same on every target: `Exception in thread "main" <toString()>`
--- and a `Caused by: <toString()>` line for each cause, then the Lua traceback of the stack it was raised from (with
+-- An error that ends main prints as on the JVM, the same on every target: `Exception in thread "main" <toString()>`,
+-- a `Caused by: <toString()>` line for each cause and an indented `Suppressed: <toString()>` line for each suppressed
+-- exception, then the Lua traceback of the stack it was raised from (with
 -- Kotlin positions under --source-map, whose debug.traceback rewrites them). A Lua error (a string) prints its message
 -- and the traceback. Then the program exits with status 1. Lua's standalone interpreters print an exception on their
 -- own differently: Lua 5.1 as "(error object is not a string)", 5.2 to 5.4 its toString() only, LuaJIT with a traceback.
@@ -32,6 +33,29 @@ do
         return tostring(getmetatable(e).____name)
     end
 
+    -- `e` as Throwable.printStackTrace prints it, without the frames: its suppressed exceptions indented under it, then
+    -- its cause
+    local function enclosed(lines, e, caption, prefix, seen)
+        if seen[e] then
+            lines[#lines + 1] = prefix .. caption .. "[CIRCULAR REFERENCE: " .. describe(e) .. "]"
+            return
+        end
+        seen[e] = true
+        lines[#lines + 1] = prefix .. caption .. describe(e)
+        local suppressed = rawget(e, "____suppressed")
+        if type(suppressed) == "table" then
+            for _, s in ipairs(suppressed) do
+                if isThrowable(s) then
+                    enclosed(lines, s, "Suppressed: ", prefix .. "\t", seen)
+                end
+            end
+        end
+        local cause = e.cause
+        if isThrowable(cause) then
+            enclosed(lines, cause, "Caused by: ", prefix, seen)
+        end
+    end
+
     local function header(e)
         if not isThrowable(e) then
             local mt = getmetatable(e)
@@ -40,17 +64,8 @@ do
             end
             return "(error object is a " .. type(e) .. " value)"
         end
-        local lines, seen = { "Exception in thread \"main\" " .. describe(e) }, { [e] = true }
-        local cause = e.cause
-        while isThrowable(cause) do
-            if seen[cause] then
-                lines[#lines + 1] = "Caused by: [CIRCULAR REFERENCE: " .. describe(cause) .. "]"
-                break
-            end
-            seen[cause] = true
-            lines[#lines + 1] = "Caused by: " .. describe(cause)
-            cause = cause.cause
-        end
+        local lines = {}
+        enclosed(lines, e, "Exception in thread \"main\" ", "", {})
         return table.concat(lines, "\n")
     end
 

@@ -2,12 +2,10 @@ package dev.k2l.transform
 
 import dev.k2l.codegen.*
 
-/** Lua feature implementing `java.util.Stack`'s own methods, `StringJoiner` and the helpers below, see `JavaUtil.lua`. */
-private const val JAVA_UTIL_FEATURE = "JavaUtil"
-
 /**
  * `java.util.Stack` (a list, with push/pop/peek/empty/search), `java.util.StringJoiner`, `java.util.Objects` and more
- * statics of `java.lang.Boolean`, `Character`, `Integer`, `Long` and `Double` (see `JavaUtil.lua`).
+ * statics of `java.lang.Boolean`, `Character`, `Integer`, `Long` and `Double` (see `JavaUtil.lua`), and Kotlin's
+ * `Boolean.and`/`or`.
  */
 internal object JavaUtilMappings {
     private val STACK_HELPERS = setOf("push", "pop", "peek", "search")
@@ -18,17 +16,18 @@ internal object JavaUtilMappings {
 
     /** `Stack()`, `StringJoiner(delimiter)` and `StringJoiner(delimiter, prefix, suffix)`. */
     fun construct(classId: String?, site: CallSite): LuaExpr? = when (classId) {
-        "java/util/Stack", "java/util/Vector" -> LuaCall(
-            LuaIndex(site.ref(featureOf("__K2L_List"), "__K2L_List"), LuaString("new")),
-            emptyList(),
-        )
-
-        "java/util/StringJoiner" -> LuaCall(LuaIndex(site.ref(JAVA_UTIL_FEATURE, "__K2L_StringJoiner"), LuaString("new")), site.args)
-
+        "java/util/Stack", "java/util/Vector" -> site.libNew(featureOf("__K2L_List"), "__K2L_List", emptyList())
+        "java/util/StringJoiner" -> site.libNew(JAVA_UTIL_FEATURE, "__K2L_StringJoiner", site.args)
+        "java/util/BitSet" -> BitSetMappings.construct(site)
         else -> null
     }
 
     fun map(callableId: String?, site: CallSite): LuaExpr? {
+        // Kotlin's `a and b`, `a or b` (no short-circuit) are Boolean.logicalAnd/logicalOr
+        if (callableId == "kotlin/Boolean.and" || callableId == "kotlin/Boolean.or") {
+            val member = if (callableId == "kotlin/Boolean.and") "logicalAnd" else "logicalOr"
+            return site.libMember("JavaUtil", "__K2L_JavaUtil", member, site.self, site.arg(0))
+        }
         val owner = callableId?.substringBeforeLast('.') ?: return null
         val name = site.name ?: return null
         return when (owner) {
@@ -45,6 +44,8 @@ internal object JavaUtilMappings {
 
             "java/util/Objects" -> objects(name, site)
 
+            "java/util/BitSet" -> BitSetMappings.map(name, site)
+
             "java/util/Comparator" -> comparators(name, site)
 
             "java/lang/Boolean" -> booleans(name, site)
@@ -53,9 +54,7 @@ internal object JavaUtilMappings {
 
             "java/lang/Double" -> doubles(name, site)
 
-            else -> if (owner.startsWith("java/lang/") && owner.removePrefix("java/lang/") in BOXES &&
-                name == "hashCode"
-            ) {
+            else -> if (owner.startsWith("java/lang/") && owner.removePrefix("java/lang/") in BOXES && name == "hashCode") {
                 hash(site)
             } else {
                 null
@@ -63,8 +62,7 @@ internal object JavaUtilMappings {
         }
     }
 
-    private fun CallSite.helper(member: String, vararg args: LuaExpr): LuaExpr =
-        libMember(JAVA_UTIL_FEATURE, "__K2L_JavaUtil", member, *args)
+    private fun CallSite.helper(member: String, vararg args: LuaExpr): LuaExpr = libMember(JAVA_UTIL_TABLE, member, *args)
 
     private fun stack(name: String, site: CallSite): LuaExpr? = when {
         site.receiver == null -> null
@@ -76,10 +74,18 @@ internal object JavaUtilMappings {
     private fun objects(name: String, site: CallSite): LuaExpr? = with(site) {
         when (name) {
             "requireNonNull" -> helper("requireNonNull", *args.toTypedArray())
-            "requireNonNullElse", "checkIndex", "compare" -> helper(name, *args.toTypedArray())
+
+            "requireNonNullElse", "requireNonNullElseGet", "checkIndex", "checkFromToIndex", "checkFromIndexSize", "compare" ->
+                helper(name, *args.toTypedArray())
+
+            "deepEquals" -> libMember(JDK_COLLECTIONS_TABLE, "objectsDeepEquals", arg(0), arg(1))
+
             "isNull" -> LuaBinary(LuaBinOp.Eq, arg(0), LuaNil)
+
             "nonNull" -> LuaBinary(LuaBinOp.Ne, arg(0), LuaNil)
+
             "toString" -> if (args.size == 2) helper("toStringOr", arg(0), arg(1)) else str(arg(0), argTypes[0])
+
             else -> null
         }
     }
@@ -145,8 +151,5 @@ internal object JavaUtilMappings {
     private fun hash(site: CallSite): LuaExpr? = if (site.args.size == 1) site.lualib("Hash", site.arg(0)) else null
 
     /** The mapping of the Kotlin member or extension [id], called on the first argument. */
-    private fun CallSite.asMember(id: String): LuaExpr? = StdlibMappings.map(
-        id,
-        CallSite(session, transformer, element, id.substringAfterLast('/'), arg(0), argTypes[0], args.drop(1), argTypes.drop(1)),
-    )
+    private fun CallSite.asMember(id: String): LuaExpr? = StdlibMappings.map(id, onFirstArgument(id.substringAfterLast('/')))
 }

@@ -7,12 +7,10 @@ import org.jetbrains.kotlin.psi.KtExpression
 
 private val RESULT_LAMBDAS = setOf("getOrElse", "onFailure", "onSuccess", "fold", "map", "recover")
 
-private fun field(target: LuaExpr, name: String): LuaExpr = LuaIndex(target, LuaString(name))
-
 /** A `Result` in the generated code: its fields (see `Result.lua`) and the tests of which one it is. */
 private class ResultParts(val result: LuaExpr) {
-    val failure = field(result, "exception")
-    val value = field(result, "value")
+    val failure = luaField(result, "exception")
+    val value = luaField(result, "value")
     val failed = LuaBinary(LuaBinOp.Ne, failure, LuaNil)
     val succeeded = LuaBinary(LuaBinOp.Eq, failure, LuaNil)
 }

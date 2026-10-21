@@ -18,8 +18,7 @@ internal object UnsignedMappings {
         }
     }
 
-    private fun CallSite.unsignedTable(member: String, vararg args: LuaExpr): LuaExpr =
-        LuaCall(LuaIndex(ref("Unsigned", "__K2L_Unsigned"), LuaString(member)), args.toList())
+    private fun CallSite.unsignedTable(member: String, vararg args: LuaExpr): LuaExpr = libCall(UNSIGNED_TABLE, member, args.toList())
 
     /** `sum()` of unsigned numbers wraps (to `UInt`, whose sum is the result type for the narrower types too). */
     fun post(callableId: String?, site: CallSite, result: LuaExpr?): LuaExpr? {
@@ -32,7 +31,7 @@ internal object UnsignedMappings {
     /** `a.compareTo(b)`: a `ULong` on 5.3/5.4 compares with `math.ult`; everything else is the generic comparison (null). */
     fun compareTo(site: CallSite): LuaExpr? = with(site) {
         val ulong = with(session) { unsignedOf(receiverType) == Unsigned.ULong || unsignedOf(argTypes.getOrNull(0)) == Unsigned.ULong }
-        if (ulong && (transformer.ctx.options.luaTarget.hasIntegers || transformer.emulatesLong)) {
+        if (ulong && (hasIntegers || transformer.emulatesLong)) {
             unsignedTable("compare", self, arg(0))
         } else {
             null
@@ -54,7 +53,7 @@ internal object UnsignedMappings {
     private fun bitwise(t: MappingTable, kind: Unsigned) {
         val name = kind.name
         val wide = kind == Unsigned.UInt || kind == Unsigned.ULong
-        fun CallSite.native(helper: String, op: LuaBinOp): LuaExpr = if (transformer.ctx.options.luaTarget.hasIntegers) {
+        fun CallSite.native(helper: String, op: LuaBinOp): LuaExpr = if (hasIntegers) {
             LuaBinary(op, self, arg(0))
         } else {
             wrap(kind, LuaCall(ref("Bit", helper), listOf(self, arg(0))))
@@ -65,7 +64,7 @@ internal object UnsignedMappings {
         // all ones minus the value: the complement within the type's width
         t.def("kotlin/$name.inv") {
             val ones = when {
-                kind == Unsigned.ULong -> if (transformer.ctx.options.luaTarget.hasIntegers) "-1" else "18446744073709551615"
+                kind == Unsigned.ULong -> if (hasIntegers) "-1" else "18446744073709551615"
                 else -> ((1L shl kind.bits) - 1).toString()
             }
             LuaBinary(LuaBinOp.Sub, LuaNumber(ones), self)
@@ -73,7 +72,7 @@ internal object UnsignedMappings {
         if (!wide) return
         t.def("kotlin/$name.shl") {
             val shift = shiftCount(kind, arg(0))
-            if (transformer.ctx.options.luaTarget.hasIntegers) {
+            if (hasIntegers) {
                 wrap(kind, LuaBinary(LuaBinOp.Shl, self, shift))
             } else {
                 wrap(kind, LuaBinary(LuaBinOp.Mul, self, LuaBinary(LuaBinOp.Pow, LuaNumber("2"), shift)))
@@ -81,10 +80,10 @@ internal object UnsignedMappings {
         }
         t.def("kotlin/$name.shr") {
             val shift = shiftCount(kind, arg(0))
-            if (transformer.ctx.options.luaTarget.hasIntegers) {
+            if (hasIntegers) {
                 LuaBinary(LuaBinOp.Shr, self, shift)
             } else {
-                luaCall(luaPath("math", "floor"), LuaBinary(LuaBinOp.Div, self, LuaBinary(LuaBinOp.Pow, LuaNumber("2"), shift)))
+                lua("math.floor", LuaBinary(LuaBinOp.Div, self, LuaBinary(LuaBinOp.Pow, LuaNumber("2"), shift)))
             }
         }
     }
@@ -103,8 +102,8 @@ internal object UnsignedMappings {
         val wide = kind == Unsigned.UInt || kind == Unsigned.ULong
         t.def("kotlin/$name.toInt") { if (wide) lualib("ToInt32", self) else self }
         t.def("kotlin/$name.toLong") { self }
-        t.def("kotlin/$name.toShort") { libMember("Numbers", "__K2L_Num", "toShort", self) }
-        t.def("kotlin/$name.toByte") { libMember("Numbers", "__K2L_Num", "toByte", self) }
+        t.def("kotlin/$name.toShort") { libMember(NUM_TABLE, "toShort", self) }
+        t.def("kotlin/$name.toByte") { libMember(NUM_TABLE, "toByte", self) }
         t.def("kotlin/$name.toDouble") { toDouble(kind) }
         t.def("kotlin/$name.toFloat") { transformer.fround(toDouble(kind)) }
         for (to in KINDS) {
@@ -114,7 +113,7 @@ internal object UnsignedMappings {
             when {
                 args.isEmpty() -> str(self, receiverType)
                 kind == Unsigned.ULong -> unsignedTable("toRadix", self, arg(0))
-                else -> libMember("Numbers", "__K2L_Num", "toRadix", self, arg(0))
+                else -> libMember(NUM_TABLE, "toRadix", self, arg(0))
             }
         }
     }

@@ -3,7 +3,7 @@ package dev.k2l.transform
 import dev.k2l.codegen.*
 
 /**
- * The `java.lang` box statics (`Integer.bitCount(x)`, `Long.toHexString(x)`, `Double.isNaN(x)`, `Character.getNumericValue(c)`,
+ * The `java.lang` box statics (`Integer.bitCount(x)`, `Long.toHexString(x)`, `Double.isNaN(x)`,
  * `String.join(...)`) that ported Java code uses. Most are a Kotlin member under another name, so they reuse its mapping with
  * the first argument as the receiver; with `--long64 emulate` the `Long` ones are mapped in [Long64Mappings] first.
  */
@@ -30,8 +30,8 @@ internal object JavaStaticMappings {
         t.def("java/lang/Integer.toUnsignedString") { n("toRadixUnsigned", arg(0), args.getOrElse(1) { num("10") }) }
         for ((name, shift) in LONG_RADIX) {
             t.def("java/lang/Long.$name") {
-                if (transformer.ctx.options.luaTarget.hasIntegers) {
-                    LuaCall(LuaIndex(ref("Unsigned", "__K2L_Unsigned"), LuaString("toRadix")), listOf(arg(0), num("${1 shl shift}")))
+                if (hasIntegers) {
+                    libCall(UNSIGNED_TABLE, "toRadix", listOf(arg(0), num("${1 shl shift}")))
                 } else {
                     n("longToUnsignedRadix", arg(0), num("$shift"))
                 }
@@ -43,14 +43,15 @@ internal object JavaStaticMappings {
         t.def("java/lang/Double.valueOf") {
             if (isTextual(argTypes.firstOrNull())) LuaCall(ref("Strings", "__K2L_StringToDouble"), listOf(arg(0))) else arg(0)
         }
-        t.def("java/lang/Double.toString", "java/lang/Boolean.toString", "java/lang/Character.toString") {
+        t.def("java/lang/Double.toString", "java/lang/Boolean.toString") {
             if (args.size == 1) str(arg(0), overloadType(0)) else null
         }
         t.def("java/lang/Boolean.parseBoolean") {
             LuaBinary(LuaBinOp.Eq, lua("string.lower", LuaBinary(LuaBinOp.Or, arg(0), LuaString(""))), LuaString("true"))
         }
-        t.def("java/lang/Character.getNumericValue") { n("numericValue", arg(0)) }
         textStatics(t)
+        JavaIntegerStatics.install(t)
+        JavaMathStatics.install(t)
     }
 
     private fun textStatics(t: MappingTable) {
@@ -73,7 +74,7 @@ internal object JavaStaticMappings {
         }
     }
 
-    private fun CallSite.n(member: String, vararg args: LuaExpr) = libMember("Numbers", "__K2L_Num", member, *args)
+    private fun CallSite.n(member: String, vararg args: LuaExpr) = libMember(NUM_TABLE, member, *args)
 
     /** The mapping of the Kotlin extension [id], called on the first argument. */
     private fun CallSite.asExtension(id: String): LuaExpr? {
