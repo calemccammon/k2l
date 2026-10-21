@@ -2,6 +2,7 @@ package dev.k2l
 
 import dev.k2l.codegen.Lualib
 import dev.k2l.frontend.SourceModule
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -10,7 +11,14 @@ import java.util.concurrent.TimeUnit
 /** The shared runtime's file among the outputs. */
 internal const val BUNDLE_FILE = "${Lualib.BUNDLE_MODULE}.lua"
 
-/** Lua interpreters on this machine, found by name (or `-Dk2l.lua51=...` and so on) and confirmed by their version banner. */
+/**
+ * Lua interpreters on this machine, found by name (or `-Dk2l.lua51=...` and so on) and confirmed by their version banner.
+ *
+ * `-PluaTargets=5.1,JIT` (`-Dk2l.luaTargets`) runs only the tests of those targets, so that CI can split them between jobs;
+ * each selected target must then have an interpreter: its tests fail instead of being skipped. The tests that are not about
+ * one target (the golden 5.4 output and its runtime names, the CLI, ...) go with 5.4 and run when it is selected. Without the
+ * property every test runs, on every interpreter found.
+ */
 internal object LuaInterpreters {
     private val names = mapOf(
         LuaTarget.Lua51 to ("lua51" to listOf("lua5.1", "lua51", "lua")),
@@ -32,14 +40,39 @@ internal object LuaInterpreters {
     private fun matches(target: LuaTarget, banner: String) =
         if (target == LuaTarget.LuaJIT) banner.startsWith("LuaJIT") else banner.startsWith("Lua ${target.id}")
 
-    /** The interpreter of [target], or null when none is installed. */
-    fun of(target: LuaTarget): String? = found[target]
+    /** The targets of `-PluaTargets`, or null when it isn't given (every target). */
+    val selection: Set<LuaTarget>? = System.getProperty("k2l.luaTargets")?.takeIf { it.isNotBlank() }?.split(',')
+        ?.map { id ->
+            LuaTarget.entries.firstOrNull { it.id.equals(id.trim(), ignoreCase = true) }
+                ?: error("unknown Lua target '${id.trim()}' in luaTargets, expected some of ${LuaTarget.entries.map { it.id }}")
+        }?.toSet()
 
-    /** Every installed interpreter with its target, one per target. */
-    val installed: List<Pair<String, LuaTarget>> get() = found.map { (target, name) -> name to target }
+    /** Whether the tests of [target] run. */
+    fun selects(target: LuaTarget): Boolean = selection?.contains(target) ?: true
+
+    /** Whether the tests that are not about a target run (see the class comment); a JUnit `@EnabledIf` condition. */
+    @JvmStatic
+    fun runsTargetFreeTests(): Boolean = selects(LuaTarget.Lua54)
+
+    /** The interpreter of [target], or null when none is installed; a target that `-PluaTargets` selects must have one. */
+    fun of(target: LuaTarget): String? = found[target].also {
+        check(it != null || selection?.contains(target) != true) { "no interpreter for Lua ${target.id} found, but luaTargets selects it" }
+    }
+
+    /** Every installed interpreter of a selected target with its target, one per target. */
+    val installed: List<Pair<String, LuaTarget>>
+        get() = LuaTarget.entries.filter(::selects).mapNotNull { target -> of(target)?.let { it to target } }
 }
 
-/** Interpreters installed on this machine with their target, one per version. */
+/** `@EnabledIf(TARGET_FREE)`: a test (or class) that is not about one Lua target, run when `-PluaTargets` selects 5.4. */
+internal const val TARGET_FREE = "dev.k2l.LuaInterpreters#runsTargetFreeTests"
+
+/** Skips the test when its interpreter is missing ([found] false), or fails it when `-PluaTargets` selects that target. */
+internal fun assumeInterpreter(found: Boolean, message: String) {
+    if (LuaInterpreters.selection != null) check(found) { message } else assumeTrue(found, message)
+}
+
+/** Interpreters installed on this machine with their target, one per version, of the targets that `-PluaTargets` selects. */
 internal val installedInterpreters: List<Pair<String, LuaTarget>> get() = LuaInterpreters.installed
 
 /** What a Lua run printed and its exit status; [stderr] is empty when it was merged into [stdout]. */

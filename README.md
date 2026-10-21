@@ -1168,9 +1168,10 @@ property). A `Double` read from an unchecked `Int` stays an integral number.
 ./gradlew test                     # transpile + run every test case on every Lua interpreter found
 ./gradlew test -PupdateGolden      # rewrite expected.lua files after an intended output change
 ./gradlew test -Ponly=casts,lazy_objects   # only these cases (also for kotlinOracle)
+./gradlew :compiler:test -PluaTargets=5.1,JIT   # only the tests of these Lua targets (see below)
 ./gradlew :compiler:kotlinOracle   # check each stdout.txt against what Kotlin/JVM prints
 ./gradlew :compiler:test --tests dev.k2l.SnapshotTest -Pk2l.snapshot=.scratch/before   # see below
-./gradlew check                    # tests + Gradle plugin functional tests + ktlint (spotlessCheck) + detekt, as CI runs it
+./gradlew check                    # tests + Gradle plugin functional tests + ktlint (spotlessCheck) + detekt, what CI runs
 ./gradlew :gradle-plugin:functionalTest   # only the TestKit tests of the Gradle plugin (about 15 s)
 ./gradlew spotlessApply            # reformat Kotlin sources with ktlint
 ./gradlew :compiler:distZip        # compiler/build/distributions/k2l-<version>.zip, the CLI distribution
@@ -1192,6 +1193,12 @@ Lua 5.1, 5.2, 5.3 and LuaJIT when those interpreters are installed (`lua5.1`, `l
 rewrites the files). A case with `errors.txt` instead checks the diagnostics; `targets-skip.txt`
 lists documented differences on specific targets (`5.4:` skips the run of the golden Lua); `jvm-skip` marks cases that call hand-written Lua; `options.txt` sets compiler options for a case, one
 `name=value` per line (`intOverflow=wrap`, `luaLibImport=inline`, `strings=utf16`, `long64=emulate`).
+
+`-PluaTargets=5.1,5.2` (of `5.1`, `5.2`, `5.3`, `5.4`, `JIT`) runs only the compiler tests of those targets, and each of
+them must then have its interpreter: a missing one fails the tests instead of skipping them. The tests that are not about
+one target (the golden output, which is 5.4's, the `errors.txt` cases, the CLI, the benchmark programs' transpiling, ...)
+go with `5.4`. CI splits `:compiler:test` into `-PluaTargets=5.4`, `5.1,JIT` and `5.2,5.3`, which together run every test
+once, and runs the rest of `check` with `-x :compiler:test`.
 
 A change that must not alter the generated Lua (a refactoring) is checked with snapshots: `-Pk2l.snapshot=<dir>`
 makes `SnapshotTest` write everything the compiler generates for every case and benchmark program, `lualib_bundle.lua`
