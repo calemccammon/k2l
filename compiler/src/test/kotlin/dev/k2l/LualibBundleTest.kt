@@ -2,7 +2,6 @@ package dev.k2l
 
 import dev.k2l.codegen.Lualib
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.io.TempDir
@@ -24,13 +23,13 @@ class LualibBundleTest {
     }
 
     @TestFactory
-    fun everyFeatureLoadsTogether(): List<DynamicTest> = LuaTarget.entries.flatMap { target ->
+    fun everyFeatureLoadsTogether(): List<DynamicTest> = LuaTarget.entries.filter(LuaInterpreters::selects).flatMap { target ->
         // --long64 emulate has its own variants of the runtime on the targets without integers
         listOf(false, true).filter { !it || !target.hasIntegers }.map { emulate ->
             val label = if (emulate) "all features on ${target.id} with long64=emulate" else "all features on ${target.id}"
             DynamicTest.dynamicTest(label) {
                 val interpreter = LuaInterpreters.of(target)
-                assumeTrue(interpreter != null, "no interpreter for ${target.id} found")
+                assumeInterpreter(interpreter != null, "no interpreter for ${target.id} found")
                 val bundle = dir.resolve("bundle_${target.name}_$emulate.lua")
                 // Features that exist only as another target's variant (e.g. IMul.float) are left out.
                 val available = features.filter { runCatching { Lualib.feature(it, target, emulate) }.isSuccess }

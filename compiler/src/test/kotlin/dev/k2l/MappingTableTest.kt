@@ -4,11 +4,13 @@ import dev.k2l.transform.Long64Mappings
 import dev.k2l.transform.StdlibMappings
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledIf
 
 /**
  * A mapping registered again under an id that already has one silently replaces it. These are the ids for which that
  * happens today; the later definition is the one in use, so a new entry here means a mapping was probably shadowed by mistake.
  */
+@EnabledIf(TARGET_FREE)
 class MappingTableTest {
     private val stdlibOverwrites =
         // ReflectionMappings: `isSuspend` needs kotlin-reflect both as a KCallable and as a KFunction member

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
+import org.junit.jupiter.api.condition.EnabledIf
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -17,6 +18,7 @@ import java.nio.file.Paths
  * A refactoring that must not change the output is checked with `diff -r` of a snapshot taken before and one after it.
  * Without the property this produces no tests.
  */
+@EnabledIf(TARGET_FREE)
 class SnapshotTest {
     @TestFactory
     fun snapshot(): List<DynamicTest> {

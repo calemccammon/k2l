@@ -7,12 +7,14 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
+import org.junit.jupiter.api.condition.EnabledIf
 import java.io.File
 
 /**
  * The benchmark programs (`src/bench/programs`, run by `./gradlew :compiler:bench`) must keep transpiling on every
  * target. Timing them is local only; this just catches a program the compiler stops accepting.
  */
+@EnabledIf(TARGET_FREE)
 class BenchProgramsTest {
     @TestFactory
     fun benchProgramsTranspile(): List<DynamicTest> = programs.flatMap { dir ->

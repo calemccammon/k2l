@@ -5,9 +5,44 @@ on:
     branches: [main]
   pull_request:
 
-# Two independent jobs that run at the same time; each fails on its own failures.
+# `./gradlew check` split into jobs that run at the same time: the compiler's tests in three shards of Lua targets
+# (-PluaTargets, see "Development" in the README), and everything else. `test` passes only when all of them pass.
 jobs:
-  test:
+  compiler-tests:
+    name: compiler tests (Lua ${{ matrix.targets }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      # every shard reports its own failures
+      fail-fast: false
+      matrix:
+        include:
+          # 5.4 also has the tests that are not about one target: the golden output, its lualib names, the CLI, ...
+          - targets: "5.4"
+            packages: lua5.4
+          - targets: "5.1,JIT"
+            packages: lua5.1 luajit
+          - targets: "5.2,5.3"
+            packages: lua5.2 lua5.3
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      # A selected target whose interpreter is missing fails its tests rather than skipping them.
+      - name: Install Lua interpreters
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ${{ matrix.packages }}
+
+      - name: Compiler tests (Lua ${{ matrix.targets }})
+        run: ./gradlew :compiler:test -PluaTargets=${{ matrix.targets }}
+
+  # The rest of `check`: the Gradle plugin's functional tests, spotless, detekt and the other source sets' compilation.
+  checks:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -20,14 +55,28 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v5
 
-      # Every test case runs on each of these; missing interpreters are skipped, so install them all.
-      - name: Install Lua interpreters
-        run: sudo apt-get update && sudo apt-get install -y lua5.1 lua5.2 lua5.3 lua5.4 luajit
+      - name: Check (without the compiler's tests)
+        run: ./gradlew check -x :compiler:test
 
-      # Tests on every Lua target, the Gradle plugin's functional tests, spotless and detekt. --parallel runs the
-      # projects' tasks side by side (the plugin's functional tests next to the compiler's tests).
-      - name: Check (all Lua targets)
-        run: ./gradlew check --parallel
+  # The check branch protection requires: passes only when every shard and `checks` passed.
+  test:
+    needs: [compiler-tests, checks]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: All test jobs passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          [ -n "$RESULTS" ] || exit 1
+          for result in $RESULTS; do
+            if [ "$result" != success ]; then
+              echo "a test job did not succeed: $result"
+              exit 1
+            fi
+          done
 
   # Confirms every case's stdout.txt is what Kotlin/JVM really prints. Needs neither Lua nor the k2l compiler.
   oracle:

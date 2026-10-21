@@ -69,6 +69,8 @@ tasks.test {
         providers.gradleProperty(name).orNull?.let { systemProperty("k2l.$name", it) }
     }
     providers.gradleProperty("only").orNull?.let { systemProperty("k2l.only", it) } // -Ponly=casts,objects_enums
+    // -PluaTargets=5.1,JIT: only those targets' tests, each needing its interpreter; the rest go with 5.4 (CI splits on it)
+    providers.gradleProperty("luaTargets").orNull?.let { systemProperty("k2l.luaTargets", it) }
     // -Pk2l.snapshot=<dir>: SnapshotTest writes the output of every case on every target there (see "Development" in the README)
     providers.gradleProperty("k2l.snapshot").orNull?.let { systemProperty("k2l.snapshot", rootProject.file(it).absolutePath) }
 }
