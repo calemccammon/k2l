@@ -16,9 +16,8 @@ private const val TWO_32 = "4294967296"
  */
 internal object ConstantBits {
     private fun CallSite.applies(isLong: Boolean): Boolean {
-        val target = transformer.target
-        if (target.hasIntegers || (isLong && transformer.emulatesLong)) return false
-        return isLong || target != LuaTarget.LuaJIT
+        if (hasIntegers || (isLong && emulatesLong)) return false
+        return isLong || !target.compilesBitOps
     }
 
     private fun constant(e: LuaExpr): Long? = (e as? LuaNumber)?.text?.toLongOrNull()
@@ -40,7 +39,7 @@ internal object ConstantBits {
     fun integerShift(site: CallSite, name: String): LuaExpr? = with(site) {
         val n = constant(arg(0)) ?: return null
         val lowest = if (name == "ushr") 1 else 0
-        if (!transformer.target.hasIntegers || n < lowest || n > INT_SHIFTS) return null
+        if (!hasIntegers || n < lowest || n > INT_SHIFTS) return null
         when (name) {
             "shl" -> transformer.wrapInt32(LuaBinary(LuaBinOp.Shl, self, arg(0)))
             "shr" -> LuaBinary(LuaBinOp.IDiv, self, LuaNumber((1L shl n.toInt()).toString()))
@@ -54,6 +53,6 @@ internal object ConstantBits {
         val n = constant(arg(0)) ?: return null
         if (n < 1 || n > if (isLong) LONG_SHIFTS else INT_SHIFTS) return null
         val value = if (unsigned) LuaBinary(LuaBinOp.Mod, self, LuaNumber(TWO_32)) else self
-        luaCall(luaPath("math", "floor"), LuaBinary(LuaBinOp.Div, value, LuaNumber((1L shl n.toInt()).toString())))
+        lua("math.floor", LuaBinary(LuaBinOp.Div, value, LuaNumber((1L shl n.toInt()).toString())))
     }
 }

@@ -17,7 +17,7 @@ internal fun FileTransformer.sourceFunInterface(type: KaType?): KtClass? = with(
 /** A lambda (a function value) passed for a parameter whose type is a `fun interface` of the program is SAM-converted. */
 internal fun FileTransformer.registerSamConversion(parameterType: KaType, arg: KtExpression): Unit = with(session) {
     val cls = sourceFunInterface(parameterType) ?: return
-    if (arg.expressionType is KaFunctionType) samConversions[arg] = cls
+    if (arg.expressionType is KaFunctionType) callState.samConversions[arg] = cls
 }
 
 /**

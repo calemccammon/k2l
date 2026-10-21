@@ -12,9 +12,6 @@ import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtExpression
 
-/** lualib feature with the abstract collection bases, see `AbstractCollections.lua`. */
-internal const val ABSTRACT_COLLECTIONS_FEATURE = "AbstractCollections"
-
 private const val ABSTRACT_COLLECTION = "__K2L_AbstractCollection"
 private const val ABSTRACT_LIST = "__K2L_AbstractList"
 private const val ABSTRACT_SET = "__K2L_AbstractSet"

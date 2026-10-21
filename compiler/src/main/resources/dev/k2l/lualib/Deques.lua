@@ -423,6 +423,11 @@ function __K2L_Deque:remove(value)
     return false
 end
 
+-- removes the i-th element (from 1), for removeLastOccurrence
+function __K2L_Deque:____delete(i)
+    delete(self, (self.____head + i - 1) % self.____capacity)
+end
+
 function __K2L_Deque:clear()
     __K2L_List.clear(self)
     self.____head = 0

@@ -45,6 +45,9 @@ internal val LIBRARY_CLASSES = listOf(
     "kotlin/ConcurrentModificationException" to "__K2L_ConcurrentModificationException",
     "java/util/EmptyStackException" to "__K2L_EmptyStackException",
     "kotlin/NotImplementedError" to "__K2L_NotImplementedError",
+    "kotlin/KotlinNullPointerException" to "__K2L_KotlinNullPointerException",
+    "kotlin/NoWhenBranchMatchedException" to "__K2L_NoWhenBranchMatchedException",
+    "kotlin/TypeCastException" to "__K2L_TypeCastException",
     "kotlin/UninitializedPropertyAccessException" to "__K2L_UninitializedPropertyAccessException",
     "java/lang/ArrayIndexOutOfBoundsException" to "__K2L_ArrayIndexOutOfBoundsException",
     "java/util/regex/PatternSyntaxException" to "__K2L_PatternSyntaxException",
@@ -62,6 +65,8 @@ internal val MARKER_INTERFACES = setOf(
     "java/lang/AutoCloseable",
     "kotlin/properties/ReadWriteProperty",
     "kotlin/properties/ReadOnlyProperty",
+    // a clock of the program is called through its own now()
+    "kotlin/time/Clock",
     // implemented by objects with resumeWith()/hasNext()/next(), as the lualib calls them
     "kotlin/coroutines/Continuation",
     "kotlin/collections/Iterator",
@@ -116,9 +121,6 @@ internal const val INIT_COMPANION = "____initCompanion"
 
 /** Creates the entries of an enum class whose initialization is lazy. */
 internal const val INIT_ENUM = "____initEnum"
-
-/** lualib feature that implements the exception classes. */
-internal const val EXCEPTIONS_FEATURE = "Exceptions"
 
 internal const val ILLEGAL_ARGUMENT_EXCEPTION = "__K2L_IllegalArgumentException"
 internal const val ILLEGAL_STATE_EXCEPTION = "__K2L_IllegalStateException"

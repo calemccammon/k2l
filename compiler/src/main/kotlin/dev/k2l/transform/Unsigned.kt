@@ -76,7 +76,7 @@ private fun FileTransformer.involvesULong(lt: KaType?, rt: KaType?): Boolean =
 /** Division and remainder of a `ULong` (5.3/5.4): values from 2^63 are negative Lua integers. */
 internal fun FileTransformer.unsignedLongDivision(remainder: Boolean, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr? =
     if (target.hasIntegers && involvesULong(lt, rt)) {
-        LuaCall(LuaIndex(lualibRef("Unsigned", "__K2L_Unsigned"), LuaString(if (remainder) "urem" else "udiv")), listOf(l, r))
+        libCall(UNSIGNED_TABLE, if (remainder) "urem" else "udiv", listOf(l, r))
     } else {
         null
     }
@@ -84,7 +84,7 @@ internal fun FileTransformer.unsignedLongDivision(remainder: Boolean, l: LuaExpr
 /** `l < r` and friends for a `ULong` (5.3/5.4): `math.ult`. */
 internal fun FileTransformer.unsignedLongComparison(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr? {
     if (!target.hasIntegers || !involvesULong(lt, rt)) return null
-    fun ult(a: LuaExpr, b: LuaExpr) = luaCall(luaPath("math", "ult"), a, b)
+    fun ult(a: LuaExpr, b: LuaExpr) = lua("math.ult", a, b)
     return when (op) {
         LuaBinOp.Lt -> ult(l, r)
         LuaBinOp.Gt -> ult(r, l)

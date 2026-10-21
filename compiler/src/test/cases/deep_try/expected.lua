@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_CloseAfter = ____lualib.__K2L_CloseAfter
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -161,7 +162,7 @@ local function nestedUse(n)
         if ____ok_3 then
             ____resource:close()
         else
-            pcall(____resource.close, ____resource)
+            __K2L_CloseAfter(____resource, ____result_4)
         end
         if not ____ok_3 then
             error(____result_4, 0)

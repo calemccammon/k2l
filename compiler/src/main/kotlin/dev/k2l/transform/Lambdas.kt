@@ -47,7 +47,7 @@ internal fun FileTransformer.lambda(e: KtLambdaExpression): LuaExpr = with(sessi
     if (literal.valueParameters.isEmpty() && type?.parameterTypes?.size == 1) params += "it"
     val returnsValue = type?.returnType?.let { !it.isUnitType } ?: true
     val frame = FunctionFrame(FunctionFrame.Kind.Lambda, lambdaLabels(e), literal)
-    frame.site = jumpSites.lastOrNull { e in it.lambdas }
+    frame.site = jumps.jumpSites.lastOrNull { e in it.lambdas }
     frame.unitResult = !returnsValue && resultExpected(e)
     val body = inFrame(frame) {
         prologue + collect {
@@ -163,7 +163,7 @@ private fun FileTransformer.jumpsToBreaks(body: List<LuaStmt>, end: String, flag
         when (s) {
             is LuaGoto -> when {
                 // a label of a loop or of an enclosing inlined body, lowered there
-                s.label != end && s.label in jumpLabels -> listOf(s)
+                s.label != end && s.label in jumps.jumpLabels -> listOf(s)
 
                 s.label != end -> listOf(s.also { ctx.error(at, "This jump out of an inlined lambda or function needs goto (Lua 5.1)") })
 

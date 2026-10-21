@@ -27,7 +27,7 @@ internal fun FileTransformer.jumpTo(target: JumpTarget, value: Operand?, at: KtE
         is JumpTarget.Break -> target.loop.owner
         is JumpTarget.Continue -> target.loop.owner
     }
-    val crossed = frames.drop(frames.indexOfLast { it === owner } + 1)
+    val crossed = jumps.frames.drop(jumps.frames.indexOfLast { it === owner } + 1)
     val closure = crossed.lastOrNull { it.isClosure }
     when {
         closure != null -> raiseJump(closure, target, value, at)
@@ -53,7 +53,7 @@ private fun FileTransformer.raiseJump(closure: FunctionFrame, target: JumpTarget
     }
     val token = LuaName(site.token ?: ctx.temp("jump").also { site.token = it })
     val code = LuaNumber(site.codeOf(target, value != null).toString())
-    jumpsRaised++
+    jumps.jumpsRaised++
     fun raise(v: LuaExpr?) = LuaCallStmt(LuaCall(lualibRef("Jump", "__K2L_Jump"), listOfNotNull(token, code, v)))
     when (value) {
         null -> emit(raise(null))
@@ -70,11 +70,11 @@ internal fun FileTransformer.catchingJumps(call: KaCallableMemberCall<*, *>, ful
     val lambdas = inlinedLambdaArguments(call)
     if (lambdas.isEmpty()) return build()
     val site = JumpSite(lambdas)
-    jumpSites.addLast(site)
+    jumps.jumpSites.addLast(site)
     val (value, pre) = try {
         withPreceding(build)
     } finally {
-        jumpSites.removeLast()
+        jumps.jumpSites.removeLast()
     }
     if (site.jumps.isEmpty()) {
         emitAll(pre)
@@ -142,7 +142,7 @@ private fun FileTransformer.madeJumps(site: JumpSite, token: LuaName, at: KtElem
 
 /** [deepPcall], or on Lua 5.1 `__K2L_CoPcall` when a lambda can suspend (5.1 cannot yield across pcall). */
 private fun FileTransformer.pcallFor(site: JumpSite): LuaExpr {
-    val suspends = target == LuaTarget.Lua51 && site.lambdas.any { containsSuspensionPoint(it) }
+    val suspends = !target.yieldsAcrossPcall && site.lambdas.any { containsSuspensionPoint(it) }
     return if (suspends) lualibRef("CoPcall", "__K2L_CoPcall") else deepPcall()
 }
 

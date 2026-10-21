@@ -23,7 +23,7 @@ internal fun FileTransformer.librarySuperCall(symbol: KaCallableSymbol, args: Li
     val self = selfRef()
     when {
         name == "toString" && args.isEmpty() -> when {
-            isThrowable -> LuaCall(LuaIndex(lualibRef(EXCEPTIONS_FEATURE, "__K2L_Throwable"), LuaString("toString")), listOf(self))
+            isThrowable -> libCall(EXCEPTIONS_FEATURE, "__K2L_Throwable", "toString", listOf(self))
             owner == "kotlin/Enum" -> LuaIndex(self, LuaString("name"))
             else -> lualibCall("AnyToString", self)
         }

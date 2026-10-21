@@ -8,22 +8,15 @@ import org.jetbrains.kotlin.psi.KtQualifiedExpression
 /** `LinkedHashMap(initialCapacity, loadFactor, accessOrder)` */
 internal const val LINKED_MAP_ACCESS_ORDER_ARITY = 3
 
-/** Functions that create collections, ranges, comparators and pairs, and constructors of library classes. */
-@Suppress("TooManyFunctions") // one small mapper per kind of factory
+/** Functions that create collections, ranges, comparators and pairs (the constructors are in [CoreConstructors]). */
 internal object FactoryMappings {
     fun factory(callableId: String?, site: CallSite): LuaExpr? {
         fun call(name: String, vararg args: LuaExpr) = LuaCall(site.ref(featureOf(name), name), args.toList())
         val args = site.args.toTypedArray()
         return when (callableId) {
             // the JVM's classes: EmptyList, Collections$SingletonList for listOf(x), Arrays$ArrayList for listOf(a, b, ...)
-            "kotlin/collections/listOf" -> if (isSingleArgument(
-                    site,
-                )
-            ) {
-                call("__K2L_SingletonListOf", *args)
-            } else {
-                call("__K2L_ReadOnlyListOf", *args)
-            }
+            "kotlin/collections/listOf" ->
+                if (isSingleArgument(site)) call("__K2L_SingletonListOf", *args) else call("__K2L_ReadOnlyListOf", *args)
 
             "kotlin/collections/emptyList" -> call("__K2L_ReadOnlyListOf")
 
@@ -44,14 +37,8 @@ internal object FactoryMappings {
 
             "kotlin/collections/mutableSetOf", "kotlin/collections/linkedSetOf" -> call("__K2L_SetOf", *args)
 
-            "kotlin/collections/mapOf" -> if (isSingleArgument(
-                    site,
-                )
-            ) {
-                call("__K2L_SingletonMapOf", *args)
-            } else {
-                call("__K2L_ReadOnlyMapOf", *args)
-            }
+            "kotlin/collections/mapOf" ->
+                if (isSingleArgument(site)) call("__K2L_SingletonMapOf", *args) else call("__K2L_ReadOnlyMapOf", *args)
 
             "kotlin/collections/emptyMap" -> call("__K2L_ReadOnlyMapOf")
 
@@ -65,7 +52,7 @@ internal object FactoryMappings {
 
             "kotlin/collections/sortedSetOf" -> call("__K2L_SortedSetOf", *args)
 
-            "kotlin/to" -> LuaCall(LuaIndex(site.ref("Pair", "__K2L_Pair"), LuaString("new")), listOf(site.self, site.arg(0)))
+            "kotlin/to" -> site.libNew(PAIR_TABLE, listOf(site.self, site.arg(0)))
 
             "kotlin/collections/List", "kotlin/collections/MutableList" -> call("__K2L_ListOfSize", site.arg(0), site.arg(1))
 
@@ -151,8 +138,9 @@ internal object FactoryMappings {
 
             "kotlin/Char.rangeTo" -> newCharRange(site, site.self, site.arg(0))
 
-            "kotlin/ranges/rangeTo" -> LuaCall(
-                LuaIndex(site.ref("Collections", "__K2L_ClosedRange"), LuaString("new")),
+            "kotlin/ranges/rangeTo" -> site.libNew(
+                "Collections",
+                "__K2L_ClosedRange",
                 listOfNotNull(site.self, site.arg(0), boundsFormat(site)),
             )
 
@@ -197,9 +185,6 @@ internal object FactoryMappings {
     private fun charCodeMinusOne(site: CallSite, c: LuaExpr): LuaExpr =
         LuaBinary(LuaBinOp.Sub, if (site.utf16) site.u16("code", c) else LuaMethodCall(c, "byte", emptyList()), LuaNumber("1"))
 
-    private fun charFromCode(site: CallSite, code: LuaExpr): LuaExpr =
-        if (site.utf16) site.u16("char", code) else LuaCall(luaPath("string", "char"), listOf(code))
-
     private fun misc(callableId: String?, site: CallSite): LuaExpr? = when (callableId) {
         "java/util/Objects.equals" -> LuaCall(site.ref("Equals", "__K2L_Equals"), listOf(site.arg(0), site.arg(1)))
 
@@ -211,11 +196,8 @@ internal object FactoryMappings {
         // the stdlib's empty ranges are 1..0 (and '\u0001'..'\u0000')
         "kotlin/ranges/IntRange.Companion.EMPTY" -> newRange(site, LuaNumber("1"), LuaNumber("0"))
 
-        "kotlin/ranges/LongRange.Companion.EMPTY" -> if (site.transformer.emulatesLong) {
-            LuaCall(
-                LuaIndex(site.ref("Long64Range", "__K2L_LongRange"), LuaString("new")),
-                listOf(LuaNumber("1"), LuaNumber("0"), LuaNil, LuaBool(false)),
-            )
+        "kotlin/ranges/LongRange.Companion.EMPTY" -> if (site.emulatesLong) {
+            site.libNew("Long64Range", "__K2L_LongRange", listOf(LuaNumber("1"), LuaNumber("0"), LuaNil, LuaBool(false)))
         } else {
             newRange(site, LuaNumber("1"), LuaNumber("0"))
         }
@@ -227,24 +209,32 @@ internal object FactoryMappings {
     }
 
     private fun newRange(site: CallSite, first: LuaExpr, last: LuaExpr, step: LuaExpr? = null) =
-        LuaCall(LuaIndex(site.ref("Collections", "__K2L_IntRange"), LuaString("new")), listOfNotNull(first, last, step))
+        site.libNew(INT_RANGE_TABLE, listOfNotNull(first, last, step))
 
     private fun newCharRange(site: CallSite, first: LuaExpr, last: LuaExpr, step: LuaExpr? = null): LuaExpr {
         val range = if (site.utf16) {
             LuaIndex(
-                LuaIndex(site.ref("Utf16", "__K2L_Utf16"), LuaString("CharRange")),
+                luaField(site.ref(UTF16_TABLE), "CharRange"),
                 LuaString("new"),
             )
         } else {
-            LuaIndex(site.ref("Collections", "__K2L_CharRange"), LuaString("new"))
+            luaField(site.ref("Collections", "__K2L_CharRange"), "new")
         }
         return LuaCall(range, listOfNotNull(first, last, step))
     }
 
+    /** The JVM name of the array type the call makes (see `__K2L_ArrayClassOf`), null for an `Object[]`. */
+    fun arrayBinary(site: CallSite): String? = with(site.session) { site.transformer.arrayBinary(site.element.expressionType) }
+}
+
+/** `kotlin.Function0.invoke` ... `kotlin.Function22.invoke`. */
+private val FUNCTION_INVOKES = (0..22).map { "kotlin/Function$it.invoke" }.toSet()
+
+/** Constructors of library classes: pairs, collections, text builders, regexes, ranges, chars and arrays (see LibraryConstructors). */
+internal object CoreConstructors {
     /** Constructor of a library class, or null. */
     fun construct(classId: String?, site: CallSite): LuaExpr? {
-        fun new(luaClass: String, vararg args: LuaExpr) =
-            LuaCall(LuaIndex(site.ref(featureOf(luaClass), luaClass), LuaString("new")), args.toList())
+        fun new(luaClass: String, vararg args: LuaExpr) = site.libNew(featureOf(luaClass), luaClass, args.toList())
         val first = site.argTypes.firstOrNull()
         val firstIsCollection = first != null && with(site.session) { first.collectionKind() } != null
         val elements = (if (firstIsCollection) site.args.take(1) else emptyList()).toTypedArray()
@@ -312,8 +302,8 @@ internal object FactoryMappings {
             "kotlin/UShortArray",
             -> primitiveArray(classId, site)
 
-            else -> BigNumberMappings.construct(classId, site) ?: JdkCollectionsMappings.construct(classId, site)
-                ?: Utf16Mappings.construct(classId, site) ?: StreamMappings.construct(classId, site)
+            // see LibraryConstructors for the other areas
+            else -> null
         }
     }
 
@@ -321,7 +311,7 @@ internal object FactoryMappings {
     private fun newPriorityQueue(site: CallSite): LuaExpr {
         val index = site.argTypes.indexOfFirst { it != null && !site.isIntegral(it) }
         val args = if (index >= 0) listOf(site.arg(index)) else emptyList()
-        return LuaCall(LuaIndex(site.ref("Collections", "__K2L_PriorityQueue"), LuaString("new")), args)
+        return site.libNew("Collections", "__K2L_PriorityQueue", args)
     }
 
     private fun primitiveArray(classId: String, site: CallSite): LuaExpr {
@@ -333,13 +323,9 @@ internal object FactoryMappings {
         }
         return LuaCall(site.ref("Collections", "__K2L_ListOfSize"), listOf(site.arg(0), site.args.getOrNull(1) ?: zero, arrayClass(site)))
     }
-
-    /** The JVM name of the array type the call makes (see `__K2L_ArrayClassOf`), null for an `Object[]`. */
-    fun arrayBinary(site: CallSite): String? = with(site.session) { site.transformer.arrayBinary(site.element.expressionType) }
-
-    /** The array class argument of `__K2L_ListOfSize`: the array type's JVM name, or true for an `Object[]`. */
-    private fun arrayClass(site: CallSite): LuaExpr = arrayBinary(site)?.let { LuaString(it) } ?: LuaBool(true)
 }
 
-/** `kotlin.Function0.invoke` ... `kotlin.Function22.invoke`. */
-private val FUNCTION_INVOKES = (0..22).map { "kotlin/Function$it.invoke" }.toSet()
+private fun charFromCode(site: CallSite, code: LuaExpr): LuaExpr = if (site.utf16) site.u16("char", code) else lua("string.char", code)
+
+/** The array class argument of `__K2L_ListOfSize`: the array type's JVM name, or true for an `Object[]`. */
+private fun arrayClass(site: CallSite): LuaExpr = FactoryMappings.arrayBinary(site)?.let { LuaString(it) } ?: LuaBool(true)

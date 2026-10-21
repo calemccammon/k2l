@@ -36,10 +36,7 @@ internal class PropertyFamilies(
     )
 
     // The scan covers the whole module, so it is done once and shared by the transformers of all files (it holds only PSI).
-    private val families: Map<KtNamedDeclaration, Family> by lazy {
-        @Suppress("UNCHECKED_CAST")
-        module.shared.getOrPut("propertyFamilies", ::scan) as Map<KtNamedDeclaration, Family>
-    }
+    private val families: Map<KtNamedDeclaration, Family> by lazy { module.shared.getOrPut(FAMILIES, ::scan) }
 
     /** Whether [p] is read and written through `getX`/`setX` methods. */
     fun usesAccessors(p: KtNamedDeclaration): Boolean = families[p]?.accessors == true && !isExternal(p)
@@ -169,6 +166,10 @@ internal class PropertyFamilies(
         p.getter?.accept(visitor)
         p.setter?.accept(visitor)
         return found
+    }
+
+    private companion object {
+        val FAMILIES = SharedKey<Map<KtNamedDeclaration, Family>>("propertyFamilies")
     }
 }
 

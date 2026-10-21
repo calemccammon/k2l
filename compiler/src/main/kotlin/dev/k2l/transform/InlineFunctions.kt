@@ -26,17 +26,17 @@ internal fun FileTransformer.reifiedType(type: KaType): KaType = with(session) {
 /** Runs [block] with the receivers of the code that passed [lambda], which is where the lambda's `this` is resolved. */
 internal inline fun <T> FileTransformer.inCallerContext(lambda: InlinedLambda, block: () -> T): T {
     val inlined = HashMap(receiverBindings)
-    val inlinedLoops = loops
+    val inlinedLoops = jumps.loops
     receiverBindings.clear()
     receiverBindings.putAll(lambda.callerBindings)
     // a `break` or `continue` in the lambda leaves the caller's loops, not those of the inlined body
-    loops = lambda.callerLoops
+    jumps.loops = lambda.callerLoops
     try {
         return block()
     } finally {
         receiverBindings.clear()
         receiverBindings.putAll(inlined)
-        loops = inlinedLoops
+        jumps.loops = inlinedLoops
     }
 }
 
@@ -115,7 +115,7 @@ private fun FileTransformer.varargArguments(fn: KtNamedFunction, call: KaFunctio
     val vararg = fn.valueParameters.firstOrNull { it.isVarArg } ?: return emptyList()
     val args = call.valueArgumentMapping.entries.filter { it.value.symbol.psi == vararg }.map { it.key }
         .sortedBy { it.textRange.startOffset }
-    args.filterTo(spreads) { (it.parent as? KtValueArgument)?.getSpreadElement() != null }
+    args.filterTo(callState.spreads) { (it.parent as? KtValueArgument)?.getSpreadElement() != null }
     return args
 }
 
@@ -128,7 +128,7 @@ internal fun FileTransformer.isInlinedParameter(p: KtParameter) = with(session) 
 private fun FileTransformer.lambdaArgument(arg: KtExpression): InlinedLambda? {
     inlinedLambdaOf(arg)?.let { return InlinedLambda(it.expr, true, it.callerBindings, it.callerLoops) }
     val unwrapped = KtPsiUtil.safeDeparenthesize(arg).let { (it as? KtLabeledExpression)?.baseExpression ?: it }
-    return (unwrapped as? KtLambdaExpression)?.let { InlinedLambda(it, false, HashMap(receiverBindings), loops) }
+    return (unwrapped as? KtLambdaExpression)?.let { InlinedLambda(it, false, HashMap(receiverBindings), jumps.loops) }
 }
 
 /** Whether the lambda has a `return` that leaves the function it is written in, or a `break`/`continue` of a loop around it. */
@@ -196,7 +196,7 @@ private fun FileTransformer.inlineUserFunction(site: InlineSite): LuaExpr = with
     val receivers = listOfNotNull(pas.dispatchReceiver, pas.extensionReceiver).map { receiverOperand(it, site.full) ?: return LuaNil }
     val valueArgs = fn.valueParameters.filter { !it.isVarArg }.map { p -> site.provided[p]?.takeIf { p !in site.lambdas } } + site.varargs
     // a spread that is not last makes the rest of the vararg's arguments one `__K2L_Spread(...)`, the last element of the Array
-    val collapsed = site.varargs.dropLast(1).any { it in spreads }
+    val collapsed = site.varargs.dropLast(1).any { it in callState.spreads }
     val values = arguments(receivers, valueArgs).let {
         if (collapsed) {
             it

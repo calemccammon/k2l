@@ -1,0 +1,12 @@
+0 zero
+2 small
+10 round
+50 other
+500 out of range
+RED true warm
+GREEN false cool GREEN
+BLUE false cool BLUE
+'' empty
+'e' vowel
+'y' sometimes
+'k' consonant

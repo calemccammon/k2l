@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.analysis.api.types.KaClassType
  */
 internal object StreamMappings {
     private const val PACKAGE = "java/util/stream/"
-    private const val STREAMS = "Streams"
 
     private val COMMON = setOf(
         "filter", "map", "flatMap", "distinct", "sorted", "limit", "skip", "peek", "takeWhile", "dropWhile", "parallel", "sequential",
@@ -44,6 +43,7 @@ internal object StreamMappings {
 
     private val OPTIONAL_MEMBERS = setOf(
         "isPresent", "isEmpty", "orElse", "orElseGet", "orElseThrow", "ifPresent", "ifPresentOrElse", "equals", "toString",
+        "hashCode", "stream",
     )
 
     /** The Kotlin names of getters (`optional.asInt` is `getAsInt()`). */
@@ -86,15 +86,15 @@ internal object StreamMappings {
         }
     }
 
-    private fun CallSite.streams(member: String, vararg args: LuaExpr): LuaExpr = libMember(STREAMS, "__K2L_Streams", member, *args)
+    private fun CallSite.streams(member: String, vararg args: LuaExpr): LuaExpr = libMember(STREAMS_TABLE, member, *args)
 
-    private fun CallSite.streamClass(simpleName: String): LuaExpr = ref(STREAMS, STREAM_CLASS_NAMES.getValue(simpleName))
+    private fun CallSite.streamClass(simpleName: String): LuaExpr = ref(STREAMS_FEATURE, STREAM_CLASS_NAMES.getValue(simpleName))
 
     private fun javaStream(rest: String, name: String, site: CallSite): LuaExpr? {
         val owner = rest.substringBefore('.')
         return when {
             owner == "Collectors" -> when (name) {
-                in COLLECTORS -> site.libMember(STREAMS, "__K2L_Collectors", name, *site.args.toTypedArray())
+                in COLLECTORS -> site.libMember(STREAMS_FEATURE, "__K2L_Collectors", name, *site.args.toTypedArray())
 
                 in SUMMARIZING -> site.libMember(
                     STATISTICS_FEATURE,
@@ -150,12 +150,15 @@ internal object StreamMappings {
     private fun optional(rest: String, name: String, site: CallSite): LuaExpr? {
         val owner = rest.substringBefore('.')
         val members = OPTIONAL_CLASSES[owner] ?: return null
-        val table = site.ref(STREAMS, "__K2L_$owner")
+        val table = site.ref(STREAMS_FEATURE, "__K2L_$owner")
         return when {
             site.receiver == null && (name == "of" || name == "empty" || (name == "ofNullable" && owner == "Optional")) ->
                 LuaCall(LuaIndex(table, LuaString(name)), site.args)
 
             site.receiver == null -> null
+
+            // `or` is a Lua keyword
+            name == "or" && owner == "Optional" -> method(site.self, "Or", *site.args.toTypedArray())
 
             name in members || name in OPTIONAL_MEMBERS -> method(site.self, GETTERS[name] ?: name, *site.args.toTypedArray())
 
@@ -165,8 +168,6 @@ internal object StreamMappings {
 
     private val RANGES = setOf("IntStream", "LongStream")
 
-    private const val STATISTICS_FEATURE = "SummaryStatistics"
-
     private val STATISTICS = setOf("java/util/IntSummaryStatistics", "java/util/LongSummaryStatistics", "java/util/DoubleSummaryStatistics")
 
     /** The members of the statistics; Kotlin reads `getCount()` as `count`. */
@@ -175,7 +176,7 @@ internal object StreamMappings {
     /** `IntSummaryStatistics()` and the like. */
     fun construct(classId: String?, site: CallSite): LuaExpr? = if (classId in STATISTICS) {
         val name = "__K2L_" + classId!!.substringAfterLast('/')
-        LuaCall(LuaIndex(site.ref(STATISTICS_FEATURE, name), LuaString("new")), emptyList())
+        site.libNew(STATISTICS_FEATURE, name, emptyList())
     } else {
         null
     }

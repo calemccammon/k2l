@@ -14,16 +14,11 @@ internal val SELECTING_FUNCTIONS = setOf(
 /** Functions that exist on `Map` and produce a map (or, `onEach`, the map itself); `filter`, `filterNot` and `onEach` also on lists. */
 internal val MAP_RESULT_FUNCTIONS = setOf("filter", "filterNot", "onEach", "mapValues", "mapKeys", "filterKeys", "filterValues")
 
-private const val PAIR_FEATURE = "Pair"
-
 /** An index the lambda does not name: parameter 1 of a one-parameter lambda, parameter 2 of a two-parameter one. */
 private const val FIRST_FREE_PARAM = 1
 private const val SECOND_FREE_PARAM = 2
 
-private fun FileTransformer.newPair(first: LuaExpr, second: LuaExpr): LuaExpr =
-    LuaCall(LuaIndex(lualibRef(PAIR_FEATURE, "__K2L_Pair"), LuaString("new")), listOf(first, second))
-
-private fun field(target: LuaExpr, name: String): LuaExpr = LuaIndex(target, LuaString(name))
+private fun FileTransformer.newPair(first: LuaExpr, second: LuaExpr): LuaExpr = libNew(PAIR_TABLE, listOf(first, second))
 
 private fun setTrue(flag: LuaName): LuaStmt = assign(flag.name, LuaBool(true))
 
@@ -199,7 +194,7 @@ private fun FileTransformer.zipping(source: Source, args: List<KtExpression?>, f
     val other = cache(asList(otherKind, expression(otherExpr)), "other")
     val result = declare("result", newList())
     eachElement(source, lambda, 0, indexParam = SECOND_FREE_PARAM) { item, index ->
-        emit(LuaIf(LuaBinary(LuaBinOp.Ge, index!!, field(other, "size")), listOf(LuaBreak)))
+        emit(LuaIf(LuaBinary(LuaBinOp.Ge, index!!, luaField(other, "size")), listOf(LuaBreak)))
         val second = LuaIndex(other, LuaBinary(LuaBinOp.Add, index, LuaNumber("1")))
         emit(add(result, inlineValue(lambda, listOf(item, second), null)))
     }
@@ -216,8 +211,8 @@ internal fun FileTransformer.mapResult(name: String, source: Source, lambda: KtE
     // filterKeys and filterValues take the key or the value, so the entry needs a name of its own.
     val byPart = name == "filterKeys" || name == "filterValues"
     eachElement(source, lambda, 0, itemName = if (byPart) ctx.temp("entry") else null) { entry, _ ->
-        val key = field(entry, "key")
-        val value = field(entry, "value")
+        val key = luaField(entry, "key")
+        val value = luaField(entry, "value")
         when (name) {
             "filter", "filterNot" -> {
                 val test = inlineValue(lambda, listOf(entry), null)

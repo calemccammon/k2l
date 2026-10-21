@@ -2,6 +2,7 @@ package dev.k2l.transform
 
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
+import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -29,7 +30,7 @@ internal object RandomMappings {
 
     fun install(t: MappingTable) {
         t.def("kotlin/random/Random") {
-            libMember("Random", "__K2L_Random", if (isLong(argTypes.firstOrNull())) "seededLong" else "seeded", arg(0))
+            libMember(RANDOM_TABLE, if (isLong(argTypes.firstOrNull())) "seededLong" else "seeded", arg(0))
         }
         for (prefix in listOf("kotlin/random/Random", "kotlin/random/Random.Default")) {
             for (member in INSTANCE_MEMBERS) {
@@ -37,15 +38,14 @@ internal object RandomMappings {
             }
         }
         t.def("kotlin/random/nextInt") { method(self, "nextIntRange", arg(0)) }
-        t.def("kotlin/random/nextLong") { libMember("RandomLong", "__K2L_RandomLong", "nextLongIn", self, arg(0)) }
+        t.def("kotlin/random/nextLong") { libMember(RANDOM_LONG_TABLE, "nextLongIn", self, arg(0)) }
         t.def("kotlin/random/nextUInt") { longs("nextUInt", self) }
         t.def("kotlin/random/nextULong") { longs("nextULong", self) }
         t.def("kotlin/ranges/random") { rangeRandom(orNull = false) }
         t.def("kotlin/ranges/randomOrNull") { rangeRandom(orNull = true) }
     }
 
-    private fun CallSite.isLong(type: org.jetbrains.kotlin.analysis.api.types.KaType?) =
-        type != null && with(session) { type.withoutFlexibility.isLongType }
+    private fun CallSite.isLong(type: KaType?) = type != null && with(session) { type.withoutFlexibility.isLongType }
 
     /** `nextLong(until)`, `nextLong(from, until)`, `nextUInt(...)` and `nextULong(...)`: `RandomLong.lua`, called as (random, from, until). */
     private fun CallSite.longs(member: String, random: LuaExpr): LuaExpr {
@@ -54,7 +54,7 @@ internal object RandomMappings {
             1 -> listOf(LuaNil, arg(0))
             else -> listOf(arg(0), arg(1))
         }
-        return libMember("RandomLong", "__K2L_RandomLong", member, random, *bounds.toTypedArray())
+        return libMember(RANDOM_LONG_TABLE, member, random, *bounds.toTypedArray())
     }
 
     /**
@@ -63,23 +63,23 @@ internal object RandomMappings {
      */
     private fun CallSite.rangeRandom(orNull: Boolean): LuaExpr? {
         val classId = receiverType?.let { with(session) { (it.withoutFlexibility as? KaClassType)?.classId?.asString() } }
-        val random = args.firstOrNull() ?: libMember("Random", "__K2L_Random", "default")
+        val random = args.firstOrNull() ?: defaultRandom()
         return when (classId) {
             "kotlin/ranges/IntRange" -> method(random, "nextIntRange", self, LuaBool(orNull))
-            "kotlin/ranges/LongRange" -> libMember("RandomLong", "__K2L_RandomLong", "nextLongIn", random, self, LuaBool(orNull))
+            "kotlin/ranges/LongRange" -> libMember(RANDOM_LONG_TABLE, "nextLongIn", random, self, LuaBool(orNull))
             else -> null
         }
     }
 
     private fun CallSite.nextValue(member: String): LuaExpr? {
-        val random = receiver ?: libMember("Random", "__K2L_Random", "default")
+        val random = receiver ?: defaultRandom()
         if (member == "nextLong" && args.isNotEmpty()) return longs("nextLong", random)
         if (member == "nextBytes" && args.size == 1 && isIntegral(argTypes.firstOrNull())) {
             // nextBytes(size) fills a new ByteArray
             val array = LuaCall(ref("Collections", "__K2L_ListOfSize"), listOf(arg(0), LuaNumber("0"), LuaString("[B")))
             return method(random, member, array)
         }
-        val isRange = args.size == 1 && argTypes.firstOrNull()?.let { with(session) { it.collectionKind() } } == CollectionKind.Range
+        val isRange = args.size == 1 && kindOf(argTypes.firstOrNull()) == CollectionKind.Range
         return method(random, if (isRange) "nextIntRange" else member, *args.toTypedArray())
     }
 }

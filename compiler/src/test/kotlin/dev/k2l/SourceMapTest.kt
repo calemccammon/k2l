@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.TimeUnit
 
 class SourceMapTest {
     @TempDir
@@ -89,7 +88,7 @@ class SourceMapTest {
             for ((lua, target) in interpreters) {
                 val out = dir.resolve("out-$mode-${target.id}")
                 compile(CompilerOptions(luaTarget = target, luaLibImport = mode, sourceMap = true)).writeTo(out)
-                val (status, output) = run(lua, out)
+                val (status, output) = runLua(lua, out)
                 assertEquals(1, status, "$lua $mode: $output")
                 assertTrue(output.contains("start\n"), "$lua $mode: $output")
                 assertTrue(output.contains("java.lang.IllegalStateException: insufficient funds"), "$lua $mode: $output")
@@ -123,7 +122,7 @@ class SourceMapTest {
             val result = compile(CompilerOptions(luaTarget = target, sourceMap = true), source)
             assertEquals("", result.diagnostics.joinToString("\n"))
             result.writeTo(out)
-            val (status, output) = run(lua, out)
+            val (status, output) = runLua(lua, out)
             assertEquals(1, status, output)
             assertTrue(output.contains("main.kt:5: raw failure"), "$lua: $output")
         }
@@ -162,17 +161,10 @@ class SourceMapTest {
             }
             // the frame of process(), which called fail(): the driver re-raises the error, but with the failing stack
             val processLine = code.indexOfFirst { it.trim() == "return fail(n) + 1" } + 1
-            val (status, output) = run(lua, out)
+            val (status, output) = runLua(lua, out)
             assertEquals(1, status, output)
             assertTrue(output.contains("raw failure"), "$lua: $output")
             assertTrue(output.contains("main.lua:$processLine:"), "$lua: no frame of process() in\n$output")
         }
-    }
-
-    private fun run(lua: String, out: Path): Pair<Int, String> {
-        val process = ProcessBuilder(lua, "main.lua").directory(out.toFile()).redirectErrorStream(true).start()
-        val output = process.inputStream.readBytes().toString(Charsets.UTF_8)
-        check(process.waitFor(30, TimeUnit.SECONDS)) { "$lua timed out" }
-        return process.exitValue() to output
     }
 }

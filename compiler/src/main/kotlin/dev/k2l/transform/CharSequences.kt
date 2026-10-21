@@ -56,16 +56,9 @@ internal fun FileTransformer.charSequenceMember(callableId: String?, receiver: L
     fun length(of: LuaExpr) = textMember("charsLength", of)
     return when (callableId) {
         "kotlin/CharSequence.length" -> length(receiver)
-
         "kotlin/CharSequence.get" -> textMember("charsGet", receiver, args.firstOrNull() ?: return null)
-
         "kotlin/text/lastIndex" -> LuaBinary(LuaBinOp.Sub, length(receiver), LuaNumber("1"))
-
-        "kotlin/text/indices" -> LuaCall(
-            LuaIndex(lualibRef("Collections", "__K2L_IntRange"), LuaString("new")),
-            listOf(LuaNumber("0"), LuaBinary(LuaBinOp.Sub, length(receiver), LuaNumber("1"))),
-        )
-
+        "kotlin/text/indices" -> libNew(INT_RANGE_TABLE, listOf(LuaNumber("0"), LuaBinary(LuaBinOp.Sub, length(receiver), LuaNumber("1"))))
         else -> null
     }
 }
@@ -75,5 +68,4 @@ internal fun FileTransformer.charSequenceLoop(text: LuaExpr, variable: String, b
     emit(LuaGenericFor(listOf(variable), listOf(textMember("chars", text)), body))
 }
 
-private fun FileTransformer.textMember(member: String, vararg args: LuaExpr): LuaExpr =
-    LuaCall(LuaIndex(lualibRef("Strings", "__K2L_Text"), LuaString(member)), args.toList())
+private fun FileTransformer.textMember(member: String, vararg args: LuaExpr): LuaExpr = libCall(TEXT_TABLE, member, args.toList())

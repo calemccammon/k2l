@@ -20,32 +20,20 @@ class BenchProgramsTest {
             DynamicTest.dynamicTest("${dir.name} on ${target.id}") {
                 assertTrue(File(dir, "stdout.txt").isFile, "${dir.name} has no stdout.txt (run :compiler:benchOracle -PupdateOracle)")
                 val result = K2lCompiler(
-                    options(dir).copy(luaTarget = target),
-                ).compile(session, SourceModule(dir.name, listOf(dir.toPath())))
+                    caseOptions(dir).copy(luaTarget = target),
+                ).compile(session, modules.single { it.name == dir.name })
                 assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
             }
         }
     }
 
-    private fun options(dir: File): CompilerOptions {
-        val values = File(dir, "options.txt").takeIf { it.isFile }?.readLines().orEmpty().filter { '=' in it }
-            .associate { it.substringBefore('=').trim() to it.substringAfter('=').trim() }
-        return CompilerOptions(
-            intOverflow = values["intOverflow"]?.let(IntOverflow::parse) ?: IntOverflow.Unchecked,
-            strings = values["strings"]?.let(StringSemantics::parse) ?: StringSemantics.Bytes,
-            long64 = values["long64"]?.let(Long64::parse) ?: Long64.AsDouble,
-        )
-    }
-
     companion object {
-        private val programs: List<File> by lazy {
-            File(System.getProperty("k2l.benchDir") ?: "src/bench/programs").absoluteFile.listFiles().orEmpty()
-                .filter { File(it, "main.kt").isFile }.sortedBy { it.name }
+        private val modules: List<SourceModule> by lazy {
+            programModules(File(System.getProperty("k2l.benchDir") ?: "src/bench/programs"))
         }
+        private val programs: List<File> by lazy { modules.map { it.roots.single().toFile() } }
 
-        private val session: SourceSession by lazy {
-            SourceSession.create(programs.map { SourceModule(it.name, listOf(it.toPath())) })
-        }
+        private val session: SourceSession by lazy { SourceSession.create(modules) }
 
         @JvmStatic
         @AfterAll

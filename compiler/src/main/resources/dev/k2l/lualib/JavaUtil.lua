@@ -104,6 +104,70 @@ function __K2L_JavaUtil.checkIndex(index, length)
     return index
 end
 
+-- Objects.checkFromToIndex(from, to, length) and checkFromIndexSize(from, size, length)
+function __K2L_JavaUtil.checkFromToIndex(from, to, length)
+    if from < 0 or from > to or to > length then
+        error(__K2L_IndexOutOfBoundsException.new("Range [" .. from .. ", " .. to .. ") out of bounds for length " .. length))
+    end
+    return from
+end
+
+function __K2L_JavaUtil.checkFromIndexSize(from, size, length)
+    if length < 0 or from < 0 or size < 0 or size > length - from then
+        error(__K2L_IndexOutOfBoundsException.new("Range [" .. from .. ", " .. from .. " + " .. size
+            .. ") out of bounds for length " .. length))
+    end
+    return from
+end
+
+-- the value, or what the supplier (a function, or an object with get()) gives
+function __K2L_JavaUtil.requireNonNullElseGet(value, supplier)
+    if value ~= nil then
+        return value
+    end
+    supplier = __K2L_JavaUtil.requireNonNull(supplier, "supplier")
+    local supplied
+    if type(supplier) == "table" and supplier.get ~= nil then
+        supplied = supplier:get()
+    else
+        supplied = supplier()
+    end
+    return __K2L_JavaUtil.requireNonNull(supplied, "supplier.get()")
+end
+
+------------------------------------------------------------------ StringBuilder.repeat
+
+local function checkCount(count)
+    if count < 0 then
+        error(__K2L_IllegalArgumentException.new("count is negative: " .. count))
+    end
+end
+
+function __K2L_JavaUtil.repeatText(text, count)
+    checkCount(count)
+    return string.rep(text, count)
+end
+
+-- the UTF-8 of a code point, `count` times
+function __K2L_JavaUtil.repeatCodePoint(cp, count)
+    if cp < 0 or cp > 0x10FFFF then
+        error(__K2L_IllegalArgumentException.new(string.format("Not a valid Unicode code point: 0x%X", cp % 4294967296)))
+    end
+    checkCount(count)
+    local floor, char = math.floor, string.char
+    local text
+    if cp < 0x80 then
+        text = char(cp)
+    elseif cp < 0x800 then
+        text = char(0xC0 + floor(cp / 64), 0x80 + cp % 64)
+    elseif cp < 0x10000 then
+        text = char(0xE0 + floor(cp / 4096), 0x80 + floor(cp / 64) % 64, 0x80 + cp % 64)
+    else
+        text = char(0xF0 + floor(cp / 262144), 0x80 + floor(cp / 4096) % 64, 0x80 + floor(cp / 64) % 64, 0x80 + cp % 64)
+    end
+    return string.rep(text, count)
+end
+
 -- Objects.compare(a, b, comparator): 0 for the same object, else the comparator's answer
 function __K2L_JavaUtil.compare(a, b, comparator)
     if rawequal(a, b) then

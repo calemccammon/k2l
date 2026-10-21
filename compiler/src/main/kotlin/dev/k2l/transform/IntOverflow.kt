@@ -139,7 +139,7 @@ private fun FileTransformer.integralStep(op: LuaBinOp, read: LuaExpr, type: KaTy
         when {
             isNarrow(type) -> {
                 val narrow = if (type!!.withoutFlexibility.isShortType) "toShort" else "toByte"
-                LuaCall(LuaIndex(lualibRef("Numbers", "__K2L_Num"), LuaString(narrow)), listOf(LuaBinary(op, read, one)))
+                libCall(NUM_TABLE, narrow, listOf(LuaBinary(op, read, one)))
             }
 
             isInt32(type) -> wrapInt32(LuaBinary(op, unwrapInt32(read), one))
@@ -185,7 +185,7 @@ private fun FileTransformer.narrowRemainder(l: LuaExpr, lt: KaType?, r: LuaExpr,
     val integral = with(session) { lt != null && rt != null && lt.isIntegral && rt.isIntegral }
     val literal = (r as? LuaNumber)?.text?.toDoubleOrNull()?.let { it != 0.0 } == true
     if (integral && !literal) return inlineRemainder(l, r) ?: lualibCall("IRem", l, r)
-    val fmod = luaCall(luaPath("math", "fmod"), l, r)
+    val fmod = lua("math.fmod", l, r)
     // fmod(-4, 2) is -0 when numbers are floats, and an Int must print as 0
     return if (integral && !target.hasIntegers) LuaBinary(LuaBinOp.Add, fmod, LuaNumber("0")) else fmod
 }
@@ -197,7 +197,7 @@ private fun FileTransformer.narrowRemainder(l: LuaExpr, lt: KaType?, r: LuaExpr,
  * harmless. Not on LuaJIT, which compiles `%` but not `fmod`.
  */
 private fun FileTransformer.inlineRemainder(l: LuaExpr, r: LuaExpr): LuaExpr? {
-    if (target == LuaTarget.LuaJIT || !isPureRead(l) || !isPureRead(r)) return null
+    if (!target.compilesFmod || !isPureRead(l) || !isPureRead(r)) return null
     val fmod = LuaBinary(LuaBinOp.Add, LuaCall(lualibRef("Natives", "__K2L_Fmod"), listOf(l, r)), LuaNumber("0"))
     val nonZero = LuaBinary(LuaBinOp.Ne, r, LuaNumber("0"))
     return LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.And, nonZero, fmod), lualibCall("IRem", l, r))

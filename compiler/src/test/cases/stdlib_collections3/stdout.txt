@@ -1,0 +1,34 @@
+eachCountTo: {z=100, a=3, b=2, c=1}, same=true
+foldTo: {5=5, 6=12, 7=14, 9=9}
+foldTo init: {a=a:577, b=b:69, c=c:6}
+reduceTo: {a=avocado, b=blueberry, c=cherry}
+aggregateTo: {a=a=apple,avocado,apricot, b=b=banana,blueberry, c=c=cherry}
+totals: {north=17, south=5}
+keyOf: s, 11
+isSorted: true false true
+isSortedDescending: true false
+isSortedBy: false true
+isSortedByDescending: true
+isSortedWith: false false
+arrays: true false true
+array by: true true
+sequence: true false
+map onEachIndexed: [0:a=1, 1:b=2] true
+string onEachIndexed: hey h0e1y2
+mapTo: [start, a1, b2]
+filterNotTo: {z=0, b=2}
+withIndex 0 x
+withIndex 1 y
+IndexedValue: IndexedValue(index=3, value=three) IndexedValue(index=4, value=three) true true
+unzip: [a, b] [1, 2]
+findAnyOf: (4, two) (4, TWO) null
+findLastAnyOf: (18, one) (4, two)
+lastIndexOfAny: 18 15 -1
+filterTo: #123
+reduceRightOrNull: c null
+reduceRightIndexed: a
+reduceRightIndexedOrNull: y
+replaceIndent: [> a
+>   b]
+replaceIndentByMargin: [- x
+-   y]

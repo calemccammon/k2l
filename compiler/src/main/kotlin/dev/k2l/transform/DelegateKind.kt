@@ -10,6 +10,12 @@ internal sealed interface DelegateKind {
     /** `Delegates.observable` and friends, or any `ReadWriteProperty`/`ReadOnlyProperty` value (lualib objects). */
     data object Library : DelegateKind
 
+    /**
+     * A property reference: `by ::other` or `by obj::other` (a KProperty0, read with `get()`) or `by Owner::other` (a
+     * KProperty1 of the receiver, read with `get(thisRef)`).
+     */
+    data class Property(val unbound: Boolean) : DelegateKind
+
     /** `by map`: the property name is the key. */
     data object MapKey : DelegateKind
 

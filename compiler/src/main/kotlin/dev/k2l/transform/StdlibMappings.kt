@@ -23,14 +23,44 @@ class CallSite(
 ) {
     val self: LuaExpr get() = receiver ?: error("call has no receiver")
     fun arg(i: Int) = args[i]
-    fun str(value: LuaExpr, type: KaType?, forConcat: Boolean = false) = with(transformer) { session.str(value, type, forConcat) }
+    fun str(value: LuaExpr, type: KaType?, forConcat: Boolean = false) = transformer.str(value, type, forConcat)
     fun lualib(feature: String, vararg args: LuaExpr) = transformer.lualibCall(feature, *args)
     fun unsupported(what: String) = transformer.unsupported(element, what)
     fun ref(feature: String, name: String) = transformer.lualibRef(feature, name)
 
+    val target: LuaTarget get() = transformer.target
+    val hasIntegers: Boolean get() = target.hasIntegers
+
+    /** `--long64 emulate` on a target without integers. */
+    val emulatesLong: Boolean get() = transformer.emulatesLong
+
+    /** The collection kind of [type] (see [collectionKind]), null for other types. */
+    fun kindOf(type: KaType?): CollectionKind? = type?.let { with(session) { it.collectionKind() } }
+
+    val receiverKind: CollectionKind? get() = kindOf(receiverType)
+
+    /** The same call with some of its parts replaced. */
+    fun copy(
+        name: String? = this.name,
+        receiver: LuaExpr? = this.receiver,
+        receiverType: KaType? = this.receiverType,
+        args: List<LuaExpr> = this.args,
+        argTypes: List<KaType?> = this.argTypes,
+        parameterTypes: List<KaType?> = this.parameterTypes,
+    ) = CallSite(session, transformer, element, name, receiver, receiverType, args, argTypes, parameterTypes)
+
     /** The same call on another receiver, e.g. a map's entries. */
-    fun withReceiver(newReceiver: LuaExpr, type: KaType? = null) =
-        CallSite(session, transformer, element, name, newReceiver, type, args, argTypes, parameterTypes)
+    fun withReceiver(newReceiver: LuaExpr, type: KaType? = null) = copy(receiver = newReceiver, receiverType = type)
+
+    /** The call `f(x, rest)` as the member or extension call `x.name(rest)`, on its first argument. */
+    fun onFirstArgument(name: String) = copy(
+        name = name,
+        receiver = arg(0),
+        receiverType = argTypes[0],
+        args = args.drop(1),
+        argTypes = argTypes.drop(1),
+        parameterTypes = emptyList(),
+    )
 
     /**
      * The type that tells which overload argument [i] is for: the declared parameter type of the resolved callee (so
@@ -48,6 +78,9 @@ private const val STRICT_MATH = "java/lang/StrictMath."
 @Suppress("TooManyFunctions") // one small installer per group of mappings
 object StdlibMappings {
     private val table = MappingTable()
+
+    /** Ids defined twice (see [MappingTable.overwrites]). */
+    internal val overwrites: List<String> get() = table.overwrites
     private val mappings get() = table.entries
 
     private fun def(vararg ids: String, mapping: Mapping) = table.def(*ids, mapping = mapping)
@@ -70,6 +103,7 @@ object StdlibMappings {
         RegexMappings.install(table)
         ReflectionMappings.install(table)
         Utf16Mappings.install(table)
+        CharacterMappings.install(table)
     }
 
     private fun io() {
@@ -78,7 +112,7 @@ object StdlibMappings {
             val text = printable(unboxed(arg(0), 0), argTypes[0])
             // Lua 5.1's print stops at a NUL character; io.write writes whole strings
             val isText = text != arg(0) || isTextual(argTypes[0])
-            if (target == LuaTarget.Lua51 && isText) lua("io.write", output(text), LuaString("\n")) else lua("print", output(text))
+            if (target.printStopsAtNul && isText) lua("io.write", output(text), LuaString("\n")) else lua("print", output(text))
         }
         def("kotlin/io/print") { lua("io.write", output(str(unboxed(arg(0), 0), argTypes[0]))) }
         def("kotlin/io/readLine", "kotlin/io/readlnOrNull", "kotlin/io/readln") { lua("io.read") }
@@ -89,13 +123,7 @@ object StdlibMappings {
         for (t in INTEGRAL) {
             def("kotlin/$t.toDouble") { LuaBinary(LuaBinOp.Add, self, LuaNumber("0.0")) }
             def("kotlin/$t.toFloat") {
-                if (t == "Int" ||
-                    t == "Long"
-                ) {
-                    transformer.fround(self)
-                } else {
-                    LuaBinary(LuaBinOp.Add, self, LuaNumber("0.0"))
-                }
+                if (t == "Int" || t == "Long") transformer.fround(self) else LuaBinary(LuaBinOp.Add, self, LuaNumber("0.0"))
             }
             def("kotlin/$t.toLong") { self }
             def("kotlin/$t.toChar") { if (utf16) u16("char", self) else lua("string.char", self) }
@@ -182,9 +210,7 @@ object StdlibMappings {
         def("kotlin/String.plus") { LuaBinary(LuaBinOp.Concat, self, str(arg(0), argTypes[0], forConcat = true)) }
         // uppercase(Locale) and lowercase(Locale): the locale only matters with --strings utf16 (Turkish, Azeri, Lithuanian)
         def("kotlin/text/uppercase") {
-            if (args.isNotEmpty() &&
-                !isLocale(argTypes.firstOrNull())
-            ) {
+            if (args.isNotEmpty() && !isLocale(argTypes.firstOrNull())) {
                 null
             } else if (utf16) {
                 u16CaseOf("uppercase")
@@ -193,9 +219,7 @@ object StdlibMappings {
             }
         }
         def("kotlin/text/lowercase") {
-            if (args.isNotEmpty() &&
-                !isLocale(argTypes.firstOrNull())
-            ) {
+            if (args.isNotEmpty() && !isLocale(argTypes.firstOrNull())) {
                 null
             } else if (utf16) {
                 u16CaseOf("lowercase")
@@ -205,12 +229,10 @@ object StdlibMappings {
         }
         def("kotlin/text/repeat") {
             val count = (arg(0) as? LuaNumber)?.text?.toLongOrNull()
-            if (count != null &&
-                count >= 0
-            ) {
+            if (count != null && count >= 0) {
                 method(self, "rep", arg(0))
             } else {
-                libMember("Strings", "__K2L_Text", "repeatCount", self, arg(0))
+                libMember(TEXT_TABLE, "repeatCount", self, arg(0))
             }
         }
         def("kotlin/CharSequence.length") { if (utf16) u16("len", self) else LuaUnary(LuaUnOp.Len, self) }
@@ -240,8 +262,6 @@ object StdlibMappings {
             callableId
         }
 
-    private val CallSite.target get() = transformer.ctx.options.luaTarget
-
     /** and/or/xor: native operators on 5.3+, lualib helpers (bit32, LuaJIT's bit, or plain Lua) elsewhere. */
     private fun CallSite.bitwise(helper: String, op: LuaBinOp): LuaExpr =
         if (target.hasIntegers) LuaBinary(op, self, arg(0)) else bitCall("__K2L_$helper")
@@ -251,29 +271,57 @@ object StdlibMappings {
     fun map(strictCallableId: String?, call: CallSite): LuaExpr? {
         val callableId = strictMathAsMath(strictCallableId)
         val site = Long64Mappings.prepare(callableId, call)
-        return UnsignedMappings.post(
-            callableId,
-            site,
-            IntOverflowMappings.post(callableId, site, FloatMappings.post(callableId, site, mapUnrounded(callableId, site))),
-        )
+        return POST_PROCESSORS.fold(mapUnrounded(callableId, site)) { result, post -> post(callableId, site, result) }
     }
 
-    private fun mapUnrounded(callableId: String?, site: CallSite): LuaExpr? = special(callableId, site)
-        ?: extras(callableId, site)
-        ?: Long64Mappings.map(callableId, site)
-        ?: callableId?.let { mappings[it] }?.invoke(site)
-        ?: TypeTestMappings.map(callableId, site)
-        ?: TypeOfMappings.map(callableId, site)
-        ?: BigNumberMappings.map(callableId, site)
-        ?: JdkCollectionsMappings.map(callableId, site)
-        ?: StreamMappings.map(callableId, site)
-        ?: SequenceMappings.map(callableId, site)
-        ?: CoroutineMappings.map(callableId, site)
-        ?: CollectionMappings.map(callableId, site)
+    /**
+     * What wraps the result of [AREAS], in this order (each one sees the result of the one before): float rounding, Int
+     * overflow, then unsigned results. [Long64Mappings.prepare] runs before all of them, on the call itself.
+     */
+    private val POST_PROCESSORS = listOf<MappingPost>(
+        { id, site, result -> FloatMappings.post(id, site, result) },
+        { id, site, result -> IntOverflowMappings.post(id, site, result) },
+        { id, site, result -> UnsignedMappings.post(id, site, result) },
+    )
 
-    /** `kotlin.time`, more of `kotlin.text` and `kotlin`, and `java.util.Stack`/`StringJoiner`/`Objects`. */
-    private fun extras(callableId: String?, site: CallSite): LuaExpr? =
-        ExtraMappings.map(callableId, site) ?: JavaUtilMappings.map(callableId, site) ?: TimeMappings.map(callableId, site)
+    /**
+     * Every area of library mappings, tried in this order until one answers; the order matters where areas overlap. Each area
+     * is a lambda so that its mapping object is still initialized on first use.
+     */
+    private val AREAS = listOf<MappingArea>(
+        // toString() and compareTo(x) on any receiver from the kotlin package (and on the JDK's collections)
+        { id, site -> special(id, site) },
+        // charsets, more of `kotlin.text` and of `kotlin`, `java.util`, `kotlin.time` ...
+        { id, site -> CharsetMappings.map(id, site) },
+        { id, site -> TextExtrasMappings.map(id, site) },
+        { id, site -> JavaUtilMappings.map(id, site) },
+        { id, site -> TimeMappings.map(id, site) },
+        { id, site -> InstantMappings.map(id, site) },
+        { id, site -> CharCategoryMappings.map(id, site) },
+        { id, site -> DeepRecursiveMappings.map(id, site) },
+        { id, site -> CollectionExtrasMappings.map(id, site) },
+        { id, site -> KotlinMiscMappings.map(id, site) },
+        { id, site -> HexFormatMappings.map(id, site) },
+        // `--long64 emulate` takes precedence over the Double-based mappings
+        { id, site -> Long64Mappings.map(id, site) },
+        // the table the installers above fill
+        { id, site -> id?.let { mappings[it] }?.invoke(site) },
+        { id, site -> TypeTestMappings.map(id, site) },
+        { id, site -> TypeOfMappings.map(id, site) },
+        { id, site -> BigNumberMappings.map(id, site) },
+        { id, site -> JdkCollectionsMappings.map(id, site) },
+        { id, site -> StreamMappings.map(id, site) },
+        { id, site -> SequenceMappings.map(id, site) },
+        { id, site -> CoroutineMappings.map(id, site) },
+        // the collection, range, comparator and pair factories (listOf, compareBy, ...)
+        { id, site -> FactoryMappings.factory(id, site) },
+        // members by the receiver's collection kind
+        { id, site -> CollectionMappings.byReceiver(id, site) },
+        // a receiver of no collection kind: strings, chars and other text
+        { id, site -> if (site.receiverKind == null) TextMappings.map(id, site) else null },
+    )
+
+    private fun mapUnrounded(callableId: String?, site: CallSite): LuaExpr? = AREAS.firstNotNullOfOrNull { it(callableId, site) }
 
     private fun special(callableId: String?, site: CallSite): LuaExpr? = when {
         site.receiver == null -> null
@@ -282,7 +330,7 @@ object StdlibMappings {
 
         // toString() of the JDK's collections (`java.util.ArrayDeque.toString`)
         callableId?.startsWith("java/util/") == true && site.name == "toString" && site.args.isEmpty() &&
-            site.receiverType?.let { with(site.session) { it.collectionKind() } } != null -> universalMethod(site)
+            site.receiverKind != null -> universalMethod(site)
 
         else -> null
     }
@@ -293,7 +341,7 @@ object StdlibMappings {
 
         // String.compareTo is the difference of the first differing chars (or of the lengths)
         site.name == "compareTo" && site.args.size == 1 && site.isString(site.receiverType) ->
-            LuaCall(LuaIndex(site.ref("Strings", "__K2L_Text"), LuaString("compare")), listOf(site.self, site.arg(0)))
+            site.libCall(TEXT_TABLE, "compare", listOf(site.self, site.arg(0)))
 
         site.name == "compareTo" && site.args.size == 1 ->
             UnsignedMappings.compareTo(site) ?: LuaCall(site.ref("Compare", "__K2L_Compare"), listOf(site.self, site.arg(0)))

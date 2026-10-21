@@ -261,9 +261,7 @@ internal fun add(list: LuaExpr, value: LuaExpr): LuaStmt = LuaCallStmt(LuaMethod
 /** `map`, `mapNotNull`, `filter`, `filterNot`, `takeWhile` and `flatMap` (of lists or sequences): a new list filled in one pass. */
 internal fun FileTransformer.listing(name: String, source: Source, lambda: KtExpression, into: LuaExpr? = null): LuaExpr = with(session) {
     val flatKind = (lambdaLiteral(lambda)?.expressionType as? KaFunctionType)?.returnType?.collectionKind()
-    if (name == "flatMap" &&
-        flatKind !in ITERATED_KINDS && flatKind != CollectionKind.Sequence
-    ) {
+    if (name == "flatMap" && flatKind !in ITERATED_KINDS && flatKind != CollectionKind.Sequence) {
         return unsupported(lambda, "A non-local return in 'flatMap' returning '$flatKind'")
     }
     val result = into ?: declare("result", newList())
@@ -330,13 +328,7 @@ internal fun FileTransformer.summing(source: Source, lambda: KtExpression, full:
         emit(
             assign(
                 result.name,
-                if (emulatesLong &&
-                    isWide(full.expressionType)
-                ) {
-                    l64("Add", result, term)
-                } else {
-                    LuaBinary(LuaBinOp.Add, result, term)
-                },
+                if (emulatesLong && isWide(full.expressionType)) l64("Add", result, term) else LuaBinary(LuaBinOp.Add, result, term),
             ),
         )
     }

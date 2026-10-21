@@ -14,11 +14,35 @@ enum class LuaTarget(val id: String) {
     /** Everything but plain 5.1 has `goto` (LuaJIT supports it too). */
     val hasGoto get() = this != Lua51
 
-    /** Lualib variant suffixes to try, most specific first: `IDiv.float.lua` replaces `IDiv.lua`. */
-    val lualibVariants: List<String>
-        get() = lualibVariants(emulateLong64 = false)
+    /** Lua 5.1 and LuaJIT allow a function 60 upvalues: the printer moves the rest into tables (`UpvalueLimit`). */
+    val limitsUpvalues get() = this == Lua51 || this == LuaJIT
+
+    /** A coroutine can yield across `pcall`, except on plain 5.1: there a `try` that suspends runs in `__K2L_CoPcall`. */
+    val yieldsAcrossPcall get() = this != Lua51
+
+    /** `try` blocks nested deeper than the C stack allows run in coroutines that a driver resumes (`DeepPcall.lua`). */
+    val drivesDeepPcall get() = hasGoto && this != LuaJIT
+
+    /** Lua 5.1's `print` stops at a NUL character; `io.write` writes whole strings. */
+    val printStopsAtNul get() = this == Lua51
+
+    /** Lua 5.1 merges the constants 0.0 and -0.0 of a function, so a negative zero is computed. */
+    val mergesSignedZeros get() = this == Lua51
+
+    /** `<` and `<=` of a table and a number call the `__lt`/`__le` metamethods (Lua 5.1 only compares like types). */
+    val comparesMixedTypes get() = this != Lua51
+
+    /** LuaJIT's `bit` operations, `bit.tobit` included, compile to single instructions. */
+    val compilesBitOps get() = this == LuaJIT
+
+    /** LuaJIT compiles `%` but not `math.fmod`. */
+    val compilesFmod get() = this != LuaJIT
+
+    /** LuaJIT's FFI has 64-bit integer literals (`5LL`). */
+    val hasInt64Literals get() = this == LuaJIT
 
     /**
+     * Lualib variant suffixes to try, most specific first: `IDiv.float.lua` replaces `IDiv.lua`.
      * With [emulateLong64] (`--long64 emulate`) the `l64` variants come first (`l64jit` on LuaJIT): `Exact.l64.lua`
      * replaces `Exact.float.lua`. Targets with 64-bit integers have none.
      */

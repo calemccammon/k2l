@@ -5,6 +5,7 @@ import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
 import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
+import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
@@ -20,6 +21,12 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 private const val GET_VALUE = "getValue"
 private const val SET_VALUE = "setValue"
 private val LIBRARY_DELEGATE_TYPES = setOf("kotlin/properties/ReadWriteProperty", "kotlin/properties/ReadOnlyProperty")
+private val PROPERTY_REFERENCES = mapOf(
+    "kotlin/reflect/KProperty0" to false,
+    "kotlin/reflect/KMutableProperty0" to false,
+    "kotlin/reflect/KProperty1" to true,
+    "kotlin/reflect/KMutableProperty1" to true,
+)
 
 private fun FileTransformer.delegateKind(p: KtProperty): DelegateKind? {
     if (delegateKinds.containsKey(p)) return delegateKinds[p]
@@ -30,6 +37,10 @@ private fun FileTransformer.computeKind(p: KtProperty): DelegateKind? = with(ses
     val expr = p.delegateExpression ?: return null
     var type = expr.expressionType ?: return unsupported(p, "Delegate of unknown type").let { null }
     // `by provider`: the delegate is what provider.provideDelegate(thisRef, property) returns
+    libraryProvider(type)?.let { delegate ->
+        delegateProviders[p] = Operator.Method("provideDelegate")
+        type = delegate
+    }
     findOperators(type, "provideDelegate").let { found ->
         if (found.size > 1) return unsupported(p, "Delegate that overloads provideDelegate").let { null }
         found.singleOrNull()?.let { (operator, result) ->
@@ -37,6 +48,11 @@ private fun FileTransformer.computeKind(p: KtProperty): DelegateKind? = with(ses
             type = result ?: return unsupported(p, "Delegate whose provideDelegate has an unknown type").let { null }
         }
     }
+    return kindOf(p, type)
+}
+
+/** The kind of a delegate of [type], after any `provideDelegate`. */
+private fun FileTransformer.kindOf(p: KtProperty, type: KaType): DelegateKind? = with(session) {
     val symbol = type.expandedSymbol
     val classId = symbol?.classId?.asString()
     val psi = symbol?.psi as? KtClassOrObject
@@ -44,9 +60,17 @@ private fun FileTransformer.computeKind(p: KtProperty): DelegateKind? = with(ses
         classId == "kotlin/Lazy" -> DelegateKind.Lazy
         type.collectionKind() == CollectionKind.Map -> DelegateKind.MapKey
         classId in LIBRARY_DELEGATE_TYPES -> DelegateKind.Library
+        classId in PROPERTY_REFERENCES -> DelegateKind.Property(PROPERTY_REFERENCES.getValue(classId!!))
         psi != null && classes.isSource(psi) -> userKind(p, type)
         else -> unsupported(p, "Delegate of type '${type.pretty()}'").let { null }
     }
+}
+
+/** The delegate type `D` of a library `PropertyDelegateProvider<T, D>`. */
+private fun FileTransformer.libraryProvider(type: KaType): KaType? = with(session) {
+    val classType = type.withoutFlexibility as? KaClassType ?: return null
+    if (classType.classId.asString() != "kotlin/properties/PropertyDelegateProvider") return null
+    classType.typeArguments.getOrNull(1)?.type
 }
 
 /**
@@ -121,6 +145,7 @@ private fun FileTransformer.delegateGet(
     DelegateKind.MapKey -> LuaMethodCall(delegate, GET_VALUE, listOf(LuaString(p.name!!)))
     DelegateKind.Library -> LuaMethodCall(delegate, GET_VALUE, listOf(thisRef, info ?: propertyInfo(p)))
     is DelegateKind.User -> operatorCall(kind.get, delegate, listOf(thisRef, info ?: propertyInfo(p)))
+    is DelegateKind.Property -> LuaMethodCall(delegate, "get", if (kind.unbound) listOf(thisRef) else emptyList())
 }
 
 private fun FileTransformer.delegateSet(
@@ -134,6 +159,7 @@ private fun FileTransformer.delegateSet(
     when (kind) {
         DelegateKind.MapKey -> LuaMethodCall(delegate, "set", listOf(LuaString(p.name!!), value))
         is DelegateKind.User -> operatorCall(kind.set!!, delegate, listOf(thisRef, info ?: propertyInfo(p), value))
+        is DelegateKind.Property -> LuaMethodCall(delegate, "set", if (kind.unbound) listOf(thisRef, value) else listOf(value))
         else -> LuaMethodCall(delegate, SET_VALUE, listOf(thisRef, info ?: propertyInfo(p), value))
     },
 )
@@ -200,7 +226,7 @@ internal fun FileTransformer.delegatedAccessors(p: KtProperty, ref: LuaExpr) {
     val kind = delegateKind(p) ?: return
     val delegate = delegateField(p, selfRef())
     // The KProperty is built once per property, not on every access: `Holder.____x_property = __K2L_PropertyRef.new("x", ...)`
-    val info = if (kind == DelegateKind.Lazy || kind == DelegateKind.MapKey) {
+    val info = if (kind == DelegateKind.Lazy || kind == DelegateKind.MapKey || kind is DelegateKind.Property) {
         null
     } else {
         LuaIndex(ref, LuaString(delegateSlot(p, "property"))).also {
@@ -220,7 +246,10 @@ internal fun FileTransformer.delegatedAccessors(p: KtProperty, ref: LuaExpr) {
 
 // ---- library delegate factories ----
 
-/** `lazy { }`, `Delegates.observable(...)`, `Delegates.vetoable(...)`, `Delegates.notNull()` and `ReadOnlyProperty { }`. */
+/**
+ * `lazy { }`, `Delegates.observable(...)`, `Delegates.vetoable(...)`, `Delegates.notNull()`, `ReadOnlyProperty { }` and
+ * `PropertyDelegateProvider { }`.
+ */
 internal fun FileTransformer.delegateFactory(callableId: String?, call: KaCallableMemberCall<*, *>): LuaExpr? = with(session) {
     if (callableId == null || call !is KaFunctionCall<*>) return null
     val args = callArguments(call)
@@ -237,8 +266,11 @@ internal fun FileTransformer.delegateFactory(callableId: String?, call: KaCallab
 
         "kotlin/properties/Delegates.notNull" -> LuaCall(lualibRef("Delegates", "__K2L_NotNullProperty"), emptyList())
 
-        // the SAM constructor `ReadOnlyProperty { thisRef, property -> }`
+        // the SAM constructors `ReadOnlyProperty { thisRef, property -> }` and `PropertyDelegateProvider { thisRef, property -> }`
         "kotlin/properties/ReadOnlyProperty" -> LuaCall(lualibRef("Delegates", "__K2L_ReadOnlyProperty"), arguments(emptyList(), args))
+
+        "kotlin/properties/PropertyDelegateProvider" ->
+            LuaCall(lualibRef("Delegates", "__K2L_DelegateProvider"), arguments(emptyList(), args))
 
         else -> null
     }

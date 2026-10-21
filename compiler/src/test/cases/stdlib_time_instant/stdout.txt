@@ -1,0 +1,46 @@
+epoch = 1970-01-01T00:00:00Z
+seconds = [2023-11-14T22:13:20Z, 1970-01-01T23:59:59Z, 1969-12-31T23:59:59Z]
+with nanos = [1970-01-01T00:00:10.500Z, 1970-01-01T00:00:11.500Z, 1970-01-01T00:00:09.999999999Z]
+millis = [1970-01-01T00:00:01.234Z, 1969-12-31T23:59:59.999Z, 2023-11-14T22:13:20.123Z]
+parts = [-1s+999000000ns, 5s+1ns]
+toEpochMilliseconds = [3999, -3000]
+fractions = [1970-01-01T00:00:00.000000001Z, 1970-01-01T00:00:00.000000010Z, 1970-01-01T00:00:00.000000100Z, 1970-01-01T00:00:00.000001Z, 1970-01-01T00:00:00.001Z, 1970-01-01T00:00:00.123456789Z, 1970-01-01T00:00:00.120Z]
+leap day = 2000-02-29T00:00:00Z
+old = [0001-01-01T00:00:00Z, 0000-12-31T23:59:59Z, -0249-10-15T19:33:20Z]
+far = [+10000-01-01T00:00:00Z, +128724-12-15T07:06:40Z]
+distant = [-100001-12-31T23:59:59.999999999Z, +100000-01-01T00:00:00Z]
+distant parts = [-3217862419201s+999999999ns, 3093527980800s+0ns]
+is distant = [true, true, false, false]
+plus = [1970-01-01T00:16:41.750Z, 1970-01-01T00:16:41.050Z, 1970-01-03T00:16:40.750Z, 1970-01-01T00:16:40.750000001Z]
+minus = [1970-01-01T00:16:39.750Z, 1970-01-01T00:16:39.950Z, 1970-01-01T00:00:00Z]
+difference = [16m 40.75s, -(16m 40.75s), 3d 18h]
+plus zero = true
+plus infinite = [true, true]
+compare = [true, false, true, -1, 1]
+equals = [true, false, false]
+hashCode = [0, -404704664, 361]
+sorted = [1970-01-01T00:00:00Z, 1970-01-01T00:16:40.750Z, 1970-01-01T00:16:40.750000001Z]
+max = 1970-01-01T00:16:40.750000001Z
+data = Event(name=launch, at=1970-01-01T00:16:40.750Z)
+set = 2
+parse = 2023-11-14T22:13:20Z
+parse epoch = 0
+parse fraction = [2020-02-29T12:34:56.500Z, 2020-02-29T12:34:56.123456789Z]
+parse offset = [2019-12-31T23:00:00Z, 2020-01-01T05:30:00Z, 2019-12-31T22:00:00Z]
+parse years = [+12345-01-01T00:00:00Z, -0001-12-31T23:59:59Z, 0000-01-01T00:00:00Z]
+round trip = true
+parse bad month EXC InstantFormatException: Expected a month number in 1..12, got 13 when parsing an Instant from "2020-13-01T00:00:00Z" when parsing an Instant from "2020-13-01T00:00:00Z"
+parse bad day EXC InstantFormatException: Expected a valid day-of-month for month 2 of year 2021, got 29 when parsing an Instant from "2021-02-29T00:00:00Z" when parsing an Instant from "2021-02-29T00:00:00Z"
+parse bad hour EXC InstantFormatException: Expected hour in 0..23, got 24 when parsing an Instant from "2021-02-28T24:00:00Z" when parsing an Instant from "2021-02-28T24:00:00Z"
+parse no offset EXC InstantFormatException: The input string is too short when parsing an Instant from "2020-01-01T00:00:00" when parsing an Instant from "2020-01-01T00:00:00"
+parse short EXC InstantFormatException: The input string is too short when parsing an Instant from "2020-01-01" when parsing an Instant from "2020-01-01"
+parse no seconds EXC InstantFormatException: The input string is too short when parsing an Instant from "2020-01-01T00:00Z" when parsing an Instant from "2020-01-01T00:00Z"
+parse bad separator EXC InstantFormatException: Expected 'T' or 't', but got ' ' at position 10 when parsing an Instant from "2020-01-01 00:00:00Z" when parsing an Instant from "2020-01-01 00:00:00Z"
+parse year digits EXC InstantFormatException: A '+' or '-' sign is required for year numbers longer than 4 digits when parsing an Instant from "20201-01-01T00:00:00Z" when parsing an Instant from "20201-01-01T00:00:00Z"
+parse empty EXC InstantFormatException: An empty string is not a valid Instant when parsing an Instant from ""
+parseOrNull = [2020-01-01T00:00:00Z, null]
+now after 2020 = true
+now before 2200 = true
+now nanos in range = true
+fixed clock = 1970-01-01T00:16:40.750Z
+system clock = true

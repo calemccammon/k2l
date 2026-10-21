@@ -1,13 +1,15 @@
 package dev.k2l.codegen
 
 import dev.k2l.LuaTarget
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Runtime helpers shipped as Lua source in `resources/dev/k2l/lualib/<Name>.lua`. Each file defines
  * `local function __K2L_<Name>` and may declare `-- requires: A, B` on its first line.
  */
 object Lualib {
-    class Feature(val name: String, val code: String, val requires: List<String>) {
+    /** A feature as loaded for one target: [file] is the resource it was read from (`IDiv.float.lua`, `IDiv.lua`). */
+    class Feature(val name: String, val code: String, val requires: List<String>, val file: String) {
         /** Top-level `__K2L_*` locals the feature defines. */
         val exports: List<String> = Regex("""^local (?:function )?(__K2L_\w+)""", RegexOption.MULTILINE)
             .findAll(code).map { it.groupValues[1] }.distinct().toList()
@@ -52,19 +54,21 @@ object Lualib {
         }
     }
 
-    private val cache = mutableMapOf<Triple<String, LuaTarget, Boolean>, Feature>()
+    // compilations of several modules can run at once (the Gradle plugin, watch mode)
+    private val cache = ConcurrentHashMap<Triple<String, LuaTarget, Boolean>, Feature>()
 
     fun functionName(feature: String) = "__K2L_$feature"
 
     fun feature(name: String, target: LuaTarget = LuaTarget.Lua54, emulateLong64: Boolean = false): Feature =
-        cache.getOrPut(Triple(name, target, emulateLong64)) {
-            val code = (target.lualibVariants(emulateLong64).map { "$name.$it" } + name).firstNotNullOfOrNull { file ->
-                Lualib::class.java.getResourceAsStream("/dev/k2l/lualib/$file.lua")?.use { it.readBytes().toString(Charsets.UTF_8) }
+        cache.computeIfAbsent(Triple(name, target, emulateLong64)) {
+            val (file, code) = (target.lualibVariants(emulateLong64).map { "$name.$it" } + name).firstNotNullOfOrNull { file ->
+                Lualib::class.java.getResourceAsStream("/dev/k2l/lualib/$file.lua")
+                    ?.use { "$file.lua" to it.readBytes().toString(Charsets.UTF_8) }
             } ?: error("missing lualib feature $name")
             val lines = code.lines()
             val requires = lines.first().takeIf { it.startsWith(REQUIRES_PREFIX) }
                 ?.removePrefix(REQUIRES_PREFIX)?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
-            Feature(name, lines.dropWhile { it.startsWith(REQUIRES_PREFIX) }.joinToString("\n").trim(), requires)
+            Feature(name, lines.dropWhile { it.startsWith(REQUIRES_PREFIX) }.joinToString("\n").trim(), requires, file)
         }
 
     /** Used features plus their dependencies, dependencies first. */

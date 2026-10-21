@@ -46,11 +46,28 @@ local __K2L_IllegalFormatPrecisionException = __K2L_Class("java.util.IllegalForm
 local __K2L_FormatFlagsConversionMismatchException =
     __K2L_Class("java.util.FormatFlagsConversionMismatchException", __K2L_IllegalFormatException)
 local __K2L_NotImplementedError = __K2L_Class("kotlin.NotImplementedError", __K2L_Error)
+local __K2L_KotlinNullPointerException = __K2L_Class("kotlin.KotlinNullPointerException", __K2L_NullPointerException)
+local __K2L_NoWhenBranchMatchedException = __K2L_Class("kotlin.NoWhenBranchMatchedException", __K2L_RuntimeException)
+local __K2L_TypeCastException = __K2L_Class("kotlin.TypeCastException", __K2L_ClassCastException)
 local __K2L_VirtualMachineError = __K2L_Class("java.lang.VirtualMachineError", __K2L_Error)
 -- Lua's "stack overflow" and "C stack overflow" errors (see ToThrowable.lua and DeepPcall.lua)
 local __K2L_StackOverflowError = __K2L_Class("java.lang.StackOverflowError", __K2L_VirtualMachineError)
 local __K2L_UninitializedPropertyAccessException = __K2L_Class("kotlin.UninitializedPropertyAccessException", __K2L_RuntimeException)
 local __K2L_KotlinReflectionNotSupportedError = __K2L_Class("kotlin.jvm.KotlinReflectionNotSupportedError", __K2L_Error)
+
+-- Kotlin's Throwable.addSuppressed (which ignores the exception itself): the exceptions are kept in `____suppressed`
+-- (see Suppressed.lua and Uncaught.lua)
+function __K2L_Throwable:addSuppressed(exception)
+    if exception == self then
+        return
+    end
+    local suppressed = rawget(self, "____suppressed")
+    if suppressed == nil then
+        suppressed = {}
+        rawset(self, "____suppressed", suppressed)
+    end
+    suppressed[#suppressed + 1] = exception
+end
 
 -- A read of an unset lateinit property or variable.
 local function __K2L_Uninitialized(name)

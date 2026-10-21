@@ -1,0 +1,16 @@
+default = [000000ff, 00010f107f80ff2a0764]
+upper = [000000FF, 00010F107F80FF2A0764, true]
+spaced = 00 01 0F 10
+7F 80 FF 2A
+07 64
+spaced props = [true,  , 4, 2147483647]
+grouped = 0x00,0x01, | 0x0f,0x10, | 0x7f,0x80, | 0xff,0x2a, | 0x07,0x64,
+grouped parse = [0, 1, 15, 16]
+spaced parse = [0, 1, 15, 16, 127, -128]
+range = 0F 10 7F
+number = [0xffh, 0x0h, 0xffffffffffffffffh, 0xah]
+number props = [0x, h, true, 1]
+number parse = [255, 1, 127]
+number parse bad EXC NumberFormatException: Expected a hexadecimal number with prefix "0x" and suffix "h", but was ff
+minLength = [000000ff, 01234567, 000005]
+upper number = [ABCDEF]

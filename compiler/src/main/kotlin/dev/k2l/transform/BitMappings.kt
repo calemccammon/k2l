@@ -20,7 +20,7 @@ internal object BitMappings {
 
     private fun CallSite.exactMath(member: String, vararg args: LuaExpr) = libMember("Exact", "__K2L_Exact", member, *args)
 
-    private fun CallSite.isLong(type: KaType?) =
+    private fun CallSite.isLongOrULong(type: KaType?) =
         type != null && with(session) { type.withoutFlexibility.let { it.isLongType || it.isULongType } }
 
     private fun CallSite.isFloat(type: KaType?) = type != null && with(session) { type.withoutFlexibility.isFloatType }
@@ -28,11 +28,11 @@ internal object BitMappings {
     private fun exact(t: MappingTable) {
         val binary = mapOf("addExact" to "add", "subtractExact" to "sub", "multiplyExact" to "mul")
         for ((name, member) in binary) {
-            t.def("java/lang/Math.$name") { exactMath(if (argTypes.any { isLong(it) }) member + "Long" else member, arg(0), arg(1)) }
+            t.def("java/lang/Math.$name") { exactMath(if (argTypes.any { isLongOrULong(it) }) member + "Long" else member, arg(0), arg(1)) }
         }
         val unary = mapOf("negateExact" to "neg", "incrementExact" to "inc", "decrementExact" to "dec", "absExact" to "abs")
         for ((name, member) in unary) {
-            t.def("java/lang/Math.$name") { exactMath(if (isLong(argTypes[0])) member + "Long" else member, arg(0)) }
+            t.def("java/lang/Math.$name") { exactMath(if (isLongOrULong(argTypes[0])) member + "Long" else member, arg(0)) }
         }
         t.def("java/lang/Math.toIntExact") { exactMath("toInt", arg(0)) }
     }
@@ -48,15 +48,13 @@ internal object BitMappings {
                     unsigned != null && unsigned != Unsigned.ULong -> null
                     isByte(receiverType) -> smallRotation(count, Byte.SIZE_BITS, true)
                     isShort(receiverType) -> smallRotation(count, Short.SIZE_BITS, true)
-                    isLong(receiverType) -> bits("rotl64", self, count)
+                    isLongOrULong(receiverType) -> bits("rotl64", self, count)
                     isIntLike(receiverType) -> bits("rotl32", self, count)
                     else -> null
                 }
             }
         }
     }
-
-    private val CallSite.hasIntegers get() = transformer.ctx.options.luaTarget.hasIntegers
 
     /** `countOneBits` of a Long where it is a double: the 53-bit helper `__K2L_LCountOneBits` of `LongBits.lua`. */
     private fun CallSite.longBits(name: String, vararg args: LuaExpr): LuaExpr =
@@ -69,8 +67,8 @@ internal object BitMappings {
         for ((name, member) in long) {
             t.def("kotlin/$name") {
                 when {
-                    isLong(receiverType) && !hasIntegers -> longBits(name, self)
-                    isLong(receiverType) -> bits(member + "64", self)
+                    isLongOrULong(receiverType) && !hasIntegers -> longBits(name, self)
+                    isLongOrULong(receiverType) -> bits(member + "64", self)
                     isIntLike(receiverType) -> bits(member + "32", self)
                     else -> null
                 }
@@ -80,9 +78,9 @@ internal object BitMappings {
         for ((name, member) in counts) {
             t.def("kotlin/$name") {
                 when {
-                    isLong(receiverType) && hasIntegers -> bits(member, self)
-                    isLong(receiverType) -> longBits(name, self)
-                    else -> libMember("Numbers", "__K2L_Num", name, self)
+                    isLongOrULong(receiverType) && hasIntegers -> bits(member, self)
+                    isLongOrULong(receiverType) -> longBits(name, self)
+                    else -> libMember(NUM_TABLE, name, self)
                 }
             }
         }
@@ -96,7 +94,7 @@ internal object BitMappings {
         t.def("kotlin/math/nextTowards") { bits(if (isFloat(receiverType)) "nextTowardsF" else "nextTowards", self, arg(0)) }
         t.def("kotlin/toBits") { bits(if (isFloat(receiverType)) "floatBits" else "doubleBits", self) }
         t.def("kotlin/toRawBits") { bits(if (isFloat(receiverType)) "floatRawBits" else "doubleRawBits", self) }
-        t.def("kotlin/fromBits") { bits(if (isLong(argTypes[0])) "doubleFromBits" else "floatFromBits", arg(0)) }
+        t.def("kotlin/fromBits") { bits(if (isLongOrULong(argTypes[0])) "doubleFromBits" else "floatFromBits", arg(0)) }
         t.def("java/lang/Double.doubleToLongBits") { bits("doubleBits", arg(0)) }
         t.def("java/lang/Double.doubleToRawLongBits") { bits("doubleRawBits", arg(0)) }
         t.def("java/lang/Double.longBitsToDouble") { bits("doubleFromBits", arg(0)) }
@@ -113,7 +111,7 @@ internal object BitMappings {
 
 /** `Byte`, `Short`, `UByte` and `UShort` rotate within their own width (see `Numbers.lua`). */
 private fun CallSite.smallRotation(count: LuaExpr, bits: Int, signed: Boolean): LuaExpr =
-    libMember("Numbers", "__K2L_Num", "rotateSmall", self, count, LuaNumber("$bits"), LuaBool(signed))
+    libMember(NUM_TABLE, "rotateSmall", self, count, LuaNumber("$bits"), LuaBool(signed))
 
 private fun CallSite.isByte(type: KaType?): Boolean = type != null && with(session) { type.withoutFlexibility.isByteType }
 

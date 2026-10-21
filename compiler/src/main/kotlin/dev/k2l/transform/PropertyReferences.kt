@@ -19,7 +19,7 @@ private class Accessors(val getter: LuaExpr, val setter: LuaExpr?, val receiver:
  */
 internal fun FileTransformer.propertyRefObject(name: String, key: String, getter: LuaExpr, setter: LuaExpr?, receiver: LuaExpr?): LuaExpr {
     val args = listOf(LuaString(name), LuaString(key), getter, setter ?: LuaNil, receiver ?: LuaNil).dropLastWhile { it == LuaNil }
-    return LuaCall(LuaIndex(lualibRef("PropertyRef", "__K2L_PropertyRef"), LuaString("new")), args)
+    return libNew("PropertyRef", "__K2L_PropertyRef", args)
 }
 
 /**

@@ -45,14 +45,9 @@ class Attribution(outputs: List<LuaOutput>, private val kotlinSource: File, lual
     }
 
     /** A function declared on a line of its own maps to the Kotlin line of its first statement, not of the statement before. */
-    private fun bodyLine(line: Int) = if (programLines.getOrNull(line - 1).orEmpty().trimStart().let {
-            it.startsWith("function ") ||
-                it.startsWith("local function ")
-        }
-    ) {
-        line + 1
-    } else {
-        line
+    private fun bodyLine(line: Int): Int {
+        val text = programLines.getOrNull(line - 1).orEmpty().trimStart()
+        return if (text.startsWith("function ") || text.startsWith("local function ")) line + 1 else line
     }
 
     /** A source line with its position and text: `main.kt:14 main.lua:52  return Pos.new(...)`. */
@@ -123,10 +118,9 @@ class Attribution(outputs: List<LuaOutput>, private val kotlinSource: File, lual
                 val index = bundle.indexOf("\n" + feature.code + "\n")
                 if (index < 0) return@mapNotNull null
                 val start = bundle.substring(0, index + 1).count { it == '\n' } + 1
-                val file = (target.lualibVariants(emulate).map { "$name.$it" } + name).first { File(lualibDir, "$it.lua").isFile } + ".lua"
-                val fileLines = File(lualibDir, file).readLines()
+                val fileLines = File(lualibDir, feature.file).readLines()
                 val offset = fileLines.indexOfFirst { it.isNotBlank() && !it.startsWith("-- requires:") }.coerceAtLeast(0)
-                Span(name, file, start, start + feature.code.count { it == '\n' }, offset)
+                Span(name, feature.file, start, start + feature.code.count { it == '\n' }, offset)
             }.sortedBy { it.startLine }
         }
     }

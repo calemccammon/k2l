@@ -143,7 +143,7 @@ private fun FileTransformer.loopedExtreme(max: Boolean, source: Source, lambda: 
 
 /** `groupBy`, `associateBy` (with or without a value transform) and `associateWith` into a new `__K2L_Map`. */
 private fun FileTransformer.loopedGrouping(name: String, source: Source, args: List<KtExpression?>): LuaExpr {
-    val newOf = { cls: String -> LuaCall(LuaIndex(lualibRef("Collections", cls), LuaString("new")), emptyList()) }
+    val newOf = { cls: String -> libNew("Collections", cls, emptyList()) }
     val result = declare("result", newOf("__K2L_Map"))
     val first = args[0]!!
     val second = args.getOrNull(1)

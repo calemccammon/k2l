@@ -11,6 +11,22 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
  */
 internal typealias ValueSink = (LuaExpr) -> List<LuaStmt>
 
+/** The loops and functions being transformed, innermost last, and what jumps out of them need (see LoopJumps.kt, NonLocalJumps.kt). */
+internal class JumpState {
+    var loops = ArrayDeque<LoopFrame>()
+
+    var frames = ArrayDeque<FunctionFrame>()
+
+    /** Calls of inline functions being transformed whose lambdas may stay Lua functions, innermost last (see NonLocalJumps.kt). */
+    val jumpSites = ArrayDeque<JumpSite>()
+
+    /** How many jumps out of lambdas raised a token so far. */
+    var jumpsRaised = 0
+
+    /** The break and continue labels of loops and the end labels of inlined bodies: on Lua 5.1 each is lowered where it is. */
+    val jumpLabels = HashSet<String>()
+}
+
 internal class LoopFrame(val label: String?) {
     /** The function or lambda the loop is written in (null at the top level): jumps from frames entered later leave them. */
     var owner: FunctionFrame? = null

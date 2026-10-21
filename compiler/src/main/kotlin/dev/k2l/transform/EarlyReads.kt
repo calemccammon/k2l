@@ -63,20 +63,19 @@ private fun constructionCode(decl: KtElement): List<PsiElement> = when (decl) {
     else -> emptyList()
 }
 
-private fun FileTransformer.functionsByName(): Map<String, List<KtNamedFunction>> {
-    @Suppress("UNCHECKED_CAST") // only this function writes the entry
-    return classes.module.shared.getOrPut("functionsByName") {
-        val result = HashMap<String, MutableList<KtNamedFunction>>()
-        classes.module.files.forEach { file ->
-            file.accept(object : KtTreeVisitorVoid() {
-                override fun visitNamedFunction(function: KtNamedFunction) {
-                    function.name?.let { result.getOrPut(it) { mutableListOf() } += function }
-                    super.visitNamedFunction(function)
-                }
-            })
-        }
-        result
-    } as Map<String, List<KtNamedFunction>>
+private val FUNCTIONS_BY_NAME = SharedKey<Map<String, List<KtNamedFunction>>>("functionsByName")
+
+private fun FileTransformer.functionsByName(): Map<String, List<KtNamedFunction>> = classes.module.shared.getOrPut(FUNCTIONS_BY_NAME) {
+    val result = HashMap<String, MutableList<KtNamedFunction>>()
+    classes.module.files.forEach { file ->
+        file.accept(object : KtTreeVisitorVoid() {
+            override fun visitNamedFunction(function: KtNamedFunction) {
+                function.name?.let { result.getOrPut(it) { mutableListOf() } += function }
+                super.visitNamedFunction(function)
+            }
+        })
+    }
+    result
 }
 
 /**

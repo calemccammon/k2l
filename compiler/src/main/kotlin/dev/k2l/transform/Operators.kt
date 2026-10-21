@@ -46,11 +46,11 @@ internal fun FileTransformer.selector(e: KtQualifiedExpression): LuaExpr = with(
 }
 
 private inline fun <T> FileTransformer.withOverride(e: KtExpression, value: LuaExpr, block: () -> T): T {
-    overrides[e] = value
+    callState.overrides[e] = value
     try {
         return block()
     } finally {
-        overrides.remove(e)
+        callState.overrides.remove(e)
     }
 }
 

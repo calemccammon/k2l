@@ -37,7 +37,7 @@ internal val EXPANDED_ALWAYS = setOf(
 
 /** The chars of a String as a list. */
 internal fun FileTransformer.charList(text: LuaExpr): LuaExpr = if (utf16) {
-    LuaCall(LuaIndex(lualibRef("Strings", "__K2L_Text"), LuaString("toList")), listOf(text))
+    libCall(TEXT_TABLE, "toList", listOf(text))
 } else {
     LuaCall(lualibRef("Strings", "__K2L_StringToList"), listOf(text))
 }
@@ -194,7 +194,7 @@ internal fun FileTransformer.keyedCall(name: String, type: KaType?, args: List<K
 }
 
 private fun FileTransformer.isBlankText(text: LuaExpr): LuaExpr = if (utf16) {
-    LuaCall(LuaIndex(lualibRef("Strings", "__K2L_Text"), LuaString("isBlank")), listOf(text))
+    libCall(TEXT_TABLE, "isBlank", listOf(text))
 } else {
     LuaCall(lualibRef("Strings", "__K2L_StringIsBlank"), listOf(text))
 }

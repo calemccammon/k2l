@@ -32,7 +32,7 @@ internal fun FileTransformer.superInit(call: KtCallElement?, info: SuperInfo): U
 private fun FileTransformer.elementSuperInit(call: KtCallElement?): Unit = with(session) {
     val resolved = call?.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>() ?: return
     val args = arguments(emptyList(), callArguments(resolved))
-    val init = LuaIndex(lualibRef(COROUTINES_FEATURE, "__K2L_AbstractCoroutineContextElement"), LuaString(INIT))
+    val init = luaField(lualibRef(COROUTINES_FEATURE, "__K2L_AbstractCoroutineContextElement"), INIT)
     emit(LuaCallStmt(LuaCall(init, listOf(selfRef()) + args)))
 }
 
@@ -40,5 +40,5 @@ private fun FileTransformer.elementSuperInit(call: KtCallElement?): Unit = with(
 private fun FileTransformer.librarySuperInit(call: KtCallElement?, libraryBase: String): Unit = with(session) {
     val resolved = call?.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>()
     val args = resolved?.let { throwableArguments(callArguments(it), it.signature.symbol.valueParameters) }.orEmpty()
-    emit(LuaCallStmt(LuaCall(LuaIndex(lualibRef(EXCEPTIONS_FEATURE, libraryBase), LuaString(INIT)), listOf(selfRef()) + args)))
+    emit(LuaCallStmt(libCall(EXCEPTIONS_FEATURE, libraryBase, INIT, listOf(selfRef()) + args)))
 }

@@ -177,8 +177,6 @@ class LuaPrinter(
                 nested(stmt.body)
                 line("end")
             }
-
-            is LuaComment -> stmt.text.lines().forEach { line("-- $it") }
         }
     }
 

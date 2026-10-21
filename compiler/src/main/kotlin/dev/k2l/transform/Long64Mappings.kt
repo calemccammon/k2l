@@ -10,6 +10,9 @@ import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 @Suppress("TooManyFunctions") // one small installer per group of members
 internal object Long64Mappings {
     private val table = MappingTable()
+
+    /** Ids defined twice (see [MappingTable.overwrites]). */
+    val overwrites: List<String> get() = table.overwrites
     private val WIDE = listOf("Long", "ULong")
     private const val BIT_OPS = "and,or,xor"
 
@@ -38,12 +41,12 @@ internal object Long64Mappings {
 
     private fun CallSite.longRange(constructor: String, vararg args: LuaExpr): LuaExpr {
         val unsigned = with(session) { isULongType(receiverType) || argTypes.any { isULongType(it) } }
-        val target = LuaIndex(ref("Long64Range", "__K2L_LongRange"), LuaString(constructor))
+        val target = luaField(ref("Long64Range", "__K2L_LongRange"), constructor)
         return LuaCall(target, args.toList() + LuaBool(unsigned))
     }
 
     fun map(callableId: String?, site: CallSite): LuaExpr? {
-        if (callableId == null || !site.transformer.emulatesLong) return null
+        if (callableId == null || !site.emulatesLong) return null
         return table.entries[callableId]?.invoke(site) ?: sums(callableId, site)
     }
 
@@ -55,19 +58,9 @@ internal object Long64Mappings {
 
     /** The call [site] with the `Long` arguments of `String.format` boxed, so that `%x` shows 64 bits for a negative number. */
     fun prepare(callableId: String?, site: CallSite): CallSite {
-        if (callableId != "kotlin/text/format" || !site.transformer.emulatesLong) return site
+        if (callableId != "kotlin/text/format" || !site.emulatesLong) return site
         val args = site.args.mapIndexed { i, a -> if (site.wide(site.argTypes.getOrNull(i))) site.l64Member("boxed", a) else a }
-        return CallSite(
-            site.session,
-            site.transformer,
-            site.element,
-            site.name,
-            site.receiver,
-            site.receiverType,
-            args,
-            site.argTypes,
-            site.parameterTypes,
-        )
+        return site.copy(args = args)
     }
 
     private fun CallSite.anyWide() = wide(receiverType) || argTypes.any { wide(it) }
@@ -82,8 +75,8 @@ internal object Long64Mappings {
     private fun conversions() {
         for (t in WIDE) {
             def("kotlin/$t.toInt") { l64("Int", self) }
-            def("kotlin/$t.toShort") { libMember("Numbers", "__K2L_Num", "toShort", l64("Int", self)) }
-            def("kotlin/$t.toByte") { libMember("Numbers", "__K2L_Num", "toByte", l64("Int", self)) }
+            def("kotlin/$t.toShort") { libMember(NUM_TABLE, "toShort", l64("Int", self)) }
+            def("kotlin/$t.toByte") { libMember(NUM_TABLE, "toByte", l64("Int", self)) }
         }
         // the hash of a Long differs from the hash of an Int with the same value for negative numbers
         def("kotlin/Long.hashCode", "kotlin/ULong.hashCode", "kotlin/Any.hashCode") {
@@ -180,7 +173,6 @@ internal object Long64Mappings {
         def("java/lang/Long.divideUnsigned") { l64Member("udiv", arg(0), arg(1)) }
         def("java/lang/Long.remainderUnsigned") { l64Member("urem", arg(0), arg(1)) }
         def("java/lang/Long.toUnsignedString") { x("ustrRadix", arg(0), args.getOrElse(1) { LuaNumber("10") }) }
-        def("java/lang/Long.parseUnsignedLong") { x("parseOrThrow", arg(0), args.getOrElse(1) { LuaNil }, LuaBool(true)) }
         def("java/lang/Long.rotateLeft") { x("rotl", arg(0), arg(1)) }
         def("java/lang/Long.rotateRight") { x("rotr", arg(0), arg(1)) }
     }

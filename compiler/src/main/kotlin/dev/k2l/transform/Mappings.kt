@@ -8,11 +8,22 @@ import org.jetbrains.kotlin.psi.KtQualifiedExpression
 /** What a mapping produces for a call, or null when it doesn't handle that overload. */
 typealias Mapping = CallSite.() -> LuaExpr?
 
+/** One area of mappings (an object's `map`): what it produces for the call to [callableId], or null when it doesn't handle it. */
+typealias MappingArea = (callableId: String?, site: CallSite) -> LuaExpr?
+
+/** What wraps the result of the mapping areas, e.g. to round a Float result; [result] is null when no area handled the call. */
+typealias MappingPost = (callableId: String?, site: CallSite, result: LuaExpr?) -> LuaExpr?
+
 /** Stdlib callables by `CallableId` string; the `*Mappings` objects each register their own area. */
 class MappingTable {
     val entries = mutableMapOf<String, Mapping>()
 
-    fun def(vararg ids: String, mapping: Mapping) = ids.forEach { entries[it] = mapping }
+    /** The ids defined again after they were already defined, in order; the later definition wins (see MappingTableTest). */
+    val overwrites = mutableListOf<String>()
+
+    fun def(vararg ids: String, mapping: Mapping) = ids.forEach { id ->
+        if (entries.put(id, mapping) != null) overwrites += id
+    }
 }
 
 internal fun method(target: LuaExpr, name: String, vararg args: LuaExpr) = LuaMethodCall(target, name, args.toList())
@@ -26,10 +37,6 @@ internal fun lua(path: String, vararg args: LuaExpr): LuaExpr {
 internal fun List<LuaExpr>.dropTrailingNil(): List<LuaExpr> = dropLastWhile { it == LuaNil }
 
 internal fun num(text: String) = LuaNumber(text)
-
-/** A call to `member` of a lualib table such as `__K2L_Num`, e.g. `__K2L_Num.sinh(x)`. */
-internal fun CallSite.libMember(feature: String, table: String, member: String, vararg args: LuaExpr): LuaExpr =
-    LuaCall(LuaIndex(ref(feature, table), LuaString(member)), args.toList())
 
 /** Names and literals can be evaluated twice without changing the program. */
 internal fun LuaExpr.isSimple(): Boolean = this is LuaName || this is LuaNumber || this is LuaString || this is LuaBool ||

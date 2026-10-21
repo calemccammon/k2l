@@ -9,7 +9,6 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.TimeUnit
 
 /**
  * The shared `lualib_bundle.lua` is one Lua chunk, and Lua limits a function (a chunk included) to 200 locals:
@@ -25,34 +24,20 @@ class LualibBundleTest {
     }
 
     @TestFactory
-    fun everyFeatureLoadsTogether(): List<DynamicTest> = INTERPRETERS.flatMap { (target, names) ->
+    fun everyFeatureLoadsTogether(): List<DynamicTest> = LuaTarget.entries.flatMap { target ->
         // --long64 emulate has its own variants of the runtime on the targets without integers
         listOf(false, true).filter { !it || !target.hasIntegers }.map { emulate ->
             val label = if (emulate) "all features on ${target.id} with long64=emulate" else "all features on ${target.id}"
             DynamicTest.dynamicTest(label) {
-                val interpreter = names.firstOrNull(::onPath)
-                assumeTrue(interpreter != null, "${names.first()} not found")
+                val interpreter = LuaInterpreters.of(target)
+                assumeTrue(interpreter != null, "no interpreter for ${target.id} found")
                 val bundle = dir.resolve("bundle_${target.name}_$emulate.lua")
                 // Features that exist only as another target's variant (e.g. IMul.float) are left out.
                 val available = features.filter { runCatching { Lualib.feature(it, target, emulate) }.isSuccess }
                 Files.writeString(bundle, Lualib.bundle(available, target, emulate))
-                val process = ProcessBuilder(interpreter, bundle.toString()).redirectErrorStream(true).start()
-                check(process.waitFor(30, TimeUnit.SECONDS)) { "lua timed out" }
-                val output = process.inputStream.bufferedReader().readText()
-                assertEquals(0, process.exitValue(), "bundle of all features failed to load:\n$output")
+                val (status, output) = runLua(requireNotNull(interpreter), dir, bundle.fileName.toString())
+                assertEquals(0, status, "bundle of all features failed to load:\n$output")
             }
         }
-    }
-
-    private fun onPath(name: String) = System.getenv("PATH").orEmpty().split(File.pathSeparator).any { File(it, name).canExecute() }
-
-    private companion object {
-        val INTERPRETERS = listOf(
-            LuaTarget.Lua51 to listOf("lua5.1", "lua51", "lua"),
-            LuaTarget.Lua52 to listOf("lua5.2", "lua52"),
-            LuaTarget.Lua53 to listOf("lua5.3", "lua53"),
-            LuaTarget.Lua54 to listOf("lua5.4", "lua54"),
-            LuaTarget.LuaJIT to listOf("luajit"),
-        )
     }
 }

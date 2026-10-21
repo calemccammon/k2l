@@ -12,8 +12,6 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 
-private const val FUNCTION_REF_FEATURE = "FunctionRef"
-
 /** What a program can learn from a reference held in a value besides calling it. */
 private val OBJECT_MEMBERS = setOf("name", "toString", "equals", "hashCode")
 
@@ -34,7 +32,7 @@ internal fun FileTransformer.named(
     if (expected is KaFunctionType && !expected.isReflectionFunctionType()) return function
     val name = if (symbol is KaConstructorSymbol) "<init>" else e.callableReference.getReferencedName()
     val args = listOf(LuaString(name), LuaString(referenceKey(symbol)), function) + listOfNotNull(receiver)
-    LuaCall(LuaIndex(lualibRef(FUNCTION_REF_FEATURE, "__K2L_FunctionRef"), LuaString("new")), args)
+    libNew(FUNCTION_REF_FEATURE, "__K2L_FunctionRef", args)
 }
 
 /**

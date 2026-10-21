@@ -17,14 +17,14 @@ internal fun FileTransformer.selfRef(): LuaExpr = LuaName("self").also { stable 
 
 internal inline fun <T> FileTransformer.withClass(c: KtClassOrObject, block: () -> T): T {
     val savedClass = currentClass
-    val savedLoops = loops
+    val savedLoops = jumps.loops
     currentClass = c
-    loops = ArrayDeque()
+    jumps.loops = ArrayDeque()
     try {
         return block()
     } finally {
         currentClass = savedClass
-        loops = savedLoops
+        jumps.loops = savedLoops
     }
 }
 

@@ -72,3 +72,18 @@ end
 local function __K2L_ReadOnlyProperty(getter)
     return ReadOnlyProperty.new(getter)
 end
+
+-- the SAM constructor PropertyDelegateProvider { thisRef, property -> delegate }
+local DelegateProvider = __K2L_Class("kotlin.properties.PropertyDelegateProvider")
+
+function DelegateProvider:____init(provide)
+    self.provide = provide
+end
+
+function DelegateProvider:provideDelegate(thisRef, property)
+    return self.provide(thisRef, property)
+end
+
+local function __K2L_DelegateProvider(provide)
+    return DelegateProvider.new(provide)
+end

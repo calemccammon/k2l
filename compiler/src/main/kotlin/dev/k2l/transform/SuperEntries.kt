@@ -169,9 +169,6 @@ private fun addCollection(found: SuperEntries, entry: KtSuperTypeListEntry, lua:
     }
 }
 
-/** Lualib feature with the mixins of library SAM interfaces, see `SamInterfaces.lua`. */
-internal const val SAM_FEATURE = "SamInterfaces"
-
 private const val CLOSED_RANGE_CLASS = "kotlin/ranges/ClosedRange"
 
 /** The default `contains`/`isEmpty` of a class of the program implementing `ClosedRange` (in `Collections.lua`). */
@@ -215,7 +212,7 @@ internal fun FileTransformer.closedRangeMembers(c: KtClassOrObject, ref: LuaExpr
     if (CLOSED_RANGE_MIXIN !in info.samMixins || info.collectionBase == null) return
     for (name in listOf("contains", "isEmpty")) {
         if (c.declarations.any { it is KtNamedFunction && it.name == name }) continue
-        emit(assign(LuaIndex(ref, LuaString(name)), LuaIndex(lualibRef("Collections", CLOSED_RANGE_MIXIN), LuaString(name))))
+        emit(assign(LuaIndex(ref, LuaString(name)), luaField(lualibRef("Collections", CLOSED_RANGE_MIXIN), name)))
     }
 }
 

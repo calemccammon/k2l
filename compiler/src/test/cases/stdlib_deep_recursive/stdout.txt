@@ -1,0 +1,11 @@
+depth: 100000
+small: 3
+sum: 5000050000
+again: 55
+even: true, false, odd: true
+fib: 190392490709135
+caught: bottom reached
+recovered: 28999
+nesting: 3
+deep nesting: 20000
+parse error: expected ] at 3

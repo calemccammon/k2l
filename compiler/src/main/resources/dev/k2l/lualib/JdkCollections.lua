@@ -1,4 +1,4 @@
--- requires: Class, Exceptions, Collections, Comparators, Compare, Equals, Random
+-- requires: Class, Exceptions, Collections, Comparators, Compare, Equals, Random, Strings
 -- java.util.Collections and java.util.Arrays helpers, Map.withDefault and List.listIterator.
 -- The unmodifiable* wrappers are live read-only views of their argument (see "views" below). The empty and singleton
 -- collections, nCopies and the like are read-only collections of their own, with the JVM's classes.
@@ -223,6 +223,59 @@ function J.unmodifiableMap(source)
     return viewOf(__K2L_MapView, source)
 end
 
+-- the sorted, navigable and sequenced views also block the members that take elements from either end
+local function withEnds(mutators, ends)
+    local out = {}
+    for _, name in ipairs(mutators) do
+        out[#out + 1] = name
+    end
+    for _, name in ipairs(ends) do
+        out[#out + 1] = name
+    end
+    return out
+end
+
+local SET_END_MUTATORS = withEnds(SET_MUTATORS, {"pollFirst", "pollLast", "removeFirst", "removeLast", "addFirst", "addLast"})
+local MAP_END_MUTATORS = withEnds(MAP_MUTATORS, {"pollFirstEntry", "pollLastEntry", "putFirst", "putLast"})
+
+local function setViewClass(name, base)
+    local class = __K2L_Class("java.util.Collections$" .. name, base)
+    makeView(class, SET_END_MUTATORS)
+    return class
+end
+
+local function mapViewClass(name, base)
+    local class = __K2L_Class("java.util.Collections$" .. name, base)
+    makeView(class, MAP_END_MUTATORS, {
+        getKeys = function(self) return viewOf(__K2L_SetView, rawget(self, "____target"):getKeys()) end,
+        getValues = function(self) return viewOf(CollectionView, rawget(self, "____target"):getValues()) end,
+        getEntries = function(self) return viewOf(__K2L_SetView, rawget(self, "____target"):getEntries()) end,
+    })
+    return class
+end
+
+local SortedSetView = setViewClass("UnmodifiableSortedSet", __K2L_SortedSet)
+local NavigableSetView = setViewClass("UnmodifiableNavigableSet", __K2L_SortedSet)
+local SequencedSetView = setViewClass("UnmodifiableSequencedSet", __K2L_Set)
+local SortedMapView = mapViewClass("UnmodifiableSortedMap", __K2L_SortedMap)
+local NavigableMapView = mapViewClass("UnmodifiableNavigableMap", __K2L_SortedMap)
+local SequencedMapView = mapViewClass("UnmodifiableSequencedMap", __K2L_Map)
+local SequencedCollectionView = __K2L_Class("java.util.Collections$UnmodifiableSequencedCollection", __K2L_Iterable)
+makeView(SequencedCollectionView, LIST_MUTATORS)
+
+function J.unmodifiableSortedSet(source) return viewOf(SortedSetView, source) end
+function J.unmodifiableNavigableSet(source) return viewOf(NavigableSetView, source) end
+function J.unmodifiableSequencedSet(source) return viewOf(SequencedSetView, source) end
+function J.unmodifiableSortedMap(source) return viewOf(SortedMapView, source) end
+function J.unmodifiableNavigableMap(source) return viewOf(NavigableMapView, source) end
+function J.unmodifiableSequencedMap(source) return viewOf(SequencedMapView, source) end
+function J.unmodifiableSequencedCollection(source) return viewOf(SequencedCollectionView, source) end
+
+-- emptySortedSet() and emptyNavigableSet(), emptySortedMap() and emptyNavigableMap(): read-only views of empty trees
+function J.emptySortedSet() return viewOf(NavigableSetView, __K2L_SortedSet.new()) end
+function J.emptySortedMap() return viewOf(NavigableMapView, __K2L_SortedMap.new()) end
+J.emptyNavigableSet, J.emptyNavigableMap = J.emptySortedSet, J.emptySortedMap
+
 function __K2L_JdkEmptyList:get(index)
     error(__K2L_IndexOutOfBoundsException.new("Index: " .. index))
 end
@@ -399,6 +452,147 @@ function J.reverseOrder(comparator)
     return __K2L_ReverseOrder
 end
 
+-- indexOfSubList(source, target) and lastIndexOfSubList: where target occurs in source, -1 when it does not
+local function matchesAt(source, target, i)
+    for j = 0, target.size - 1 do
+        if not __K2L_Equals(source:get(i + j), target:get(j)) then
+            return false
+        end
+    end
+    return true
+end
+
+function J.indexOfSubList(source, target)
+    for i = 0, source.size - target.size do
+        if matchesAt(source, target, i) then
+            return i
+        end
+    end
+    return -1
+end
+
+function J.lastIndexOfSubList(source, target)
+    for i = source.size - target.size, 0, -1 do
+        if matchesAt(source, target, i) then
+            return i
+        end
+    end
+    return -1
+end
+
+function J.emptyIterator()
+    return J.emptyList():iterator()
+end
+
+function J.emptyListIterator()
+    return J.listIterator(J.emptyList())
+end
+
+local function isInstance(value, class)
+    local c = getmetatable(value)
+    while c do
+        if c == class then
+            return true
+        end
+        c = rawget(c, "____super")
+    end
+    return false
+end
+
+-- newSetFromMap(map): a set ordered as the (empty) map would order its keys
+function J.newSetFromMap(map)
+    if not map:isEmpty() then
+        illegalArgument("Map is non-empty")
+    end
+    if isInstance(map, __K2L_SortedMap) then
+        return __K2L_SortedSet.new(rawget(map, "____compare"))
+    elseif isInstance(map, __K2L_HashMap) then
+        return __K2L_HashSet.new()
+    end
+    return __K2L_Set.new()
+end
+
+-- clone() of ArrayList, LinkedList, ArrayDeque, HashMap, LinkedHashMap, TreeMap, HashSet and the like: a shallow copy of
+-- the same class (and comparator)
+function J.clone(collection)
+    local class = getmetatable(collection)
+    local compare = rawget(collection, "____compare")
+    local out = (compare ~= nil and compare ~= __K2L_Compare) and class.new(compare) or class.new()
+    if collection.containsKey ~= nil then
+        out:putAll(collection)
+    else
+        out:addAll(collection)
+    end
+    return out
+end
+
+-- Map.replace(key, value): only a key that is there gets the value
+function J.replace(map, key, value)
+    if not map:containsKey(key) then
+        return nil
+    end
+    local old = map:get(key)
+    map:put(key, value)
+    return old
+end
+
+-- Map.replace(key, oldValue, newValue)
+function J.replaceIf(map, key, oldValue, newValue)
+    if not map:containsKey(key) or not __K2L_Equals(map:get(key), oldValue) then
+        return false
+    end
+    map:put(key, newValue)
+    return true
+end
+
+-- LinkedHashMap.putLast: the entry moves to the end
+function J.putLast(map, key, value)
+    local old = map:remove(key)
+    map:put(key, value)
+    return old
+end
+
+J.unsupported = unsupported
+
+function J.removeLastOccurrence(collection, value)
+    for i = collection.size, 1, -1 do
+        if __K2L_Equals(collection[i], value) then
+            if collection.____head ~= nil then
+                collection:____delete(i)
+            else
+                collection:removeAt(i - 1)
+            end
+            return true
+        end
+    end
+    return false
+end
+
+-- Collection.toArray(array): the elements in the array when they fit (then null after the last, as the JDK does), else in a
+-- new array of the same type
+function J.toArray(collection, array)
+    local arr, n = collection:____array()
+    local out = array
+    if array.size < n then
+        out = setmetatable({size = n}, getmetatable(array))
+    elseif array.size > n then
+        out[n + 1] = nil
+    end
+    for i = 1, n do
+        out[i] = arr[i]
+    end
+    return out
+end
+
+-- the comparator of a TreeMap, TreeSet or PriorityQueue, null for the natural order
+function J.comparator(collection)
+    local compare = collection.____compare
+    if compare == __K2L_Compare then
+        return nil
+    end
+    return compare
+end
+
 ------------------------------------------------------------------ Arrays
 function J.asList(...)
     local list = __K2L_FixedSizeList.new()
@@ -492,6 +686,18 @@ function J.arrayEquals(a, b)
     return (a.contentEquals or a.equals)(a, b)
 end
 
+-- Objects.deepEquals: arrays by their contents, all the way down; anything else by equals
+function J.objectsDeepEquals(a, b)
+    if rawequal(a, b) and type(a) ~= "number" then
+        return true
+    elseif a == nil or b == nil then
+        return false
+    elseif type(a) == "table" and a.contentDeepEquals ~= nil and type(b) == "table" and b.contentDeepEquals ~= nil then
+        return a:contentDeepEquals(b)
+    end
+    return __K2L_Equals(a, b)
+end
+
 function J.arrayHashCode(array)
     if array == nil then
         return 0
@@ -506,6 +712,127 @@ function J.binarySearch_array(array, a, b, c, d)
     end
     checkRange(array.size, a, b)
     return array:binarySearch(c, d or __K2L_Compare, a, b)
+end
+
+-- Arrays.compare's order of two elements of the kind ("Int", "Byte", "Char", "Object" ...): the difference for the narrow
+-- kinds and Char, as Byte.compare and Character.compare are; null first among objects
+local function charCode(c)
+    local b = c:byte(1)
+    if b < 0x80 then
+        return b
+    elseif b < 0xE0 then
+        return (b - 0xC0) * 64 + c:byte(2) - 0x80
+    elseif b < 0xF0 then
+        return ((b - 0xE0) * 64 + c:byte(2) - 0x80) * 64 + c:byte(3) - 0x80
+    end
+    return (((b - 0xF0) * 64 + c:byte(2) - 0x80) * 64 + c:byte(3) - 0x80) * 64 + c:byte(4) - 0x80
+end
+
+local function elementOrder(kind, unsigned)
+    if kind == "Byte" or kind == "Short" then
+        local m = kind == "Byte" and 256 or 65536
+        if unsigned then
+            return function(a, b) return a % m - b % m end
+        end
+        return function(a, b) return a - b end
+    elseif kind == "Char" then
+        return function(a, b) return charCode(a) - charCode(b) end
+    elseif kind == "Object" then
+        return function(a, b)
+            if a == nil or b == nil then
+                return a == nil and (b == nil and 0 or -1) or 1
+            elseif type(a) == "string" then
+                return __K2L_Text.compare(a, b)
+            end
+            return __K2L_Compare(a, b)
+        end
+    elseif unsigned then
+        return function(a, b)
+            local an, bn = __K2L_Compare(a, 0) < 0, __K2L_Compare(b, 0) < 0
+            if an ~= bn then
+                return an and 1 or -1
+            end
+            return __K2L_Compare(a, b)
+        end
+    end
+    return __K2L_Compare
+end
+
+local function isComparatorArg(x)
+    return x ~= nil and type(x) ~= "number"
+end
+
+-- the arrays and ranges of compare(a, b[, cmp]) and compare(a, aFrom, aTo, b, bFrom, bTo[, cmp]), checked as the JDK does
+local function ranges(a, b, c, d, e, f, g)
+    if type(b) == "number" then
+        checkRange(a.size, b, c)
+        checkRange(d.size, e, f)
+        return a, b, c, d, e, f, g
+    end
+    return a, 0, a and a.size, b, 0, b and b.size, c
+end
+
+local function firstMismatch(a, af, at, b, bf, bt, same)
+    local n = math.min(at - af, bt - bf)
+    for i = 1, n do
+        if not same(a[af + i], b[bf + i]) then
+            return i - 1
+        end
+    end
+    return -1
+end
+
+local function compareArrays(kind, unsigned, ...)
+    local a, af, at, b, bf, bt, cmp = ranges(...)
+    if a == b and af == bf and at == bt then
+        return 0
+    elseif a == nil or b == nil then
+        return a == nil and -1 or 1
+    end
+    local order = isComparatorArg(cmp) and cmp or elementOrder(kind, unsigned)
+    local i = firstMismatch(a, af, at, b, bf, bt, function(x, y) return order(x, y) == 0 end)
+    if i >= 0 then
+        return order(a[af + i + 1], b[bf + i + 1])
+    end
+    return (at - af) - (bt - bf)
+end
+
+function J.compareArrays(kind, ...)
+    return compareArrays(kind, false, ...)
+end
+
+function J.compareUnsignedArrays(kind, ...)
+    return compareArrays(kind, true, ...)
+end
+
+-- Arrays.mismatch: the index of the first difference (Double.equals for numbers, a comparator's 0 when given), the shorter
+-- length when one is a prefix of the other, -1 when they are equal
+function J.mismatchArrays(_, ...)
+    local a, af, at, b, bf, bt, cmp = ranges(...)
+    if a == nil or b == nil then
+        error(__K2L_NullPointerException.new())
+    end
+    local same = __K2L_Equals
+    if isComparatorArg(cmp) then
+        same = function(x, y) return cmp(x, y) == 0 end
+    end
+    local i = firstMismatch(a, af, at, b, bf, bt, same)
+    if i < 0 and at - af ~= bt - bf then
+        return math.min(at - af, bt - bf)
+    end
+    return i
+end
+
+-- parallelPrefix(array, op) and parallelPrefix(array, from, to, op): each element combined with the result before it
+function J.parallelPrefix(array, a, b, c)
+    local from, to, op = 0, array.size, a
+    if type(a) == "number" then
+        checkRange(array.size, a, b)
+        from, to, op = a, b, c
+    end
+    for i = from + 2, to do
+        array[i] = op(array[i - 1], array[i])
+    end
 end
 
 function J.setAll(array, generator)

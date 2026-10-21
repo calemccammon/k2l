@@ -52,7 +52,7 @@ internal object FloatMappings {
         val printer = when {
             classId == "kotlin/FloatArray" || element?.isFloatType == true -> "FloatToString"
 
-            !site.transformer.target.hasIntegers || site.transformer.usesFloat ->
+            !site.hasIntegers || site.transformer.usesFloat ->
                 if (classId == "kotlin/DoubleArray" || element?.isDoubleType == true) "DoubleToString" else return null
 
             else -> return null
