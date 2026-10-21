@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Locale = ____lualib.__K2L_Locale
 local __K2L_LocaleNames = ____lualib.__K2L_LocaleNames
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -84,5 +85,5 @@ local function main()
 end
 
 ____exports.show = show
-main()
+__K2L_Main(main)
 return ____exports

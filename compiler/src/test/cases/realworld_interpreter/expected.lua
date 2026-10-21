@@ -4,6 +4,7 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -282,7 +283,7 @@ function Expr.Num:hashCode()
 end
 
 function Expr.Num:equals(other)
-    return getmetatable(other) == Expr.Num and self.value == other.value and self.line == other.line
+    return getmetatable(other) == Expr.Num and __K2L_DoubleEquals(self.value, other.value) and self.line == other.line
 end
 
 Expr.Str = __K2L_Class("calc.Expr$Str", nil, Expr)
@@ -823,7 +824,7 @@ function Value.NumV.new(n)
 end
 
 function Value.NumV:toString()
-    return self.n == math.floor(self.n) + 0.0 and not __K2L_Num.isInfinite(self.n) and tostring(__K2L_DoubleToLong(self.n)) or __K2L_Str(self.n)
+    return self.n == (self.n == 0 and self.n * 1.0 or math.floor(self.n) + 0.0) and not __K2L_Num.isInfinite(self.n) and tostring(__K2L_DoubleToLong(self.n)) or __K2L_Str(self.n)
 end
 
 function Value.NumV:hashCode()
@@ -831,7 +832,7 @@ function Value.NumV:hashCode()
 end
 
 function Value.NumV:equals(other)
-    return getmetatable(other) == Value.NumV and self.n == other.n
+    return getmetatable(other) == Value.NumV and __K2L_DoubleEquals(self.n, other.n)
 end
 
 Value.StrV = __K2L_Class("calc.Value$StrV", Value)

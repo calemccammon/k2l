@@ -6,6 +6,7 @@ local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -174,5 +175,5 @@ function windowedSumPairs(self)
     return __K2L_ListWrap(____out_3, ____count_3)
 end
 
-main()
+__K2L_Main(main)
 return {Version = Version, sumAll = sumAll, describe = describe, windowedSumPairs = windowedSumPairs}

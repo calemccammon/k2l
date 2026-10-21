@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 
 local ____exports = {}
@@ -53,5 +54,5 @@ end
 
 ____exports.____next = ____next
 ____exports.twice = twice
-main()
+__K2L_Main(main)
 return ____exports

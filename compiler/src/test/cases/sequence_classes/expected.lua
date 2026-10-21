@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_IteratorBuilder = ____lualib.__K2L_IteratorBuilder
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
@@ -122,5 +123,5 @@ local function main()
     end
 end
 
-main()
+__K2L_Main(main)
 return {CountdownIterator = CountdownIterator, Countdown = Countdown, Words = Words, Fibonacci = Fibonacci, Base = Base, Derived = Derived, describe = describe}

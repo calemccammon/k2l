@@ -35,7 +35,7 @@ internal fun KaSession.isWideRange(t: KaType?): Boolean =
 private val WIDE_RANGES =
     setOf("kotlin/ranges/LongRange", "kotlin/ranges/LongProgression", "kotlin/ranges/ULongRange", "kotlin/ranges/ULongProgression")
 
-private fun KaSession.isFloating(t: KaType?): Boolean = t != null && t.withoutFlexibility.let { it.isDoubleType || it.isFloatType }
+internal fun KaSession.isFloating(t: KaType?): Boolean = t != null && t.withoutFlexibility.let { it.isDoubleType || it.isFloatType }
 
 /** `__K2L_LAdd(a, b)`: the hot operations are separate lualib locals. */
 internal fun FileTransformer.l64(op: String, vararg args: LuaExpr): LuaExpr =

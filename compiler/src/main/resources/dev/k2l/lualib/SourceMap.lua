@@ -99,19 +99,3 @@ if not ____state.installed and debug and debug.traceback then
         return ____rewrite(result)
     end
 end
-
--- Runs `main` (the program's entry point); an uncaught error prints a traceback with Kotlin positions and exits with 1.
-local function __K2L_RunMain(main, ...)
-    local args = { ... }
-    local count = select("#", ...)
-    local unpack = table.unpack or unpack
-    local ok, err = xpcall(function()
-        return main(unpack(args, 1, count))
-    end, function(e)
-        return ____rewrite(debug.traceback("Exception in thread \"main\" " .. tostring(e), 2))
-    end)
-    if not ok then
-        io.stderr:write(err, "\n")
-        os.exit(1)
-    end
-end

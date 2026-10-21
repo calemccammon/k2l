@@ -11,6 +11,7 @@ local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
 local __K2L_IsLowerCase = ____lualib.__K2L_IsLowerCase
 local __K2L_IsUpperCase = ____lualib.__K2L_IsUpperCase
 local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Random = ____lualib.__K2L_Random
 local __K2L_Str = ____lualib.__K2L_Str
@@ -128,7 +129,7 @@ local function ranges()
     print(__K2L_Str(__K2L_IntRange.new(1, 4):associateWith(____lambda_4)))
     print(__K2L_Str(__K2L_IntRange.new(1, 6):chunked(4)))
     print(__K2L_Str(__K2L_IntRange.new(1, 3):flatMap(____lambda_5)))
-    local ____value = __K2L_IntRange.new(1, 5):random(__K2L_Random.seeded(3))
+    local ____value = __K2L_Random.seeded(3):nextIntRange(__K2L_IntRange.new(1, 5), false)
     print(____value >= 1 and ____value <= 5)
 end
 
@@ -153,5 +154,5 @@ local function main()
     longs()
 end
 
-main()
+__K2L_Main(main)
 return {ints = ints, chars = chars, ranges = ranges, longs = longs}

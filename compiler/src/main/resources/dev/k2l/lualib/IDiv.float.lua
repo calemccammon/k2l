@@ -7,5 +7,5 @@ local function __K2L_IDiv(a, b)
         error(__K2L_ArithmeticException.new("/ by zero"))
     end
     local q = a / b
-    return q >= 0 and floor(q) or ceil(q)
+    return q > 0 and floor(q) or ceil(q) + 0 -- + 0: ceil(-0.5) and 0 / -3 are -0.0, which would print as "-0"
 end

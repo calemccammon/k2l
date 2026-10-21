@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 
 local function main()
@@ -12,4 +13,4 @@ local function main()
     print(("b"):upper())
 end
 
-main()
+__K2L_Main(main)

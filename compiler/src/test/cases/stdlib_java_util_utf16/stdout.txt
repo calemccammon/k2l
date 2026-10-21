@@ -1,0 +1,9 @@
+pop: é then null
+peek: caught EmptyStackException null java.util.EmptyStackException
+pop as RuntimeException: EmptyStackException message=null true false
+constructed: java.util.EmptyStackException null true
+runCatching: EmptyStackException message=null
+empty length: 2 «»
+length: 10 10 «naïve·😀»
+empty value length: 1
+ascii length: 3

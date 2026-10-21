@@ -4,6 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
@@ -98,5 +99,5 @@ local function main()
     print(__K2L_ReadOnlySetOf(g1, g2).size .. " " .. total(__K2L_TypedArrayOf("[[I", __K2L_TypedArrayOf("[I", 1, 2), __K2L_TypedArrayOf("[I", 3, 4, 5))) .. " " .. widest(__K2L_TypedArrayOf("[D", 1.0), __K2L_TypedArrayOf("[D", 2.0, 3.0)))
 end
 
-main()
+__K2L_Main(main)
 return {Grid = Grid, total = total, widest = widest}

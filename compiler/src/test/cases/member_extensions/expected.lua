@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_Text = ____lualib.__K2L_Text
@@ -298,5 +299,5 @@ local function main()
     print(Maybe.new(nil):show())
 end
 
-main()
+__K2L_Main(main)
 return {Builder = Builder, Counter = Counter, Formatter = Formatter, Loud = Loud, Plainer = Plainer, Registry = Registry, Outer = Outer, Html = Html, html = html, Maybe = Maybe, Vec = Vec}

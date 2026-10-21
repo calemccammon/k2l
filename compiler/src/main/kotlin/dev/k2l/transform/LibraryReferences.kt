@@ -50,11 +50,16 @@ internal fun FileTransformer.libraryReference(e: KtCallableReferenceExpression, 
     return if (mapped == null) null else ReferenceValue(LuaFunction(params, body), bound)
 }
 
-/** The type of the receiver a reference to [symbol] takes: its extension receiver or its containing class. */
+/**
+ * The type of the receiver a reference to [symbol] takes: its extension receiver or its containing class (none for a Java
+ * static such as `Math::sin`).
+ */
 context(s: KaSession)
 private fun referenceReceiverType(symbol: KaCallableSymbol): KaType? = with(s) {
     symbol.receiverParameter?.returnType
-        ?: (symbol.containingDeclaration as? KaClassSymbol)?.takeUnless { it.classKind.isObject }?.defaultType
+        ?: (symbol.containingDeclaration as? KaClassSymbol)?.takeUnless {
+            it.classKind.isObject || (symbol as? KaNamedFunctionSymbol)?.isStatic == true
+        }?.defaultType
 }
 
 /**

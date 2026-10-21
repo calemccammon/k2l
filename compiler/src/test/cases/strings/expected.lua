@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 
 local function main()
@@ -28,4 +29,4 @@ local function main()
     print(tostring(version) .. __K2L_Str(ratio))
 end
 
-main()
+__K2L_Main(main)

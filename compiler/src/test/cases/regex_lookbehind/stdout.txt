@@ -1,0 +1,54 @@
+(?<=ab)c on "abc xbc abcabc c" -> 2:c 10:c 13:c
+(?<!x)y on "xy y zy yy" -> 3:y 6:y 8:y 9:y
+(?<=a|bcd)e on "ae bcde cde e" -> 1:e 6:e
+(?<!a|bcd)e on "ae bcde cde e" -> 10:e 12:e
+(?<=[a-c]{2})\d on "ab1 a2 cc3 9" -> 2:1 9:3
+(?<=x{1,3})y on "xy xxxy y xxxxy" -> 1:y 6:y 14:y
+(?<=\b\w{1,3})\. on "ab. abcd. a.b." -> 2:. 11:. 13:.
+(?<=(a|bc)(d|ef)?)! on "ad! bcef! a! aefd! x!" -> 2:![a][d] 8:![bc][ef] 11:![a][]
+(?<=(?:de){2}(f{2}))! on "dedeff! deff!" -> 6:![ff]
+(?<=(?:ab){0,3})q on "q abq ababq" -> 0:q 4:q 10:q
+(?<=(?:x(?:y|zz)?)?)- on "x- xy- xzz- -" -> 1:- 5:- 10:- 12:-
+(?<=(?<=a)b)c on "abc bc" -> 2:c
+(?<=a+)b on "aab b xab" -> 2:b 8:b
+(?<=xa*)q on "xq xaaq q" -> 1:q 6:q
+(?<=x.+)q on "x12q q" -> 3:q 5:q
+(?<!\d+)px on "12px apx px" -> 6:px 9:px
+(?<=a+(?:b|cd))! on "ab! aacd! cd!" -> 2:! 8:!
+(?<=^|,)\w+ on "one,two,,three" -> 0:one 4:two 9:three
+(?<=(\w)\w)\b on "ab cde" -> 2:[a] 6:[d]
+(?i)(?<=AB)c on "abc aBc xbc" -> 2:c 6:c
+lookbehind replace: 1,234,567
+split: [aX, bY, c]
+PatternSyntaxException: Look-behind group does not have an obvious maximum length near index 8
+(?<=(a)\1)b
+        ^
+PatternSyntaxException: Look-behind group does not have an obvious maximum length near index 14
+(?<!(x|yz){0,3})q
+              ^
+PatternSyntaxException: Look-behind group does not have an obvious maximum length near index 10
+(?<=(?:ab)*)q
+          ^
+PatternSyntaxException: Look-behind group does not have an obvious maximum length near index 12
+(?<=(?:a|bc)+)q
+            ^
+PatternSyntaxException: Look-behind group does not have an obvious maximum length near index 7
+(?<=xa+?)q
+       ^
+PatternSyntaxException: Look-behind group does not have an obvious maximum length near index 7
+(?<=xa++)q
+       ^
+PatternSyntaxException: Look-behind group does not have an obvious maximum length near index 12
+(?<=(?:a?){2})q
+            ^
+PatternSyntaxException: Look-behind group does not have an obvious maximum length near index 20
+(?<=(a|bc)(d|ef){1,2})!
+                    ^
+accepted (?<=a+)q
+accepted (?<=(?:a){2,})q
+accepted (?<=(?:a|bc)?+)q
+long (?<=a)b: 20000
+long (?<!a)b: 0
+long (?<=ab{1,3})c: 40000..40000
+long (?<=x|yz)c: null
+long (?<=[^c]{2})c: 40000..40000

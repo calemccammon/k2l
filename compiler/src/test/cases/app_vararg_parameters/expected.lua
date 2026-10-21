@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Spread = ____lualib.__K2L_Spread
 local __K2L_Str = ____lualib.__K2L_Str
@@ -140,5 +141,5 @@ local function main()
     print(__K2L_Str(mk(__K2L_TypedArrayOf("[Ljava.lang.String;", "p", "q"), 2)) .. " " .. method(t, __K2L_ArrayOf(1, 2), "&") .. " " .. bound(__K2L_ArrayOf("z"), ""))
 end
 
-main()
+__K2L_Main(main)
 return {sum = sum, tagged = tagged, build = build, Row = Row, Base = Base, Sub = Sub, Table = Table, total = total, spreadFirst = spreadFirst}

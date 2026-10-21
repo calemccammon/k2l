@@ -6,6 +6,9 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
 ## [Unreleased]
 
 ### Added
+- `Class.enumConstants` (also through `KClass.java` and `javaClass`): a fresh array of the entries of an enum class, in
+  declaration order, or `null` for any other class, including the class of an entry with a body, as on the JVM. And
+  `Enum.declaringJavaClass`, the enum class of an entry.
 - `k2l --check` analyzes the sources and reports every Kotlin error and every construct k2l cannot translate, without
   writing any files. It ends with a count (`k2l: checked 4 file(s): 2 errors, 0 warnings`) and exits with status 1 when
   there are errors. The Gradle plugin has a matching `k2lCheck` task.
@@ -16,8 +19,69 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   `--no-source-map` or `"sourceMap": false` in k2l.json turns them off. Builds without `--watch`, the Gradle plugin and
   the golden tests are unchanged.
 - `--no-source-map`, and examples in `--help`.
+- A standard library coverage report, [docs/stdlib-coverage.md](docs/stdlib-coverage.md): every public function, property and
+  constructor of the main `kotlin.*` packages and the commonly used `java.util`/`java.lang` classes, probed by transpiling a
+  generated call, with the supported, partly supported and unsupported names and a percentage per package.
+  `./gradlew :compiler:stdlibCoverage` regenerates it; `check` only compiles it.
+- `kotlin.time`: `Duration` (construction from `Int`/`Long`/`Double` units and `toDuration`, `ZERO`/`INFINITE`, arithmetic,
+  comparison, `inWhole...`, `toLong`/`toInt`/`toDouble`, `toComponents`, `toString` and `toString(unit, decimals)` as the JVM
+  formats them, `toIsoString`, `parse`/`parseOrNull`/`parseIsoString`/`parseIsoStringOrNull`), `DurationUnit`, `measureTime`,
+  `measureTimedValue` and `TimedValue`, `TimeSource.Monotonic` (on `os.clock()`) and `TestTimeSource` with their time marks
+  (`markNow`, `elapsedNow`, `hasPassedNow`/`hasNotPassedNow`, `+`/`-`, comparison). Tested by `stdlib_time_duration`,
+  `stdlib_time_sources` and `stdlib_time_parse`.
+- `java.util.Stack` (`pop()`/`peek()` of an empty stack throw `java.util.EmptyStackException`, which `catch` and `is`
+  name), `java.util.StringJoiner` (`length()` counts UTF-16 units with `--strings utf16`), `Objects.requireNonNull`/`requireNonNullElse`/`isNull`/`nonNull`/`toString`/
+  `checkIndex`/`compare`, `Boolean.compare`/`logicalAnd`/`logicalOr`/`logicalXor`/`valueOf`, `Character.digit`/`forDigit`,
+  `Double.max`/`min`/`sum` and the boxes' static `hashCode`. Tested by `stdlib_java_util_extras` and
+  `stdlib_java_util_utf16`. `Comparator.comparingInt`/
+  `comparingLong`/`comparingDouble`, `thenComparingInt`/`Long`/`Double` and the static `Comparator.nullsFirst`/`nullsLast`
+  (`stdlib_java_comparators`).
+- `kotlin.text`: `replaceAfter`/`replaceBefore`/`replaceAfterLast`/`replaceBeforeLast`, `toByte`/`toShort` (and `OrNull`),
+  `splitToSequence` (also `Regex.splitToSequence`), `windowedSequence`/`chunkedSequence`, `Char.isISOControl`, `Charsets.UTF_8`
+  and decoding a `ByteArray` (`decodeToString()`, `toString(charset)`), the folds, scans and `...To` operations over a string's
+  characters (`foldRight`, `reduceRight`, `runningFold`/`scan`, `mapIndexedNotNull`, `associateByTo`, `toHashSet`,
+  `firstNotNullOf`, `randomOrNull`, ...), `toHexString()`/`hexToInt()`/`hexToLong()`/`hexToShort()`/`hexToByte()`/
+  `hexToByteArray()` with the default `HexFormat`, the `StringBuilder` extensions `deleteAt`/`deleteRange`/`setRange`, and
+  `startsWith`/`endsWith`/`contains` with a non-literal `ignoreCase`. Tested by `stdlib_text_extras`, `stdlib_text_chars` and
+  `stdlib_text_hex`.
+- `kotlin`: `Boolean.and`/`or` (both operands are evaluated), `lazyOf`, `enumValues<E>()`/`enumValueOf<E>()` of the program's
+  enums (a reified `E` included), `setOfNotNull`, and `reduceRightOrNull`/`reduceRightIndexed`/`reduceRightIndexedOrNull` of
+  lists and arrays.
+- Classes and objects extending `kotlin.random.Random()`: only `nextBits(bitCount)` is abstract, and `nextInt`
+  (with bounds and ranges), `nextLong`, `nextDouble`, `nextFloat`, `nextBoolean`, `nextBytes`, `nextUInt`/`nextULong` and
+  the extensions taking a `Random` (`shuffled`, `shuffle`, `random`) draw from it as Kotlin's default implementations
+  do. The lualib's `__K2L_RandomBase` holds them; XorWow (`Random(seed)`) extends it and gives the same numbers as
+  before. Overriding an overloaded member (`nextInt()`) is reported, with a hint to override `nextBits`. Tested by
+  `stdlib_random_subclass` and `stdlib_random_subclass_long64` (with `--long64 emulate`) on every target.
+- `java.lang.StrictMath`, bit for bit the JVM's: `sin`, `cos` and `tan` (with fdlibm's argument reduction,
+  `__ieee754_rem_pio2`, and `__kernel_rem_pio2` for huge arguments), `log`, `log10` and `pow` are new ports of fdlibm
+  (`StrictMath.lua`, from the JDK's `FdLibm.java`), `exp`, `asin`, `acos`, `atan`, `atan2`, `cbrt`, `hypot`, `sinh`,
+  `cosh`, `tanh`, `expm1`, `log1p` and `IEEEremainder` the existing ones of `FdLibm.lua`, and every other member
+  (`sqrt`, `floor`, `ceil`, `rint`, `abs`, `max`, `round`, `floorMod`, ...) is `Math`'s. Over 200000 random arguments
+  (random bit patterns, multiples of π/2, wide magnitudes) none of `sin`, `cos`, `tan`, `log`, `log10`, `pow` and `exp`
+  differed from the JVM on any target. `kotlin.math.sin` and `Math.sin` stay on Lua's `math` library. Tested by
+  `stdlib_strictmath`.
 
 ### Changed
+- An uncaught exception prints like on the JVM on every target: `Exception in thread "main" <toString()>` and a
+  `Caused by:` line per cause on stderr, then the Lua traceback of where it was raised (Kotlin positions with
+  `--source-map`), and the program exits with status 1. Before, Lua 5.1 printed `(error object is not a string)`, 5.2
+  to 5.4 the `toString()` alone and LuaJIT the `toString()` with a traceback, all before the program's buffered
+  output. `main` runs under `xpcall` (`__K2L_Main`) or the coroutine driver of `try` blocks; a Lua error that is not an
+  exception prints its message and traceback. With `--source-map`, programs using `try` now run under that driver as
+  well (they used plain `pcall`s, `__K2L_RunMain` is gone). On Lua 5.1 the `xpcall` takes one of the 200 nested C
+  calls, so a recursion through a `try` block at every level fails one level earlier (194 instead of 195 levels).
+- `Random.nextBits(bitCount)`, `nextBytes(size)`, `nextBytes(array, fromIndex, toIndex)` and `nextLong(LongRange)`, with the
+  JVM's numbers for a seeded `Random` (four bytes per draw, low byte first, then one draw for the rest), and
+  `Double.IEEErem` / `Math.IEEEremainder` (exact, as fdlibm computes it). Found by `realworld_sim_montecarlo` and
+  `realworld_sim_boids`.
+- **`kotlin.math` gives the JVM's bits.** `hypot`, `atan`, `atan2`, `asin`, `acos`, `cbrt`, `sinh`, `cosh`, `tanh`, `expm1`
+  and `ln1p` (and their `Math` forms) are ports of fdlibm, the `StrictMath` code these JVM functions run (`FdLibm.lua`).
+  C's libm rounds differently in the last bit: over 2000 random arguments, `hypot` differed from the JVM 225 times,
+  `atan2` 349, `cbrt` 271, `asin` 124, `ln1p` 356, `tanh` 1238 (k2l's own formulas for the hyperbolic functions were off
+  by up to 14000 units in the last place). Now none differ, on every target. `hypot` also no longer overflows
+  (`hypot(1e300, 1e300)` was Infinity) and is Infinity when one argument is infinite and the other NaN. Tested by
+  `stdlib_math_strict`.
 - The Kotlin/JVM oracle runs at most 4 cases at a time by default (it used one per processor, which could exhaust the
   memory of a large machine); `-PoracleThreads=N` still sets it.
 - A diagnostic on a call in a chain points at the call's name: for `list.stream().spliterator()` it points at
@@ -44,13 +108,70 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   live in the file's exports table, and `__K2L_LazyFile` runs their initializers on the first read or write of one of them.
   Before, they ran when the program started. Files whose initializers are constants or collection factories, and the
   entry file, are unchanged.
+- **Faster UTF-16 match indices.** With `--strings utf16`, each `MatchResult.range`, group range and start index of
+  `find(input, startIndex)`/`matchAt` was converted by decoding the text up to it again (and cached the prefix, which
+  pushed the text itself out of the cache), so the indices of many matches in a long non-ASCII text took quadratic time.
+  The byte offset of every UTF-16 unit is now computed once per text and looked up. A program reading the ranges of
+  6000 matches in a 28000-unit text runs in 1.0 s instead of 60 s on Lua 5.1; 20000 matches in 120000 units take 1.2 s
+  instead of more than 5 minutes on 5.4. Results are unchanged.
 - **Faster `HashMap` creation.** A `HashMap` holds nine fields once it has a key; set one by one, the ninth (the live
   entries added in 0.2.0) made Lua rehash the object from 8 to 16 slots, on top of the rehashes at 1, 2 and 4.
   `HashMap()` now builds the object with one table constructor that has room for all of them. Creating a map is about
   3x faster on LuaJIT and 25% faster on Lua 5.4, and `oop_interpreter` (a `HashMap` per scope) is back to its speed
-  before 0.2.0, or slightly faster.
+  before 0.2.0, or slightly faster. `LinkedHashMap` (`mutableMapOf()`), `LinkedHashSet` (`mutableSetOf()`) and `HashSet`
+  do the same for their seven, five and seven fields (four rehashes each before): creating one and adding two keys is
+  about 2x faster on LuaJIT, 17-19% faster on Lua 5.4 and 6-10% faster on 5.1; the benchmark programs, which make few
+  small maps, are unchanged.
+- **Bounded lookbehind.** A lookbehind tried every start position back to the start of the input, at every position,
+  so `(?<!a)b` or `(?<=x|yz)c` over a long text took quadratic time. Like Java's `Pattern`, the regex compiler now
+  computes the minimum and maximum length of the lookbehind's body and tries only the starts in between: three
+  lookbehind searches over a 40000-character text take 85 ms instead of 268 s on Lua 5.4. A lookbehind Java rejects
+  (a back-reference, or a repeated group whose body has alternatives or variable repetitions, such as `(?<=(a|bc){2})`
+  or `(?<=(?:ab)*)`) throws Java's `PatternSyntaxException` with its message, index and caret line; the unbounded forms
+  Java accepts (`(?<=a+)`, `(?<=x.*)`) still look back to the start. Tested by `regex_lookbehind` and
+  `regex_lookbehind_utf16`.
 
 ### Fixed
+- Boxed Doubles compare with `Double.equals`, as on the JVM: in collections (`contains`, `indexOf`, `lastIndexOf`,
+  `remove`, `distinct`, `toSet`, `groupBy`, `==` of lists, sets and maps), in an `Any` or a type parameter (`a == b`),
+  `Pair`/`Triple`, `Objects.equals`, `x.equals(y)` and a data class's Double and Float properties (`Double.compare`):
+  NaN equals NaN and `0.0` differs from `-0.0`. `listOf(Double.NaN).contains(Double.NaN)` was false, `-0.0` and `0.0`
+  were one key of a `HashMap` or `HashSet`, and a NaN key threw `table index is NaN`. `HashMap` and `HashSet` keep NaN
+  and `-0.0` keys in their hashCode buckets (`Double.hashCode`); other number keys keep their raw lookup, which tests
+  two more comparisons. `==` of two values whose static types are `Double` (or `Double?`, also after a smart cast) stays
+  IEEE (`NaN == NaN` is false), exactly where Kotlin uses IEEE. `Double.hashCode()` of NaN is the JVM's on Lua 5.3/5.4
+  (Lua's NaN can have the sign bit set), and of `-0.0` on 5.1, 5.2 and LuaJIT. Tested by `collection_double_equality`.
+- On Lua 5.1, 5.2 and LuaJIT, `Int` and `Long` arithmetic no longer makes `-0`, which printed as `-0` and which
+  `Double.equals` would now tell from `0`: `-x` is `0 - x`, a product is `x * y + 0` unless a factor is a positive
+  literal (an enclosing `+` or `-` drops the `+ 0` again), and `/` and `floorDiv` of a zero dividend by a negative
+  divisor give `0`, and so do `Math.negateExact(0)` and `Math.multiplyExact(0, -1)`.
+- `floor(-0.0)` and `Math.floor(-0.0)` are `-0.0`; they were `0.0` (`math.floor(x) + 0.0`). Tested, with `ceil`, `round`,
+  `Math.rint`, `truncate`, `abs`, `sign`, `withSign` and `Math.copySign` of `±0.0`, NaN and the infinities, by
+  `stdlib_math_signed_zero`.
+- `Double.toString` of a power of two whose nearest 16 digits do not read back printed 17 digits where 16 do:
+  `2.0.pow(710)` printed `5.3863791631855345E213`, the JVM `5.386379163185535E213` (46 of the 2098 doubles that are
+  powers of two printed differently). A subnormal prints at least two digits, the nearest two, as on the JVM:
+  `9.9E-324`, not `1.0E-323`. Now every power of two, its neighbors and their negations print as on the JVM.
+- A reference to a Java static function (`StrictMath::sin`, `Math::sqrt`) took a receiver as its first parameter, so
+  `listOf(4.0).map(Math::sqrt)` passed the element as that receiver and `nil` as the argument.
+- `Random(seed).nextInt(from, until)` over exactly 2^31 values (`nextInt(Int.MIN_VALUE, 0)`) drew like the JVM's
+  rejection loop for ranges wider than an `Int`; Kotlin's `until - from` is `Int.MIN_VALUE` there, a power of two, so it
+  takes `nextBits(31)`. Now the same numbers as the JVM.
+- An endless recursion that ends `main` prints `Exception in thread "main" java.lang.StackOverflowError`, then Lua's
+  message with its position and the traceback, on every target (Lua 5.1 to 5.4 printed the message and traceback without
+  the header). On LuaJIT it printed only `stack overflow`: the overflow happens in a compiled trace, and LuaJIT then
+  unwinds without calling the `xpcall` handler that captures the traceback (with `-joff` the handler runs). `main` now
+  runs in a coroutine on LuaJIT, whose stack stays readable after the error. Tested by `UncaughtTest`.
+- A lookbehind no longer starts inside a multi-byte UTF-8 character: `(?<![^é])b` failed after `é`, because `[^é]` matched
+  the last byte of `é` on its own.
+- `\p{IsAlphabetic}` and `\p{javaAlphabetic}` under `--strings utf16` match what `Character.isAlphabetic` does: the
+  letters plus `Nl` (such as `Ⅻ`) and `Other_Alphabetic` (such as the circled letters `Ⓐ`, combining vowel signs). They
+  matched the letters only. `Unicode.lua` grows by 1.3 KB.
+- `byteArrayOf(-128)` and `shortArrayOf(-32768)` (a `Byte` or `Short` minimum written as a negative literal) produced 128 and
+  32768: the literal after the minus wraps to the negative value, which was negated again. Found by `stdlib_text_hex`.
+- `String(bytes)` of a `ByteArray` joined the byte values (`"104105"`); it now decodes the bytes (as UTF-8).
+- `maxOfOrNull`/`minOfOrNull` of a string's characters, when empty, passed no value at all as the last argument of a call
+  (`listOf(x, "".minOfOrNull { ... })` lost the `null`).
 - `main(args: Array<String>)` receives an `Array` (`args.isEmpty()`, `args.size`, `in args` work); it was a plain Lua table.
 - An invalid regex pattern threw a plain `IllegalArgumentException`; it is now a `java.util.regex.PatternSyntaxException`
   (a subclass, so existing catches still work), which `catch` and `is` can name. A pattern defining the same group name
@@ -104,6 +225,30 @@ All notable changes to k2l. The format follows [Keep a Changelog](https://keepac
   deep-try driver (`__K2L_DeepMain`), which raised an uncaught Lua error again from the driver, so the traceback showed
   only the driver. It now raises it with the traceback of the coroutine where it happened (the driver's frames follow).
   Uncaught exceptions print as before, as without a `try`, and the exit status stays 1.
+- **A seeded `Random` drifted from the JVM's sequence after `nextInt(1)`.** Kotlin's XorWow `nextBits(0)` still draws a
+  number, so `nextInt(1)`, `nextLong(1)` and `list.random(rng)` of a one-element list consume one; k2l returned 0
+  without drawing, so every later number differed. Found by `realworld_sim_rpg` (a battle picking among the last
+  enemy); tested by `realworld_sim_montecarlo`.
+- `IntRange.random(rng)`, `nextInt(IntRange)` and `LongRange.random(rng)` draw as Kotlin does at the bounds
+  (`0..Int.MAX_VALUE`, `Long.MIN_VALUE..Long.MAX_VALUE`) and for Long ranges (which draw Longs, not an index); an empty
+  range throws `Cannot get random in empty range: 1..0` (`NoSuchElementException` from `random`, `IllegalArgumentException`
+  from `nextInt`). `nextDouble(from, until)` handles a range wider than `Double.MAX_VALUE`, returns `until.nextDown()` when
+  rounding reaches `until`, and prints the bounds of an empty range as Doubles (`[2.0, 1.0)`) on every target.
+- `min`, `max`, `minOf`, `maxOf` and `Math.min`/`max` of Doubles: NaN wins whatever its position, and `-0.0` is below `0.0`
+  (`min(0.0, -0.0)` is `-0.0`); `math.min` and `math.max` told neither. Integers still use `math.min`/`math.max`.
+- `x.pow(y)` and `Math.pow` with a `Double` exponent: `1.0.pow(NaN)` and `(-1.0).pow(Infinity)` are NaN, as on the JVM (C
+  gives 1). A literal or `Int` exponent still compiles to `^`.
+- `truncate(-0.5)` is `-0.0`, and on Lua 5.1 `ceil(-0.5)`, `round(-0.4)` and `truncate(-0.5)` are `-0.0` too: Lua 5.1
+  merges a function's constants `0` and `-0.0`, so the library's `return -0.0` returned `0.0` (also in `Float` rounding).
+- On Lua 5.1, 5.2 and LuaJIT, an integer division whose quotient is between -1 and 0 (`-5L / d` with `d = 10L`) gave
+  `-0.0`, printed as `-0`. Found by `realworld_sim_fixedpoint` (banker's rounding of money in cents).
+- `joinToString()` of a `List<Double>`, `DoubleArray`, `List<Float>` or `FloatArray` without a transform prints each element
+  by its type: on Lua 5.1, 5.2 and LuaJIT integral Doubles printed as Ints (`2, -3`), and in a program that uses `Float` a
+  Double that is exactly a float printed as a Float (`2.220446E-16` for `1.0.ulp`).
+- A program that uses `Float` (or `nextFloat()`) printed the Floats in a collection with Double digits
+  (`[0.40338701009750366]` for `[0.403387]`) unless it also converted a `Float` to a string directly.
+- A call of an extension of a basic type's companion (`fun Long.Companion.sign(v: Long)`, called as `Long.sign(x)`) was
+  rejected as an unresolved call. Found by `realworld_sim_fixedpoint`.
 
 ## [0.2.0] - YYYY-MM-DD
 

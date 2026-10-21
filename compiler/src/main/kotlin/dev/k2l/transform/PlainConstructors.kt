@@ -28,7 +28,9 @@ private fun FileTransformer.isPlainClass(c: KtClass) = !c.isEnum() && !c.isInner
 /** Whether a library class or interface (lualib collections, exceptions, sequences, SAM mixins, delegations) is a supertype of [c]. */
 private fun FileTransformer.hasLibraryAncestry(c: KtClassOrObject): Boolean {
     val info = classes.superInfo(c)
-    val library = info.libraryBase != null || info.sequenceBase || info.elementBase || info.sequenceMixin || info.collectionBase != null ||
-        info.samMixins.isNotEmpty() || info.libraryDelegations.isNotEmpty() || info.collectionMixin != null || info.unsupported != null
+    val library =
+        info.libraryBase != null || info.sequenceBase || info.elementBase || info.randomBase || info.sequenceMixin ||
+            info.collectionBase != null || info.samMixins.isNotEmpty() || info.libraryDelegations.isNotEmpty() ||
+            info.collectionMixin != null || info.unsupported != null
     return library || info.base?.let { hasLibraryAncestry(it) } == true || info.interfaces.any { hasLibraryAncestry(it) }
 }

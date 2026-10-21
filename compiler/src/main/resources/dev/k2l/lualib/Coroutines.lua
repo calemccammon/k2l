@@ -1,4 +1,4 @@
--- requires: Class, Exceptions, ToThrowable, Result, Str
+-- requires: Class, Exceptions, ToThrowable, Result, Str, Uncaught
 -- kotlin.coroutines on Lua coroutines. startCoroutine runs the suspend block as a task in its own Lua
 -- coroutine; suspend functions are ordinary functions called inside it. suspendCoroutine hands its
 -- block a continuation and, unless the block already resumed it, yields the task's coroutine until
@@ -263,7 +263,14 @@ local function __K2L_CoroutineContext()
     return running.context
 end
 
--- suspend fun main(): runs as a coroutine; an exception it ends with is rethrown.
+-- suspend fun main(): runs as a coroutine. An exception it ends with is uncaught (Uncaught.lua), with the traceback of
+-- the coroutine, which an error stops without unwinding its stack.
 local function __K2L_RunSuspend(main, args)
-    __K2L_StartCoroutine(main, __K2L_Continuation.new(__K2L_EmptyCoroutineContext, function(result) result:getOrThrow() end), args)
+    local task
+    task = newTask(main, __K2L_Continuation.new(__K2L_EmptyCoroutineContext, function(result)
+        if result:isFailure() then
+            __K2L_UncaughtIn(result:exceptionOrNull(), task.co)
+        end
+    end), args)
+    intercepted(task):resumeWith(__K2L_Result.success(nil))
 end

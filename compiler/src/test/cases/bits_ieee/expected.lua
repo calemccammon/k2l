@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Bits = ____lualib.__K2L_Bits
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_FloatToString = ____lualib.__K2L_FloatToString
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 
 local function main()
@@ -68,4 +69,4 @@ local function main()
     print(__K2L_DoubleToString(__K2L_Num.signDouble(-2.5)))
 end
 
-main()
+__K2L_Main(main)

@@ -3,6 +3,7 @@
 local __K2L_Fround
 do
     local frexp, ldexp, floor, huge = math.frexp, math.ldexp, math.floor, math.huge
+    local NEG_ZERO = -1 / huge -- not the literal: Lua 5.1 folds -0.0 into a function's constant 0
     __K2L_Fround = function(x)
         if x == nil then
             return nil
@@ -24,7 +25,7 @@ do
         end
         local r = ldexp(f, shift)
         if r == 0 then
-            return x < 0 and -0.0 or 0.0
+            return x < 0 and NEG_ZERO or 0.0
         end
         if r >=3.4028236692093846e38 then
             return huge

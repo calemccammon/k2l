@@ -12,6 +12,7 @@ local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -271,5 +272,5 @@ local function main()
     print("end")
 end
 
-main()
+__K2L_Main(main)
 return {Named = Named, Config = Config, Loud = Loud, Plain = Plain, Second = Second, Base = Base, Derived = Derived, Service = Service, Quiet = Quiet, Level = Level, Color = Color, Mode = Mode}

@@ -2,6 +2,10 @@ package dev.k2l.transform
 
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.psi.KtCallExpression
+import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
+import org.jetbrains.kotlin.psi.KtNameReferenceExpression
+import org.jetbrains.kotlin.psi.KtQualifiedExpression
 
 /** kotlin.math, numeric members, `Char` members and the `java.lang` statics Kotlin code reaches for. */
 @Suppress("TooManyFunctions") // one small installer per group of numeric members
@@ -19,10 +23,14 @@ internal object NumberMappings {
         floatingMembers(t)
         charMembers(t)
         javaStatics(t)
+        strictMath(t)
         system(t)
     }
 
     private fun CallSite.n(member: String, vararg args: LuaExpr) = libMember("Numbers", "__K2L_Num", member, *args)
+
+    /** The JVM's StrictMath algorithms (see FdLibm.lua), where C's libm rounds differently. */
+    private fun CallSite.fd(member: String, vararg args: LuaExpr) = libMember("FdLibm", "__K2L_FdLibm", member, *args)
 
     private fun CallSite.arithmetic(op: LuaBinOp) = transformer.arithmetic(op, self, receiverType, arg(0), argTypes[0])
 
@@ -37,12 +45,12 @@ internal object NumberMappings {
         t.def("kotlin/math/sin") { lua("math.sin", arg(0)) }
         t.def("kotlin/math/cos") { lua("math.cos", arg(0)) }
         t.def("kotlin/math/tan") { lua("math.tan", arg(0)) }
-        t.def("kotlin/math/asin") { lua("math.asin", arg(0)) }
-        t.def("kotlin/math/acos") { lua("math.acos", arg(0)) }
-        t.def("kotlin/math/atan") { lua("math.atan", arg(0)) }
-        t.def("kotlin/math/atan2") { n("atan2", arg(0), arg(1)) }
+        t.def("kotlin/math/asin") { fd("asin", arg(0)) }
+        t.def("kotlin/math/acos") { fd("acos", arg(0)) }
+        t.def("kotlin/math/atan") { fd("atan", arg(0)) }
+        t.def("kotlin/math/atan2") { fd("atan2", arg(0), arg(1)) }
         t.def("kotlin/math/exp") { lua("math.exp", arg(0)) }
-        t.def("kotlin/math/pow") { LuaBinary(LuaBinOp.Pow, self, arg(0)) }
+        t.def("kotlin/math/pow") { pow(self, 0) }
         t.def("kotlin/math/PI") { luaPath("math", "pi") }
         t.def("kotlin/math/E") { lua("math.exp", num("1")) }
         t.def("kotlin/math/sign") {
@@ -51,11 +59,34 @@ internal object NumberMappings {
         }
     }
 
-    /** `maxOf(a, b)` of numbers is `math.max`; other comparables go through `compareTo`. */
+    /**
+     * `x.pow(y)` (argument [i] is `y`) is `x ^ y`, except for a `Double` exponent that may be NaN or infinite: the JVM's
+     * `1.0.pow(NaN)` and `(-1.0).pow(Infinity)` are NaN, C's are 1. A literal or an integer's `toDouble()` is neither.
+     */
+    private fun CallSite.pow(base: LuaExpr, i: Int): LuaExpr {
+        val exponent = arg(i)
+        val finite = exponent is LuaNumber || !isFloating(argTypes[i]) || isIntegerToDouble(i)
+        return if (finite) LuaBinary(LuaBinOp.Pow, base, exponent) else n("pow", base, exponent)
+    }
+
+    /** Whether argument [i] of the call is written `n.toDouble()` of an integer `n`. */
+    private fun CallSite.isIntegerToDouble(i: Int): Boolean {
+        val call = element as? KtCallExpression ?: (element as? KtQualifiedExpression)?.selectorExpression as? KtCallExpression
+        val argument = call?.valueArguments?.getOrNull(i)?.getArgumentExpression() as? KtDotQualifiedExpression ?: return false
+        val selector = argument.selectorExpression as? KtCallExpression
+        return (selector?.calleeExpression as? KtNameReferenceExpression)?.getReferencedName() == "toDouble" &&
+            with(session) { argument.receiverExpression.expressionType?.isIntegral == true }
+    }
+
+    /**
+     * `maxOf(a, b)` of integers is `math.max`, of `Double`s `__K2L_Num.maxD` (NaN wins and `0.0` is above `-0.0`, as on the JVM);
+     * other comparables go through `compareTo`.
+     */
     private fun CallSite.extreme(fn: String): LuaExpr? {
         if (args.size !in MIN_MAX_ARITY) return null
         val numeric = argTypes.all { it != null && (isIntegral(it) || isFloating(it)) }
         return when {
+            numeric && argTypes.any { isFloating(it) } -> args.reduce { acc, x -> n(fn + "D", acc, x) }
             numeric -> lua("math.$fn", *args.toTypedArray())
             args.size == 2 -> libMember("Numbers", "__K2L_Num", fn + "Of", arg(0), arg(1))
             else -> null
@@ -63,27 +94,47 @@ internal object NumberMappings {
     }
 
     private fun hyperbolicAndLogs(t: MappingTable) {
-        t.def("kotlin/math/sinh") { n("sinh", arg(0)) }
-        t.def("kotlin/math/cosh") { n("cosh", arg(0)) }
-        t.def("kotlin/math/tanh") { n("tanh", arg(0)) }
+        t.def("kotlin/math/sinh") { fd("sinh", arg(0)) }
+        t.def("kotlin/math/cosh") { fd("cosh", arg(0)) }
+        t.def("kotlin/math/tanh") { fd("tanh", arg(0)) }
         t.def("kotlin/math/ln") { lua("math.log", arg(0)) }
-        t.def("kotlin/math/ln1p") { n("ln1p", arg(0)) }
-        t.def("kotlin/math/expm1") { n("expm1", arg(0)) }
+        t.def("kotlin/math/ln1p") { fd("log1p", arg(0)) }
+        t.def("kotlin/math/expm1") { fd("expm1", arg(0)) }
         t.def("kotlin/math/log10") { n("log10", arg(0)) }
         t.def("kotlin/math/log2") { n("log2", arg(0)) }
         t.def("kotlin/math/log") { n("log", arg(0), arg(1)) }
-        t.def("kotlin/math/hypot") { n("hypot", arg(0), arg(1)) }
-        t.def("kotlin/math/cbrt") { n("cbrt", arg(0)) }
+        t.def("kotlin/math/hypot") { fd("hypot", arg(0), arg(1)) }
+        t.def("kotlin/math/cbrt") { fd("cbrt", arg(0)) }
+        t.def("kotlin/math/IEEErem") { n("IEEErem", self, arg(0)) }
     }
 
     private fun rounding(t: MappingTable) {
         // Lua's floor/ceil return integers; Kotlin's return Double.
-        t.def("kotlin/math/floor") { floatPlusZero(lua("math.floor", arg(0))) }
+        t.def("kotlin/math/floor") { floor(arg(0)) }
         t.def("kotlin/math/ceil") { n("ceil", arg(0)) }
         t.def("kotlin/math/truncate") { n("truncate", arg(0)) }
         t.def("kotlin/math/round") { n("round", arg(0)) }
         t.def("kotlin/math/roundToInt") { n("roundToInt", self) }
         t.def("kotlin/math/roundToLong") { n("roundToLong", self) }
+    }
+
+    /**
+     * `floor(x)`: `math.floor(x) + 0.0`, a Double, except that the floor of -0.0 is -0.0 (`+ 0.0` makes it 0.0, and
+     * 5.3+'s `math.floor` returns the integer 0): `x == 0 and x * 1.0 or ...` for a simple `x`, else `__K2L_Num.floor`.
+     */
+    private fun CallSite.floor(x: LuaExpr): LuaExpr = if (isNonZeroLiteral(x)) {
+        floatPlusZero(lua("math.floor", x))
+    } else if (x.isSimple()) {
+        val zero = LuaBinary(LuaBinOp.And, LuaBinary(LuaBinOp.Eq, x, num("0")), LuaBinary(LuaBinOp.Mul, x, num("1.0")))
+        LuaBinary(LuaBinOp.Or, zero, floatPlusZero(lua("math.floor", x)))
+    } else {
+        n("floor", x)
+    }
+
+    private fun isNonZeroLiteral(x: LuaExpr): Boolean = when (x) {
+        is LuaNumber -> x.text.toDoubleOrNull()?.let { it != 0.0 } == true
+        is LuaUnary -> x.op == LuaUnOp.Neg && isNonZeroLiteral(x.operand)
+        else -> false
     }
 
     private fun CallSite.isNumber(type: KaType?) =
@@ -164,7 +215,8 @@ internal object NumberMappings {
     private fun floatingMembers(t: MappingTable) {
         for (type in FLOATING) {
             t.def("kotlin/$type.rem") { lua("math.fmod", self, arg(0)) }
-            t.def("kotlin/$type.equals") { LuaBinary(LuaBinOp.Eq, self, arg(0)) }
+            // Double.equals boxes: NaN equals NaN, 0.0 and -0.0 differ (`==` of two Doubles is IEEE)
+            t.def("kotlin/$type.equals") { LuaCall(ref("Equals", "__K2L_DoubleEquals"), listOf(self, arg(0))) }
         }
         t.def("kotlin/isNaN") { if (self.isSimple()) LuaBinary(LuaBinOp.Ne, self, self) else n("isNaN", self) }
         t.def("kotlin/isInfinite") { n("isInfinite", self) }
@@ -194,11 +246,14 @@ internal object NumberMappings {
     /** `java.lang.Math`, `Integer`, `Long` and `Double` statics. */
     private fun javaStatics(t: MappingTable) {
         mathStatics(t)
-        for (name in listOf("abs", "sqrt", "sin", "cos", "tan", "asin", "acos", "atan", "exp", "log")) {
+        for (name in listOf("abs", "sqrt", "sin", "cos", "tan", "exp", "log")) {
             t.def("java/lang/Math.$name") { lua("math.$name", arg(0)) }
         }
-        t.def("java/lang/Math.atan2") { n("atan2", arg(0), arg(1)) }
-        t.def("java/lang/Math.pow") { LuaBinary(LuaBinOp.Pow, arg(0), arg(1)) }
+        for (name in listOf("asin", "acos", "atan", "expm1", "log1p")) {
+            t.def("java/lang/Math.$name") { fd(name, arg(0)) }
+        }
+        t.def("java/lang/Math.atan2") { fd("atan2", arg(0), arg(1)) }
+        t.def("java/lang/Math.pow") { pow(arg(0), 1) }
         t.def("java/lang/Math.max") { extreme("max") }
         t.def("java/lang/Math.min") { extreme("min") }
         t.def("java/lang/Math.random") { lua("math.random") }
@@ -238,21 +293,33 @@ internal object NumberMappings {
     }
 
     private fun mathStatics(t: MappingTable) {
-        t.def("java/lang/Math.floor") { floatPlusZero(lua("math.floor", arg(0))) }
+        t.def("java/lang/Math.floor") { floor(arg(0)) }
         t.def("java/lang/Math.ceil") { n("ceil", arg(0)) }
         t.def("java/lang/Math.round") { n("roundToLong", arg(0)) }
         t.def("java/lang/Math.rint") { n("round", arg(0)) }
         t.def("java/lang/Math.signum") { n("signDouble", arg(0)) }
-        t.def("java/lang/Math.hypot") { n("hypot", arg(0), arg(1)) }
-        t.def("java/lang/Math.cbrt") { n("cbrt", arg(0)) }
+        t.def("java/lang/Math.hypot") { fd("hypot", arg(0), arg(1)) }
+        t.def("java/lang/Math.cbrt") { fd("cbrt", arg(0)) }
+        t.def("java/lang/Math.IEEEremainder") { n("IEEErem", arg(0), arg(1)) }
         t.def("java/lang/Math.log10") { n("log10", arg(0)) }
-        t.def("java/lang/Math.sinh") { n("sinh", arg(0)) }
-        t.def("java/lang/Math.cosh") { n("cosh", arg(0)) }
-        t.def("java/lang/Math.tanh") { n("tanh", arg(0)) }
+        t.def("java/lang/Math.sinh") { fd("sinh", arg(0)) }
+        t.def("java/lang/Math.cosh") { fd("cosh", arg(0)) }
+        t.def("java/lang/Math.tanh") { fd("tanh", arg(0)) }
         t.def("java/lang/Math.floorMod") { n("mod", arg(0), arg(1)) }
         t.def("java/lang/Math.floorDiv") { lualib("FloorDiv", arg(0), arg(1)) }
         t.def("java/lang/Math.toRadians") { LuaBinary(LuaBinOp.Mul, arg(0), num("0.017453292519943295")) }
         t.def("java/lang/Math.toDegrees") { LuaBinary(LuaBinOp.Mul, arg(0), num("57.29577951308232")) }
+    }
+
+    /**
+     * The `StrictMath` functions whose results the JVM's `Math` may not give (the others are `Math`'s, see
+     * `StdlibMappings.map`): fdlibm ports, bit for bit what StrictMath specifies (`StrictMath.lua`, `FdLibm.lua`).
+     */
+    private fun strictMath(t: MappingTable) {
+        for (name in listOf("sin", "cos", "tan", "log", "log10", "pow")) {
+            t.def("java/lang/StrictMath.$name") { libMember("StrictMath", "__K2L_StrictMath", name, *args.toTypedArray()) }
+        }
+        t.def("java/lang/StrictMath.exp") { fd("exp", arg(0)) }
     }
 
     private fun system(t: MappingTable) {

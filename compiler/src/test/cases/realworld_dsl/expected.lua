@@ -6,6 +6,7 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -587,5 +588,5 @@ local function main()
     print(__K2L_ReadOnlyListOf(Json.JNull, Json.JBool.new(true), Json.JNumber.new(3)):joinToString(" "))
 end
 
-main()
+__K2L_Main(main)
 return {Element = Element, TextElement = TextElement, escape = escape, Tag = Tag, TagWithText = TagWithText, HTML = HTML, Head = Head, Title = Title, BodyTag = BodyTag, Body = Body, B = B, P = P, H1 = H1, UL = UL, LI = LI, A = A, getCssClass = getCssClass, setCssClass = setCssClass, getDepth = getDepth, html = html, Json = Json, ObjectBuilder = ObjectBuilder, ArrayBuilder = ArrayBuilder, toJson = toJson, json = json}

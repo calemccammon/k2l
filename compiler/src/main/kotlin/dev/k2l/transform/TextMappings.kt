@@ -12,13 +12,19 @@ internal object TextMappings {
     private val ON_CHAR_LIST = setOf(
         "any", "all", "none", "map", "mapIndexed", "mapNotNull", "flatMap", "forEachIndexed", "withIndex", "toSet", "toMutableList",
         "toMutableSet", "zip", "groupBy", "associate", "associateWith", "associateBy", "sumOf", "maxOrNull", "minOrNull", "max", "min",
-        "maxBy", "minBy", "maxByOrNull", "minByOrNull", "maxOf", "minOf", "indexOfFirst", "indexOfLast", "find", "findLast",
+        "maxBy", "minBy", "maxByOrNull", "minByOrNull", "maxOf", "minOf", "indexOfFirst", "indexOfLast", "find", "findLast", "randomOrNull",
         "firstOrNull", "lastOrNull", "fold", "reduce", "foldIndexed", "reduceOrNull", "zipWithNext", "asIterable", "onEach", "distinct",
         "count", "first", "last", "random", "elementAtOrNull", "elementAtOrElse", "getOrElse", "single", "singleOrNull",
         "iterator", "groupingBy", "toSortedSet", "maxOfWith", "minOfWith", "maxOfWithOrNull", "minOfWithOrNull", "maxWith",
         "minWith", "maxWithOrNull",
-        "minWithOrNull",
+        "minWithOrNull", "foldRight", "foldRightIndexed", "reduceRight", "reduceIndexed", "reduceIndexedOrNull", "runningFold",
+        "runningFoldIndexed", "runningReduce", "runningReduceIndexed", "mapIndexedNotNull", "mapIndexedNotNullTo", "mapIndexedTo", "mapTo",
+        "flatMapIndexed", "flatMapIndexedTo", "associateByTo", "associateWithTo", "toCollection", "toHashSet", "maxOfOrNull",
+        "minOfOrNull", "firstNotNullOf", "firstNotNullOfOrNull", "scan", "scanIndexed",
     )
+
+    /** The list methods of the [ON_CHAR_LIST] operations named differently. */
+    private val LIST_NAMES = mapOf("scan" to "runningFold", "scanIndexed" to "runningFoldIndexed")
 
     private val IGNORE_CASE_MEMBERS = setOf(
         "contains", "startsWith", "endsWith", "indexOf", "lastIndexOf", "indexOfAny", "replace", "replaceFirst", "split", "equals",
@@ -322,7 +328,7 @@ internal object TextMappings {
 
             "contains" -> when {
                 c.literalIgnoreCase(1) -> ignoreCaseCall(c, "Contains")
-                c.ignoreCase(1) != null -> null
+                c.ignoreCase(1) != null -> if (c.isString(0)) dynamicIgnoreCase(c, "Contains") else null
                 else -> c.helper("Contains", a[0])
             }
 
@@ -369,8 +375,18 @@ internal object TextMappings {
     private fun compareEnds(c: StringCall, helper: String): LuaExpr? = when {
         c.isInt(1) -> if (helper == "StartsWith") startsWithAt(c) else null
         c.literalIgnoreCase(1) -> ignoreCaseCall(c, helper)
-        c.ignoreCase(1) != null -> null
+        c.ignoreCase(1) != null -> dynamicIgnoreCase(c, helper)
         else -> c.helper(helper, c.args[0])
+    }
+
+    /**
+     * `s.endsWith(x, ignoreCase = flag)`: `flag and <ignoring case> or <exact>`, which is right even when the first is false (an
+     * exact match is also one ignoring case). Only for operands that can be evaluated twice.
+     */
+    private fun dynamicIgnoreCase(c: StringCall, helper: String): LuaExpr? {
+        val flag = c.args[1]
+        if (!c.self.isSimple() || !c.args[0].isSimple() || !flag.isSimple()) return null
+        return LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.And, flag, ignoreCaseCall(c, helper)), c.helper(helper, c.args[0]))
     }
 
     /** `startsWith(prefix, startIndex)` */
@@ -521,9 +537,15 @@ internal object TextMappings {
         if ((name == "first" || name == "last") && c.args.isEmpty()) return c.text(name)
         if (name == "single" && c.args.isEmpty()) return c.text("single")
         if (name !in ON_CHAR_LIST) return null
-        if (name == "random") return LuaMethodCall(c.listOfChars(), name, listOf(c.args.firstOrNull() ?: defaultRandom(c.site)))
-        if (name == "zip" && c.isString(0)) return LuaMethodCall(c.listOfChars(), name, listOf(c.helperOf(c.args[0])) + c.args.drop(1))
-        return LuaMethodCall(c.listOfChars(), name, c.args)
+        return LuaMethodCall(c.listOfChars(), LIST_NAMES[name] ?: name, charListArguments(name, c))
+    }
+
+    /** The arguments of the list operation: a default Random, the other string's characters, the receiver's name in an error. */
+    private fun charListArguments(name: String, c: StringCall): List<LuaExpr> = when {
+        name == "random" || name == "randomOrNull" -> listOf(c.args.firstOrNull() ?: defaultRandom(c.site))
+        name == "zip" && c.isString(0) -> listOf(c.helperOf(c.args[0])) + c.args.drop(1)
+        name == "firstNotNullOf" -> c.args + LuaString("char sequence")
+        else -> c.args
     }
 
     /** Members of `Char`; Unicode-aware with `--strings utf16`, ASCII only otherwise. */

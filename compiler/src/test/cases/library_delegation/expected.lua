@@ -18,6 +18,7 @@ local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_ListBase = ____lualib.__K2L_ListBase
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_MapBase = ____lualib.__K2L_MapBase
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NaturalOrder = ____lualib.__K2L_NaturalOrder
@@ -1095,5 +1096,5 @@ local function main()
     traced()
 end
 
-main()
+__K2L_Main(main)
 return {Counting = Counting, Plain = Plain, Logging = Logging, ReadOnly = ReadOnly, Tagged = Tagged, Lookup = Lookup, Unique = Unique, Bag = Bag, Wrap = Wrap, Steps = Steps, Name = Name, Job = Job, Twice = Twice, comparators = comparators, lists = lists, maps = maps, others = others, Sized = Sized, Pool = Pool, Draining = Draining, Version = Version, Release = Release, Pairing = Pairing, Lines = Lines, Window = Window, Layer = Layer, more = more, Traced = Traced, traced = traced, Pair = Pair, Words = Words}

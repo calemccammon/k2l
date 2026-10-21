@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
@@ -9,6 +10,7 @@ local __K2L_Fround = ____lualib.__K2L_Fround
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -49,7 +51,7 @@ function Vec:hashCode()
 end
 
 function Vec:equals(other)
-    return getmetatable(other) == Vec and self.x == other.x and self.y == other.y
+    return getmetatable(other) == Vec and __K2L_DoubleEquals(self.x, other.x) and __K2L_DoubleEquals(self.y, other.y)
 end
 
 local function average(xs)
@@ -78,8 +80,8 @@ local function main()
     zeros[2] = ____value
     print(__K2L_FloatToString(zeros[2] or __K2L_IndexError(1, zeros.size, "array")))
     print(__K2L_FloatToString(math.abs(-1.100000023841858)))
-    print(__K2L_FloatToString(math.max(1.100000023841858, 2.200000047683716)))
-    print(__K2L_FloatToString(math.min(1.100000023841858, 2.200000047683716)))
+    print(__K2L_FloatToString(__K2L_Num.maxD(1.100000023841858, 2.200000047683716)))
+    print(__K2L_FloatToString(__K2L_Num.minD(1.100000023841858, 2.200000047683716)))
     print(__K2L_FloatToString(__K2L_Num.coerceIn(1.100000023841858, 0.0, 1.0)))
     print(__K2L_Num.roundToInt(2.5))
     print(__K2L_DoubleToLong(3.700000047683716))
@@ -144,5 +146,5 @@ local function main()
     print(__K2L_FloatToString(count))
 end
 
-main()
+__K2L_Main(main)
 return {Vec = Vec, average = average}

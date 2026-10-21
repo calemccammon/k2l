@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.psi.*
 
 private const val SEQUENCE_CLASS = "kotlin/sequences/Sequence"
 private const val ELEMENT_CLASS = "kotlin/coroutines/AbstractCoroutineContextElement"
+private const val RANDOM_CLASS = "kotlin/random/Random"
 
 /** Collects the supertype entries of a class by what they need at run time. */
 private class SuperEntries {
@@ -14,7 +15,10 @@ private class SuperEntries {
     var bad: KtSuperTypeListEntry? = null
     var libraryBase: String? = null
     var sequence: KtSuperTypeListEntry? = null
+
+    /** `AbstractCoroutineContextElement(key)`, or `Random()` when [random]: a lualib base class with no constructor state of its own. */
     var element: KtSuperTypeListEntry? = null
+    var random = false
     val interfaces = mutableListOf<KtClassOrObject>()
 
     /** Library interfaces with a single abstract method, implemented through a lualib mixin (see SAM_MIXINS). */
@@ -48,11 +52,18 @@ internal fun KaSession.classifySupertypes(
     val inheritsSequence = found.base?.let(isSequenceClass) ?: false
     val sequenceMixin = found.sequence != null && !ownSequence && !inheritsSequence
     if (found.element != null && (found.base != null || found.libraryBase != null)) found.bad = found.bad ?: found.element
-    val elementBase = found.element != null && found.bad == null
+    val (elementBase, randomBase) = lualibBases(found)
     return SuperInfo(
         found.base, found.baseCall, found.interfaces, found.bad, found.libraryBase, ownSequence, elementBase, sequenceMixin,
         found.collection, found.samMixins, found.delegations, found.libraryDelegations, found.collectionMixin,
+        randomBase = randomBase,
     )
+}
+
+/** Whether the class extends `AbstractCoroutineContextElement` and whether it extends `Random`, the lualib bases of [SuperEntries.element]. */
+private fun lualibBases(found: SuperEntries): Pair<Boolean, Boolean> {
+    val extends = found.element != null && found.bad == null
+    return (extends && !found.random) to (extends && found.random)
 }
 
 /**
@@ -114,8 +125,9 @@ private fun addSupertype(
 
         id == SEQUENCE_CLASS -> found.sequence = entry
 
-        id == ELEMENT_CLASS -> {
+        id == ELEMENT_CLASS || id == RANDOM_CLASS -> {
             found.element = entry
+            found.random = id == RANDOM_CLASS
             found.baseCall = entry as? KtSuperTypeCallEntry
         }
 

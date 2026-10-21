@@ -7,6 +7,7 @@ local __K2L_IsCharSequence = ____lualib.__K2L_IsCharSequence
 local __K2L_IsComparable = ____lualib.__K2L_IsComparable
 local __K2L_IsNumber = ____lualib.__K2L_IsNumber
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NumberTo = ____lualib.__K2L_NumberTo
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyOverride = ____lualib.__K2L_PropertyOverride
@@ -141,5 +142,5 @@ local function main()
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
 end
 
-main()
+__K2L_Main(main)
 return {Name = Name, Score = Score, Dir = Dir, kind = kind}

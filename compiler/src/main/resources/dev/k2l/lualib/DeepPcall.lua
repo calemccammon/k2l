@@ -1,4 +1,4 @@
--- requires: Exceptions
+-- requires: Exceptions, Uncaught
 -- The protected call of try blocks (and use, runCatching, ...). Lua allows only about 200 nested C calls, and each pcall
 -- is one, so a recursion through a try would fail with "C stack overflow" after some 190 levels. Every LIMIT nested
 -- protected calls, the next one instead runs in a fresh coroutine that the driver around main (__K2L_DeepMain) resumes:
@@ -54,17 +54,6 @@ do
         return deep(f)
     end
 
-    -- What the driver raises for an error that ended main's coroutine. Raised again from the driver, a Lua error (a
-    -- string) would carry the driver's traceback (the standalone interpreter adds the stack it is raised from), so it gets
-    -- the stack of the coroutine where it happened first: an error stops a coroutine without unwinding its stack. An
-    -- exception (an object) is raised as it is: the interpreters print it without a traceback, as when main runs directly.
-    local function uncaught(co, e)
-        if type(e) == "string" and debug and debug.traceback then
-            return debug.traceback(co, e)
-        end
-        return e
-    end
-
     -- Runs main in a coroutine and runs the functions its protected calls hand over, each in a coroutine of its own.
     function __K2L_DeepMain(main, ...)
         local waiting, n = {}, 0
@@ -92,7 +81,8 @@ do
             elseif r[1] then
                 return unpack(r, 2, r.n)
             else
-                error(uncaught(co, r[2]), 0)
+                -- an error stops a coroutine without unwinding its stack: the traceback of co is that of the error
+                __K2L_UncaughtIn(r[2], co)
             end
         end
     end

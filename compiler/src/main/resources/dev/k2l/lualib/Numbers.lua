@@ -4,14 +4,10 @@ local __K2L_Num = {}
 
 do
 
-local atan2 = math.atan2 or math.atan
 local LN2 = math.log(2)
 local MAX_LONG = math.maxinteger or 9223372036854775807
 local MIN_LONG = math.mininteger or -9223372036854775808
-
-function __K2L_Num.atan2(y, x)
-    return atan2(y, x)
-end
+local NEG_ZERO = -1 / math.huge -- not the literal: Lua 5.1 folds -0.0 into a function's constant 0
 
 -- math.log(x, 10) is not available before Lua 5.2, and math.log10 is gone in 5.4.
 function __K2L_Num.log10(x)
@@ -32,72 +28,51 @@ function __K2L_Num.log(x, base)
     return math.log(x) / math.log(base)
 end
 
-function __K2L_Num.ln1p(x)
-    local u = 1 + x
-    if u == 1 then
+-- x.IEEErem(y) (Math.IEEEremainder): x - n * y for the integer n nearest x / y, ties to even, computed exactly as fdlibm does.
+function __K2L_Num.IEEErem(x, y)
+    if x ~= x or y ~= y or y == 0 or x == math.huge or x == -math.huge then
+        return 0 / 0
+    elseif y == math.huge or y == -math.huge then
         return x
     end
-    return math.log(u) * x / (u - 1)
+    local p = math.abs(y)
+    local negative = x < 0 or (x == 0 and 1 / x < 0)
+    local a = math.abs(x + 0.0)
+    if p < 8.98846567431158e307 then -- 2^1023
+        a = math.abs(math.fmod(a, p + p)) -- now a < 2p
+    end
+    if p < 4.450147717014403e-308 then -- 2^-1021: p / 2 may not be exact
+        if a + a > p then
+            a = a - p
+            if a + a >= p then
+                a = a - p
+            end
+        end
+    else
+        local half = 0.5 * p
+        if a > half then
+            a = a - p
+            if a >= half then
+                a = a - p
+            end
+        end
+    end
+    return negative and -a or a
 end
 
-function __K2L_Num.expm1(x)
-    local u = math.exp(x)
-    if u == 1 then
-        return x
+-- Math.floor(-0.0) is -0.0 (math.floor(x) + 0.0 would be 0.0)
+function __K2L_Num.floor(x)
+    if x == 0 then
+        return x * 1.0
     end
-    local um1 = u - 1
-    if um1 == -1 then
-        return -1.0
-    end
-    return um1 * x / math.log(u)
-end
-
-function __K2L_Num.sinh(x)
-    return (math.exp(x) - math.exp(-x)) / 2
-end
-
-function __K2L_Num.cosh(x)
-    return (math.exp(x) + math.exp(-x)) / 2
-end
-
-function __K2L_Num.tanh(x)
-    if x > 20 then
-        return 1.0
-    elseif x < -20 then
-        return -1.0
-    end
-    local a, b = math.exp(x), math.exp(-x)
-    return (a - b) / (a + b)
-end
-
-function __K2L_Num.hypot(x, y)
-    if x ~= x and y ~= y then
-        return x
-    end
-    return math.sqrt(x * x + y * y)
-end
-
--- Cube root, exact for perfect cubes.
-function __K2L_Num.cbrt(x)
-    if x == 0 or x ~= x or x == math.huge or x == -math.huge then
-        return x
-    end
-    local a = math.abs(x)
-    local y = a ^ (1 / 3)
-    y = y - (y * y * y - a) / (3 * y * y)
-    local r = math.floor(y + 0.5)
-    if r * r * r == a then
-        y = r
-    end
-    y = y + 0.0
-    return x < 0 and -y or y
+    return math.floor(x) + 0.0
 end
 
 -- Math.ceil(-0.5) is -0.0
 function __K2L_Num.ceil(x)
     local r = math.ceil(x) + 0.0
     if r == 0 and (x < 0 or 1 / x < 0) then
-        return -0.0
+        return NEG_ZERO
     end
     return r
 end
@@ -106,8 +81,49 @@ function __K2L_Num.truncate(x)
     if x ~= x or x == math.huge or x == -math.huge then
         return x
     end
-    return (x >= 0 and math.floor(x) or math.ceil(x)) + 0.0
+    local r = (x >= 0 and math.floor(x) or math.ceil(x)) + 0.0
+    if r == 0 and (x < 0 or 1 / x < 0) then
+        return NEG_ZERO
+    end
+    return r
 end
+
+-- Math.pow: 1 ^ NaN and (+-1) ^ (+-Infinity) are NaN on the JVM, 1 in C.
+function __K2L_Num.pow(x, y)
+    if (x == 1 or x == -1) and (y ~= y or y == math.huge or y == -math.huge) then
+        return 0 / 0
+    end
+    return x ^ y
+end
+
+-- Math.max and Math.min of Doubles: NaN wins, and 0.0 is greater than -0.0 (math.max and math.min tell neither).
+local function maxD(a, b)
+    if a > b then
+        return a
+    elseif b > a then
+        return b
+    elseif a ~= a then
+        return a
+    elseif b ~= b or (a == 0 and 1 / a < 0) then
+        return b
+    end
+    return a
+end
+
+local function minD(a, b)
+    if a < b then
+        return a
+    elseif b < a then
+        return b
+    elseif a ~= a then
+        return a
+    elseif b ~= b or (a == 0 and 1 / a > 0) then
+        return b
+    end
+    return a
+end
+
+__K2L_Num.maxD, __K2L_Num.minD = maxD, minD
 
 function __K2L_Num.signInt(x)
     if x > 0 then
@@ -145,7 +161,7 @@ function __K2L_Num.round(x)
         r = f + 1
     end
     if r == 0 and (x < 0 or 1 / x < 0) then
-        return -0.0
+        return NEG_ZERO
     end
     return r + 0.0
 end

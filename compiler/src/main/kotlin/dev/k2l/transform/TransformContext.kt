@@ -25,6 +25,9 @@ class TransformContext(val options: CompilerOptions) {
 
     /** Expressions wrapped to 32 bits by `--int-overflow wrap`, by identity, mapped to what they wrap (see IntOverflow.kt). */
     val int32Pending = java.util.IdentityHashMap<dev.k2l.codegen.LuaExpr, dev.k2l.codegen.LuaExpr>()
+
+    /** Integer products made `x * y + 0` on float targets (never -0), by identity, mapped to the product (see IntOverflow.kt). */
+    val zeroPending = java.util.IdentityHashMap<dev.k2l.codegen.LuaExpr, dev.k2l.codegen.LuaExpr>()
     private val generated = mutableMapOf<String, Int>()
 
     /** Kotlin position of the statements the transformer emitted; only filled with [CompilerOptions.sourceMap]. */
@@ -81,5 +84,5 @@ object LuaNames {
     }
 }
 
-/** Lualib feature with the source-map runtime: traceback rewriting and `__K2L_RunMain`. */
+/** Lualib feature with the source-map runtime: Lua positions in tracebacks rewritten to Kotlin ones. */
 internal const val SOURCE_MAP_FEATURE = "SourceMap"

@@ -4,6 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -81,7 +82,7 @@ function Json.Num:hashCode()
 end
 
 function Json.Num:equals(other)
-    return getmetatable(other) == Json.Num and self.value == other.value
+    return getmetatable(other) == Json.Num and __K2L_DoubleEquals(self.value, other.value)
 end
 
 Json.Str = __K2L_Class("Json$Str", Json)
@@ -390,7 +391,7 @@ local function quote(s)
 end
 
 local function formatNumber(d)
-    return d == math.floor(d) + 0.0 and not __K2L_Num.isInfinite(d) and math.abs(d) < 1.0E15 and tostring(__K2L_DoubleToLong(d)) or __K2L_Str(d)
+    return d == (d == 0 and d * 1.0 or math.floor(d) + 0.0) and not __K2L_Num.isInfinite(d) and math.abs(d) < 1.0E15 and tostring(__K2L_DoubleToLong(d)) or __K2L_Str(d)
 end
 
 local function compact(self)

@@ -135,6 +135,33 @@ tasks.register<JavaExec>("bench") {
     outputs.upToDateWhen { false }
 }
 
+// ---- Standard library coverage: ./gradlew :compiler:stdlibCoverage writes docs/stdlib-coverage.md (see the README) ----
+
+val coverage: SourceSet = sourceSets.create("coverage") {
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().output
+}
+configurations["coverageImplementation"].extendsFrom(configurations.implementation.get())
+configurations["coverageRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
+
+// `check` only compiles the audit: running it takes a while, and its report is committed.
+tasks.check { dependsOn(tasks.named("compileCoverageKotlin")) }
+
+tasks.register<JavaExec>("stdlibCoverage") {
+    description = "Probes which Kotlin stdlib and JDK APIs k2l translates and writes docs/stdlib-coverage.md."
+    group = "documentation"
+    classpath = coverage.runtimeClasspath
+    mainClass.set("dev.k2l.coverage.CoverageKt")
+    jvmArgs("-Xss8m", "-XX:+UseParallelGC")
+    maxHeapSize = "3g"
+    systemProperty("k2l.coverage.report", rootProject.file("docs/stdlib-coverage.md").absolutePath)
+    systemProperty("k2l.coverage.work", layout.buildDirectory.dir("coverage").get().asFile.absolutePath)
+    systemProperty("k2l.coverage.sources", layout.projectDirectory.dir("src/main/kotlin").asFile.absolutePath)
+    // -PcoverageOnly=kotlin.time,java.lang.Math probes only those areas and prints the result instead of writing the report.
+    providers.gradleProperty("coverageOnly").orNull?.let { systemProperty("k2l.coverage.only", it) }
+    outputs.upToDateWhen { false }
+}
+
 // ---- The compiler's runtime classpath as one consumable directory, for the Gradle plugin (`dev.k2l`) ----
 
 // The Analysis API jars are published without usable POMs, so a consumer can't resolve them transitively.

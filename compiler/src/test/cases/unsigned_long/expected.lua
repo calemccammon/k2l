@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StrByte = ____lualib.__K2L_StrByte
@@ -84,5 +85,5 @@ local function main()
     print(__K2L_ReadOnlyListOf(big, small, max).size)
 end
 
-main()
+__K2L_Main(main)
 return {fnv = fnv}

@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
@@ -30,4 +31,4 @@ local function main()
     print("sb=" .. __K2L_Str(sb) .. " " .. #sb:toString())
 end
 
-main()
+__K2L_Main(main)

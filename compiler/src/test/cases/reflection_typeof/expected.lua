@@ -7,6 +7,7 @@ local __K2L_KClassNamed = ____lualib.__K2L_KClassNamed
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfArray = ____lualib.__K2L_KClassOfArray
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -401,5 +402,5 @@ local function main()
     print(__K2L_Hash(____result_4) == __K2L_Hash(__K2L_TypeOf("java.util.List<java.lang.Integer>", false, __K2L_KClassNamed("kotlin.collections.List"), {{"", __K2L_TypeOf("int", false, __K2L_KClassNamed("kotlin.Int"), {})}})))
 end
 
-main()
+__K2L_Main(main)
 return {Outer = Outer, Box = Box}

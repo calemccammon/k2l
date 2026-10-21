@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 
 local ____lambda_1 = function(acc, f) return acc | f end
@@ -19,4 +20,4 @@ local function main()
     print(5 & 1 == 1)
 end
 
-main()
+__K2L_Main(main)

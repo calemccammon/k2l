@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____greeter = require("lib.greeter")
@@ -37,4 +38,4 @@ local function main()
     print(ok)
 end
 
-main()
+__K2L_Main(main)

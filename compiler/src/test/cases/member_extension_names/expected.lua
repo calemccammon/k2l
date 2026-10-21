@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Holder = __K2L_Class("Holder")
@@ -91,5 +92,5 @@ local function main()
     print(c:more())
 end
 
-main()
+__K2L_Main(main)
 return {Holder = Holder, Parent = Parent, Child = Child}

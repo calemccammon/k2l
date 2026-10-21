@@ -3,6 +3,8 @@ local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
+local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 
@@ -37,7 +39,7 @@ local function main()
     print(2 - -3)
     print(-(-a))
     print(math.max(3, 9))
-    print(__K2L_Str(math.min(2.5, 1.5)))
+    print(__K2L_Str(__K2L_Num.minD(2.5, 1.5)))
     print(__K2L_Str(math.sqrt(16.0)))
     print(math.abs(-4))
     print(__K2L_Str(math.floor(2.7) + 0.0))
@@ -48,4 +50,4 @@ local function main()
     print(2147483647)
 end
 
-main()
+__K2L_Main(main)

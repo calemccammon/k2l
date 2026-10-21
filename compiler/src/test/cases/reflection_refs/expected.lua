@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -102,5 +103,5 @@ ____exports.Config = Config
 ____exports.label = label
 ____exports.twice = twice
 ____exports.describe = describe
-main()
+__K2L_Main(main)
 return ____exports

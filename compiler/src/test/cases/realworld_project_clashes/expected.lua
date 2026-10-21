@@ -2,6 +2,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -32,7 +33,7 @@ function Point:hashCode()
 end
 
 function Point:equals(other)
-    return getmetatable(other) == Point and self.x == other.x and self.y == other.y
+    return getmetatable(other) == Point and __K2L_DoubleEquals(self.x, other.x) and __K2L_DoubleEquals(self.y, other.y)
 end
 
 ____exports.count = 0
@@ -77,6 +78,7 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -149,7 +151,7 @@ local function main()
     print(tostring(getmetatable(any) == ____Point_1.Point) .. " " .. tostring(getmetatable(any) == ____Point.Point))
 end
 
-main()
+__K2L_Main(main)
 return {Point = Point, format = format}
 -- ==== text/Point.lua ====
 local ____lualib = require("lualib_bundle")

@@ -1,0 +1,13 @@
+(?<=é)x on "éx ex" -> 1:x
+(?<=[éa]{2})x on "aéx éx ééx" -> 2:x 9:x
+(?<=.)\. on ".a.é.😀." -> 2:. 4:. 7:.
+(?<=😀)! on "😀! !" -> 2:!
+(?<=[^a]{1,2})! on "😀😀! a!" -> 4:!
+(?<!\p{L})\d on "é1 2 x3" -> 3:2
+(?iu)(?<=k)x on "Kx kx Kx" -> 1:x 4:x 7:x
+(?<=ü+)z on "üüz z" -> 2:z
+Look-behind group does not have an obvious maximum length near index 9
+(?<=é(a)\1)b
+         ^
+long (?<=é)b: 10000
+long (?<![^é])b: 10000

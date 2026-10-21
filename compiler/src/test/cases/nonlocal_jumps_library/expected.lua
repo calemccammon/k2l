@@ -6,6 +6,7 @@ local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IsArray = ____lualib.__K2L_IsArray
 local __K2L_Jump = ____lualib.__K2L_Jump
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NewJump = ____lualib.__K2L_NewJump
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -1681,5 +1682,5 @@ local function main()
     print("Continues1 seq_sumOf: " .. __K2L_Str(Continues1:t_seq_sumOf(false)) .. " / " .. __K2L_Str(Continues1:t_seq_sumOf(true)))
 end
 
-main()
+__K2L_Main(main)
 return {show = show, Returns1 = Returns1, Returns2 = Returns2, Breaks1 = Breaks1, Continues1 = Continues1}

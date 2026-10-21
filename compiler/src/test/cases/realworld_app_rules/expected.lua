@@ -328,6 +328,7 @@ return {RuleCycleException = RuleCycleException, Engine = Engine}
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -352,7 +353,7 @@ function Value.Num.new(v)
 end
 
 function Value.Num:toString()
-    return self.v == math.floor(self.v) + 0.0 and not __K2L_Num.isInfinite(self.v) and tostring(__K2L_DoubleToLong(self.v)) or __K2L_Str(self.v)
+    return self.v == (self.v == 0 and self.v * 1.0 or math.floor(self.v) + 0.0) and not __K2L_Num.isInfinite(self.v) and tostring(__K2L_DoubleToLong(self.v)) or __K2L_Str(self.v)
 end
 
 function Value.Num:hashCode()
@@ -360,7 +361,7 @@ function Value.Num:hashCode()
 end
 
 function Value.Num:equals(other)
-    return getmetatable(other) == Value.Num and self.v == other.v
+    return getmetatable(other) == Value.Num and __K2L_DoubleEquals(self.v, other.v)
 end
 
 Value.Text = __K2L_Class("rules.engine.Value$Text", Value)

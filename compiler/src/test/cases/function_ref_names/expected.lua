@@ -3,6 +3,7 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
@@ -120,5 +121,5 @@ function sortedNames(fs)
     return __K2L_ListWrap(____out_1, ____count_1):sorted()
 end
 
-main()
+__K2L_Main(main)
 return {Greeter = Greeter, twice = twice, shout = shout, whisper = whisper, describe = describe, names = names, pick = pick, negate = negate, sortedNames = sortedNames}

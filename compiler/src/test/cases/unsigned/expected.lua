@@ -7,6 +7,7 @@ local __K2L_Fround = ____lualib.__K2L_Fround
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -157,5 +158,5 @@ function sumOfSquares(n)
     return total
 end
 
-main()
+__K2L_Main(main)
 return {hash = hash, sumOfSquares = sumOfSquares}

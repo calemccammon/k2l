@@ -5,6 +5,7 @@ local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
@@ -193,5 +194,5 @@ local function main()
     print(__K2L_Str(__K2L_Unsigned.toDouble(unsigned)))
 end
 
-main()
+__K2L_Main(main)
 return {Counter = Counter, Consts = Consts, Shape = Shape, Sq = Sq, parse = parse, gcd = gcd, modPow = modPow}

@@ -48,7 +48,7 @@ internal const val COROUTINES_FEATURE = "Coroutines"
 /** Lua feature implementing `kotlin.Result`, see `Result.lua`. */
 internal const val RESULT_FEATURE = "Result"
 
-/** Library objects used as values: `EmptyCoroutineContext`, `Result` (its companion) and `Unit`. */
+/** Library objects used as values: `EmptyCoroutineContext`, `Result` (its companion), `Unit` and `TimeSource.Monotonic`. */
 internal val LIBRARY_OBJECTS = setOf(
     "kotlin/coroutines/EmptyCoroutineContext",
     "kotlin/Result",
@@ -56,6 +56,7 @@ internal val LIBRARY_OBJECTS = setOf(
     "kotlin/Unit",
     "kotlin/coroutines/ContinuationInterceptor",
     "kotlin/coroutines/ContinuationInterceptor.Key",
+    "kotlin/time/TimeSource.Monotonic",
 )
 
 /** The Lua value of one of the [LIBRARY_OBJECTS]. */
@@ -66,6 +67,8 @@ internal fun FileTransformer.libraryObject(classId: String): LuaExpr = when (cla
 
     "kotlin/coroutines/ContinuationInterceptor", "kotlin/coroutines/ContinuationInterceptor.Key" ->
         lualibRef(COROUTINES_FEATURE, "__K2L_ContinuationInterceptor")
+
+    "kotlin/time/TimeSource.Monotonic" -> lualibRef(DURATION_FEATURE, "__K2L_Monotonic")
 
     else -> lualibRef(RESULT_FEATURE, "__K2L_Result")
 }

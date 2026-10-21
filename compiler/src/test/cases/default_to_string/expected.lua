@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -119,5 +120,5 @@ local function main()
     print(shape(__K2L_StringBuilder.new():append(__K2L_Str(p)):toString()))
 end
 
-main()
+__K2L_Main(main)
 return {P = P, Hashed = Hashed, Base = Base, Derived = Derived, Outer = Outer, Singleton = Singleton, D = D, E = E, Problem = Problem, Shape = Shape, Square = Square, hash = hash, shape = shape}

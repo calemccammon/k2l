@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
@@ -129,5 +130,5 @@ local function main()
     print(__K2L_Utf16.out(__K2L_Str(__K2L_ListWrap(____out_5, ____count_5))))
 end
 
-main()
+__K2L_Main(main)
 return {mark = mark}

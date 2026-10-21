@@ -7,6 +7,7 @@ local __K2L_JavaClass = ____lualib.__K2L_JavaClass
 local __K2L_KClassNamed = ____lualib.__K2L_KClassNamed
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Outer = __K2L_Class("app.Outer")
@@ -79,5 +80,5 @@ local function main()
     print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(Impl.new())).____kotlin.simpleName))
 end
 
-main()
+__K2L_Main(main)
 return {Outer = Outer, Named = Named, Solo = Solo, Marker = Marker, Impl = Impl, classOf = classOf}

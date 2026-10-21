@@ -13,6 +13,7 @@ local __K2L_CreateCoroutine = ____lualib.__K2L_CreateCoroutine
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
 local __K2L_Str = ____lualib.__K2L_Str
@@ -173,5 +174,5 @@ local function main()
     print("finished=" .. tostring(finished))
 end
 
-main()
+__K2L_Main(main)
 return {CoroutineName = CoroutineName, UserId = UserId, QueueDispatcher = QueueDispatcher, DispatchedContinuation = DispatchedContinuation, waiting = waiting, park = park, nameNow = nameNow, worker = worker, launch = launch}

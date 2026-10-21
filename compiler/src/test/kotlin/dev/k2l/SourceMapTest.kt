@@ -79,12 +79,11 @@ class SourceMapTest {
         val plain = compile(CompilerOptions()).outputs.single { it.path == "main.lua" }
         assertFalse(plain.code.contains("SourceMap"))
         assertEquals(null, plain.sourceMap)
-        assertFalse(plain.code.contains("__K2L_RunMain"))
     }
 
     @Test
     fun `an uncaught exception prints a traceback with Kotlin positions`() {
-        val interpreters = interpreters()
+        val interpreters = installedInterpreters
         assumeTrue(interpreters.isNotEmpty(), "no Lua interpreter found")
         for (mode in LuaLibImport.entries) {
             for ((lua, target) in interpreters) {
@@ -108,7 +107,7 @@ class SourceMapTest {
 
     @Test
     fun `runtime errors in Lua code are rewritten too`() {
-        val interpreters = interpreters()
+        val interpreters = installedInterpreters
         assumeTrue(interpreters.isNotEmpty(), "no Lua interpreter found")
         val source = """
             |import dev.k2l.lua.*
@@ -132,7 +131,7 @@ class SourceMapTest {
 
     @Test
     fun `an uncaught Lua error through the try driver shows the traceback of its site`() {
-        val interpreters = interpreters()
+        val interpreters = installedInterpreters
         assumeTrue(interpreters.isNotEmpty(), "no Lua interpreter found")
         val source = """
             |import dev.k2l.lua.*
@@ -175,21 +174,5 @@ class SourceMapTest {
         val output = process.inputStream.readBytes().toString(Charsets.UTF_8)
         check(process.waitFor(30, TimeUnit.SECONDS)) { "$lua timed out" }
         return process.exitValue() to output
-    }
-
-    /** Interpreters installed on this machine with the target matching their version banner, one per version. */
-    private fun interpreters(): List<Pair<String, LuaTarget>> {
-        val seen = mutableSetOf<LuaTarget>()
-        return listOf("lua5.1", "lua5.2", "lua5.3", "lua5.4", "luajit", "lua").mapNotNull { name ->
-            val banner = runCatching {
-                val p = ProcessBuilder(name, "-v").redirectErrorStream(true).start()
-                p.inputStream.readBytes().toString(Charsets.UTF_8).also { p.waitFor() }
-            }.getOrNull() ?: return@mapNotNull null
-            val target = when {
-                banner.startsWith("LuaJIT") -> LuaTarget.LuaJIT
-                else -> LuaTarget.entries.firstOrNull { banner.startsWith("Lua ${it.id}") }
-            }
-            if (target != null && seen.add(target)) name to target else null
-        }
     }
 }

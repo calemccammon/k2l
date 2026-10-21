@@ -3,6 +3,7 @@ local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IRem = ____lualib.__K2L_IRem
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StrByte = ____lualib.__K2L_StrByte
@@ -87,5 +88,5 @@ local function main()
     print((min - 1 + 0x80000000 & 0xFFFFFFFF) - 0x80000000)
 end
 
-main()
+__K2L_Main(main)
 return {divide = divide, firstBig = firstBig}

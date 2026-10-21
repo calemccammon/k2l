@@ -7,6 +7,7 @@ local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_Sequence = ____lualib.__K2L_Sequence
@@ -306,5 +307,5 @@ local function main()
     print("tags: " .. __K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("<(\\w+)"):findAllFactory(html)):groupingBy(____lambda_9):eachCount():toSortedMap()))
 end
 
-main()
+__K2L_Main(main)
 return {escapeHtml = escapeHtml, slug = slug, inline = inline, Heading = Heading, Converter = Converter, toc = toc, DOCUMENT = DOCUMENT}

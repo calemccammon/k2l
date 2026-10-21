@@ -3,6 +3,7 @@ local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -401,7 +402,7 @@ function Planet:hashCode()
 end
 
 function Planet:equals(other)
-    return getmetatable(other) == Planet and self.name == other.name and self.moons == other.moons and self.radiusKm == other.radiusKm and self.rings == other.rings
+    return getmetatable(other) == Planet and self.name == other.name and self.moons == other.moons and __K2L_DoubleEquals(self.radiusKm, other.radiusKm) and self.rings == other.rings
 end
 
 local ____lambda_4 = function(it) return "<" .. it .. ">" end

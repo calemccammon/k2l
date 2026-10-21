@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_Sequence = ____lualib.__K2L_Sequence
@@ -35,6 +36,7 @@ end
 
 local ____lambda_1 = function(it) return it.value end
 local ____lambda_2 = function(it) return it.value end
+local ____lambda_3 = function(it) return it.value end
 local function main()
     local ____list = CATEGORIES
     local ____mod = ____list.____modCount
@@ -45,7 +47,7 @@ local function main()
             break
         end
     end
-    local ____list_1 = __K2L_ReadOnlyListOf("\\P{L}", "\\p{IsLu}", "\\p{gc=Nl}", "[\\p{Lu}\\p{Lt}]", "[^\\p{L}\\p{N}\\p{Cn}]", "(?i)\\p{Lt}", "\\pM")
+    local ____list_1 = __K2L_ReadOnlyListOf("\\P{L}", "\\p{IsLu}", "\\p{gc=Nl}", "[\\p{Lu}\\p{Lt}]", "[^\\p{L}\\p{N}\\p{Cn}]", "(?i)\\p{Lt}", "\\pM", "\\p{IsAlphabetic}", "\\p{javaAlphabetic}", "\\P{IsAlphabetic}", "[\\p{IsAlphabetic}&&\\P{L}]")
     for ____i_1 = 1, ____list_1.size do
         local form = ____list_1[____i_1]
         print(__K2L_Utf16.out(__K2L_Text.padEnd(form, 22) .. " " .. summary(__K2L_Regex.new(form))))
@@ -56,9 +58,10 @@ local function main()
         local name = ____list_2[____i_2]
         print(__K2L_Utf16.out(name .. ": " .. __K2L_Sequence.new(__K2L_Regex.new("\\p{" .. name .. "}"):findAllFactory(text)):map(____lambda_1):joinToString(" ")))
     end
+    print(__K2L_Utf16.out("alphabetic: " .. __K2L_Sequence.new(__K2L_Regex.new("\\p{IsAlphabetic}"):findAllFactory(text)):map(____lambda_2):joinToString(" ")))
     print(__K2L_Utf16.out(__K2L_Regex.new("[\\p{Z}\\p{P}]+"):replace(text, "|")))
-    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("\\p{Lu}\\p{Ll}*"):findAllFactory("Ἀθῆναι Ελλάδα Ärger Öl")):map(____lambda_2):toList())))
+    print(__K2L_Utf16.out(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("\\p{Lu}\\p{Ll}*"):findAllFactory("Ἀθῆναι Ελλάδα Ärger Öl")):map(____lambda_3):toList())))
 end
 
-main()
+__K2L_Main(main)
 return {CATEGORIES = CATEGORIES, SAMPLE = SAMPLE, summary = summary}

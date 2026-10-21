@@ -4,6 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ContextGet = ____lualib.__K2L_ContextGet
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_Sequence = ____lualib.__K2L_Sequence
@@ -139,5 +140,5 @@ local function main()
     print(__K2L_Str(q:map(____lambda_3):toList()))
 end
 
-main()
+__K2L_Main(main)
 return {Base = Base, Evens = Evens, EvenIterator = EvenIterator, Oops = Oops, Named = Named, Sub = Sub, Shape = Shape, Sq = Sq, Both = Both}

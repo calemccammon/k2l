@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -70,5 +71,5 @@ local function main()
     print(__K2L_ReadOnlyListOf(box, Box.new(__K2L_ListOf(1))):sumOf(__K2L_PropertyRef.new("first", "Box./first", getFirst, setFirst)))
 end
 
-main()
+__K2L_Main(main)
 return {Box = Box, getLastChar = getLastChar, getTotal = getTotal, getFirst = getFirst, setFirst = setFirst, getSize = getSize, describe = describe}

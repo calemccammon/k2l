@@ -186,7 +186,7 @@ class ModuleContext(
             "TreeMap", "SortedMap", "NavigableMap", "ArrayDeque", "Deque", "Queue", "AbstractQueue", "PriorityQueue",
             "AbstractSequentialList", "Vector", "Stack", "MutableIterable",
         )
-        private val FLOAT_NAMES = setOf("Float", "FloatArray", "floatArrayOf", "toFloat", "toFloatOrNull", "toFloatArray")
+        private val FLOAT_NAMES = setOf("Float", "FloatArray", "floatArrayOf", "toFloat", "toFloatOrNull", "toFloatArray", "nextFloat")
 
         fun single(file: KtFile) = ModuleContext(setOf(file), { it.name.removeSuffix(".kt") })
     }

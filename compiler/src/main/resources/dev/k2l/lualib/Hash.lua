@@ -68,6 +68,9 @@ local function __K2L_Hash(value)
             end
             return __K2L_ToInt32(value ~ (value >> 32))
         end
+        if value ~= value then
+            return 2146959360 -- Double.hashCode(NaN): the bits of the canonical NaN (Lua's may have the sign bit set)
+        end
         return __K2L_Hash(string.unpack("<i8", string.pack("<d", value)))
     elseif t == "string" then
         return hashString(value)

@@ -13,6 +13,7 @@ local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_LoopItems = ____lualib.__K2L_LoopItems
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -420,5 +421,5 @@ local function main()
     surgery()
 end
 
-main()
+__K2L_Main(main)
 return {kmpTable = kmpTable, kmpSearch = kmpSearch, rabinKarp = rabinKarp, zFunction = zFunction, levenshtein = levenshtein, lcs = lcs, suffixArray = suffixArray, lcpArray = lcpArray, longestPalindrome = longestPalindrome, surgery = surgery, swapCase = swapCase}

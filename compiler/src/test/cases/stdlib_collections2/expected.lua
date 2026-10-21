@@ -6,6 +6,7 @@ local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NaturalOrder = ____lualib.__K2L_NaturalOrder
@@ -330,5 +331,5 @@ local function main()
     misc()
 end
 
-main()
+__K2L_Main(main)
 return {ordering = ordering, grouping = grouping, windows = windows, slicing = slicing, aggregates = aggregates, mutation = mutation, misc = misc}

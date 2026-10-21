@@ -684,8 +684,9 @@ function __K2L_Iterable:maxBy(selector) return (extreme(self, selector, 1, false
 function __K2L_Iterable:minBy(selector) return (extreme(self, selector, -1, false)) end
 function __K2L_Iterable:maxOf(selector) return select(2, extreme(self, selector, 1, false)) end
 function __K2L_Iterable:minOf(selector) return select(2, extreme(self, selector, -1, false)) end
-function __K2L_Iterable:maxOfOrNull(selector) return select(2, extreme(self, selector, 1, true)) end
-function __K2L_Iterable:minOfOrNull(selector) return select(2, extreme(self, selector, -1, true)) end
+-- (one value even when there is none: a call ending an argument list must still pass the null)
+function __K2L_Iterable:maxOfOrNull(selector) return (select(2, extreme(self, selector, 1, true))) end
+function __K2L_Iterable:minOfOrNull(selector) return (select(2, extreme(self, selector, -1, true))) end
 
 -- The list sorted() and the like return: toList() for at most one element (EmptyList, SingletonList), else the sorted array
 -- seen through asList(), an Arrays$ArrayList. Arrays always give the Arrays$ArrayList.
@@ -1442,10 +1443,11 @@ function __K2L_Iterable:firstNotNullOfOrNull(transform)
     return nil
 end
 
-function __K2L_Iterable:firstNotNullOf(transform)
+-- `what` names the receiver in the error: "collection" unless given ("char sequence")
+function __K2L_Iterable:firstNotNullOf(transform, what)
     local value = self:firstNotNullOfOrNull(transform)
     if value == nil then
-        noSuchElement("No element of the collection was transformed to a non-null value.")
+        noSuchElement("No element of the " .. (what or "collection") .. " was transformed to a non-null value.")
     end
     return value
 end
@@ -2693,14 +2695,45 @@ end
 ------------------------------------------------------------------ hashed keys (Map and Set)
 local NIL_KEY = {}
 
--- Finds the slot of `key`: raw lookup for plain values, hashCode buckets plus equals() for objects.
+-- The hash of a key kept in the hashCode buckets, or nil for one the index finds by raw equality: an object with
+-- hashCode(), an int64_t of --long64 emulate (cdata, which table keys would compare by identity), and NaN and -0.0, which
+-- Double.equals tells from 0.0 (and a Lua table cannot hold NaN as a key, nor 0.0 and -0.0 as two).
+local function bucketHash(key, kind)
+    if kind == "table" then
+        if key.hashCode ~= nil then
+            return key:hashCode()
+        end
+    elseif kind == "number" then
+        if key ~= key or (key == 0 and 1 / key < 0) then
+            return __K2L_Hash(key)
+        end
+    elseif kind == "cdata" then
+        return __K2L_Hash(key)
+    end
+    return nil
+end
+
+-- Finds the slot of `key`: raw lookup for plain values, hashCode buckets plus equals() for objects (bucketHash, inlined
+-- for the common kinds).
 local function findSlot(self, key)
     local kind = type(key)
-    if kind == "string" or kind == "number" then
+    local h
+    if kind == "string" then
         return self.____index[key]
-    elseif (kind == "table" and key.hashCode ~= nil) or kind == "cdata" then
-        -- cdata is an int64_t of --long64 emulate: table keys would compare it by identity
-        local bucket = self.____buckets[kind == "cdata" and __K2L_Hash(key) or key:hashCode()]
+    elseif kind == "table" then
+        if key.hashCode ~= nil then
+            h = key:hashCode()
+        end
+    elseif kind == "number" then
+        if key == key and (key ~= 0 or 1 / key > 0) then
+            return self.____index[key]
+        end
+        h = __K2L_Hash(key)
+    elseif kind == "cdata" then
+        h = __K2L_Hash(key)
+    end
+    if h ~= nil then
+        local bucket = self.____buckets[h]
         if bucket ~= nil then
             for _, slot in ipairs(bucket) do
                 if __K2L_Equals(self.____keys[slot], key) then
@@ -2721,8 +2754,15 @@ local function addSlot(self, key)
     self.____modCount = self.____modCount + 1
     self.____keys[slot] = key
     local kind = type(key)
-    if (kind == "table" and key.hashCode ~= nil) or kind == "cdata" then
-        local h = kind == "cdata" and __K2L_Hash(key) or key:hashCode()
+    local h
+    if kind == "table" then
+        if key.hashCode ~= nil then
+            h = key:hashCode()
+        end
+    elseif kind == "cdata" or (kind == "number" and (key == 0 or key ~= key)) then
+        h = bucketHash(key, kind)
+    end
+    if h ~= nil then
         local bucket = self.____buckets[h]
         if bucket == nil then
             bucket = {}
@@ -2767,8 +2807,8 @@ local function removeSlot(self, slot)
     local keys, values, index, buckets = self.____keys, self.____values, self.____index, self.____buckets
     local removed = keys[slot]
     local stale = false
-    if type(removed) == "table" and removed.hashCode ~= nil then
-        local h = removed:hashCode()
+    local h = bucketHash(removed, type(removed))
+    if h ~= nil then
         local bucket = buckets[h]
         if bucket == nil then
             stale = true
@@ -2813,8 +2853,9 @@ local function removeSlot(self, slot)
         if values ~= nil then
             values[i] = values[i + 1]
         end
-        if type(key) == "table" and key.hashCode ~= nil then
-            local bucket = buckets[key:hashCode()]
+        local kh = bucketHash(key, type(key))
+        if kh ~= nil then
+            local bucket = buckets[kh]
             local found = false
             if bucket ~= nil then
                 for j = 1, #bucket do
@@ -2850,6 +2891,14 @@ function __K2L_Set:____init(elements)
     if type(elements) == "table" then
         self:addAll(elements)
     end
+end
+
+-- Like HashMap.new: a LinkedHashSet holds five fields once it has an element (with ____modCount), which set one by one
+-- rehash the table at 1, 2, 4 and from 4 to 8 slots; a table constructor sizes it once.
+function __K2L_Set.new(...)
+    local self = setmetatable({size = 0, ____keys = false, ____index = false, ____buckets = false, ____modCount = 0}, __K2L_Set)
+    __K2L_Set.____init(self, ...)
+    return self
 end
 
 function __K2L_Set:____array()
@@ -3090,6 +3139,16 @@ function __K2L_Map:____init(map, accessOrder)
     if accessOrder then
         self.____accessOrder = true
     end
+end
+
+-- Like HashMap.new: seven fields once the map has a key (with ____modCount), in one table constructor.
+function __K2L_Map.new(...)
+    local self = setmetatable({
+        size = 0, ____keys = false, ____values = false, ____index = false, ____buckets = false, ____entries = false,
+        ____modCount = 0,
+    }, __K2L_Map)
+    __K2L_Map.____init(self, ...)
+    return self
 end
 
 -- A LinkedHashMap in access order moves an entry to the end when get, getOrDefault or put reach it.
@@ -5292,6 +5351,16 @@ function __K2L_HashSet:____init(capacityOrElements)
         self.____capacity = tableSizeFor(math.max(math.floor(capacityOrElements:count() / 0.75) + 1, 16))
         self:addAll(capacityOrElements)
     end
+end
+
+-- Like HashMap.new: seven fields once the set has an element, in one table constructor.
+function __K2L_HashSet.new(...)
+    local self = setmetatable({
+        size = 0, ____keys = false, ____index = false, ____buckets = false, ____capacity = 16, ____dirty = false,
+        ____modCount = 0,
+    }, __K2L_HashSet)
+    __K2L_HashSet.____init(self, ...)
+    return self
 end
 
 function __K2L_HashSet:add(value)

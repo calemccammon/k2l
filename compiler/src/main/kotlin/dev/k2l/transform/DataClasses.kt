@@ -74,7 +74,13 @@ internal fun FileTransformer.dataClassMembers(c: KtClass, ref: LuaExpr): Unit = 
         val checks = listOf<LuaExpr>(LuaBinary(LuaBinOp.Eq, luaCall(LuaName("getmetatable"), other), ref)) +
             props.map { p ->
                 val key = LuaString(p.name!!)
-                equality(LuaIndex(selfRef(), key), p.returnType, LuaIndex(other, key), p.returnType, negated = false)
+                val (mine, theirs) = LuaIndex(selfRef(), key) to LuaIndex(other, key)
+                // a Double (Float) property compares with Double.compare (NaN equals NaN, 0.0 and -0.0 differ), not IEEE `==`
+                if (with(session) { isFloating(p.returnType) }) {
+                    LuaCall(lualibRef("Equals", "__K2L_DoubleEquals"), listOf(mine, theirs))
+                } else {
+                    equality(mine, p.returnType, theirs, p.returnType, negated = false)
+                }
             }
         emitMethod(ref, "equals", listOf("other"), listOf(LuaReturn(listOf(checks.reduce { a, b -> LuaBinary(LuaBinOp.And, a, b) }))))
     }

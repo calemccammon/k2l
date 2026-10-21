@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Bits = ____lualib.__K2L_Bits
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -23,4 +24,4 @@ local function main()
     print(__K2L_Str(table.concat({"x", "y", "z"}, "-")) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf("a", "b"):joinToString(", ")) .. " [" .. __K2L_Str(table.concat({}, "/")) .. "]")
 end
 
-main()
+__K2L_Main(main)

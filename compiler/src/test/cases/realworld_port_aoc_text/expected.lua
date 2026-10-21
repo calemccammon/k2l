@@ -5,6 +5,7 @@ local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -481,5 +482,5 @@ local function main()
     print("calibration: " .. ____sum_2 .. " " .. ____sum_3 .. " " .. __K2L_Str(__K2L_ListWrap(____out_7, ____count_6)))
 end
 
-main()
+__K2L_Main(main)
 return {niceOld = niceOld, niceNew = niceNew, passwordPolicies = passwordPolicies, validPassport = validPassport, supportsTls = supportsTls, syntaxScore = syntaxScore, crates = crates, stream = stream, decodedLength = decodedLength, encodedLength = encodedLength, nextPassword = nextPassword, calibration = calibration}

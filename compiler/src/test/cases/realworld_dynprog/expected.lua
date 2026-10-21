@@ -8,6 +8,7 @@ local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -408,5 +409,5 @@ local function main()
     print("partition counts: " .. __K2L_Str(__K2L_IntRange.new(1, 12):map(____lambda_5)))
 end
 
-main()
+__K2L_Main(main)
 return {editDistance = editDistance, longestCommonSubsequence = longestCommonSubsequence, Item = Item, knapsack = knapsack, coinChangeWays = coinChangeWays, minCoins = minCoins, longestIncreasingSubsequence = longestIncreasingSubsequence, Arrangements = Arrangements, unfold = unfold, fibMemo = fibMemo, fib = fib, triangleMaxPath = triangleMaxPath, partitions = partitions}

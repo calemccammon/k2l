@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -171,5 +172,5 @@ local function main()
     print("isEmpty")
 end
 
-main()
+__K2L_Main(main)
 return {describe = describe, read = read}

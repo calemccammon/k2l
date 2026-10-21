@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CharSequenceText = ____lualib.__K2L_CharSequenceText
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_PropertyOverride = ____lualib.__K2L_PropertyOverride
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -78,5 +79,5 @@ local function main()
     print()
 end
 
-main()
+__K2L_Main(main)
 return {Pairs = Pairs, units = units}

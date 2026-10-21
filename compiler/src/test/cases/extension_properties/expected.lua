@@ -2,6 +2,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -192,7 +193,7 @@ ____exports.getTracked = getTracked
 ____exports.setTracked = setTracked
 ____exports.describe = describe
 ____exports.makeBox = makeBox
-main()
+__K2L_Main(main)
 return ____exports
 -- ==== util/ext.lua ====
 local ____lualib = require("lualib_bundle")

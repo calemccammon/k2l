@@ -1,8 +1,10 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_FdLibm = ____lualib.__K2L_FdLibm
 local __K2L_FloorDiv = ____lualib.__K2L_FloorDiv
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -11,13 +13,13 @@ local function basics()
     print(math.abs(-7))
     print(__K2L_Str(__K2L_Num.signDouble(-3.0)))
     print(__K2L_Str(__K2L_Num.signDouble(0.0)))
-    print(__K2L_Str(math.max(1.5, 2.5)))
+    print(__K2L_Str(__K2L_Num.maxD(1.5, 2.5)))
     print(math.min(3, 4))
     print(math.max(1, 2, 3))
-    print(__K2L_Str(math.min(5.0, 2.0, 9.0)))
+    print(__K2L_Str(__K2L_Num.minD(__K2L_Num.minD(5.0, 2.0), 9.0)))
     print(__K2L_Str(math.sqrt(81.0)))
-    print(__K2L_Str(__K2L_Num.cbrt(27.0)))
-    print(__K2L_Str(__K2L_Num.hypot(3.0, 4.0)))
+    print(__K2L_Str(__K2L_FdLibm.cbrt(27.0)))
+    print(__K2L_Str(__K2L_FdLibm.hypot(3.0, 4.0)))
     print(__K2L_Str(2.0 ^ 10))
     print(__K2L_Str(2.0 ^ 0.5))
     print(__K2L_Str(10.0 ^ (-2)))
@@ -62,13 +64,13 @@ local function trig()
     print(__K2L_Str(math.sin(0.0)))
     print(__K2L_Str(math.cos(0.0)))
     print(__K2L_Str(math.tan(0.0)))
-    print(__K2L_Str(__K2L_Num.atan2(1.0, 1.0)))
-    print(__K2L_Str(math.atan(1.0)))
-    print(__K2L_Str(math.asin(1.0)))
-    print(__K2L_Str(math.acos(1.0)))
-    print(__K2L_Str(__K2L_Num.sinh(0.0)))
-    print(__K2L_Str(__K2L_Num.cosh(0.0)))
-    print(__K2L_Str(__K2L_Num.tanh(0.0)))
+    print(__K2L_Str(__K2L_FdLibm.atan2(1.0, 1.0)))
+    print(__K2L_Str(__K2L_FdLibm.atan(1.0)))
+    print(__K2L_Str(__K2L_FdLibm.asin(1.0)))
+    print(__K2L_Str(__K2L_FdLibm.acos(1.0)))
+    print(__K2L_Str(__K2L_FdLibm.sinh(0.0)))
+    print(__K2L_Str(__K2L_FdLibm.cosh(0.0)))
+    print(__K2L_Str(__K2L_FdLibm.tanh(0.0)))
     local ____value = math.pi / 2
     print(__K2L_Str(math.sin(____value)))
     print(__K2L_Str(math.pi * 57.29577951308232))
@@ -106,5 +108,5 @@ local function main()
     special()
 end
 
-main()
+__K2L_Main(main)
 return {basics = basics, rounding = rounding, trig = trig, special = special}

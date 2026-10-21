@@ -142,6 +142,39 @@ Each `.kt` file becomes a `.lua` file at the same relative path. The runtime sup
 "lualib") is written once as `lualib_bundle.lua`; each file imports only what it uses. With
 `--lualib inline`, each file carries its own copy instead.
 
+### Uncaught exceptions
+
+An exception that ends `main` prints the way the JVM prints it, the same on every target: on stderr,
+`Exception in thread "main"` and the exception's `toString()`, a `Caused by:` line for each cause, then the Lua traceback
+of the stack it was raised from. The program exits with status 1, after what it printed has been flushed:
+
+```
+Exception in thread "main" AppError: load failed
+Caused by: java.lang.IllegalArgumentException: java.lang.NumberFormatException: For input string: "x"
+Caused by: java.lang.NumberFormatException: For input string: "x"
+stack traceback:
+	[C]: in function 'error'
+	main.lua:65: in function <main.lua:58>
+```
+
+The lines up to `stack traceback:` are those of the JVM without its `at` frames. The frames are Lua's, since JVM frames
+cannot be reproduced (with [source maps](#source-maps-and-kotlin-tracebacks) they show Kotlin positions). A `catch`
+that does not match raises the exception again, so the traceback starts at that `catch` rather than at the `throw`. A Lua
+error that is not an exception (a string, as from `Lua.error` or a Lua runtime error) prints its message and the
+traceback. This holds for `main()`, `main(args)` and `suspend fun main()`: `main` runs under `xpcall` (or in the
+coroutine driver of `try` blocks, see [Other semantic differences](#other-semantic-differences)), which costs nothing
+until something is thrown. Without it, Lua 5.1 would print `(error object is not a string)`, Lua 5.2 to 5.4 the
+`toString()` alone and LuaJIT the `toString()` and a traceback, each after the program's buffered output. Suppressed
+exceptions are not printed: k2l does not record them. The exit uses `os.exit(1)`, so a host embedding Lua that runs
+the main file stops as well.
+
+An overflow of the Lua stack (an endless recursion) prints `Exception in thread "main" java.lang.StackOverflowError`,
+then Lua's message with the position (`main.lua:5: stack overflow`) and the traceback. On LuaJIT, `main` runs in a
+coroutine instead of under `xpcall`: when the overflow happens in compiled code (a trace), LuaJIT unwinds the stack
+without calling the `xpcall` handler, so the traceback was lost and only `stack overflow` printed. A coroutine stopped by
+an error keeps its stack, which the traceback is read from after the resume. The frame of the trace itself shows no line
+(`main.lua: in function 'down'`); the frames below it do.
+
 ## Diagnostics and `k2l --check`
 
 Kotlin compile errors are reported and stop the build. Kotlin features k2l can't translate yet are
@@ -192,8 +225,8 @@ Source maps are a debugging aid, so they are on by default only with `--watch`, 
 them off in watch mode too.
 
 The same information is embedded in each Lua file as a compact line table, and a small runtime helper
-rewrites Lua positions to Kotlin ones in error messages and tracebacks (Lua 5.1 to 5.4 and LuaJIT).
-`main()` runs under `xpcall`, so an uncaught exception prints a Kotlin trace and exits with status 1:
+rewrites Lua positions to Kotlin ones in error messages and tracebacks (Lua 5.1 to 5.4 and LuaJIT), so an
+[uncaught exception](#uncaught-exceptions) prints a Kotlin trace:
 
 ```
 Exception in thread "main" java.lang.IllegalStateException: insufficient funds
@@ -554,7 +587,8 @@ Yielding through a Lua C function (e.g. a `table.sort` comparator or raw `Lua.pc
 
 `x::class`, `Foo::class` and `T::class` (in an expanded reified inline function) give a `KClass`; `javaClass` and
 `KClass.java` give its `Class` (an object of its own, one per class, with `KClass.kotlin`/`Class.kotlin` leading back). Supported
-members: `simpleName`, `qualifiedName`, `isInstance(x)`, `name` of a `Class`, `toString()`, and `==`/`!=`, use as map keys, in
+members: `simpleName`, `qualifiedName`, `isInstance(x)`, `name` and `enumConstants` of a `Class` (a fresh array of an enum
+class's entries, `null` for other classes), `Enum.declaringJavaClass`, `toString()`, and `==`/`!=`, use as map keys, in
 `when` and in collections. Classes of the program match the JVM: package-qualified names (`app.model.Outer.Nested`, binary
 `app.model.Outer$Nested` for `javaClass.name`), `null` as `qualifiedName` of local classes, binary names of local classes and object expressions
 (`app.MainKt$main$Local`, `app.Shop$greeter$1`, `app.MainKt$main$made$1$1`: numbered within the function, property or lambda
@@ -649,10 +683,11 @@ that print and concatenate normally (`"😀".length == 2`, `s[i]` is a UTF-16 co
   (UTF-16 order) and `hashCode` (also used for `HashMap` order) work on code units, exactly like the JVM.
 - `isLetter`, `isDigit`, `isLetterOrDigit`, `isWhitespace`, `isUpperCase`, `isLowerCase`, `uppercaseChar()`, `uppercase()`
   (`ß` becomes `SS`), `titlecase()`, `String.uppercase()/lowercase()`, `equals(ignoreCase)` and the other `ignoreCase`
-  functions, and `digitToInt()` use Unicode tables generated from the JDK (`compiler/tools/GenUnicode.java`, about 23 KB of
+  functions, and `digitToInt()` use Unicode tables generated from the JDK (`compiler/tools/GenUnicode.java`, about 24 KB of
   range lists in `Unicode.lua`, loaded only by programs that use them). Regex `\w \d \s` and the POSIX classes (`\p{Alpha}`,
   `\p{Digit}`, ...) stay ASCII, as in Java, while the binary properties (`\p{IsAlphabetic}`, `\p{IsUppercase}`,
-  `\p{IsWhite_Space}`, `\p{javaWhitespace}`, ...) use the same tables and the general categories (`\p{Lu}`, `\p{L}`, ...) a
+  `\p{IsWhite_Space}`, `\p{javaWhitespace}`, ...) use the same tables (`\p{IsAlphabetic}` is `Character.isAlphabetic`: the
+  letters, `Nl` and `Other_Alphabetic`) and the general categories (`\p{Lu}`, `\p{L}`, ...) a
   table of every code point's `Character.getType` (`UnicodeCategories.lua`, about 7 KB, also generated by `GenUnicode.java`).
   A regex whose pattern has `\p` or `\P`, or is not a literal, loads them.
 - Code points: `codePointAt/Before/Count`, `offsetByCodePoints`, `codePoints()` and `chars()` (an `IntStream`,
@@ -870,7 +905,9 @@ Each of these is reported as an error rather than miscompiled.
 ### Standard library coverage
 
 Besides the language constructs above, k2l maps the commonly used parts of the Kotlin standard library
-and checks them against the JVM (see the `stdlib_*` test cases):
+and checks them against the JVM (see the `stdlib_*` test cases). [docs/stdlib-coverage.md](docs/stdlib-coverage.md) lists, per
+package, every public function and property and whether k2l translates it; `./gradlew :compiler:stdlibCoverage` regenerates it
+(see [Development](#development)).
 
 - `kotlin.collections`: the usual `List`/`Set`/`Map`/`Array` operations (sorting with comparators, grouping,
   `windowed`/`chunked`/`zipWithNext`, folds and running folds, slicing, set operations, `buildList` ...),
@@ -897,13 +934,45 @@ and checks them against the JVM (see the `stdlib_*` test cases):
   `StringBuilder`, `Char`
   classification, and `toUInt()`/`toULong()`/`toUByte()`/`toUShort()` with their `OrNull` and `radix` variants (a leading `+` is
   accepted, `-` is not, and the error is `NumberFormatException: Invalid number format: '...'`, as in Kotlin).
+  Also `toByte()`/`toShort()` (and `OrNull`), `replaceAfter`/`replaceBefore`/`replaceAfterLast`/`replaceBeforeLast`,
+  `splitToSequence`, `windowedSequence`/`chunkedSequence`, the folds, scans and `...To` operations over a string's characters
+  (`foldRight`, `runningFold`/`scan`, `mapIndexedNotNull`, `associateByTo`, `toHashSet`, ...), `Char.isISOControl`,
+  `toHexString()`/`hexToInt()`/`hexToLong()`/`hexToByteArray()`... with the default `HexFormat`, `Charsets.UTF_8` with
+  `toByteArray(charset)`, `String(bytes)`/`decodeToString()`, the `StringBuilder` extensions `deleteAt`/`deleteRange`/`setRange`,
+  and `startsWith`/`endsWith`/`contains` with an `ignoreCase` that is a variable.
+- `kotlin.time`: `Duration` (`5.seconds`, `1.5.hours`, `toDuration(unit)`, `ZERO`/`INFINITE`, arithmetic and comparison,
+  `inWhole...`, `toLong`/`toInt`/`toDouble(unit)`, `toComponents`, `toString()` and `toString(unit, decimals)` exactly as the JVM
+  formats them, `toIsoString`, `parse`/`parseIsoString` and their `OrNull` forms), `DurationUnit`, `measureTime`/
+  `measureTimedValue` with `TimedValue`, and the time marks of `TimeSource.Monotonic` and `TestTimeSource` (`markNow`,
+  `elapsedNow`, `hasPassedNow`, `+`/`-`, comparison). A `Duration` keeps its nanoseconds: exact within ±104 days without Lua
+  integers, ±146 years with them. `TimeSource.Monotonic` reads `os.clock()`, the processor time, as plain Lua has no monotonic
+  wall clock. Not translated with `--long64 emulate`; `Instant` and `Clock` are not supported.
 - `kotlin.math`, `Int`/`Long`/`Double` operations (`coerceIn`, `mod`, `floorDiv`, bit counting,
-  `roundToInt` ...), ranges and progressions, `Pair`/`Triple`, `require`/`check`/`error`, `Result`.
-- `kotlin.random.Random`: Kotlin's XorWow generator, so a seeded `Random(seed)` produces the same numbers
-  as on the JVM on Lua 5.3+ (Long results need 64-bit integers, or `--long64 emulate`). Unseeded generators are seeded from the
-  clock. The test case only asserts seed-independent properties (ranges, same seed gives the same sequence).
+  `roundToInt` ...), ranges and progressions, `Pair`/`Triple`, `require`/`check`/`error`, `Result`. `hypot`, `atan`, `atan2`,
+  `asin`, `acos`, `cbrt`, `sinh`, `cosh`, `tanh`, `expm1`, `ln1p` and `IEEErem` are ports of fdlibm, the `StrictMath` code the
+  JVM runs for them, so they return the JVM's bits on every target (`FdLibm.lua`; they cost more than C's, about 0.5 µs a
+  `hypot` on Lua 5.4 and 0.05 µs on LuaJIT); `sqrt` and the rounding functions are exact. `sin`, `cos`, `tan`, `exp`, `pow`,
+  `ln` and `log10` are C's, while the JVM computes them with intrinsics of its own: over 2000 random arguments `ln` (and
+  `log2`, which divides it by `ln(2)`) always agreed, `log10` differed in the last bit for 147, the others for 3 to 7.
+  These stay on Lua's `math` library: the JVM allows `Math.sin` and the rest to differ from the exact result by 1 ulp,
+  and its own results vary with the CPU, so there is no single answer to match. `java.lang.StrictMath` is bit-exact:
+  its `sin`, `cos`, `tan`, `exp`, `log`, `log10` and `pow` are fdlibm ports as well (`StrictMath.lua`; the trigonometric
+  ones reduce huge arguments such as `1e300` by π/2 with fdlibm's 1584 bits of 2/π), with the JVM's bits over 200000
+  random arguments on every target, and its other members are `Math`'s.
+  `min`/`max` of Doubles follow `Math.min`/`max` (NaN wins, `-0.0 < 0.0`).
+- `kotlin.random.Random`: Kotlin's XorWow generator, so a seeded `Random(seed)` produces the same numbers as on the JVM:
+  `nextInt`, `nextBits`, `nextBoolean`, `nextDouble`, `nextFloat`, `nextBytes`, ranges, `shuffle`/`shuffled` and `random`
+  on every target; `nextLong` and `nextULong` beyond 2^53 need 64-bit integers (5.3+) or `--long64 emulate`. Unseeded
+  generators are seeded from the clock. `realworld_sim_montecarlo` and `realworld_sim_random_long` check the JVM's sequences.
+  A class or object extending `Random()` overrides `nextBits(bitCount)`, and every other member draws from it as Kotlin's
+  default implementations do (`nextInt()` is `nextBits(32)`, `nextLong()` two `nextInt()`s, `nextDouble()`
+  `nextBits(26)` and `nextBits(27)`, ranges by the same rejection loops), so `nextInt(until)`, ranges, `nextLong`,
+  `nextDouble`, `nextFloat`, `nextBoolean`, `nextBytes`, `nextUInt`/`nextULong` and the extensions taking a `Random`
+  (`shuffled(rng)`, `shuffle(rng)`, `random(rng)`) give the JVM's numbers for the same `nextBits`. It may also override
+  `nextBoolean` and `nextFloat`; overriding an overloaded member (`nextInt`, `nextLong`, `nextDouble`, `nextBytes`) is
+  reported as unsupported, since their overloads share one Lua method.
 - `Regex`: an own backtracking engine implementing the common `java.util.regex` syntax (classes, groups,
-  named groups, back-references, lazy and possessive quantifiers, lookahead, `IGNORE_CASE`/`MULTILINE`/
+  named groups, back-references, lazy and possessive quantifiers, lookahead and lookbehind, `IGNORE_CASE`/`MULTILINE`/
   `DOT_MATCHES_ALL`); `find`, `findAll` (a lazy `Sequence`, as in Kotlin), `matches`, `replace` (with `$1` and lambdas), `split`,
   `destructured`, `matchAt`/`matchesAt`, class intersection (`[a-z&&[^aeiou]]`).
   Match indices are bytes (UTF-16 units with `--strings utf16`); classes such as `\w` are ASCII only, as in Java. Every general
@@ -915,6 +984,11 @@ and checks them against the JVM (see the `stdlib_*` test cases):
   matches every `\P{..}`). In ASCII, `` $+<=>^`|~ `` are symbols and the other POSIX punctuation is `\p{P}`, while `\p{Punct}`
   is POSIX's ASCII punctuation, as in Java. Scripts and blocks (`\p{IsLatin}`, `\p{InGreek}`, `\p{sc=Greek}`) are not
   supported: such a pattern throws `PatternSyntaxException`'s message as an `IllegalArgumentException`.
+  A lookbehind tries only the start positions its lengths allow, as Java's does: `(?<=ab{1,3})` looks back 2 to 4
+  characters, not to the start of the input. Java's rules for its maximum length apply: a lookbehind with a
+  back-reference, or with a repeated group whose body has alternatives or variable repetitions (`(?<=(a|bc){2})`,
+  `(?<=(?:ab)*)`), throws Java's `PatternSyntaxException` ("Look-behind group does not have an obvious maximum length");
+  the unbounded forms Java accepts (`(?<=a+)`, `(?<=x.*)`) look back to the start of the input, as in Java.
 
 - Numbers: `Float` (single precision), `UByte`/`UShort`/`UInt`/`ULong` with literals, arithmetic, comparison, shifts, bit
   operations, conversions, ranges and `UIntArray`s, `Math.addExact`/`subtractExact`/`multiplyExact`/`negateExact`/
@@ -933,13 +1007,22 @@ and checks them against the JVM (see the `stdlib_*` test cases):
   48-bit generator: seeded sequences, `shuffle(list, Random(seed))` and `nextGaussian` match the JVM).
   `Map.withDefault { }` (`getValue` uses the default, `get` does not) and `listIterator()` with `hasPrevious`/`set`/`add`/`remove`.
   Arrays have `contentHashCode`, `contentDeepHashCode` and `contentDeepEquals`.
+  `java.util.Stack` (a list with `push`/`pop`/`peek`/`empty`/`search`; an empty stack throws `EmptyStackException`),
+  `StringJoiner` (`add`, `setEmptyValue`, `merge`, `length`, in UTF-16 units with `--strings utf16`) and
+  `Objects.requireNonNull` (with a message or a supplier), `requireNonNullElse`, `isNull`/`nonNull`, `toString(o, default)`,
+  `checkIndex` and `compare`. `Comparator.comparingInt`/`comparingLong`/`comparingDouble`, `thenComparingInt`/`Long`/`Double`
+  and `Comparator.nullsFirst`/`nullsLast`.
   Collections and boxed arrays convert to every primitive array (`toCharArray()`, `toIntArray()`, `toLongArray()`,
   `toDoubleArray()`, `toFloatArray()`, `toBooleanArray()`, `toByteArray()`, `toShortArray()`), and back with `toList()`,
   `toTypedArray()`, `asList()`, ...
 - `java.lang` statics: `Integer`/`Long` `bitCount`, `numberOfLeadingZeros`/`numberOfTrailingZeros`, `highestOneBit`/`lowestOneBit`,
   `rotateLeft`/`rotateRight`, `signum`, `max`/`min`, `Integer.reverse`, `toUnsignedString`, `toBinaryString`/`toHexString`/
   `toOctalString`, `Double.isNaN`/`isInfinite`/`valueOf`/`toString`, `Boolean.parseBoolean`, `Character.getNumericValue` (ASCII
-  digits and letters), `String.valueOf` and `String.join`.
+  digits and letters), `String.valueOf` and `String.join`, `Boolean.compare`/`logicalAnd`/`logicalOr`/`logicalXor`/`valueOf`,
+  `Character.digit`/`forDigit`, `Double.max`/`min`/`sum`, and the static `hashCode(x)` of each box.
+- `kotlin`: also `Boolean.and`/`or` (both operands evaluated), `lazyOf`, `enumValues<E>()`/`enumValueOf<E>(name)` (of the
+  program's enums, also with a reified `E`), `setOfNotNull` and `reduceRightOrNull`/`reduceRightIndexed(OrNull)` of lists and
+  arrays.
 - `Number`: `is Number` (Lua numbers, emulated Longs, `BigInteger`, `BigDecimal`) and `toInt()`/`toLong()`/`toDouble()`/... of a
   `Number`-typed value; an integral number converts like a `Long`, a fractional one like a `Double`.
 
@@ -972,7 +1055,11 @@ before for the next key is detached there (and one for the removed key shows the
 their keys; a `TreeSet` held in a `Collection` answers `first()`/`last()` with its own members (the JVM calls the stdlib's, which use `iterator()`).
 Indexing of lists and arrays, `substring`, `subSequence`, `first()`/`last()` of an empty string, `repeat`, `padStart`, `/`, `%`,
 `rem`, `mod` and `floorDiv` throw the same exception types and messages as the JVM. Doubles keep IEEE behaviour
-(`x / 0.0` is Infinity, `x % 0.0` is NaN).
+(`x / 0.0` is Infinity, `x % 0.0` is NaN, `==` of two `Double`s is IEEE), and boxed Doubles (in collections, `Any`,
+type parameters, `Pair`, data class properties) compare with `Double.equals` as on the JVM: NaN equals NaN and `0.0`
+differs from `-0.0`. Where Lua has no integer subtype (5.1, 5.2, LuaJIT) an integral `Double` and the `Int` of the same
+value are the same key of a `HashMap` or `HashSet` and are equal in an `Any` (on 5.3/5.4 too, `3.0` and `3` share a table
+key), where the JVM keeps a `Double` and an `Int` apart.
 
 `String.format` checks the conversions against the static types of the arguments; an argument held in an `Any` (or a collection)
 is checked by its value, which cannot tell everything: `%f` of an `Int` held in an `Any` prints instead of throwing
@@ -991,9 +1078,9 @@ it through); a Unit returned by Lua code called through `@LuaExternal` is `nil`,
 (and `use`, `runCatching`, ...) runs its block in a protected call (`__K2L_DeepPcall`), and Lua 5.1 to 5.4 allow only about 200
 nested C calls, a `pcall` being one: on Lua 5.2 to 5.4 every hundredth nested protected call runs in a coroutine of its own,
 resumed by a driver around `main` (`__K2L_DeepMain`) from the bottom of the C stack, so a recursion through `try` blocks goes some
-20000 levels deep before it ends in a `StackOverflowError`. An uncaught Lua error (a string, such as "stack overflow" or a `Lua.error`) that ends `main` under the driver is raised again with the traceback of the stack where it happened, followed by the driver's own traceback that the standalone interpreter adds; an uncaught exception prints as it does without the driver (on PUC Lua its `toString()` only). That needs the driver: the protected calls of `try` blocks inside a
-Kotlin coroutine or a `sequence { }` (which run in coroutines of their own), of top-level property initializers, of functions
-called from Lua through `@LuaExternal` exports and of programs built with `--source-map` stay plain `pcall`s, and so do all of them
+20000 levels deep before it ends in a `StackOverflowError`. An error that ends `main` under the driver prints as an [uncaught exception](#uncaught-exceptions), with the traceback of the stack where it happened. That needs the driver: the protected calls of `try` blocks inside a
+Kotlin coroutine or a `sequence { }` (which run in coroutines of their own), of top-level property initializers and of functions
+called from Lua through `@LuaExternal` exports stay plain `pcall`s, and so do all of them
 on Lua 5.1, where a recursion through a `try` block at every level fails with "C stack overflow" after roughly 190 levels (LuaJIT
 goes much deeper by itself). That is a limit of Lua 5.1 that k2l cannot work around: there every protected call (`pcall`, `xpcall`,
 and also `coroutine.resume`, since a coroutine starts from its resumer's count of nested C calls) counts against
@@ -1027,6 +1114,7 @@ property). A `Double` read from an unchecked `Int` stays an integral number.
 ./gradlew :gradle-plugin:functionalTest   # only the TestKit tests of the Gradle plugin (about 15 s)
 ./gradlew spotlessApply            # reformat Kotlin sources with ktlint
 ./gradlew :compiler:distZip        # compiler/build/distributions/k2l-<version>.zip, the CLI distribution
+./gradlew :compiler:stdlibCoverage # regenerate docs/stdlib-coverage.md (-PcoverageOnly=kotlin.time prints one area instead)
 ./gradlew publishToMavenLocal      # install compiler, lua-api and the plugin into ~/.m2 to try them in another project
 ```
 
@@ -1056,6 +1144,20 @@ Layout:
 - `lua-api`: the `dev.k2l.lua` interop declarations.
 - `gradle-plugin`: the `dev.k2l` Gradle plugin and its TestKit tests (`src/functionalTest`).
 - `compiler/src/bench`: the benchmark harness (`kotlin`) and its programs (`programs`), see below.
+- `compiler/src/coverage`: the standard library audit behind `stdlibCoverage`, see below.
+
+### Standard library coverage report
+
+`./gradlew :compiler:stdlibCoverage` writes [docs/stdlib-coverage.md](docs/stdlib-coverage.md) (about a minute). It lists the
+public functions, properties and constructors of `kotlin`, `kotlin.collections`, `kotlin.text`, `kotlin.sequences`,
+`kotlin.ranges`, `kotlin.comparisons`, `kotlin.time`, `kotlin.properties`, the commonly used `java.util` classes,
+`java.lang.Math`, `StringBuilder` and the `java.lang` box statics with the Analysis API, writes a small probe function per
+overload (receiver and arguments as parameters, operators and infix calls in their syntax, trailing lambdas, once with only the
+required arguments and once with all), and transpiles the probes in-process, 150 to a file. A probe that does not compile as
+Kotlin, or that resolves to another overload, is set aside; a file k2l crashes on is split up to find the probe. Probes that
+need `--strings utf16` are run again with it. Deprecated and experimental APIs are listed but not counted. `check` only compiles
+the audit; rerun it after adding a mapping and commit the report. `-PcoverageOnly=kotlin.text,java.util` prints the
+unsupported names of some areas instead of writing the report.
 
 ### Benchmarks
 

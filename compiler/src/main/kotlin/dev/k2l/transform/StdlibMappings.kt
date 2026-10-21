@@ -43,6 +43,8 @@ class CallSite(
  * Maps Kotlin stdlib callables (by `CallableId`, e.g. `kotlin/io/println` or `kotlin/String.length`)
  * to Lua. A mapping returns null when it doesn't handle that overload.
  */
+private const val STRICT_MATH = "java/lang/StrictMath."
+
 @Suppress("TooManyFunctions") // one small installer per group of mappings
 object StdlibMappings {
     private val table = MappingTable()
@@ -225,7 +227,18 @@ object StdlibMappings {
 
     private fun CallSite.isBuilder(type: KaType?) = type != null && with(session) { type.collectionKind() } == CollectionKind.StringBuilder
 
-    fun has(callableId: String?) = callableId in mappings
+    fun has(callableId: String?) = strictMathAsMath(callableId) in mappings
+
+    /**
+     * `StrictMath.f` is `Math.f`, except where the two can differ: those members have mappings of their own, to the fdlibm
+     * ports StrictMath specifies (see NumberMappings).
+     */
+    private fun strictMathAsMath(callableId: String?): String? =
+        if (callableId != null && callableId.startsWith(STRICT_MATH) && callableId !in mappings) {
+            "java/lang/Math." + callableId.removePrefix(STRICT_MATH)
+        } else {
+            callableId
+        }
 
     private val CallSite.target get() = transformer.ctx.options.luaTarget
 
@@ -235,7 +248,8 @@ object StdlibMappings {
 
     private fun CallSite.bitCall(name: String): LuaExpr = LuaCall(ref("Bit", name), listOfNotNull(receiver) + args)
 
-    fun map(callableId: String?, call: CallSite): LuaExpr? {
+    fun map(strictCallableId: String?, call: CallSite): LuaExpr? {
+        val callableId = strictMathAsMath(strictCallableId)
         val site = Long64Mappings.prepare(callableId, call)
         return UnsignedMappings.post(
             callableId,
@@ -245,6 +259,7 @@ object StdlibMappings {
     }
 
     private fun mapUnrounded(callableId: String?, site: CallSite): LuaExpr? = special(callableId, site)
+        ?: extras(callableId, site)
         ?: Long64Mappings.map(callableId, site)
         ?: callableId?.let { mappings[it] }?.invoke(site)
         ?: TypeTestMappings.map(callableId, site)
@@ -255,6 +270,10 @@ object StdlibMappings {
         ?: SequenceMappings.map(callableId, site)
         ?: CoroutineMappings.map(callableId, site)
         ?: CollectionMappings.map(callableId, site)
+
+    /** `kotlin.time`, more of `kotlin.text` and `kotlin`, and `java.util.Stack`/`StringJoiner`/`Objects`. */
+    private fun extras(callableId: String?, site: CallSite): LuaExpr? =
+        ExtraMappings.map(callableId, site) ?: JavaUtilMappings.map(callableId, site) ?: TimeMappings.map(callableId, site)
 
     private fun special(callableId: String?, site: CallSite): LuaExpr? = when {
         site.receiver == null -> null

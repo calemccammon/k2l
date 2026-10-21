@@ -6,6 +6,7 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_IsComparable = ____lualib.__K2L_IsComparable
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -160,5 +161,5 @@ local function main()
     print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
 end
 
-main()
+__K2L_Main(main)
 return {Version = Version, Level = Level, Ranked = Ranked, Card = Card, Ace = Ace, Joker = Joker, Money = Money, Point = Point, describe = describe}

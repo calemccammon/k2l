@@ -34,6 +34,8 @@ local __K2L_NumberFormatException = __K2L_Class("java.lang.NumberFormatException
 local __K2L_PatternSyntaxException = __K2L_Class("java.util.regex.PatternSyntaxException", __K2L_IllegalArgumentException)
 local __K2L_NoSuchElementException = __K2L_Class("java.util.NoSuchElementException", __K2L_RuntimeException)
 local __K2L_ConcurrentModificationException = __K2L_Class("java.util.ConcurrentModificationException", __K2L_RuntimeException)
+-- java.util.Stack's pop() and peek() of an empty stack (no message, as on the JVM)
+local __K2L_EmptyStackException = __K2L_Class("java.util.EmptyStackException", __K2L_RuntimeException)
 -- java.util.Formatter's exceptions (String.format), with the JDK's messages
 local __K2L_IllegalFormatException = __K2L_Class("java.util.IllegalFormatException", __K2L_IllegalArgumentException)
 local __K2L_MissingFormatArgumentException = __K2L_Class("java.util.MissingFormatArgumentException", __K2L_IllegalFormatException)

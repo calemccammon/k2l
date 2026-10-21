@@ -1,3 +1,6 @@
+local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
+
 local function main()
     for i = 1, 3 do
         io.write(i .. " ")
@@ -78,4 +81,4 @@ local function main()
     print(sum)
 end
 
-main()
+__K2L_Main(main)

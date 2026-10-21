@@ -91,6 +91,7 @@
     end
 
     function __K2L_Unicode.isLetter(cp) return find("letter", cp) ~= nil end
+    function __K2L_Unicode.isAlphabetic(cp) return find("letter", cp) ~= nil or find("alphabeticNonLetter", cp) ~= nil end
     function __K2L_Unicode.isDigit(cp) return find("digit", cp) ~= nil end
     function __K2L_Unicode.isUpper(cp) return find("upper", cp) ~= nil end
     function __K2L_Unicode.isLower(cp) return find("lower", cp) ~= nil end

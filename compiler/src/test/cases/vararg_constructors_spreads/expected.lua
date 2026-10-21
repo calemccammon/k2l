@@ -3,6 +3,7 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Spread = ____lualib.__K2L_Spread
@@ -119,5 +120,5 @@ function spreads()
     print(__K2L_Str(Tags.new(__K2L_Spread("s.s", a, "!", __K2L_TypedArrayOf("[Ljava.lang.String;", "?")))))
 end
 
-main()
+__K2L_Main(main)
 return {Tags = Tags, Batch = Batch, Labeled = Labeled, Chord = Chord, total = total, spreads = spreads}
