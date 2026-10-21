@@ -17,6 +17,7 @@ local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListBase = ____lualib.__K2L_ListBase
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_MapBase = ____lualib.__K2L_MapBase
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -364,5 +365,5 @@ local function main()
     subclasses()
 end
 
-main()
+__K2L_Main(main)
 return {Window = Window, Numbers = Numbers, Constants = Constants, Matrix = Matrix, Bounded = Bounded, Base = Base, Derived = Derived, Snapshot = Snapshot, Sized = Sized, Unsized = Unsized, Shelf = Shelf, interfaces = interfaces, subclasses = subclasses}

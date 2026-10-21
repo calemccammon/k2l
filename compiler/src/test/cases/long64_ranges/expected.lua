@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 
 local function main()
@@ -98,4 +99,4 @@ local function main()
     print(tostring(5 >= 1 and 5 <= 10 and (5 - 1) % 2 == 0) .. " " .. tostring(6 >= 1 and 6 <= 10 and (6 - 1) % 2 == 0) .. " " .. tostring(4294967295 >= ____first_8 and 4294967295 <= 4294967295 and (4294967295 - ____first_8) % 5 == 0))
 end
 
-main()
+__K2L_Main(main)

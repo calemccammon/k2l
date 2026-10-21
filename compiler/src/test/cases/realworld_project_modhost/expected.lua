@@ -1,5 +1,6 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____host = require("lib.host")
@@ -19,7 +20,7 @@ local function main()
     print("fired " .. __K2L_Str(____Events.Events.fired))
 end
 
-main()
+__K2L_Main(main)
 -- ==== mods/Counter.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_LazyFile = ____lualib.__K2L_LazyFile

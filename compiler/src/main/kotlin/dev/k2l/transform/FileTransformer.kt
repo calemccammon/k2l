@@ -41,6 +41,11 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.isPrivate
 import java.util.IdentityHashMap
 
+/** The companion objects of the basic types, whose members are constants (see `isBasicCompanion`). */
+private val BASIC_COMPANIONS =
+    listOf("Int", "Long", "Short", "Byte", "Double", "Float", "Char", "String", "Boolean", "UInt", "ULong", "UShort", "UByte")
+        .map { "kotlin/$it.Companion" }.toSet()
+
 /**
  * Translates one Kotlin file into a Lua chunk. Expressions may need statements to run before them
  * (e.g. an `if` used as a value); those are emitted into the current statement buffer, see [collect].
@@ -200,19 +205,18 @@ class FileTransformer(
             )
         }
         val name = LuaName(naming.of(main))
-        val suspend = main.hasModifier(KtTokens.SUSPEND_KEYWORD)
-        if (ctx.options.sourceMap) {
-            // Uncaught errors print a traceback with Kotlin positions.
-            val run = lualibRef(SOURCE_MAP_FEATURE, "__K2L_RunMain")
-            val call = if (suspend) listOf(lualibRef(COROUTINES_FEATURE, "__K2L_RunSuspend"), name) else listOf(name)
-            return LuaCallStmt(LuaCall(run, call + args))
+
+        // An uncaught error prints as on the JVM and exits with status 1 (Uncaught.lua); with --source-map its traceback
+        // shows Kotlin positions, since the source-map runtime rewrites debug.traceback.
+        fun run() = lualibRef("Uncaught", "__K2L_Main")
+        if (main.hasModifier(KtTokens.SUSPEND_KEYWORD)) {
+            return LuaCallStmt(LuaCall(run(), listOf(lualibRef(COROUTINES_FEATURE, "__K2L_RunSuspend"), name) + args))
         }
-        if (suspend) return LuaCallStmt(LuaCall(lualibRef(COROUTINES_FEATURE, "__K2L_RunSuspend"), listOf(name) + args))
         // protected calls nested deeper than Lua's C stack allows run in coroutines the driver resumes (DeepPcall.lua)
         if (module.usesTry && target.hasGoto && target != LuaTarget.LuaJIT) {
             return LuaCallStmt(LuaCall(lualibRef("DeepPcall", "__K2L_DeepMain"), listOf(name) + args))
         }
-        return LuaCallStmt(LuaCall(name, args))
+        return LuaCallStmt(LuaCall(run(), listOf(name) + args))
     }
 
     /** The chunk's `return`: the exports table, or a table of the [exported] declarations when not in table mode. */
@@ -1282,9 +1286,13 @@ class FileTransformer(
     private fun KaSession.classValue(e: KtNameReferenceExpression, symbol: KaClassLikeSymbol, psi: PsiElement?): LuaExpr? {
         val companion = (e.expressionType?.expandedSymbol?.psi as? KtObjectDeclaration)?.takeIf { hasOwnTable(it) && classes.isSource(it) }
         val target = companion ?: psi
-        val value = classLikeReference(symbol, target) ?: return null
+        val value = classLikeReference(symbol, target) ?: return if (isBasicCompanion(e)) LuaNil else null
         return if (initializesOnUse(e, target)) lualibCall("TouchObject", value) else value
     }
+
+    /** `Long` in `Long.parse(s)`, a call of an extension of `Long.Companion`: the companions of the basic types only hold constants. */
+    private fun KaSession.isBasicCompanion(e: KtNameReferenceExpression): Boolean =
+        (e.expressionType?.withoutFlexibility as? KaClassType)?.classId?.asString() in BASIC_COMPANIONS
 
     /** A class or object used as a value: an external Lua table, a library object or a source class. */
     private fun KaSession.classLikeReference(symbol: KaClassLikeSymbol, psi: PsiElement?): LuaExpr? = when {
@@ -1352,14 +1360,22 @@ class FileTransformer(
 
             in BINARY_OPERATORS -> {
                 foldedInt(e)?.let { return it }
-                // operator fun plus etc., including extensions such as Int.times(String)
-                if (token in ARITHMETIC && (!isPrimitiveOperand(left.expressionType) || isSourceOperator(e))) return call(e, e)
+                if (token in ARITHMETIC && callsOperator(e, left, right)) return call(e, e)
                 val (l, r) = ordered(listOf(left, right)).let { it[0] to it[1] }
                 operator(BINARY_OPERATORS.getValue(token), l, left.expressionType, r, right.expressionType, e)
             }
 
             else -> unsupported(e, "Operator '${e.operationReference.text}'")
         }
+    }
+
+    /**
+     * An arithmetic operator that is a call: `operator fun plus` etc., including extensions such as Int.times(String), and a
+     * library operator on a number, such as Int.times(Duration).
+     */
+    private fun KaSession.callsOperator(e: KtBinaryExpression, left: KtExpression, right: KtExpression): Boolean {
+        val numberOperator = left.expressionType?.isNumber == true && !isPrimitiveOperand(right.expressionType)
+        return !isPrimitiveOperand(left.expressionType) || numberOperator || isSourceOperator(e)
     }
 
     /** `left op right` for `and`/`or`, keeping [right]'s preceding statements behind the short circuit. */
@@ -1484,14 +1500,22 @@ class FileTransformer(
         }
 
     /**
-     * `-2147483648` and `-9223372036854775808`: the literal after the minus does not fit its type and evaluates to the
-     * negative value already, so the whole expression is the literal (negating it again would give +2147483648).
+     * `-2147483648` and `-9223372036854775808` (and -128 and -32768 as a Byte or Short): the literal after the minus does not
+     * fit its type and evaluates to the negative value already, so the whole expression is the literal (negating it again
+     * would give +2147483648).
      */
     private fun KaSession.negativeLiteral(e: KtPrefixExpression, base: KtExpression): LuaExpr? {
         if (e.operationToken != KtTokens.MINUS || base !is KtConstantExpression) return null
         return when (val v = e.evaluate()) {
             is KaConstantValue.IntValue -> v.value.takeIf { it == Int.MIN_VALUE }?.let { constantValue(v, e) }
+
             is KaConstantValue.LongValue -> v.value.takeIf { it == Long.MIN_VALUE }?.let { constantValue(v, e) }
+
+            // byteArrayOf(-128), shortArrayOf(-32768)
+            is KaConstantValue.ByteValue -> v.value.takeIf { it == Byte.MIN_VALUE }?.let { constantValue(v, e) }
+
+            is KaConstantValue.ShortValue -> v.value.takeIf { it == Short.MIN_VALUE }?.let { constantValue(v, e) }
+
             else -> null
         }
     }
@@ -1711,7 +1735,8 @@ class FileTransformer(
         }
         val site =
             CallSite(this, this@FileTransformer, full, null, null, null, arguments(emptyList(), args), args.map { it?.expressionType })
-        return FactoryMappings.construct(classId?.asString(), site)
+        return FactoryMappings.construct(classId?.asString(), site) ?: TimeMappings.construct(classId?.asString(), site)
+            ?: JavaUtilMappings.construct(classId?.asString(), site)
             ?: unsupported(full, "Constructing library class '${classId?.asSingleFqName()}'")
     }
 
@@ -1961,6 +1986,8 @@ class FileTransformer(
 
     fun lualibRef(feature: String, name: String): LuaExpr {
         ctx.lualib += feature
+        // with Floats among untyped values, every printer of untyped values has to recognize them (see FloatToString.lua)
+        if (usesFloat) ctx.lualib += "FloatToString"
         ctx.lualibNames += name
         // --strings utf16 patches the text and Regex runtime in place when its feature is loaded
         if (utf16 && (feature == "Strings" || feature == "Regex")) ctx.lualib += "Utf16"

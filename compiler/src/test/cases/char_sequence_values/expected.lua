@@ -4,6 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_PropertyOverride = ____lualib.__K2L_PropertyOverride
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -197,5 +198,5 @@ local function main()
     print(____arg .. " " .. ____arg_1 .. " " .. ____sum)
 end
 
-main()
+__K2L_Main(main)
 return {Letters = Letters, Fixed = Fixed, Wrapped = Wrapped, Holder = Holder, count = count, describe = describe, maybeText = maybeText}

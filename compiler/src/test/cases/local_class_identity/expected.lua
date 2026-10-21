@@ -7,6 +7,7 @@ local __K2L_JavaClass = ____lualib.__K2L_JavaClass
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
@@ -128,5 +129,5 @@ local function main()
     print(__K2L_KClassOfValue(locals:get(1)):isInstance(locals:get(0)))
 end
 
-main()
+__K2L_Main(main)
 return {Shape = Shape, square = square, circle = circle, makeLocal = makeLocal}

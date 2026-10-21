@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Locale = ____lualib.__K2L_Locale
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -73,5 +74,5 @@ local function main()
     print(__K2L_Utf16.out(__K2L_Equals(tr, __K2L_Locale.of("TR")) and not __K2L_Equals(tr, trTR) and __K2L_Equals(trTR, __K2L_Locale.of("tr", "tr"))))
 end
 
-main()
+__K2L_Main(main)
 return {hex = hex}

@@ -339,6 +339,9 @@ internal fun FileTransformer.component(entry: KtDestructuringDeclarationEntry, v
     val cls = symbol.callableId?.classId?.let(classes::classInFile) as? KtClass
     if (cls != null && cls.isData()) return propertyRead(value, cls.primaryConstructorParameters[n - 1])
     val receiverType = (call.partiallyAppliedSymbol.extensionReceiver ?: call.partiallyAppliedSymbol.dispatchReceiver)?.type
+    if (receiverType?.expandedSymbol?.classId?.asString() == "kotlin/time/TimedValue") {
+        return LuaIndex(value, LuaString(if (n == 1) "value" else "duration"))
+    }
     return when (receiverType?.collectionKind()) {
         CollectionKind.Pair, CollectionKind.Triple -> LuaIndex(value, LuaString(listOf("first", "second", "third")[n - 1]))
         CollectionKind.Entry -> LuaIndex(value, LuaString(if (n == 1) "key" else "value"))

@@ -4,6 +4,7 @@ local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_KProperty = ____lualib.__K2L_KProperty
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
@@ -262,5 +263,5 @@ ____exports.Seen = Seen
 ____exports.seen = seen
 ____exports.Box = Box
 ____exports.____topLevel_delegate = ____topLevel_delegate
-main()
+__K2L_Main(main)
 return ____exports

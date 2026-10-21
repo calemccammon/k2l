@@ -7,6 +7,7 @@ local __K2L_HashSetOf = ____lualib.__K2L_HashSetOf
 local __K2L_IsArray = ____lualib.__K2L_IsArray
 local __K2L_LinkedList = ____lualib.__K2L_LinkedList
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
@@ -95,5 +96,5 @@ local function main()
     print(__K2L_StringToList("abc"):toCharArray():joinToString(""))
 end
 
-main()
+__K2L_Main(main)
 return {kind = kind}

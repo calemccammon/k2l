@@ -1197,12 +1197,60 @@ do
     function U.highSurrogate(cp) return unitChar(0xD800 + floor((cp - 0x10000) / 1024)) end
     function U.lowSurrogate(cp) return unitChar(0xDC00 + (cp - 0x10000) % 1024) end
 
-    -- The UTF-16 index of the character after the first `bytes` bytes of s, and the other way round (used by Regex)
+    -- For Regex indices, kept with the units of s (built once, so that the indices of many matches in a long string take
+    -- a lookup each): starts[j], the byte where the sequence decode read code unit j from starts, and ends[j], the length
+    -- of encode(u, 1, j).
+    local function offsets(s, u)
+        local starts, ends = u.starts, u.ends
+        if starts == nil then
+            starts, ends = {}, {[0] = 0}
+            local i, n, len = 1, 0, #s
+            -- the steps of decode
+            while i <= len do
+                local b = byte(s, i)
+                n = n + 1
+                starts[n] = i
+                if b >= 0xF0 then
+                    n = n + 1
+                    starts[n] = i
+                    i = i + 4
+                else
+                    i = i + (b >= 0xE0 and 3 or b >= 0xC0 and 2 or 1)
+                end
+            end
+            -- encode joins a high surrogate and the low one after it into 4 bytes; any other unit is unitChar
+            for j = 1, u.n do
+                local c = u[j]
+                if c >= 0xDC00 and c <= 0xDFFF and j > 1 and u[j - 1] >= 0xD800 and u[j - 1] <= 0xDBFF then
+                    ends[j] = ends[j - 2] + 4
+                else
+                    ends[j] = ends[j - 1] + (c < 0x80 and 1 or c < 0x800 and 2 or 3)
+                end
+            end
+            u.starts, u.ends = starts, ends
+        end
+        return starts, ends
+    end
+
+    -- The UTF-16 index of the character after the first `bytes` bytes of s (the units decode reads from them), and the
+    -- other way round (used by Regex)
     function U.byteToUnit(s, bytes)
-        if bytes == 0 or not units(s) then
+        local u = bytes ~= 0 and units(s)
+        if not u then
             return bytes
         end
-        return length(sub(s, 1, bytes))
+        -- the number of units whose sequence starts within the first `bytes` bytes
+        local starts = offsets(s, u)
+        local low, high = 0, u.n
+        while low < high do
+            local mid = floor((low + high + 1) / 2)
+            if starts[mid] <= bytes then
+                low = mid
+            else
+                high = mid - 1
+            end
+        end
+        return low
     end
 
     function U.unitToByte(s, index)
@@ -1210,7 +1258,8 @@ do
         if not u then
             return index
         end
-        return #encode(u, 1, math.min(index, u.n))
+        local _, ends = offsets(s, u)
+        return ends[math.max(0, math.min(index, u.n))]
     end
 
     ---------------------------------------------------------------- char ranges

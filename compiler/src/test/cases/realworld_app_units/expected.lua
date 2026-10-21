@@ -346,6 +346,7 @@ return {Mode = Mode, Leg = Leg, SpeedingException = SpeedingException, Trip = Tr
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IDiv = ____lualib.__K2L_IDiv
@@ -443,7 +444,7 @@ function Meters:hashCode()
 end
 
 function Meters:equals(other)
-    return getmetatable(other) == Meters and self.si == other.si
+    return getmetatable(other) == Meters and __K2L_DoubleEquals(self.si, other.si)
 end
 
 local Seconds = __K2L_Class("phys.units.Seconds", nil, Quantity)
@@ -486,7 +487,7 @@ function Seconds:hashCode()
 end
 
 function Seconds:equals(other)
-    return getmetatable(other) == Seconds and self.si == other.si
+    return getmetatable(other) == Seconds and __K2L_DoubleEquals(self.si, other.si)
 end
 
 local Speed = __K2L_Class("phys.units.Speed", nil, Quantity)
@@ -524,7 +525,7 @@ function Speed:hashCode()
 end
 
 function Speed:equals(other)
-    return getmetatable(other) == Speed and self.si == other.si
+    return getmetatable(other) == Speed and __K2L_DoubleEquals(self.si, other.si)
 end
 
 local Kilograms = __K2L_Class("phys.units.Kilograms", nil, Quantity)
@@ -558,7 +559,7 @@ function Kilograms:hashCode()
 end
 
 function Kilograms:equals(other)
-    return getmetatable(other) == Kilograms and self.si == other.si
+    return getmetatable(other) == Kilograms and __K2L_DoubleEquals(self.si, other.si)
 end
 
 local function div(____this, t)

@@ -16,14 +16,14 @@ local function checked(r)
     if r < MIN_INT or r > MAX_INT then
         overflow("integer")
     end
-    return r
+    return r + 0 -- + 0: negateExact(0) and multiplyExact(0, -1) are -0.0 in doubles
 end
 
 local function checkedLong(r)
     if r >= TWO_63 or r < -TWO_63 then
         overflow("long")
     end
-    return r
+    return r + 0
 end
 
 function __K2L_Exact.add(a, b) return checked(a + b) end

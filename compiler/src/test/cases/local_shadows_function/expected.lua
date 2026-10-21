@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -35,5 +36,5 @@ local function main()
     end
 end
 
-main()
+__K2L_Main(main)
 return {nullable = nullable, total = total, label = label, label__1 = label__1}

@@ -8,6 +8,7 @@ local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_TouchObject = ____lualib.__K2L_TouchObject
@@ -311,7 +312,7 @@ local function main()
     print(__K2L_Str(__K2L_KClassOf(Foo.Companion).simpleName) .. " " .. __K2L_Str(__K2L_KClassOf(Bar.Maker).simpleName))
 end
 
-main()
+__K2L_Main(main)
 return {Named = Named, Registry = Registry, Foo = Foo, Bar = Bar, Baz = Baz, Shape = Shape, Circle = Circle, Codec = Codec, Upper = Upper, Labeled = Labeled, Tagged = Tagged, Outer = Outer, Box = Box, make = make, encodeAll = encodeAll}
 -- ==== model/factory.lua ====
 local ____lualib = require("lualib_bundle")

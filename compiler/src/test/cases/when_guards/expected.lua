@@ -7,6 +7,7 @@ local __K2L_IsLetter = ____lualib.__K2L_IsLetter
 local __K2L_IsUpperCase = ____lualib.__K2L_IsUpperCase
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
@@ -152,5 +153,5 @@ ____exports.Event = Event
 ____exports.big = big
 ____exports.classify = classify
 ____exports.describe = describe
-main()
+__K2L_Main(main)
 return ____exports

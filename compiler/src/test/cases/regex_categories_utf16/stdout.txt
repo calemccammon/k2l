@@ -42,6 +42,10 @@ C   8073 490614476
 [^\p{L}\p{N}\p{Cn}]    2500 592957119
 (?i)\p{Lt}             574 488667093
 \pM                    315 104735756
+\p{IsAlphabetic}       18363 103721721
+\p{javaAlphabetic}     18363 103721721
+\P{IsAlphabetic}       9638 572360820
+[\p{IsAlphabetic}&&\P{L}] 236 812424524
 Lu: Ǆ 𝐀
 Ll: e m a l u r o é
 Lt: ǅ
@@ -62,5 +66,6 @@ So: Ⓐ ⓑ © 😀
 Zl:  
 Cf: ­
 Co: 
+alphabetic: Ⓐ ⓑ Ǆ e m a l ǅ u r o Ⅻ ʰ 中 é ˆ 𝐀 𐍁
 Ⓐ|ⓑ|Ǆemal|ǅuro|Ⅻ|½|٣|ʰ|中|é|́|¢|ˆ|⊕|©|­||𝐀|𐍁|😀
 [Ἀθῆναι, Ελλάδα, Ärger, Öl]

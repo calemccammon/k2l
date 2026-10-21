@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_IndexError = ____lualib.__K2L_IndexError
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
@@ -132,5 +133,5 @@ local function main()
     print(sum)
 end
 
-main()
+__K2L_Main(main)
 return {Counter = Counter, hash = hash, mix = mix, id = id}

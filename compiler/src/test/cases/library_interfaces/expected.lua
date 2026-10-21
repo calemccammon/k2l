@@ -16,6 +16,7 @@ local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_Iterator = ____lualib.__K2L_Iterator
 local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NaturalOrder = ____lualib.__K2L_NaturalOrder
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_PropertyOverride = ____lualib.__K2L_PropertyOverride
@@ -346,5 +347,5 @@ local function main()
     others()
 end
 
-main()
+__K2L_Main(main)
 return {ByLength = ByLength, Version = Version, Count = Count, Upto = Upto, Letters = Letters, Task = Task, Answer = Answer, Doubler = Doubler, Check = Check, comparators = comparators, comparables = comparables, iterators = iterators, others = others, Named = Named, Reverse = Reverse, Backwards = Backwards, describe = describe, countMatching = countMatching, twice = twice, smallest = smallest, more = more}

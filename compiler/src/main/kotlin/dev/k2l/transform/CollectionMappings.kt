@@ -56,6 +56,8 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "kotlin/collections/ArrayList",
         "java/util/AbstractList",
         "java/util/LinkedList",
+        "java/util/Stack",
+        "java/util/Vector",
         "kotlin/enums/EnumEntries",
         "kotlin/collections/ArrayDeque",
         "java/util/ArrayDeque",
@@ -595,6 +597,7 @@ object CollectionMappings {
         val component = name.removePrefix("component").toIntOrNull()
         return when {
             name in RANDOM_METHODS -> LuaMethodCall(self, name, listOf(site.args.firstOrNull() ?: defaultRandom(site)))
+            name == "joinToString" -> FloatMappings.joinToString(site) ?: iterableByName(kind, name, site)
             component != null && name.startsWith("component") -> LuaMethodCall(self, "elementAt", listOf(LuaNumber("${component - 1}")))
             else -> iterableByName(kind, name, site)
         }

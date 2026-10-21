@@ -4,6 +4,7 @@ local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -428,5 +429,5 @@ local function main()
     end
 end
 
-main()
+__K2L_Main(main)
 return {Dialect = Dialect, printable = printable, splitRecords = splitRecords, sniff = sniff, ColType = ColType, typeOf = typeOf, columnType = columnType, writeCsv = writeCsv, SAMPLES = SAMPLES}

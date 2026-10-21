@@ -1,0 +1,6 @@
+[Bob, Dee, Ann, Cid]
+[Bob, Cid, Ann, Dee]
+[Bob, Dee, Ann, Cid]
+[Bob, Dee, Cid, Ann]
+[null, null, apple, fig, pear]
+[fig, pear, apple, null, null]

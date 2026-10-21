@@ -14,6 +14,7 @@ local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -220,7 +221,7 @@ local function main()
     print(__K2L_KClassNamed("kotlin.Any"):isInstance(Plain.new()))
 end
 
-main()
+__K2L_Main(main)
 return {Plain = Plain, Point = Point, Animal = Animal, Dog = Dog, Cat = Cat, describe = describe, localClasses = localClasses, handlers = handlers, kindOf = kindOf}
 -- ==== model/model.lua ====
 local ____lualib = require("lualib_bundle")

@@ -36,6 +36,9 @@ internal object DiagnosticHints {
             "rename one of them"
         },
         Rule(Regex("^A member named '.*' clashes with the generated Lua class table")) { "rename the member" },
+        Rule(Regex("^Overriding 'Random\\.")) {
+            "override only nextBits(bitCount): Random's other members draw from it, as Kotlin's defaults do"
+        },
     )
 
     fun hintFor(message: String): String? = rules.firstOrNull { it.pattern.containsMatchIn(message) }?.let { rule ->

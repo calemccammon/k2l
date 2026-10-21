@@ -57,6 +57,7 @@ return {history = history, getName = getName, setName = setName, getVolume = get
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -250,5 +251,5 @@ ____exports.getLater = getLater
 ____exports.getBranching = getBranching
 ____exports.getLazyish = getLazyish
 ____exports.setLazyish = setLazyish
-main()
+__K2L_Main(main)
 return ____exports

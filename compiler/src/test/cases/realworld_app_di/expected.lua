@@ -272,6 +272,7 @@ local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunctionMixin = ____lualib.__K2L_FunctionMixin
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -369,7 +370,7 @@ function OrderPlaced:hashCode()
 end
 
 function OrderPlaced:equals(other)
-    return getmetatable(other) == OrderPlaced and self.source == other.source and self.orderId == other.orderId and self.total == other.total
+    return getmetatable(other) == OrderPlaced and self.source == other.source and self.orderId == other.orderId and __K2L_DoubleEquals(self.total, other.total)
 end
 
 local Shutdown = __K2L_Class("app.di.events.Shutdown", nil, Event)

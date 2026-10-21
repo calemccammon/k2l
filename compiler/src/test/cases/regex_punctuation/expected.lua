@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_Sequence = ____lualib.__K2L_Sequence
@@ -41,5 +42,5 @@ local function main()
     print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("\\p{S}"):findAllFactory("1+2<3 and $4|^")):map(____lambda_2):toList()))
 end
 
-main()
+__K2L_Main(main)
 return {classify = classify}

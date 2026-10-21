@@ -3,6 +3,7 @@ local __K2L_Collectors = ____lualib.__K2L_Collectors
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_LongStream = ____lualib.__K2L_LongStream
 local __K2L_LongSummaryStatistics = ____lualib.__K2L_LongSummaryStatistics
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_OptionalDouble = ____lualib.__K2L_OptionalDouble
 local __K2L_OptionalLong = ____lualib.__K2L_OptionalLong
@@ -38,4 +39,4 @@ local function main()
     print(__K2L_Streams.ofCollection(values, true):mapToLong(____lambda_7):max():getAsLong())
 end
 
-main()
+__K2L_Main(main)

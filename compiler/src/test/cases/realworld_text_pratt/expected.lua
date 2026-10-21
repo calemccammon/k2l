@@ -3,8 +3,10 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_FdLibm = ____lualib.__K2L_FdLibm
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -179,7 +181,7 @@ function Num:hashCode()
 end
 
 function Num:equals(other)
-    return getmetatable(other) == Num and self.v == other.v
+    return getmetatable(other) == Num and __K2L_DoubleEquals(self.v, other.v)
 end
 
 local Var = __K2L_Class("Var", nil, Expr)
@@ -446,7 +448,9 @@ local function show(e)
     end
 end
 
-local functions = __K2L_ReadOnlyMapOf(__K2L_Pair.new("max", function(a) return a:maxOrNull() or 0.0 / 0.0 end), __K2L_Pair.new("min", function(a) return a:minOrNull() or 0.0 / 0.0 end), __K2L_Pair.new("sqrt", function(a) return math.sqrt(a:single()) end), __K2L_Pair.new("abs", function(a) return math.abs(a:single()) end), __K2L_Pair.new("hypot", function(a) return __K2L_Num.hypot(a:get(0), a:get(1)) end), __K2L_Pair.new("avg", function(a) return a:average() end))
+local functions = __K2L_ReadOnlyMapOf(__K2L_Pair.new("max", function(a) return a:maxOrNull() or 0.0 / 0.0 end), __K2L_Pair.new("min", function(a) return a:minOrNull() or 0.0 / 0.0 end), __K2L_Pair.new("sqrt", function(a) return math.sqrt(a:single()) end), __K2L_Pair.new("abs", function(a) return math.abs(a:single()) end), __K2L_Pair.new("hypot", function(a)
+    return __K2L_FdLibm.hypot(a:get(0), a:get(1))
+end), __K2L_Pair.new("avg", function(a) return a:average() end))
 
 local function eval(e, env)
     local ____mt_1 = getmetatable(e)
@@ -488,7 +492,7 @@ local function eval(e, env)
             elseif ____subject_2 == "%" then
                 return math.fmod(a, b)
             elseif ____subject_2 == "**" or ____subject_2 == "^" then
-                return a ^ b
+                return __K2L_Num.pow(a, b)
             elseif ____subject_2 == "<" then
                 return a < b and 1.0 or 0.0
             elseif ____subject_2 == ">" then

@@ -4,6 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Deque = ____lualib.__K2L_Deque
 local __K2L_LinkedList = ____lualib.__K2L_LinkedList
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PriorityQueue = ____lualib.__K2L_PriorityQueue
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -65,5 +66,5 @@ end
 
 ____exports.Box = Box
 ____exports.tick = tick
-main()
+__K2L_Main(main)
 return ____exports

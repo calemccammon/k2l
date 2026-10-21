@@ -12,6 +12,7 @@ local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
@@ -520,5 +521,5 @@ local function main()
     print("obstacles creating loops (near start): " .. loops)
 end
 
-main()
+__K2L_Main(main)
 return {Pos = Pos, Dir = Dir, Grid = Grid, MAZE = MAZE, bfs = bfs, State = State, cheapestRoute = cheapestRoute, GARDEN = GARDEN, Region = Region, regions = regions, PATROL = PATROL, patrol = patrol}

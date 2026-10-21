@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
@@ -184,5 +185,5 @@ local function main()
     print(nested())
 end
 
-main()
+__K2L_Main(main)
 return {limit = limit, prefix = prefix, withVararg = withVararg, sumAll = sumAll, label = label, capped = capped, tagged = tagged, outer = outer, varargs = varargs, spreads = spreads, emptyVarargs = emptyVarargs, named = named, captured = captured, param = param, hiddenInLoop = hiddenInLoop, hiddenPrefix = hiddenPrefix, nested = nested}

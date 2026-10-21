@@ -727,6 +727,7 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -1019,5 +1020,5 @@ local function main()
     print(__K2L_Str(world))
 end
 
-main()
+__K2L_Main(main)
 return {Counter = Counter}

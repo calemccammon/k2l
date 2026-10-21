@@ -11,6 +11,7 @@ local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -467,5 +468,5 @@ local function main()
     print(__K2L_Utf16.out(inline("unclosed **bold and `tick")))
 end
 
-main()
+__K2L_Main(main)
 return {Block = Block, parseBlocks = parseBlocks, escapeHtml = escapeHtml, inline = inline, Renderer = Renderer, doc = doc}

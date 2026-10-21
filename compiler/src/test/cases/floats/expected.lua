@@ -5,6 +5,7 @@ local __K2L_FloatSum = ____lualib.__K2L_FloatSum
 local __K2L_FloatToString = ____lualib.__K2L_FloatToString
 local __K2L_Fround = ____lualib.__K2L_Fround
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToDouble = ____lualib.__K2L_StringToDouble
@@ -60,4 +61,4 @@ local function main()
     print(__K2L_DoubleToString(a * 3))
 end
 
-main()
+__K2L_Main(main)

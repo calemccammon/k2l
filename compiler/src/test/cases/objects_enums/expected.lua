@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Registry = __K2L_Class("Registry")
@@ -120,5 +121,5 @@ local function main()
     print(Point.ORIGIN.x)
 end
 
-main()
+__K2L_Main(main)
 return {Registry = Registry, Direction = Direction, Planet = Planet, Point = Point}

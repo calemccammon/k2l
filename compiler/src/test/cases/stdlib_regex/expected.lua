@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Regex = ____lualib.__K2L_Regex
@@ -74,4 +75,4 @@ local function main()
     print(__K2L_Str(____receiver_8 and ____receiver_8.value))
 end
 
-main()
+__K2L_Main(main)

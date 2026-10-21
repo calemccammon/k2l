@@ -4,6 +4,7 @@ local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -150,5 +151,5 @@ local function main()
     print(__K2L_Str(____result_1))
 end
 
-main()
+__K2L_Main(main)
 return {Key = Key}

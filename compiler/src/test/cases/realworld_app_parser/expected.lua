@@ -5,6 +5,7 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -309,7 +310,7 @@ function Expr.Num:hashCode()
 end
 
 function Expr.Num:equals(other)
-    return getmetatable(other) == Expr.Num and self.v == other.v
+    return getmetatable(other) == Expr.Num and __K2L_DoubleEquals(self.v, other.v)
 end
 
 Expr.Var = __K2L_Class("parsing.Expr$Var", nil, Expr)
@@ -565,7 +566,7 @@ function Json.Num:hashCode()
 end
 
 function Json.Num:equals(other)
-    return getmetatable(other) == Json.Num and self.n == other.n
+    return getmetatable(other) == Json.Num and __K2L_DoubleEquals(self.n, other.n)
 end
 
 Json.Arr = __K2L_Class("parsing.Json$Arr", Json)

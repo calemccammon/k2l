@@ -2,6 +2,7 @@ package dev.k2l.transform
 
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 
 /**
@@ -38,6 +39,30 @@ internal object FloatMappings {
     fun sum(site: CallSite): LuaExpr? = with(site.session) {
         if (isFloat(site.receiverType?.elementType)) site.lualib("FloatSum", site.self) else null
     }
+
+    /**
+     * `joinToString()` of `Double`s or `Float`s without a transform prints each element by its static type, which the untyped
+     * printer cannot tell: an integral Double looks like an Int without integers, and one that is exactly a float like a Float.
+     */
+    fun joinToString(site: CallSite): LuaExpr? = with(site.session) {
+        if (site.args.size >= JOIN_TRANSFORM) return null
+        val receiver = site.receiverType?.withoutFlexibility ?: return null
+        val element = receiver.elementType?.withoutFlexibility
+        val classId = (receiver as? KaClassType)?.classId?.asString()
+        val printer = when {
+            classId == "kotlin/FloatArray" || element?.isFloatType == true -> "FloatToString"
+
+            !site.transformer.target.hasIntegers || site.transformer.usesFloat ->
+                if (classId == "kotlin/DoubleArray" || element?.isDoubleType == true) "DoubleToString" else return null
+
+            else -> return null
+        }
+        val args = site.args + List(JOIN_TRANSFORM - 1 - site.args.size) { LuaNil } + site.ref(printer, "__K2L_$printer")
+        LuaMethodCall(site.self, "joinToString", args)
+    }
+
+    /** The position of `transform` among `joinToString`'s parameters, counted from 1. */
+    private const val JOIN_TRANSFORM = 6
 
     /** [result] of the mapping for [callableId], rounded to a float when the call returns one. */
     fun post(callableId: String?, site: CallSite, result: LuaExpr?): LuaExpr? {

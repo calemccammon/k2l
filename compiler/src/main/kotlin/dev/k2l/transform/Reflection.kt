@@ -164,6 +164,10 @@ internal object ReflectionMappings {
             LuaCall(ref(KCLASS_FEATURE, "__K2L_JavaClass"), listOf(kclass))
         }
         table.def("kotlin/jvm/java") { LuaCall(ref(KCLASS_FEATURE, "__K2L_JavaClass"), listOf(self)) }
+        table.def("java/lang/Class.enumConstants", "java/lang/Class.getEnumConstants") {
+            LuaCall(ref("EnumConstants", "__K2L_EnumConstants"), listOf(self))
+        }
+        table.def("kotlin/jvm/declaringJavaClass") { LuaCall(ref("EnumConstants", "__K2L_EnumDeclaringClass"), listOf(self)) }
         table.def("kotlin/jvm/kotlin") { LuaIndex(self, LuaString("____kotlin")) }
     }
 }

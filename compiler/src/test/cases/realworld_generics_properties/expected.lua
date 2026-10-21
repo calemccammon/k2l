@@ -10,6 +10,7 @@ local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -431,5 +432,5 @@ local function main()
     print(__K2L_Str(____table))
 end
 
-main()
+__K2L_Main(main)
 return {Validator = Validator, ____and = ____and, Mapper = Mapper, ____then = ____then, Validated = Validated, Observed = Observed, computed = computed, positive = positive, atMost = atMost, notBlank = notBlank, oneOf = oneOf, Settings = Settings, Id = Id, Author = Author, Book = Book, Store = Store, record = record}

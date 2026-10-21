@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -49,5 +50,5 @@ local function main()
     print(____greeting_delegate:getValue())
 end
 
-main()
+__K2L_Main(main)
 return {Node = Node, tree = tree, countdown = countdown, ____greeting_delegate = ____greeting_delegate, greetingName = greetingName}

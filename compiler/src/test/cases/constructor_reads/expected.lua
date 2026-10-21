@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Base = __K2L_Class("Base")
@@ -152,5 +153,5 @@ local function main()
     print(Calmer.new():show())
 end
 
-main()
+__K2L_Main(main)
 return {Base = Base, Child = Child, GrandChild = GrandChild, Shape = Shape, Triangle = Triangle, Counter = Counter, Offset = Offset, Calm = Calm, Calmer = Calmer}

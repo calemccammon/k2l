@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Jump = ____lualib.__K2L_Jump
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NewJump = ____lualib.__K2L_NewJump
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
@@ -384,5 +385,5 @@ local function main()
     print(returnFromLoopInRun(9))
 end
 
-main()
+__K2L_Main(main)
 return {forEachJumps = forEachJumps, mapJumps = mapJumps, labeled = labeled, scopeFunctions = scopeFunctions, stringAndSequence = stringAndSequence, twice = twice, userInline = userInline, trimWith = trimWith, trimVia = trimVia, passedOn = passedOn, passedOnJumps = passedOnJumps, capped = capped, viaTrim = viaTrim, nestedInlineReturns = nestedInlineReturns, returnFromLoopInRun = returnFromLoopInRun}

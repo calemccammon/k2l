@@ -19,13 +19,6 @@ local function fastLog2(n)
     return log
 end
 
-local function nextBits(rng, bitCount)
-    if bitCount == 0 then
-        return 0
-    end
-    return math.floor((rng:nextRaw() % TWO_32) / 2 ^ (32 - bitCount))
-end
-
 local function nextLong(rng)
     local high = rng:nextRaw()
     return add(L.make(high, 0), rng:nextRaw())
@@ -46,12 +39,12 @@ local function nextLongRange(rng, from, upTo)
             local low = L.toInt(n) % TWO_32
             local high = L.toInt(ushr(n, 32)) % TWO_32
             if low ~= 0 then
-                rnd = nextBits(rng, fastLog2(low))
+                rnd = rng:nextBits(fastLog2(low)) % TWO_32
             elseif high == 1 then
                 rnd = rng:nextRaw() % TWO_32
             else
                 local bitCount = fastLog2(high)
-                rnd = add(shl(nextBits(rng, bitCount), 32), rng:nextRaw() % TWO_32)
+                rnd = add(shl(rng:nextBits(bitCount), 32), rng:nextRaw() % TWO_32)
             end
         else
             local v
@@ -72,6 +65,23 @@ local function nextLongRange(rng, from, upTo)
 end
 
 __K2L_RandomLong.nextLong = nextLongRange
+
+-- nextLong(range: LongRange); `orNull` true is randomOrNull, false is LongRange.random (NoSuchElementException when empty).
+function __K2L_RandomLong.nextLongIn(rng, range, orNull)
+    local first, last = range.first, range.last
+    if lt(last, first) then
+        if orNull then
+            return nil
+        end
+        local message = "Cannot get random in empty range: " .. L.str(first) .. ".." .. L.str(last)
+        error((orNull == false and __K2L_NoSuchElementException or __K2L_IllegalArgumentException).new(message))
+    elseif lt(last, L.MAX) then
+        return nextLongRange(rng, first, add(last, 1))
+    elseif lt(L.MIN, first) then
+        return add(nextLongRange(rng, sub(first, 1), last), 1)
+    end
+    return nextLong(rng)
+end
 
 local function emptyRange(from, upTo)
     error(__K2L_IllegalArgumentException.new("Random range is empty: [" ..

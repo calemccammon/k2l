@@ -29,13 +29,16 @@ fun main() {
     for (name in CATEGORIES) {
         println("${name.padEnd(3)} ${summary(Regex("\\p{$name}"))}")
     }
-    for (form in listOf("\\P{L}", "\\p{IsLu}", "\\p{gc=Nl}", "[\\p{Lu}\\p{Lt}]", "[^\\p{L}\\p{N}\\p{Cn}]", "(?i)\\p{Lt}", "\\pM")) {
+    for (form in listOf("\\P{L}", "\\p{IsLu}", "\\p{gc=Nl}", "[\\p{Lu}\\p{Lt}]", "[^\\p{L}\\p{N}\\p{Cn}]", "(?i)\\p{Lt}", "\\pM",
+        "\\p{IsAlphabetic}", "\\p{javaAlphabetic}", "\\P{IsAlphabetic}", "[\\p{IsAlphabetic}&&\\P{L}]")) {
         println("${form.padEnd(22)} ${summary(Regex(form))}")
     }
     val text = "Ⓐ ⓑ Ǆemal ǅuro: Ⅻ ½ ٣ ʰ 中 é ́ ‿ « » ‹ › ‐ ¢ ˆ ⊕ ©   ­  𝐀 𐍁 😀"
     for (name in listOf("Lu", "Ll", "Lt", "Lm", "Lo", "Nl", "No", "Nd", "Mn", "Pc", "Pi", "Pf", "Pd", "Sc", "Sk", "Sm", "So", "Zl", "Cf", "Co")) {
         println("$name: " + Regex("\\p{$name}").findAll(text).map { it.value }.joinToString(" "))
     }
+    // Character.isAlphabetic: the letters, Nl (Ⅻ) and Other_Alphabetic (the circled letters, which are So)
+    println("alphabetic: " + Regex("\\p{IsAlphabetic}").findAll(text).map { it.value }.joinToString(" "))
     println(text.replace(Regex("[\\p{Z}\\p{P}]+"), "|"))
     println(Regex("\\p{Lu}\\p{Ll}*").findAll("Ἀθῆναι Ελλάδα Ärger Öl").map { it.value }.toList())
 }

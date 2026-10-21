@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_JavaRandom = ____lualib.__K2L_JavaRandom
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 
 local function main()
@@ -13,4 +14,4 @@ local function main()
     print(__K2L_JavaRandom.new(1234567890123456789):nextInt(100))
 end
 
-main()
+__K2L_Main(main)

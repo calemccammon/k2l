@@ -1,0 +1,24 @@
+replaceAfter = [dir/X, dir/sub/file.zip, none]
+replaceBefore = [root/sub/file.tar.gz, dir/sub/file.tar.gz]
+replaceAfterLast = [dir/sub/file.tar.bz2, dir/sub/other.txt]
+replaceBeforeLast = [home/file.tar.gz, missing]
+toByte = [12, -128, 127]
+toByte range EXC NumberFormatException: Value out of range. Value:"128" Radix:10
+toByte malformed EXC NumberFormatException: For input string: "x1"
+toShort = [32767, -5, 255]
+toShort range EXC NumberFormatException: Value out of range. Value:"40000" Radix:10
+OrNull = [100, null, null, -32768, null]
+splitToSequence = [A, B, C]
+splitToSequence chars = [k, v, x, y]
+Regex.splitToSequence = [one, two, three]
+isISOControl = [true, true, false, true]
+utf8 bytes = 6
+decode = [héllo, héllo, héllo, héllo]
+charset = UTF-8
+and/or = [false, true, false, true, 2]
+both evaluated = false 2
+lazyOf = [true, ready, ready]
+enumValues = [LOW, MEDIUM, HIGH]
+enumValueOf = [HIGH, MEDIUM]
+enumValueOf direct = 1
+setOfNotNull = [[1, 2], [], [x]]

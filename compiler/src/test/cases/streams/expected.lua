@@ -8,6 +8,7 @@ local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IntStream = ____lualib.__K2L_IntStream
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Optional = ____lualib.__K2L_Optional
 local __K2L_OptionalDouble = ____lualib.__K2L_OptionalDouble
 local __K2L_OptionalInt = ____lualib.__K2L_OptionalInt
@@ -239,5 +240,5 @@ local function main()
     objectStreams()
 end
 
-main()
+__K2L_Main(main)
 return {Person = Person, sources = sources, intStreams = intStreams, doubleStreams = doubleStreams, objectStreams = objectStreams}

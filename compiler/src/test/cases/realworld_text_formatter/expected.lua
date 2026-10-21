@@ -7,6 +7,7 @@ local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -358,5 +359,5 @@ local function main()
     print(__K2L_StringFormat("tax 8.25%%: %.2f, grand total: %.2f", total * 0.0825, total * 1.0825))
 end
 
-main()
+__K2L_Main(main)
 return {wrap = wrap, justify = justify, center = center, columns = columns, Align = Align, Table = Table, LOREM = LOREM, formatSamples = formatSamples}

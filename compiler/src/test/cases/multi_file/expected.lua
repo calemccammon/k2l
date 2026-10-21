@@ -1,6 +1,7 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -42,7 +43,7 @@ local function main()
     print(____even.isEven(7))
 end
 
-main()
+__K2L_Main(main)
 return {Circle = Circle}
 -- ==== model/shapes.lua ====
 local ____lualib = require("lualib_bundle")

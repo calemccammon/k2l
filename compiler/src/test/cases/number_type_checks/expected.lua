@@ -4,6 +4,7 @@ local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_IsNumber = ____lualib.__K2L_IsNumber
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NumberTo = ____lualib.__K2L_NumberTo
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
@@ -68,5 +69,5 @@ local function main()
     print(__K2L_DoubleToString(total))
 end
 
-main()
+__K2L_Main(main)
 return {describe = describe}

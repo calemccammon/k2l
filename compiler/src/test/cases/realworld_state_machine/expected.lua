@@ -6,6 +6,7 @@ local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
@@ -52,7 +53,7 @@ function Event.Placed:hashCode()
 end
 
 function Event.Placed:equals(other)
-    return getmetatable(other) == Event.Placed and self.orderId == other.orderId and self.amount == other.amount
+    return getmetatable(other) == Event.Placed and self.orderId == other.orderId and __K2L_DoubleEquals(self.amount, other.amount)
 end
 
 Event.Paid = __K2L_Class("machine.Event$Paid", nil, Event)
@@ -76,7 +77,7 @@ function Event.Paid:hashCode()
 end
 
 function Event.Paid:equals(other)
-    return getmetatable(other) == Event.Paid and self.orderId == other.orderId and self.amount == other.amount
+    return getmetatable(other) == Event.Paid and self.orderId == other.orderId and __K2L_DoubleEquals(self.amount, other.amount)
 end
 
 Event.Shipped = __K2L_Class("machine.Event$Shipped", nil, Event)

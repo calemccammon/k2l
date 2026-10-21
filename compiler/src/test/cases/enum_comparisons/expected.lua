@@ -6,6 +6,7 @@ local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -169,5 +170,5 @@ function companions()
     print(__K2L_Str(Size:parse("l")) .. " " .. __K2L_Str(Size:parse("x")) .. " " .. Size:count() .. " " .. __K2L_Str(Size:named("small")))
 end
 
-main()
+__K2L_Main(main)
 return {E = E, Level = Level, Task = Task, Size = Size, companions = companions}

@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Locale = ____lualib.__K2L_Locale
 local __K2L_LocaleFormat = ____lualib.__K2L_LocaleFormat
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
@@ -75,5 +76,5 @@ local function main()
     print(__K2L_LocaleFormat.format(chosen, nil, "%,d", 1234567))
 end
 
-main()
+__K2L_Main(main)
 return {line = line}

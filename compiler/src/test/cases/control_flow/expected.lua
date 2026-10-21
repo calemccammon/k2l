@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 
 local function sign(n)
@@ -101,5 +102,5 @@ local function main()
     print(count)
 end
 
-main()
+__K2L_Main(main)
 return {sign = sign, describe = describe, bucket = bucket, isPositive = isPositive, n0 = n0, maybe = maybe}

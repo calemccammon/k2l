@@ -4,6 +4,7 @@ local __K2L_BigInteger = ____lualib.__K2L_BigInteger
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IRem = ____lualib.__K2L_IRem
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_MathContext = ____lualib.__K2L_MathContext
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RoundingMode = ____lualib.__K2L_RoundingMode
@@ -93,5 +94,5 @@ ____exports.digits = digits
 ____exports.randomInteger = randomInteger
 ____exports.integers = integers
 ____exports.decimals = decimals
-main()
+__K2L_Main(main)
 return ____exports

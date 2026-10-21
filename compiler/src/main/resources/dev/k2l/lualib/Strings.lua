@@ -906,6 +906,24 @@ end
 ------------------------------------------------------------------ String.format
 -- java.util.Formatter: %[index$][flags][width][.precision]conversion
 
+-- The digits of %.15e one unit higher in the last digit (s is "d.ddd...e+XX", maybe with a sign). The decimals that read
+-- back as a power of two reach only half as far below it as above it (the double below is twice as close), so its
+-- nearest 16 digits may not read back while the next 16 digits up do, and are its shortest digits: 2^710 is
+-- 5.386379163185535E213, not 5.3863791631855345E213.
+local function digitUp(s)
+    local sign, int, frac, exp = string.match(s, "^(-?)(%d)%.(%d+)e([-+]%d+)$")
+    local digits = int .. frac
+    local i = #digits
+    while i > 0 and digits:byte(i) == 57 do
+        i = i - 1
+    end
+    if i == 0 then
+        return sign .. "1." .. string.rep("0", #frac) .. "e" .. (tonumber(exp) + 1)
+    end
+    digits = digits:sub(1, i - 1) .. string.char(digits:byte(i) + 1) .. string.rep("0", #digits - i)
+    return sign .. digits:sub(1, 1) .. "." .. digits:sub(2) .. "e" .. exp
+end
+
 -- Shortest round-tripping decimal digits of |x| and the decimal exponent of the first digit.
 local function decimalDigits(x)
     x = math.abs(x)
@@ -921,7 +939,8 @@ local function decimalDigits(x)
         if tonumber(s) ~= x then
             s = string.format("%.15e", x)
             if tonumber(s) ~= x then
-                s = string.format("%.16e", x)
+                local up = digitUp(s)
+                s = tonumber(up) == x and up or string.format("%.16e", x)
             end
         end
     else

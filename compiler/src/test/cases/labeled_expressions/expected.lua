@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -102,5 +103,5 @@ local function main()
     print(__K2L_Str(____pairs))
 end
 
-main()
+__K2L_Main(main)
 return {twice = twice, sign = sign}

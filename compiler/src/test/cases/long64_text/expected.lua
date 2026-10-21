@@ -7,6 +7,7 @@ local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Num = ____lualib.__K2L_Num
@@ -184,5 +185,5 @@ local function main()
     print(__K2L_Str(__K2L_BigDecimal.valueOf(big):toPlainString()))
 end
 
-main()
+__K2L_Main(main)
 return {P = P, sum3 = sum3}

@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ObservableProperty = ____lualib.__K2L_ObservableProperty
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -152,5 +153,5 @@ local function main()
     print(shop:getSales())
 end
 
-main()
+__K2L_Main(main)
 return {Priced = Priced, Size = Size, getLabel = getLabel, Shop = Shop, getTag = getTag, Item = Item, Special = Special}

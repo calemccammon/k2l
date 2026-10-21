@@ -9,6 +9,7 @@ local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_PriorityQueue = ____lualib.__K2L_PriorityQueue
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
@@ -413,5 +414,5 @@ ____exports.CRC_TABLE = CRC_TABLE
 ____exports.crc32 = crc32
 ____exports.memoized = memoized
 ____exports.slowSquare = slowSquare
-main()
+__K2L_Main(main)
 return ____exports

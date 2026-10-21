@@ -5,6 +5,7 @@ local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_GenerateSequenceLazy = ____lualib.__K2L_GenerateSequenceLazy
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -373,7 +374,7 @@ function Task:hashCode()
 end
 
 function Task:equals(other)
-    return getmetatable(other) == Task and self.name == other.name and self.priority == other.priority and self.cost == other.cost
+    return getmetatable(other) == Task and self.name == other.name and self.priority == other.priority and __K2L_DoubleEquals(self.cost, other.cost)
 end
 
 local PORT = Key.new("port", 8080)

@@ -129,6 +129,8 @@ public class GenUnicode {
         out.append("    local sets = {\n");
         String[][] sets = {
             {"letter", ranges(Character::isLetter)},
+            // the rest of Character.isAlphabetic (Nl and Other_Alphabetic): every letter is alphabetic
+            {"alphabeticNonLetter", ranges(cp -> Character.isAlphabetic(cp) && !Character.isLetter(cp))},
             {"digit", ranges(Character::isDigit)},
             {"upper", ranges(Character::isUpperCase)},
             {"lower", ranges(Character::isLowerCase)},

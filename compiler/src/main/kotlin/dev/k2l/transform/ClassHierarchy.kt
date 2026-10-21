@@ -32,6 +32,8 @@ internal class SuperInfo(
     val libraryDelegations: List<LibraryDelegation> = emptyList(),
     /** The lualib base of a collection interface implemented next to a base that is not a collection, as an interface. */
     val collectionMixin: String? = null,
+    /** The class extends `kotlin.random.Random()`: the lualib base draws everything from the class's `nextBits` (Random.lua). */
+    val randomBase: Boolean = false,
 )
 
 /** `: I by expr`: the delegate is stored in [field] of the instance when it is constructed. */

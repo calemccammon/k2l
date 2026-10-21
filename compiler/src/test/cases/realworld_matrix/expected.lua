@@ -5,6 +5,7 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -215,7 +216,7 @@ function Meters:hashCode()
 end
 
 function Meters:equals(other)
-    return getmetatable(other) == Meters and self.value == other.value
+    return getmetatable(other) == Meters and __K2L_DoubleEquals(self.value, other.value)
 end
 
 local Seconds = __K2L_Class("Seconds")
@@ -237,7 +238,7 @@ function Seconds:hashCode()
 end
 
 function Seconds:equals(other)
-    return getmetatable(other) == Seconds and self.value == other.value
+    return getmetatable(other) == Seconds and __K2L_DoubleEquals(self.value, other.value)
 end
 
 local function div(self, t)
@@ -296,11 +297,11 @@ function Vec:hashCode()
 end
 
 function Vec:equals(other)
-    return getmetatable(other) == Vec and self.x == other.x and self.y == other.y
+    return getmetatable(other) == Vec and __K2L_DoubleEquals(self.x, other.x) and __K2L_DoubleEquals(self.y, other.y)
 end
 
 function fmt(____this_2)
-    return ____this_2 == math.floor(____this_2) + 0.0 and math.abs(____this_2) < 1.0E9 and tostring(__K2L_DoubleToLong(____this_2)) or __K2L_StringFormat("%.3f", ____this_2)
+    return ____this_2 == (____this_2 == 0 and ____this_2 * 1.0 or math.floor(____this_2) + 0.0) and math.abs(____this_2) < 1.0E9 and tostring(__K2L_DoubleToLong(____this_2)) or __K2L_StringFormat("%.3f", ____this_2)
 end
 
 local ____lambda_6 = function(____a, ____b)

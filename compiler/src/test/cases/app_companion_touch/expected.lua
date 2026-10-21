@@ -5,6 +5,7 @@ local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_TouchObject = ____lualib.__K2L_TouchObject
 
@@ -62,5 +63,5 @@ local function main()
     print(__K2L_Str(__K2L_TouchObject(Registry)))
 end
 
-main()
+__K2L_Main(main)
 return {log = log, Widget = Widget, Registry = Registry}

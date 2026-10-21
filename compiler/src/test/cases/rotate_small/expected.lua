@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Bits = ____lualib.__K2L_Bits
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -62,7 +63,7 @@ local function main()
         ____out[____count] = __K2L_Num.rotateSmall(it, 7, 8, false)
     end
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
-    local bytes = __K2L_ReadOnlyListOf(1, 2, -(-128), 127)
+    local bytes = __K2L_ReadOnlyListOf(1, 2, -128, 127)
     local ____out_1 = {}
     local ____count_1 = 0
     local ____items_1, ____n_1 = bytes:____array()
@@ -76,4 +77,4 @@ local function main()
     print(__K2L_Bits.rotl32(2147483648, 1) & 0xFFFFFFFF)
 end
 
-main()
+__K2L_Main(main)

@@ -4,6 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -113,7 +114,7 @@ function Sale:hashCode()
 end
 
 function Sale:equals(other)
-    return getmetatable(other) == Sale and self.id == other.id and self.date == other.date and self.rep == other.rep and self.region == other.region and self.product == other.product and self.units == other.units and self.unitPrice == other.unitPrice
+    return getmetatable(other) == Sale and self.id == other.id and self.date == other.date and self.rep == other.rep and self.region == other.region and self.product == other.product and self.units == other.units and __K2L_DoubleEquals(self.unitPrice, other.unitPrice)
 end
 
 local RAW = "id,date,rep,region,product,units,unit_price\n1,2024-01-05,\"Smith, Anna\",North,Widget,12,2.50\n2,2024-01-09,Bob Jones,South,Gadget,3,19.99\n3,2024-01-17,\"Smith, Anna\",North,Gizmo,7,7.25\n4,2024-02-02,Carla Diaz,East,Widget,40,2.45\n5,2024-02-11,Bob Jones,South,Widget,15,2.50\n6,2024-02-14,\"O\"\"Brien, Pat\",West,Gadget,2,21.00\n7,2024-02-28,Carla Diaz,East,Gizmo,9,7.00\n8,2024-03-03,\"Smith, Anna\",North,Gadget,5,19.50\n9,2024-03-15,Dev Patel,West,Widget,-4,2.50\n10,2024-03-19,Dev Patel,Weast,Gizmo,4,7.10\n11,2024-03-21,Bob Jones,South,Gizmo,11,6.95\n12,2024-03-30,\"O\"\"Brien, Pat\",West,Widget,25,2.40\n13,2024-03-31,Carla Diaz,East,Gadget,6,\n"
@@ -244,7 +245,7 @@ function Stats:hashCode()
 end
 
 function Stats:equals(other)
-    return getmetatable(other) == Stats and self.count == other.count and self.mean == other.mean and self.median == other.median and self.stdDev == other.stdDev and self.min == other.min and self.max == other.max
+    return getmetatable(other) == Stats and self.count == other.count and __K2L_DoubleEquals(self.mean, other.mean) and __K2L_DoubleEquals(self.median, other.median) and __K2L_DoubleEquals(self.stdDev, other.stdDev) and __K2L_DoubleEquals(self.min, other.min) and __K2L_DoubleEquals(self.max, other.max)
 end
 
 local function stats(self)

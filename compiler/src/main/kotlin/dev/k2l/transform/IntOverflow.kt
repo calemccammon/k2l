@@ -57,13 +57,43 @@ internal fun FileTransformer.arithmetic(op: LuaBinOp, l: LuaExpr, lt: KaType?, r
 private fun FileTransformer.narrowArithmetic(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr {
     val typed = if (floatResult(lt, rt)) fround(LuaBinary(op, l, r)) else unsignedArithmetic(op, l, lt, r, rt)
     if (typed != null) return typed
-    if (!isInt32Arithmetic(lt, rt)) return LuaBinary(op, l, r)
+    if (!isInt32Arithmetic(lt, rt)) return integralArithmetic(op, l, lt, r, rt)
     if (op == LuaBinOp.Mul && !target.hasIntegers) {
         val small = listOf(l, r).any { (it as? LuaNumber)?.text?.toLongOrNull()?.let { n -> n in -SMALL_FACTOR..SMALL_FACTOR } == true }
         return if (small) wrapInt32(LuaBinary(op, l, r)) else jitMultiply(l, r) ?: lualibCall("IMul", l, r)
     }
     return wrapInt32(LuaBinary(op, unwrapInt32(l), unwrapInt32(r)))
 }
+
+/**
+ * Integer arithmetic on float targets never makes -0, which prints as "-0" and which `Double.equals` (collections, `Any`)
+ * tells from 0: a product is `x * y + 0` (`0 * -3` is -0.0) unless one factor is a positive literal; an enclosing `+`
+ * (one operand) or `-` (its right operand) drops that `+ 0` again, as `-0 + y` and `x - -0` are never -0 for y, x not -0.
+ */
+private fun FileTransformer.integralArithmetic(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr {
+    if (target.hasIntegers || !isSigned(lt) || !isSigned(rt)) return LuaBinary(op, l, r)
+    return when (op) {
+        LuaBinOp.Mul -> if (isPositiveLiteral(l) || isPositiveLiteral(r)) {
+            LuaBinary(op, l, r)
+        } else {
+            LuaBinary(LuaBinOp.Add, LuaBinary(op, unwrapZero(l), unwrapZero(r)), LuaNumber("0")).also { ctx.zeroPending[it] = it.left }
+        }
+
+        LuaBinOp.Add -> if (l in ctx.zeroPending) LuaBinary(op, unwrapZero(l), r) else LuaBinary(op, l, unwrapZero(r))
+
+        LuaBinOp.Sub -> LuaBinary(op, l, unwrapZero(r))
+
+        else -> LuaBinary(op, l, r)
+    }
+}
+
+private fun FileTransformer.isSigned(t: KaType?): Boolean = with(session) {
+    t != null && t.withoutFlexibility.let { it.isIntType || it.isLongType || it.isShortType || it.isByteType }
+}
+
+private fun isPositiveLiteral(e: LuaExpr): Boolean = (e as? LuaNumber)?.text?.toDoubleOrNull()?.let { it > 0 } == true
+
+private fun FileTransformer.unwrapZero(e: LuaExpr): LuaExpr = ctx.zeroPending[e] ?: e
 
 internal fun FileTransformer.negation(value: LuaExpr, type: KaType?): LuaExpr =
     long64Negation(value, type) ?: negativeZero(value, type) ?: ordinaryNegation(value, type)
@@ -79,6 +109,13 @@ private fun FileTransformer.negativeZero(value: LuaExpr, type: KaType?): LuaExpr
 }
 
 private fun FileTransformer.ordinaryNegation(value: LuaExpr, type: KaType?): LuaExpr {
+    if (!target.hasIntegers && isSigned(type)) {
+        // `0 - x`: `-x` of an integer 0 is -0 on float targets (see integralArithmetic)
+        if (value is LuaNumber) return if (value.text.toDoubleOrNull() == 0.0) value else LuaUnary(LuaUnOp.Neg, value)
+        val wrap = wrapsInt && with(session) { isInt32(type) }
+        val negated = LuaBinary(LuaBinOp.Sub, LuaNumber("0"), unwrapZero(if (wrap) unwrapInt32(value) else value))
+        return if (wrap) wrapInt32(negated) else negated
+    }
     val wrap = wrapsInt && with(session) { isInt32(type) } && value !is LuaNumber
     return if (wrap) wrapInt32(LuaUnary(LuaUnOp.Neg, unwrapInt32(value))) else LuaUnary(LuaUnOp.Neg, value)
 }

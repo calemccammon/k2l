@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CompareByWith = ____lualib.__K2L_CompareByWith
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
@@ -216,5 +217,5 @@ local function main()
     regexClasses()
 end
 
-main()
+__K2L_Main(main)
 return {flags = flags, classification = classification, caseMapping = caseMapping, stringCase = stringCase, ignoreCase = ignoreCase, digits = digits, predicates = predicates, capitalizeFirst = capitalizeFirst, regexClasses = regexClasses}

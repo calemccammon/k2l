@@ -1,3 +1,6 @@
+local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
+
 local ____exports = {}
 local isOdd
 local greeting = "Hi"
@@ -74,5 +77,5 @@ ____exports.bump = bump
 ____exports.____end = ____end
 ____exports.outer = outer
 ____exports.unit = unit
-main()
+__K2L_Main(main)
 return ____exports

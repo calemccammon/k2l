@@ -1,0 +1,162 @@
+== depth 1: [Knight(60/60), Rogue(40/40), Mage(35/35)]
+round 1
+  Goblin1_2 dodges Rogue
+  Mage hits Goblin1_2 for 15
+  Goblin1_1 hits Rogue for 5
+  Goblin1_2 burns for 3
+  Goblin1_2 hits Knight for 4
+  Knight hits Goblin1_1 for 8
+  Goblin1_0 hits Rogue for 6
+round 2
+  Goblin1_0 dodges Rogue
+  Rogue dodges Goblin1_1
+  Mage hits Goblin1_1 for 18
+  Goblin1_2 burns for 3
+  Knight dodges Goblin1_2
+  Goblin1_0 hits Rogue for 6
+  Goblin1_2 dodges Knight
+round 3
+  Rogue hits Goblin1_2 for 11
+  Goblin1_2 falls
+  Mage hits Goblin1_0 for 16
+  Rogue dodges Goblin1_1
+  Goblin1_0 burns for 3
+  Goblin1_0 hits Mage for 6
+  Knight hits Goblin1_0 for 8
+round 4
+  Rogue hits Goblin1_0 for 12
+  Goblin1_0 falls
+  Rogue dodges Goblin1_1
+  Mage hits Goblin1_1 for 16
+  Goblin1_1 falls
+== depth 2: [Knight(60/60), Rogue(27/40), Mage(32/35)]
+round 1
+  Goblin2_0 dodges Rogue
+  Goblin2_0 hits Mage for 5
+  Goblin2_2 dodges Mage
+  Goblin2_1 hits Knight for 5
+  Goblin2_2 hits Mage for 5
+  Knight hits Goblin2_2 for 7
+round 2
+  Rogue hits Goblin2_0 for 11
+  Goblin2_0 is frozen
+  Mage hits Goblin2_1 for 14
+  Goblin2_1 burns for 3
+  Goblin2_1 hits Knight for 7 (critical)
+  Knight dodges Goblin2_2
+  Knight hits Goblin2_2 for 8
+round 3
+  Rogue hits Goblin2_2 for 12
+  Mage dodges Goblin2_0
+  Mage hits Goblin2_0 for 15
+  Goblin2_2 hits Mage for 5
+  Goblin2_1 burns for 3
+  Goblin2_1 hits Mage for 5
+  Goblin2_1 dodges Knight
+round 4
+  Rogue hits Goblin2_2 for 21 (critical)
+  Goblin2_2 falls
+  Goblin2_0 burns for 3
+  Rogue dodges Goblin2_0
+  Mage hits Goblin2_0 for 16
+  Goblin2_0 falls
+  Mage dodges Goblin2_1
+  Knight hits Goblin2_1 for 8
+round 5
+  Rogue hits Goblin2_1 for 14
+  Goblin2_1 falls
+== depth 3: [Knight(54/60), Rogue(31/40), Mage(15/35)]
+round 1
+  Rogue hits Goblin3_1 for 12
+  Goblin3_1 hits Mage for 8
+  Mage hits Goblin3_0 for 17
+  Goblin3_0 burns for 3
+  Rogue dodges Goblin3_0
+  Goblin3_2 hits Rogue for 6
+  Knight hits Goblin3_2 for 25 (critical)
+round 2
+  Rogue hits Goblin3_1 for 11
+  Rogue dodges Goblin3_1
+  Mage hits Goblin3_2 for 16
+  Goblin3_0 burns for 3
+  Goblin3_0 hits Mage for 8
+  Mage falls
+  Goblin3_2 hits Rogue for 8
+  Goblin3_2 dodges Knight
+round 3
+  Rogue hits Goblin3_1 for 19 (critical)
+  Goblin3_1 falls
+  Rogue dodges Goblin3_0
+  Goblin3_2 hits Rogue for 8
+  Knight hits Goblin3_0 for 14
+round 4
+  Rogue hits Goblin3_2 for 13
+  Goblin3_2 falls
+  Goblin3_0 hits Rogue for 8
+  Knight hits Goblin3_0 for 13
+  Goblin3_0 falls
+== depth 4: [Knight(60/60), Rogue(5/40)]
+round 1
+  Rogue hits Goblin4_2 for 13
+  Goblin4_2 is frozen
+  Goblin4_0 hits Knight for 6
+  Knight hits Goblin4_1 for 11
+  Goblin4_1 is frozen
+round 2
+  Rogue hits Goblin4_0 for 11
+  Goblin4_2 hits Knight for 7
+  Rogue dodges Goblin4_0
+  Knight hits Goblin4_1 for 12
+  Goblin4_1 hits Knight for 8
+round 3
+  Rogue hits Goblin4_1 for 12
+  Goblin4_2 hits Knight for 6
+  Goblin4_0 hits Rogue for 14 (critical)
+  Rogue falls
+  Knight hits Goblin4_0 for 12
+  Goblin4_1 hits Knight for 6
+round 4
+  Goblin4_2 hits Knight for 6
+  Goblin4_0 hits Knight for 7
+  Knight drinks a potion
+  Goblin4_1 hits Knight for 7
+round 5
+  Goblin4_2 hits Knight for 7
+  Goblin4_0 hits Knight for 6
+  Knight drinks a potion
+  Goblin4_1 hits Knight for 6
+round 6
+  Goblin4_2 hits Knight for 6
+  Goblin4_0 hits Knight for 7
+  Knight hits Goblin4_2 for 14
+  Goblin4_1 hits Knight for 8
+round 7
+  Goblin4_2 hits Knight for 6
+  Goblin4_0 hits Knight for 7
+  Knight drinks a potion
+  Goblin4_1 hits Knight for 7
+round 8
+  Goblin4_2 hits Knight for 6
+  Goblin4_0 hits Knight for 6
+  Knight hits Goblin4_0 for 13
+  Goblin4_1 hits Knight for 7
+round 9
+  Goblin4_2 hits Knight for 6
+  Knight falls
+
+seed 1 reached depth 4 in 22 rounds; survivors []; kills [1, 6, 2]; Knight:frost axe/-/1 Rogue:frost axe/-/3 Mage:flame sword/leather/3
+-- tournament
+seed 194 reached depth 6 in 27 rounds; survivors []; kills [4, 7, 3]; Knight:frost axe/-/2 Rogue:flame sword/leather/5 Mage:venom blade/leather/2
+seed 291 reached depth 6 in 19 rounds; survivors []; kills [3, 2, 4]; Knight:flame sword/-/2 Rogue:flame sword/leather/2 Mage:venom blade/-/3
+seed 388 reached depth 7 in 26 rounds; survivors []; kills [1, 4, 7]; Knight:dagger/-/3 Rogue:venom blade/leather/4 Mage:venom blade/-/1
+seed 485 reached depth 8 in 32 rounds; survivors []; kills [4, 4, 6]; Knight:flame sword/plate/4 Rogue:venom blade/leather/4 Mage:dagger/-/3
+seed 582 reached depth 4 in 21 rounds; survivors []; kills [3, 3, 2]; Knight:dagger/leather/3 Rogue:-/-/2 Mage:dagger/-/1
+seed 679 reached depth 7 in 34 rounds; survivors []; kills [6, 6, 2]; Knight:flame sword/-/2 Rogue:flame sword/plate/2 Mage:frost axe/leather/3
+seed 776 reached depth 6 in 20 rounds; survivors []; kills [4, 4, 3]; Knight:flame sword/-/2 Rogue:flame sword/-/2 Mage:frost axe/-/2
+seed 873 reached depth 4 in 17 rounds; survivors []; kills [6, 2, 0]; Knight:flame sword/-/3 Rogue:venom blade/-/3 Mage:frost axe/-/3
+seed 970 reached depth 6 in 32 rounds; survivors []; kills [2, 2, 9]; Knight:-/-/0 Rogue:venom blade/leather/2 Mage:frost axe/plate/6
+seed 1067 reached depth 5 in 22 rounds; survivors []; kills [3, 4, 3]; Knight:venom blade/-/1 Rogue:flame sword/-/2 Mage:dagger/-/2
+seed 1164 reached depth 6 in 22 rounds; survivors []; kills [5, 3, 4]; Knight:flame sword/-/5 Rogue:frost axe/-/2 Mage:venom blade/leather/2
+seed 1261 reached depth 4 in 17 rounds; survivors []; kills [4, 1, 1]; Knight:dagger/-/1 Rogue:venom blade/-/4 Mage:dagger/leather/2
+average depth 5.75, best 8, cleared 0
+loot distribution {dagger=176, flame sword=74, frost axe=83, leather=182, plate=53, potion=371, venom blade=61}

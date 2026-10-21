@@ -43,6 +43,7 @@ internal val LIBRARY_CLASSES = listOf(
     "kotlin/NoSuchElementException" to "__K2L_NoSuchElementException",
     "java/util/ConcurrentModificationException" to "__K2L_ConcurrentModificationException",
     "kotlin/ConcurrentModificationException" to "__K2L_ConcurrentModificationException",
+    "java/util/EmptyStackException" to "__K2L_EmptyStackException",
     "kotlin/NotImplementedError" to "__K2L_NotImplementedError",
     "kotlin/UninitializedPropertyAccessException" to "__K2L_UninitializedPropertyAccessException",
     "java/lang/ArrayIndexOutOfBoundsException" to "__K2L_ArrayIndexOutOfBoundsException",

@@ -102,6 +102,9 @@ local function __K2L_Hash(value)
     local t = type(value)
     if t == "number" then
         if value % 1 == 0 and value >= -2147483648 and value <= 2147483647 then
+            if value == 0 and 1 / value < 0 then
+                return -2147483648 -- Double.hashCode(-0.0) (an Int is never -0)
+            end
             return value
         end
         -- Long.hashCode() for large integral values, Double.hashCode() otherwise

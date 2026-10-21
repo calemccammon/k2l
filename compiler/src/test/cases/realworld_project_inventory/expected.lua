@@ -133,6 +133,7 @@ return ____exports
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
@@ -190,7 +191,7 @@ local function main()
     print("journal head: " .. __K2L_Text.take(____Log.dumpJournal(), 60))
 end
 
-main()
+__K2L_Main(main)
 -- ==== model/Item.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class

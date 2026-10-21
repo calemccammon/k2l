@@ -12,6 +12,7 @@ internal fun FileTransformer.superInit(call: KtCallElement?, info: SuperInfo): U
     when {
         info.collectionBase != null -> return collectionSuperInit(call, info.collectionBase)
         info.elementBase -> return elementSuperInit(call)
+        info.randomBase -> return
         info.libraryBase != null -> return librarySuperInit(call, info.libraryBase)
         base == null -> return
     }

@@ -4,6 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -97,7 +98,7 @@ function TFloat:hashCode()
 end
 
 function TFloat:equals(other)
-    return getmetatable(other) == TFloat and self.v == other.v
+    return getmetatable(other) == TFloat and __K2L_DoubleEquals(self.v, other.v)
 end
 
 local TBool = __K2L_Class("TBool", nil, TValue)

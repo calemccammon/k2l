@@ -6,6 +6,7 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
@@ -131,7 +132,7 @@ local function main()
     print(__K2L_IDiv(36000, 12))
 end
 
-main()
+__K2L_Main(main)
 return {Contractor = Contractor, printTrace = printTrace}
 -- ==== pay/Payroll.lua ====
 local ____lualib = require("lualib_bundle")

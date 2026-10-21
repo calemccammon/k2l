@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_Sequence = ____lualib.__K2L_Sequence
@@ -112,5 +113,5 @@ local function main()
     regexIndices()
 end
 
-main()
+__K2L_Main(main)
 return {codePoints = codePoints, surrogates = surrogates, locales = locales, regexIndices = regexIndices}

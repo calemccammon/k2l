@@ -15,6 +15,15 @@ local function patternError(message, pattern)
     error(__K2L_PatternSyntaxException.new(message .. " near index in pattern " .. pattern))
 end
 
+-- Java's error for a lookbehind without a maximum length, with its index (of the character before the group's ")",
+-- `bytes` bytes into the pattern) and caret line.
+local function lookbehindError(pattern, bytes)
+    local units = __K2L_Regex.____units
+    local index = units and units.toUnit(pattern, bytes) or bytes
+    error(__K2L_PatternSyntaxException.new("Look-behind group does not have an obvious maximum length near index " .. index
+        .. "\n" .. pattern .. "\n" .. string.rep(" ", index) .. "^"))
+end
+
 local function isWordByte(b)
     return b ~= nil and (b >= 48 and b <= 57 or b >= 65 and b <= 90 or b >= 97 and b <= 122 or b == 95)
 end
@@ -88,7 +97,10 @@ local lower = unicodeProperty(PROPERTIES.Lower, function(u, cp) return u.lower(c
 local digit = unicodeProperty(PROPERTIES.Digit, function(u, cp) return u.digit(cp) end)
 -- Character.isSpaceChar (Zs, Zl, Zp): no control characters
 local separator = unicodeProperty(function(b) return b == 32 end, function(u, cp) return u.space(cp) end)
-PROPERTIES.IsLetter, PROPERTIES.IsAlphabetic, PROPERTIES.javaLetter, PROPERTIES.javaAlphabetic = letter, letter, letter, letter
+PROPERTIES.IsLetter, PROPERTIES.javaLetter = letter, letter
+-- Character.isAlphabetic: the letters, Nl and Other_Alphabetic (in ASCII the letters)
+local alphabetic = unicodeProperty(PROPERTIES.Alpha, function(u, cp) return u.alphabetic(cp) end)
+PROPERTIES.IsAlphabetic, PROPERTIES.javaAlphabetic = alphabetic, alphabetic
 PROPERTIES.IsUppercase, PROPERTIES.javaUpperCase = upper, upper
 PROPERTIES.IsLowercase, PROPERTIES.javaLowerCase = lower, lower
 PROPERTIES.IsDigit, PROPERTIES.javaDigit = digit, digit
@@ -202,6 +214,128 @@ local function utf8Bytes(code)
     end
     return string.char(240 + math.floor(code / 262144), 128 + math.floor(code / 4096) % 64,
         128 + math.floor(code / 64) % 64, 128 + code % 64)
+end
+
+-- The lengths a lookbehind can match, as Java's Pattern studies them (TreeInfo): `valid` is false when Java finds no
+-- obvious maximum (a backreference, or a repeated group whose body has alternatives or variable repetitions), and
+-- `jmax` is Java's maximum in chars, with its 32-bit overflow (a+ adds Integer.MAX_VALUE unchecked; a+?, a++ and
+-- (?:a)+ check it). bmin and bmax are the lengths in bytes, which bound the start positions the matcher tries.
+local studyLength
+do
+    local MAX_REPS = 2147483647
+
+    local function int32(x)
+        x = x % 4294967296
+        if x >= 2147483648 then
+            x = x - 4294967296
+        end
+        return x
+    end
+
+    local function mul32(a, b)
+        a, b = a % 4294967296, b % 4294967296
+        return int32(a * (b % 65536) + (a * math.floor(b / 65536)) % 65536 * 65536)
+    end
+
+    local ONE_CHAR = {char = true, any = true, set = true, ufold = true, ["and"] = true}
+
+    -- a single character, as Java's CharProperty: a char node or the bytes of one UTF-8 literal
+    local function isOneChar(node)
+        if node.group then
+            return false
+        elseif ONE_CHAR[node.t] then
+            return true
+        end
+        local items = node.t == "seq" and node.items
+        if not items or #items == 0 or items[1].t ~= "char" or charLength(items[1].c) ~= #items then
+            return false
+        end
+        for _, item in ipairs(items) do
+            if item.t ~= "char" then
+                return false
+            end
+        end
+        return true
+    end
+
+    local function fresh()
+        return {jmax = 0, valid = true, det = true, bmin = 0, bmax = 0}
+    end
+
+    local function addBytes(info, min, max)
+        info.bmin, info.bmax = info.bmin + min, info.bmax + max
+    end
+
+    local function studyRep(node, info, possessive)
+        local atom, min, max = node.node, node.min, node.max
+        local sub = fresh()
+        studyLength(atom, sub)
+        addBytes(info, sub.bmin * min, sub.bmax == 0 and 0 or sub.bmax * max)
+        if min == 0 and max == 1 then
+            -- Ques, or a Branch for a group: no overflow check
+            info.jmax, info.valid, info.det = int32(info.jmax + sub.jmax), info.valid and sub.valid, false
+        elseif not possessive and not node.lazy and max == math.huge and isOneChar(atom) then
+            -- CharPropertyGreedy
+            if info.valid then
+                info.jmax = int32(info.jmax + MAX_REPS)
+            end
+            info.det = false
+        elseif not possessive and (atom.group or atom.t == "group") and not sub.det then
+            -- a Loop
+            info.valid, info.det = false, false
+        else
+            -- Curly or GroupCurly
+            if info.valid and sub.valid then
+                local temp = int32(mul32(sub.jmax, max == math.huge and MAX_REPS or max) + info.jmax)
+                info.valid = temp >= info.jmax
+                info.jmax = temp
+            else
+                info.valid = false
+            end
+            info.det = info.det and sub.det and min == max
+        end
+    end
+
+    function studyLength(node, info)
+        local t = node.t
+        if t == "char" then
+            local c = node.c
+            addBytes(info, 1, 1)
+            info.jmax = int32(info.jmax + ((c >= 0x80 and c < 0xC0) and 0 or (c >= 0xF0 and 2 or 1)))
+        elseif ONE_CHAR[t] then
+            local ascii = t == "set" and not node.neg and not node.uni and #node.classes == 0 and #node.multi == 0
+                and #node.cpRanges == 0
+            addBytes(info, 1, ascii and 1 or 4)
+            info.jmax = int32(info.jmax + 1)
+        elseif t == "seq" then
+            for _, item in ipairs(node.items) do
+                studyLength(item, info)
+            end
+        elseif t == "group" then
+            studyLength(node.node, info)
+        elseif t == "alt" then
+            local jmax, bmin, bmax = -1, math.huge, 0
+            for _, alt in ipairs(node.alts) do
+                local sub = fresh()
+                studyLength(alt, sub)
+                jmax, bmin, bmax = math.max(jmax, sub.jmax), math.min(bmin, sub.bmin), math.max(bmax, sub.bmax)
+                info.valid = info.valid and sub.valid
+            end
+            addBytes(info, bmin, bmax)
+            info.jmax, info.det = int32(info.jmax + jmax), false
+        elseif t == "rep" then
+            studyRep(node, info, false)
+        elseif t == "atomic" then
+            if node.possessive then
+                studyRep(node.node, info, true)
+            else
+                studyLength(node.node, info)
+            end
+        elseif t == "backref" then
+            info.valid, info.det = false, false
+        end
+        -- anchors, \b and lookarounds have no length
+    end
 end
 
 local function parse(pattern, options)
@@ -577,7 +711,7 @@ local function parse(pattern, options)
         end
         local node = {t = "rep", node = atom, min = min, max = max, lazy = lazy}
         if possessive then
-            node = {t = "atomic", node = node}
+            node = {t = "atomic", node = node, possessive = true}
         end
         return node
     end
@@ -599,13 +733,24 @@ local function parse(pattern, options)
             if kind == "capture" then
                 return {t = "group", index = data, node = inner}
             elseif kind == "look" then
-                return {t = "look", node = inner, ahead = data.ahead, neg = data.neg}
+                local look = {t = "look", node = inner, ahead = data.ahead, neg = data.neg}
+                if not data.ahead then
+                    local info = {jmax = 0, valid = true, det = true, bmin = 0, bmax = 0}
+                    studyLength(inner, info)
+                    if not info.valid then
+                        lookbehindError(pattern, pos - 3)
+                    end
+                    look.min, look.max = info.bmin, info.bmax
+                end
+                return look
             elseif kind == "atomic" then
                 return {t = "atomic", node = inner}
             elseif kind == "scoped" then
                 flags.ci, flags.uni, flags.multiline, flags.dotall, flags.comments =
                     data.ci, data.uni, data.multiline, data.dotall, data.comments
             end
+            -- a group to Java, when a quantifier follows (see studyLength)
+            inner.group = true
             return inner
         elseif c == "[" then
             return parseSet()
@@ -1148,15 +1293,22 @@ function compile(node)
         end
     elseif t == "look" then
         local f = compile(node.node)
+        -- a lookbehind tries the starts that its lengths allow, nearest first, as Java's Behind does
+        local min, max = node.min, node.max
         return function(st, i, k)
             local found
             if node.ahead then
                 found = f(st, i, function(i2) return i2 end)
             else
-                for j = i, 1, -1 do
-                    found = f(st, j, function(i2) if i2 == i then return i2 end end)
-                    if found then
-                        break
+                local bytes = st.bytes
+                for j = i - min, math.max(i - max, 1), -1 do
+                    -- not from inside a UTF-8 character
+                    local b = bytes[j]
+                    if b == nil or b < 0x80 or b >= 0xC0 then
+                        found = f(st, j, function(i2) if i2 == i then return i2 end end)
+                        if found then
+                            break
+                        end
                     end
                 end
             end

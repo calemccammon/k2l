@@ -7,6 +7,7 @@ local __K2L_FloatToString = ____lualib.__K2L_FloatToString
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_JavaClass = ____lualib.__K2L_JavaClass
 local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -47,4 +48,4 @@ local function main()
     print(__K2L_Str(__K2L_ClosedRange.new("a", "c")))
 end
 
-main()
+__K2L_Main(main)

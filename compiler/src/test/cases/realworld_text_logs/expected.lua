@@ -7,6 +7,7 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -384,5 +385,5 @@ local function main()
     print(__K2L_Regex.new("[aeiou]"):replaceFirst("programming language", "_") .. " " .. __K2L_Regex.new("(?i)[^aeiou\\s]"):replace("Hello World", "."))
 end
 
-main()
+__K2L_Main(main)
 return {ACCESS = ACCESS, APP = APP, LOG = LOG, Access = Access, parseQuery = parseQuery, SECRET_PARAM = SECRET_PARAM, EMAIL = EMAIL, CARD = CARD, redact = redact}

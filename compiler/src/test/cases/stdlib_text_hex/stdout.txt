@@ -1,0 +1,18 @@
+Int.toHexString = [000000ff, ffffffff, 00000000, 80000000]
+Long.toHexString = [00000000000000ff, fffffffffffffffe, 0000123456789abc]
+Short/Byte = [000a, ffff, 7f, 80]
+ByteArray.toHexString = 000f10ff7f80
+hexToInt = [255, -1, 2147483647, 0]
+hexToLong = [16, -1, 20015998343868]
+hexToShort/Byte = [-1, 127, -128]
+hexToInt bad EXC NumberFormatException
+hexToInt long EXC NumberFormatException
+hexToByteArray = [0, 15, 16, -1, 127, -128]
+round trip = true
+deleteAt = hello world
+deleteRange = world
+setRange = World
+deleteAt out of range = out of range
+endsWith = [true, false, true]
+startsWith = [true, false]
+contains = [true, false]

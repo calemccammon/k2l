@@ -7,6 +7,7 @@ local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_RangeEnd = ____lualib.__K2L_RangeEnd
 local __K2L_RangeStart = ____lualib.__K2L_RangeStart
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -109,5 +110,5 @@ local function main()
     print(__K2L_Str(ranges:map(____lambda_3)))
 end
 
-main()
+__K2L_Main(main)
 return {Day = Day, Span = Span, Week = Week, Grades = Grades, describe = describe}

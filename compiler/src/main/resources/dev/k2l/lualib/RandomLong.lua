@@ -1,6 +1,7 @@
 -- requires: Random, Unsigned
 -- Random.nextLong(until), nextLong(from, until), nextUInt and nextULong on Lua 5.3/5.4, as Kotlin's Random implements them:
--- the same draws from the generator, so a seeded Random gives the numbers the JVM gives.
+-- the same draws from the generator, so a seeded Random gives the numbers the JVM gives. The draws are
+-- rng:nextRaw() (nextInt()) and rng:nextBits, so a generator of the program gets Kotlin's defaults too.
 local __K2L_RandomLong = {}
 
 do
@@ -24,13 +25,6 @@ local function toInt32(x)
     return x
 end
 
-local function nextBits(rng, bitCount)
-    if bitCount == 0 then
-        return 0
-    end
-    return (rng:nextRaw() & 0xFFFFFFFF) >> (32 - bitCount)
-end
-
 local function nextLong(rng)
     return (rng:nextRaw() << 32) + rng:nextRaw()
 end
@@ -50,12 +44,12 @@ local function nextLongRange(rng, from, upTo)
             local low = toInt32(n)
             local high = toInt32(n >> 32)
             if low ~= 0 then
-                rnd = nextBits(rng, fastLog2(low & 0xFFFFFFFF))
+                rnd = rng:nextBits(fastLog2(low & 0xFFFFFFFF)) & 0xFFFFFFFF
             elseif high == 1 then
                 rnd = rng:nextRaw() & 0xFFFFFFFF
             else
                 local bitCount = fastLog2(high & 0xFFFFFFFF)
-                rnd = (nextBits(rng, bitCount) << 32) + (rng:nextRaw() & 0xFFFFFFFF)
+                rnd = (rng:nextBits(bitCount) << 32) + (rng:nextRaw() & 0xFFFFFFFF)
             end
         else
             local v
@@ -76,6 +70,23 @@ local function nextLongRange(rng, from, upTo)
 end
 
 __K2L_RandomLong.nextLong = nextLongRange
+
+-- nextLong(range: LongRange); `orNull` true is randomOrNull, false is LongRange.random (NoSuchElementException when empty).
+function __K2L_RandomLong.nextLongIn(rng, range, orNull)
+    local first, last = range.first, range.last
+    if last < first then
+        if orNull then
+            return nil
+        end
+        local message = "Cannot get random in empty range: " .. first .. ".." .. last
+        error((orNull == false and __K2L_NoSuchElementException or __K2L_IllegalArgumentException).new(message))
+    elseif last < math.maxinteger then
+        return nextLongRange(rng, first, last + 1)
+    elseif first > math.mininteger then
+        return nextLongRange(rng, first - 1, last) + 1
+    end
+    return nextLong(rng)
+end
 
 local function emptyRange(from, upTo)
     error(__K2L_IllegalArgumentException.new("Random range is empty: [" ..

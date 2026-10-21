@@ -5,6 +5,7 @@ local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -193,5 +194,5 @@ ____exports.Row = Row
 ____exports.get__1 = get__1
 ____exports.set__1 = set__1
 ____exports.index = index
-main()
+__K2L_Main(main)
 return ____exports

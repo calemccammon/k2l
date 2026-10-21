@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -344,7 +345,7 @@ function Product:hashCode()
 end
 
 function Product:equals(other)
-    return getmetatable(other) == Product and self.id == other.id and self.price == other.price and self.stock == other.stock
+    return getmetatable(other) == Product and self.id == other.id and __K2L_DoubleEquals(self.price, other.price) and self.stock == other.stock
 end
 
 local ____lambda_1 = function(it) return it.id end

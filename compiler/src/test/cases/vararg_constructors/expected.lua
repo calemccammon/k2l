@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
@@ -139,5 +140,5 @@ local function main()
     print(__K2L_Str(Bag.new():add()))
 end
 
-main()
+__K2L_Main(main)
 return {Polygon = Polygon, Triangle = Triangle, Path = Path, Chord = Chord, Outer = Outer, Bag = Bag}

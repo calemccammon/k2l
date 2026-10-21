@@ -563,7 +563,7 @@ function Game:attack()
         ____object_7.score = ____object_7.score + 10
         return self:say("The " .. monster.name .. " dies!")
     end
-    local bite = monster.attack:random(self.random)
+    local bite = self.random:nextIntRange(monster.attack, false)
     local ____object_8 = self.player
     ____object_8.hp = ____object_8.hp - bite
     self:say("The " .. monster.name .. " bites you for " .. bite .. " (hp " .. self.player.hp .. ").")

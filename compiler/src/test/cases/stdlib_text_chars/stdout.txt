@@ -1,0 +1,36 @@
+foldRight = NILTOK
+foldRightIndexed = 1637
+reduceRight = c
+reduceIndexed = d
+reduceIndexedOrNull = [null, y]
+runningFold = [, a, ab, abc]
+scan = [0, 1, 3, 6]
+runningFoldIndexed = [[], [97], [97, 99]]
+scanIndexed = [, 0x, 0x1y, 0x1y2z]
+runningReduce = [a, Z, Z]
+runningReduceIndexed = [a, B, B]
+mapIndexedNotNull = [1:1, 3:2]
+mapIndexedTo = [start, a0, b1]
+mapIndexedNotNullTo = [0]
+mapTo = 4
+flatMapIndexed = [a, b, b]
+flatMapIndexedTo = [0, 0, 120, 1, 121]
+associateByTo = {A=a, B=b, C=c}
+associateWithTo = {a=97, b=98}
+toCollection = [a, b, n]
+toHashSet = [i, m, p, s]
+maxOfOrNull = [99, null]
+firstNotNullOf = 3
+firstNotNullOfOrNull = null
+firstNotNullOf none EXC NoSuchElementException: No element of the char sequence was transformed to a non-null value.
+randomOrNull = [null, a]
+windowedSequence = [abc, bcd, cde]
+windowedSequence step = [cba, edc, gfe, g]
+chunkedSequence = abc|def|gh
+reduceRightOrNull = [-2, null]
+reduceRightIndexed = 4531
+reduceRightIndexed empty EXC UnsupportedOperationException: Empty list can't be reduced.
+reduceRightIndexedOrNull = cb1a0
+array reduceRightOrNull = zyx
+array reduceRightIndexed = 1
+array empty EXC UnsupportedOperationException: Empty array can't be reduced.

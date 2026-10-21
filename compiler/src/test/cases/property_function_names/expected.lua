@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 
@@ -90,5 +91,5 @@ local function main()
     print(__K2L_Str(f(Holder.new())))
 end
 
-main()
+__K2L_Main(main)
 return {Source = Source, Base = Base, Derived = Derived, Inbox = Inbox, Holder = Holder}

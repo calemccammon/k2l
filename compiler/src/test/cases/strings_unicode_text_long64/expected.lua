@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
@@ -23,4 +24,4 @@ local function main()
     print(__K2L_Utf16.out(__K2L_NotNull(__K2L_StringToInt("-٤", nil, true))))
 end
 
-main()
+__K2L_Main(main)

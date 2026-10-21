@@ -4,5 +4,5 @@ local function __K2L_FloorDiv(a, b)
     if b == 0 then
         error(__K2L_ArithmeticException.new("/ by zero"))
     end
-    return math.floor(a / b)
+    return math.floor(a / b) + 0 -- + 0: 0 / -3 is -0.0
 end

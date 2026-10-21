@@ -4,6 +4,7 @@ local __K2L_CharRange = ____lualib.__K2L_CharRange
 local __K2L_CheckStep = ____lualib.__K2L_CheckStep
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
@@ -14,6 +15,7 @@ local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Num = ____lualib.__K2L_Num
@@ -129,7 +131,7 @@ function Reading:hashCode()
 end
 
 function Reading:equals(other)
-    return getmetatable(other) == Reading and self.minute == other.minute and self.celsius == other.celsius
+    return getmetatable(other) == Reading and self.minute == other.minute and __K2L_DoubleEquals(self.celsius, other.celsius)
 end
 
 local SENSOR = __K2L_Text.trimIndent("\n    0 21.5\n    1 21.7\n    2 22.4\n    3 23.9\n    4 24.1\n    5 99.9\n    6 24.6\n    7 24.2\n    8 23.0\n    9 22.1\n    10 21.4\n    11 20.9\n    12 -40.0\n    13 20.5\n    14 20.8\n    15 21.6\n")
@@ -365,5 +367,5 @@ local function main()
     print("  result=" .. __K2L_Str(result) .. " after " .. __K2L_Str(evaluated))
 end
 
-main()
+__K2L_Main(main)
 return {collatz = collatz, primes = primes, sieve = sieve, fibonacci = fibonacci, digitsOf = digitsOf, isHappy = isHappy, Reading = Reading, SENSOR = SENSOR, parseReadings = parseReadings, fmt = fmt}

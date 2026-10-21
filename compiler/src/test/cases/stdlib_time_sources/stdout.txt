@@ -1,0 +1,19 @@
+measureTime non-negative: true, finite: true
+measureTimedValue: 333833500, non-negative: true
+timed value: done, below a minute: true
+elapsed non-negative: true, passed: true, not passed: false
+future mark: passed false, not passed true
+mark difference: 1s, order: true, true
+earlier: -2s, true
+source: TimeSource(System.nanoTime())
+generic mark elapsed non-negative: true
+measured on a source: true
+test elapsed: 1.5s
+stopwatch: 2s
+after reset: 250ms, total: 3.75s
+deadline passed: false
+deadline passed: true, over by: 0s
+t2 - t1 = 3s, t1 < t2: true, compare: true
+test measureTime: 42ms
+test measureTimedValue: TimedValue(value=ok, duration=7s), ok, 7s
+copy: TimedValue(value=changed, duration=7s), equal: true

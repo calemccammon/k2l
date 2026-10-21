@@ -5,6 +5,7 @@ local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_RunSuspend = ____lualib.__K2L_RunSuspend
@@ -64,5 +65,5 @@ local function main()
     end
 end
 
-__K2L_RunSuspend(main)
+__K2L_Main(__K2L_RunSuspend, main)
 return {double = double, pending = pending, request = request}

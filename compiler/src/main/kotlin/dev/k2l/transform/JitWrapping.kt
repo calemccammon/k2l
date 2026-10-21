@@ -32,6 +32,8 @@ internal fun FileTransformer.jitMultiply(l: LuaExpr, r: LuaExpr): LuaExpr? {
     return tobit(LuaBinary(LuaBinOp.Add, low, high))
 }
 
+private val ZERO = LuaNumber("0")
+
 private fun constantOf(e: LuaExpr): Long? = (e as? LuaNumber)?.text?.toLongOrNull()?.takeIf { it in Int.MIN_VALUE..Int.MAX_VALUE }
 
 /**
@@ -43,8 +45,15 @@ private fun magnitudeBits(e: LuaExpr): Int = when (e) {
         ?: Int.MAX_VALUE / 2
 
     is LuaBinary -> when (e.op) {
-        LuaBinOp.Add, LuaBinOp.Sub -> maxOf(magnitudeBits(e.left), magnitudeBits(e.right)) + 1
+        // `0 - x` (a negation) and `x * y + 0` (see integralArithmetic) are no larger than x and the product
+        LuaBinOp.Add, LuaBinOp.Sub -> if (e.left == ZERO || e.right == ZERO) {
+            maxOf(magnitudeBits(e.left), magnitudeBits(e.right))
+        } else {
+            maxOf(magnitudeBits(e.left), magnitudeBits(e.right)) + 1
+        }
+
         LuaBinOp.Mul -> magnitudeBits(e.left) + magnitudeBits(e.right)
+
         else -> INT_BITS
     }
 

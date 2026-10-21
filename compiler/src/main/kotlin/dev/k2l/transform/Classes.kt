@@ -58,6 +58,7 @@ internal fun FileTransformer.declareClass(c: KtClassOrObject, isLocal: Boolean):
         unsupported(info.unsupported, "$what '${info.unsupported.text}'")
         return
     }
+    if (classes.hierarchy(c).any { classes.superInfo(it).randomBase }) checkRandomOverrides(c)
     if (isLocal) captureOuters(c)
     val ref = classRef(c)
     emitClassTable(c, ref, info, isLocal)
@@ -73,6 +74,7 @@ private fun FileTransformer.emitClassTable(c: KtClassOrObject, ref: LuaExpr, inf
         ?: when {
             info.sequenceBase -> lualibRef(SEQUENCE_FEATURE, "__K2L_Sequence")
             info.elementBase -> lualibRef(COROUTINES_FEATURE, "__K2L_AbstractCoroutineContextElement")
+            info.randomBase -> lualibRef("Random", "__K2L_RandomBase")
             else -> null
         }
     val mixins = listOfNotNull(info.collectionMixin?.let { collectionBaseRef(it) }) +

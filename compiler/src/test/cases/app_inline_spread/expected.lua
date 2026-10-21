@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Spread = ____lualib.__K2L_Spread
 local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
@@ -96,5 +97,5 @@ local function main()
     print(search(__K2L_TypedArrayOf("[I", 5, 2)))
 end
 
-main()
+__K2L_Main(main)
 return {firstOver = firstOver, search = search}

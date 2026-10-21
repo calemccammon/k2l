@@ -667,7 +667,7 @@ local function show(v)
     if v == nil then
         return "nil"
     elseif math.type(v) == "float" then
-        return v == math.floor(v) + 0.0 and not __K2L_Num.isInfinite(v) and tostring(__K2L_DoubleToLong(v)) or __K2L_Str(v)
+        return v == (v == 0 and v * 1.0 or math.floor(v) + 0.0) and not __K2L_Num.isInfinite(v) and tostring(__K2L_DoubleToLong(v)) or __K2L_Str(v)
     elseif getmetatable(v) == Native then
         return "<native " .. v.name .. ">"
     else

@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
@@ -187,5 +188,5 @@ local function main()
     print(__K2L_Utf16.out(tostring(__K2L_Utf16Case.equalsIgnoreCase("Ǆemal", "ǆemal")) .. " " .. tostring(__K2L_Utf16Case.equalsIgnoreCase("STRASSE", "straße")) .. " " .. tostring(__K2L_StringContains(__K2L_Utf16Case.fold("ÀB"), __K2L_Utf16Case.fold("àb"))) .. " " .. __K2L_StringIndexOf("Größe", "ö") .. " " .. __K2L_Text.padStart("Größe", 8, "·") .. " " .. __K2L_Text.padEnd("x", 3, "é") .. "|"))
 end
 
-main()
+__K2L_Main(main)
 return {FOLD = FOLD, slugify = slugify, truncate = truncate, displayWidth = displayWidth, padDisplay = padDisplay, describe = describe}
