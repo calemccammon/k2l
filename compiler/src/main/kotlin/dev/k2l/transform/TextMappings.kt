@@ -15,8 +15,8 @@ internal object TextMappings {
         "firstOrNull", "lastOrNull", "fold", "reduce", "foldIndexed", "reduceOrNull", "zipWithNext", "asIterable", "onEach", "distinct",
         "count", "first", "last", "random", "elementAtOrNull", "elementAtOrElse", "getOrElse", "single", "singleOrNull",
         "iterator", "groupingBy", "toSortedSet", "maxOfWith", "minOfWith", "maxOfWithOrNull", "minOfWithOrNull", "maxWith",
-        "minWith", "maxWithOrNull",
-        "minWithOrNull", "foldRight", "foldRightIndexed", "reduceRight", "reduceIndexed", "reduceIndexedOrNull", "runningFold",
+        "minWith", "maxWithOrNull", "minWithOrNull", "foldRight", "foldRightIndexed", "reduceRight", "reduceIndexed",
+        "reduceIndexedOrNull", "runningFold",
         "runningFoldIndexed", "runningReduce", "runningReduceIndexed", "mapIndexedNotNull", "mapIndexedNotNullTo", "mapIndexedTo", "mapTo",
         "flatMapIndexed", "flatMapIndexedTo", "associateByTo", "associateWithTo", "toCollection", "toHashSet", "maxOfOrNull",
         "minOfOrNull", "firstNotNullOf", "firstNotNullOfOrNull", "scan", "scanIndexed",
@@ -86,7 +86,7 @@ internal object TextMappings {
 
         fun isFunction(i: Int) = site.argTypes.getOrNull(i) is KaFunctionType
 
-        /** Names of the arguments that are Int-typed, in order (used to tell overloads apart). */
+        /** Whether argument [i] is an integer (which tells overloads apart). */
         fun isInt(i: Int) = site.isIntegral(site.argTypes.getOrNull(i))
 
         fun listOfChars(): LuaExpr = helper("ToList")
@@ -155,9 +155,7 @@ internal object TextMappings {
 
             "indexOf" -> if (a.size <= 2) c.helper("IndexOf", *a.toTypedArray()) else c.text("indexOf", a[0], a[1], a[2])
 
-            "lastIndexOf" -> if (a.size ==
-                1
-            ) {
+            "lastIndexOf" -> if (a.size == 1) {
                 c.helper("LastIndexOf", a[0])
             } else {
                 c.text("lastIndexOf", a[0], a.getOrElse(1) { LuaNil }, a.getOrElse(2) { LuaNil })

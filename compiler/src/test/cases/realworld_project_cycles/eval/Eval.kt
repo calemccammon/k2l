@@ -5,7 +5,7 @@ import calc.lang.keywords
 import calc.lang.parse
 import calc.trace
 
-// Initialized from the parser's state: on the JVM, reading `keywords` initializes the parser's file first.
+// Initialized from the parser's state: reading `keywords` initializes the parser's file first.
 val reserved: Set<String> = keywords + "def"
 
 val builtins: MutableMap<String, (List<Int>) -> Int> = linkedMapOf(

@@ -1,5 +1,5 @@
 -- requires: Class
--- Kotlin/JVM exception hierarchy. Each class carries its JVM name so toString() matches the JVM.
+-- The library's exception classes, named as Kotlin prints them (`java.lang.IllegalStateException: bad`).
 local __K2L_Throwable = __K2L_Class("java.lang.Throwable")
 
 function __K2L_Throwable:____init(message, cause)

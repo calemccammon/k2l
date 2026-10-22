@@ -1,4 +1,4 @@
-// Any.toString() is "Name@hash", which differs from run to run on the JVM, so only its shape is printed.
+// Any.toString() is "Name@hash", whose hash may differ from run to run, so only its shape is printed.
 fun shape(s: String): String {
     val at = s.indexOf('@')
     val hex = s.substring(at + 1)

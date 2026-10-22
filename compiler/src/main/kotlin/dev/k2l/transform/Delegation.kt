@@ -112,9 +112,9 @@ private fun FileTransformer.userKind(p: KtProperty, type: KaType): DelegateKind?
 }
 
 /**
- * The `KProperty` passed to the delegate: a property reference (see [propertyRefObject]) with the name, `toString()` and `==` of
- * the JVM's, without accessors (on the JVM only kotlin-reflect would make them reachable for a `KProperty<*>`). Members store
- * theirs in the class; for top-level and local properties `__K2L_KProperty` keeps one per property.
+ * The `KProperty` passed to the delegate: a property reference (see [propertyRefObject]) with a name, `toString()` and `==`,
+ * but no accessors. Members store theirs in the class; for top-level and local properties `__K2L_KProperty` keeps one per
+ * property.
  */
 private fun FileTransformer.propertyInfo(p: KtProperty, member: Boolean = false): LuaExpr = with(session) {
     val key = referenceKey(p.symbol as KaCallableSymbol)
@@ -194,7 +194,7 @@ internal fun FileTransformer.delegatedVariableTarget(p: KtProperty): Target? {
 
 // ---- members ----
 
-/** Each class of an override family that delegates has a delegate slot of its own, like the JVM's `x$delegate` fields. */
+/** Each class of an override family that delegates has a delegate slot of its own. */
 private fun delegateField(p: KtProperty, self: LuaExpr): LuaExpr = LuaIndex(self, LuaString(delegateSlot(p, "delegate")))
 
 private fun delegateSlot(p: KtProperty, kind: String): String {

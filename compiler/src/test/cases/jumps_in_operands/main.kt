@@ -1,5 +1,5 @@
-// Branches that are annotated blocks, and jumps as operands of || and && (kotlinx.collections.immutable's TrieNode:
-// `thisIsNode -> @Suppress("UNCHECKED_CAST") { ... }` and `thisCell == otherCell || return false`).
+// Branches that are annotated blocks (`thisIsNode -> @Suppress("UNCHECKED_CAST") { ... }`), and jumps as operands of ||
+// and && (`thisCell == otherCell || return false`).
 fun allEqual(a: List<Int>, b: List<Int>): Boolean {
     if (a.size != b.size) return false
     for (i in a.indices) {

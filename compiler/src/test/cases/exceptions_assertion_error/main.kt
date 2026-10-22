@@ -1,7 +1,22 @@
-// AssertionError: constructed, thrown, caught and type-checked like the JVM's java.lang.AssertionError, whose
-// constructor takes any value as its message (kotlin.test's assertions throw it).
+// AssertionError: constructed, thrown, caught (as an Error), type-checked and extended. Its constructor takes any value
+// as its message (kotlin.test's assertions throw it); a Throwable detail is also the cause.
 fun check(ok: Boolean, message: Any?) {
     if (!ok) throw AssertionError(message)
+}
+
+class CheckFailed(message: String) : AssertionError(message)
+
+fun verify(condition: Boolean, message: String) {
+    if (!condition) throw CheckFailed(message)
+}
+
+fun outcome(block: () -> Unit): String = try {
+    block()
+    "no error"
+} catch (e: Exception) {
+    "exception $e"
+} catch (e: Error) {
+    "error ${e::class.simpleName}: ${e.message} (assertion: ${e is AssertionError})"
 }
 
 fun describe(e: Throwable): String = when (e) {
@@ -40,4 +55,12 @@ fun main() {
         e
     }
     println(caught is AssertionError)
+    println(outcome { verify(1 + 1 == 2, "math") })
+    println(outcome { verify(false, "expected <1>, actual <2>.") })
+    println(CheckFailed("sub"))
+    try {
+        verify(false, "rethrown")
+    } catch (e: AssertionError) {
+        println("caught ${e.message} ${e is CheckFailed} ${e is Throwable}")
+    }
 }

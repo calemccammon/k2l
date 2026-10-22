@@ -28,9 +28,7 @@ val KaType.elementType: KaType? get() = (withoutFlexibility as? KaClassType)?.ty
 
 context(s: KaSession)
 val KaType.isIntegral: Boolean get() = with(s) {
-    withoutFlexibility.let {
-        it.isIntType || it.isLongType || it.isShortType || it.isByteType
-    }
+    withoutFlexibility.let { it.isIntType || it.isLongType || it.isShortType || it.isByteType }
 }
 
 context(s: KaSession)
@@ -47,5 +45,18 @@ val KaType?.isTextual: Boolean get() = with(s) {
 context(s: KaSession)
 fun KaType?.pretty(): String = with(s) { this@pretty?.render(position = Variance.INVARIANT) ?: "?" }
 
-/** `Double` or `Float`. */
-internal fun KaSession.isFloating(t: KaType?): Boolean = t != null && t.withoutFlexibility.let { it.isDoubleType || it.isFloatType }
+/**
+ * The unsigned types (`UInt`, `ULong`, `UByte`, `UShort`, their arrays and ranges) are not supported: Lua has no unsigned
+ * numbers, and k2l does not emulate them. An expression of one of these types is reported, see [unsignedTypeName].
+ */
+private val UNSIGNED_CLASSES = setOf(
+    "kotlin/UInt", "kotlin/ULong", "kotlin/UByte", "kotlin/UShort",
+    "kotlin/UIntArray", "kotlin/ULongArray", "kotlin/UByteArray", "kotlin/UShortArray",
+    "kotlin/ranges/UIntRange", "kotlin/ranges/ULongRange", "kotlin/ranges/UIntProgression", "kotlin/ranges/ULongProgression",
+)
+
+/** The name of the unsigned type [t] (`UInt`), or null when it is not one. */
+internal fun KaSession.unsignedTypeName(t: KaType?): String? {
+    val classId = (t?.withoutFlexibility as? KaClassType)?.classId ?: return null
+    return classId.shortClassName.asString().takeIf { classId.asString() in UNSIGNED_CLASSES }
+}

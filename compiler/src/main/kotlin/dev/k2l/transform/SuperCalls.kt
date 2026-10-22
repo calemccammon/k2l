@@ -6,20 +6,18 @@ import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtProperty
 
 /**
- * `super.toString()`, `super.equals(other)` and `super.hashCode()` where the superclass chain reaches `Any`, and
- * `super.message`/`super.cause`/`super.toString()` into a lualib exception class. They behave like the JVM:
- * `Any.toString()` is `Name@hex(hashCode())`, `equals` is identity and `hashCode` is an identity hash that agrees with
- * what `Hash` gives objects without a `hashCode()`. Other library members (`printStackTrace`, ...) are not supported.
- * A class that overrides `message` or `cause` with a custom accessor keeps the value the `Throwable` constructor stored
- * in `____message`, which is what `super.message` reads.
+ * `super.toString()`, `super.equals(other)` and `super.hashCode()` where the superclass chain reaches `Any` (`Name@hex`,
+ * identity, and the identity hash `Hash` gives objects without a `hashCode()`), and `super.message`, `super.cause`,
+ * `super.toString()`, `super.printStackTrace()` and `super.fillInStackTrace()` into a lualib exception class. A class that
+ * overrides `message` or `cause` with a custom accessor keeps the value the `Throwable` constructor stored in
+ * `____message`, which is what `super.message` reads.
  */
 internal fun FileTransformer.librarySuperCall(symbol: KaCallableSymbol, args: List<KtExpression?>): LuaExpr? = with(session) {
     val owner = symbol.callableId?.classId?.asString()
     val name = symbol.callableId?.callableName?.asString()
     // Kotlin resolves Throwable's toString to Any's, so look at what the class extends.
-    val isThrowable =
-        owner in LIBRARY_CLASSES ||
-            currentClass?.let { c -> classes.hierarchy(c).any { classes.superInfo(it).libraryBase != null } } == true
+    val isThrowable = owner in LIBRARY_CLASSES ||
+        currentClass?.let { c -> classes.hierarchy(c).any { classes.superInfo(it).libraryBase != null } } == true
     val self = selfRef()
     when {
         name == "toString" && args.isEmpty() -> when {

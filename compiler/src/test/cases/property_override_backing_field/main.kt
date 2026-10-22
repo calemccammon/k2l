@@ -1,6 +1,5 @@
 // A property overriding a library one with an accessor and a backing field (`override var size` with a setter in an
-// AbstractMutableMap, kotlinx.collections.immutable's PersistentHashMapBuilder): the library reads `size` through the
-// getter, which reads the backing field.
+// AbstractMutableMap): the library reads `size` through the getter, which reads the backing field.
 class Sized : AbstractMutableMap<String, Int>() {
     private val backing = LinkedHashMap<String, Int>()
     var sizeChanges = 0

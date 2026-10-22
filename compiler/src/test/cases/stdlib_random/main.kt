@@ -1,6 +1,6 @@
 import kotlin.random.Random
 
-// The JVM's seeded sequences can not be asserted portably here; only properties that hold for any seed.
+// Properties of Random that hold for any seed.
 fun main() {
     val r = Random(42)
     var inRange = true

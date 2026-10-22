@@ -57,16 +57,16 @@ internal class PropertyFamilies(
     fun hasOwnField(p: KtNamedDeclaration): Boolean = families[p]?.fields?.contains(p) == true
 
     /**
-     * The value a read of [p]'s field gives before its initializer ran, when the family is read by a constructor
-     * (the JVM's field default), or null when that is `nil` anyway or cannot happen.
+     * The value a read of [p]'s field gives before its initializer ran (`0`, `false`, ...), when the family is read by a
+     * constructor, or null when that is `nil` anyway or cannot happen.
      */
     fun uninitializedValue(p: KtNamedDeclaration): LuaExpr? {
         val family = families[p] ?: return null
         if (!family.readInConstructor || p !in family.fields.drop(1)) return null
-        return with(session) { jvmFieldDefault((if (p is KtProperty) p.symbol else (p as KtParameter).symbol).returnType) }
+        return with(session) { fieldDefault((if (p is KtProperty) p.symbol else (p as KtParameter).symbol).returnType) }
     }
 
-    /** The Lua table key holding [p]'s backing field. Members of one family that each have a field get distinct keys, like the JVM. */
+    /** The Lua table key holding [p]'s backing field. Members of one family that each have a field get distinct keys. */
     fun fieldName(p: KtNamedDeclaration): String {
         val name = p.name!!
         val fields = families[p]?.takeIf { it.accessors }?.fields.orEmpty()
@@ -260,10 +260,7 @@ private class ConstructorReads(private val declarations: Declarations) {
 
                     is KtProperty -> {
                         reads += target
-                        listOfNotNull(target.getter?.takeIf { it.hasBody() }, target.setter?.takeIf { it.hasBody() }).forEach {
-                            pending +=
-                                it
-                        }
+                        pending += listOfNotNull(target.getter?.takeIf { it.hasBody() }, target.setter?.takeIf { it.hasBody() })
                     }
 
                     is KtParameter -> reads += target

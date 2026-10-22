@@ -21,8 +21,8 @@ internal object SequenceMappings {
         "filterIndexedTo", "filterTo", "filterNotTo", "filterNotNullTo", "mapIndexedNotNullTo", "mapIndexedTo", "mapTo",
         "mapNotNullTo", "flatMapIndexedTo", "flatMapTo", "flatMapIndexed", "associateTo", "associateByTo", "associateWithTo",
         "groupByTo", "groupingBy", "maxWith", "minWith", "maxWithOrNull", "minWithOrNull", "maxOfWith", "minOfWith",
-        "maxOfWithOrNull", "minOfWithOrNull", "reduceIndexed",
-        "reduceIndexedOrNull", "reduceOrNull", "runningFoldIndexed", "scanIndexed", "runningReduceIndexed", "sumBy",
+        "maxOfWithOrNull", "minOfWithOrNull", "reduceIndexed", "reduceIndexedOrNull", "reduceOrNull", "runningFoldIndexed",
+        "scanIndexed", "runningReduceIndexed", "sumBy",
         "sumByDouble", "requireNoNulls", "joinTo", "toSortedSet",
     )
 

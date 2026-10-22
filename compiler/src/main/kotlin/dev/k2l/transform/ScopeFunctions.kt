@@ -62,15 +62,10 @@ internal fun FileTransformer.scopeFunction(
 
         "kotlin/collections/forEach", "kotlin/sequences/forEach", "java/lang/Iterable.forEach", "java/util/Map.forEach",
         "kotlin/text/forEach",
-        ->
-            forEachCall(receiver!!, receiverExpr?.expressionType ?: call.dispatchReceiver?.type, args, indexed = false)
+        -> forEachCall(receiver!!, receiverExpr?.expressionType ?: call.dispatchReceiver?.type, args, indexed = false)
 
-        "kotlin/collections/forEachIndexed", "kotlin/text/forEachIndexed" -> forEachCall(
-            receiver!!,
-            receiverExpr?.expressionType,
-            args,
-            indexed = true,
-        )
+        "kotlin/collections/forEachIndexed", "kotlin/text/forEachIndexed" ->
+            forEachCall(receiver!!, receiverExpr?.expressionType, args, indexed = true)
 
         "kotlin/TODO" -> todoCall(args)
 

@@ -1,16 +1,16 @@
-2:27: Unsigned type 'UInt' is not supported yet
+2:27: Unsigned type 'UInt' is not supported
   hint: use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones
-5:13: Unsigned type 'UInt' is not supported yet
+5:13: Unsigned type 'UInt' is not supported
   hint: use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones
-6:13: Unsigned type 'UInt' is not supported yet
+6:13: Unsigned type 'UInt' is not supported
   hint: use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones
-7:18: Unsigned type 'UByte' is not supported yet
+7:18: Unsigned type 'UByte' is not supported
   hint: use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones
-8:17: Unsigned type 'UByteArray' is not supported yet
+8:17: Unsigned type 'UByteArray' is not supported
   hint: use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones
-9:13: Unsigned type 'UByteArray' is not supported yet
+9:13: Unsigned type 'UByteArray' is not supported
   hint: use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones
-10:14: Unsigned type 'UIntRange' is not supported yet
+10:14: Unsigned type 'UIntRange' is not supported
   hint: use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones
-11:15: Unsigned type 'ULong' is not supported yet
+11:15: Unsigned type 'ULong' is not supported
   hint: use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones

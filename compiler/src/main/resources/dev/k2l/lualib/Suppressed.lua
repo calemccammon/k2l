@@ -1,5 +1,5 @@
 -- requires: Exceptions, InstanceOf, ToThrowable, ListWrap
--- Throwable.suppressedExceptions (a copy, as on the JVM), and the close() of `use` after its block failed with `cause`:
+-- Throwable.suppressedExceptions (a copy), and the close() of `use` after its block failed with `cause`:
 -- an error of close() is added to the suppressed exceptions of the block's exception.
 local function __K2L_Suppressed(e)
     local suppressed, copy = rawget(e, "____suppressed") or {}, {}

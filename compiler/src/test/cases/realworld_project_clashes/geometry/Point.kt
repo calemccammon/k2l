@@ -1,6 +1,6 @@
 package draw.geometry
 
-// A file named after the class it declares, with top-level functions next to it (the JVM puts them in PointKt).
+// A file named after the class it declares, with top-level functions next to it.
 
 data class Point(val x: Double, val y: Double) {
     operator fun plus(o: Point) = Point(x + o.x, y + o.y)

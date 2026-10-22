@@ -1,41 +1,39 @@
 -- requires: ToInt32, IdentityHash
--- Kotlin/JVM hashCode() for primitives and strings; objects use their own hashCode().
-local byte = string.byte
+-- hashCode() of a value: a number by its value (an integral Double hashes like the Int it equals), a string by its bytes, a
+-- boolean as 1231 or 1237, an object by its own hashCode() or else by identity. Hash codes are the same on every target.
+local byte, floor = string.byte, math.floor
 
--- String.hashCode() of the bytes, four per step (h * 31^4 + ...: below 2^53, so exact with doubles too)
+-- s[0] * 31^(n-1) + ... + s[n-1] of the bytes, four per step (h * 31^4 + ... stays below 2^53, so it is exact with doubles)
 local function hashString(s)
     local h, i, n = 0, 1, #s
     while i + 3 <= n do
         local b1, b2, b3, b4 = byte(s, i, i + 3)
-        h = (h * 923521 + b1 * 29791 + b2 * 961 + b3 * 31 + b4) & 0xFFFFFFFF
+        h = (h * 923521 + b1 * 29791 + b2 * 961 + b3 * 31 + b4) % 4294967296
         i = i + 4
     end
     while i <= n do
-        h = (31 * h + byte(s, i)) & 0xFFFFFFFF
+        h = (31 * h + byte(s, i)) % 4294967296
         i = i + 1
     end
-    if h >= 2147483648 then
-        h = h - 4294967296
-    end
-    return h
+    return __K2L_ToInt32(h)
 end
 
-local mtype = math.type
+local function hashNumber(x)
+    if x ~= x then
+        return 0
+    elseif x % 1 ~= 0 or x >= 9007199254740992 or x <= -9007199254740992 then
+        -- a fraction, an infinity or a number beyond 2^53: by its text
+        return hashString(string.format("%.17g", x))
+    elseif x >= -2147483648 and x <= 2147483647 then
+        return x == 0 and 0 or floor(x)
+    end
+    return __K2L_ToInt32(floor(x / 4294967296) * 31 + x % 4294967296)
+end
 
 local function __K2L_Hash(value)
     local t = type(value)
     if t == "number" then
-        if mtype(value) == "integer" then
-            -- Int.hashCode() is the value itself; Long.hashCode() folds the high bits in.
-            if value >= -0x80000000 and value <= 0x7FFFFFFF then
-                return value
-            end
-            return __K2L_ToInt32(value ~ (value >> 32))
-        end
-        if value ~= value then
-            return 2146959360 -- Double.hashCode(NaN): the bits of the canonical NaN (Lua's may have the sign bit set)
-        end
-        return __K2L_Hash(string.unpack("<i8", string.pack("<d", value)))
+        return hashNumber(value)
     elseif t == "string" then
         return hashString(value)
     elseif value == nil then
@@ -46,9 +44,4 @@ local function __K2L_Hash(value)
         return value:hashCode()
     end
     return __K2L_IdentityHash(value)
-end
-
--- Double.hashCode() of a value statically typed Double (floats are told apart from integers here, see Hash.float.lua).
-local function __K2L_DoubleHash(value)
-    return __K2L_Hash(value + 0.0)
 end

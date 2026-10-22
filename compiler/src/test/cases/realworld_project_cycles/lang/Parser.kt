@@ -10,7 +10,7 @@ import calc.trace
 
 val keywords = setOf("let", "if", "quote")
 
-// Read from the evaluator while the evaluator reads `keywords`: fine on the JVM, as `keywords` is set first.
+// Read from the evaluator while the evaluator reads `keywords`: fine, as `keywords` is set first.
 val operatorSymbols = calc.eval.builtins.keys.filter { it.length == 1 }
 
 var parsedNodes = 0

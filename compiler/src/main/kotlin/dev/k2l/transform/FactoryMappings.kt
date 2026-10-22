@@ -2,8 +2,6 @@ package dev.k2l.transform
 
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
-import org.jetbrains.kotlin.psi.KtCallExpression
-import org.jetbrains.kotlin.psi.KtQualifiedExpression
 
 /** `LinkedHashMap(initialCapacity, loadFactor, accessOrder)` */
 internal const val LINKED_MAP_ACCESS_ORDER_ARITY = 3
@@ -114,11 +112,7 @@ internal object FactoryMappings {
 
             "kotlin/Char.rangeTo" -> newCharRange(site, site.self, site.arg(0))
 
-            "kotlin/ranges/rangeTo" -> site.libNew(
-                "Collections",
-                "__K2L_ClosedRange",
-                listOf(site.self, site.arg(0)),
-            )
+            "kotlin/ranges/rangeTo" -> site.libNew("Collections", "__K2L_ClosedRange", listOf(site.self, site.arg(0)))
 
             "kotlin/Int.rangeUntil", "kotlin/ranges/until" ->
                 if (charOperands) {
@@ -129,12 +123,7 @@ internal object FactoryMappings {
 
             "kotlin/ranges/downTo" ->
                 if (charOperands) {
-                    newCharRange(
-                        site,
-                        site.self,
-                        site.arg(0),
-                        LuaNumber("-1"),
-                    )
+                    newCharRange(site, site.self, site.arg(0), LuaNumber("-1"))
                 } else {
                     newRange(site, site.self, site.arg(0), LuaNumber("-1"))
                 }

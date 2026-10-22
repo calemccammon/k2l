@@ -1,4 +1,0 @@
-primes: 6000, last 59359
-longest collatz below 30000: 26623 (308 steps)
-best windows: [900, 897, 939, 924, 892, 888, 940]
-pairs 17137, distinct 997, nested 1509885, running 3584, checksum 170073805

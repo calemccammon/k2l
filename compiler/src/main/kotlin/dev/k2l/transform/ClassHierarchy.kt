@@ -75,8 +75,6 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
         with(session) { classifySupertypes(c, ::isSource, ::isSequenceClass, { collectionBaseOf(it) != null }) }
     }
 
-    /** Whether [c] or a source class it extends implements `Sequence`. */
-
     private val initCache = HashMap<KtClassOrObject, Boolean>()
 
     /** Whether the primary constructor does anything, i.e. whether `____init` is generated for it. */
@@ -123,10 +121,8 @@ internal fun KtClassOrObject.declaredFunction(name: String) =
 internal fun hasPrimary(c: KtClassOrObject) = c !is KtClass || c.primaryConstructor != null || c.secondaryConstructors.isEmpty()
 
 /** Whether [c] (or a source superclass) implements `Sequence`. */
-internal fun ClassHierarchy.isSequenceClass(c: KtClassOrObject): Boolean = superInfo(c).let {
-    it.sequenceBase || it.sequenceMixin ||
-        it.base?.let(::isSequenceClass) == true
-}
+internal fun ClassHierarchy.isSequenceClass(c: KtClassOrObject): Boolean =
+    superInfo(c).let { it.sequenceBase || it.sequenceMixin || it.base?.let(::isSequenceClass) == true }
 
 /** The lualib collection class [c] (or a source superclass) extends or implements, if any. */
 internal fun ClassHierarchy.collectionBaseOf(c: KtClassOrObject): String? = superInfo(c).let {

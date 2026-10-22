@@ -1,0 +1,47 @@
+15:13: Constructing library class 'java.math.BigInteger' is not supported
+15:44: Library API 'java.math.BigInteger.ONE' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+15:13: Library API 'kotlin.plus' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+16:13: Constructing library class 'java.math.BigDecimal' is not supported
+17:16: Library API 'kotlin.toBigInteger' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+21:15: Library API 'kotlin.time.Duration.Companion.seconds' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+22:13: Library API 'kotlin.time.measureTime' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+23:34: Library API 'kotlin.time.TimeSource.Monotonic.markNow' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+27:17: Constructing library class 'java.util.PriorityQueue' is not supported
+28:16: Constructing library class 'java.util.TreeMap' is not supported
+29:35: Library API 'java.util.Collections.max' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+30:21: Library API 'java.lang.Integer.toHexString' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+31:18: Library API 'java.lang.Math.addExact' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+32:26: Library API 'kotlin.collections.List.stream' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+32:35: Library API 'java.util.stream.Stream.count' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+33:35: Library API 'java.util.SortedMap.firstKey' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+37:13: Class literal 'x::class' is not supported
+37:22: Library API 'kotlin.reflect.KClass.qualifiedName' is not supported
+38:15: Library API 'kotlin.jvm.javaClass' is not supported
+38:25: Library API 'java.lang.Class.name' is not supported
+39:13: Library API 'kotlin.reflect.typeOf' is not supported
+41:15: Library API 'kotlin.reflect.KCallable.name' is not supported
+47:17: Library API 'kotlin.toBits' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+48:20: Library API 'kotlin.fromBits' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+49:17: Library API 'kotlin.math.ulp' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+50:13: Type test 'is IntArray' is not supported: all arrays are one Lua class (test `is Array<*>`)
+51:15: Library API 'kotlin.text.isSurrogate' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+52:13: Constructing library class 'kotlin.DeepRecursiveFunction' is not supported
+52:13: Library API 'kotlin.invoke' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+53:13: Constructing library class 'kotlin.ConcurrentModificationException' is not supported

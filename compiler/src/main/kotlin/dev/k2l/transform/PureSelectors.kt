@@ -24,7 +24,7 @@ private val PURE_OPERATORS = setOf(
  * Whether the selector passed to `sortedBy` and the like (the last argument of the call [element]) runs no code anybody
  * could observe: a lambda whose body reads its parameter, fields and constants, combined with arithmetic and comparisons
  * on numbers, booleans and strings; or a reference to such a field. Then the lualib may compute each element's key once
- * instead of once per comparison (the JVM's compareBy), with the same result.
+ * instead of once per comparison, with the same result.
  */
 internal fun FileTransformer.isPureSelector(element: KtExpression): Boolean {
     val call = element as? KtCallExpression ?: (element as? KtQualifiedExpression)?.selectorExpression as? KtCallExpression

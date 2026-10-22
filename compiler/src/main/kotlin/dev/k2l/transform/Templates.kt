@@ -4,7 +4,6 @@ import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaAnonymousFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaValueParameterSymbol
-import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaFlexibleType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.idea.references.mainReference
@@ -44,8 +43,8 @@ internal fun FileTransformer.template(e: KtStringTemplateExpression): LuaExpr = 
 }
 
 /**
- * The text of each template entry, ordered like [ordered]; an entry is turned into text where the JVM appends it, so a later
- * entry that is computed first (`"$list ${list.removeLastOrNull()?.x}"`) can't change what an earlier object prints.
+ * The text of each template entry, ordered like [ordered]; each entry is turned into text in order, so a later entry that
+ * is computed first (`"$list ${list.removeLastOrNull()?.x}"`) can't change what an earlier object prints.
  */
 private fun FileTransformer.orderedTexts(exprs: List<KtExpression>): List<LuaExpr> = with(session) {
     val results = exprs.map { expr -> withPreceding { str(expression(expr), templateType(expr), forConcat = true) } }
@@ -58,7 +57,7 @@ private fun FileTransformer.orderedTexts(exprs: List<KtExpression>): List<LuaExp
 
 /**
  * The type a template prints [expr] by. A platform type may be null, except for a parameter of a lambda converted to a Java
- * interface (`Comparator { a, b -> }`, `stream.peek { }`), which the library calls with its own elements.
+ * interface (`Comparator { a, b -> }`), which the library calls with its own elements.
  */
 private fun FileTransformer.templateType(expr: KtExpression): KaType? = with(session) {
     val type = expr.expressionType
@@ -94,7 +93,7 @@ internal fun FileTransformer.str(value: LuaExpr, type: KaType?, forConcat: Boole
     }
 }
 
-/** A platform type from a Java method (`treeMap.higherKey(k)` is `Int!`) may be null; Java strings are taken as non-null. */
+/** A platform type from a Java method (a value of a `sortedMapOf` map is `Int!`) may be null; Java strings are taken as non-null. */
 private fun FileTransformer.isPlatformNullable(type: KaType): Boolean = with(session) {
     type is KaFlexibleType && type.upperBound.isMarkedNullable && !type.lowerBound.isStringType
 }

@@ -1,6 +1,5 @@
 // Members that share a Lua name with an override of a library member, whose name the library fixes: a final
-// property named like the method (`val hashCode` next to `override fun hashCode()`, kotlinx.collections.immutable's
-// ObjectWrapper) and a property accessor named like it (`override var value` next to `override fun setValue`).
+// property named like the method (`val hashCode` next to `override fun hashCode()`) and a property accessor named like it (`override var value` next to `override fun setValue`).
 class Wrapper(val obj: String, val hashCode: Int) {
     override fun hashCode(): Int = hashCode
 

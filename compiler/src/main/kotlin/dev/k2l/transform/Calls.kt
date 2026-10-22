@@ -194,9 +194,7 @@ internal fun FileTransformer.sourceFunctionCall(
 ): LuaExpr = with(session) {
     if (psi.containingClassOrObject == null) {
         // Extension functions take their receiver as the first argument.
-        val receivers = if (psi.receiverTypeReference !=
-            null
-        ) {
+        val receivers = if (psi.receiverTypeReference != null) {
             listOf(receiverOperand(implicit, receiverExpr) ?: return LuaNil)
         } else {
             emptyList()

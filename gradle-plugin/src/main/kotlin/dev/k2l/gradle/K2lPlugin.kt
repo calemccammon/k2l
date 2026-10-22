@@ -16,8 +16,8 @@ import java.util.Properties
  * task (`k2l --check`, which writes no Lua).
  *
  * The compiler comes from the `k2lCompiler` configuration, which defaults to `dev.k2l:compiler:<plugin version>`;
- * that dependency resolves to a directory with the compiler's complete runtime classpath (see `k2lCompilerRuntime`
- * in the compiler project) and is only ever passed to the task as a file collection for a forked JVM.
+ * that dependency resolves to a zip of the compiler's complete runtime classpath (see `k2lCompilerRuntime` in the
+ * compiler project), unpacked by [UnzipTransform], and is only ever passed to the task as a file collection for a forked JVM.
  */
 class K2lPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -34,10 +34,6 @@ class K2lPlugin : Plugin<Project> {
         project.dependencies.registerTransform(UnzipTransform::class.java) {
             it.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, "zip")
             it.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, "directory")
-        }
-        project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE) {
-            it.compatibilityRules.add(ZipUsageCompatibility::class.java)
-            it.disambiguationRules.add(PreferDirectoryUsage::class.java)
         }
         val compiler = project.configurations.create(COMPILER_CONFIGURATION) { cfg ->
             cfg.description = "The k2l compiler and its runtime classpath."
@@ -72,8 +68,7 @@ class K2lPlugin : Plugin<Project> {
     private fun configureCommon(project: Project, task: K2lTask, extension: K2lExtension, compiler: Configuration) {
         task.sourceDirs.from(extension.sourceDirs)
         task.classpath.from(extension.classpath)
-        // A published compiler is a zip of jars (unpacked by UnzipTransform); in a composite build it is a directory;
-        // a hand-made dependency (files(...)) is used as it is.
+        // The compiler is a zip of jars (unpacked by UnzipTransform); a hand-made dependency on jars (files(...)) is used as it is.
         val unpacked = compiler.incoming.artifactView { it.attributes.attribute(ARTIFACT_TYPE_ATTRIBUTE, "directory") }.files
         task.compilerClasspath.from((unpacked + compiler.incoming.files).asFileTree.matching { it.include("**/*.jar") })
         task.luaTarget.set(extension.luaTarget)
@@ -96,7 +91,6 @@ class K2lPlugin : Plugin<Project> {
     companion object {
         const val COMPILER_CONFIGURATION = "k2lCompiler"
         const val COMPILER_USAGE = "k2l-compiler-runtime"
-        const val COMPILER_ZIP_USAGE = "k2l-compiler-runtime-zip"
         private const val MIN_JAVA = 21
     }
 }

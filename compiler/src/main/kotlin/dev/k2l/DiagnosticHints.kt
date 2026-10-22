@@ -20,12 +20,10 @@ internal object DiagnosticHints {
         Rule(Regex("^Delegating the library interface")) {
             "implement the interface's members in the class and forward each one to the delegate"
         },
-        Rule(Regex("^Extending '(java\\.util\\.)?Vector<")) {
-            "extend java.util.ArrayList instead (Lua has one thread, so Vector's locking adds nothing)"
-        },
+        Rule(Regex("^Extending '(java\\.util\\.)?Vector<")) { "extend java.util.ArrayList instead" },
         // Reflection has no Lua function to bind; other library APIs can be written in Kotlin or bound to Lua.
-        Rule(Regex("^Library API '(?!java\\.lang\\.Class\\.|kotlin\\.reflect\\.)")) {
-            "implement it in Kotlin, or bind a Lua function with @LuaExternal (see \"Calling Lua from Kotlin\" in the README)"
+        Rule(Regex("^Library API '(?!java\\.lang\\.Class\\.|kotlin\\.reflect\\.|kotlin\\.jvm\\.)")) {
+            "implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)"
         },
         Rule(Regex("^Passing a nullable value for '(\\w+)', which has a default")) {
             "declare the parameter with '= null' and apply the real default in the body (${it.groupValues[1]} ?: ...)"

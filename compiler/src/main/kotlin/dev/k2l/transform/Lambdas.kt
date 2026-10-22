@@ -112,17 +112,15 @@ internal fun FileTransformer.emitInlinedBody(body: List<LuaStmt>, frame: Functio
 }
 
 private fun FileTransformer.isInlinableExpression(lambdaExpr: KtExpression, single: KtExpression, args: List<LuaExpr>) = with(session) {
-    single !is KtDeclaration && !mayNeedStatements(single) && args.all(::isStable) &&
-        PsiTreeUtil.findChildOfAnyType(
-            lambdaExpr,
-            KtReturnExpression::class.java,
-            KtBreakExpression::class.java,
-            KtContinueExpression::class.java,
-        ) ==
-        null &&
-        single !is KtThrowExpression &&
-        (KtPsiUtil.safeDeparenthesize(lambdaExpr) as? KtLambdaExpression)?.valueParameters?.none { it.destructuringDeclaration != null } !=
-        false
+    val jumps = PsiTreeUtil.findChildOfAnyType(
+        lambdaExpr,
+        KtReturnExpression::class.java,
+        KtBreakExpression::class.java,
+        KtContinueExpression::class.java,
+    )
+    val params = (KtPsiUtil.safeDeparenthesize(lambdaExpr) as? KtLambdaExpression)?.valueParameters
+    single !is KtDeclaration && !mayNeedStatements(single) && args.all(::isStable) && jumps == null &&
+        single !is KtThrowExpression && params?.none { it.destructuringDeclaration != null } != false
 }
 
 private fun lambdaParameterNames(literal: KtFunctionLiteral, args: List<LuaExpr>) =
@@ -199,17 +197,12 @@ internal fun FileTransformer.inlineValue(lambdaExpr: KtExpression, args: List<Lu
         // `x.let { it + 1 }` becomes `x + 1`.
         var result: LuaExpr = LuaNil
         var marker: LuaStmt? = null
-        val stmts =
-            collect {
-                inlineLambda(lambdaExpr, args, receiver) {
-                    listOf(
-                        LuaCallStmt(it.also { v -> result = v }).also { m ->
-                            marker =
-                                m
-                        },
-                    )
-                }
+        val stmts = collect {
+            inlineLambda(lambdaExpr, args, receiver) { value ->
+                result = value
+                listOf(LuaCallStmt(value).also { marker = it })
             }
+        }
         if (stmts.lastOrNull() === marker) {
             emitAll(stmts.dropLast(1))
             return result

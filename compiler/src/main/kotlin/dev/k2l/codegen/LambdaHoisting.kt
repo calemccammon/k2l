@@ -6,8 +6,7 @@ import java.util.IdentityHashMap
  * Function values written inside functions that only return an expression and capture nothing (they read only their own
  * parameters, chunk-level locals and globals) are created once, in a chunk-level local declared just before the chunk-level
  * statement that contains them, instead of at each evaluation (a closure allocation each time, and LuaJIT cannot compile
- * closure creation). As on the JVM, where a lambda without captures is a singleton. The printer prints the [names] in place
- * of those functions and the [preludes] before their statements.
+ * closure creation). The printer prints the [names] in place of those functions and the [preludes] before their statements.
  */
 class LambdaHoisting(
     val names: Map<LuaFunction, String>,

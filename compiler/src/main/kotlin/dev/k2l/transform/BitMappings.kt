@@ -5,8 +5,7 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
 
 /**
  * Rotations, single-bit and bit-count functions of `Long`, and `Double.withSign`. The runtime is `Bits.lua`; its `.float`
- * variant serves Lua 5.1, 5.2 and LuaJIT, where `Long` is a double (32-bit bit operations). The IEEE 754 bit patterns
- * (`toBits`, `fromBits`, `ulp`, `nextUp` ...) are not supported.
+ * variant serves Lua 5.1, 5.2 and LuaJIT, where `Long` is a double (32-bit bit operations).
  */
 internal object BitMappings {
     fun install(t: MappingTable) {
@@ -24,8 +23,8 @@ internal object BitMappings {
             t.def("kotlin/$name") {
                 val count = if (negate) LuaUnary(LuaUnOp.Neg, arg(0)) else arg(0)
                 when {
-                    isByte(receiverType) -> smallRotation(count, Byte.SIZE_BITS, true)
-                    isShort(receiverType) -> smallRotation(count, Short.SIZE_BITS, true)
+                    isByte(receiverType) -> smallRotation(count, Byte.SIZE_BITS)
+                    isShort(receiverType) -> smallRotation(count, Short.SIZE_BITS)
                     isLong(receiverType) -> bits("rotl64", self, count)
                     isIntLike(receiverType) -> bits("rotl32", self, count)
                     else -> null
@@ -61,8 +60,8 @@ internal object BitMappings {
 }
 
 /** `Byte` and `Short` rotate within their own width (see `Numbers.lua`). */
-private fun CallSite.smallRotation(count: LuaExpr, bits: Int, signed: Boolean): LuaExpr =
-    libMember(NUM_TABLE, "rotateSmall", self, count, LuaNumber("$bits"), LuaBool(signed))
+private fun CallSite.smallRotation(count: LuaExpr, bits: Int): LuaExpr =
+    libMember(NUM_TABLE, "rotateSmall", self, count, LuaNumber("$bits"))
 
 private fun CallSite.isByte(type: KaType?): Boolean = type != null && with(session) { type.withoutFlexibility.isByteType }
 

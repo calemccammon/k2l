@@ -51,13 +51,7 @@ abstract class K2lTask(private val exec: ExecOperations) : DefaultTask() {
 
     /** The options every run passes, then [extra], then the sources. */
     protected fun compilerArgs(sources: List<File>, extra: List<String>): List<String> {
-        val args =
-            mutableListOf(
-                "-t",
-                luaTarget.get(),
-                "--lualib",
-                luaLibImport.get(),
-            )
+        val args = mutableListOf("-t", luaTarget.get(), "--lualib", luaLibImport.get())
         args += extra
         val libraries = classpath.files.filter { it.exists() }
         if (libraries.isNotEmpty()) args += listOf("--classpath", libraries.joinToString(File.pathSeparator))

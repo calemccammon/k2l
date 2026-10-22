@@ -12,7 +12,7 @@ var operations = 0
 
 val stock: MutableMap<String, Item> = linkedMapOf()
 
-// On the JVM this runs when StoreKt is first touched (the first `operations++`), not when the program starts.
+// This runs when the file is first used (the first `operations++`), not when the program starts.
 val fileStamp = log("Store.kt top-level init")
 
 object Store {

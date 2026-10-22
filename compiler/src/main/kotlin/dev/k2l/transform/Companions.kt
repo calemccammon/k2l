@@ -38,7 +38,7 @@ private val CLASS_TABLE_NAMES = setOf("new", "toString", "equals", "hashCode", "
 /**
  * Companion members live on the class table; their initializers run in `____initCompanion`. A companion with a table of
  * its own is declared like a nested object; when its initialization is observable, the class's `____initCompanion` touches
- * it, so constructing the class and using the companion both initialize it, as on the JVM.
+ * it, so constructing the class and using the companion both initialize it.
  */
 internal fun FileTransformer.companion(companion: KtObjectDeclaration, ref: LuaExpr): Boolean = with(session) {
     if (hasOwnTable(companion)) {

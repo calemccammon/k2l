@@ -3,7 +3,7 @@ import kotlin.math.roundToLong
 
 // Numbers to and from text found by the realworld_* programs: the literal -2147483648, "-0.0".toDouble(), nullable
 // Doubles printed by their static type on every target, Char.equals(ignoreCase) and println of a platform-typed null
-// Int (the JVM unboxes it for println(Int) and throws NullPointerException).
+// Int (println(Int) unboxes it and throws NullPointerException).
 
 fun same(a: Char, b: Char, ignoreCase: Boolean) = a.equals(b, ignoreCase)
 

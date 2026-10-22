@@ -1,7 +1,7 @@
 -- requires: Collections, Exceptions, Str, Compare, Pair
 -- Kotlin String functions. Strings are Lua byte strings; indices count bytes.
 
--- s[i] and s.get(i): Java's charAt.
+-- s[i] and s.get(i)
 local function __K2L_StringCharAt(s, i)
     if i < 0 or i >= #s then
         error(__K2L_StringIndexOutOfBoundsException.new("Index " .. i .. " out of bounds for length " .. #s))
@@ -23,11 +23,6 @@ end
 
 -- Kotlin's String.indexOf, lastIndexOf, replace, split(String) and lines(), see __K2L_Text below.
 local __K2L_Text = {}
-
--- The length in chars, which are bytes
-function __K2L_Text.len(s)
-    return #s
-end
 
 local function __K2L_StringIndexOf(s, part, from)
     return __K2L_Text.indexOf(s, part, from)
@@ -188,7 +183,7 @@ local function chars(s)
     return out
 end
 
--- Java's String.compareTo: the difference of the first differing chars, else of the lengths.
+-- String.compareTo: the difference of the first differing chars, else of the lengths.
 function __K2L_Text.compare(a, b)
     local n = math.min(#a, #b)
     for i = 1, n do
@@ -475,20 +470,6 @@ end
 
 function __K2L_Text.get(s, index)
     return __K2L_StringCharAt(s, index)
-end
-
-function __K2L_Text.first(s)
-    if s == "" then
-        error(__K2L_NoSuchElementException.new("Char sequence is empty."))
-    end
-    return s:sub(1, 1)
-end
-
-function __K2L_Text.last(s)
-    if s == "" then
-        error(__K2L_NoSuchElementException.new("Char sequence is empty."))
-    end
-    return s:sub(-1)
 end
 
 function __K2L_Text.repeatCount(s, n)
@@ -825,7 +806,7 @@ function __K2L_Text.regionMatches(s, thisOffset, other, otherOffset, length, ign
 end
 
 ------------------------------------------------------------------ String.format
--- String.format of a format that is not a literal (the compiler translates literal ones, see TextFormat.kt): each Java
+-- String.format of a format that is not a literal (the compiler translates literal ones, see TextFormat.kt): each
 -- specifier %[flags][width][.precision]conversion is formatted by Lua's string.format. %s, %S, %b and %B take the text of
 -- their argument, %c of a Char its string, the "," flag of %d and %f groups the digits by three and %n is a newline; the
 -- argument indexes, the "(" flag and the conversions Lua has no equivalent of (%h, %t) raise an error.
@@ -1023,7 +1004,7 @@ function __K2L_StringBuilder:____text()
     return self:toString()
 end
 
--- Comparable since Java 11: by the chars of the texts, as String.compareTo
+-- Comparable: by the chars of the texts, as String.compareTo
 __K2L_StringBuilder.____comparable = true
 
 function __K2L_StringBuilder:compareTo(other)
@@ -1032,10 +1013,10 @@ end
 
 ------------------------------------------------------------------ CharSequence values
 -- A value typed CharSequence: a string, a StringBuilder or an object of a class of the program implementing CharSequence.
--- length, get and loops call the object's own members, as on the JVM.
+-- length, get and loops call the object's own members.
 function __K2L_Text.charsLength(s)
     if type(s) == "string" then
-        return __K2L_Text.len(s)
+        return #s
     end
     local getLength = s.getLength
     if getLength ~= nil then
@@ -1051,20 +1032,10 @@ function __K2L_Text.charsGet(s, index)
     return s:get(index)
 end
 
--- A string of chars
-function __K2L_Text.joinChars(chars)
-    return table.concat(chars)
-end
-
--- The chars of a string
-function __K2L_Text.eachChar(s)
-    return string.gmatch(s, ".")
-end
-
--- for (c in s): an object's get(i) while i < length, both read at each step like the JVM's CharSequence iterator
+-- for (c in s): an object's get(i) while i < length, both read at each step
 function __K2L_Text.chars(s)
     if type(s) == "string" then
-        return __K2L_Text.eachChar(s)
+        return string.gmatch(s, ".")
     end
     local i = 0
     return function()

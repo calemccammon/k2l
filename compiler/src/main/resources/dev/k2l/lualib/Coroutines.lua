@@ -124,7 +124,7 @@ end
 local running = nil
 
 -- Resumes a task's coroutine: the Lua side of Continuation.resumeWith for the coroutine's own continuation.
-local TaskContinuation = __K2L_Class("kotlin.coroutines.jvm.internal.BaseContinuationImpl")
+local TaskContinuation = __K2L_Class("kotlin.coroutines.Continuation")
 
 function TaskContinuation:____init(task)
     self.task = task
@@ -166,7 +166,7 @@ local function newTask(block, completion, receiver)
     return task
 end
 
--- The task's continuation as seen from outside: the context's interceptor wraps it (asked once, like on the JVM).
+-- The task's continuation as seen from outside: the context's interceptor wraps it (asked once).
 local function intercepted(task)
     if task.intercepted == nil then
         task.interceptor = __K2L_ContextGet(task.context, __K2L_ContinuationInterceptor)

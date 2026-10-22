@@ -12,3 +12,7 @@ true
 true
 caught as Error: 7
 true
+no error
+error CheckFailed: expected <1>, actual <2>. (assertion: true)
+CheckFailed: sub
+caught rethrown true true

@@ -1,4 +1,4 @@
-// Reading an element of an `Array<T>` that is still null (an unchecked `arrayOfNulls` cast) gives null, as on the JVM,
+// Reading an element of an `Array<T>` that is still null (an unchecked `arrayOfNulls` cast) gives null,
 // and an index out of range still throws.
 @Suppress("UNCHECKED_CAST")
 class Slots<T>(n: Int) {

@@ -61,7 +61,7 @@ class ModuleContext(
      * Whether some file declares a class extending `AbstractList` (or implementing `List`): such lists have no array part,
      * so loops over lists have to index them rather than use `ipairs`, which does not follow `__index` before Lua 5.3.
      */
-    val usesListViews: Boolean by lazy { mentions.listViews }
+    val implementsLists: Boolean by lazy { mentions.lists }
 
     /** Whether some class implements `ClosedRange`: then `start` of a ClosedRange value may be its own property. */
     val implementsClosedRange: Boolean by lazy { mentions.closedRange }
@@ -71,7 +71,7 @@ class ModuleContext(
 
     /**
      * Whether some class extends or implements a library collection or map: then a collection value may be an object of
-     * the program, whose collection operations call its overrides (see CollectionOverrides.lua) and stay method calls.
+     * the program, whose collection operations call its overrides and stay method calls.
      */
     val implementsCollections: Boolean by lazy { mentions.collections }
 

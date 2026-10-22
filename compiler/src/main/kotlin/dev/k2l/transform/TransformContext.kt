@@ -5,7 +5,6 @@ import dev.k2l.CompilerOptions
 import dev.k2l.Diagnostic
 import dev.k2l.Origin
 import dev.k2l.Severity
-import dev.k2l.codegen.LuaExpr
 import dev.k2l.codegen.LuaPrinter
 import dev.k2l.codegen.LuaStmt
 import java.util.IdentityHashMap

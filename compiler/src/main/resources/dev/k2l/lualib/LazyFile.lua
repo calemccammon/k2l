@@ -1,6 +1,6 @@
--- The JVM initializes a file's top-level properties when its facade class is first used. For a file whose initializers
--- can be noticed, its properties live in the exports table under `names` and `init` runs them: the first read or
--- write of one of those keys, from any file, drops the metatable and runs `init` once. Other keys (functions, classes)
+-- Kotlin initializes a file's top-level properties when the file is first used. For a file whose initializers can be
+-- noticed, its properties live in the exports table under `names` and `init` runs them: the first read or write of one
+-- of those keys, from any file, drops the metatable and runs `init` once. Other keys (functions, classes)
 -- stay plain fields, and afterwards the properties are plain fields too.
 local function __K2L_LazyFile(exports, init, names)
     local pending = {}

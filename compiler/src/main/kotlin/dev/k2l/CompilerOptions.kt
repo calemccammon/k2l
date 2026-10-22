@@ -26,13 +26,16 @@ enum class LuaTarget(val id: String) {
     /** LuaJIT's `bit` operations compile to single instructions. */
     val compilesBitOps get() = this == LuaJIT
 
-    /** Lualib variant suffixes to try, most specific first: `Bit.51.lua` replaces `Bit.lua`. Targets with 64-bit integers have none. */
+    /**
+     * Lualib variant suffixes to try, most specific first: `Bit.51.lua` replaces `Bit.lua`. The `float` variants are for the
+     * targets without an integer subtype (and the 5.3 operators); 5.3 and 5.4 have none.
+     */
     val lualibVariants: List<String>
         get() = when (this) {
             Lua54, Lua53 -> emptyList()
             Lua52 -> listOf("52", "float")
             Lua51 -> listOf("51", "float")
-            LuaJIT -> listOf("jit", "51", "float")
+            LuaJIT -> listOf("jit", "float")
         }
 
     companion object {

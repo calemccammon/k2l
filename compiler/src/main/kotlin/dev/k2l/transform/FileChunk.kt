@@ -82,12 +82,9 @@ private fun FileTransformer.mainInvocation(main: KtNamedFunction): LuaStmt {
     val args = if (main.valueParameters.isEmpty()) {
         emptyList()
     } else {
-        listOf(
-            LuaCall(lualibRef("Collections", "__K2L_ArrayOf"), listOf(LuaName("..."))),
-        )
+        listOf(LuaCall(lualibRef("Collections", "__K2L_ArrayOf"), listOf(LuaName("..."))))
     }
     val name = LuaName(naming.of(main))
-
     val call = if (main.hasModifier(KtTokens.SUSPEND_KEYWORD)) {
         listOf(lualibRef(COROUTINES_FEATURE, "__K2L_RunSuspend"), name) + args
     } else {

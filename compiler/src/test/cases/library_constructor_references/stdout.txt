@@ -1,5 +1,0 @@
-abc
-2 [1]
-[IndexedValue(index=0, value=x), IndexedValue(index=1, value=y)]
-false
-[(a, 1), (b, 2)]

@@ -116,7 +116,7 @@ internal fun FileTransformer.indexed(name: String, source: Source, lambda: KtExp
     return result
 }
 
-/** The JVM walks lists and arrays from the end for `last { }`, `indexOfLast { }` and the like, and other collections forwards. */
+/** `last { }`, `indexOfLast { }` and the like walk lists and arrays from the end, and other collections forwards. */
 private fun Source.fromEnd() = kind.isIndexable
 
 private fun FileTransformer.indexSearch(last: Boolean, source: Source, lambda: KtExpression): LuaExpr {

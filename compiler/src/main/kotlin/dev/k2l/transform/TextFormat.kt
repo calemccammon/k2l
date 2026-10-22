@@ -13,7 +13,7 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
  * The overloads taking a `Locale` are not supported.
  */
 internal object TextFormat {
-    /** `%[index$][flags][width][.precision]conversion`, as java.util.Formatter reads it. */
+    /** `%[index$][flags][width][.precision]conversion`. */
     private val SPECIFIER = Regex("%(\\d+\\$)?([-#+ 0,(<]*)(\\d+)?(\\.\\d+)?([a-zA-Z%])")
 
     /** The conversions Lua's string.format has with the same meaning. */
@@ -94,7 +94,7 @@ internal object TextFormat {
         else -> conversion in LUA_CONVERSIONS || conversion in "sSbBcC"
     }
 
-    /** The Lua conversion for a Java one, and the argument it formats. */
+    /** The Lua conversion for a Kotlin one, and the argument it formats. */
     private fun CallSite.argument(conversion: Char, value: LuaExpr, type: KaType?): Pair<Char, LuaExpr> = when (conversion) {
         's' -> 's' to str(value, type)
         'S' -> 's' to upper(str(value, type))
@@ -105,7 +105,7 @@ internal object TextFormat {
         else -> conversion to value
     }
 
-    /** `%b`: "false" for null and false, "true" for anything else, as java.util.Formatter writes it. */
+    /** `%b`: "false" for null and false, "true" for anything else. */
     private fun booleanText(value: LuaExpr): LuaExpr = luaCall(LuaName("tostring"), LuaUnary(LuaUnOp.Not, LuaUnary(LuaUnOp.Not, value)))
 
     private fun upper(text: LuaExpr): LuaExpr = lua("string.upper", text)

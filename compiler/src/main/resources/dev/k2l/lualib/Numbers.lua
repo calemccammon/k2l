@@ -8,8 +8,8 @@ local MIN_LONG = math.mininteger or -9223372036854775808
 local exp, log, sqrt, abs, huge = math.exp, math.log, math.sqrt, math.abs, math.huge
 local LN2 = log(2)
 
--- The functions of kotlin.math that Lua's math library lacks, as short formulas of k2l's own. They are accurate to a few
--- units in the last place, not the JVM's StrictMath bits.
+-- The functions of kotlin.math that Lua's math library lacks, as short formulas of k2l's own, accurate to a few units in
+-- the last place.
 
 -- exp(x) - 1 without the cancellation near 0 (Kahan): the error of exp(x) cancels in (u - 1) / log(u).
 function __K2L_Num.expm1(x)
@@ -145,7 +145,7 @@ local DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
 -- the radixes string.format writes (for magnitudes below 2^53, which every target formats exactly)
 local RADIX_FORMATS = {[8] = "%o", [16] = "%x"}
 
--- Integer.toString(n, radix)
+-- n.toString(radix)
 function __K2L_Num.toRadix(n, radix)
     if radix < 2 or radix > 36 then
         radix = 10
@@ -181,7 +181,7 @@ for i = 1, 16 do
 end
 
 -- Byte and Short .rotateLeft(n) within [bits] (8 or 16) bits; a negative n rotates right.
-function __K2L_Num.rotateSmall(x, n, bits, signed)
+function __K2L_Num.rotateSmall(x, n, bits)
     local size = POW2[bits]
     local u = x % size
     n = n % bits
@@ -189,7 +189,7 @@ function __K2L_Num.rotateSmall(x, n, bits, signed)
         local high = math.floor(u / POW2[bits - n])
         u = (u - high * POW2[bits - n]) * POW2[n] + high
     end
-    if signed and u >= POW2[bits - 1] then
+    if u >= POW2[bits - 1] then
         u = u - size
     end
     return u

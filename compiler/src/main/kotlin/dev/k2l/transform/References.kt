@@ -20,8 +20,7 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 
 /** The companion objects of the basic types, whose members are constants (see `isBasicCompanion`). */
 private val BASIC_COMPANIONS =
-    listOf("Int", "Long", "Short", "Byte", "Double", "Float", "Char", "String", "Boolean", "UInt", "ULong", "UShort", "UByte")
-        .map { "kotlin/$it.Companion" }.toSet()
+    listOf("Int", "Long", "Short", "Byte", "Double", "Float", "Char", "String", "Boolean").map { "kotlin/$it.Companion" }.toSet()
 
 internal fun FileTransformer.reference(e: KtNameReferenceExpression, full: KtExpression = e): LuaExpr = with(session) {
     val symbol = e.mainReference.resolveToSymbol()
@@ -102,9 +101,7 @@ private fun FileTransformer.isSourceAccessorProperty(symbol: KaSymbol?, psi: Psi
  */
 private fun FileTransformer.lambdaBinding(symbol: KaValueParameterSymbol, e: KtNameReferenceExpression): LuaExpr? = with(session) {
     if (lambdaBindings.isNotEmpty()) {
-        symbol.containingDeclaration?.psi?.let {
-            lambdaBindings[it to symbol.name.asString()]
-        }?.let { return it }
+        symbol.containingDeclaration?.psi?.let { lambdaBindings[it to symbol.name.asString()] }?.let { return it }
     }
     return inlinedLambdaOf(e)?.let { inCallerContext(it) { lambda(it.expr) } }
 }

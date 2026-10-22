@@ -33,7 +33,6 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
     private companion object {
         const val REGISTER_NAME = "__K2L_SourceMapRegister"
         const val REGISTER_LINES = 1
-        const val NANOS_PER_MILLI = 1_000_000
     }
 
     /**
@@ -42,16 +41,8 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
      */
     fun compile(session: SourceSession, module: SourceModule, emit: Boolean = true): CompileResult {
         val files = session.files(module.name)
-        val profile = System.getenv("K2L_PROFILE") != null
-        var t0 = System.nanoTime()
-        fun lap(what: String) {
-            if (profile) System.err.println("[profile] $what ${(System.nanoTime() - t0) / NANOS_PER_MILLI} ms")
-            t0 = System.nanoTime()
-        }
         val moduleContext = moduleContext(module, files)
-        lap("module references")
         val results = files.map { file -> compileFile(file, module, moduleContext, emit) }
-        lap("files")
         val outputs = results.mapNotNullTo(mutableListOf()) { it.output }
         // A construct reached more than once (an inline function expanded at several call sites, say) is reported once.
         val diagnostics = results.flatMap { it.diagnostics }.distinctBy { listOf(it.file, it.line, it.column, it.message) }

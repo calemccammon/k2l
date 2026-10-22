@@ -75,9 +75,7 @@ internal object RegexMappings {
 
         is LuaString -> setOf(options.value)
 
-        is LuaCall -> if ((options.fn as? LuaName)?.name ==
-            "__K2L_SetOf"
-        ) {
+        is LuaCall -> if ((options.fn as? LuaName)?.name == "__K2L_SetOf") {
             options.args.map { (it as? LuaString)?.value ?: return null }.toSet()
         } else {
             null

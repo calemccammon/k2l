@@ -3,9 +3,8 @@ package dev.k2l.transform
 import dev.k2l.transform.Piece.Kind
 
 /**
- * Kotlin regexes as Lua patterns: the subset of the regex syntax that maps onto them (see the README), translated by the
- * compiler from the constant pattern of every Regex (there is no run-time translator). Anything else is a
- * [RegexUnsupported] naming the construct.
+ * Kotlin regexes as Lua patterns: the subset of the regex syntax that maps onto them, translated from the constant pattern
+ * of every Regex. Anything else is a [RegexUnsupported] naming the construct.
  */
 internal object RegexTranslator {
     private val OPTIONS = setOf("IGNORE_CASE", "LITERAL", "DOT_MATCHES_ALL", "UNIX_LINES")

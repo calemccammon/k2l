@@ -57,7 +57,7 @@ private fun CallSite.selectorLambdas(): List<KtLambdaExpression>? {
     return arguments.map { (it.getArgumentExpression()?.let(KtPsiUtil::safeDeparenthesize) as? KtLambdaExpression) ?: return null }
 }
 
-/** Whether the lambda's result is a non-null Int, Short or Byte (compared with `<` like the JVM). */
+/** Whether the lambda's result is a non-null Int, Short or Byte, which is compared with `<`. */
 private fun CallSite.isIntKey(lambda: KtLambdaExpression): Boolean = with(session) {
     val type = lambda.bodyExpression?.statements?.lastOrNull()?.expressionType?.withoutFlexibility ?: return false
     !type.isMarkedNullable && (type.isIntType || type.isShortType || type.isByteType)

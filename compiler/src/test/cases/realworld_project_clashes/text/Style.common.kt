@@ -1,6 +1,6 @@
 package draw.text
 
-// A multiplatform-style file name with a dot in it; the JVM calls its facade Style_commonKt.
+// A multiplatform-style file name with a dot in it (its Lua module is text/Style_common.lua).
 
 enum class Style { PLAIN, BOLD }
 

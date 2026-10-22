@@ -35,7 +35,7 @@ internal object KotlinMiscMappings {
     }
 
     /**
-     * `AutoCloseable { }`, `assert` (disabled, as on the JVM by default: the condition is evaluated, the message is not),
+     * `AutoCloseable { }`, `assert` (disabled: the condition is evaluated, the message is not),
      * the identity hash of an enum entry, the hash of a Result and of a nullable value, `Char.toChar()`, `lazyOf` and
      * `enumValues`/`enumValueOf`.
      */
@@ -96,10 +96,8 @@ internal object KotlinMiscMappings {
 
             type in INT_RANGES && name == "rangeTo" -> StdlibMappings.map("kotlin/Int.rangeTo", this)
 
-            (type in INT_RANGES || type == "Char" || type == "Long") && name == "rangeUntil" -> StdlibMappings.map(
-                "kotlin/ranges/until",
-                this,
-            )
+            (type in INT_RANGES || type == "Char" || type == "Long") && name == "rangeUntil" ->
+                StdlibMappings.map("kotlin/ranges/until", this)
 
             else -> null
         }
@@ -135,25 +133,14 @@ internal object KotlinMiscMappings {
         }
     }
 
-    private fun CallSite.intCall(callableId: String, receiver: LuaExpr, int: KaType, vararg args: LuaExpr): LuaExpr? = StdlibMappings.map(
-        callableId,
-        CallSite(
-            session,
-            transformer,
-            element,
-            callableId.substringAfterLast('.').substringAfterLast('/'),
-            receiver,
-            int,
-            args.toList(),
-            args.map {
-                int
-            },
-        ),
-    )
+    private fun CallSite.intCall(callableId: String, receiver: LuaExpr, int: KaType, vararg args: LuaExpr): LuaExpr? {
+        val name = callableId.substringAfterLast('.').substringAfterLast('/')
+        val site = CallSite(session, transformer, element, name, receiver, int, args.toList(), args.map { int })
+        return StdlibMappings.map(callableId, site)
+    }
 
-    private fun CallSite.isType(type: KaType?, classId: String): Boolean = type != null &&
-        with(session) { (type.withoutFlexibility as? KaClassType)?.classId?.asString() } ==
-        classId
+    private fun CallSite.isType(type: KaType?, classId: String): Boolean =
+        type != null && with(session) { (type.withoutFlexibility as? KaClassType)?.classId?.asString() } == classId
 }
 
 /** `enumValues<E>()` and `enumValueOf<E>(name)` of an enum class of the program (a reified `E` included). */

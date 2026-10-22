@@ -20,8 +20,7 @@ import org.jetbrains.kotlin.psi.*
 /** `Math` in `Math.abs(x)` or `Random` in `Random.nextInt()`: a library class named as the receiver, not a value. */
 internal fun FileTransformer.isLibraryClassQualifier(value: KaReceiverValue): Boolean = with(session) {
     val expr = explicitReceiver(value) ?: return false
-    val ref =
-        expr as? KtNameReferenceExpression ?: (expr as? KtDotQualifiedExpression)?.selectorExpression as? KtNameReferenceExpression
+    val ref = expr as? KtNameReferenceExpression ?: (expr as? KtDotQualifiedExpression)?.selectorExpression as? KtNameReferenceExpression
     val symbol = ref?.mainReference?.resolveToSymbol()
     return symbol is KaClassLikeSymbol && symbol.classId?.asString() !in LIBRARY_OBJECTS && !classes.isSource(symbol.psi) &&
         !interop.isExternal(symbol)

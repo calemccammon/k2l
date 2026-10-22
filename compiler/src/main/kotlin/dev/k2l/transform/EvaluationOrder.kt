@@ -33,8 +33,8 @@ private fun FileTransformer.isRead(e: LuaExpr): Boolean = when (e) {
 
 /**
  * An object (or companion) with observable initialization named as a qualifier (`Registry.register(...)`) is initialized when
- * the member is reached; when the qualifier is cached in a local because a later argument needs statements, the JVM has
- * already initialized it by then, so the cached value touches it.
+ * the member is reached; when the qualifier is cached in a local because a later argument needs statements, the cached
+ * value touches it, so it is initialized before the later arguments run, as in Kotlin.
  */
 private fun FileTransformer.touchedIfCached(expr: KtExpression, value: LuaExpr): LuaExpr = with(session) {
     if ((expr.parent as? KtQualifiedExpression)?.receiverExpression != expr) return value // a value is touched already

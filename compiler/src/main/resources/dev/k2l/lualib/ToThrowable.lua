@@ -1,6 +1,6 @@
 -- requires: Exceptions, InstanceOf, Jump
 -- A caught Lua error as a Kotlin exception: Lua runtime errors become RuntimeExceptions, an overflow of the Lua or the C
--- stack a StackOverflowError (an Error, which `catch (e: Exception)` lets through, as on the JVM).
+-- stack a StackOverflowError (an Error, which `catch (e: Exception)` lets through).
 -- A non-local jump out of a lambda (see Jump.lua) is not an exception: it is raised again.
 local function __K2L_ToThrowable(err)
     if __K2L_IsJump(err) then

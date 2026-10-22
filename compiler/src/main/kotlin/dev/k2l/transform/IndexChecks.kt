@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.*
 
 /**
- * `xs[i]` and `s[i]` are bounds-checked like on the JVM (`xs:get(i)`, `__K2L_StringCharAt(s, i)`), except where the
+ * `xs[i]` and `s[i]` are bounds-checked (`xs:get(i)`, `__K2L_StringCharAt(s, i)`), except where the
  * index is provably in range: the variable of a loop over exactly that collection's indices,
  * `for (i in xs.indices)`, `for (i in 0 until xs.size)`, `for (i in xs.size - 1 downTo 0)` and the like. Those keep the
  * direct `xs[i + 1]` access, so index loops over arrays and strings stay fast.

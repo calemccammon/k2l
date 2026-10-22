@@ -1,6 +1,6 @@
 -- requires: Class, Collections, Exceptions, Str
 -- kotlin.text.Regex on Lua patterns. The compiler translates each (compile-time constant) Kotlin regex to a Lua pattern,
--- matched here with string.find; constructs Lua patterns lack are compile errors (see the README).
+-- matched here with string.find; constructs Lua patterns lack are compile errors.
 -- Strings are byte strings: indices are bytes, and classes and IGNORE_CASE are ASCII.
 local __K2L_Regex = __K2L_Class("kotlin.text.Regex")
 local __K2L_MatchResult = __K2L_Class("kotlin.text.MatchResult")
@@ -196,7 +196,7 @@ local function replacementParts(self, replacement)
                 error(__K2L_IllegalArgumentException.new(sub(replacement, i + 1, i + 1) == "{"
                     and "Regex named group references `${name}` are not supported" or "Illegal group reference"))
             end
-            -- as in Java, further digits extend the reference while the group exists
+            -- as in Kotlin, further digits extend the reference while the group exists
             local len = 1
             while len < #digits and tonumber(sub(digits, 1, len + 1)) <= self.____groups do
                 len = len + 1
@@ -234,7 +234,7 @@ local function replaceMatches(self, input, replacement, onlyFirst)
         out[#out + 1] = sub(input, last, match.____first - 1)
         out[#out + 1] = transform and __K2L_Str(replacement(match)) or expand(parts, match)
         last = match.____last + 1
-        -- Kotlin's replace with a transform stops at a match that reaches the end (Java's replaceAll does not)
+        -- Kotlin's replace with a transform stops at a match that reaches the end
         if onlyFirst or (transform and last > #input) then
             break
         end

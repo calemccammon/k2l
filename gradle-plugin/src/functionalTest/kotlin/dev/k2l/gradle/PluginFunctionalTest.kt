@@ -31,15 +31,18 @@ class PluginFunctionalTest {
         .withArguments(*args, "--stacktrace", "--info")
         .forwardOutput()
 
-    /** A project whose compiler comes from the jars this test was given instead of a published artifact. */
+    /**
+     * A project whose compiler is the runtime-libs zip this test was given instead of a published artifact; the plugin
+     * unpacks it like the published one.
+     */
     private fun sampleProject(extension: String = "") {
         write("settings.gradle", "rootProject.name = 'sample'\n")
-        val dirs = compilerLibs.joinToString(", ") { "fileTree(dir: '${it.replace("\\", "/")}', include: '*.jar')" }
+        val zips = compilerLibs.joinToString(", ") { "'${it.replace("\\", "/")}'" }
         write(
             "build.gradle",
             """
             plugins { id 'dev.k2l' }
-            dependencies { k2lCompiler files($dirs) }
+            dependencies { k2lCompiler files($zips) }
             $extension
             """.trimIndent(),
         )
@@ -103,7 +106,7 @@ class PluginFunctionalTest {
         )
         val failed = runner("k2lCheck").buildAndFail()
         assertEquals(TaskOutcome.FAILED, failed.task(":k2lCheck")?.outcome, failed.output)
-        assertTrue(failed.output.contains("main.kt:3:17: error: Extending 'Vector<Int>()' is not supported yet"), failed.output)
+        assertTrue(failed.output.contains("main.kt:3:17: error: Extending 'Vector<Int>()' is not supported"), failed.output)
         assertTrue(failed.output.contains("hint: extend java.util.ArrayList"), failed.output)
         assertTrue(failed.output.contains("1 error, 0 warnings"), failed.output)
         assertFalse(Files.exists(project.resolve("build/lua")))

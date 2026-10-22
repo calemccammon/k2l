@@ -2,7 +2,7 @@
 -- kotlin.sequences: lazy sequences. A sequence holds a factory of generators; a generator is a
 -- function returning `true, element` for each element and nothing at the end, so a loop is
 -- `for _, x in seq:iter() do ... end` and null elements are fine. Intermediate operations wrap the
--- generator and run nothing until a terminal operation pulls elements, one at a time, as on the JVM.
+-- generator and run nothing until a terminal operation pulls elements, one at a time.
 local __K2L_Iterator -- below
 local __K2L_IteratorBuilder -- below
 local __K2L_SequenceBuilder -- below
@@ -125,9 +125,9 @@ local function __K2L_SequenceOf(...)
 end
 
 ------------------------------------------------------------------ Sequence.asIterable()
--- An Iterable that reads its sequence again for each operation (so a constrainOnce sequence fails the second time, as on
--- the JVM). Operations that stop early pull only the elements they need, so they also work on infinite sequences; the others,
--- and a `for` loop, read all of it.
+-- An Iterable that reads its sequence again for each operation (so a constrainOnce sequence fails the second time).
+-- Operations that stop early pull only the elements they need, so they also work on infinite sequences; the others, and a
+-- `for` loop, read all of it.
 local __K2L_SequenceIterable = __K2L_Class("kotlin.sequences.SequencesKt$asIterable", __K2L_Iterable)
 
 function __K2L_SequenceIterable:____init(sequence)
@@ -239,7 +239,7 @@ end
 -- yieldAll of another builder's sequence or iterator does not resume the inner coroutine from the outer one: each resume
 -- counts as a C call, so a recursion such as a tree walk would end in "C stack overflow" after some 200 levels. It hands
 -- the inner builder to the generator instead, which keeps a stack of the active coroutines and resumes the innermost
--- directly; when that one finishes, the one below goes on from its yieldAll. Exceptions go where the JVM's nested hasNext()
+-- directly; when that one finishes, the one below goes on from its yieldAll. Exceptions go where Kotlin's nested hasNext()
 -- calls take them: one thrown by an inner builder before it has produced an element is thrown by the yieldAll that started
 -- it, one thrown later (when the consumer's hasNext() reaches the inner builder through the outer ones) goes straight to
 -- the consumer, past the try blocks around the yieldAll calls.

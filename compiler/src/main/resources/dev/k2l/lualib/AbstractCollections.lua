@@ -1,7 +1,7 @@
 -- requires: Class, Collections, Exceptions, Equals, Hash, Str, ToInt32, Bit, IdentityHash, AnyToString
 -- The library's abstract collections as bases of a program's classes: AbstractCollection, AbstractList, AbstractSet and
 -- AbstractMap (the Kotlin ones, their mutable variants and java.util's), and kotlin.collections.AbstractIterator; a class
--- implementing List, Set, Map or Collection directly gets the same base. As in the JDK and the Kotlin stdlib, every
+-- implementing List, Set, Map or Collection directly gets the same base. As in the Kotlin stdlib, every
 -- operation is written in terms of what a subclass implements: iterator() and size; get(index) and size for a list (and
 -- set, addAt and removeAt to make it mutable); entries for a map (and put); computeNext() for an iterator. The elements of
 -- such a class are not in the array part, so `list[i]` is get(i - 1) (__K2L_ElementAccess), and the operations shared with
@@ -138,7 +138,7 @@ function __K2L_AbstractCollection:hashCode()
     return __K2L_IdentityHash(self)
 end
 
--- The mutators of java.util.AbstractCollection (Kotlin's AbstractMutableCollection): add is the subclass's, the others use
+-- The mutators of AbstractMutableCollection: add is the subclass's, the others use
 -- add and the iterator's remove().
 __K2L_AbstractCollection.add = unsupported
 
@@ -369,7 +369,7 @@ function __K2L_AbstractList:subList(from, to)
 end
 __K2L_AbstractList.getLastIndex = __K2L_List.getLastIndex
 
--- The mutators of java.util.AbstractList (Kotlin's AbstractMutableList): set, addAt and removeAt are the subclass's.
+-- The mutators of AbstractMutableList: set, addAt and removeAt are the subclass's.
 __K2L_AbstractList.set = unsupported
 __K2L_AbstractList.addAt = unsupported
 __K2L_AbstractList.removeAt = unsupported
@@ -423,7 +423,7 @@ function __K2L_AbstractList:removeLastOrNull()
     return self:removeAt(self.size - 1)
 end
 
--- in place through set(), like List.sort/replaceAll and Collections.reverse/fill/shuffle
+-- in place through set(): sort, reverse, fill, replaceAll, shuffle
 for _, name in ipairs({
     "sort", "sortDescending", "sortBy", "sortByDescending", "sortWith", "reverse", "fill", "replaceAll", "shuffle",
 }) do
@@ -450,7 +450,7 @@ function __K2L_AbstractSet:hashCode()
     return h
 end
 
--- java.util.AbstractSet.removeAll removes the other collection's elements one by one when that is smaller.
+-- AbstractMutableSet.removeAll removes the other collection's elements one by one when that is smaller.
 function __K2L_AbstractSet:removeAll(elements)
     if type(elements) ~= "function" and elements.size ~= nil and self.size > elements.size then
         local arr, n = elements:____array()
@@ -623,7 +623,7 @@ function __K2L_AbstractMap:hashCode()
     return h
 end
 
--- The mutators of java.util.AbstractMap (Kotlin's AbstractMutableMap): put is the subclass's; remove and clear go through
+-- The mutators of AbstractMutableMap: put is the subclass's; remove and clear go through
 -- the entries.
 __K2L_AbstractMap.put = unsupported
 
@@ -671,7 +671,7 @@ function __K2L_AbstractMap:getOrPut(key, default)
 end
 
 -- Map.getOrElse: get, then containsKey for a missing value (not through a copy of the entries, as the other Map
--- operations below: the persistent maps' iterators call it at every step)
+-- operations below)
 function __K2L_AbstractMap:getOrElse(key, default)
     local value = self:get(key)
     if value == nil and not self:containsKey(key) then

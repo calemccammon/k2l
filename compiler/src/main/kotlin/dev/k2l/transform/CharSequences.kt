@@ -50,7 +50,7 @@ internal fun FileTransformer.charSequenceArgument(value: LuaExpr, type: KaType?,
 
 /**
  * `length`, `s[i]`, `lastIndex` and `indices` of a value that may not be a string ([isCharSequenceObject]): the members of
- * the object itself (`__K2L_Text.charsLength`), as the JVM calls them, rather than of its text.
+ * the object itself (`__K2L_Text.charsLength`) rather than of its text.
  */
 internal fun FileTransformer.charSequenceMember(callableId: String?, receiver: LuaExpr, args: List<LuaExpr>): LuaExpr? {
     fun length(of: LuaExpr) = textMember("charsLength", of)
@@ -63,7 +63,7 @@ internal fun FileTransformer.charSequenceMember(callableId: String?, receiver: L
     }
 }
 
-/** `for (c in s)` over a value that may not be a string: its chars, read with `get(i)` while `i < length` like the JVM's iterator. */
+/** `for (c in s)` over a value that may not be a string: its chars, read with `get(i)` while `i < length`. */
 internal fun FileTransformer.charSequenceLoop(text: LuaExpr, variable: String, body: List<LuaStmt>) {
     emit(LuaGenericFor(listOf(variable), listOf(textMember("chars", text)), body))
 }

@@ -10,6 +10,8 @@ b LOW
 true -2
 [CIRCLE, tri, SQUARE]
 {LOW=2, HIGH=1}
+[LOW=2, HIGH=1]
+HIGH
 LOW routine false false
 MEDIUM routine true true
 HIGH urgent true true

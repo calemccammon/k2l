@@ -1,4 +1,4 @@
-// Any.toString() of a class without its own toString: the JVM class name and the hash code in hex. The hash differs
+// Any.toString() of a class without its own toString: the class name and the hash code in hex. The hash differs
 // between runs, so only its shape is printed.
 package app
 

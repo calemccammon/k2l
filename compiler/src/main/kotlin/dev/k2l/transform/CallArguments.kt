@@ -155,8 +155,8 @@ internal fun FileTransformer.throwableArguments(args: List<KtExpression?>, param
             when {
                 id == "kotlin/String" -> message = value
 
-                // AssertionError(detailMessage: Any?) and AssertionError(Int), (Boolean), ...: String.valueOf(detailMessage),
-                // which is also the cause when it is a Throwable
+                // AssertionError(detail: Any?) and AssertionError(Int), (Boolean), ...: the detail's string, and also the
+                // cause when it is a Throwable
                 parameters.size == 1 && (id == "kotlin/Any" || id in VALUE_MESSAGES) -> {
                     val type = argument.first.expressionType
                     message = str(value, type)

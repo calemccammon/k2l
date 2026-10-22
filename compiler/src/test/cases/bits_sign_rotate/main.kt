@@ -1,4 +1,4 @@
-// withSign, rotations and single bits (the IEEE 754 bit patterns, toBits/fromBits/ulp/nextUp, are not supported)
+// withSign, rotations and single bits
 import kotlin.math.sign
 import kotlin.math.withSign
 

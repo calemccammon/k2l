@@ -11,15 +11,8 @@ internal val FILLING_FUNCTIONS = setOf(
 )
 
 /** Folds whose lambda also takes the index, and the running ones. */
-internal val ACCUMULATING_FUNCTIONS = setOf(
-    "reduceIndexed",
-    "foldIndexed",
-    "runningFold",
-    "scan",
-    "runningReduce",
-    "foldRight",
-    "reduceRight",
-)
+internal val ACCUMULATING_FUNCTIONS =
+    setOf("reduceIndexed", "foldIndexed", "runningFold", "scan", "runningReduce", "foldRight", "reduceRight")
 
 internal val INDEXED_LISTING = setOf("mapIndexedNotNull", "flatMapIndexed")
 
@@ -72,12 +65,10 @@ private class FoldShape(name: String) {
     val indexed = name == "foldIndexed" || name == "reduceIndexed"
 
     /** The lambda parameter that names the element. */
-    val elementParam = if (right) {
-        0
-    } else if (indexed) {
-        2
-    } else {
-        1
+    val elementParam = when {
+        right -> 0
+        indexed -> 2
+        else -> 1
     }
 }
 
@@ -94,12 +85,10 @@ internal fun FileTransformer.accumulating(name: String, source: Source, args: Li
         foldElement(shape, lambda, Triple(acc, started, result), item, index)
     }
     if (started != null && !shape.running) {
-        val what = if (source.kind == CollectionKind.Array) {
-            "array"
-        } else if (shape.right) {
-            "list"
-        } else {
-            "collection"
+        val what = when {
+            source.kind == CollectionKind.Array -> "array"
+            shape.right -> "list"
+            else -> "collection"
         }
         val message = LuaString("Empty $what can't be reduced.")
         emit(LuaIf(negate(started), listOf(throwNew("__K2L_UnsupportedOperationException", message))))

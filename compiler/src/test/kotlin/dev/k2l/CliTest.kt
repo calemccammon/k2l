@@ -4,14 +4,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.api.io.TempDir
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
 import java.nio.file.Path
 
-@EnabledIf(TARGET_FREE)
 class CliTest {
     @TempDir
     lateinit var dir: Path
@@ -39,7 +37,7 @@ class CliTest {
         write("src/other.kt", "fun twice(x: Int) = x * 2\n")
         val run = k2l("--check", "-o", out.toString(), src)
         assertEquals(1, run.status, run.err)
-        assertTrue(run.err.contains("main.kt:3:17: error: Extending 'Vector<Int>()' is not supported yet\n"), run.err)
+        assertTrue(run.err.contains("main.kt:3:17: error: Extending 'Vector<Int>()' is not supported\n"), run.err)
         // The source line, the span underlined, then the workaround.
         assertTrue(
             run.err.contains("class Numbers : Vector<Int>()\n                ^^^^^^^^^^^^^\n  hint: extend java.util.ArrayList"),

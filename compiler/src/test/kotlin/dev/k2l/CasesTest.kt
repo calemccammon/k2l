@@ -29,14 +29,12 @@ import java.nio.file.Paths
  */
 class CasesTest {
     @TestFactory
-    fun cases(): List<DynamicNode> = modules.mapNotNull { module ->
+    fun cases(): List<DynamicNode> = modules.map { module ->
         val dir = module.roots.single().toFile()
         val options = caseOptions(dir)
         val result by lazy { K2lCompiler(options).compile(session, module) }
         val errors = File(dir, "errors.txt")
         if (errors.isFile) {
-            // compiled for 5.4 like the golden output, so it runs with that target's tests
-            if (!golden) return@mapNotNull null
             DynamicTest.dynamicTest(module.name) {
                 val actual = result.diagnostics.joinToString("") { d ->
                     "${d.line}:${d.column}: ${d.message}\n" + d.hint?.let { "  hint: $it\n" }.orEmpty()
@@ -46,7 +44,6 @@ class CasesTest {
         } else {
             DynamicContainer.dynamicContainer(
                 module.name,
-                // the golden output is 5.4's: its tests run when -PluaTargets selects 5.4 (see LuaInterpreters)
                 listOf(
                     DynamicTest.dynamicTest("transpiles") {
                         assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
@@ -61,13 +58,13 @@ class CasesTest {
                     },
                     DynamicTest.dynamicTest("runs") {
                         val lua = lua54
-                        assumeInterpreter(lua != null, "lua5.4 not found")
+                        assumeTrue(lua != null, "lua5.4 not found")
                         val skip = skippedTargets(dir)["5.4"]
                         assumeTrue(skip == null, "skipped on 5.4: $skip")
                         assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
                         checkStdout(dir, LuaTarget.Lua54, runCase(lua!!, result.outputs, dir.toPath()))
                     },
-                ).takeIf { golden }.orEmpty() + otherTargets.map { (target, interpreter) ->
+                ) + otherTargets.map { (target, interpreter) ->
                     // The golden Lua is for 5.4; other targets only have to print the same output (or their stdout.<target>.txt).
                     DynamicTest.dynamicTest("runs on ${target.id}") {
                         val skip = skippedTargets(dir)[target.id]
@@ -138,15 +135,11 @@ class CasesTest {
         private val update = System.getProperty("k2l.updateGolden").toBoolean()
 
         /** The 5.4 interpreter the golden output runs on (`-Plua54` overrides it). */
-        private val lua54: String? by lazy { LuaInterpreters.of(LuaTarget.Lua54) }
+        private val lua54: String? by lazy { luaInterpreter(LuaTarget.Lua54) }
 
-        /** Whether the tests of the golden 5.4 output run (`-PluaTargets`). */
-        private val golden = LuaInterpreters.runsTargetFreeTests()
-
-        /** Interpreters for the other targets that `-PluaTargets` selects. */
+        /** The installed interpreters of the other targets. */
         private val otherTargets: List<Pair<LuaTarget, String>> by lazy {
-            listOf(LuaTarget.Lua51, LuaTarget.Lua52, LuaTarget.Lua53, LuaTarget.LuaJIT).filter(LuaInterpreters::selects)
-                .mapNotNull { target -> LuaInterpreters.of(target)?.let { target to it } }
+            installedInterpreters.filter { it.second != LuaTarget.Lua54 }.map { (lua, target) -> target to lua }
         }
 
         private val modules: List<SourceModule> by lazy {

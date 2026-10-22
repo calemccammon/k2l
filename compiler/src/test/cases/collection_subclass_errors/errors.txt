@@ -1,3 +1,3 @@
-5:17: Extending 'Vector<Int>()' is not supported yet
-  hint: extend java.util.ArrayList instead (Lua has one thread, so Vector's locking adds nothing)
-7:15: Extending 'WeakHashMap<String, Int>()' is not supported yet
+5:17: Extending 'Vector<Int>()' is not supported
+  hint: extend java.util.ArrayList instead
+7:15: Extending 'WeakHashMap<String, Int>()' is not supported

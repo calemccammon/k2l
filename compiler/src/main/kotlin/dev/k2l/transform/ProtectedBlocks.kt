@@ -1,6 +1,5 @@
 package dev.k2l.transform
 
-import dev.k2l.LuaTarget
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.psi.KtExpression

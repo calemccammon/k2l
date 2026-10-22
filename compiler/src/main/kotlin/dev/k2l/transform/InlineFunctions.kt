@@ -200,14 +200,8 @@ private fun FileTransformer.inlineUserFunction(site: InlineSite): LuaExpr = with
     // the expansion applies the defaults of omitted arguments itself, so a null argument stays nil
     callState.nullArguments.removeAll(valueArgs.filterNotNull().toSet())
     val values = arguments(receivers, valueArgs).let {
-        if (collapsed) {
-            it
-        } else {
-            it +
-                List(receivers.size + valueArgs.size - it.size) { LuaNil }
-        }
+        if (collapsed) it else it + List(receivers.size + valueArgs.size - it.size) { LuaNil }
     }
-
     val scope = Scope()
     avoidCaptures(site, values, scope)
     val unit = site.full.expressionType.let { it == null || it.isUnitType || it.isNothingType }

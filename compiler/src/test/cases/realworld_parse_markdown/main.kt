@@ -182,7 +182,7 @@ Setup guide
 1. Install with `npm i k2l --save`
 2. Configure:
    - set `target` to *5.4*
-   - set `strings` to __utf16__
+   - set `mode` to __strict__
 3. Run it
 
 7) seven
