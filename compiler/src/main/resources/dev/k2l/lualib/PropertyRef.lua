@@ -1,9 +1,9 @@
 -- requires: Class, Equals, Hash, Exceptions
 -- Property references (`Person::name`, `obj::age`, `::counter`, `String::length`) and the `KProperty` passed to delegates: an
 -- object with the property's name and its accessors. An unbound reference's accessors take the receiver first; a bound one's
--- close over it. It is callable like the JVM's KProperty1/KProperty0, so it can be passed where a function is expected.
--- `key` names the property (`Person.name`), and with the bound receiver it makes `==` and `hashCode` match the JVM's.
-local __K2L_PropertyRef = __K2L_Class("kotlin.jvm.internal.PropertyReference")
+-- close over it. It is callable, so it can be passed where a function is expected. `key` names the property
+-- (`Person.name`); with the bound receiver it decides `==` and `hashCode`.
+local __K2L_PropertyRef = __K2L_Class("kotlin.reflect.KProperty")
 
 -- The KProperty passed to a delegate has no accessors; only an unchecked cast reaches them.
 local function noAccessor()

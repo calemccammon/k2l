@@ -1,3 +1,0 @@
-dijkstra checksum 11390970
-mst 9999 edges, weight 58406
-words reached 599, total 6447, farthest w497

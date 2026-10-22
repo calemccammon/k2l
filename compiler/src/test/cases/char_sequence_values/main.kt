@@ -1,5 +1,5 @@
 // Values typed CharSequence: strings, StringBuilders and classes of the program. Loops, length, s[i], lastIndex and
-// indices use the object's own members (as the JVM does); the text functions see its chars.
+// indices use the object's own members; the text functions see its chars.
 
 class Letters(private val n: Int) : CharSequence {
     override val length: Int get() = n

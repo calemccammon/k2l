@@ -2,7 +2,6 @@ package dev.k2l.transform
 
 import com.intellij.psi.PsiElement
 import dev.k2l.codegen.*
-import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
 import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
@@ -68,7 +67,7 @@ internal fun FileTransformer.declareClass(c: KtClassOrObject, isLocal: Boolean):
 }
 
 private fun FileTransformer.emitClassTable(c: KtClassOrObject, ref: LuaExpr, info: SuperInfo, isLocal: Boolean) {
-    val classArgs = mutableListOf<LuaExpr>(LuaString(binaryName(c)))
+    val classArgs = mutableListOf<LuaExpr>(LuaString(className(c)))
     val baseRef = info.base?.let(::classRef) ?: info.libraryBase?.let { lualibRef(EXCEPTIONS_FEATURE, it) }
         ?: info.collectionBase?.let { collectionBaseRef(it) }
         ?: when {
@@ -111,8 +110,8 @@ private fun FileTransformer.classBody(c: KtClassOrObject, ref: LuaExpr, info: Su
 private fun FileTransformer.libraryPropertyOverrides(c: KtClassOrObject, ref: LuaExpr) {
     val properties = c.declarations.filterIsInstance<KtProperty>() +
         (c as? KtClass)?.primaryConstructorParameters?.filter { it.hasValOrVar() }.orEmpty()
-    // A lualib collection class keeps its size in the field, as the JDK's do: their own code does not call an overriding
-    // `size` (Kotlin code calls it when the static type is the class).
+    // A lualib collection class keeps its size in the field and its own code does not call an overriding `size` (Kotlin
+    // code calls it when the static type is the class).
     for (p in properties.filter { readsThroughPropertyOverride(it) }) {
         propertyOverride(c, ref, p.name!!, accessorName("get", p))
     }

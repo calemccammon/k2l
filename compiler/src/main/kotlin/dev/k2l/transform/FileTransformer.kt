@@ -22,7 +22,7 @@ class FileTransformer(
     override val ctx: TransformContext,
     internal val module: ModuleContext = ModuleContext.single(file),
 ) : StatementEmitter() {
-    internal val usesListViews get() = module.usesListViews
+    internal val implementsLists get() = module.implementsLists
     internal val implementsCharSequence get() = module.implementsCharSequence
     internal val implementsClosedRange get() = module.implementsClosedRange
     internal val implementsCollections get() = module.implementsCollections
@@ -62,7 +62,7 @@ class FileTransformer(
     internal val reifiedTypes = HashMap<PsiElement, KaType>()
 
     fun unsupported(element: KtElement, what: String): LuaExpr {
-        ctx.error(element, "$what is not supported yet")
+        ctx.error(element, "$what is not supported")
         return LuaNil
     }
 

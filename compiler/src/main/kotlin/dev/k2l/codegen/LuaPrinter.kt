@@ -45,9 +45,7 @@ class LuaPrinter(
                 MARK_START -> {
                     val end = marked.indexOf(MARK_END, i)
                     val (line, column) = marked.substring(i + 1, end).split(':').map(String::toInt)
-                    if (mappings.lastOrNull()?.luaLine !=
-                        luaLine
-                    ) {
+                    if (mappings.lastOrNull()?.luaLine != luaLine) {
                         mappings += LineMapping(luaLine, code.length - lineStart, Origin(line, column))
                     }
                     i = end
@@ -338,6 +336,7 @@ class LuaPrinter(
         private const val FIRST_PRINTABLE = 0x20
         private const val DELETE = 0x7F
         private const val DECIMAL_ESCAPE_DIGITS = 3
+        private const val BYTE_MASK = 0xFF
 
         val KEYWORDS = setOf(
             "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "goto", "if", "in",
@@ -347,14 +346,13 @@ class LuaPrinter(
         fun isIdentifier(s: String) = s.isNotEmpty() && (s[0].isLetter() || s[0] == '_') && s[0].code < ASCII_LIMIT &&
             s.all { (it.isLetterOrDigit() || it == '_') && it.code < ASCII_LIMIT } && s !in KEYWORDS
 
-        private const val BYTE_MASK = 0xFF
-
         private fun quote(s: String): String = buildString {
             append('"')
-            val bytes = utf8(s)
+            // a lone surrogate (from a Kotlin literal) becomes `?`
+            val bytes = s.toByteArray(Charsets.UTF_8)
             var i = 0
             while (i < bytes.size) {
-                val b = bytes[i].toInt() and 0xFF
+                val b = bytes[i].toInt() and BYTE_MASK
                 when {
                     b == '"'.code -> append("\\\"")
 
@@ -377,12 +375,7 @@ class LuaPrinter(
                             b >= 0xE0 -> 3
                             else -> 2
                         }
-                        if (isLoneSurrogate(bytes, i)) {
-                            // A lone surrogate (from a Kotlin literal) in its 3-byte form, which is not valid UTF-8
-                            for (k in 0 until len) append("\\").append((bytes[i + k].toInt() and BYTE_MASK).toString())
-                        } else {
-                            append(String(bytes, i, minOf(len, bytes.size - i), Charsets.UTF_8))
-                        }
+                        append(String(bytes, i, minOf(len, bytes.size - i), Charsets.UTF_8))
                         i += len
                         continue
                     }

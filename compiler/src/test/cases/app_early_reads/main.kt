@@ -1,5 +1,5 @@
 // Code that runs earlier during construction (an initializer calling a method, a superclass constructor calling an
-// override) reads the JVM's field defaults (0, false, null) from properties whose initializers have not run yet.
+// override) reads 0, false or null from properties whose initializers have not run yet.
 class Early {
     val x = compute()
     val y = 5

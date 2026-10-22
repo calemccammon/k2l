@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
@@ -47,7 +46,6 @@ class SourceMapTest {
     }
 
     @Test
-    @EnabledIf(TARGET_FREE)
     fun `source map decodes to the Kotlin lines of the statements`() {
         val result = compile(CompilerOptions(sourceMap = true))
         assertEquals("", result.diagnostics.joinToString("\n"))
@@ -76,7 +74,6 @@ class SourceMapTest {
     }
 
     @Test
-    @EnabledIf(TARGET_FREE)
     fun `the generated Lua is unchanged without the option`() {
         val plain = compile(CompilerOptions()).outputs.single { it.path == "main.lua" }
         assertFalse(plain.code.contains("SourceMap"))

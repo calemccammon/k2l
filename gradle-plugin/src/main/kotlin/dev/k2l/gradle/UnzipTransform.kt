@@ -11,7 +11,7 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import java.util.zip.ZipInputStream
 
-/** Unpacks the published `compiler-<version>-runtime-libs.zip` into a directory of jars. */
+/** Unpacks the compiler's `compiler-<version>-runtime-libs.zip` into a directory of jars. */
 @CacheableTransform
 abstract class UnzipTransform : TransformAction<TransformParameters.None> {
     @get:InputArtifact

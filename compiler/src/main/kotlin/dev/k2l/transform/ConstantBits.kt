@@ -1,6 +1,5 @@
 package dev.k2l.transform
 
-import dev.k2l.LuaTarget
 import dev.k2l.codegen.*
 
 private const val INT_SHIFTS = 31

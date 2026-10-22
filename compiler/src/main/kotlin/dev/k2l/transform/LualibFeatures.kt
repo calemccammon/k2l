@@ -8,7 +8,7 @@ internal const val EXCEPTIONS_FEATURE = "Exceptions"
 /** lualib feature with the abstract collection bases, see `AbstractCollections.lua`. */
 internal const val ABSTRACT_COLLECTIONS_FEATURE = "AbstractCollections"
 
-/** lualib feature with ArrayDeque and LinkedList, see `Deques.lua`. */
+/** lualib feature with ArrayDeque, see `Deques.lua`. */
 internal const val DEQUES_FEATURE = "Deques"
 
 /** Lua feature implementing lazy sequences, iterators and the `sequence { }` builder, see `Sequence.lua`. */
@@ -34,7 +34,7 @@ internal const val EXTRAS_FEATURE = "Extras"
 /** Lua feature with the helpers of `CollectionExtras.lua`. */
 internal const val COLLECTION_EXTRAS = "CollectionExtras"
 
-/** Lua feature with KotlinVersion and the library enums, see `KotlinMisc.lua`. */
+/** Lua feature with `Any()`, `AutoCloseable { }` and the library enums, see `KotlinMisc.lua`. */
 internal const val KOTLIN_MISC = "KotlinMisc"
 
 /** lualib feature with the marker of a null argument for a parameter whose default is not null, see `NullArgument.lua`. */

@@ -1,5 +1,5 @@
 // Classes implementing List, Collection and Map directly, generic and inherited collection subclasses, super calls into
-// the abstract classes, and JDK helpers on them.
+// the abstract classes, and library helpers on them.
 
 class Window(private val data: IntArray, private val from: Int, private val to: Int) : List<Int> {
     override val size: Int get() = to - from

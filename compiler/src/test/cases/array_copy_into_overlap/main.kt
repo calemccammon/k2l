@@ -1,5 +1,5 @@
-// copyInto within one array with overlapping ranges, which copies as if through a temporary array like
-// System.arraycopy (kotlinx.collections.immutable's TrieNode moves the entries of a node's buffer up this way).
+// copyInto within one array with overlapping ranges, which copies as if through a temporary array (moving the entries of
+// a buffer up by one).
 fun main() {
     val up = arrayOf<Any?>(1, 2, 3, 4, 5, null)
     up.copyInto(up, 1, 0, 5)

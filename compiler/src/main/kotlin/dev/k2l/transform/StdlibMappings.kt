@@ -60,8 +60,6 @@ class CallSite(
  * Maps Kotlin stdlib callables (by `CallableId`, e.g. `kotlin/io/println` or `kotlin/String.length`)
  * to Lua. A mapping returns null when it doesn't handle that overload.
  */
-private const val STRICT_MATH = "java/lang/StrictMath."
-
 @Suppress("TooManyFunctions") // one small installer per group of mappings
 object StdlibMappings {
     private val table = MappingTable()
@@ -123,11 +121,8 @@ object StdlibMappings {
 
     private fun anyAndEnum() {
         def("kotlin/Any.equals") { lualib("Equals", self, arg(0)) }
-        def("kotlin/Throwable.message") {
-            LuaIndex(self, LuaString("message"))
-        }
+        def("kotlin/Throwable.message") { LuaIndex(self, LuaString("message")) }
         def("kotlin/Throwable.cause") { LuaIndex(self, LuaString("cause")) }
-
         def("kotlin/isInitialized") { transformer.lateinitIsInitialized(element) }
         def("kotlin/Lazy.value") { method(self, "getValue") }
         def("kotlin/Lazy.isInitialized") { method(self, "isInitialized") }
@@ -142,10 +137,7 @@ object StdlibMappings {
     private fun bitwise() {
         for (t in listOf("Int", "Long")) {
             val isLong = t == "Long"
-            def("kotlin/$t.and") {
-                ConstantBits.mask(this, isLong)
-                    ?: bitwise("BAnd", LuaBinOp.BAnd)
-            }
+            def("kotlin/$t.and") { ConstantBits.mask(this, isLong) ?: bitwise("BAnd", LuaBinOp.BAnd) }
             def("kotlin/$t.or") { bitwise("BOr", LuaBinOp.BOr) }
             def("kotlin/$t.xor") { bitwise("BXor", LuaBinOp.BXor) }
             def("kotlin/$t.inv") { if (target.hasIntegers) LuaUnary(LuaUnOp.BNot, self) else bitCall("__K2L_BNot") }
@@ -159,16 +151,12 @@ object StdlibMappings {
     }
 
     private fun shifts() {
-        def("kotlin/Int.shl") {
-            ConstantBits.integerShift(this, "shl") ?: bitCall("__K2L_Shl")
-        }
+        def("kotlin/Int.shl") { ConstantBits.integerShift(this, "shl") ?: bitCall("__K2L_Shl") }
         def("kotlin/Int.shr") {
-            ConstantBits.integerShift(this, "shr") ?: ConstantBits.shift(this, false, false)
-                ?: bitCall("__K2L_Shr")
+            ConstantBits.integerShift(this, "shr") ?: ConstantBits.shift(this, false, false) ?: bitCall("__K2L_Shr")
         }
         def("kotlin/Int.ushr") {
-            ConstantBits.integerShift(this, "ushr") ?: ConstantBits.shift(this, false, true)
-                ?: bitCall("__K2L_Ushr")
+            ConstantBits.integerShift(this, "ushr") ?: ConstantBits.shift(this, false, true) ?: bitCall("__K2L_Ushr")
         }
         // where a Long is a double, its shifts are multiplications and floored divisions by 2^n (exact below 2^53)
         def("kotlin/Long.shl") {
@@ -217,17 +205,7 @@ object StdlibMappings {
 
     private fun CallSite.isBuilder(type: KaType?) = type != null && with(session) { type.collectionKind() } == CollectionKind.StringBuilder
 
-    fun has(callableId: String?) = strictMathAsMath(callableId) in mappings
-
-    /**
-     * `StrictMath.f` is `Math.f`: both are Lua's math functions (see NumberMappings), unless a member has a mapping of its own.
-     */
-    private fun strictMathAsMath(callableId: String?): String? =
-        if (callableId != null && callableId.startsWith(STRICT_MATH) && callableId !in mappings) {
-            "java/lang/Math." + callableId.removePrefix(STRICT_MATH)
-        } else {
-            callableId
-        }
+    fun has(callableId: String?) = callableId in mappings
 
     /** and/or/xor: native operators on 5.3+, lualib helpers (bit32, LuaJIT's bit, or plain Lua) elsewhere. */
     private fun CallSite.bitwise(helper: String, op: LuaBinOp): LuaExpr =
@@ -235,10 +213,7 @@ object StdlibMappings {
 
     private fun CallSite.bitCall(name: String): LuaExpr = LuaCall(ref("Bit", name), listOfNotNull(receiver) + args)
 
-    fun map(strictCallableId: String?, site: CallSite): LuaExpr? {
-        val callableId = strictMathAsMath(strictCallableId)
-        return AREAS.firstNotNullOfOrNull { it(callableId, site) }
-    }
+    fun map(callableId: String?, site: CallSite): LuaExpr? = AREAS.firstNotNullOfOrNull { it(callableId, site) }
 
     /**
      * Every area of library mappings, tried in this order until one answers; the order matters where areas overlap. Each area
@@ -270,7 +245,7 @@ object StdlibMappings {
 
         callableId?.startsWith("kotlin/") == true -> universalMethod(site)
 
-        // toString() of the JDK's collections (`java.util.ArrayDeque.toString`)
+        // toString() of the collections that are JDK classes (ArrayList, HashMap, ...)
         callableId?.startsWith("java/util/") == true && site.name == "toString" && site.args.isEmpty() &&
             site.receiverKind != null -> universalMethod(site)
 
@@ -292,8 +267,8 @@ object StdlibMappings {
     }
 
     /**
-     * Argument [i] passed to a primitive parameter (`println(message: Int)`): a platform-typed value (`treeMap.higherKey(k)` is
-     * `Int!`) is unboxed there, so null throws `NullPointerException` as on the JVM.
+     * Argument [i] passed to a primitive parameter (`println(message: Int)`): a platform-typed value (a value of the
+     * `java.util.SortedMap` of `sortedMapOf` is `Int!`) is checked there, so null throws `NullPointerException`.
      */
     private fun CallSite.unboxed(value: LuaExpr, i: Int): LuaExpr = with(session) {
         val type = argTypes.getOrNull(i) as? KaFlexibleType ?: return value

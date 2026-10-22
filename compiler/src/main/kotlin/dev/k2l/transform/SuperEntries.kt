@@ -60,7 +60,7 @@ internal fun KaSession.classifySupertypes(
     )
 }
 
-/** Whether the class extends `AbstractCoroutineContextElement` and whether it extends `Random`, the lualib bases of [SuperEntries.element]. */
+/** Whether the class extends `AbstractCoroutineContextElement` and whether it extends `Random` ([SuperEntries.element]). */
 private fun lualibBases(found: SuperEntries): Pair<Boolean, Boolean> {
     val extends = found.element != null && found.bad == null
     return (extends && !found.random) to (extends && found.random)

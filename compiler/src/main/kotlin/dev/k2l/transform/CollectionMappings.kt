@@ -28,8 +28,8 @@ object CollectionMappings {
         "zip", "fold", "reduce", "joinToString", "groupBy", "associate", "associateBy", "associateWith", "toMap", "forEach",
         "onEach", "intersect", "union", "subtract", "toTypedArray", "toIntArray", "toLongArray", "toDoubleArray",
         "toBooleanArray", "toFloatArray", "toCharArray", "toShortArray", "toByteArray", "asSequence", "asIterable", "add",
-        "addAll", "removeAt", "remove", "removeFirst", "removeLast",
-        "removeAll", "removeIf", "retainAll", "clear", "sort", "sortDescending", "sortBy", "sortByDescending", "sortWith",
+        "addAll", "removeAt", "remove", "removeFirst", "removeLast", "removeAll", "removeIf", "retainAll", "clear", "sort",
+        "sortDescending", "sortBy", "sortByDescending", "sortWith",
         "reverse", "fill", "subList", "contentEquals", "contentToString", "set", "toMutableMap", "hashCode",
         "windowed", "zipWithNext", "unzip", "foldRight", "reduceRight", "reduceOrNull", "foldIndexed", "reduceIndexed",
         "runningFold", "scan", "runningReduce", "maxWith", "minWith", "maxWithOrNull", "minWithOrNull", "takeLastWhile",
@@ -37,8 +37,7 @@ object CollectionMappings {
         "associateWithTo", "elementAtOrNull", "elementAtOrElse", "firstNotNullOfOrNull", "firstNotNullOf", "ifEmpty", "slice",
         "requireNoNulls", "asReversed", "asList", "binarySearch", "binarySearchBy", "sortedArray", "sortedArrayDescending",
         "sortedArrayWith", "reversedArray", "copyOfRange", "copyInto", "iterator", "addFirst", "addLast", "removeFirstOrNull",
-        "removeLastOrNull",
-        "replaceAll", "getFirst", "getLast", "toSortedSet", "groupingBy", "sliceArray", "contentDeepToString",
+        "removeLastOrNull", "replaceAll", "getFirst", "getLast", "toSortedSet", "groupingBy", "sliceArray", "contentDeepToString",
         "contentHashCode", "contentDeepHashCode", "contentDeepEquals", "foldRightIndexed", "mapIndexedTo",
         "maxOfWith", "minOfWith", "maxOfWithOrNull", "minOfWithOrNull", "reduceIndexedOrNull", "runningFoldIndexed",
         "scanIndexed", "runningReduceIndexed",
@@ -62,11 +61,10 @@ object CollectionMappings {
         "filterNot", "mapValuesTo", "mapKeysTo", "orEmpty", "iterator", "asIterable", "filterTo", "ifEmpty", "toSortedMap",
     )
 
-    private val ITERATOR_METHODS =
-        setOf(
-            "hasNext", "next", "remove", "hasPrevious", "previous", "nextIndex", "previousIndex", "set", "add", "setNext", "done",
-            "nextInt", "nextLong", "nextDouble",
-        )
+    private val ITERATOR_METHODS = setOf(
+        "hasNext", "next", "remove", "hasPrevious", "previous", "nextIndex", "previousIndex", "set", "add", "setNext", "done",
+        "nextInt", "nextLong", "nextDouble",
+    )
 
     /** `Random` is passed explicitly to the lualib methods; calls without one use `Random.Default`. */
     private val RANDOM_METHODS = setOf("shuffled", "shuffle", "random", "randomOrNull")
@@ -281,10 +279,8 @@ object CollectionMappings {
                 site.isString(site.argTypes.getOrNull(0)) -> LuaMethodCall(self, "getNamed", site.args)
 
                 // xs[i] and xs.get(i) throw IndexOutOfBoundsException; a loop index over xs.indices needs no check
-                kind == CollectionKind.Iterable || site.transformer.isProvenIndex(
-                    site.element,
-                    site.receiverType,
-                ) -> index(self, site.arg(0))
+                kind == CollectionKind.Iterable || site.transformer.isProvenIndex(site.element, site.receiverType) ->
+                    index(self, site.arg(0))
 
                 site.transformer.isPrimitiveArray(site.receiverType) -> site.transformer.primitiveArrayRead(self, site.arg(0))
 
@@ -293,9 +289,7 @@ object CollectionMappings {
 
             "indices" -> LuaMethodCall(self, "getIndices", emptyList())
 
-            "listIterator" -> if (kind ==
-                CollectionKind.List
-            ) {
+            "listIterator" -> if (kind == CollectionKind.List) {
                 LuaCall(site.ref("ListIterator", "__K2L_ListIterator"), listOf(self) + site.args)
             } else {
                 null
@@ -413,16 +407,17 @@ object CollectionMappings {
     }
 
     private fun isMapOrIterable(site: CallSite) = with(site.session) {
-        site.overloadType(0)?.collectionKind() in
-            setOf(
-                CollectionKind.Map,
-                CollectionKind.List,
-                CollectionKind.Array,
-                CollectionKind.Set,
-                CollectionKind.Iterable,
-                CollectionKind.Sequence,
-            )
+        site.overloadType(0)?.collectionKind() in MAP_OR_ITERABLE
     }
+
+    private val MAP_OR_ITERABLE = setOf(
+        CollectionKind.Map,
+        CollectionKind.List,
+        CollectionKind.Array,
+        CollectionKind.Set,
+        CollectionKind.Iterable,
+        CollectionKind.Sequence,
+    )
 
     /** `map += pair` is `set(first, second)`; `map += otherMap` and `map += listOfPairs` are `putAll`. */
     private fun pairArguments(site: CallSite): List<LuaExpr> =

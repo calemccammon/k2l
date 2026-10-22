@@ -256,8 +256,7 @@ private fun FileTransformer.collectionLoop(
         if (kind.isIndexable) listSource(collection) else arraySource(collection)
     }
     val variable = if (destructuring != null) ctx.temp("item") else naming.of(param)
-    val prologue = destructuring?.let { listOf(destructure(it.entries, LuaName(variable).also { v -> stable += v })) }
-        .orEmpty()
+    val prologue = destructuring?.let { listOf(destructure(it.entries, LuaName(variable).also { v -> stable += v })) }.orEmpty()
     elementsLoop(source, variable, null, prologue + loopBody(frame, e.body))
 }
 
@@ -332,8 +331,8 @@ internal fun FileTransformer.component(entry: KtDestructuringDeclarationEntry, v
 
 /**
  * The collection kind a loop over a value of [type] walks: a class of the program implementing `List` itself (or by
- * delegation), or extending a library list and overriding iterator(), is walked with its iterator(), as on the JVM,
- * rather than read by index.
+ * delegation), or extending a library list and overriding iterator(), is walked with its iterator() rather than read by
+ * index.
  */
 internal fun FileTransformer.loopKind(type: KaType): CollectionKind? = with(session) {
     val kind = type.collectionKind()

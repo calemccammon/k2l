@@ -6,10 +6,7 @@ import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaConstructorSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaValueParameterSymbol
-import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
-import org.jetbrains.kotlin.analysis.api.types.KaType
-import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 
 /**
@@ -25,11 +22,6 @@ internal fun referenceKey(symbol: KaCallableSymbol): String = with(s) {
     val receiver = symbol.receiverParameter?.returnType?.let { "${it.pretty()}." }.orEmpty()
     val params = (symbol as? KaFunctionSymbol)?.valueParameters?.joinToString(",", "(", ")") { it.returnType.pretty() }.orEmpty()
     receiver + id + params
-}
-
-internal fun KaFunctionType.isReflectionFunctionType(): Boolean {
-    val id = classId.asString()
-    return id.startsWith("kotlin/reflect/")
 }
 
 /**

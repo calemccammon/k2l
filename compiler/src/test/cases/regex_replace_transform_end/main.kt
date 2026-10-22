@@ -1,5 +1,5 @@
 // Regex.replace with a transform stops once a match reaches the end of the input, so a pattern that also matches the
-// empty string gets no empty match there; replace with a replacement string (Java's replaceAll) does get one.
+// empty string gets no empty match there; replace with a replacement string does get one.
 
 fun main() {
     println(Regex("x*").replace("abc") { "-" })

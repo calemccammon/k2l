@@ -7,7 +7,7 @@
 <li>Configure:
 <ul>
 <li>set <code>target</code> to <em>5.4</em></li>
-<li>set <code>strings</code> to <strong>utf16</strong></li>
+<li>set <code>mode</code> to <strong>strict</strong></li>
 </ul></li>
 <li>Run it</li>
 </ol>

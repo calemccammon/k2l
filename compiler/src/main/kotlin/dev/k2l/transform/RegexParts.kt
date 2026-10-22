@@ -120,9 +120,7 @@ internal class ClassReader(private val src: String, start: Int, private val igno
     }
 
     private fun ascii(ch: String): Int {
-        if (ch.length != 1 ||
-            ch[0].code >= NON_ASCII
-        ) {
+        if (ch.length != 1 || ch[0].code >= NON_ASCII) {
             regexFail("non-ASCII character in a character class is not supported (strings are bytes)")
         }
         return ch[0].code

@@ -179,10 +179,7 @@ internal object NumberMappings {
     /** The `java.lang.Math` functions that are Lua's math functions. */
     private fun javaStatics(t: MappingTable) {
         mathStatics(t)
-        for (name in listOf("abs", "sqrt", "sin", "cos", "tan", "exp", "log")) {
-            t.def("java/lang/Math.$name") { lua("math.$name", arg(0)) }
-        }
-        for (name in listOf("asin", "acos", "atan")) {
+        for (name in listOf("abs", "sqrt", "sin", "cos", "tan", "exp", "log", "asin", "acos", "atan")) {
             t.def("java/lang/Math.$name") { lua("math.$name", arg(0)) }
         }
         for (name in listOf("expm1", "log1p", "sinh", "cosh", "tanh", "cbrt")) {

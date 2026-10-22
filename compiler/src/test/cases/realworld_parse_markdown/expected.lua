@@ -432,7 +432,7 @@ function Renderer:render(blocks, tight)
     return ____builder_1:toString()
 end
 
-local doc = __K2L_Text.trimIndent("\n# Release notes\nVersion **2.0** brings _many_ changes & fixes.\n\nSetup guide\n===========\n\n1. Install with `npm i k2l --save`\n2. Configure:\n   - set `target` to *5.4*\n   - set `strings` to __utf16__\n3. Run it\n\n7) seven\n8) eight\n\n> **Note:** quotes can hold\n> - lists\n> - and `code <b>`\n\n```kotlin\nfun main() = println(\"<hi> & bye\")\n```\n\n* * *\n\nLinks: [docs](https://example.com/docs \"The docs\"), <https://k2l.dev>, and [nested *em*](/x).\nEscapes: \\*not em\\*, snake_case_name, 2 < 3 && 5 > 4.\nLine two after a hard break.\n\n## Setup guide\n## Ünïcode héading!\n")
+local doc = __K2L_Text.trimIndent("\n# Release notes\nVersion **2.0** brings _many_ changes & fixes.\n\nSetup guide\n===========\n\n1. Install with `npm i k2l --save`\n2. Configure:\n   - set `target` to *5.4*\n   - set `mode` to __strict__\n3. Run it\n\n7) seven\n8) eight\n\n> **Note:** quotes can hold\n> - lists\n> - and `code <b>`\n\n```kotlin\nfun main() = println(\"<hi> & bye\")\n```\n\n* * *\n\nLinks: [docs](https://example.com/docs \"The docs\"), <https://k2l.dev>, and [nested *em*](/x).\nEscapes: \\*not em\\*, snake_case_name, 2 < 3 && 5 > 4.\nLine two after a hard break.\n\n## Setup guide\n## Ünïcode héading!\n")
 
 local ____lambda_5 = function(it) return it end
 local ____lambda_6 = function(it) return it.groupValues:get(1) end

@@ -1,5 +1,5 @@
-// Constructor calls through a typealias of a class of the program (kotlinx.collections.immutable's
-// `typealias IntWrapper = ObjectWrapper<Int>`, constructed as `IntWrapper(1, 0)`).
+// Constructor calls through a typealias of a class of the program (`typealias IntWrapper = ObjectWrapper<Int>`,
+// constructed as `IntWrapper(1, 0)`).
 class Wrapper<K : Comparable<K>>(val obj: K, val hash: Int) {
     constructor(obj: K) : this(obj, -1)
 

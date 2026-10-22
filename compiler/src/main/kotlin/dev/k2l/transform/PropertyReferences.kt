@@ -51,7 +51,7 @@ internal fun FileTransformer.libraryPropertyReference(e: KtCallableReferenceExpr
     val reference = libraryReference(e, symbol) ?: libraryConstant(e, symbol)
         ?: return unsupported(e, "Reference to library property '${symbol.name}'")
     val expected = e.expectedType
-    if (expected is KaFunctionType && !expected.isReflectionFunctionType()) return reference.function
+    if (expected is KaFunctionType && !expected.classId.asString().startsWith("kotlin/reflect/")) return reference.function
     propertyRefObject(symbol.name.asString(), referenceKey(symbol), reference.function, null, reference.receiver)
 }
 
@@ -69,13 +69,9 @@ private fun FileTransformer.memberAccessors(
 ): Accessors? = with(session) {
     // `::count` inside the class is bound to the implicit `this`
     val implicit = if (receiver == null) implicitReferenceReceiver(e) ?: return null else null
-    val owner = receiver?.let { r ->
-        (
-            r as? KtNameReferenceExpression
-                ?: (r as? KtDotQualifiedExpression)?.selectorExpression as? KtNameReferenceExpression
-            )
-    }
-        ?.mainReference?.resolve()
+    val ownerName = receiver as? KtNameReferenceExpression
+        ?: (receiver as? KtDotQualifiedExpression)?.selectorExpression as? KtNameReferenceExpression
+    val owner = ownerName?.mainReference?.resolve()
     val bound = implicit != null || isBoundReference(e) || owner is KtObjectDeclaration
     val value = LuaName("value")
     if (!bound) {

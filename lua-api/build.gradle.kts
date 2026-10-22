@@ -5,3 +5,7 @@ plugins {
 kotlin {
     jvmToolchain(21)
 }
+
+publishing {
+    publications.create<MavenPublication>("maven") { from(components["java"]) }
+}

@@ -1,5 +1,5 @@
-// Enum entries compare by ordinal; `in a..b` over Comparable objects calls compareTo;
-// a companion of an enum reaches entries/values()/valueOf without qualification.
+// Enum entries compare by ordinal (operators, compareTo, sorting, max/min, coerceIn, sorted collections); `in a..b` over
+// Comparable objects calls compareTo; a companion of an enum reaches entries/values()/valueOf without qualification.
 
 enum class Level { LOW, MEDIUM, HIGH, CRITICAL }
 
@@ -45,6 +45,8 @@ fun main() {
     println("${c > Level.LOW} ${c.compareTo(Level.CRITICAL)}")
     println(listOf(Shape.SQUARE, Shape.TRIANGLE, Shape.CIRCLE).toSortedSet())
     println(sortedMapOf(Level.HIGH to 1, Level.LOW to 2))
+    println(mapOf(Level.HIGH to 1, Level.LOW to 2).entries.sortedBy { it.key })
+    println(Level.MEDIUM.coerceIn(Level.HIGH, Level.HIGH))
 
     for (level in Level.entries) {
         val band = when (level) {

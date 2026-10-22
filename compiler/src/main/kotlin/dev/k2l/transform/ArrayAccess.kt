@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtClassOrObject
 
-/** The primitive arrays whose elements are never nil or false (not BooleanArray; the unsigned ones are value classes). */
+/** The primitive arrays whose elements are never nil or false (not BooleanArray). */
 private val PRIMITIVE_ARRAYS = setOf("IntArray", "LongArray", "DoubleArray", "FloatArray", "CharArray", "ShortArray", "ByteArray")
     .map { "kotlin/$it" }.toSet()
 
@@ -57,7 +57,7 @@ internal fun FileTransformer.primitiveArrayRead(array: LuaExpr, index: LuaExpr):
 private fun FileTransformer.indexError(array: LuaExpr, index: LuaExpr): LuaExpr =
     lualibCall("IndexError", index, LuaIndex(array, LuaString("size")), LuaString("array"))
 
-/** `xs[i]` as an assignment target, checked like the JVM: the inline check of [primitiveArrayTarget], else `get`/`set`. */
+/** `xs[i]` as an assignment target, bounds-checked: the inline check of [primitiveArrayTarget], else `get`/`set`. */
 internal fun FileTransformer.checkedIndexTarget(type: KaType?, receiver: LuaExpr, key: LuaExpr): Target = if (isPrimitiveArray(type)) {
     primitiveArrayTarget(receiver, key)
 } else {

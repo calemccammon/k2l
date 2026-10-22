@@ -13,10 +13,7 @@ import org.jetbrains.kotlin.psi.*
  */
 internal fun KtClass.hasDataMembers(): Boolean = isData() || hasModifier(KtTokens.VALUE_KEYWORD) || hasModifier(KtTokens.INLINE_KEYWORD)
 
-/**
- * `field.hashCode()`: an `Int` (`Short`, `Byte`) is its own hash and a `Boolean` 1231 or 1237; a `Double` that holds an
- * integral value hashes like the JVM's Double where numbers are doubles too.
- */
+/** `field.hashCode()`: an `Int` (`Short`, `Byte`) is its own hash and a `Boolean` 1231 or 1237, as `__K2L_Hash` gives them. */
 private fun FileTransformer.fieldHash(p: KtParameter, value: LuaExpr): LuaExpr = with(session) {
     val type = p.returnType.withoutFlexibility
     when {
@@ -26,12 +23,9 @@ private fun FileTransformer.fieldHash(p: KtParameter, value: LuaExpr): LuaExpr =
 
         type.isBooleanType -> LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.And, value, LuaNumber("1231")), LuaNumber("1237"))
 
-        type.isDoubleType && !target.hasIntegers -> LuaCall(lualibRef("Hash", "__K2L_DoubleHash"), listOf(value))
-
         // a data class of the program (final) has its own hashCode
-        (type.expandedSymbol?.psi as? KtClass)?.let {
-            it.isData() && classes.isSource(it)
-        } == true -> LuaMethodCall(value, "hashCode", emptyList())
+        (type.expandedSymbol?.psi as? KtClass)?.let { it.isData() && classes.isSource(it) } == true ->
+            LuaMethodCall(value, "hashCode", emptyList())
 
         else -> lualibCall("Hash", value)
     }

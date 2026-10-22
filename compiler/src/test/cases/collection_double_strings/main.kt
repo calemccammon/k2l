@@ -1,5 +1,5 @@
-// Collections, maps and pairs of Doubles print integral elements as Doubles on targets without an integer subtype
-// (Lua 5.1, 5.2, LuaJIT), where the static type says every number in them is a Double.
+// Collections, maps and pairs of Doubles print their elements with Lua's tostring: an integral Double is `3.0` on Lua 5.3
+// and 5.4, and `3` on 5.1, 5.2 and LuaJIT.
 data class P(val n: Int, val xs: List<Double>)
 
 fun main() {

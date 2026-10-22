@@ -26,8 +26,8 @@ internal fun FileTransformer.classLiteral(e: KtClassLiteralExpression): LuaExpr 
     val selector = (parent?.selectorExpression as? KtNameReferenceExpression)?.getReferencedName()
     if (parent?.receiverExpression != e || selector != "simpleName") return unsupported(e, "Class literal '${e.text}'")
     val receiver = e.receiverExpression ?: return unsupported(e, "A class literal without a receiver")
-    val ref =
-        receiver as? KtNameReferenceExpression ?: (receiver as? KtDotQualifiedExpression)?.selectorExpression as? KtNameReferenceExpression
+    val ref = receiver as? KtNameReferenceExpression
+        ?: (receiver as? KtDotQualifiedExpression)?.selectorExpression as? KtNameReferenceExpression
     val symbol = ref?.mainReference?.resolveToSymbol()
     if (symbol !is KaClassLikeSymbol && symbol !is KaTypeParameterSymbol) return valueSimpleName(receiver)
     val type = (e.expressionType as? KaClassType)?.typeArguments?.firstOrNull()?.type ?: return unsupported(e, "This class literal")

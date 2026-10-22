@@ -2,6 +2,7 @@ package dev.k2l
 
 import dev.k2l.codegen.Lualib
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.io.TempDir
@@ -23,12 +24,12 @@ class LualibBundleTest {
     }
 
     @TestFactory
-    fun everyFeatureLoadsTogether(): List<DynamicTest> = LuaTarget.entries.filter(LuaInterpreters::selects).map { target ->
+    fun everyFeatureLoadsTogether(): List<DynamicTest> = LuaTarget.entries.map { target ->
         DynamicTest.dynamicTest("all features on ${target.id}") {
-            val interpreter = LuaInterpreters.of(target)
-            assumeInterpreter(interpreter != null, "no interpreter for ${target.id} found")
+            val interpreter = luaInterpreter(target)
+            assumeTrue(interpreter != null, "no interpreter for ${target.id} found")
             val bundle = dir.resolve("bundle_${target.name}.lua")
-            // Features that exist only as another target's variant (e.g. IMul.float) are left out.
+            // Features that exist only as another target's variant are left out.
             val available = features.filter { runCatching { Lualib.feature(it, target) }.isSuccess }
             Files.writeString(bundle, Lualib.bundle(available, target))
             val (status, output) = runLua(requireNotNull(interpreter), dir, bundle.fileName.toString())

@@ -35,7 +35,7 @@ fun main() {
     resource.use { log += "used" }
     t("AutoCloseable") { log }
 
-    // assert is disabled on the JVM by default: the condition is evaluated, the message never
+    // assert is disabled: the condition is evaluated, the message never
     var evaluated = 0
     assert(evaluated++ == 100)
     assert(false) { "never built" }

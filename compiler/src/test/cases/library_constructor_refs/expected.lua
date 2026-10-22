@@ -1,13 +1,16 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
+local __K2L_IndexedValue = ____lualib.__K2L_IndexedValue
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
+local __K2L_Object = ____lualib.__K2L_Object
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_RunMain = ____lualib.__K2L_RunMain
@@ -74,7 +77,11 @@ local ____lambda_15 = function(____p1)
     return __K2L_IllegalArgumentException.new(____p1)
 end
 local ____lambda_16 = function(____p1) return __K2L_Regex.fromLiteral(____p1) end
-local ____lambda_17 = function(____p1)
+local ____lambda_17 = function(____p1, ____p2)
+    return __K2L_IndexedValue.new(____p1, ____p2)
+end
+local ____lambda_18 = function() return __K2L_Object.new() end
+local ____lambda_19 = function(____p1)
     return __K2L_StringBuilder.new(__K2L_Str(____p1))
 end
 local function main()
@@ -156,9 +163,27 @@ local function main()
         ____out_3[____count_2] = it:matches("aab")
     end
     print(__K2L_Str(__K2L_ListWrap(____out_3, ____count_2)))
+    local indexed = ____lambda_17
+    print(__K2L_Str(__K2L_ListOf("x", "y"):mapIndexed(indexed)))
+    local ____out_4 = {}
+    for ____i_4 = 1, 2 do
+        local it = ____i_4 - 1
+        ____out_4[____i_4] = ____lambda_18
+    end
+    local ____list_1 = __K2L_ListWrap(____out_4, 2)
+    local ____out_5 = {}
+    local ____count_3 = 0
+    local ____items_3, ____n_3 = ____list_1:____array()
+    for ____i_5 = 1, ____n_3 do
+        local it = ____items_3[____i_5]
+        ____count_3 = ____count_3 + 1
+        ____out_5[____count_3] = it()
+    end
+    local anys = __K2L_ListWrap(____out_5, ____count_3)
+    print(__K2L_Equals(anys:get(0), anys:get(1)))
     local holder = Holder.new
     print(__K2L_Str(holder(__K2L_ListOf("x")).items))
-    local ref = ____lambda_17
+    local ref = ____lambda_19
     print(__K2L_Str(ref("xxx"):append("!")))
 end
 

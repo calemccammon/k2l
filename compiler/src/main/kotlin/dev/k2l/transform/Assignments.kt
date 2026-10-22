@@ -6,9 +6,6 @@ import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaBackingFieldSymbol
-import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
-import org.jetbrains.kotlin.analysis.api.symbols.KaPropertySymbol
-import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.lexer.KtTokens
@@ -68,7 +65,7 @@ internal fun FileTransformer.assignTarget(e: KtExpression): Target? = with(sessi
         return Target(field) { assign(field, it) }
     }
     val decl = ref?.mainReference?.resolve()
-    if (ref == null || decl == null || !classes.isSource(decl)) return libraryFieldTarget(e, ref, receiverExpr)
+    if (ref == null || decl == null || !classes.isSource(decl)) return unsupported(e, "Assignment to this target").let { null }
     return when {
         decl is KtProperty && decl.containingClassOrObject == null -> variableTarget(decl, ref, receiverExpr)
 
@@ -81,11 +78,6 @@ internal fun FileTransformer.assignTarget(e: KtExpression): Target? = with(sessi
     }
 }
 
-/** A property of a library class: not supported. */
-@Suppress("UNUSED_PARAMETER")
-private fun FileTransformer.libraryFieldTarget(e: KtExpression, ref: KtNameReferenceExpression?, receiverExpr: KtExpression?): Target? =
-    unsupported(e, "Assignment to this target").let { null }
-
 private fun FileTransformer.assignedReference(ex: KtExpression) = when (ex) {
     is KtNameReferenceExpression -> ex
     is KtDotQualifiedExpression -> ex.selectorExpression as? KtNameReferenceExpression
@@ -97,11 +89,7 @@ private fun FileTransformer.memberPropertyTarget(
     ref: KtNameReferenceExpression,
     receiverExpr: KtExpression?,
 ): Target? = with(session) {
-    if (property is KtProperty &&
-        property.receiverTypeReference != null
-    ) {
-        return memberExtensionPropertyTarget(property, ref, receiverExpr)
-    }
+    if (property is KtProperty && property.receiverTypeReference != null) return memberExtensionPropertyTarget(property, ref, receiverExpr)
     val receiver = if (receiverExpr != null) cache(expression(receiverExpr), "object") else implicitReceiverOf(ref) ?: return null
     return Target(propertyRead(receiver, property)) { propertyWrite(receiver, property, it) }
 }
@@ -143,7 +131,7 @@ private fun FileTransformer.libraryIndexTarget(e: KtArrayAccessExpression, type:
                 Target(slot) { assign(slot, it) }
             }
 
-            // checked like the JVM: out-of-range reads and writes throw IndexOutOfBoundsException
+            // out-of-range reads and writes throw IndexOutOfBoundsException
             kind?.isIndexable == true -> checkedIndexTarget(type, receiver, key)
 
             else -> unsupported(e, "Index assignment on '${type.pretty()}'").let { null }

@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 
 /**
- * `for (c in s)` (bytes mode) whose body uses `c` only as `c.code` and in `c == 'x'` / `c != 'x'` with ASCII literals:
+ * `for (c in s)` whose body uses `c` only as `c.code` and in `c == 'x'` / `c != 'x'` with ASCII literals:
  * the loop reads `local c = byte(s, i)` (a number, no one-character string) and those uses become `c` and `c == 120`.
  * Returns false (registering nothing) when the body uses `c` otherwise.
  */
@@ -69,7 +69,7 @@ private fun FileTransformer.literalComparison(parent: KtBinaryExpression, refere
 private const val ASCII_LIMIT = 128
 
 /**
- * `s[i] == 'x'` (bytes mode) as [inlineCharAt] reads `s[i]`, compared with an ASCII literal: the byte instead of the
+ * `s[i] == 'x'` as [inlineCharAt] reads `s[i]`, compared with an ASCII literal: the byte instead of the
  * one-character string, `(i >= 0 and byte(s, i + 1) or __K2L_IndexError(...)) == 120` (`byte` gives nil past the end, so
  * the length test goes); other comparisons are returned as they are.
  */

@@ -14,5 +14,7 @@ outer bad
 null
 caught from a reference
 [false, true]
+[IndexedValue(index=0, value=x), IndexedValue(index=1, value=y)]
+false
 [x]
 xxx!

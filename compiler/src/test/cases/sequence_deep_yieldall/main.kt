@@ -1,5 +1,5 @@
 // yieldAll of another sequence { } or iterator { }: recursive builders thousands of levels deep, in the same order and as
-// lazily as the JVM. As on the JVM, an exception an inner builder throws before its first element comes out of the yieldAll
+// lazily as in Kotlin. An exception an inner builder throws before its first element comes out of the yieldAll
 // that started it; one thrown later reaches the consumer without passing through the try blocks around the yieldAll calls.
 
 class Node(val id: Int, val children: List<Node>)

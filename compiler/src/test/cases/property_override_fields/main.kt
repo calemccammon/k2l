@@ -1,4 +1,4 @@
-// An overriding property with its own initializer has its own backing field, as on the JVM.
+// An overriding property with its own initializer has its own backing field.
 open class A {
     open val x = 1
     open var y = "a"

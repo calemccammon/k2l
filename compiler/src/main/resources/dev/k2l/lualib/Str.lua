@@ -8,7 +8,7 @@ local function __K2L_Str(value)
         if value.toString then
             return value:toString()
         end
-        -- Any.toString() of an object of the program: its JVM class name and hash code in hex, as in `app.Point@1b`
+        -- Any.toString() of an object of the program: its class name and hash code in hex, as in `app.Point@1b`
         local cls = rawget(value, "____name") ~= nil and value or getmetatable(value)
         if type(cls) == "table" and rawget(cls, "____name") ~= nil then
             local hash = value.hashCode ~= nil and value:hashCode() or __K2L_IdentityHash(value)

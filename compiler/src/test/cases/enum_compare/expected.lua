@@ -8,6 +8,7 @@ local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
@@ -162,7 +163,8 @@ local ____lambda_6 = function(____a_1, ____b_1)
 end
 local ____lambda_7 = function(it) return it.shape end
 local ____lambda_8 = function(it) return it.level end
-local ____lambda_9 = function() return Shape:named("hexagon") end
+local ____lambda_9 = function(it) return it.key end
+local ____lambda_10 = function() return Shape:named("hexagon") end
 local function main()
     print(tostring(__K2L_Compare(Level.LOW, Level.HIGH) < 0) .. " " .. tostring(__K2L_Compare(Level.CRITICAL, Level.MEDIUM) <= 0) .. " " .. __K2L_Compare(Level.HIGH, Level.LOW) .. " " .. __K2L_Compare(Level.LOW, Level.LOW))
     print(__K2L_Str(__K2L_ListOf(Level.HIGH, Level.LOW, Level.CRITICAL, Level.MEDIUM):sorted()))
@@ -205,6 +207,8 @@ local function main()
     print(tostring(__K2L_Compare(c, Level.LOW) > 0) .. " " .. __K2L_Compare(c, Level.CRITICAL))
     print(__K2L_Str(__K2L_ListOf(Shape.SQUARE, Shape.TRIANGLE, Shape.CIRCLE):toSortedSet()))
     print(__K2L_Str(__K2L_SortedMapOf(nil, __K2L_Pair.new(Level.HIGH, 1), __K2L_Pair.new(Level.LOW, 2))))
+    print(__K2L_Str(__K2L_MapOf(__K2L_Pair.new(Level.HIGH, 1), __K2L_Pair.new(Level.LOW, 2)):getEntries():sortedBy(____lambda_9, true)))
+    print(__K2L_Str(__K2L_Num.coerceIn(Level.MEDIUM, Level.HIGH, Level.HIGH)))
     local ____values_1 = Level.____values
     for ____i_4 = 1, #____values_1 do
         local level = ____values_1[____i_4]
@@ -231,7 +235,7 @@ local function main()
     print(____arg .. " " .. ____arg_1 .. " " .. tostring(__K2L_Compare(____value, ____bound_4) >= 0 and __K2L_Compare(____value, ____bound_5) <= 0))
     print(tostring("b" >= "a" and "b" <= "c") .. " " .. tostring("d" >= "a" and "d" <= "c") .. " " .. tostring(2.5 >= 1.0 and 2.5 <= 3.0))
     print(__K2L_Str(Shape:byCorners(3)) .. " " .. __K2L_Str(Shape:byCorners(5)) .. " " .. __K2L_Str(Shape:all()) .. " " .. __K2L_Str(Shape:named("square")))
-    print(__K2L_Str(__K2L_RunCatching(____lambda_9):exceptionOrNull()))
+    print(__K2L_Str(__K2L_RunCatching(____lambda_10):exceptionOrNull()))
 end
 
 __K2L_RunMain(main)

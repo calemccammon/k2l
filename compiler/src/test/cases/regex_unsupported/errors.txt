@@ -26,9 +26,9 @@
 30:9: Regex option MULTILINE is not supported
 31:15: Regex alternation `|` is not supported (Lua patterns have no alternation)
 32:16: Regex quantifier on a group is not supported (Lua quantifies single characters and classes only)
-36:26: Library API 'kotlin.text.MatchGroup.range' is not supported yet
-  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see "Calling Lua from Kotlin" in the README)
-37:13: Regex named group lookup `groups[name]` is not supported yet
+36:26: Library API 'kotlin.text.MatchGroup.range' is not supported
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see docs/lua-interop.md)
+37:13: Regex named group lookup `groups[name]` is not supported
 42:13: Regex pattern must be a compile-time constant (k2l translates it to a Lua pattern)
 43:25: Regex pattern must be a compile-time constant (k2l translates it to a Lua pattern)
 44:13: Regex options must be compile-time constants (RegexOption entries or a setOf of them)

@@ -33,8 +33,9 @@ private fun notNullSet(site: CallSite): LuaExpr {
 /**
  * More of `kotlin.collections`, `kotlin.sequences` and `kotlin.text`: `isSorted` and friends, Grouping's `eachCountTo`,
  * `foldTo`, `reduceTo` and `aggregateTo`, `Map.onEachIndexed`/`mapTo`/`filterNotTo`, `Iterator.withIndex`, `IndexedValue`,
- * `Sequence.unzip`, `setOfNotNull`, a list's or array's `reduceRightOrNull` and friends, and CharSequence's `findAnyOf`, `findLastAnyOf`, `lastIndexOfAny`, `filterTo`, `onEachIndexed`, the
- * right-to-left reductions, `replaceIndent` and `replaceIndentByMargin`.
+ * `Sequence.unzip`, `setOfNotNull`, a list's or array's `reduceRightOrNull` and friends, and CharSequence's `findAnyOf`,
+ * `findLastAnyOf`, `lastIndexOfAny`, `filterTo`, `onEachIndexed`, the right-to-left reductions, `replaceIndent` and
+ * `replaceIndentByMargin`.
  */
 internal object CollectionExtrasMappings {
     private val IS_SORTED = mapOf(

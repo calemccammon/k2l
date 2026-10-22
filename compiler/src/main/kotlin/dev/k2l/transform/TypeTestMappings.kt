@@ -22,9 +22,7 @@ internal object TypeTestMappings {
         val element = LuaName("x")
         val test = with(site.transformer) { typeTest(element, type, site.element) }
         val predicate = LuaFunction(listOf("x"), listOf(LuaReturn(listOf(test))))
-        if (destination ==
-            null
-        ) {
+        if (destination == null) {
             LuaMethodCall(site.self, "filter", listOf(predicate))
         } else {
             LuaMethodCall(site.self, "filterTo", listOf(destination, predicate))

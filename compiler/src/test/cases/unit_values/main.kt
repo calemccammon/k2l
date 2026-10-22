@@ -2,7 +2,7 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.startCoroutine
 
-// `Unit` used as a value prints as kotlin.Unit, like on the JVM.
+// `Unit` used as a value prints as kotlin.Unit.
 
 var calls = 0
 

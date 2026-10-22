@@ -1,6 +1,0 @@
-modpow sum 9795569
-primes 25997, sum of squares 7.3035175461282e+14
-gcd sum 288456
-coin ways 65542641
-lcs 201
-bits 657403030, avg 2191

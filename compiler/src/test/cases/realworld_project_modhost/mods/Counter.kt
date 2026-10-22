@@ -4,7 +4,7 @@ import dev.k2l.lua.LuaName
 import mods.bindings.Host
 import mods.shared.Events
 
-// Its properties are initialized when the driver first reads one (as the JVM does on first use of the file), and the
+// Its properties are initialized when the driver first reads one, and the
 // driver writes `click_count` directly.
 
 val bootMessage: String = run {

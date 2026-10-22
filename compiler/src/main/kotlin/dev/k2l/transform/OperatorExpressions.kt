@@ -118,10 +118,7 @@ internal fun FileTransformer.operator(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: 
 /** Texts (Strings and Chars) compare with Lua's `<`, which orders bytes. */
 internal fun FileTransformer.comparesNatively(lt: KaType?, rt: KaType?): Boolean = with(session) { lt.isTextual && rt.isTextual }
 
-private fun FileTransformer.both(lt: KaType?, rt: KaType?, test: (KaType) -> Boolean) = listOfNotNull(lt, rt).let {
-    it.size == 2 &&
-        it.all(test)
-}
+private fun FileTransformer.both(lt: KaType?, rt: KaType?, test: (KaType) -> Boolean) = lt != null && rt != null && test(lt) && test(rt)
 
 /** Chars are one-character strings: 'c' - 'a' is an Int, 'a' + 1 is a Char. */
 private fun FileTransformer.charArithmetic(op: LuaBinOp, l: LuaExpr, lt: KaType?, r: LuaExpr, rt: KaType?): LuaExpr? = with(session) {

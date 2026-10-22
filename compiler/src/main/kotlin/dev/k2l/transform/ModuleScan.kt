@@ -1,21 +1,17 @@
 package dev.k2l.transform
 
-import org.jetbrains.kotlin.psi.KtCallExpression
-import org.jetbrains.kotlin.psi.KtClassLiteralExpression
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.KtSuperTypeListEntry
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
-import org.jetbrains.kotlin.psi.KtTryExpression
 import org.jetbrains.kotlin.psi.KtUserType
 
 /**
- * What the files of a module mention, found in one walk over them: the flags of [ModuleContext] (`usesListViews`, ...).
+ * What the files of a module mention, found in one walk over them: the flags of [ModuleContext] (`implementsLists`, ...).
  * Each flag only says whether some file mentions something, so it doesn't matter in which order the files are walked.
  */
 internal class ModuleScan(files: Set<KtFile>) {
     /** A class extending one of [LIST_BASES]. */
-    var listViews = false
+    var lists = false
         private set
 
     /** A class implementing `ClosedRange`. */
@@ -36,14 +32,9 @@ internal class ModuleScan(files: Set<KtFile>) {
     }
 
     private inner class Visitor : KtTreeVisitorVoid() {
-        override fun visitSimpleNameExpression(expression: KtSimpleNameExpression) {
-            val name = expression.getReferencedName()
-            super.visitSimpleNameExpression(expression)
-        }
-
         override fun visitSuperTypeListEntry(specifier: KtSuperTypeListEntry) {
             val name = (specifier.typeReference?.typeElement as? KtUserType)?.referencedName
-            if (name in LIST_BASES) listViews = true
+            if (name in LIST_BASES) lists = true
             if (name == "ClosedRange") closedRange = true
             if (name == "CharSequence") charSequence = true
             if (name in COLLECTION_TYPES) collections = true

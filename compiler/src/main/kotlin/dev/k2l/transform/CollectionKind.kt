@@ -49,13 +49,8 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "kotlin/collections/AbstractList",
         "kotlin/collections/AbstractMutableList",
     )
-    val arrayTypes =
-        listOf(
-            "Array", "IntArray", "LongArray", "DoubleArray", "FloatArray", "BooleanArray", "CharArray", "ShortArray", "ByteArray",
-        )
-    for (t in arrayTypes) {
-        put("kotlin/$t", CollectionKind.Array)
-    }
+    val arrays = listOf("", "Int", "Long", "Double", "Float", "Boolean", "Char", "Short", "Byte")
+    for (t in arrays) put("kotlin/${t}Array", CollectionKind.Array)
     kind(
         CollectionKind.Set,
         "kotlin/collections/Set",
@@ -131,10 +126,6 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "kotlin/collections/FloatIterator",
         "kotlin/collections/DoubleIterator",
         "java/util/Iterator",
-        "java/util/PrimitiveIterator",
-        "java/util/PrimitiveIterator.OfInt",
-        "java/util/PrimitiveIterator.OfLong",
-        "java/util/PrimitiveIterator.OfDouble",
         "kotlin/collections/AbstractIterator",
     )
     put("kotlin/collections/Map.Entry", CollectionKind.Entry)
@@ -148,7 +139,6 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
     put("kotlin/text/StringBuilder", CollectionKind.StringBuilder)
     put("dev/k2l/lua/LuaTable", CollectionKind.LuaTable)
     put("kotlin/sequences/Sequence", CollectionKind.Sequence)
-    kind(CollectionKind.Iterator, "kotlin/collections/Iterator", "kotlin/collections/MutableIterator", "java/util/Iterator")
 }
 
 context(s: KaSession)

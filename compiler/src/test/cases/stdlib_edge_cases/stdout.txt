@@ -1,0 +1,10 @@
+in-varargs = [true, true, true, false]
+setOf-in = [true, false]
+dblHash = [48568, -241872217]
+longHash = [705032735, -705032766, 7]
+mapHash = 48601
+digitToInt EXC: Char x is not a decimal digit
+digitToInt16 EXC: Char x is not a digit in the given radix=16
+windowed EXC: Both size 0 and step 1 must be greater than zero.
+padStart EXC: Desired length -1 is less than zero.
+repeat EXC: Count 'n' must be non-negative, but was -1.

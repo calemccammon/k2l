@@ -7,11 +7,11 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtProperty
 
 /**
- * The JVM initializes a file's top-level properties when its facade class is first used, not when the program starts.
- * k2l runs them when the file loads unless somebody could notice: a file without `main` whose plain properties (see
- * [isField]) have an initializer that calls code or reads mutable state is *deferred*. Its plain properties are fields of
- * the exports table, their initializers run on the first read or write of one of them (`LazyFile.lua`), so an import
- * cycle or another file's state set by `main` beforehand sees what it would see on the JVM.
+ * Kotlin initializes a file's top-level properties when the file is first used, not when the program starts. k2l runs them
+ * when the file loads unless somebody could notice: a file without `main` whose plain properties (see [isField]) have an
+ * initializer that calls code or reads mutable state is *deferred*. Its plain properties are fields of the exports table,
+ * and their initializers run on the first read or write of one of them (`LazyFile.lua`), so an import cycle or state that
+ * `main` sets beforehand is seen as in Kotlin.
  */
 internal class FileInit(private val session: KaSession, private val lazyInit: LazyInit) {
     private val cache = HashMap<KtFile, Boolean>()
@@ -19,7 +19,7 @@ internal class FileInit(private val session: KaSession, private val lazyInit: La
 
     fun isDeferred(file: KtFile): Boolean {
         cache[file]?.let { return it }
-        // a file whose initializers read a file that reads it back: the JVM would see a half-initialized file either way
+        // a file whose initializers read a file that reads it back sees a half-initialized file either way
         if (!inProgress.add(file)) return false
         val result = with(session) { compute(file) }
         inProgress.remove(file)

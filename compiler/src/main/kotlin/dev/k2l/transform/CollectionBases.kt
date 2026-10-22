@@ -9,7 +9,6 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtCallElement
 import org.jetbrains.kotlin.psi.KtClassOrObject
-import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 
@@ -22,7 +21,7 @@ private const val ABSTRACT_MAP = "__K2L_AbstractMap"
  * Library collection classes a program's class can extend, and collection interfaces it can implement, by ClassId: the
  * lualib class its table extends. Abstract classes get the abstract bases, which implement every operation in terms of the
  * members the class provides; interfaces get the same bases with Any's toString, equals and hashCode (an interface has no
- * implementation of them); the open JDK classes are the lualib collections themselves.
+ * implementation of them); ArrayList, HashSet and HashMap are the lualib collections themselves.
  */
 internal val COLLECTION_BASES: Map<String, String> = buildMap {
     fun base(lua: String, vararg ids: String) = ids.forEach { put(it, lua) }

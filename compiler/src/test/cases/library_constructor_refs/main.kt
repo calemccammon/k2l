@@ -54,6 +54,12 @@ fun main() {
     val patterns = listOf("a+b", "aab").map(Regex::fromLiteral)
     println(patterns.map { it.matches("aab") })
 
+    // IndexedValue and Any
+    val indexed: (Int, String) -> IndexedValue<String> = ::IndexedValue
+    println(listOf("x", "y").mapIndexed(indexed))
+    val anys = List(2) { ::Any }.map { it() }
+    println(anys[0] == anys[1])
+
     // a source constructor held as a KFunction, and a library one taking an option
     val holder: KFunction1<MutableList<String>, Holder> = ::Holder
     println(holder(mutableListOf("x")).items)

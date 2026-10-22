@@ -82,8 +82,7 @@ internal fun FileTransformer.equality(l: LuaExpr, lt: KaType?, r: LuaExpr, rt: K
 }
 
 internal fun FileTransformer.isPrimitiveOperand(t: KaType?): Boolean = with(session) {
-    t == null || t.isNumber || t.isStringType || t.isCharType || t.isBooleanType ||
-        (t.isMarkedNullable && (t.isStringType)) // String? + x is still string concatenation
+    t == null || t.isNumber || t.isStringType || t.isCharType || t.isBooleanType
 }
 
 context(s: KaSession)

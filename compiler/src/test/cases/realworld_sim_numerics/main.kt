@@ -6,7 +6,7 @@ import kotlin.math.ln
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-// Numerical methods with their results printed in full (Double.toString's shortest repr):
+// Numerical methods with their results printed by Lua's tostring:
 // root finding, quadrature, ODE integration, linear algebra and series.
 
 fun newton(f: (Double) -> Double, df: (Double) -> Double, x0: Double, tol: Double = 1e-15): Pair<Double, Int> {

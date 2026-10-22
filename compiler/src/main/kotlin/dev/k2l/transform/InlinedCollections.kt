@@ -89,11 +89,7 @@ private fun FileTransformer.loopSource(
     if (inText) {
         Source(cache(charList(collection), "chars"), kind, false)
     } else {
-        Source(
-            collection,
-            kind,
-            type?.elementType?.isMarkedNullable != false,
-        )
+        Source(collection, kind, type?.elementType?.isMarkedNullable != false)
     }
 }
 
@@ -149,9 +145,7 @@ private fun FileTransformer.lowered(
 
     "onEachIndexed" -> eachIndexed(source, lambda)
 
-    in MAP_RESULT_FUNCTIONS -> if (source.kind ==
-        CollectionKind.Map
-    ) {
+    in MAP_RESULT_FUNCTIONS -> if (source.kind == CollectionKind.Map) {
         mapResult(name, source, lambda)
     } else {
         listingOrEach(name, source, lambda)
@@ -190,7 +184,7 @@ internal fun lambdaLiteral(arg: KtExpression?): KtLambdaExpression? =
 /**
  * Emits a loop over [source] whose body is what [step] emits for the element, named after parameter [paramIndex] of [lambda],
  * and for the 0-based index, named after parameter [indexParam] if there is one. A list or array is walked from the end
- * when [backwards] (the order the JVM visits it for `last { }` and the like). [itemName] names the element variable when
+ * when [backwards] (for `last { }` and the like). [itemName] names the element variable when
  * the lambda's parameters are not the elements.
  */
 internal fun FileTransformer.eachElement(
@@ -209,7 +203,7 @@ internal fun FileTransformer.eachElement(
     val body = collect { step(element, index) }
     if (snapshotOrEntriesLoop(source, item, index, body)) return
     val list = asList(source.kind, source.collection)
-    val plain = index == null && !backwards && !usesListViews
+    val plain = index == null && !backwards && !implementsLists
     if (!source.elementNullable && plain) {
         emit(LuaGenericFor(listOf("_", item), listOf(luaCall(LuaName("ipairs"), list)), body))
         return

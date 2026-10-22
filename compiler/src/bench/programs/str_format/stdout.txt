@@ -1,7 +1,0 @@
-formatted 1105086 chars, checksum 451749691
-apollo     10324:03    823806.48
-gemini      9941:53    784639.14
-mercury    10141:40    811768.91
-soyuz       9988:14    793471.14
-vostok     10227:07    812909.02
-parsed 448934888

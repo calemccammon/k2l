@@ -58,7 +58,7 @@ fun main() {
     println(listOf('a').toTypedArray().toCharArray().concatToString())
     println(sequenceOf('a', 'b').toList().toCharArray().size)
     println("abc".toList().toCharArray().concatToString())
-    // an array prints its elements, as a list does (not the JVM's `[I@1b6d3586`), and compares by identity
+    // an array prints its elements, as a list does, and compares by identity
     val arr = intArrayOf(1, 2)
     println("$arr ${arrayOf("x")} ${arr == intArrayOf(1, 2)} ${arr.contentEquals(intArrayOf(1, 2))}")
 }

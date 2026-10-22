@@ -3,8 +3,8 @@ import kotlin.math.sqrt
 import kotlin.random.Random
 import kotlin.random.nextInt
 
-// Seeded Monte Carlo experiments: every draw goes through Kotlin's XorWow generator, so the
-// numbers printed here are the JVM's exact sequences for each Random method.
+// Seeded Monte Carlo experiments: every draw goes through a seeded Random, so the numbers printed here are the same on
+// every run and every target.
 
 fun estimatePi(seed: Int, samples: Int): Double {
     val rng = Random(seed)

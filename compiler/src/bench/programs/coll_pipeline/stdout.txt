@@ -1,7 +1,0 @@
-batch 0: NORTH=10887/sku18, WEST=10656/sku40, SOUTH=9355/sku56, EAST=9102/sku53
-  vip 4304 avg 36459, top [371, 496, 422, 446, 5], week 372672403, skus 60, chunks 531
-batch 1: NORTH=10858/sku18, WEST=10674/sku14, SOUTH=9392/sku56, EAST=9076/sku53
-  vip 4259 avg 36628, top [496, 333, 422, 371, 446], week 372223386, skus 60, chunks 527
-batch 2: NORTH=10883/sku18, WEST=10660/sku14, SOUTH=9398/sku56, EAST=9059/sku53
-  vip 4275 avg 36531, top [496, 371, 421, 422, 333], week 372015632, skus 60, chunks 528
-checksum 7682983

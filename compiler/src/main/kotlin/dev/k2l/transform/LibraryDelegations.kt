@@ -17,11 +17,11 @@ private const val CHAR_SEQUENCE = "kotlin/CharSequence"
 /**
  * `class C(xs: MutableList<Int>) : MutableList<Int> by xs`: the class implements the library interface like a class that
  * implements it itself (it extends the lualib base, see CollectionBases, or is callable, see SAM_MIXINS), and every member
- * Kotlin delegates (the abstract ones the class does not override; not Java's default methods such as `removeIf` or `sort`,
- * nor `toString`/`equals`/`hashCode`) is a method calling that member on the delegate, as a call on a value of the
- * interface type compiles: `function C:get(index) return self.____delegate_MutableList:get(index) end`. The other
+ * Kotlin delegates (the abstract ones the class does not override; not the interface's default methods such as `removeIf`
+ * or `sort`, nor `toString`/`equals`/`hashCode`) is a method calling that member on the delegate, as a call on a value of
+ * the interface type compiles: `function C:get(index) return self.____delegate_MutableList:get(index) end`. The other
  * operations (`map`, `joinToString`, `for` loops, the default methods) are the base's, written in terms of these methods,
- * so they see the members the class overrides, as on the JVM.
+ * so they see the members the class overrides.
  */
 internal fun FileTransformer.libraryDelegatedMembers(c: KtClassOrObject, ref: LuaExpr): Unit = with(session) {
     val delegations = classes.superInfo(c).libraryDelegations

@@ -9,20 +9,20 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 
 /**
- * The JVM zeroes an object's fields before any constructor code runs, so code that runs earlier during construction (an
- * initializer or `init` block calling a method, a superclass constructor calling an override) reads `0`, `false` or `null`
- * from a property whose initializer has not run yet. Lua fields are nil until assigned, so the constructor of such a class
- * first stores those values (`self.y = 0`) for the properties that earlier construction code can reach.
+ * Code that runs during construction before a property's initializer (an initializer or `init` block calling a method, a
+ * superclass constructor calling an override) reads `0`, `false` or `null` from it in Kotlin. Lua fields are nil until
+ * assigned, so the constructor of such a class first stores those values (`self.y = 0`) for the properties that earlier
+ * construction code can reach.
  */
 internal fun FileTransformer.earlyFieldDefaults(c: KtClassOrObject): Unit = with(session) {
     for (p in earlyReadProperties(c)) {
-        val zero = jvmFieldDefault(p.symbol.returnType) ?: continue
+        val zero = fieldDefault(p.symbol.returnType) ?: continue
         emit(assign(LuaIndex(selfRef(), LuaString(fieldKey(p))), zero))
     }
 }
 
 /** What a field of [type] holds before it is initialized, as far as Lua's nil differs from it (`null` stays nil). */
-internal fun KaSession.jvmFieldDefault(type: KaType): LuaExpr? = when {
+internal fun KaSession.fieldDefault(type: KaType): LuaExpr? = when {
     type.isMarkedNullable -> null
 
     type.isBooleanType -> LuaBool(false)
@@ -31,7 +31,7 @@ internal fun KaSession.jvmFieldDefault(type: KaType): LuaExpr? = when {
 
     type.isDoubleType || type.isFloatType -> LuaNumber("0.0")
 
-    // a non-null String that is null on the JVM prints as "null" (and a Lua concatenation of nil would fail)
+    // a non-null String read before its initializer prints as "null" (and a Lua concatenation of nil would fail)
     type.isStringType -> LuaString("null")
 
     else -> null

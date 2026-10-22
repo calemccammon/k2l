@@ -42,10 +42,7 @@ internal fun FileTransformer.hoistSubjectMetatable(e: KtWhenExpression, subject:
 }
 
 context(s: KaSession)
-private fun KaType.isPrimitiveLike() = with(s) {
-    isStringType || isCharType || isBooleanType || isIntegral || isDoubleType ||
-        isFloatType
-}
+private fun KaType.isPrimitiveLike() = with(s) { isStringType || isCharType || isBooleanType || isIntegral || isDoubleType || isFloatType }
 
 /** Whether [typeTest] can test [declaredType] (type parameters and unmapped library types cannot be told at run time). */
 internal fun FileTransformer.isTestable(declaredType: KaType): Boolean = with(session) {
@@ -77,23 +74,12 @@ private fun FileTransformer.nonNullTypeTest(value: LuaExpr, type: KaType, elemen
         type.isIntegral || type.isDoubleType || type.isFloatType -> {
             val wantInteger = type.isIntegral
             if (target.hasIntegers) {
-                return LuaBinary(
-                    LuaBinOp.Eq,
-                    lua("math.type", value),
-                    LuaString(if (wantInteger) "integer" else "float"),
-                )
+                return LuaBinary(LuaBinOp.Eq, lua("math.type", value), LuaString(if (wantInteger) "integer" else "float"))
             }
             // Without an integer subtype, an Int is an integral number (so 2.0 is Int and Double).
             val isNumber = LuaBinary(LuaBinOp.Eq, luaCall(LuaName("type"), value), LuaString("number"))
-            return if (wantInteger) {
-                LuaBinary(
-                    LuaBinOp.And,
-                    isNumber,
-                    LuaBinary(LuaBinOp.Eq, LuaBinary(LuaBinOp.Mod, value, LuaNumber("1")), LuaNumber("0")),
-                )
-            } else {
-                isNumber
-            }
+            val integral = LuaBinary(LuaBinOp.Eq, LuaBinary(LuaBinOp.Mod, value, LuaNumber("1")), LuaNumber("0"))
+            return if (wantInteger) LuaBinary(LuaBinOp.And, isNumber, integral) else isNumber
         }
 
         else -> return classTest(value, type, element)
@@ -123,12 +109,11 @@ private fun FileTransformer.classTest(value: LuaExpr, type: KaType, element: KtE
         collection != null -> {
             val test = lualibCall("InstanceOf", value, lualibRef(featureOf(collection), collection))
             // an Iterable that is not a Collection (a class implementing Iterable, a range) has no size
-            val sized = if (id in COLLECTION_INTERFACES) {
+            if (id in COLLECTION_INTERFACES) {
                 LuaBinary(LuaBinOp.And, test, LuaBinary(LuaBinOp.Ne, LuaIndex(value, LuaString("size")), LuaNil))
             } else {
                 test
             }
-            sized
         }
 
         id in LIBRARY_CLASSES -> lualibCall("InstanceOf", value, lualibRef(EXCEPTIONS_FEATURE, LIBRARY_CLASSES.getValue(id!!)))
@@ -140,10 +125,21 @@ private fun FileTransformer.classTest(value: LuaExpr, type: KaType, element: KtE
             lualibCall("InstanceOf", value, lualibRef(SAM_FEATURE, SAM_MIXINS.getValue(id!!))),
         )
 
-        id in TYPE_CHECKS -> {
-            LuaCall(lualibRef("TypeChecks", TYPE_CHECKS.getValue(id!!)), listOf(value))
-        }
+        id in TYPE_CHECKS -> LuaCall(lualibRef("TypeChecks", TYPE_CHECKS.getValue(id!!)), listOf(value))
 
         else -> unsupported(element, "Type check against '${type.pretty()}'")
     }
+}
+
+/**
+ * `is Array<*>`: whether the value is an array. All arrays are of one Lua class whatever their element type, so a test
+ * against a primitive array type (`is IntArray`) is a compile error; a cast to one (`as IntArray`) checks for an array.
+ */
+private fun FileTransformer.arrayTypeTest(value: LuaExpr, type: KaType, element: KtElement): LuaExpr = with(session) {
+    val id = type.expandedSymbol?.classId
+    if (id?.asString() != "kotlin/Array" && element !is KtBinaryExpressionWithTypeRHS) {
+        ctx.error(element, "Type test 'is ${id?.shortClassName}' is not supported: all arrays are one Lua class (test `is Array<*>`)")
+        return LuaNil
+    }
+    LuaCall(lualibRef("Collections", "__K2L_IsArray"), listOf(value))
 }

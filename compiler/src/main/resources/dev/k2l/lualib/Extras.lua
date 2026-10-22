@@ -59,7 +59,7 @@ end
 function __K2L_Extras.toSmall(s, bits, radix)
     local n = __K2L_Extras.toSmallOrNull(s, bits, radix)
     if n == nil then
-        -- the message of java.lang.Byte.parseByte / Short.parseShort
+        -- Kotlin's message for a number out of the type's range
         if __K2L_StringToIntOrNull(s, radix) ~= nil then
             error(__K2L_NumberFormatException.new("Value out of range. Value:\"" .. s .. "\" Radix:" .. (radix or 10)))
         end

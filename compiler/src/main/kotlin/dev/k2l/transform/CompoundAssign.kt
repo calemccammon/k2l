@@ -8,7 +8,7 @@ import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 
 /**
- * The value of `a op= b` when it is `a = a op b` through an `operator fun` (`var total: BigInteger; total += x`): the
+ * The value of `a op= b` when it is `a = a op b` through an `operator fun` (`var total: Money; total += x`): the
  * call of that operator, or null when the expression does not resolve that way.
  */
 internal fun FileTransformer.compoundOperatorCall(e: KtBinaryExpression): LuaExpr? = with(session) {

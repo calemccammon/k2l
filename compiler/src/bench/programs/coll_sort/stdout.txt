@@ -1,4 +1,0 @@
-first: Anan Finannor 2023; last: Prapra Norolgor
-median year 1961, title range ananan..praprapra
-prolific: [Belpra Gordrami:121, Bellor Elolol:120, Elol Praannor:118, Finbel Ancorjun:118, Olgor Belanol:118]
-checksum 182303

@@ -53,81 +53,8 @@ local function newList(arr, n)
     return setmetatable(arr, __K2L_List)
 end
 
--- Whether `keys[1..n]` can be ordered with Lua's `<` and `>` exactly like __K2L_Compare: all numbers or all strings.
-local function directlyOrdered(keys, n)
-    local t = type(keys[1])
-    if t ~= "number" and t ~= "string" then
-        return n == 0
-    end
-    for i = 2, n do
-        if type(keys[i]) ~= t then
-            return false
-        end
-    end
-    return true
-end
-
--- Stable sort of arr[1..n] by the precomputed `keys` (keys[i] belongs to arr[i]), which are ordered by `<` directly.
-local function sortByKeys(arr, n, keys, descending)
-    local src, dst = {}, {}
-    for i = 1, n do
-        src[i] = i
-    end
-    local width = 1
-    while width < n do
-        local i = 1
-        while i <= n do
-            local mid, hi = math.min(i + width, n + 1), math.min(i + 2 * width, n + 1)
-            local a, b, k = i, mid, i
-            if descending then
-                while a < mid and b < hi do
-                    local ia, ib = src[a], src[b]
-                    if keys[ib] > keys[ia] then
-                        dst[k] = ib
-                        b = b + 1
-                    else
-                        dst[k] = ia
-                        a = a + 1
-                    end
-                    k = k + 1
-                end
-            else
-                while a < mid and b < hi do
-                    local ia, ib = src[a], src[b]
-                    if keys[ib] < keys[ia] then
-                        dst[k] = ib
-                        b = b + 1
-                    else
-                        dst[k] = ia
-                        a = a + 1
-                    end
-                    k = k + 1
-                end
-            end
-            while a < mid do
-                dst[k] = src[a]
-                a, k = a + 1, k + 1
-            end
-            while b < hi do
-                dst[k] = src[b]
-                b, k = b + 1, k + 1
-            end
-            i = i + 2 * width
-        end
-        src, dst = dst, src
-        width = width * 2
-    end
-    local out = {}
-    for i = 1, n do
-        out[i] = arr[src[i]]
-    end
-    return out
-end
-
 -- Sorting: sorted(), sortedWith(), sortedBy() and the sort functions of lists and arrays are stable, as Kotlin documents
--- them. Elements in natural order and the keys of a selector the compiler knows to be pure, when they are all numbers or
--- all strings, are merged by Lua's `<` (sortByKeys); the others by their comparator, compareTo or the selector's keys
--- (mergeSorted). These return a sorted copy of arr[1..n] as a plain array.
+-- them. These return a sorted copy of arr[1..n] as a plain array.
 
 -- A sorted copy of arr[1..n] by `compare(x, y)` (negative, zero or positive): a bottom-up merge sort, which takes the
 -- element of the left run first when the two compare equal.
@@ -172,11 +99,8 @@ local function reverseNatural(a, b)
     return __K2L_Compare(b, a)
 end
 
--- sorted(), sortedDescending(): compareTo, or Collections.reverseOrder() calling it with the arguments swapped
+-- sorted(), sortedDescending(): compareTo, or with the arguments swapped
 local function sortNatural(arr, n, descending)
-    if directlyOrdered(arr, n) then
-        return sortByKeys(arr, n, arr, descending)
-    end
     return mergeSorted(arr, n, descending and reverseNatural or __K2L_Compare)
 end
 
@@ -184,13 +108,17 @@ end
 -- (b first for the descending order). `pure` (set by the compiler) allows computing each key once instead.
 local function sortSelected(arr, n, selector, descending, pure)
     if pure then
-        local keys = {}
+        local keys, slots = {}, {}
         for i = 1, n do
-            keys[i] = selector(arr[i])
+            keys[i], slots[i] = selector(arr[i]), i
         end
-        if directlyOrdered(keys, n) then
-            return sortByKeys(arr, n, keys, descending)
+        local compare = descending and function(a, b) return __K2L_CompareValues(keys[b], keys[a]) end
+            or function(a, b) return __K2L_CompareValues(keys[a], keys[b]) end
+        local sorted = mergeSorted(slots, n, compare)
+        for i = 1, n do
+            sorted[i] = arr[sorted[i]]
         end
+        return sorted
     end
     if descending then
         return mergeSorted(arr, n, function(a, b) return __K2L_CompareValues(selector(b), selector(a)) end)
@@ -624,35 +552,30 @@ function __K2L_Iterable:minOf(selector) return select(2, extreme(self, selector,
 function __K2L_Iterable:maxOfOrNull(selector) return (select(2, extreme(self, selector, 1, true))) end
 function __K2L_Iterable:minOfOrNull(selector) return (select(2, extreme(self, selector, -1, true))) end
 
--- the list sorted() and the like return
-local function sortedList(_, out, n)
-    return newList(out, n)
-end
-
 function __K2L_Iterable:sorted()
     local arr, n = self:____array()
-    return sortedList(self, sortNatural(arr, n, false), n)
+    return newList(sortNatural(arr, n, false), n)
 end
 
 function __K2L_Iterable:sortedDescending()
     local arr, n = self:____array()
-    return sortedList(self, sortNatural(arr, n, true), n)
+    return newList(sortNatural(arr, n, true), n)
 end
 
 function __K2L_Iterable:sortedBy(selector, pure)
     local arr, n = self:____array()
-    return sortedList(self, sortSelected(arr, n, selector, false, pure), n)
+    return newList(sortSelected(arr, n, selector, false, pure), n)
 end
 
 function __K2L_Iterable:sortedByDescending(selector, pure)
     local arr, n = self:____array()
-    return sortedList(self, sortSelected(arr, n, selector, true, pure), n)
+    return newList(sortSelected(arr, n, selector, true, pure), n)
 end
 
 -- `comparator` is a Lua function (a, b) -> Int, from a Kotlin lambda or compareBy.
 function __K2L_Iterable:sortedWith(comparator)
     local arr, n = self:____array()
-    return sortedList(self, mergeSorted(arr, n, comparator), n)
+    return newList(mergeSorted(arr, n, comparator), n)
 end
 
 function __K2L_Iterable:reversed()
@@ -660,9 +583,6 @@ function __K2L_Iterable:reversed()
     local out = {}
     for i = 1, n do
         out[i] = arr[n - i + 1]
-    end
-    if n <= 1 then
-        return newList(out, n)
     end
     return newList(out, n)
 end
@@ -919,12 +839,7 @@ function __K2L_Iterable:associateWith(valueSelector)
 end
 
 function __K2L_Iterable:toMap()
-    local map = self:associate(function(pair) return pair end)
-    local _, n = self:____array()
-    if n <= 1 then
-        return map
-    end
-    return map
+    return self:associate(function(pair) return pair end)
 end
 
 function __K2L_Iterable:forEach(action)
@@ -1551,7 +1466,7 @@ function __K2L_Iterable:copyInto(destination, destinationOffset, startIndex, end
     if destinationOffset < 0 or startIndex < 0 or endIndex > n or destinationOffset + endIndex - startIndex > destination.size then
         error(__K2L_IndexOutOfBoundsException.new("The destination range is out of bounds"))
     end
-    -- within one array, a range moved up is copied from its end, as System.arraycopy copies overlapping ranges
+    -- within one array, a range moved up is copied from its end, so that an overlapping range is copied intact
     if rawequal(arr, destination) and destinationOffset > startIndex then
         for i = endIndex - 1, startIndex, -1 do
             destination[destinationOffset + i - startIndex + 1] = arr[i + 1]
@@ -1787,12 +1702,8 @@ function __K2L_List:addAt(index, value)
 end
 
 -- The bulk and convenience operations do not call add, addAt or removeAt, which a subclass may override.
-local function toArray(elements)
-    return elements:____array()
-end
-
 function __K2L_List:addAll(elements)
-    local arr, n = toArray(elements)
+    local arr, n = elements:____array()
     local size = self.size
     for i = 1, n do
         self[size + i] = arr[i]
@@ -1802,7 +1713,7 @@ function __K2L_List:addAll(elements)
 end
 
 function __K2L_List:addAllAt(index, elements)
-    local arr, n = toArray(elements)
+    local arr, n = elements:____array()
     if index < 0 or index > self.size then
         error(__K2L_IndexOutOfBoundsException.new("Index: " .. index .. ", Size: " .. self.size))
     end
@@ -1835,7 +1746,7 @@ function __K2L_List:remove(value)
     return true
 end
 
--- java.util.List.removeFirst/removeLast, which Kotlin 2.4 calls on JDK 21: the exception has no message
+-- removeFirst() and removeLast() of an empty list throw NoSuchElementException without a message
 function __K2L_List:removeFirst()
     if self.size == 0 then
         noSuchElement()
@@ -1894,32 +1805,30 @@ local function sortInPlace(self, sorted)
     end
 end
 
-local sortedInPlace = sortInPlace
-
 -- In place, as MutableList.sort*() do, with the same comparisons as sorted*() (none for one element).
 function __K2L_List:sort()
     local arr, n = self:____array()
-    sortedInPlace(self, sortNatural(arr, n, false))
+    sortInPlace(self, sortNatural(arr, n, false))
 end
 
 function __K2L_List:sortDescending()
     local arr, n = self:____array()
-    sortedInPlace(self, sortNatural(arr, n, true))
+    sortInPlace(self, sortNatural(arr, n, true))
 end
 
 function __K2L_List:sortBy(selector, pure)
     local arr, n = self:____array()
-    sortedInPlace(self, sortSelected(arr, n, selector, false, pure))
+    sortInPlace(self, sortSelected(arr, n, selector, false, pure))
 end
 
 function __K2L_List:sortByDescending(selector, pure)
     local arr, n = self:____array()
-    sortedInPlace(self, sortSelected(arr, n, selector, true, pure))
+    sortInPlace(self, sortSelected(arr, n, selector, true, pure))
 end
 
 function __K2L_List:sortWith(comparator)
     local arr, n = self:____array()
-    sortedInPlace(self, mergeSorted(arr, n, comparator))
+    sortInPlace(self, mergeSorted(arr, n, comparator))
 end
 
 function __K2L_List:reverse() sortInPlace(self, self:reversed()) end
@@ -1958,7 +1867,7 @@ function __K2L_List:addLast(value)
     self:add(value)
 end
 
--- JDK 21's List.getFirst()/getLast()
+-- getFirst() and getLast()
 function __K2L_List:getFirst()
     if self.size == 0 then
         noSuchElement()
@@ -3319,7 +3228,7 @@ function __K2L_Array:sliceArray(indices)
     return setmetatable(self:slice(indices), getmetatable(self))
 end
 
--- Arrays.deepHashCode / deepEquals: nested arrays by content, other elements by hashCode()/equals()
+-- contentDeepHashCode / contentDeepEquals: nested arrays by content, other elements by hashCode()/equals()
 function __K2L_Array:contentDeepHashCode()
     local h = 1
     for i = 1, self.size do
@@ -3358,6 +3267,3 @@ function __K2L_Array:contentDeepToString()
     end
     return "[" .. table.concat(parts, ", ") .. "]"
 end
-
------------------------------------------------------------------- builders
--- buildList { }, buildSet { } and buildMap { } fill a new list, set or map (see ScopeFunctions.kt): __K2L_ListOf() and the like.
