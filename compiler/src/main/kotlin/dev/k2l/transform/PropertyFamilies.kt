@@ -50,6 +50,9 @@ internal class PropertyFamilies(
     /** Why the family of [p] cannot be compiled, or null. */
     fun problem(p: KtNamedDeclaration): String? = families[p]?.problem
 
+    /** [p] and the properties it overrides or is overridden by. */
+    fun members(p: KtNamedDeclaration): List<KtNamedDeclaration> = families[p]?.members ?: listOf(p)
+
     /** Whether [p] stores its value in a field of the object (the only accessor-less member of a field-less family has none). */
     fun hasOwnField(p: KtNamedDeclaration): Boolean = families[p]?.fields?.contains(p) == true
 

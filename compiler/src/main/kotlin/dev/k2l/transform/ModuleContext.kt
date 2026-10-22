@@ -57,30 +57,14 @@ class ModuleContext(
     /** What the files mention, for the flags below: one walk over all of them, on the first flag read. */
     private val mentions: ModuleScan by lazy { ModuleScan(files) }
 
-    /** Whether some file uses `::class`, `javaClass` or `typeOf`: then classes record their qualified names (see Reflection.kt). */
-    val usesReflection: Boolean by lazy { mentions.reflection }
-
     /**
-     * Whether some file mentions `Float`: then the runtime recognizes floats among untyped values, so a statically
-     * typed `Double` is printed by `__K2L_DoubleToString` rather than through the untyped printer.
-     */
-    val usesFloat: Boolean by lazy { mentions.float }
-
-    /**
-     * Whether some file calls `Collections.unmodifiableList`, `unmodifiableCollection`, `subList` or `asList`, or declares a
-     * class extending `AbstractList` (or implementing `List`): such lists (views) have no array part, so loops over lists have
-     * to index them rather than use `ipairs`, which does not follow `__index` before Lua 5.3.
+     * Whether some file declares a class extending `AbstractList` (or implementing `List`): such lists have no array part,
+     * so loops over lists have to index them rather than use `ipairs`, which does not follow `__index` before Lua 5.3.
      */
     val usesListViews: Boolean by lazy { mentions.listViews }
 
     /** Whether some class implements `ClosedRange`: then `start` of a ClosedRange value may be its own property. */
     val implementsClosedRange: Boolean by lazy { mentions.closedRange }
-
-    /** Casts whose results are checked where they are used (see UncheckedCasts.kt). */
-    internal val uncheckedCasts: UncheckedCasts by lazy { UncheckedCasts.scan(files) }
-
-    /** Whether some file has a `try` or calls `use` or `runCatching`, which run their blocks in protected calls. */
-    val usesTry: Boolean by lazy { mentions.protectedCalls }
 
     /** Whether some class implements `CharSequence`: then CharSequence values may be objects (see CharSequences.kt). */
     val implementsCharSequence: Boolean by lazy { mentions.charSequence }
@@ -90,11 +74,6 @@ class ModuleContext(
      * the program, whose collection operations call its overrides (see CollectionOverrides.lua) and stay method calls.
      */
     val implementsCollections: Boolean by lazy { mentions.collections }
-
-    private var functionNames: Boolean? = null
-
-    /** Whether some file reads the `name` of a function reference held in a value; computed once with [scan]. */
-    fun usesFunctionNames(scan: (Set<KtFile>) -> Boolean): Boolean = functionNames ?: scan(files).also { functionNames = it }
 
     companion object {
         fun single(file: KtFile) = ModuleContext(setOf(file), { it.name.removeSuffix(".kt") })

@@ -62,7 +62,6 @@ fun main() {
     val big = 3_000_000_000L
     println("${big in 0L..4_000_000_000L step 1_000_000_000L} ${big + 1 in 0L..4_000_000_000L step 1_000_000_000L}")
     println("${-6L in 10L downTo -10L step 4L} ${-7L !in 10L downTo -10L step 4L} ${10L in 0L until 10L step 5L}")
-    println("${7u in 1u..10u step 3} ${8u !in 1u..10u step 3} ${5uL in 9uL downTo 1uL step 2L} ${4uL in 9uL downTo 1uL step 2L}")
     val longs = (-5L..15L).filter { it in 2L..13L step 5L }
     println(longs)
 

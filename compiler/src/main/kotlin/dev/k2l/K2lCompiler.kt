@@ -57,7 +57,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val diagnostics = results.flatMap { it.diagnostics }.distinctBy { listOf(it.file, it.line, it.column, it.message) }
         val usedFeatures = results.flatMapTo(sortedSetOf()) { it.features }
         if (emit && options.luaLibImport == LuaLibImport.Require && usedFeatures.isNotEmpty()) {
-            outputs += LuaOutput("${Lualib.BUNDLE_MODULE}.lua", Lualib.bundle(usedFeatures, options.luaTarget, options.emulatesLong64))
+            outputs += LuaOutput("${Lualib.BUNDLE_MODULE}.lua", Lualib.bundle(usedFeatures, options.luaTarget))
         }
         return CompileResult(outputs, diagnostics)
     }
@@ -89,7 +89,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         ctx.lualibNames += REGISTER_NAME
         // The runtime table is one line, so the code starts after the lines of the header plus that line.
         val top = when (options.luaLibImport) {
-            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget, options.emulatesLong64)
+            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget)
             LuaLibImport.Require -> requireHeader(ctx)
         }
         val offset = top.count { it == '\n' } + REGISTER_LINES + 1
@@ -111,7 +111,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val code = printer(chunk, ctx, null).print(chunk)
         if (ctx.lualib.isEmpty()) return code
         return when (options.luaLibImport) {
-            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget, options.emulatesLong64) + "\n" + code
+            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget) + "\n" + code
             LuaLibImport.Require -> requireHeader(ctx) + "\n" + code
         }
     }

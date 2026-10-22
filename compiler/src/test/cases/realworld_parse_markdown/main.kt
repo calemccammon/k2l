@@ -11,7 +11,15 @@ sealed class Block {
     data object Rule : Block()
 }
 
-private val listMarker = Regex("""^( {0,3})([-*+]|(\d{1,9})[.)])\s+(.*)$""")
+// Lua patterns have no alternation: bullets and numbers are separate patterns
+private val bulletMarker = Regex("""^( {0,3})([-*+])\s+(.*)$""")
+private val numberMarker = Regex("""^( {0,3})((\d{1,9})[.)])\s+(.*)$""")
+
+/** A list item line's groups (the line, its indent, marker, number (empty for a bullet) and text), or null. */
+fun listMarker(line: String): List<String>? = numberMarker.matchEntire(line)?.groupValues
+    ?: bulletMarker.matchEntire(line)?.groupValues?.let { g -> listOf(g[0], g[1], g[2], "", g[3]) }
+
+fun isSetextUnderline(line: String) = Regex("^=+\\s*$").matches(line) || Regex("^-+\\s*$").matches(line)
 private val atx = Regex("""^(#{1,6})\s+(.*?)\s*#*\s*$""")
 
 fun parseBlocks(lines: List<String>): List<Block> {
@@ -23,7 +31,7 @@ fun parseBlocks(lines: List<String>): List<Block> {
         val line = lines[i]
         val stripped = line.trimStart()
         val heading = atx.matchEntire(line)
-        val marker = listMarker.matchEntire(line)
+        val marker = listMarker(line)
         when {
             line.isBlank() -> { flush(); i++ }
             stripped.startsWith("```") -> {
@@ -36,7 +44,7 @@ fun parseBlocks(lines: List<String>): List<Block> {
                 out += Block.Code(lang, body.toString())
             }
             heading != null -> { flush(); out += Block.Heading(heading.groupValues[1].length, heading.groupValues[2]); i++ }
-            para.isNotEmpty() && line.matches(Regex("^(=+|-+)\\s*$")) -> {
+            para.isNotEmpty() && isSetextUnderline(line) -> {
                 val level = if (line[0] == '=') 1 else 2
                 out += Block.Heading(level, para.joinToString(" "))
                 para.clear()
@@ -53,17 +61,17 @@ fun parseBlocks(lines: List<String>): List<Block> {
             }
             marker != null -> {
                 flush()
-                val delimiter = marker.groupValues[2].last()
-                val ordered = marker.groupValues[3].isNotEmpty()
-                val start = marker.groupValues[3].toIntOrNull() ?: 1
+                val delimiter = marker[2].last()
+                val ordered = marker[3].isNotEmpty()
+                val start = marker[3].toIntOrNull() ?: 1
                 val items = mutableListOf<List<String>>()
                 while (i < lines.size) {
-                    val m = listMarker.matchEntire(lines[i])
-                    if (m != null && m.groupValues[1] == marker.groupValues[1] && m.groupValues[2].last() == delimiter) {
-                        items += mutableListOf(m.groupValues[4]); i++
+                    val m = listMarker(lines[i])
+                    if (m != null && m[1] == marker[1] && m[2].last() == delimiter) {
+                        items += mutableListOf(m[4]); i++
                     } else if (lines[i].startsWith("  ") && items.isNotEmpty()) {
                         (items.last() as MutableList) += lines[i].drop(if (lines[i].startsWith("    ")) 4 else 2); i++
-                    } else if (lines[i].isBlank() && i + 1 < lines.size && (lines[i + 1].startsWith("  ") || listMarker.matches(lines[i + 1]))) {
+                    } else if (lines[i].isBlank() && i + 1 < lines.size && (lines[i + 1].startsWith("  ") || listMarker(lines[i + 1]) != null)) {
                         i++
                     } else break
                 }
@@ -132,7 +140,7 @@ class Renderer {
     val toc = mutableListOf<Triple<Int, String, String>>()
 
     private fun slug(text: String): String {
-        val base = text.lowercase().replace(Regex("[^\\p{L}\\p{N}\\s-]"), "").trim().replace(Regex("\\s+"), "-").ifEmpty { "section" }
+        val base = text.lowercase().replace(Regex("[^a-z0-9\\s-]"), "").trim().replace(Regex("\\s+"), "-").ifEmpty { "section" }
         val n = slugs.merge(base, 1, Int::plus)!!
         return if (n == 1) base else "$base-${n - 1}"
     }

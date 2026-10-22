@@ -12,9 +12,7 @@ internal fun FileTransformer.constantValue(c: KaConstantValue?, e: KtElement): L
 
     // 9223372036854775808 does not fit a Lua integer, so Long.MIN_VALUE is spelled as a subtraction
     is KaConstantValue.LongValue ->
-        if (emulatesLong) {
-            long64Literal(c.value)
-        } else if (c.value == Long.MIN_VALUE) {
+        if (c.value == Long.MIN_VALUE) {
             LuaBinary(LuaBinOp.Sub, LuaNumber("-9223372036854775807"), LuaNumber("1"))
         } else {
             LuaNumber(c.value.toString())
@@ -24,17 +22,10 @@ internal fun FileTransformer.constantValue(c: KaConstantValue?, e: KtElement): L
 
     is KaConstantValue.ByteValue -> LuaNumber(c.value.toString())
 
-    is KaConstantValue.DoubleValue -> floatingLiteral(c.value)
+    is KaConstantValue.DoubleValue -> doubleLiteral(c.value)
 
-    is KaConstantValue.FloatValue -> floatingLiteral(c.value.toDouble())
-
-    is KaConstantValue.UIntValue -> unsignedLiteral(c.value.toULong())
-
-    is KaConstantValue.ULongValue -> unsignedLiteral(c.value)
-
-    is KaConstantValue.UShortValue -> unsignedLiteral(c.value.toULong())
-
-    is KaConstantValue.UByteValue -> unsignedLiteral(c.value.toULong())
+    // a Float is a Lua number like a Double: `0.1f` is the literal 0.1, not the double value of the float
+    is KaConstantValue.FloatValue -> doubleLiteral(c.value.toString().toDouble())
 
     is KaConstantValue.BooleanValue -> LuaBool(c.value)
 
@@ -47,13 +38,6 @@ internal fun FileTransformer.constantValue(c: KaConstantValue?, e: KtElement): L
     null -> unsupported(e, "Non-constant literal")
 
     else -> unsupported(e, "Constant of type ${c.javaClass.simpleName}")
-}
-
-/** Lua 5.1 merges the constants 0.0 and -0.0 of a function, so a negative zero is computed there. */
-internal fun FileTransformer.floatingLiteral(d: Double): LuaExpr = if (target.mergesSignedZeros && d == 0.0 && 1 / d < 0) {
-    LuaBinary(LuaBinOp.Div, LuaNumber("1"), LuaUnary(LuaUnOp.Neg, luaPath("math", "huge")))
-} else {
-    doubleLiteral(d)
 }
 
 internal fun FileTransformer.constant(e: KtExpression): LuaExpr = with(session) {

@@ -98,7 +98,7 @@ fun justify(line: String, width: Int): String {
 }
 
 fun render(template: String, values: Map<String, Any?>): String =
-    Regex("""\{\{\s*(\w+)(?:\|(\w+))?\s*}}""").replace(template) { m ->
+    Regex("""\{\{\s*(\w+)\|?(\w*)\s*}}""").replace(template) { m ->
         val (name, filter) = m.destructured
         val value = values[name]?.toString() ?: "<$name?>"
         when (filter) {
@@ -123,10 +123,11 @@ val LOG = """
 """
 
 fun parseLog(text: String): Pair<List<LogEntry>, Int> {
-    val re = Regex("""^(\S+)\s+(INFO|WARN|ERROR)\s+\[(\w+)]\s+(.*)$""")
+    val re = Regex("""^(\S+)\s+([A-Z]+)\s+\[(\w+)]\s+(.*)$""")
+    val levels = setOf("INFO", "WARN", "ERROR")
     var bad = 0
     val entries = text.trimIndent().lines().filter(String::isNotBlank).mapNotNull { line ->
-        re.matchEntire(line)?.groupValues?.let { (_, t, l, c, m) -> LogEntry(t, l, c, m) } ?: run { bad++; null }
+        re.matchEntire(line)?.groupValues?.takeIf { it[2] in levels }?.let { (_, t, l, c, m) -> LogEntry(t, l, c, m) } ?: run { bad++; null }
     }
     return entries to bad
 }
@@ -176,7 +177,7 @@ fun main() {
     val durations = entries.mapNotNull { Regex("""(\d+)ms""").find(it.message)?.groupValues?.get(1)?.toInt() }
     println("durations: $durations avg=${"%.1f".format(durations.average())}")
     entries.filter { it.level == "ERROR" }.forEach { (time, _, comp, msg) -> println("  ${time.substringAfter('T')} $comp: ${msg.substringBefore(':')}") }
-    val paths = entries.flatMap { Regex("""(GET|POST) (\S+)""").findAll(it.message).map { m -> m.groupValues[2] }.toList() }
+    val paths = entries.flatMap { Regex("""([A-Z]+) (\S+)""").findAll(it.message).filter { m -> m.groupValues[1] in setOf("GET", "POST") }.map { m -> m.groupValues[2] }.toList() }
     println("paths: ${paths.distinct()} kv: ${Regex("(\\w+)=(\\w+)").findAll(LOG).associate { it.groupValues[1] to it.groupValues[2] }}")
     println("snake: ${"parseHttpResponseCode".replace(Regex("([a-z])([A-Z])"), "$1_$2").lowercase()} camel: ${"max_retry_count".split('_').mapIndexed { i, p -> if (i == 0) p else p.replaceFirstChar { it.uppercase() } }.joinToString("")}")
     println("chars: ${"Hello".map { it.code }} ${"Kotlin".withIndex().filter { it.index % 2 == 0 }.map { it.value }} ${"a-b-c".split("-", limit = 2)}")

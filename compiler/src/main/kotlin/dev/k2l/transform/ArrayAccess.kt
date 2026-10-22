@@ -42,8 +42,8 @@ internal fun isPureRead(e: LuaExpr, calls: Boolean = false): Boolean = when (e) 
 private val PURE_OPERATORS =
     setOf(LuaBinOp.Add, LuaBinOp.Sub, LuaBinOp.Mul, LuaBinOp.BAnd, LuaBinOp.BOr, LuaBinOp.BXor, LuaBinOp.Shl, LuaBinOp.Shr)
 
-/** Functions without side effects that generated code wraps Int arithmetic in (`--int-overflow wrap`). */
-private val PURE_FUNCTIONS = setOf(LuaName("__K2L_ToInt32"), luaPath("bit", "tobit"))
+/** Functions without side effects that generated code wraps numbers in. */
+private val PURE_FUNCTIONS = setOf(LuaName("__K2L_ToInt32"))
 
 /**
  * `a[i]` of a primitive array: `a[i + 1] or __K2L_IndexError(i, a.size, true)` (any missing element is out of range), as
@@ -93,7 +93,7 @@ internal fun FileTransformer.primitiveArrayTarget(array: LuaExpr, index: LuaExpr
  * `__K2L_StringCharAt` checks, when reading `s` and `i` again is harmless; else null.
  */
 internal fun FileTransformer.inlineCharAt(text: LuaExpr, index: LuaExpr): LuaExpr? {
-    if (utf16 || !isPureRead(text, calls = true) || !isPureRead(index, calls = true)) return null
+    if (!isPureRead(text, calls = true) || !isPureRead(index, calls = true)) return null
     val length = LuaUnary(LuaUnOp.Len, text)
     val inRange = LuaBinary(LuaBinOp.And, LuaBinary(LuaBinOp.Ge, index, LuaNumber("0")), LuaBinary(LuaBinOp.Lt, index, length))
     val at = LuaBinary(LuaBinOp.Add, index, LuaNumber("1"))

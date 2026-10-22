@@ -57,8 +57,7 @@ return {history = history, getName = getName, setName = setName, getVolume = get
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____exports = {}
@@ -141,7 +140,7 @@ local function setFlag(v)
 end
 
 local function getComputed()
-    return __K2L_ReadOnlyListOf(____exports.counter, ____exports.counter + 1)
+    return __K2L_ListOf(____exports.counter, ____exports.counter + 1)
 end
 
 local function getNow__1()
@@ -251,5 +250,5 @@ ____exports.getLater = getLater
 ____exports.getBranching = getBranching
 ____exports.getLazyish = getLazyish
 ____exports.setLazyish = setLazyish
-__K2L_Main(main)
+__K2L_RunMain(main)
 return ____exports

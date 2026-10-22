@@ -10,7 +10,7 @@ n % 3 == 1 || !(x == 3)              => (((n % 3) == 1) || (!(x == 3)))         
 max(x, y, n, 7) - min(1, 2)          => (max(x, y, n, 7) - min(1, 2))            = 9
 avg(1, 2, 3, 4) * sqrt(16)           => (avg(1, 2, 3, 4) * sqrt(16))             = 10
 pi * x ^ 2                           => (pi * (x ^ 2))                           = 28.274334
-1 / 0                                => (1 / 0)                                  = Infinity
+1 / 0                                => (1 / 0)                                  = inf
 0 / 0 == 0 / 0                       => ((0 / 0) == (0 / 0))                     = 0
 .5 + 1.25e-1                         => (0.5 + 0.125)                            = 0.625000
 x ? y ? 1 : 2 : 3                    => (x ? (y ? 1 : 2) : 3)                    = 1
@@ -41,6 +41,6 @@ parse error: malformed number '1.2.3' at 0
 eval error: List has more than one element.
 eval error: unknown function foo/1
 eval error: unknown variable 'z'
-parse error: unexpected é at 2
+parse error: unexpected character '�' (U+00C3) at 2
   | x é 2
   |   ^

@@ -1,7 +1,0 @@
-5 4 é 111 [68 e9 6c 6c 6f]
-surrogates=0 text=héllo upper=HÉLLO has=false
-5 4 n 56832 [fc 6e ef d83d de00]
-surrogates=2 text=ünï😀 upper=ÜNÏ😀 has=true
-4 3 ? 56832 [d83d de00 d83d de00]
-surrogates=4 text=Pairs(2) upper=PAIRS(2) has=true
-0=a 1=ñ 2=b 

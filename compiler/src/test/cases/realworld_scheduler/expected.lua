@@ -2,13 +2,9 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -18,9 +14,9 @@ local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
 
@@ -222,13 +218,9 @@ function Scheduler:step(t)
     if not (t.iterator or __K2L_Uninitialized("iterator")):hasNext() then
         t.finished = true
         local ____list = self.listeners
-        local ____mod = ____list.____modCount
         for ____i = 1, ____list.size do
             local it = ____list[____i]
             it(t)
-            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-                break
-            end
         end
         return
     end
@@ -266,13 +258,9 @@ function Scheduler:run()
             break
         end
         local ready = self.tasks:filter(function(...) return self:runnable(...) end)
-        local ____mod_1 = ready.____modCount
         for ____i_2 = 1, ready.size do
             local it = ready[____i_2];
             (function(...) return self:step(...) end)(it)
-            if ready.____modCount ~= ____mod_1 and ready:____comodified(____i_2) then
-                break
-            end
         end
         if ready:isEmpty() then
             local ____list_2 = self.tasks
@@ -345,7 +333,7 @@ local function primes()
             local ____items_4, ____n_4 = found:____array()
             for ____i_6 = 1, ____n_4 do
                 local it = ____items_4[____i_6]
-                if (it ~= 0 and __K2L_Fmod(n, it) + 0 or __K2L_IRem(n, it)) == 0 then
+                if n % it == 0 then
                     ____result_1 = false
                     break
                 end
@@ -390,14 +378,10 @@ end
 
 local ____lambda_5 = function(it) return it < 40 end
 local ____lambda_6 = function(it) return it * it end
-local ____lambda_7 = function(it)
-    return (it >= 0 and it % 10 or 0 - -it % 10) == 9
-end
+local ____lambda_7 = function(it) return it % 10 == 9 end
 local ____lambda_8 = function(it) return it * 3 end
 local ____lambda_9 = function(it) return it - 1 end
-local ____lambda_10 = function(it)
-    return (it >= 0 and it % 2 or 0 - -it % 2) == 0
-end
+local ____lambda_10 = function(it) return it % 2 == 0 end
 local ____lambda_11 = function(it) return it > 20 end
 local ____lambda_12 = function(____p1) return print(__K2L_Str(____p1)) end
 local function main()
@@ -419,7 +403,7 @@ local function main()
     scheduler:spawn("producer", function(____this_5, ctx)
         for _, x in fibonacci():drop(3):take(4):iter() do
             ctx:log("send " .. x)
-            ____this_5:yield(Effect.Send.new("numbers", __K2L_ToInt32(x)))
+            ____this_5:yield(Effect.Send.new("numbers", x))
             ____this_5:yield(Effect.Sleep.new(2))
         end
         ____this_5:yield(Effect.Send.new("numbers", -1))
@@ -453,13 +437,9 @@ local function main()
         ctx:log("unreachable")
     end)
     local ____list_5 = scheduler:run()
-    local ____mod_2 = ____list_5.____modCount
     for ____i_7 = 1, ____list_5.size do
         local it = ____list_5[____i_7];
         (____lambda_12)(it)
-        if ____list_5.____modCount ~= ____mod_2 and ____list_5:____comodified(____i_7) then
-            break
-        end
     end
     print("finished: " .. __K2L_Str(finished))
     print(scheduler:getSummary())
@@ -469,7 +449,7 @@ local function main()
         ctx:log("about to fail")
         ctx:lastReceived()
     end)
-    local ____ok, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok, ____result_2 = pcall(function()
         failing:run()
     end)
     if not ____ok then
@@ -483,5 +463,5 @@ local function main()
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Effect = Effect, Mailbox = Mailbox, Task = Task, TaskContext = TaskContext, Scheduler = Scheduler, fibonacci = fibonacci, primes = primes, chunkedBy = chunkedBy, tree = tree}

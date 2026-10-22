@@ -1,0 +1,12 @@
+inc/dec = [2.5, 1.5, 3.5, 0.5]
+clone = [[1, 2, 3], [99, 2, 3], [a, b]]
+clone doubles = [1, 2.5]
+clone others = [[true], [x], [5]]
+byte range = [[1, 2, 3, 4], [1, 2, 3]]
+short range = [[10, 11, 12], 11]
+char rangeUntil = abcd
+long rangeUntil = [1, 2, 3]
+Byte bits = [128, 8, 4]
+Short bits = [32768, 8]
+LazyThreadSafetyMode = [[SYNCHRONIZED, PUBLICATION, NONE], NONE, 3]
+DeprecationLevel = [[WARNING, ERROR, HIDDEN], 1]

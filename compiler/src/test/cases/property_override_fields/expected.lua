@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 
 local A = __K2L_Class("A")
 
@@ -113,5 +113,5 @@ local function main()
     print(Named.new("n"):show())
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {A = A, B = B, C = C, Plain = Plain, Named = Named}

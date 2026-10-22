@@ -2,14 +2,13 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassCastException = ____lualib.__K2L_ClassCastException
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_List = ____lualib.__K2L_List
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_NullPointerException = ____lualib.__K2L_NullPointerException
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -45,7 +44,7 @@ local Square = __K2L_Class("Square", nil, Shape)
 local Single = __K2L_Class("Single")
 
 local function attempt(label, block)
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         print(label .. ": " .. __K2L_Str(block()))
     end)
     if not ____ok then
@@ -78,112 +77,112 @@ local ____lambda_1 = function() return Single == Single end
 local function main()
     local animal = Dog.new("rex")
     if getmetatable(animal) ~= Dog then
-        __K2L_CastFail(animal, "Dog", "Dog")
+        __K2L_CastFail(animal, "Dog")
     end
     print(animal:bark())
     attempt("cat", function()
         if getmetatable(animal) ~= Cat then
-            __K2L_CastFail(animal, "Cat", "Cat")
+            __K2L_CastFail(animal, "Cat")
         end
         return animal.name
     end)
     local any = "text"
     if type(any) ~= "string" then
-        __K2L_CastFail(any, "java.lang.String", "kotlin.String")
+        __K2L_CastFail(any, "kotlin.String")
     end
     print(any)
     attempt("string as Int", function()
         if math.type(any) ~= "integer" then
-            __K2L_CastFail(any, "java.lang.Integer", "kotlin.Int")
+            __K2L_CastFail(any, "kotlin.Int")
         end
         return any
     end)
     local number = 42
     if math.type(number) ~= "integer" then
-        __K2L_CastFail(number, "java.lang.Integer", "kotlin.Int")
+        __K2L_CastFail(number, "kotlin.Int")
     end
     print(number)
     attempt("int as String", function()
         if type(number) ~= "string" then
-            __K2L_CastFail(number, "java.lang.String", "kotlin.String")
+            __K2L_CastFail(number, "kotlin.String")
         end
         return number
     end)
     attempt("int as Boolean", function()
         if type(number) ~= "boolean" then
-            __K2L_CastFail(number, "java.lang.Boolean", "kotlin.Boolean")
+            __K2L_CastFail(number, "kotlin.Boolean")
         end
         return number
     end)
     local flag = true
     if type(flag) ~= "boolean" then
-        __K2L_CastFail(flag, "java.lang.Boolean", "kotlin.Boolean")
+        __K2L_CastFail(flag, "kotlin.Boolean")
     end
     print(flag)
     attempt("boolean as String", function()
         if type(flag) ~= "string" then
-            __K2L_CastFail(flag, "java.lang.String", "kotlin.String")
+            __K2L_CastFail(flag, "kotlin.String")
         end
         return flag
     end)
     local nothing = nil
     if not (nothing == nil or type(nothing) == "string") then
-        __K2L_CastFail(nothing, "java.lang.String", "kotlin.String")
+        __K2L_CastFail(nothing, "kotlin.String")
     end
     print(__K2L_Str(nothing))
     if not (nothing == nil or math.type(nothing) == "integer") then
-        __K2L_CastFail(nothing, "java.lang.Integer", "kotlin.Int")
+        __K2L_CastFail(nothing, "kotlin.Int")
     end
     print(__K2L_Str(nothing))
     attempt("null as String", function()
         if type(nothing) ~= "string" then
-            __K2L_CastFail(nothing, "java.lang.String", "kotlin.String")
+            __K2L_CastFail(nothing, "kotlin.String")
         end
         return nothing
     end)
     attempt("null as Dog", function()
         if getmetatable(nothing) ~= Dog then
-            __K2L_CastFail(nothing, "Dog", "Dog")
+            __K2L_CastFail(nothing, "Dog")
         end
         return nothing
     end)
     local shape = Square.new()
     print(__K2L_InstanceOf(shape, Shape))
     if not __K2L_InstanceOf(shape, Shape) then
-        __K2L_CastFail(shape, "Shape", "Shape")
+        __K2L_CastFail(shape, "Shape")
     end
     print(shape == shape)
     attempt("square as Animal", function()
         if not __K2L_InstanceOf(shape, Animal) then
-            __K2L_CastFail(shape, "Animal", "Animal")
+            __K2L_CastFail(shape, "Animal")
         end
         return shape
     end)
     attempt("object", ____lambda_1)
     attempt("string as Single", function()
         if "x" ~= Single then
-            __K2L_CastFail("x", "Single", "Single")
+            __K2L_CastFail("x", "Single")
         end
         return "x"
     end)
-    local list = __K2L_ReadOnlyListOf(1, 2, 3)
+    local list = __K2L_ListOf(1, 2, 3)
     if not __K2L_InstanceOf(list, __K2L_List) then
-        __K2L_CastFail(list, "java.util.List", "kotlin.collections.List")
+        __K2L_CastFail(list, "kotlin.collections.List")
     end
     print(list.size)
     if not __K2L_InstanceOf(list, __K2L_List) then
-        __K2L_CastFail(list, "java.util.List", "kotlin.collections.List")
+        __K2L_CastFail(list, "kotlin.collections.List")
     end
     print(list.size)
     attempt("list as Map", function()
         if not __K2L_InstanceOf(list, __K2L_Map) then
-            __K2L_CastFail(list, "java.util.Map", "kotlin.collections.Map")
+            __K2L_CastFail(list, "kotlin.collections.Map")
         end
         return list
     end)
     attempt("string as List", function()
         if not __K2L_InstanceOf(any, __K2L_List) then
-            __K2L_CastFail(any, "java.util.List", "kotlin.collections.List")
+            __K2L_CastFail(any, "kotlin.collections.List")
         end
         return any
     end)
@@ -195,10 +194,10 @@ local function main()
     local d = 2.5
     local anyD = d
     if math.type(anyD) ~= "float" then
-        __K2L_CastFail(anyD, "java.lang.Double", "kotlin.Double")
+        __K2L_CastFail(anyD, "kotlin.Double")
     end
-    print(__K2L_Str(anyD))
-    local ____list = __K2L_ReadOnlyListOf("a", 1)
+    print(anyD)
+    local ____list = __K2L_ListOf("a", 1)
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list:____array()
@@ -213,13 +212,13 @@ local function main()
     attempt("in args", function()
         local ____arg = 1 + 1
         if math.type(any) ~= "integer" then
-            __K2L_CastFail(any, "java.lang.Integer", "kotlin.Int")
+            __K2L_CastFail(any, "kotlin.Int")
         end
-        return __K2L_ReadOnlyListOf(____arg, any + 1)
+        return __K2L_ListOf(____arg, any + 1)
     end)
-    local ____ok_1, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_2 = pcall(function()
         if math.type(any) ~= "integer" then
-            __K2L_CastFail(any, "java.lang.Integer", "kotlin.Int")
+            __K2L_CastFail(any, "kotlin.Int")
         end
     end)
     if not ____ok_1 then
@@ -231,9 +230,9 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_3 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_3 = pcall(function()
         if getmetatable(animal) ~= Cat then
-            __K2L_CastFail(animal, "Cat", "Cat")
+            __K2L_CastFail(animal, "Cat")
         end
     end)
     if not ____ok_2 then
@@ -248,5 +247,5 @@ local function main()
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Animal = Animal, Dog = Dog, Cat = Cat, Shape = Shape, Square = Square, Single = Single, attempt = attempt, unchecked = unchecked, describe = describe}

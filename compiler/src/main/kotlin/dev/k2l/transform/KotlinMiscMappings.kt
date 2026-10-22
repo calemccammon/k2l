@@ -8,10 +8,9 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.KtClass
 
 /**
- * More of the `kotlin` package: `Any()`, `String()`, `KotlinVersion` (`CURRENT` is the version of the Kotlin compiler k2l
- * is built with), the entries of `LazyThreadSafetyMode` and `DeprecationLevel`, `Double`/`Float` `inc`/`dec`, the arrays'
- * `clone`, the ranges of `Byte`, `Short`, `Char`, `Long` and the unsigned types as values, the unsigned `floorDiv`/`mod`,
- * and `takeHighestOneBit`/`takeLowestOneBit` of the small and unsigned types.
+ * More of the `kotlin` package: `Any()`, `String()`, the entries of `LazyThreadSafetyMode` and `DeprecationLevel`,
+ * `Double`/`Float` `inc`/`dec`, the arrays' `clone`, the ranges of `Byte`, `Short`, `Char` and `Long` as values, and
+ * `takeHighestOneBit`/`takeLowestOneBit` of the small types.
  */
 internal object KotlinMiscMappings {
     private val ENUMS = mapOf(
@@ -20,8 +19,6 @@ internal object KotlinMiscMappings {
     )
     private val ARRAYS = listOf("", "Boolean", "Byte", "Short", "Char", "Int", "Long", "Float", "Double").map { "kotlin/${it}Array.clone" }
     private val SMALL = listOf("Byte", "Short")
-    private val UNSIGNED = listOf("UByte", "UShort", "UInt", "ULong")
-    private val VERSION_MEMBERS = setOf("major", "minor", "patch")
     private const val BYTE_MASK = "255"
     private const val SHORT_MASK = "65535"
 
@@ -30,17 +27,9 @@ internal object KotlinMiscMappings {
         val owner = callableId.substringBeforeLast('.')
         val name = callableId.substringAfterLast('.')
         return when {
-            owner == "kotlin/KotlinVersion" || owner == "kotlin/KotlinVersion.Companion" -> version(name, site)
-
             owner in ENUMS -> enumMember(ENUMS.getValue(owner), name, site)
-
             callableId in ARRAYS -> LuaMethodCall(site.self, "toTypedArray", emptyList())
-
-            callableId == "kotlin/ranges/UIntRange.Companion.EMPTY" ->
-                site.libNew(INT_RANGE_TABLE, listOf(LuaNumber("1"), LuaNumber("0")))
-
             callableId == "kotlin/takeHighestOneBit" || callableId == "kotlin/takeLowestOneBit" -> oneBit(callableId, site)
-
             else -> misc(callableId, site) ?: numberMember(owner.removePrefix("kotlin/"), name, site)
         }
     }
@@ -79,44 +68,11 @@ internal object KotlinMiscMappings {
         }
     }
 
-    /** `KotlinVersion(major, minor)`, `KotlinVersion(major, minor, patch)`. */
+    /** `Any()` and `String()`. */
     fun construct(classId: String?, site: CallSite): LuaExpr? = when (classId) {
-        "kotlin/KotlinVersion" -> site.libNew(KOTLIN_MISC, "__K2L_KotlinVersion", site.args)
         "kotlin/Any" -> site.libNew(KOTLIN_MISC, "__K2L_Object", emptyList())
         "kotlin/String" -> if (site.args.isEmpty()) LuaString("") else null
         else -> null
-    }
-
-    private fun version(name: String, site: CallSite): LuaExpr? = with(site) {
-        when (name) {
-            "CURRENT" -> KotlinVersion.CURRENT.let { v ->
-                construct(
-                    "kotlin/KotlinVersion",
-                    CallSite(
-                        session,
-                        transformer,
-                        element,
-                        null,
-                        null,
-                        null,
-                        listOf(v.major, v.minor, v.patch).map {
-                            LuaNumber("$it")
-                        },
-                        emptyList(),
-                    ),
-                )
-            }
-
-            in VERSION_MEMBERS -> receiver?.let { LuaIndex(it, LuaString(name)) }
-
-            "isAtLeast" -> receiver?.let { LuaMethodCall(it, "isAtLeast", args) }
-
-            "equals" -> receiver?.let { lualib("Equals", it, arg(0)) }
-
-            "hashCode" -> receiver?.let { LuaMethodCall(it, "hashCode", emptyList()) }
-
-            else -> null
-        }
     }
 
     private fun enumMember(table: String, name: String, site: CallSite): LuaExpr? = with(site) {
@@ -130,13 +86,13 @@ internal object KotlinMiscMappings {
     }
 
     /** Types whose `rangeTo` is that of Int and whose `rangeUntil` is `until`: their values are plain numbers. */
-    private val INT_RANGES = SMALL + listOf("UByte", "UShort", "UInt")
+    private val INT_RANGES = SMALL
 
     private fun numberMember(type: String, name: String, site: CallSite): LuaExpr? = with(site) {
         when {
             receiver == null -> null
 
-            (type == "Double" || type == "Float") && (name == "inc" || name == "dec") -> stepped(type, name)
+            (type == "Double" || type == "Float") && (name == "inc" || name == "dec") -> stepped(name)
 
             type in INT_RANGES && name == "rangeTo" -> StdlibMappings.map("kotlin/Int.rangeTo", this)
 
@@ -144,9 +100,6 @@ internal object KotlinMiscMappings {
                 "kotlin/ranges/until",
                 this,
             )
-
-            type in UNSIGNED && (name == "floorDiv" || name == "mod") ->
-                StdlibMappings.map("kotlin/$type." + if (name == "mod") "rem" else "div", this)
 
             else -> null
         }
@@ -164,20 +117,14 @@ internal object KotlinMiscMappings {
     }
 
     /** `inc()` and `dec()` of a Double or Float. */
-    private fun CallSite.stepped(type: String, name: String): LuaExpr {
-        val stepped = LuaBinary(if (name == "inc") LuaBinOp.Add else LuaBinOp.Sub, self, LuaNumber("1"))
-        return if (type == "Float") transformer.fround(stepped) else stepped
-    }
+    private fun CallSite.stepped(name: String): LuaExpr = LuaBinary(if (name == "inc") LuaBinOp.Add else LuaBinOp.Sub, self, LuaNumber("1"))
 
-    /** Of a Byte or Short: of its bits as an unsigned Int, narrowed back; of an unsigned type: of its value, as unsigned. */
+    /** Of a Byte or Short: of its bits as an unsigned Int, narrowed back. */
     private fun oneBit(callableId: String, site: CallSite): LuaExpr? = with(site) {
         val int = session.builtinTypes.int
-        val unsigned = with(session) { unsignedOf(receiverType) }
         val small = SMALL.firstOrNull { isType(receiverType, "kotlin/$it") }
         when {
-            unsigned == Unsigned.ULong || receiver == null -> null
-
-            unsigned != null -> intCall(callableId, self, int)?.let { transformer.wrapUnsigned(unsigned, it) }
+            receiver == null -> null
 
             small != null -> {
                 val masked = intCall("kotlin/Int.and", self, int, LuaNumber(if (small == "Byte") BYTE_MASK else SHORT_MASK)) ?: return null

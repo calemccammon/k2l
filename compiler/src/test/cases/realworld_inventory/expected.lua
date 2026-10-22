@@ -1,21 +1,14 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
@@ -23,12 +16,12 @@ local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringPadEnd = ____lualib.__K2L_StringPadEnd
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
@@ -39,8 +32,6 @@ local __K2L_Unit = ____lualib.__K2L_Unit
 
 local Order
 local Money = __K2L_Class("Money")
-__K2L_ClassInfo(Money, "Money", "Money", "class")
-__K2L_CompanionInfo(Money, "Money.Companion", "Money$Companion", "Companion")
 Money.____comparable = true
 
 function Money:____init(cents)
@@ -64,7 +55,7 @@ function Money:times(n)
 end
 
 function Money:div(n)
-    return Money.new(__K2L_IDiv(self.cents, n))
+    return Money.new(self.cents // n)
 end
 
 function Money:compareTo(other)
@@ -74,7 +65,7 @@ end
 function Money:toString()
     local sign = self.cents < 0 and "-" or ""
     local abs = math.abs(self.cents)
-    return sign .. "$" .. (abs >= 0 and abs // 100 or (abs + 99) // 100) .. "." .. __K2L_StringPadStart(tostring(abs >= 0 and abs % 100 or (abs % 100 - 100) % (-100)), 2, "0")
+    return sign .. "$" .. abs // 100 .. "." .. __K2L_StringPadStart(tostring(abs % 100), 2, "0")
 end
 
 function Money:hashCode()
@@ -113,7 +104,6 @@ local function sum(____this)
 end
 
 local Category = __K2L_Class("Category")
-__K2L_ClassInfo(Category, "Category", "Category", "class")
 
 function Category:____init(name, ordinal, code, perishable)
     if perishable == nil then
@@ -139,7 +129,6 @@ Category.HARDWARE = Category.new("HARDWARE", 2, "HWR")
 Category.BOOKS = Category.new("BOOKS", 3, "BKS")
 Category.____values = {Category.PRODUCE, Category.DAIRY, Category.HARDWARE, Category.BOOKS}
 local Product = __K2L_Class("Product")
-__K2L_ClassInfo(Product, "Product", "Product", "class")
 
 function Product:____init(sku, name, category, price)
     self.sku = sku
@@ -165,7 +154,6 @@ function Product:equals(other)
 end
 
 local OutOfStockException = __K2L_Class("OutOfStockException", __K2L_RuntimeException)
-__K2L_ClassInfo(OutOfStockException, "OutOfStockException", "OutOfStockException", "class")
 
 function OutOfStockException:____init(sku, requested, available)
     __K2L_RuntimeException.____init(self, "Cannot take " .. requested .. " of " .. sku .. ": only " .. available .. " left")
@@ -175,9 +163,7 @@ function OutOfStockException:____init(sku, requested, available)
 end
 
 local Event = __K2L_Class("Event")
-__K2L_ClassInfo(Event, "Event", "Event", "interface")
 Event.Received = __K2L_Class("Event$Received", nil, Event)
-__K2L_ClassInfo(Event.Received, "Event.Received", "Event$Received", "class")
 
 function Event.Received:____init(sku, qty)
     self.sku = sku
@@ -201,7 +187,6 @@ function Event.Received:equals(other)
 end
 
 Event.Shipped = __K2L_Class("Event$Shipped", nil, Event)
-__K2L_ClassInfo(Event.Shipped, "Event.Shipped", "Event$Shipped", "class")
 
 function Event.Shipped:____init(sku, qty, order)
     self.sku = sku
@@ -226,7 +211,6 @@ function Event.Shipped:equals(other)
 end
 
 Event.Adjusted = __K2L_Class("Event$Adjusted", nil, Event)
-__K2L_ClassInfo(Event.Adjusted, "Event.Adjusted", "Event$Adjusted", "class")
 
 function Event.Adjusted:____init(sku, delta, reason)
     self.sku = sku
@@ -251,7 +235,6 @@ function Event.Adjusted:equals(other)
 end
 
 Event.PriceChanged = __K2L_Class("Event$PriceChanged", nil, Event)
-__K2L_ClassInfo(Event.PriceChanged, "Event.PriceChanged", "Event$PriceChanged", "class")
 
 function Event.PriceChanged:____init(sku, newPrice)
     self.sku = sku
@@ -275,7 +258,6 @@ function Event.PriceChanged:equals(other)
 end
 
 local Inventory = __K2L_Class("Inventory")
-__K2L_ClassInfo(Inventory, "Inventory", "Inventory", "class")
 
 function Inventory:____init()
     self.products = __K2L_MapOf()
@@ -319,7 +301,7 @@ function Inventory:apply(event)
         if not (event.qty > 0) then
             error(__K2L_IllegalArgumentException.new("received quantity must be positive"))
         end
-        self.stock:merge(event.sku, event.qty, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_3))
+        self.stock:merge(event.sku, event.qty, ____lambda_3)
     elseif ____mt == Event.Shipped then
         local have = self:quantity(event.sku)
         if have < event.qty then
@@ -370,7 +352,7 @@ end
 function Inventory:report()
     local ____builder = __K2L_StringBuilder.new()
     do
-        ____builder:appendLine(__K2L_StringFormat("%-6s %-14s %-12s %5s %10s", "SKU", "Name", "Category", "Qty", "Value"))
+        ____builder:appendLine(string.format("%-6s %-14s %-12s %5s %10s", "SKU", "Name", "Category", "Qty", "Value"))
         local ____list_2 = self.products:getValues():sortedWith(function(____a, ____b)
             local ____c_1 = __K2L_CompareValues(____a.category, ____b.category)
             if ____c_1 ~= 0 then
@@ -382,15 +364,11 @@ function Inventory:report()
             end
             return __K2L_CompareValues(____a.sku, ____b.sku)
         end)
-        local ____mod = ____list_2.____modCount
         for ____i_2 = 1, ____list_2.size do
             local p = ____list_2[____i_2]
             do
                 local qty = self:quantity(p.sku)
-                ____builder:appendLine(__K2L_StringFormat("%-6s %-14s %-12s %5d %10s", p.sku, p.name, p.category, qty, p.price:times(qty)))
-            end
-            if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
-                break
+                ____builder:appendLine(string.format("%-6s %-14s %-12s %5d %10s", p.sku, p.name, __K2L_Str(p.category), qty, __K2L_Str(p.price:times(qty))))
             end
         end
         ____builder:append("Total value: " .. __K2L_Str(self:value()))
@@ -399,7 +377,6 @@ function Inventory:report()
 end
 
 local OrderLine = __K2L_Class("OrderLine")
-__K2L_ClassInfo(OrderLine, "OrderLine", "OrderLine", "class")
 
 function OrderLine:____init(sku, qty)
     self.sku = sku
@@ -411,7 +388,6 @@ function OrderLine.new(sku, qty)
 end
 
 local OrderBuilder = __K2L_Class("OrderBuilder")
-__K2L_ClassInfo(OrderBuilder, "OrderBuilder", "OrderBuilder", "class")
 
 function OrderBuilder:____init(id)
     self.id = id
@@ -457,7 +433,6 @@ function OrderBuilder:build()
 end
 
 Order = __K2L_Class("Order")
-__K2L_ClassInfo(Order, "Order", "Order", "class")
 
 function Order:____init(id, customer, express, lines)
     self.id = id
@@ -491,7 +466,6 @@ end
 local function fulfil(____this_2, ____order)
     return __K2L_RunCatching(function(____this_3)
         local ____list_4 = ____order.lines
-        local ____mod_1 = ____list_4.____modCount
         for ____i_5 = 1, ____list_4.size do
             local line = ____list_4[____i_5]
             do
@@ -499,9 +473,6 @@ local function fulfil(____this_2, ____order)
                 if have < line.qty then
                     error(OutOfStockException.new(line.sku, line.qty, have))
                 end
-            end
-            if ____list_4.____modCount ~= ____mod_1 and ____list_4:____comodified(____i_5) then
-                break
             end
         end
         local ____list_5 = ____order.lines
@@ -530,25 +501,19 @@ local ____lambda_5 = function()
     end)
 end
 local ____lambda_6 = function(x) return getmetatable(x) == Event.Shipped end
-local ____lambda_7 = function(it)
-    return __K2L_KClassOfValue(it).simpleName or "?"
-end
+local ____lambda_7 = function(it) return __K2L_SimpleName(it) or "?" end
 local ____lambda_8 = function(it) return getDollars(it) end
 local function main()
     local inv = Inventory.new()
-    local ____list_6 = __K2L_ReadOnlyListOf(Product.new("A100", "Apples (kg)", Category.PRODUCE, Money:parse("3.49")), Product.new("M200", "Milk 1L", Category.DAIRY, Money:parse("$1.2")), Product.new("H300", "Hammer", Category.HARDWARE, getDollars(18)), Product.new("H301", "Nails x100", Category.HARDWARE, Money:parse("4.05")), Product.new("B400", "Kotlin Book", Category.BOOKS, Money:parse("39.99")))
-    local ____mod_2 = ____list_6.____modCount
+    local ____list_6 = __K2L_ListOf(Product.new("A100", "Apples (kg)", Category.PRODUCE, Money:parse("3.49")), Product.new("M200", "Milk 1L", Category.DAIRY, Money:parse("$1.2")), Product.new("H300", "Hammer", Category.HARDWARE, getDollars(18)), Product.new("H301", "Nails x100", Category.HARDWARE, Money:parse("4.05")), Product.new("B400", "Kotlin Book", Category.BOOKS, Money:parse("39.99")))
     for ____i_7 = 1, ____list_6.size do
         local it = ____list_6[____i_7];
         (function(...) return inv:register(...) end)(it)
-        if ____list_6.____modCount ~= ____mod_2 and ____list_6:____comodified(____i_7) then
-            break
-        end
     end
-    local ____list_7 = __K2L_ReadOnlyListOf(Product.new("A100", "Dup", Category.BOOKS, getDollars(1)), Product.new("Z1", "Free", Category.BOOKS, Money.ZERO))
+    local ____list_7 = __K2L_ListOf(Product.new("A100", "Dup", Category.BOOKS, getDollars(1)), Product.new("Z1", "Free", Category.BOOKS, Money.ZERO))
     for ____i_8 = 1, ____list_7.size do
         local attempt = ____list_7[____i_8]
-        local ____ok, ____result_5 = __K2L_DeepPcall(function()
+        local ____ok, ____result_5 = pcall(function()
             inv:register(attempt)
         end)
         if not ____ok then
@@ -561,17 +526,13 @@ local function main()
             end
         end
     end
-    local incoming = __K2L_ReadOnlyListOf(Event.Received.new("A100", 50), Event.Received.new("M200", 24), Event.Received.new("H300", 5), Event.Received.new("H301", 40), Event.Received.new("B400", 3), Event.Adjusted.new("A100", -4, "bruised"), Event.PriceChanged.new("M200", Money:parse("1.35")), Event.Received.new("H300", 2))
-    local ____mod_3 = incoming.____modCount
+    local incoming = __K2L_ListOf(Event.Received.new("A100", 50), Event.Received.new("M200", 24), Event.Received.new("H300", 5), Event.Received.new("H301", 40), Event.Received.new("B400", 3), Event.Adjusted.new("A100", -4, "bruised"), Event.PriceChanged.new("M200", Money:parse("1.35")), Event.Received.new("H300", 2))
     for ____i_9 = 1, incoming.size do
         local it = incoming[____i_9];
         (function(...) return inv:apply(...) end)(it)
-        if incoming.____modCount ~= ____mod_3 and incoming:____comodified(____i_9) then
-            break
-        end
     end
     print(inv:report())
-    local orders = __K2L_ReadOnlyListOf(order("ORD-1", function(____this_4)
+    local orders = __K2L_ListOf(order("ORD-1", function(____this_4)
         ____this_4.customer = "Ada"
         ____this_4:of(2, "H300")
         ____this_4:of(10, "H301")
@@ -585,7 +546,6 @@ local function main()
         ____this_6:of(12, "M200")
         ____this_6:of(1, "B400")
     end))
-    local ____mod_4 = orders.____modCount
     for ____i_10 = 1, orders.size do
         local o = orders[____i_10]
         fulfil(inv, o):onSuccess(function(it)
@@ -597,9 +557,6 @@ local function main()
                 error(e)
             end
         end)
-        if orders.____modCount ~= ____mod_4 and orders:____comodified(____i_10) then
-            break
-        end
     end
     print(__K2L_Str(__K2L_RunCatching(____lambda_5):exceptionOrNull()))
     print(__K2L_Str(__K2L_RunCatching(function()
@@ -702,7 +659,7 @@ local function main()
     end
     local prices = __K2L_ListWrap(____out_6, ____count_6)
     local ____arg_3 = __K2L_Str(prices)
-    local ____list_13 = __K2L_ReadOnlyListOf("A100", "H300", "B400")
+    local ____list_13 = __K2L_ListOf("A100", "H300", "B400")
     local ____out_7 = {}
     local ____count_7 = 0
     local ____items_11, ____n_11 = ____list_13:____array()
@@ -732,5 +689,5 @@ local function main()
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Money = Money, getDollars = getDollars, sum = sum, Category = Category, Product = Product, OutOfStockException = OutOfStockException, Event = Event, Inventory = Inventory, OrderLine = OrderLine, OrderBuilder = OrderBuilder, Order = Order, order = order, fulfil = fulfil}

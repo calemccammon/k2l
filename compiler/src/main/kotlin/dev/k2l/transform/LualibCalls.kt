@@ -2,8 +2,7 @@ package dev.k2l.transform
 
 import dev.k2l.codegen.*
 
-// Builders for calls into the lualib runtime. Each goes through FileTransformer.lualibRef, which loads the feature (and
-// what it implies: FloatToString with Floats about, Utf16 for Strings and Regex under --strings utf16).
+// Builders for calls into the lualib runtime. Each goes through FileTransformer.lualibRef, which loads the feature.
 
 /** `target.name`. */
 internal fun luaField(target: LuaExpr, name: String): LuaExpr = LuaIndex(target, LuaString(name))

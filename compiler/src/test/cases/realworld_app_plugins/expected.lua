@@ -1,7 +1,6 @@
 -- ==== api/Plugin.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
@@ -10,7 +9,6 @@ local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 
@@ -21,14 +19,12 @@ local function trace(what)
 end
 
 local Describable = __K2L_Class("host.api.Describable")
-__K2L_ClassInfo(Describable, "host.api.Describable", "host.api.Describable", "interface")
 
 function Describable:describe()
     return "Describable(" .. self:getId() .. ")"
 end
 
 local Lifecycle = __K2L_Class("host.api.Lifecycle")
-__K2L_ClassInfo(Lifecycle, "host.api.Lifecycle", "host.api.Lifecycle", "interface")
 
 function Lifecycle:start()
     return "start"
@@ -43,10 +39,9 @@ function Lifecycle:describe()
 end
 
 local Configurable = __K2L_Class("host.api.Configurable")
-__K2L_ClassInfo(Configurable, "host.api.Configurable", "host.api.Configurable", "interface")
 
 function Configurable:getSettings()
-    return __K2L_ReadOnlyMapOf()
+    return __K2L_MapOf()
 end
 
 function Configurable:setting(key, default)
@@ -54,7 +49,6 @@ function Configurable:setting(key, default)
 end
 
 local Plugin = __K2L_Class("host.api.Plugin", nil, Describable, Lifecycle)
-__K2L_ClassInfo(Plugin, "host.api.Plugin", "host.api.Plugin", "class")
 Plugin.____comparable = true
 
 function Plugin:____init(id, priority)
@@ -106,7 +100,6 @@ function Plugin:toString()
 end
 
 local CountingPlugin = __K2L_Class("host.api.CountingPlugin", Plugin)
-__K2L_ClassInfo(CountingPlugin, "host.api.CountingPlugin", "host.api.CountingPlugin", "class")
 
 function CountingPlugin:____init(id, priority)
     Plugin.____init(self, id, priority)
@@ -133,7 +126,6 @@ function CountingPlugin:stats()
 end
 
 local PluginException = __K2L_Class("host.api.PluginException", __K2L_Exception)
-__K2L_ClassInfo(PluginException, "host.api.PluginException", "host.api.PluginException", "class")
 
 function PluginException:____init(plugin, cause)
     __K2L_Exception.____init(self, "plugin " .. plugin .. " failed: " .. __K2L_Str(cause.message), cause)
@@ -141,7 +133,6 @@ function PluginException:____init(plugin, cause)
 end
 
 local Registry = __K2L_Class("host.api.Registry")
-__K2L_ClassInfo(Registry, "host.api.Registry", "host.api.Registry", "class")
 
 function Registry:____init()
     self.factories = __K2L_MapOf()
@@ -157,7 +148,7 @@ end
 
 function Registry:create(name, settings)
     if settings == nil then
-        settings = __K2L_ReadOnlyMapOf()
+        settings = __K2L_MapOf()
     end
     self.lookups = self.lookups + 1
     local ____value_1 = self.factories:get(name)
@@ -177,8 +168,6 @@ return {initLog = initLog, trace = trace, Describable = Describable, Lifecycle =
 -- ==== builtin/Builtins.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IsLowerCase = ____lualib.__K2L_IsLowerCase
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
@@ -192,8 +181,6 @@ local __K2L_TouchObject = ____lualib.__K2L_TouchObject
 
 local ____Plugin = require("api.Plugin")
 local UpperPlugin = __K2L_Class("host.builtin.UpperPlugin", ____Plugin.CountingPlugin)
-__K2L_ClassInfo(UpperPlugin, "host.builtin.UpperPlugin", "host.builtin.UpperPlugin", "class")
-__K2L_CompanionInfo(UpperPlugin, "host.builtin.UpperPlugin.Companion", "host.builtin.UpperPlugin$Companion", "Companion")
 
 function UpperPlugin:____init(priority)
     ____Plugin.CountingPlugin.____init(self, "upper", priority)
@@ -226,7 +213,6 @@ end
 
 __K2L_LazyObject(UpperPlugin, "____initCompanion")
 local ReplacePlugin = __K2L_Class("host.builtin.ReplacePlugin", ____Plugin.CountingPlugin, ____Plugin.Configurable)
-__K2L_ClassInfo(ReplacePlugin, "host.builtin.ReplacePlugin", "host.builtin.ReplacePlugin", "class")
 
 function ReplacePlugin:____init(settings)
     ____Plugin.CountingPlugin.____init(self, "replace", 3)
@@ -257,7 +243,6 @@ function ReplacePlugin:describe()
 end
 
 local GuardPlugin = __K2L_Class("host.builtin.GuardPlugin", ____Plugin.Plugin)
-__K2L_ClassInfo(GuardPlugin, "host.builtin.GuardPlugin", "host.builtin.GuardPlugin", "class")
 
 function GuardPlugin:____init(limit)
     ____Plugin.Plugin.____init(self, "guard", 10)
@@ -283,7 +268,6 @@ end
 local function counterPlugin(prefix)
     local calls = 0
     local ____object = __K2L_Class("host.builtin.BuiltinsKt$counterPlugin$1", ____Plugin.Plugin)
-    __K2L_ClassInfo(____object, nil, "host.builtin.BuiltinsKt$counterPlugin$1", "class", false)
     function ____object:____init()
         ____Plugin.Plugin.____init(self, "counter", 1)
         self.displayName = "Counter(" .. prefix .. ")"
@@ -320,24 +304,18 @@ return {UpperPlugin = UpperPlugin, ReplacePlugin = ReplacePlugin, GuardPlugin = 
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsComparable = ____lualib.__K2L_IsComparable
-local __K2L_JavaClass = ____lualib.__K2L_JavaClass
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_SortedSetOf = ____lualib.__K2L_SortedSetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
@@ -346,16 +324,14 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local ____Plugin = require("api.Plugin")
 local ____Builtins = require("builtin.Builtins")
 local Host = __K2L_Class("host.Host")
-__K2L_ClassInfo(Host, "host.Host", "host.Host", "class")
 
 function Host:____init(name)
     self.name = name
-    self.plugins = __K2L_SortedSetOf()
+    self.plugins = __K2L_SortedSetOf(nil)
     self.failures = __K2L_ListOf()
 end
 
 Host.Run = __K2L_Class("host.Host$Run")
-__K2L_ClassInfo(Host.Run, "host.Host.Run", "host.Host$Run", "class")
 
 function Host.Run:____init(____outer, input)
     self.____outer = ____outer
@@ -367,11 +343,10 @@ function Host.Run:execute()
     local current = self.input
     local ____collection = self.____outer.plugins
     local ____items, ____n = ____collection:____array()
-    local ____mod = ____collection.____modCount
     for ____i = 1, ____n do
         local p = ____items[____i]
         local out
-        local ____ok, ____result = __K2L_DeepPcall(function()
+        local ____ok, ____result = pcall(function()
             out = p:handle(current)
         end)
         if not ____ok then
@@ -382,8 +357,7 @@ function Host.Run:execute()
                 self.____outer.failures:add(__K2L_NotNull(wrapped.message))
                 local ____arg = self.____outer.failures
                 local ____receiver = wrapped.cause
-                local ____receiver_1 = ____receiver and __K2L_JavaClass(__K2L_KClassOfValue(____receiver))
-                ____arg:add("cause: " .. __K2L_Str(____receiver_1 and (____receiver_1.simpleName or "")))
+                ____arg:add("cause: " .. __K2L_Str(____receiver and __K2L_SimpleName(____receiver)))
                 return "rejected by " .. __K2L_Str(p)
             else
                 error(____error, 0)
@@ -393,15 +367,11 @@ function Host.Run:execute()
             self.steps:add(p:getId() .. ": " .. current .. " -> " .. out)
             current = out
         end
-        if ____collection.____modCount ~= ____mod and ____collection:____comodified(____i, ____n) then
-            break
-        end
     end
     return self.____outer.name .. ": " .. current
 end
 
 Host.Report = __K2L_Class("host.Host$Report")
-__K2L_ClassInfo(Host.Report, "host.Host.Report", "host.Host$Report", "class")
 
 function Host.Report:____init(lines)
     self.lines = lines
@@ -423,7 +393,7 @@ function Host:load(...)
         local plugin, settings = ____item.first, ____item.second
         do
             local p
-            local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+            local ____ok_1, ____result_1 = pcall(function()
                 p = ____Plugin.Registry:create(plugin, settings)
             end)
             if not ____ok_1 then
@@ -483,7 +453,6 @@ function Host:getOrder()
 end
 
 local Version = __K2L_Class("host.Version")
-__K2L_ClassInfo(Version, "host.Version", "host.Version", "class")
 Version.____comparable = true
 
 function Version:____init()
@@ -501,7 +470,6 @@ end
 
 Version:____init()
 local Level = __K2L_Class("host.Level", nil, ____Plugin.Describable)
-__K2L_ClassInfo(Level, "host.Level", "host.Level", "class")
 
 function Level:____init(name, ordinal)
     self.name = name
@@ -518,7 +486,6 @@ end
 
 do
     local ____LOW = __K2L_Class("Level", Level)
-    __K2L_ClassInfo(____LOW, "host.Level.LOW", "host.Level$LOW", "class", "LOW")
     function ____LOW:getId()
         return self.id__LOW or "null"
     end
@@ -530,7 +497,6 @@ do
 end
 do
     local ____HIGH = __K2L_Class("Level", Level)
-    __K2L_ClassInfo(____HIGH, "host.Level.HIGH", "host.Level$HIGH", "class", "HIGH")
     function ____HIGH:getId()
         return self.id__HIGH or "null"
     end
@@ -545,7 +511,6 @@ do
 end
 Level.____values = {Level.LOW, Level.HIGH}
 local Both = __K2L_Class("host.Both", nil, ____Plugin.Describable, ____Plugin.Lifecycle)
-__K2L_ClassInfo(Both, "host.Both", "host.Both", "class")
 
 function Both:____init()
     self.id__Both = "both"
@@ -579,7 +544,7 @@ local function main()
     print("after install: " .. __K2L_Str(____Plugin.initLog))
     ____Plugin.initLog:clear()
     local host = Host.new("main")
-    host:load(__K2L_Pair.new("guard", __K2L_SingletonMapOf(__K2L_Pair.new("limit", "16"))), __K2L_Pair.new("replace", __K2L_ReadOnlyMapOf(__K2L_Pair.new("from", "cat"), __K2L_Pair.new("to", "dog"))), __K2L_Pair.new("upper", __K2L_ReadOnlyMapOf()), __K2L_Pair.new("missing", __K2L_ReadOnlyMapOf()), __K2L_Pair.new("counter", __K2L_SingletonMapOf(__K2L_Pair.new("prefix", "!"))))
+    host:load(__K2L_Pair.new("guard", __K2L_MapOf(__K2L_Pair.new("limit", "16"))), __K2L_Pair.new("replace", __K2L_MapOf(__K2L_Pair.new("from", "cat"), __K2L_Pair.new("to", "dog"))), __K2L_Pair.new("upper", __K2L_MapOf()), __K2L_Pair.new("missing", __K2L_MapOf()), __K2L_Pair.new("counter", __K2L_MapOf(__K2L_Pair.new("prefix", "!"))))
     print("init order:")
     local ____list_2 = ____Plugin.initLog
     for ____i_4 = 1, ____list_2.size do
@@ -587,7 +552,7 @@ local function main()
         print("  " .. it)
     end
     print("order: " .. __K2L_Str(host:getOrder()))
-    local ____list_3 = __K2L_ReadOnlyListOf("the cat sat", "!cat", "NO CHANGE", "a very long input line", "cat cat")
+    local ____list_3 = __K2L_ListOf("the cat sat", "!cat", "NO CHANGE", "a very long input line", "cat cat")
     for ____i_6 = 1, ____list_3.size do
         local input = ____list_3[____i_6]
         local ____destructured = host:run(input)
@@ -600,7 +565,7 @@ local function main()
     end
     print("report:\n" .. __K2L_Str(host:report()))
     print("lookups: " .. ____Plugin.Registry.lookups .. ", registered: " .. __K2L_Str(____Plugin.Registry:getNames()))
-    local ____ok_2, ____result_3 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_3 = pcall(function()
         ____Plugin.Registry:register("upper", ____lambda_2)
     end)
     if not ____ok_2 then
@@ -612,13 +577,13 @@ local function main()
             error(____error_2, 0)
         end
     end
-    local another = ____Builtins.UpperPlugin:create(__K2L_SingletonMapOf(__K2L_Pair.new("priority", "7")))
+    local another = ____Builtins.UpperPlugin:create(__K2L_MapOf(__K2L_Pair.new("priority", "7")))
     print(__K2L_Str(another) .. " " .. another:getDisplayName() .. " " .. another:describe() .. " " .. another:compareTo(____Plugin.Registry:create("upper")))
     print(__K2L_Str(Version) .. " " .. check(Version) .. " | " .. check(Level.HIGH) .. " " .. Level.HIGH:describe() .. " " .. Level.LOW:describe())
-    print(check(Both.new()) .. " " .. Both.new():describe() .. " | " .. check(another) .. " | " .. check("text") .. " | " .. check(__K2L_SingletonListOf(1)))
-    local comparables = __K2L_ReadOnlyListOf(Version, 3, "s", another, Level.LOW, Both.new(), 2.5):filter(____lambda_3)
+    print(check(Both.new()) .. " " .. Both.new():describe() .. " | " .. check(another) .. " | " .. check("text") .. " | " .. check(__K2L_ListOf(1)))
+    local comparables = __K2L_ListOf(Version, 3, "s", another, Level.LOW, Both.new(), 2.5):filter(____lambda_3)
     print("comparables: " .. comparables.size)
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Host = Host, Version = Version, Level = Level, Both = Both, check = check}

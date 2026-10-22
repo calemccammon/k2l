@@ -1,0 +1,8 @@
+[number, number, number, text(3), text(2), text(4), comparable, comparable, comparable, other, other, null]
+8
+abc|xy|name
+6.5
+4
+true
+true
+[2 2 2 2 2.7, -3 -3 -3 -3 -3, 10 10 10 10 10, -3300000000 -3300000000 -3300000000 -3300000000 -3300000000.5]

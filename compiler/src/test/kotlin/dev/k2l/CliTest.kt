@@ -99,16 +99,8 @@ class CliTest {
             "fun main() {\n    val a = StringBuilder().appendCodePoint(65)\n    val b = StringBuilder().appendCodePoint(66)\n}\n",
         )
         val run = k2l("--check", src)
-        assertEquals(
-            2,
-            Regex("without --strings utf16").findAll(
-                run.err.lines().filter {
-                    "error:" in it
-                }.joinToString("\n"),
-            ).count(),
-            run.err,
-        )
-        assertEquals(1, Regex("hint: compile with --strings utf16").findAll(run.err).count(), run.err)
+        assertEquals(2, run.err.lines().count { "error: Library API" in it }, run.err)
+        assertEquals(1, Regex("hint: implement it in Kotlin").findAll(run.err).count(), run.err)
     }
 
     @Test

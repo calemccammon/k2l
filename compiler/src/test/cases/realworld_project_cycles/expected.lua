@@ -95,7 +95,7 @@ local function evaluate(node, env)
     elseif ____mt == ____Parser.Node.Call then
         local ____cast = node.items:first()
         if getmetatable(____cast) ~= ____Parser.Node.Sym then
-            __K2L_CastFail(____cast, "calc.lang.Node$Sym", "calc.lang.Node.Sym")
+            __K2L_CastFail(____cast, "calc.lang.Node.Sym")
         end
         local head = ____cast
         local ____subject = head.name
@@ -104,19 +104,19 @@ local function evaluate(node, env)
         elseif ____subject == "let" then
             local ____cast_3 = node.items:get(1)
             if getmetatable(____cast_3) ~= ____Parser.Node.Sym then
-                __K2L_CastFail(____cast_3, "calc.lang.Node$Sym", "calc.lang.Node.Sym")
+                __K2L_CastFail(____cast_3, "calc.lang.Node.Sym")
             end
             local name = ____cast_3.name
             local ____cast_4 = evaluate(node.items:get(2), env)
             if getmetatable(____cast_4) ~= Value.I then
-                __K2L_CastFail(____cast_4, "calc.eval.Value$I", "calc.eval.Value.I")
+                __K2L_CastFail(____cast_4, "calc.eval.Value.I")
             end
             local v = ____cast_4.n
             return evaluate(node.items:get(3), env:plus(__K2L_Pair.new(name, v)))
         elseif ____subject == "eval" then
             local ____cast_2 = node.items:get(1)
             if getmetatable(____cast_2) ~= ____Parser.Node.Sym then
-                __K2L_CastFail(____cast_2, "calc.lang.Node$Sym", "calc.lang.Node.Sym")
+                __K2L_CastFail(____cast_2, "calc.lang.Node.Sym")
             end
             local src = __K2L_StringReplace(__K2L_StringReplace(__K2L_StringReplace(____cast_2.name, "_", " "), "[", "("), "]", ")")
             return evaluate(____Parser.parse(src), env)
@@ -136,7 +136,7 @@ local function evaluate(node, env)
                 do
                     local ____cast_1 = evaluate(it, env)
                     if getmetatable(____cast_1) ~= Value.I then
-                        __K2L_CastFail(____cast_1, "calc.eval.Value$I", "calc.eval.Value.I")
+                        __K2L_CastFail(____cast_1, "calc.eval.Value.I")
                     end
                     ____result = ____cast_1.n
                 end
@@ -176,8 +176,8 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_LazyFile = ____lualib.__K2L_LazyFile
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
 local __K2L_StringReplace = ____lualib.__K2L_StringReplace
@@ -338,12 +338,12 @@ end
 ____exports.countNodes = countNodes
 
 local function run(src)
-    return ____Eval.evaluate(parse(src), __K2L_ReadOnlyMapOf())
+    return ____Eval.evaluate(parse(src), __K2L_MapOf())
 end
 
 ____exports.run = run
 __K2L_LazyFile(____exports, function()
-    ____exports.keywords = __K2L_ReadOnlySetOf("let", "if", "quote")
+    ____exports.keywords = __K2L_SetOf("let", "if", "quote")
     local ____list = ____Eval.builtins:getKeys()
     local ____out = {}
     local ____count = 0
@@ -362,9 +362,9 @@ end, {"keywords", "operatorSymbols", "parsedNodes", "maxDepth"})
 return ____exports
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Unit = ____lualib.__K2L_Unit
 
@@ -426,7 +426,7 @@ local function main()
 end
 
 if ... ~= "main" then
-    __K2L_DeepMain(main)
+    __K2L_RunMain(main)
 end
 return ____exports
 -- ==== report/Report.lua ====

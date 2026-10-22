@@ -1,9 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
-local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IsLowerCase = ____lualib.__K2L_IsLowerCase
@@ -12,17 +10,14 @@ local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_LoopItems = ____lualib.__K2L_LoopItems
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringEqualsIgnoreCase = ____lualib.__K2L_StringEqualsIgnoreCase
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_StringToList = ____lualib.__K2L_StringToList
@@ -31,7 +26,7 @@ local __K2L_Text = ____lualib.__K2L_Text
 local swapCase
 
 local function kmpTable(p)
-    local fail = __K2L_ListOfSize(#p, 0, "[I")
+    local fail = __K2L_ListOfSize(#p, 0, true)
     local k = 0
     for i = 1, #p - 1 do
         while k > 0 and (i >= 0 and i < #p and p:sub(i + 1, i + 1) or __K2L_IndexError(i, #p, "string")) ~= (k >= 0 and k < #p and p:sub(k + 1, k + 1) or __K2L_IndexError(k, #p, "string")) do
@@ -53,8 +48,7 @@ local function kmpSearch(text, p)
     local hits = __K2L_ListOf()
     local k = 0
     local ____collection = __K2L_StringToList(text):withIndex()
-    local ____items, ____n = __K2L_LoopItems(____collection)
-    local ____mod = ____collection.____modCount
+    local ____items, ____n = ____collection:____array()
     for ____i = 1, ____n do
         local ____item = ____items[____i]
         local i, c = ____item.index, ____item.value
@@ -68,9 +62,6 @@ local function kmpSearch(text, p)
             hits:add(i - k + 1)
             k = fail[k] or __K2L_IndexError(k - 1, fail.size, "array")
         end
-        if ____collection.____modCount ~= ____mod and ____collection:____comodified(____i, ____n) then
-            break
-        end
     end
     return hits
 end
@@ -83,18 +74,18 @@ local function rabinKarp(text, p, base, mod)
         mod = 1000000007
     end
     if #p > #text then
-        return __K2L_ReadOnlyListOf()
+        return __K2L_ListOf()
     end
     local high = 1
     for it = 0, #p - 1 - 1 do
-        high = mod ~= 0 and __K2L_Fmod(high * base, mod) + 0 or __K2L_IRem(high * base, mod)
+        high = high * base % mod
     end
     local hp = 0
     local ht = 0
     local ____range = __K2L_IntRange.new(0, #p - 1)
     for i = ____range.first, ____range.last, ____range.step do
-        hp = __K2L_IRem(hp * base + p:sub(i + 1, i + 1):byte(), mod)
-        ht = __K2L_IRem(ht * base + (i >= 0 and i < #text and text:sub(i + 1, i + 1) or __K2L_IndexError(i, #text, "string")):byte(), mod)
+        hp = (hp * base + p:sub(i + 1, i + 1):byte()) % mod
+        ht = (ht * base + (i >= 0 and i < #text and text:sub(i + 1, i + 1) or __K2L_IndexError(i, #text, "string")):byte()) % mod
     end
     local hits = __K2L_ListOf()
     for i = 0, #text - #p do
@@ -102,14 +93,14 @@ local function rabinKarp(text, p, base, mod)
             hits:add(i)
         end
         if i + #p < #text then
-            ht = __K2L_IRem((ht - __K2L_IRem((i >= 0 and i < #text and text:sub(i + 1, i + 1) or __K2L_IndexError(i, #text, "string")):byte() * high, mod) + mod) * base + __K2L_StringCharAt(text, i + #p):byte(), mod)
+            ht = ((ht - (i >= 0 and i < #text and text:sub(i + 1, i + 1) or __K2L_IndexError(i, #text, "string")):byte() * high % mod + mod) * base + __K2L_StringCharAt(text, i + #p):byte()) % mod
         end
     end
     return hits
 end
 
 local function zFunction(s)
-    local z = __K2L_ListOfSize(#s, 0, "[I")
+    local z = __K2L_ListOfSize(#s, 0, true)
     local l = 0
     local r = 0
     for i = 1, #s - 1 do
@@ -132,7 +123,7 @@ local function zFunction(s)
 end
 
 local function levenshtein(a, b)
-    local d = __K2L_ListOfSize(#a + 1, function(it) return __K2L_ListOfSize(#b + 1, 0, "[I") end, "[[I")
+    local d = __K2L_ListOfSize(#a + 1, function(it) return __K2L_ListOfSize(#b + 1, 0, true) end, true)
     for i = 0, #a do
         local ____object = d[i + 1] or __K2L_IndexError(i, d.size, "array")
         if 0 < 0 or 0 >= ____object.size then
@@ -178,7 +169,7 @@ local function levenshtein(a, b)
 end
 
 local function lcs(a, b)
-    local dp = __K2L_ListOfSize(#a + 1, function(it) return __K2L_ListOfSize(#b + 1, 0, "[I") end, "[[I")
+    local dp = __K2L_ListOfSize(#a + 1, function(it) return __K2L_ListOfSize(#b + 1, 0, true) end, true)
     local ____range_1 = __K2L_IntRange.new(0, #a - 1):reversed()
     for i = ____range_1.first, ____range_1.last, ____range_1.step do
         local ____range_2 = __K2L_IntRange.new(0, #b - 1):reversed()
@@ -215,8 +206,7 @@ local function suffixArray(s)
 end
 
 local function lcpArray(s, sa)
-    local rank = __K2L_ListOfSize(#s, 0, "[I")
-    local ____mod_1 = sa.____modCount
+    local rank = __K2L_ListOfSize(#s, 0, true)
     for ____i_1 = 1, sa.size do
         local p = sa[____i_1]
         local i = ____i_1 - 1
@@ -224,11 +214,8 @@ local function lcpArray(s, sa)
             __K2L_IndexError(p, rank.size, "array")
         end
         rank[p + 1] = i
-        if sa.____modCount ~= ____mod_1 and sa:____comodified(____i_1) then
-            break
-        end
     end
-    local lcp = __K2L_ListOfSize(#s, 0, "[I")
+    local lcp = __K2L_ListOfSize(#s, 0, true)
     local h = 0
     local ____range_3 = __K2L_IntRange.new(0, #s - 1)
     for i = ____range_3.first, ____range_3.last, ____range_3.step do
@@ -255,7 +242,7 @@ end
 local ____lambda_1 = function(it) return it.value end
 local function longestPalindrome(s)
     local t = __K2L_Text.toCharArray(s):joinToString("#", "^#", "#$")
-    local p = __K2L_ListOfSize(#t, 0, "[I")
+    local p = __K2L_ListOfSize(#t, 0, true)
     local center = 0
     local right = 0
     for i = 1, #t - 1 - 1 do
@@ -277,8 +264,7 @@ local function longestPalindrome(s)
     local ____value_4 = p:withIndex():maxBy(____lambda_1)
     local ____destructured = __K2L_Pair.new(____value_4.value, ____value_4.index)
     local len, c = ____destructured.first, ____destructured.second
-    local ____dividend = c - len
-    local start = ____dividend >= 0 and ____dividend // 2 or 0 - -____dividend // 2
+    local start = (c - len) // 2
     return __K2L_Text.substring(s, start, start + len)
 end
 
@@ -290,7 +276,7 @@ local ____lambda_4 = function(it) return __K2L_IsUpperCase[it] == true end
 local ____lambda_5 = function(it) return __K2L_IsLowerCase[it] == true end
 local function surgery()
     local sb = __K2L_StringBuilder.new("Hello, World")
-    sb:insert(0, ">> "):insert(sb:getLength(), "!"):insert(8, tostring(123)):insert(3, __K2L_Str(4.5)):insert(3, tostring(true))
+    sb:insert(0, ">> "):insert(sb:getLength(), "!"):insert(8, tostring(123)):insert(3, tostring(4.5)):insert(3, tostring(true))
     print(__K2L_Str(sb))
     sb:set(0, "<")
     sb:deleteCharAt(1)
@@ -340,7 +326,7 @@ local ____lambda_10 = function(____a, ____b)
 end
 local function main()
     local text = "abracadabra abracadabra cadabra"
-    local ____list = __K2L_ReadOnlyListOf("abra", "cad", "a", "zzz", "abracadabra c")
+    local ____list = __K2L_ListOf("abra", "cad", "a", "zzz", "abracadabra c")
     for ____i_3 = 1, ____list.size do
         local p = ____list[____i_3]
         local k = kmpSearch(text, p)
@@ -353,7 +339,7 @@ local function main()
     end
     print("kmp table of 'aabaaab': " .. kmpTable("aabaaab"):joinToString())
     print("z of 'aaabaab': " .. zFunction("aaabaab"):contentToString())
-    local ____list_1 = __K2L_ReadOnlyListOf(__K2L_Pair.new("kitten", "sitting"), __K2L_Pair.new("Saturday", "sunday"), __K2L_Pair.new("", "abc"), __K2L_Pair.new("flaw", "lawn"), __K2L_Pair.new("same", "SAME"))
+    local ____list_1 = __K2L_ListOf(__K2L_Pair.new("kitten", "sitting"), __K2L_Pair.new("Saturday", "sunday"), __K2L_Pair.new("", "abc"), __K2L_Pair.new("flaw", "lawn"), __K2L_Pair.new("same", "SAME"))
     for ____i_4 = 1, ____list_1.size do
         local ____item_1 = ____list_1[____i_4]
         local a, b = ____item_1.first, ____item_1.second
@@ -364,24 +350,20 @@ local function main()
     local banana = "banana"
     local sa = suffixArray(banana)
     local lcp = lcpArray(banana, sa)
-    local ____mod_2 = sa.____modCount
     for ____i_5 = 1, sa.size do
         local p = sa[____i_5]
         local i = ____i_5 - 1
-        print(__K2L_StringFormat("%2d %d %-7s lcp=%d", i, p, __K2L_Text.substring(banana, p), lcp[i + 1] or __K2L_IndexError(i, lcp.size, "array")))
-        if sa.____modCount ~= ____mod_2 and sa:____comodified(____i_5) then
-            break
-        end
+        print(string.format("%2d %d %-7s lcp=%d", i, p, __K2L_Text.substring(banana, p), lcp[i + 1] or __K2L_IndexError(i, lcp.size, "array")))
     end
     local ____value_6 = lcp:withIndex():maxBy(____lambda_8)
     local longestRepeat = __K2L_Text.substring(banana, sa:get(____value_6.index), sa:get(____value_6.index) + ____value_6.value)
     print("longest repeated substring: " .. longestRepeat)
-    local ____list_2 = __K2L_ReadOnlyListOf("babad", "forgeeksskeegfor", "a", "abacdfgdcaba", "racecar level")
+    local ____list_2 = __K2L_ListOf("babad", "forgeeksskeegfor", "a", "abacdfgdcaba", "racecar level")
     for ____i_6 = 1, ____list_2.size do
         local s = ____list_2[____i_6]
         print("palindrome(" .. s .. ") = " .. longestPalindrome(s))
     end
-    local words = __K2L_ReadOnlyListOf("listen", "silent", "enlist", "google", "gooegl", "cat", "act", "tac", "dog", "Inlets")
+    local words = __K2L_ListOf("listen", "silent", "enlist", "google", "gooegl", "cat", "act", "tac", "dog", "Inlets")
     local ____result = __K2L_Map.new()
     local ____items_2, ____n_2 = words:____array()
     for ____i_7 = 1, ____n_2 do
@@ -397,15 +379,11 @@ local function main()
     local groups = ____result
     local ____collection_1 = groups:filterValues(____lambda_9):toSortedMap()
     local ____items_3, ____n_3 = ____collection_1:____entryArray()
-    local ____mod_3 = ____collection_1.____modCount
     for ____i_8 = 1, ____n_3 do
         local ____entry = ____items_3[____i_8]
         do
             local k, v = ____entry.key, ____entry.value
             print(__K2L_Str(k) .. " -> " .. __K2L_Str(v:sorted()))
-        end
-        if ____collection_1.____modCount ~= ____mod_3 and ____collection_1:____comodified(____i_8, ____n_3) then
-            break
         end
     end
     print(words:sortedWith(____lambda_10):joinToString())
@@ -421,5 +399,5 @@ local function main()
     surgery()
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {kmpTable = kmpTable, kmpSearch = kmpSearch, rabinKarp = rabinKarp, zFunction = zFunction, levenshtein = levenshtein, lcs = lcs, suffixArray = suffixArray, lcpArray = lcpArray, longestPalindrome = longestPalindrome, surgery = surgery, swapCase = swapCase}

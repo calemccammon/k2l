@@ -1,6 +1,5 @@
 package sim.ecs
 
-import kotlin.reflect.KClass
 
 /** Marker for component data. */
 interface Component
@@ -11,7 +10,7 @@ value class Entity(val id: Int) {
 }
 
 /** Storage for one component type: sparse map from entity id to component. */
-class Store<C : Component> internal constructor(val type: KClass<C>) {
+class Store<C : Component> internal constructor(val type: String) {
     private val items = sortedMapOf<Int, C>()
     val size get() = items.size
     operator fun get(e: Entity): C? = items[e.id]
@@ -20,7 +19,7 @@ class Store<C : Component> internal constructor(val type: KClass<C>) {
     }
     fun remove(e: Entity) = items.remove(e.id) != null
     fun ids(): Set<Int> = items.keys
-    override fun toString() = "${type.simpleName}x$size"
+    override fun toString() = "${type}x$size"
 }
 
 abstract class System(val name: String) {
@@ -41,7 +40,7 @@ class World {
     private var nextId = 1
     private val alive = linkedSetOf<Int>()
     @PublishedApi
-    internal val stores = linkedMapOf<KClass<out Component>, Store<out Component>>()
+    internal val stores = linkedMapOf<String, Store<out Component>>()
     private val systems = mutableListOf<System>()
     private val pendingRemoval = mutableListOf<Entity>()
     var tick = 0
@@ -57,25 +56,25 @@ class World {
 
     fun <C : Component> add(e: Entity, c: C) {
         @Suppress("UNCHECKED_CAST")
-        val store = stores.getOrPut(c::class) { Store(c::class) } as Store<C>
+        val store = stores.getOrPut(c::class.simpleName!!) { Store(c::class.simpleName!!) } as Store<C>
         store[e] = c
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <C : Component> store(type: KClass<C>): Store<C> = stores.getOrPut(type) { Store(type) } as Store<C>
+    fun <C : Component> store(type: String): Store<C> = stores.getOrPut(type) { Store(type) } as Store<C>
 
-    inline fun <reified C : Component> get(e: Entity): C? = store(C::class)[e]
+    inline fun <reified C : Component> get(e: Entity): C? = store<C>(C::class.simpleName!!)[e]
 
     inline fun <reified C : Component> has(e: Entity): Boolean = get<C>(e) != null
 
     inline fun <reified A : Component> query(): List<Pair<Entity, A>> {
-        val s = store(A::class)
+        val s = store<A>(A::class.simpleName!!)
         return s.ids().filter { isAlive(it) }.map { Entity(it) to s[Entity(it)]!! }
     }
 
     inline fun <reified A : Component, reified B : Component> query2(): List<Triple<Entity, A, B>> {
-        val a = store(A::class)
-        val b = store(B::class)
+        val a = store<A>(A::class.simpleName!!)
+        val b = store<B>(B::class.simpleName!!)
         return a.ids().filter { it in b.ids() && isAlive(it) }.map { id -> Entity(id).let { Triple(it, a[it]!!, b[it]!!) } }
     }
 

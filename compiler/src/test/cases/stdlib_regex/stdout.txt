@@ -27,10 +27,10 @@ a
 [(a, 1), (b, 2)]
 1:a, 2:b
 [a, a, ]
-null
 true
-2
-a|b
+true
+1
+a+b
 \Qa.b*c\E
 [color, colour]
 ll

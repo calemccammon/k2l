@@ -7,12 +7,10 @@ package dev.k2l
 internal object DiagnosticHints {
     private class Rule(val pattern: Regex, val hint: (MatchResult) -> String)
 
-    private const val UTF16 = "compile with --strings utf16 (k2l.json: \"strings\": \"utf16\") to get the JVM's UTF-16 strings"
     private const val GOTO = "target Lua 5.2 or newer, or LuaJIT, which have goto (-t 5.4, k2l.json: \"luaTarget\")"
     private const val LAMBDA = "use a lambda instead of the reference"
 
     private val rules = listOf(
-        Rule(Regex("without --strings utf16")) { UTF16 },
         Rule(Regex("needs goto")) { GOTO },
         Rule(Regex("^Reference to the library constructor '(?:[\\w$]+[/.])*([\\w$]+)'")) { "$LAMBDA, e.g. { ${it.groupValues[1]}() }" },
         Rule(Regex("^Reference to library property '(\\w+)'")) {
@@ -36,6 +34,7 @@ internal object DiagnosticHints {
             "rename one of them"
         },
         Rule(Regex("^A member named '.*' clashes with the generated Lua class table")) { "rename the member" },
+        Rule(Regex("^Unsigned type '")) { "use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones" },
         Rule(Regex("^Overriding 'Random\\.")) {
             "override only nextBits(bitCount): Random's other members draw from it, as Kotlin's defaults do"
         },

@@ -1,30 +1,24 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CharRange = ____lualib.__K2L_CharRange
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
-local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashSet = ____lualib.__K2L_HashSet
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Random = ____lualib.__K2L_Random
-local __K2L_RandomLong = ____lualib.__K2L_RandomLong
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_Set = ____lualib.__K2L_Set
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function estimatePi(seed, samples)
     local rng = __K2L_Random.seeded(seed)
@@ -55,7 +49,7 @@ function Walk.new(x, y, maxDistance, returns)
 end
 
 function Walk:toString()
-    return "Walk(x=" .. self.x .. ", y=" .. self.y .. ", maxDistance=" .. __K2L_DoubleToString(self.maxDistance) .. ", returns=" .. self.returns .. ")"
+    return "Walk(x=" .. self.x .. ", y=" .. self.y .. ", maxDistance=" .. self.maxDistance .. ", returns=" .. self.returns .. ")"
 end
 
 function Walk:hashCode()
@@ -63,7 +57,7 @@ function Walk:hashCode()
 end
 
 function Walk:equals(other)
-    return getmetatable(other) == Walk and self.x == other.x and self.y == other.y and __K2L_DoubleEquals(self.maxDistance, other.maxDistance) and self.returns == other.returns
+    return getmetatable(other) == Walk and self.x == other.x and self.y == other.y and self.maxDistance == other.maxDistance and self.returns == other.returns
 end
 
 local function randomWalk(rng, steps)
@@ -99,7 +93,7 @@ local DiceStats = __K2L_Class("DiceStats")
 
 function DiceStats:____init(sides)
     self.sides = sides
-    self.counts = __K2L_ListOfSize(self.sides + 1, 0, "[I")
+    self.counts = __K2L_ListOfSize(self.sides + 1, 0, true)
     self.rolls = 0
     self.sum = 0
 end
@@ -199,19 +193,19 @@ local function rawSequences()
     local ____out_10 = {}
     for ____i_10 = 1, 4 do
         local it = ____i_10 - 1
-        ____out_10[____i_10] = __K2L_StringFormat("%.12f", r:nextDouble())
+        ____out_10[____i_10] = string.format("%.12f", r:nextDouble())
     end
     print(__K2L_Str(__K2L_ListWrap(____out_10, 4)))
     local ____out_11 = {}
     for ____i_11 = 1, 3 do
         local it = ____i_11 - 1
-        ____out_11[____i_11] = __K2L_StringFormat("%.10f", r:nextDouble(10.0))
+        ____out_11[____i_11] = string.format("%.10f", r:nextDouble(10.0))
     end
     print(__K2L_Str(__K2L_ListWrap(____out_11, 3)))
     local ____out_12 = {}
     for ____i_12 = 1, 3 do
         local it = ____i_12 - 1
-        ____out_12[____i_12] = __K2L_StringFormat("%.10f", r:nextDouble(-1.5, 2.5))
+        ____out_12[____i_12] = string.format("%.10f", r:nextDouble(-1.5, 2.5))
     end
     print(__K2L_Str(__K2L_ListWrap(____out_12, 3)))
     local ____out_13 = {}
@@ -223,17 +217,17 @@ local function rawSequences()
     local ____out_14 = {}
     for ____i_14 = 1, 4 do
         local it = ____i_14 - 1
-        ____out_14[____i_14] = __K2L_RandomLong.nextLong(r, nil, 1000)
+        ____out_14[____i_14] = r:nextLong(1000)
     end
     print(__K2L_Str(__K2L_ListWrap(____out_14, 4)))
     local ____out_15 = {}
     for ____i_15 = 1, 3 do
         local it = ____i_15 - 1
-        ____out_15[____i_15] = __K2L_RandomLong.nextLong(r, -5, 5)
+        ____out_15[____i_15] = r:nextLong(-5, 5)
     end
     print(__K2L_Str(__K2L_ListWrap(____out_15, 3)))
-    print(r:nextBytes(__K2L_ListOfSize(7, 0, "[B")):joinToString(","))
-    local buffer = __K2L_ListOfSize(10, 0, "[B")
+    print(r:nextBytes(__K2L_ListOfSize(7, 0, true)):joinToString(","))
+    local buffer = __K2L_ListOfSize(10, 0, true)
     r:nextBytes(buffer, 2, 9)
     print(buffer:joinToString(","))
     r:nextBytes(buffer)
@@ -242,27 +236,27 @@ end
 
 local function seeds()
     print("-- seeds")
-    local ____list = __K2L_ReadOnlyListOf(0, 1, -1, 7, 123456, -2147483648, 2147483647)
+    local ____list = __K2L_ListOf(0, 1, -1, 7, 123456, -2147483648, 2147483647)
     for ____i_16 = 1, ____list.size do
         local seed = ____list[____i_16]
         local r = __K2L_Random.seeded(seed)
-        print(seed .. ": " .. r:nextInt() .. " " .. r:nextInt(10) .. " " .. __K2L_StringFormat("%.6f", r:nextDouble()))
+        print(seed .. ": " .. r:nextInt() .. " " .. r:nextInt(10) .. " " .. string.format("%.6f", r:nextDouble()))
     end
-    local ____list_1 = __K2L_ReadOnlyListOf(0, 42, -42, 4294967296, 1234567890123, -9007199254740992)
+    local ____list_1 = __K2L_ListOf(0, 42, -42, 4294967296, 1234567890123, -9007199254740992)
     for ____i_17 = 1, ____list_1.size do
         local seed = ____list_1[____i_17]
-        local r = __K2L_Random.seededLong(seed)
+        local r = __K2L_Random.seeded(seed)
         print(seed .. "L: " .. r:nextInt() .. " " .. r:nextInt(1000))
     end
-    print(__K2L_Random.seeded(5):nextInt() == __K2L_Random.seededLong(5):nextInt())
-    print(__K2L_Random.seeded(-5):nextInt() == __K2L_Random.seededLong(-5):nextInt())
+    print(__K2L_Random.seeded(5):nextInt() == __K2L_Random.seeded(5):nextInt())
+    print(__K2L_Random.seeded(-5):nextInt() == __K2L_Random.seeded(-5):nextInt())
 end
 
 local ____lambda_1 = function(it) return it * it end
 local function collections()
     print("-- collections")
     local deck = __K2L_IntRange.new(1, 13):flatMap(function(rank)
-        local ____list_2 = __K2L_ReadOnlyListOf("S", "H", "D", "C")
+        local ____list_2 = __K2L_ListOf("S", "H", "D", "C")
         local ____out_16 = {}
         local ____count = 0
         local ____items, ____n = ____list_2:____array()
@@ -279,10 +273,10 @@ local function collections()
     local hand = deck:toMutableList()
     hand:shuffle(__K2L_Random.seeded(7))
     print(__K2L_Str(hand:takeLast(5)))
-    local array = __K2L_ListOfSize(10, ____lambda_1, "[I")
+    local array = __K2L_ListOfSize(10, ____lambda_1, true)
     array:shuffle(__K2L_Random.seeded(3))
     print(array:joinToString())
-    local boxed = __K2L_TypedArrayOf("[Ljava.lang.String;", "a", "b", "c", "d", "e", "f")
+    local boxed = __K2L_ArrayOf("a", "b", "c", "d", "e", "f")
     boxed:shuffle(__K2L_Random.seeded(11))
     print(boxed:joinToString(""))
     local picker = __K2L_Random.seeded(99)
@@ -313,19 +307,19 @@ local function collections()
     local ____out_21 = {}
     for ____i_23 = 1, 4 do
         local it = ____i_23 - 1
-        ____out_21[____i_23] = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 10, 20, 30):random(picker)
+        ____out_21[____i_23] = __K2L_ArrayOf(10, 20, 30):random(picker)
     end
     print(__K2L_Str(__K2L_ListWrap(____out_21, 4)))
     local ____out_22 = {}
     for ____i_24 = 1, 4 do
         local it = ____i_24 - 1
-        ____out_22[____i_24] = __K2L_TypedArrayOf("[I", 1, 2, 3, 4, 5):random(picker)
+        ____out_22[____i_24] = __K2L_ArrayOf(1, 2, 3, 4, 5):random(picker)
     end
     print(__K2L_Str(__K2L_ListWrap(____out_22, 4)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf():randomOrNull(picker)))
-    print(__K2L_Str(__K2L_SingletonListOf(9):randomOrNull(picker)))
+    print(__K2L_Str(__K2L_ListOf():randomOrNull(picker)))
+    print(__K2L_Str(__K2L_ListOf(9):randomOrNull(picker)))
     print(__K2L_Str(picker:nextIntRange(__K2L_IntRange.new(1, 0), true)))
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         picker:nextIntRange(__K2L_IntRange.new(1, 0), false)
     end)
     if not ____ok then
@@ -337,7 +331,7 @@ local function collections()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_1 = pcall(function()
         picker:nextIntRange(__K2L_IntRange.new(5, 4))
     end)
     if not ____ok_1 then
@@ -349,7 +343,7 @@ local function collections()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_2 = pcall(function()
         picker:nextDouble(2.0, 1.0)
     end)
     if not ____ok_2 then
@@ -365,12 +359,12 @@ end
 
 local function experiments()
     print("-- experiments")
-    local ____list_3 = __K2L_ReadOnlyListOf(__K2L_Pair.new(1, 1000), __K2L_Pair.new(2, 10000), __K2L_Pair.new(3, 50000))
+    local ____list_3 = __K2L_ListOf(__K2L_Pair.new(1, 1000), __K2L_Pair.new(2, 10000), __K2L_Pair.new(3, 50000))
     for ____i_25 = 1, ____list_3.size do
         local ____item = ____list_3[____i_25]
         local seed, samples = ____item.first, ____item.second
         local pi = estimatePi(seed, samples)
-        print("pi(" .. seed .. ", " .. samples .. ") = " .. __K2L_DoubleToString(pi) .. " error=" .. __K2L_StringFormat("%.5f", math.abs(pi - 3.141592653589793)))
+        print("pi(" .. seed .. ", " .. samples .. ") = " .. pi .. " error=" .. string.format("%.5f", math.abs(pi - 3.141592653589793)))
     end
     local walker = __K2L_Random.seeded(31337)
     for it = 0, 2 do
@@ -386,8 +380,8 @@ local function experiments()
         d20:roll(dice)
     end
     print(d6:histogram())
-    print("d6 mean=" .. __K2L_StringFormat("%.4f", d6:mean()) .. " chi2=" .. __K2L_StringFormat("%.4f", d6:chiSquare()))
-    print("d20 mean=" .. __K2L_StringFormat("%.4f", d20:mean()) .. " chi2=" .. __K2L_StringFormat("%.4f", d20:chiSquare()))
+    print("d6 mean=" .. string.format("%.4f", d6:mean()) .. " chi2=" .. string.format("%.4f", d6:chiSquare()))
+    print("d20 mean=" .. string.format("%.4f", d20:mean()) .. " chi2=" .. string.format("%.4f", d20:chiSquare()))
     local coin = __K2L_Random.seeded(1)
     local streak = 0
     local longest = 0
@@ -406,7 +400,7 @@ local function experiments()
     local collisions = 0
     for it = 0, 1999 do
         do
-            local seen = __K2L_HashSet.new()
+            local seen = __K2L_Set.new()
             local hit = false
             for it = 0, 22 do
                 if not seen:add(birthdays:nextInt(365)) then
@@ -418,7 +412,7 @@ local function experiments()
             end
         end
     end
-    print("birthday paradox (23 people): " .. __K2L_StringFormat("%.3f", collisions / 2000.0))
+    print("birthday paradox (23 people): " .. string.format("%.3f", collisions / 2000.0))
 end
 
 local function defaults()
@@ -444,9 +438,9 @@ local function defaults()
     print(__K2L_Random.default():nextInt(5, 6))
     local ____value_1 = __K2L_Random.default():nextBits(4)
     print(____value_1 >= 0 and ____value_1 <= 15)
-    print(__K2L_Random.default():nextBytes(__K2L_ListOfSize(3, 0, "[B")).size)
+    print(__K2L_Random.default():nextBytes(__K2L_ListOfSize(3, 0, true)).size)
     print(__K2L_Random.default():nextFloat() < 1.0)
-    print(__K2L_RandomLong.nextLong(__K2L_Random.default(), 3, 4))
+    print(__K2L_Random.default():nextLong(3, 4))
 end
 
 local function main()
@@ -457,5 +451,5 @@ local function main()
     defaults()
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {estimatePi = estimatePi, Walk = Walk, randomWalk = randomWalk, DiceStats = DiceStats, rawSequences = rawSequences, seeds = seeds, collections = collections, experiments = experiments, defaults = defaults}

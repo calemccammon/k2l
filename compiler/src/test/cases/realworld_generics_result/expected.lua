@@ -1,28 +1,22 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringContains = ____lualib.__K2L_StringContains
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 local __K2L_StringToDouble = ____lualib.__K2L_StringToDouble
@@ -33,10 +27,7 @@ local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Either = __K2L_Class("generics.result.Either")
-__K2L_ClassInfo(Either, "generics.result.Either", "generics.result.Either", "interface")
-__K2L_CompanionInfo(Either, "generics.result.Either.Companion", "generics.result.Either$Companion", "Companion")
 Either.Left = __K2L_Class("generics.result.Either$Left", nil, Either)
-__K2L_ClassInfo(Either.Left, "generics.result.Either.Left", "generics.result.Either$Left", "class")
 
 function Either.Left:____init(____error)
     self.error = ____error
@@ -59,7 +50,6 @@ function Either.Left:equals(other)
 end
 
 Either.Right = __K2L_Class("generics.result.Either$Right", nil, Either)
-__K2L_ClassInfo(Either.Right, "generics.result.Either.Right", "generics.result.Either$Right", "class")
 
 function Either.Right:____init(value)
     self.value = value
@@ -90,7 +80,7 @@ function Either:left(e)
 end
 
 function Either:catching(block)
-    local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
+    local ____ok, ____result, ____returned = pcall(function()
         return true, Either.Right.new(block())
     end)
     if ____ok then
@@ -151,7 +141,6 @@ end
 
 local function sequence(____this_4)
     local out = __K2L_List.new()
-    local ____mod = ____this_4.____modCount
     for ____i = 1, ____this_4.size do
         local e = ____this_4[____i]
         local ____mt_4 = getmetatable(e)
@@ -160,17 +149,12 @@ local function sequence(____this_4)
         elseif ____mt_4 == Either.Right then
             out:add(e.value)
         end
-        if ____this_4.____modCount ~= ____mod and ____this_4:____comodified(____i) then
-            break
-        end
     end
     return Either.Right.new(out)
 end
 
 local Validated = __K2L_Class("generics.result.Validated")
-__K2L_ClassInfo(Validated, "generics.result.Validated", "generics.result.Validated", "class")
 Validated.Valid = __K2L_Class("generics.result.Validated$Valid", Validated)
-__K2L_ClassInfo(Validated.Valid, "generics.result.Validated.Valid", "generics.result.Validated$Valid", "class")
 
 function Validated.Valid:____init(value)
     self.value = value
@@ -193,7 +177,6 @@ function Validated.Valid:equals(other)
 end
 
 Validated.Invalid = __K2L_Class("generics.result.Validated$Invalid", Validated)
-__K2L_ClassInfo(Validated.Invalid, "generics.result.Validated.Invalid", "generics.result.Validated$Invalid", "class")
 
 function Validated.Invalid:____init(errors)
     self.errors = errors
@@ -238,7 +221,7 @@ local function zip(a, b, f)
     if getmetatable(a) == Validated.Valid and getmetatable(b) == Validated.Valid then
         return Validated.Valid.new(f(a.value, b.value))
     else
-        local ____list = __K2L_ReadOnlyListOf(a, b):filter(____lambda_2)
+        local ____list = __K2L_ListOf(a, b):filter(____lambda_2)
         local ____out = {}
         local ____count = 0
         local ____items, ____n = ____list:____array()
@@ -267,11 +250,10 @@ local function valid(____this_5)
 end
 
 local function invalid(____this_6)
-    return Validated.Invalid.new(__K2L_SingletonListOf(____this_6))
+    return Validated.Invalid.new(__K2L_ListOf(____this_6))
 end
 
 local Field = __K2L_Class("generics.result.Field")
-__K2L_ClassInfo(Field, "generics.result.Field", "generics.result.Field", "class")
 
 function Field:____init(name, ordinal)
     self.name = name
@@ -291,7 +273,6 @@ Field.AGE = Field.new("AGE", 1)
 Field.EMAIL = Field.new("EMAIL", 2)
 Field.____values = {Field.NAME, Field.AGE, Field.EMAIL}
 local FieldError = __K2L_Class("generics.result.FieldError")
-__K2L_ClassInfo(FieldError, "generics.result.FieldError", "generics.result.FieldError", "class")
 
 function FieldError:____init(field, message)
     self.field = field
@@ -315,7 +296,6 @@ function FieldError:equals(other)
 end
 
 local User = __K2L_Class("generics.result.User")
-__K2L_ClassInfo(User, "generics.result.User", "generics.result.User", "class")
 
 function User:____init(name, age, email)
     self.name = name
@@ -373,21 +353,21 @@ local function parsePercent(s)
     return __K2L_RunCatching(function()
         local n = __K2L_StringToDouble(__K2L_StringTrim(__K2L_Text.removeSuffix(s, "%")))
         if not (n >= 0.0 and n <= 100.0) then
-            error(__K2L_IllegalArgumentException.new("percent out of range: " .. __K2L_Str(n)))
+            error(__K2L_IllegalArgumentException.new("percent out of range: " .. n))
         end
         return n / 100
     end)
 end
 
 local ____lambda_5 = function(it)
-    return "err(" .. __K2L_Str(__K2L_KClassOfValue(it).simpleName) .. ": " .. __K2L_Str(it.message) .. ")"
+    return "err(" .. __K2L_Str(__K2L_SimpleName(it)) .. ": " .. __K2L_Str(it.message) .. ")"
 end
 local function describe(____this_7, f)
     return ____this_7:fold(function(it) return "ok(" .. __K2L_Str(f(it)) .. ")" end, ____lambda_5)
 end
 
 local function divide(a, b)
-    return b == 0 and Either:left("division by zero") or Either:right(__K2L_IDiv(a, b))
+    return b == 0 and Either:left("division by zero") or Either:right(a // b)
 end
 
 local ____lambda_6 = function(it) return divide(it, 2) end
@@ -398,14 +378,14 @@ local ____lambda_10 = function(it) return divide(it, 2) end
 local ____lambda_11 = function(it) return it + 1 end
 local ____lambda_12 = function(it) return it:upper() end
 local ____lambda_13 = function() return __K2L_StringToInt("12x") end
-local ____lambda_14 = function(it) return __K2L_KClassOfValue(it).simpleName end
+local ____lambda_14 = function(it) return __K2L_SimpleName(it) end
 local ____lambda_15 = function() return __K2L_StringToInt("12") end
 local ____lambda_16 = function(it) return it * 2 end
 local ____lambda_17 = function(x) return getmetatable(x) == Either.Right end
 local ____lambda_18 = function(x) return getmetatable(x) == Either.Left end
 local ____lambda_19 = function(it) return it.error end
 local ____lambda_20 = function(it) return it.email end
-local ____lambda_21 = function(it) return __K2L_StringFormat("%.3f", it) end
+local ____lambda_21 = function(it) return string.format("%.3f", it) end
 local ____lambda_22 = function(it) return 0.0 end
 local ____lambda_23 = function(it) return it + 1 end
 local function main()
@@ -414,13 +394,13 @@ local function main()
     print("chain=" .. __K2L_Str(chain) .. " fold=" .. fold(chain, ____lambda_8, ____lambda_9))
     local broken = mapLeft(map(flatMap(divide(1, 0), ____lambda_10), ____lambda_11), ____lambda_12)
     print("broken=" .. __K2L_Str(broken) .. " orElse=" .. getOrElse(broken, -1))
-    local all = sequence(__K2L_ReadOnlyListOf(divide(10, 2), divide(9, 3), divide(8, 4)))
-    local some = sequence(__K2L_ReadOnlyListOf(divide(10, 2), divide(9, 0), divide(8, 0)))
+    local all = sequence(__K2L_ListOf(divide(10, 2), divide(9, 3), divide(8, 4)))
+    local some = sequence(__K2L_ListOf(divide(10, 2), divide(9, 0), divide(8, 0)))
     print("all=" .. __K2L_Str(all) .. " some=" .. __K2L_Str(some))
     local caught = mapLeft(Either:catching(____lambda_13), ____lambda_14)
     local fine = map(Either:catching(____lambda_15), ____lambda_16)
     print("caught=" .. __K2L_Str(caught) .. " fine=" .. __K2L_Str(fine))
-    local values = __K2L_ReadOnlyListOf(Either:right(1), Either:left("x"), Either:right("two"), Either:right(3.5))
+    local values = __K2L_ListOf(Either:right(1), Either:left("x"), Either:right("two"), Either:right(3.5))
     local ____list_1 = values:filter(____lambda_17)
     local ____out_1 = {}
     local ____count_1 = 0
@@ -433,8 +413,7 @@ local function main()
     print("rights=" .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     print("lefts=" .. values:filter(____lambda_18):joinToString(nil, nil, nil, nil, nil, ____lambda_19))
     print("== validated")
-    local forms = __K2L_ReadOnlyListOf(__K2L_ReadOnlyMapOf(__K2L_Pair.new("name", "ada"), __K2L_Pair.new("age", "36"), __K2L_Pair.new("email", "Ada@Example.org")), __K2L_ReadOnlyMapOf(__K2L_Pair.new("name", ""), __K2L_Pair.new("age", "abc"), __K2L_Pair.new("email", "nope")), __K2L_ReadOnlyMapOf(__K2L_Pair.new("name", "bartholomew-the-great"), __K2L_Pair.new("age", "200"), __K2L_Pair.new("email", "b@x.io")), __K2L_ReadOnlyMapOf(__K2L_Pair.new("age", "41"), __K2L_Pair.new("email", "@x")))
-    local ____mod_1 = forms.____modCount
+    local forms = __K2L_ListOf(__K2L_MapOf(__K2L_Pair.new("name", "ada"), __K2L_Pair.new("age", "36"), __K2L_Pair.new("email", "Ada@Example.org")), __K2L_MapOf(__K2L_Pair.new("name", ""), __K2L_Pair.new("age", "abc"), __K2L_Pair.new("email", "nope")), __K2L_MapOf(__K2L_Pair.new("name", "bartholomew-the-great"), __K2L_Pair.new("age", "200"), __K2L_Pair.new("email", "b@x.io")), __K2L_MapOf(__K2L_Pair.new("age", "41"), __K2L_Pair.new("email", "@x")))
     for ____i_3 = 1, forms.size do
         local form = forms[____i_3]
         local result = parseUser(form)
@@ -443,9 +422,6 @@ local function main()
             print("valid " .. __K2L_Str(result.value))
         elseif ____mt_7 == Validated.Invalid then
             print("invalid " .. __K2L_Str(result.errors))
-        end
-        if forms.____modCount ~= ____mod_1 and forms:____comodified(____i_3) then
-            break
         end
     end
     local ____list_2 = forms:map(parseUser)
@@ -495,12 +471,12 @@ local function main()
     end)
     print("either=" .. __K2L_Str(asEither))
     print("== result")
-    local ____list_4 = __K2L_ReadOnlyListOf("50%", " 12.5 ", "150", "abc")
+    local ____list_4 = __K2L_ListOf("50%", " 12.5 ", "150", "abc")
     for ____i_7 = 1, ____list_4.size do
         local s = ____list_4[____i_7]
         print(s .. " -> " .. describe(parsePercent(s), ____lambda_21))
     end
-    local ____list_5 = __K2L_ReadOnlyListOf("10%", "20%", "x", "30%"):map(parsePercent)
+    local ____list_5 = __K2L_ListOf("10%", "20%", "x", "30%"):map(parsePercent)
     local ____out_4 = {}
     local ____count_4 = 0
     local ____items_5, ____n_5 = ____list_5:____array()
@@ -513,18 +489,18 @@ local function main()
         end
     end
     local total = __K2L_ListWrap(____out_4, ____count_4):sum(0.0)
-    print("total=" .. __K2L_Str(total))
+    print("total=" .. total)
     local recovered = parsePercent("oops"):recover(____lambda_22):map(____lambda_23)
     local mapped = parsePercent("40"):mapCatching(function(it)
         if not (it < 0.3) then
-            error(__K2L_IllegalStateException.new("too high: " .. __K2L_Str(it)))
+            error(__K2L_IllegalStateException.new("too high: " .. it))
         end
         return it
     end)
-    local ____arg = __K2L_Str(recovered:getOrThrow())
+    local ____arg = recovered:getOrThrow()
     local ____receiver_3 = mapped:exceptionOrNull()
     print("recovered=" .. ____arg .. " mapped=" .. __K2L_Str(____receiver_3 and ____receiver_3.message) .. " isFailure=" .. tostring(mapped:isFailure()))
-    local ____list_6 = __K2L_ReadOnlyListOf("1", "2", "z", "w"):map(parsePercent)
+    local ____list_6 = __K2L_ListOf("1", "2", "z", "w"):map(parsePercent)
     local ____result_4
     local ____items_6, ____n_6 = ____list_6:____array()
     for ____i_9 = 1, ____n_6 do
@@ -536,8 +512,8 @@ local function main()
     end
     local firstFailure = ____result_4
     local ____receiver_4 = firstFailure and firstFailure:exceptionOrNull()
-    print("first failure: " .. __K2L_Str(____receiver_4 and __K2L_KClassOfValue(____receiver_4).simpleName))
+    print("first failure: " .. __K2L_Str(____receiver_4 and __K2L_SimpleName(____receiver_4)))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Either = Either, map = map, flatMap = flatMap, mapLeft = mapLeft, fold = fold, getOrElse = getOrElse, sequence = sequence, Validated = Validated, zip = zip, zip__1 = zip__1, valid = valid, invalid = invalid, Field = Field, FieldError = FieldError, User = User, validateName = validateName, validateAge = validateAge, validateEmail = validateEmail, parseUser = parseUser, parsePercent = parsePercent, describe = describe, divide = divide}

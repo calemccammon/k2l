@@ -29,12 +29,12 @@
 Escapes: *not em*, snake_case_name, 2 &lt; 3 &amp;&amp; 5 &gt; 4.
 Line two after a hard break.</p>
 <h2 id="setup-guide-1">Setup guide</h2>
-<h2 id="ünïcode-héading">Ünïcode héading!</h2>
+<h2 id="ncode-hading">Ünïcode héading!</h2>
 <nav>
 <a href="#release-notes">Release notes</a>
 <a href="#setup-guide">Setup guide</a>
   <a href="#setup-guide-1">Setup guide</a>
-  <a href="#ünïcode-héading">Ünïcode héading!</a>
+  <a href="#ncode-hading">Ünïcode héading!</a>
 </nav>
 (9, [a, blockquote, code, em, h1, h2, hr, li, ol, p, pre, strong, ul])
 unclosed <strong>bold and `tick</strong>

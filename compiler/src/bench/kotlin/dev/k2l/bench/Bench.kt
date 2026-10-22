@@ -8,6 +8,8 @@ import dev.k2l.caseOptions
 import dev.k2l.frontend.SourceModule
 import dev.k2l.frontend.SourceSession
 import dev.k2l.luaVersionBanner
+import dev.k2l.recordStdout
+import dev.k2l.stdoutFile
 import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
@@ -15,14 +17,17 @@ import kotlin.system.exitProcess
 /**
  * The benchmark harness behind `./gradlew :compiler:bench` (see the README, "Benchmarks"): transpiles every program
  * in `src/bench/programs` with the current compiler, runs it on every Lua interpreter found, checks its output against
- * the program's `stdout.txt` (from Kotlin/JVM, `benchOracle`) and reports wall times, or with `-PbenchProfile` a
- * sampling profile.
+ * what the program prints on that target (`stdout.txt`, from Lua 5.4, or `stdout.<target>.txt`, as for test cases) and
+ * reports wall times, or with `-PbenchProfile` a sampling profile. With `-PupdateGolden` it rewrites those files instead
+ * (run it with `-PbenchRuns=1`).
  */
 fun main() {
     val config = BenchConfig.fromSystemProperties()
     val programs = BenchProgram.discover(config.programsDir).filter { config.only == null || it.name in config.only }
     require(programs.isNotEmpty()) { "no benchmark programs selected (-PbenchOnly=${config.only})" }
+    // 5.4 first: with -PupdateGolden its output is the one the other targets' outputs are compared with
     val targets = BenchTarget.discover().filter { config.targets == null || it.target.id in config.targets }
+        .sortedBy { it.target != LuaTarget.Lua54 }
     require(targets.isNotEmpty()) { "no Lua interpreters found for ${config.targets ?: "any target"}" }
     println("k2l bench: ${programs.size} programs on ${targets.joinToString { "${it.target.id} (${it.version})" }}")
     val failed = SourceSession.create(programs.map { it.module }).use { session ->
@@ -53,6 +58,8 @@ class BenchConfig(
     val interval: Int,
     val profileRepeat: Int?,
     val top: Int,
+    /** `-PupdateGolden`: record the programs' outputs instead of checking them. */
+    val updateGolden: Boolean,
 ) {
     companion object {
         private const val DEFAULT_RUNS = 5
@@ -85,6 +92,7 @@ class BenchConfig(
                 interval = p.int("benchInterval") ?: DEFAULT_INTERVAL,
                 profileRepeat = p.int("benchProfileRepeat"),
                 top = p.int("benchTop") ?: DEFAULT_TOP,
+                updateGolden = p.value("updateGolden").toBoolean(),
             )
         }
     }
@@ -106,8 +114,11 @@ class BenchConfig(
     }
 }
 
-/** A directory of `src/bench/programs`: `main.kt`, `stdout.txt` and optionally `options.txt` (as for test cases). */
-class BenchProgram(val name: String, val dir: File, val options: CompilerOptions, val expected: String) {
+/** A directory of `src/bench/programs`: `main.kt`, `stdout.txt` and optionally `stdout.<target>.txt` and `options.txt` (as for test cases). */
+class BenchProgram(val name: String, val dir: File, val options: CompilerOptions) {
+    /** What the program prints on [target], empty when it has no stdout file. */
+    fun expected(target: LuaTarget): String = stdoutFile(dir, target).takeIf(File::isFile)?.readText().orEmpty()
+
     val module = SourceModule(name, listOf(dir.toPath().toAbsolutePath()))
 
     /** Compiles for [target] into [outDir], failing on any diagnostic. */
@@ -122,7 +133,7 @@ class BenchProgram(val name: String, val dir: File, val options: CompilerOptions
     companion object {
         fun discover(dir: File): List<BenchProgram> = dir.listFiles().orEmpty()
             .filter { File(it, "main.kt").isFile }.sortedBy { it.name }
-            .map { BenchProgram(it.name, it, caseOptions(it), File(it, "stdout.txt").takeIf(File::isFile)?.readText().orEmpty()) }
+            .map { BenchProgram(it.name, it, caseOptions(it)) }
     }
 }
 
@@ -177,9 +188,14 @@ fun runLua(interpreter: String, dir: File, vararg args: String): Pair<Double, St
     return ms to stdout.readText()
 }
 
-/** Checks a run's output against the program's `stdout.txt`. */
-fun BenchProgram.verify(output: String, repeat: Int = 1) {
-    check(expected.isNotEmpty()) { "$name has no stdout.txt (run ./gradlew :compiler:benchOracle -PupdateOracle)" }
+/** Checks a run's output on [target] against the program's stdout file, or with [update] records it there. */
+fun BenchProgram.verify(target: LuaTarget, output: String, update: Boolean, repeat: Int = 1) {
+    if (update) {
+        recordStdout(dir, target, output)
+        return
+    }
+    val expected = expected(target)
+    check(expected.isNotEmpty()) { "$name has no stdout.txt (run ./gradlew :compiler:bench -PupdateGolden -PbenchRuns=1)" }
     check(output == expected.repeat(repeat)) { "wrong output:\n${output.take(TEXT_LIMIT)}\nexpected:\n${expected.take(TEXT_LIMIT)}" }
 }
 
@@ -197,7 +213,7 @@ private fun runTimings(
                 program.compile(session, t.target, dir)
                 val times = (1..config.runs).map {
                     val (ms, output) = runLua(t.interpreter, dir, "main.lua")
-                    program.verify(output)
+                    program.verify(t.target, output, config.updateGolden)
                     ms
                 }
                 BenchResult(program.name, t.target.id, times)

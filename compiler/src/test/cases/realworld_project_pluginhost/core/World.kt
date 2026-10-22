@@ -1,6 +1,5 @@
 package arena.core
 
-import kotlin.reflect.KClass
 
 data class Unit(val name: String, var hp: Int, var x: Int, val team: Char)
 
@@ -32,18 +31,18 @@ val World.teams: Set<Char> get() = alive().map { it.team }.toSortedSet()
 
 /** What plugins see of the host: logging and typed services that other plugins provide. */
 class Context(private val logger: (String) -> kotlin.Unit) {
-    private val services = HashMap<KClass<*>, Any>()
+    private val services = HashMap<String, Any>()
 
     fun log(msg: String) = logger(msg)
 
-    fun <T : Any> provide(type: KClass<T>, service: T) {
+    fun <T : Any> provide(type: String, service: T) {
         services[type] = service
     }
 
-    fun <T : Any> lookup(type: KClass<T>): T? {
+    fun <T : Any> lookup(type: String): T? {
         @Suppress("UNCHECKED_CAST")
         return services[type] as T?
     }
 
-    inline fun <reified T : Any> service(): T = lookup(T::class) ?: error("no service ${T::class.simpleName}")
+    inline fun <reified T : Any> service(): T = lookup(T::class.simpleName!!) ?: error("no service ${T::class.simpleName}")
 }

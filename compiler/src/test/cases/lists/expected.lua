@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -6,12 +7,9 @@ local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Item = __K2L_Class("Item")
 
@@ -44,7 +42,7 @@ local ____lambda_5 = function(it) return it.price end
 local ____lambda_6 = function(it) return it.price end
 local ____lambda_7 = function(it) return it.price > 4 end
 local function main()
-    local xs = __K2L_ReadOnlyListOf(5, 3, 8, 1, 9, 2)
+    local xs = __K2L_ListOf(5, 3, 8, 1, 9, 2)
     print(__K2L_Str(xs))
     print(xs.size)
     print(xs:get(0) + xs:get(xs.size - 1))
@@ -62,7 +60,7 @@ local function main()
     local ____items_1, ____n_1 = xs:____array()
     for ____i_1 = 1, ____n_1 do
         local it = ____items_1[____i_1]
-        if (it >= 0 and it % 2 or 0 - -it % 2) == 1 then
+        if it % 2 == 1 then
             ____count_1 = ____count_1 + 1
             ____out_1[____count_1] = it
         end
@@ -73,7 +71,7 @@ local function main()
     print(xs:sum())
     print(__K2L_Str(xs:maxOrNull()))
     print(__K2L_Str(xs:minOrNull()))
-    print(__K2L_Str(xs:average()))
+    print(xs:average())
     print(xs:first() + xs:last())
     local ____result = false
     local ____items_2, ____n_2 = xs:____array()
@@ -143,14 +141,14 @@ local function main()
         end
     end
     print(__K2L_Str(____result_5))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 1, 2, 3, 3):distinct()))
+    print(__K2L_Str(__K2L_ListOf(1, 1, 2, 3, 3):distinct()))
     print(__K2L_Str(xs:chunked(4)))
-    print(__K2L_Str(xs:zip(__K2L_ReadOnlyListOf("a", "b", "c"))))
+    print(__K2L_Str(xs:zip(__K2L_ListOf("a", "b", "c"))))
     print(__K2L_Str(xs:withIndex():map(function(____destructured)
         local i, v = ____destructured.index, ____destructured.value
         return i * v
     end)))
-    local items = __K2L_ReadOnlyListOf(Item.new("pen", 3), Item.new("book", 12), Item.new("cup", 5), Item.new("ink", 3))
+    local items = __K2L_ListOf(Item.new("pen", 3), Item.new("book", 12), Item.new("cup", 5), Item.new("ink", 3))
     local ____list = items:sortedBy(____lambda_4, true)
     local ____out_2 = {}
     local ____count_2 = 0
@@ -222,7 +220,7 @@ local function main()
     end
     print(total)
     for i = 0, xs.size - 1 do
-        if (i >= 0 and i % 2 or 0 - -i % 2) == 0 then
+        if i % 2 == 0 then
             io.write(xs[i + 1] .. " ")
         end
     end
@@ -248,7 +246,7 @@ local function main()
             print("first is " .. x)
         end
     end
-    local nested = __K2L_ReadOnlyListOf(__K2L_ReadOnlyListOf(1, 2), __K2L_SingletonListOf(3), __K2L_ReadOnlyListOf())
+    local nested = __K2L_ListOf(__K2L_ListOf(1, 2), __K2L_ListOf(3), __K2L_ListOf())
     print(__K2L_Str(nested:flatten()))
     local ____out_4 = {}
     local ____count_4 = 0
@@ -274,27 +272,27 @@ local function main()
         end
     end
     print(__K2L_Str(__K2L_ListWrap(____out_4, ____count_4)))
-    print(__K2L_Equals(__K2L_ReadOnlyListOf(1, 2), __K2L_ReadOnlyListOf(1, 2)))
+    print(__K2L_Equals(__K2L_ListOf(1, 2), __K2L_ListOf(1, 2)))
     local ____out_6 = {}
     for ____i_18 = 1, 4 do
         local it = ____i_18 - 1
         ____out_6[____i_18] = it * it
     end
     print(__K2L_Str(__K2L_ListWrap(____out_6, 4)))
-    local arr = __K2L_TypedArrayOf("[I", 3, 1, 2)
+    local arr = __K2L_ArrayOf(3, 1, 2)
     if 1 < 0 or 1 >= arr.size then
         __K2L_IndexError(1, arr.size, "array")
     end
     arr[2] = 7
     print(arr.size)
     print(__K2L_Str(arr:toList()))
-    local words = __K2L_TypedArrayOf("[Ljava.lang.String;", "x", "y")
+    local words = __K2L_ArrayOf("x", "y")
     print(words:joinToString(""))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("a", nil, "b"):filterNotNull()))
-    local ____destructured_1 = __K2L_ReadOnlyListOf(10, 20)
+    print(__K2L_Str(__K2L_ListOf("a", nil, "b"):filterNotNull()))
+    local ____destructured_1 = __K2L_ListOf(10, 20)
     local a, b = ____destructured_1[1], ____destructured_1[2]
     print(a + b)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Item = Item}

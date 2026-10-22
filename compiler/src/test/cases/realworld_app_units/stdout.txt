@@ -1,5 +1,5 @@
 3250.00 m 12m30s 15.6 km/h 31200.00 m 6500.00 m 1625.00 m -3250.00 m 13.0
-true true -1 2 0.20833333333333334
+true true -1 2 0.20833333333333
 36.0 km/h 36.0 2.3 kg 77.5 kg
 distances: [120.00 m, 900.00 m, 2500.00 m, 5000.00 m], min 120.00 m, max 5000.00 m, total 8520.00 m
 times: [1m30s, 45m00s, 1h00m, 3h05m], min 1m30s, max 3h05m, total 4h51m

@@ -2,14 +2,11 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_TouchObject = ____lualib.__K2L_TouchObject
 
@@ -17,9 +14,7 @@ local ____factory = require("model.factory")
 local ____token = require("model.token")
 local Circle
 local Named = __K2L_Class("app.Named")
-__K2L_ClassInfo(Named, "app.Named", "app.Named", "interface")
 local Registry = __K2L_Class("app.Registry")
-__K2L_ClassInfo(Registry, "app.Registry", "app.Registry", "class")
 
 function Registry:____init(prefix)
     self.prefix = prefix
@@ -35,7 +30,6 @@ function Registry:describe()
 end
 
 local Foo = __K2L_Class("app.Foo")
-__K2L_ClassInfo(Foo, "app.Foo", "app.Foo", "class")
 
 function Foo:____init(n)
     self.n = n
@@ -54,7 +48,6 @@ function Foo:toString()
 end
 
 Foo.Companion = __K2L_Class("app.Foo$Companion", nil, ____factory.Factory, Named)
-__K2L_ClassInfo(Foo.Companion, "app.Foo.Companion", "app.Foo$Companion", "class")
 
 function Foo.Companion:____init()
     self.count = 0
@@ -77,9 +70,7 @@ end
 
 Foo.Companion:____init()
 local Bar = __K2L_Class("app.Bar")
-__K2L_ClassInfo(Bar, "app.Bar", "app.Bar", "class")
 Bar.Maker = __K2L_Class("app.Bar$Maker", Registry)
-__K2L_ClassInfo(Bar.Maker, "app.Bar.Maker", "app.Bar$Maker", "class")
 
 function Bar.Maker:____init()
     Registry.____init(self, "bar:")
@@ -102,14 +93,12 @@ end
 
 __K2L_LazyObject(Bar, "____initCompanion")
 local Baz = __K2L_Class("app.Baz")
-__K2L_ClassInfo(Baz, "app.Baz", "app.Baz", "class")
 
 function Baz:____init()
     print("Baz instance")
 end
 
 Baz.Companion = __K2L_Class("app.Baz$Companion", nil, Named)
-__K2L_ClassInfo(Baz.Companion, "app.Baz.Companion", "app.Baz$Companion", "class")
 
 function Baz.Companion:____init()
     print("Baz companion init")
@@ -127,9 +116,7 @@ end
 
 __K2L_LazyObject(Baz, "____initCompanion")
 local Shape = __K2L_Class("app.Shape")
-__K2L_ClassInfo(Shape, "app.Shape", "app.Shape", "class")
 Shape.Companion = __K2L_Class("app.Shape$Companion", nil, ____factory.Factory)
-__K2L_ClassInfo(Shape.Companion, "app.Shape.Companion", "app.Shape$Companion", "class")
 
 function Shape.Companion:create()
     return Circle
@@ -140,30 +127,25 @@ function Shape.Companion:getKind()
 end
 
 Circle = __K2L_Class("app.Circle", Shape)
-__K2L_ClassInfo(Circle, "app.Circle", "app.Circle", "class")
 
 function Circle:toString()
     return "Circle"
 end
 
 local Codec = __K2L_Class("app.Codec")
-__K2L_ClassInfo(Codec, "app.Codec", "app.Codec", "interface")
 Codec.Companion = __K2L_Class("app.Codec$Companion", nil, Codec)
-__K2L_ClassInfo(Codec.Companion, "app.Codec.Companion", "app.Codec$Companion", "class")
 
 function Codec.Companion:encode(s)
     return s:reverse()
 end
 
 local Upper = __K2L_Class("app.Upper", nil, Codec)
-__K2L_ClassInfo(Upper, "app.Upper", "app.Upper", "class")
 
 function Upper:encode(s)
     return s:upper()
 end
 
 local Labeled = __K2L_Class("app.Labeled", nil, Named)
-__K2L_ClassInfo(Labeled, "app.Labeled", "app.Labeled", "class")
 
 function Labeled:____init(label)
     self.label = label
@@ -178,9 +160,7 @@ function Labeled:getLabel()
 end
 
 local Tagged = __K2L_Class("app.Tagged")
-__K2L_ClassInfo(Tagged, "app.Tagged", "app.Tagged", "class")
 Tagged.Companion = __K2L_Class("app.Tagged$Companion", Labeled)
-__K2L_ClassInfo(Tagged.Companion, "app.Tagged.Companion", "app.Tagged$Companion", "class")
 
 function Tagged.Companion:____init()
     Labeled.____init(self, "tagged")
@@ -188,9 +168,7 @@ end
 
 Tagged.Companion:____init()
 local Outer = __K2L_Class("app.Outer")
-__K2L_ClassInfo(Outer, "app.Outer", "app.Outer", "class")
 Outer.Inner = __K2L_Class("app.Outer$Inner")
-__K2L_ClassInfo(Outer.Inner, "app.Outer.Inner", "app.Outer$Inner", "class")
 
 function Outer.Inner:____init(tag)
     self.tag = tag
@@ -205,14 +183,12 @@ function Outer.Inner:toString()
 end
 
 Outer.Inner.Companion = __K2L_Class("app.Outer$Inner$Companion", nil, ____factory.Factory)
-__K2L_ClassInfo(Outer.Inner.Companion, "app.Outer.Inner.Companion", "app.Outer$Inner$Companion", "class")
 
 function Outer.Inner.Companion:create()
     return Outer.Inner.new("inner")
 end
 
 local Box = __K2L_Class("app.Box")
-__K2L_ClassInfo(Box, "app.Box", "app.Box", "class")
 
 function Box:____init(value)
     self.value = value
@@ -227,7 +203,6 @@ function Box:toString()
 end
 
 Box.Companion = __K2L_Class("app.Box$Companion", nil, ____factory.Factory)
-__K2L_ClassInfo(Box.Companion, "app.Box.Companion", "app.Box$Companion", "class")
 
 function Box.Companion:create()
     return Box.new(42)
@@ -259,7 +234,7 @@ local function main()
     local a = Foo.Companion
     print(__K2L_InstanceOf(a, Named))
     if not __K2L_InstanceOf(a, Named) then
-        __K2L_CastFail(a, "app.Named", "app.Named")
+        __K2L_CastFail(a, "app.Named")
     end
     print(a:getLabel())
     print(__K2L_Str(__K2L_InstanceOf(a, Registry) and a or nil))
@@ -279,14 +254,10 @@ local function main()
     Baz.new()
     local n = __K2L_TouchObject(Baz.Companion)
     print(n:getLabel())
-    local shapes = __K2L_ReadOnlyListOf(Foo.Companion, Shape.Companion, Outer.Inner.Companion, Box.Companion)
-    local ____mod = shapes.____modCount
+    local shapes = __K2L_ListOf(Foo.Companion, Shape.Companion, Outer.Inner.Companion, Box.Companion)
     for ____i_1 = 1, shapes.size do
         local s = shapes[____i_1]
         print(s:getKind() .. " " .. __K2L_Str(s:create()))
-        if shapes.____modCount ~= ____mod and shapes:____comodified(____i_1) then
-            break
-        end
     end
     local x = Shape.Companion
     if __K2L_InstanceOf(x, ____factory.Factory) then
@@ -294,11 +265,11 @@ local function main()
     else
         print("other")
     end
-    print(__K2L_Str(encodeAll(__K2L_ReadOnlyListOf(Codec.Companion, Upper.new(), Codec.Companion), "abc")))
+    print(__K2L_Str(encodeAll(__K2L_ListOf(Codec.Companion, Upper.new(), Codec.Companion), "abc")))
     local ____arg = Tagged.Companion:getLabel() .. " "
     local ____value_1 = Tagged.Companion
     print(____arg .. tostring(__K2L_InstanceOf(____value_1, Labeled)))
-    local ____list = __K2L_ReadOnlyListOf(Foo.Companion, Tagged.Companion, __K2L_TouchObject(Baz.Companion))
+    local ____list = __K2L_ListOf(Foo.Companion, Tagged.Companion, __K2L_TouchObject(Baz.Companion))
     local ____out_1 = {}
     local ____count_1 = 0
     local ____items_1, ____n_1 = ____list:____array()
@@ -309,22 +280,20 @@ local function main()
     end
     print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     print(____token.Token.Companion:parse("id") .. " " .. make(____token.Token.Companion).text)
-    print(__K2L_Str(__K2L_KClassOf(Foo.Companion).simpleName) .. " " .. __K2L_Str(__K2L_KClassOf(Bar.Maker).simpleName))
+    print(__K2L_Str("Companion") .. " " .. __K2L_Str("Maker"))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Named = Named, Registry = Registry, Foo = Foo, Bar = Bar, Baz = Baz, Shape = Shape, Circle = Circle, Codec = Codec, Upper = Upper, Labeled = Labeled, Tagged = Tagged, Outer = Outer, Box = Box, make = make, encodeAll = encodeAll}
 -- ==== model/factory.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 
 local Factory = __K2L_Class("app.model.Factory")
-__K2L_ClassInfo(Factory, "app.model.Factory", "app.model.Factory", "interface")
 
 function Factory:twice()
-    return __K2L_ReadOnlyListOf(self:create(), self:create())
+    return __K2L_ListOf(self:create(), self:create())
 end
 
 function Factory:getKind()
@@ -335,11 +304,9 @@ return {Factory = Factory}
 -- ==== model/token.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 
 local ____factory = require("model.factory")
 local Token = __K2L_Class("app.model.Token")
-__K2L_ClassInfo(Token, "app.model.Token", "app.model.Token", "class")
 
 function Token:____init(text)
     self.text = text
@@ -350,7 +317,6 @@ function Token.new(text)
 end
 
 Token.Companion = __K2L_Class("app.model.Token$Companion", nil, ____factory.Factory)
-__K2L_ClassInfo(Token.Companion, "app.model.Token.Companion", "app.model.Token$Companion", "class")
 
 function Token.Companion:parse(s)
     return "<" .. s .. ">"

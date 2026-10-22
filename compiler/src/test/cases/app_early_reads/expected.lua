@@ -2,8 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Early = __K2L_Class("Early")
@@ -22,7 +21,7 @@ function Early:____init()
     self.ratio = self:half()
     self.scale = 2.0
     self.items = self:peek()
-    self.list = __K2L_SingletonListOf(1)
+    self.list = __K2L_ListOf(1)
 end
 
 function Early:compute()
@@ -89,11 +88,11 @@ __K2L_LazyObject(Settings, "____init")
 
 local function main()
     local e = Early.new()
-    print(e.x .. " " .. e.y .. " " .. e.name .. " " .. tostring(e.flag) .. " " .. __K2L_Str(e.ratio) .. " " .. __K2L_Str(e.items) .. " " .. __K2L_Str(e.list))
+    print(e.x .. " " .. e.y .. " " .. e.name .. " " .. tostring(e.flag) .. " " .. e.ratio .. " " .. __K2L_Str(e.items) .. " " .. __K2L_Str(e.list))
     local b = Button.new(7)
     print(__K2L_Str(b.log) .. " " .. b:render())
     print(Settings.summary .. " " .. Settings.retries)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Early = Early, Widget = Widget, Button = Button, Settings = Settings}

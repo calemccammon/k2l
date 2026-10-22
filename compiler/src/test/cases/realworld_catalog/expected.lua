@@ -1,13 +1,9 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsNumber = ____lualib.__K2L_IsNumber
 local __K2L_Iterable = ____lualib.__K2L_Iterable
@@ -17,16 +13,13 @@ local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_SortedSetOf = ____lualib.__K2L_SortedSetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Triple = ____lualib.__K2L_Triple
@@ -164,16 +157,16 @@ local Library = __K2L_Class("Library")
 
 function Library:____init()
     self.books = __K2L_Map.new()
-    self.members = __K2L_HashMap.new()
+    self.members = __K2L_Map.new()
     self.loans = __K2L_List.new()
-    self.byAuthor = __K2L_SortedMapOf()
-    self.byGenre = __K2L_HashMap.new()
-    self.wordIndex = __K2L_HashMap.new()
+    self.byAuthor = __K2L_SortedMapOf(nil)
+    self.byGenre = __K2L_Map.new()
+    self.wordIndex = __K2L_Map.new()
 end
 
 local ____lambda_1 = function(it) return __K2L_ListOf() end
 local ____lambda_2 = function() return __K2L_SetOf() end
-local ____lambda_3 = function(it) return __K2L_SortedSetOf() end
+local ____lambda_3 = function(it) return __K2L_SortedSetOf(nil) end
 function Library:add(book)
     local ____receiver = self.books:putIfAbsent(book.isbn, book)
     if ____receiver ~= nil then
@@ -183,13 +176,9 @@ function Library:add(book)
     self.byAuthor:computeIfAbsent(book.author, ____lambda_1):add(book.isbn)
     local ____collection = book.genres
     local ____items, ____n = ____collection:____array()
-    local ____mod = ____collection.____modCount
     for ____i = 1, ____n do
         local g = ____items[____i]
         self.byGenre:getOrPut(g, ____lambda_2):add(book.isbn)
-        if ____collection.____modCount ~= ____mod and ____collection:____comodified(____i, ____n) then
-            break
-        end
     end
     local ____list = __K2L_StringSplit(book.title:lower(), " ")
     local ____out = {}
@@ -203,13 +192,9 @@ function Library:add(book)
         end
     end
     local ____list_1 = __K2L_ListWrap(____out, ____count)
-    local ____mod_1 = ____list_1.____modCount
     for ____i_2 = 1, ____list_1.size do
         local w = ____list_1[____i_2]
         self.wordIndex:computeIfAbsent(w, ____lambda_3):add(book.isbn)
-        if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_2) then
-            break
-        end
     end
 end
 
@@ -318,9 +303,9 @@ function Library:search(query)
     for ____i_8 = 1, ____n_7 do
         local it = ____items_7[____i_8]
         ____count_3 = ____count_3 + 1
-        ____out_3[____count_3] = self.wordIndex:get(it) or __K2L_ReadOnlySetOf()
+        ____out_3[____count_3] = self.wordIndex:get(it) or __K2L_SetOf()
     end
-    local ____arg_1 = __K2L_ListWrap(____out_3, ____count_3):reduceOrNull(____lambda_4) or __K2L_ReadOnlySetOf()
+    local ____arg_1 = __K2L_ListWrap(____out_3, ____count_3):reduceOrNull(____lambda_4) or __K2L_SetOf()
     local ____receiver_1 = self.books
     return ____arg_1:map(function(____p1) return ____receiver_1:getValue(____p1) end)
 end
@@ -362,13 +347,9 @@ function Library:recommend(isbn)
         end
     end
     local ____list_10 = __K2L_ListWrap(____out_6, ____count_6):distinctBy(____lambda_5)
-    local ____mod_2 = ____list_10.____modCount
     for ____i_12 = 1, ____list_10.size do
         local it = ____list_10[____i_12]
-        counts:merge(it.isbn, 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_6))
-        if ____list_10.____modCount ~= ____mod_2 and ____list_10:____comodified(____i_12) then
-            break
-        end
+        counts:merge(it.isbn, 1, ____lambda_6)
     end
     local ____list_11 = counts:getEntries():sortedWith(function(____a, ____b)
         local ____x_1, ____y_1 = ____b.value, ____a.value
@@ -473,7 +454,7 @@ function Library:export()
                 ____count_11 = ____count_11 + 1
                 ____out_11[____count_11] = it.name:lower()
             end
-            ____result_7 = __K2L_ReadOnlyMapOf(____arg_2, ____arg_3, ____arg_4, __K2L_Pair.new("genres", __K2L_ListWrap(____out_11, ____count_11)), __K2L_Pair.new("available", self:available(b.isbn)))
+            ____result_7 = __K2L_MapOf(____arg_2, ____arg_3, ____arg_4, __K2L_Pair.new("genres", __K2L_ListWrap(____out_11, ____count_11)), __K2L_Pair.new("available", self:available(b.isbn)))
         end
         ____count_10 = ____count_10 + 1
         ____out_10[____count_10] = ____result_7
@@ -486,7 +467,7 @@ function Library:export()
     for ____i_20 = 1, ____n_17 do
         local it = ____items_17[____i_20]
         ____count_12 = ____count_12 + 1
-        ____out_12[____count_12] = __K2L_ReadOnlyMapOf(__K2L_Pair.new("id", it.id), __K2L_Pair.new("name", it.name), __K2L_Pair.new("tier", it.tier.name))
+        ____out_12[____count_12] = __K2L_MapOf(__K2L_Pair.new("id", it.id), __K2L_Pair.new("name", it.name), __K2L_Pair.new("tier", it.tier.name))
     end
     local ____arg_6 = __K2L_Pair.new("members", __K2L_ListWrap(____out_12, ____count_12))
     local ____list_17 = self.loans
@@ -498,7 +479,7 @@ function Library:export()
             ____result_8 = ____result_8 + 1
         end
     end
-    return __K2L_ReadOnlyMapOf(____arg_5, ____arg_6, __K2L_Pair.new("openLoans", ____result_8), __K2L_Pair.new("note", nil))
+    return __K2L_MapOf(____arg_5, ____arg_6, __K2L_Pair.new("openLoans", ____result_8), __K2L_Pair.new("note", nil))
 end
 
 local function toJson(value, indent)
@@ -519,7 +500,7 @@ local function toJson(value, indent)
             elseif c == "\n" then
                 ____builder:append("\\n")
             elseif c:byte() < 32 then
-                ____builder:append(__K2L_StringFormat("\\u%04x", c:byte()))
+                ____builder:append(string.format("\\u%04x", c:byte()))
             else
                 ____builder:append(c)
             end
@@ -562,17 +543,13 @@ end
 
 local function main()
     local lib = Library.new()
-    local ____list_18 = __K2L_ReadOnlyListOf(Book.new("978-0", "The Time Machine", "H. G. Wells", 1895, __K2L_ReadOnlySetOf(Genre.FICTION, Genre.SCIENCE), 2), Book.new("978-1", "The War of the Worlds", "H. G. Wells", 1898, __K2L_ReadOnlySetOf(Genre.FICTION)), Book.new("978-2", "A Brief History of Time", "Stephen Hawking", 1988, __K2L_ReadOnlySetOf(Genre.SCIENCE)), Book.new("978-3", "The Story of Art", "E. H. Gombrich", 1950, __K2L_ReadOnlySetOf(Genre.HISTORY)), Book.new("978-4", "A Little History of the World", "E. H. Gombrich", 1936, __K2L_ReadOnlySetOf(Genre.HISTORY, Genre.KIDS)), Book.new("978-5", "The Gruffalo", "Julia Donaldson", 1999, __K2L_ReadOnlySetOf(Genre.KIDS, Genre.POETRY), 3), Book.new("978-6", "Leaves of Grass", "Walt Whitman", 1855, __K2L_ReadOnlySetOf(Genre.POETRY)))
-    local ____mod_3 = ____list_18.____modCount
+    local ____list_18 = __K2L_ListOf(Book.new("978-0", "The Time Machine", "H. G. Wells", 1895, __K2L_SetOf(Genre.FICTION, Genre.SCIENCE), 2), Book.new("978-1", "The War of the Worlds", "H. G. Wells", 1898, __K2L_SetOf(Genre.FICTION)), Book.new("978-2", "A Brief History of Time", "Stephen Hawking", 1988, __K2L_SetOf(Genre.SCIENCE)), Book.new("978-3", "The Story of Art", "E. H. Gombrich", 1950, __K2L_SetOf(Genre.HISTORY)), Book.new("978-4", "A Little History of the World", "E. H. Gombrich", 1936, __K2L_SetOf(Genre.HISTORY, Genre.KIDS)), Book.new("978-5", "The Gruffalo", "Julia Donaldson", 1999, __K2L_SetOf(Genre.KIDS, Genre.POETRY), 3), Book.new("978-6", "Leaves of Grass", "Walt Whitman", 1855, __K2L_SetOf(Genre.POETRY)))
     for ____i_24 = 1, ____list_18.size do
         local it = ____list_18[____i_24];
         (function(...) return lib:add(...) end)(it)
-        if ____list_18.____modCount ~= ____mod_3 and ____list_18:____comodified(____i_24) then
-            break
-        end
     end
-    local ____ok, ____result_10 = __K2L_DeepPcall(function()
-        lib:add(Book.new("978-6", "Dup", "X", 2000, __K2L_ReadOnlySetOf()))
+    local ____ok, ____result_10 = pcall(function()
+        lib:add(Book.new("978-6", "Dup", "X", 2000, __K2L_SetOf()))
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result_10)
@@ -583,14 +560,10 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____list_19 = __K2L_ReadOnlyListOf(Member.new(1, "Ana", Member.Tier.BASIC), Member.new(2, "Ben", Member.Tier.PLUS), Member.new(3, "Cy", Member.Tier.STAFF), Member.new(4, "Di", Member.Tier.PLUS))
-    local ____mod_4 = ____list_19.____modCount
+    local ____list_19 = __K2L_ListOf(Member.new(1, "Ana", Member.Tier.BASIC), Member.new(2, "Ben", Member.Tier.PLUS), Member.new(3, "Cy", Member.Tier.STAFF), Member.new(4, "Di", Member.Tier.PLUS))
     for ____i_25 = 1, ____list_19.size do
         local it = ____list_19[____i_25];
         (function(...) return lib:join(...) end)(it)
-        if ____list_19.____modCount ~= ____mod_4 and ____list_19:____comodified(____i_25) then
-            break
-        end
     end
     print("authors: " .. __K2L_Str(lib:authors()))
     print("genres: " .. __K2L_Str(lib:genres()))
@@ -615,12 +588,11 @@ local function main()
     end
     print("search 'the time': " .. __K2L_Str(__K2L_ListWrap(____out_14, ____count_14)))
     print("search 'nothing here': " .. __K2L_Str(lib:search("nothing here")))
-    local actions = __K2L_ReadOnlyListOf(__K2L_Triple.new("978-0", 1, 1), __K2L_Triple.new("978-2", 1, 1), __K2L_Triple.new("978-3", 1, 2), __K2L_Triple.new("978-0", 2, 2), __K2L_Triple.new("978-0", 3, 3), __K2L_Triple.new("978-2", 2, 3), __K2L_Triple.new("978-5", 4, 4), __K2L_Triple.new("978-0", 4, 5), __K2L_Triple.new("978-9", 2, 5), __K2L_Triple.new("978-1", 7, 5))
-    local ____mod_5 = actions.____modCount
+    local actions = __K2L_ListOf(__K2L_Triple.new("978-0", 1, 1), __K2L_Triple.new("978-2", 1, 1), __K2L_Triple.new("978-3", 1, 2), __K2L_Triple.new("978-0", 2, 2), __K2L_Triple.new("978-0", 3, 3), __K2L_Triple.new("978-2", 2, 3), __K2L_Triple.new("978-5", 4, 4), __K2L_Triple.new("978-0", 4, 5), __K2L_Triple.new("978-9", 2, 5), __K2L_Triple.new("978-1", 7, 5))
     for ____i_28 = 1, actions.size do
         local ____item = actions[____i_28]
         local isbn, member, day = ____item.first, ____item.second, ____item.third
-        local ____ok_1, ____result_11 = __K2L_DeepPcall(function()
+        local ____ok_1, ____result_11 = pcall(function()
             local loan = lib:lend(isbn, member, day)
             print("day " .. day .. ": lent " .. isbn .. " to " .. member .. ", due day " .. loan.due)
         end)
@@ -633,11 +605,8 @@ local function main()
                 error(____error_1, 0)
             end
         end
-        if actions.____modCount ~= ____mod_5 and actions:____comodified(____i_28) then
-            break
-        end
     end
-    print("available: " .. __K2L_Str(__K2L_ReadOnlyListOf("978-0", "978-2", "978-5"):associateWith(function(...) return lib:available(...) end)))
+    print("available: " .. __K2L_Str(__K2L_ListOf("978-0", "978-2", "978-5"):associateWith(function(...) return lib:available(...) end)))
     print("fine Ana: " .. lib:giveBack("978-0", 1, 20) .. " cents")
     print("fine Ben: " .. lib:giveBack("978-0", 2, 20) .. " cents")
     local ____receiver_3 = __K2L_RunCatching(function() return lib:giveBack("978-0", 2, 21) end):exceptionOrNull()
@@ -649,8 +618,8 @@ local function main()
     print("lend after return: " .. lib:lend("978-6", 1, 41).due)
     print("recommend for 978-0: " .. __K2L_Str(lib:recommend("978-0")))
     print(toJson(lib:export()))
-    print(toJson(__K2L_ReadOnlyMapOf(__K2L_Pair.new("escaped", "quote \" backslash \\ newline \n tab\t"), __K2L_Pair.new("empty", __K2L_ReadOnlyMapOf()), __K2L_Pair.new("nested", __K2L_ReadOnlyListOf(__K2L_ReadOnlyListOf(1, 2), __K2L_ReadOnlyListOf())))))
+    print(toJson(__K2L_MapOf(__K2L_Pair.new("escaped", "quote \" backslash \\ newline \n tab\t"), __K2L_Pair.new("empty", __K2L_MapOf()), __K2L_Pair.new("nested", __K2L_ListOf(__K2L_ListOf(1, 2), __K2L_ListOf())))))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Genre = Genre, Book = Book, Member = Member, Loan = Loan, LibraryException = LibraryException, Library = Library, toJson = toJson}

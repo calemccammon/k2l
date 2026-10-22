@@ -6,7 +6,9 @@ import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaReceiverValue
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaValueParameterSymbol
+import org.jetbrains.kotlin.name.StandardClassIds
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 
 // The arguments of a call in parameter order, with spreads, defaults and the receiver operand.
 
@@ -47,6 +49,7 @@ private fun FileTransformer.converted(expr: KtExpression, value: LuaExpr): LuaEx
     when (expr) {
         in callState.samConversions -> funInterfaceObject(callState.samConversions.getValue(expr), value)
         in callState.unitResults -> returningUnit(value)
+        in callState.nullArguments -> nullArgument(value)
         else -> value
     }
 }
@@ -76,7 +79,7 @@ internal fun FileTransformer.callArguments(call: KaCallableMemberCall<*, *>): Li
         } else {
             val arg = mapped?.singleOrNull()
             result += arg
-            checkNullableForDefault(p.psi as? KtParameter, arg)
+            noteNullableForDefault(p.psi as? KtParameter, arg)
             if (arg != null) {
                 registerSamConversion(p.returnType, arg)
                 noteUnitResult(p, arg)
@@ -109,17 +112,37 @@ private fun FileTransformer.spreadArguments(operands: List<Operand?>, transforme
         return values.take(firstSpread) + LuaCall(lualibRef("Unpack", "__K2L_Spread"), listOf(LuaString(marks)) + values.drop(firstSpread))
     }
 
-/** nil means "use the default", so a nullable argument for a nullable parameter is ambiguous. */
-private fun FileTransformer.checkNullableForDefault(decl: KtParameter?, arg: KtExpression?): Unit = with(session) {
+/**
+ * nil means "use the default", so a nullable argument for a parameter whose default is not null is passed as a
+ * [nullArgument], which the function turns back into nil (see [defaultArguments]). A function implemented in Lua can't.
+ */
+private fun FileTransformer.noteNullableForDefault(decl: KtParameter?, arg: KtExpression?): Unit = with(session) {
     if (arg == null || decl == null) return
     if (!decl.hasDefaultValue() || !classes.isSource(decl)) return
-    if (arg.expressionType?.isMarkedNullable != true || (decl.defaultValue as? KtConstantExpression)?.text == "null") return
-    ctx.error(arg, "Passing a nullable value for '${decl.name}', which has a default, is ambiguous in Lua (nil selects the default)")
+    if (arg.expressionType?.isMarkedNullable != true || isNullDefault(decl.defaultValue)) return
+    val owner = decl.ownerFunction ?: decl.containingClassOrObject
+    if (owner != null && interop.isExternalDeclaration(owner)) {
+        ctx.error(arg, "Passing a nullable value for '${decl.name}', which has a default, is ambiguous in Lua (nil selects the default)")
+        return
+    }
+    callState.nullArguments += arg
 }
+
+/** Whether a parameter's [default] is `null`, which nil selects either way. */
+internal fun isNullDefault(default: KtExpression?): Boolean =
+    (KtPsiUtil.safeDeparenthesize(default ?: return false) as? KtConstantExpression)?.text == "null"
+
+/** A nullable argument for a parameter whose default is not null: a marker in place of null (see `NullArgument.lua`). */
+internal fun FileTransformer.nullArgument(value: LuaExpr): LuaExpr =
+    if (value == LuaNil) lualibRef(NULL_ARGUMENT_FEATURE, "__K2L_NULL_ARGUMENT") else lualibCall(NULL_ARGUMENT_FEATURE, value)
+
+/** The primitive parameter types of AssertionError's constructors, whose argument is the message. */
+private val VALUE_MESSAGES = setOf("kotlin/Int", "kotlin/Long", "kotlin/Char", "kotlin/Boolean", "kotlin/Float", "kotlin/Double")
 
 /**
  * Arguments of a library exception constructor, as (message, cause), classified by the parameter each one is for (the
- * `enableSuppression`/`writableStackTrace` flags of `RuntimeException(message, cause, false, false)` are dropped).
+ * `enableSuppression`/`writableStackTrace` flags of `RuntimeException(message, cause, false, false)` are dropped). The
+ * detail of `AssertionError(detail)` is its message, as the string of the value, or its cause if it is a Throwable.
  */
 internal fun FileTransformer.throwableArguments(args: List<KtExpression?>, parameters: List<KaValueParameterSymbol>): List<LuaExpr> =
     with(session) {
@@ -128,9 +151,20 @@ internal fun FileTransformer.throwableArguments(args: List<KtExpression?>, param
         var message: LuaExpr = LuaNil
         var cause: LuaExpr = LuaNil
         present.zip(values).forEach { (argument, value) ->
-            when (argument.second.returnType.withoutFlexibility.expandedSymbol?.classId?.asString()) {
-                "kotlin/String" -> message = value
-                "kotlin/Boolean" -> Unit
+            val id = argument.second.returnType.withoutFlexibility.expandedSymbol?.classId?.asString()
+            when {
+                id == "kotlin/String" -> message = value
+
+                // AssertionError(detailMessage: Any?) and AssertionError(Int), (Boolean), ...: String.valueOf(detailMessage),
+                // which is also the cause when it is a Throwable
+                parameters.size == 1 && (id == "kotlin/Any" || id in VALUE_MESSAGES) -> {
+                    val type = argument.first.expressionType
+                    message = str(value, type)
+                    if (id == "kotlin/Any" && type != null && type.isSubtypeOf(StandardClassIds.Throwable)) cause = value
+                }
+
+                id == "kotlin/Boolean" -> Unit
+
                 else -> cause = value
             }
         }

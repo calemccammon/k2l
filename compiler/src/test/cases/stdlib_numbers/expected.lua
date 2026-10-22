@@ -2,8 +2,6 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CharRange = ____lualib.__K2L_CharRange
 local __K2L_ClosedRange = ____lualib.__K2L_ClosedRange
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
-local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
@@ -11,12 +9,12 @@ local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
 local __K2L_IsLowerCase = ____lualib.__K2L_IsLowerCase
 local __K2L_IsUpperCase = ____lualib.__K2L_IsUpperCase
 local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Random = ____lualib.__K2L_Random
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
+local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local function ints()
     print(2147483647)
@@ -24,14 +22,14 @@ local function ints()
     print(__K2L_Num.toRadix(255, 16))
     print(__K2L_Num.toRadix(255, 2))
     print(__K2L_Num.toRadix(-255, 16))
-    print(__K2L_Str(__K2L_Num.toRadixUnsigned(10, 2)))
-    print(__K2L_Num.toByte(10))
-    print(__K2L_Num.toByte(300))
-    print(__K2L_Num.toShort(70000))
-    print(__K2L_DoubleToInt(3.9))
-    print(__K2L_DoubleToInt(-3.9))
-    print(__K2L_DoubleToInt(1.0E10))
-    print(__K2L_ToInt32(5))
+    print(__K2L_Num.toRadix(10, 2))
+    print(10)
+    print(300)
+    print(70000)
+    print(__K2L_Truncate(3.9))
+    print(__K2L_Truncate(-3.9))
+    print(__K2L_Truncate(1.0E10))
+    print(5)
     print(2147483647 + 0)
     print(12345 * 1000)
     print(__K2L_Compare(7, 9))
@@ -49,8 +47,8 @@ local function ints()
     print((-16 & 0xFFFFFFFF) >> 28)
     print(__K2L_Num.signInt(7))
     print(math.abs(-7))
-    print(__K2L_Str((10 + 0.0) / 4))
-    print(math.fmod(17, 5))
+    print((10 + 0.0) / 4)
+    print(17 % 5)
     print(2 * 3 + 4)
     print(2147483647 + 1)
 end
@@ -82,9 +80,7 @@ end
 
 local ____lambda_1 = function(it) return it * it end
 local ____lambda_2 = function(a, b) return a * b end
-local ____lambda_3 = function(it)
-    return (it >= 0 and it % 2 or 0 - -it % 2) == 1
-end
+local ____lambda_3 = function(it) return it % 2 == 1 end
 local ____lambda_4 = function(it) return it * 2 end
 local ____lambda_5 = function(a)
     return __K2L_IntRange.new(1, a):map(function(it) return a * 10 + it end)
@@ -105,7 +101,7 @@ local function ranges()
     print(3 >= 1 and 3 <= 5)
     print(not (7 >= 1 and 7 <= 5))
     print(__K2L_IntRange.new(1, 5):contains(5))
-    print(__K2L_Str(__K2L_IntRange.new(1, 5):average()))
+    print(__K2L_IntRange.new(1, 5):average())
     print(__K2L_IntRange.new(1, 5):fold(1, ____lambda_2))
     local ____list = __K2L_IntRange.new(1, 3):toList()
     local ____sum = 0
@@ -120,8 +116,8 @@ local function ranges()
     print(__K2L_IntRange.new(1, 5):max())
     print(__K2L_IntRange.new(1, 5):isEmpty())
     print(__K2L_IntRange.new(1, 0):isEmpty())
-    print(__K2L_ClosedRange.new(1.0, 2.0, __K2L_DoubleToString):contains(1.5))
-    print(__K2L_Str(__K2L_ClosedRange.new(1.0, 2.0, __K2L_DoubleToString).last))
+    print(__K2L_ClosedRange.new(1.0, 2.0):contains(1.5))
+    print(__K2L_ClosedRange.new(1.0, 2.0).last)
     print(__K2L_Str(__K2L_IntRange.new(1, 5)))
     print(__K2L_Str(__K2L_IntRange.new(1, 5):withStep(2)))
     print(__K2L_Str(__K2L_IntRange.new(1, 3):toList()))
@@ -137,13 +133,13 @@ local function longs()
     local big = 1234567890123
     print(big)
     print(big + 1)
-    print(big >= 0 and big // 1000 or (big + 999) // 1000)
-    print(big >= 0 and big % 1000 or (big % 1000 - 1000) % (-1000))
+    print(big // 1000)
+    print(big % 1000)
     print(#tostring(big))
     print(big > 5)
     print(__K2L_StringToInt("123456789012", nil, true))
     print(math.max(big, 5))
-    print(__K2L_Str(big + 0.0))
+    print(big + 0.0)
     print(-big)
 end
 
@@ -154,5 +150,5 @@ local function main()
     longs()
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {ints = ints, chars = chars, ranges = ranges, longs = longs}

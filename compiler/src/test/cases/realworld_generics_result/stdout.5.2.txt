@@ -1,0 +1,22 @@
+== either
+chain=Right(value=30) fold=value 30
+broken=Left(error=DIVISION BY ZERO) orElse=-1
+all=Right(value=[5, 3, 2]) some=Left(error=division by zero)
+caught=Left(error=NumberFormatException) fine=Right(value=24)
+rights=[1, two, 3.5]
+lefts=x
+== validated
+valid User(name=Ada, age=36, email=ada@example.org)
+invalid [name: required, age: not a number: abc, email: invalid: nope]
+invalid [name: too long (21), age: out of range: 200]
+invalid [name: required, email: invalid: @x]
+emails=[ada@example.org]
+either=Left(error={NAME=[required], AGE=[not a number: abc], EMAIL=[invalid: nope]})
+== result
+50% -> ok(0.500)
+ 12.5  -> ok(0.125)
+150 -> err(IllegalArgumentException: percent out of range: 150)
+abc -> err(NumberFormatException: For input string: "abc")
+total=0.6
+recovered=1 mapped=too high: 0.4 isFailure=true
+first failure: NumberFormatException

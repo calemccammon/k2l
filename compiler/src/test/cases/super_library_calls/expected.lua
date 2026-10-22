@@ -1,15 +1,13 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AnyToString = ____lualib.__K2L_AnyToString
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IdentityHash = ____lualib.__K2L_IdentityHash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -190,7 +188,7 @@ local function main()
     print(m1:equals(m1))
     print(m1:equals(m2))
     print(m1:equals(m3))
-    print(__K2L_ReadOnlySetOf(m1, m2, m3).size)
+    print(__K2L_SetOf(m1, m2, m3).size)
     local h = Hashed.new(1)
     print(__K2L_Str(h))
     print(h:hashCode() == h:hashCode())
@@ -198,7 +196,7 @@ local function main()
     print(__K2L_Str(e))
     print(__K2L_Str(e.message))
     print(e.code)
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         error(MyException.new(1))
     end)
     if not ____ok then
@@ -221,5 +219,5 @@ local function main()
     print(__K2L_Str(Singleton))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {shape = shape, Plain = Plain, Derived = Derived, Identity = Identity, Mixed = Mixed, Hashed = Hashed, MyException = MyException, Wrapping = Wrapping, Base = Base, Leaf = Leaf, Color = Color, Singleton = Singleton}

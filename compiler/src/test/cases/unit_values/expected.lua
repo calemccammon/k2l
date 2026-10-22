@@ -1,25 +1,20 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Continuation = ____lualib.__K2L_Continuation
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_KClassNamed = ____lualib.__K2L_KClassNamed
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Unit = ____lualib.__K2L_Unit
@@ -37,7 +32,7 @@ local function id(x)
 end
 
 local function twice(f)
-    return __K2L_ReadOnlyListOf(f(), f())
+    return __K2L_ListOf(f(), f())
 end
 
 local function describe(x)
@@ -71,7 +66,7 @@ local function returnsUnitObject()
 end
 
 local function expanded(limit)
-    local ____list = __K2L_ReadOnlyListOf(1, 2)
+    local ____list = __K2L_ListOf(1, 2)
     local ____result = __K2L_ListOf()
     for _, it in ipairs(____list) do
         if it > limit then
@@ -107,14 +102,12 @@ local function maybe(c)
 end
 
 local Holder = __K2L_Class("Holder")
-__K2L_ClassInfo(Holder, "Holder", "Holder", "class")
 
 function Holder:getP()
     u()
 end
 
 local Box = __K2L_Class("Box")
-__K2L_ClassInfo(Box, "Box", "Box", "class")
 
 function Box:____init(value)
     self.value = value
@@ -145,7 +138,7 @@ local function main()
     print("kotlin.Unit")
     local ____arg = __K2L_Unit
     u()
-    print(__K2L_Str(__K2L_ReadOnlyListOf(____arg, __K2L_Unit, 1)))
+    print(__K2L_Str(__K2L_ListOf(____arg, __K2L_Unit, 1)))
     print(__K2L_Str(__K2L_RunCatching(function()
         u()
         return __K2L_Unit
@@ -172,8 +165,8 @@ local function main()
     print(__K2L_Hash(__K2L_Unit) == __K2L_Hash(a))
     u()
     print(__K2L_Str(Box.new(__K2L_Unit)))
-    print(__K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new(1, __K2L_Unit))))
-    local ____list_1 = __K2L_ReadOnlyListOf(1, 2)
+    print(__K2L_Str(__K2L_MapOf(__K2L_Pair.new(1, __K2L_Unit))))
+    local ____list_1 = __K2L_ListOf(1, 2)
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list_1:____array()
@@ -210,8 +203,8 @@ local function main()
     local r = __K2L_Result.success(__K2L_Unit)
     print(__K2L_Str(r))
     print(__K2L_Str(r:getOrNull()))
-    print(__K2L_SingletonListOf(__K2L_Unit):contains(__K2L_Unit))
-    print(__K2L_ReadOnlySetOf(__K2L_Unit, __K2L_Unit).size)
+    print(__K2L_ListOf(__K2L_Unit):contains(__K2L_Unit))
+    print(__K2L_SetOf(__K2L_Unit, __K2L_Unit).size)
     local ____lazyUnit_delegate = __K2L_Lazy(function()
         u()
         return __K2L_Unit
@@ -219,7 +212,7 @@ local function main()
     print(__K2L_Str(____lazyUnit_delegate:getValue()))
     u()
     print("kotlin.Unit" .. "!")
-    print(__K2L_Str(__K2L_KClassNamed("kotlin.Unit").simpleName))
+    print(__K2L_Str("Unit"))
     local block = function()
         u()
     end
@@ -245,7 +238,7 @@ local function main()
     local g = function(it)
         u()
     end
-    print(__K2L_Str(__K2L_SingletonListOf(1):map(function(...)
+    print(__K2L_Str(__K2L_ListOf(1):map(function(...)
         g(...)
         return __K2L_Unit
     end)))
@@ -265,7 +258,7 @@ local function main()
         u()
         return __K2L_Unit
     end):toList()))
-    local ____list_2 = __K2L_SingletonListOf(1)
+    local ____list_2 = __K2L_ListOf(1)
     local ____result_5 = __K2L_Map.new()
     local ____items_1, ____n_1 = ____list_2:____array()
     for ____i_1 = 1, ____n_1 do
@@ -282,7 +275,6 @@ local function main()
 end
 
 local Hooks = __K2L_Class("Hooks")
-__K2L_ClassInfo(Hooks, "Hooks", "Hooks", "class")
 
 function Hooks:____init(onStart)
     self.onStart = onStart
@@ -314,7 +306,7 @@ function convertedReferences()
         return __K2L_Unit
     end
     print(__K2L_Str(widened()))
-    local ____list_3 = __K2L_ReadOnlyListOf(function(...)
+    local ____list_3 = __K2L_ListOf(function(...)
         u(...)
         return __K2L_Unit
     end, ____lambda_2)
@@ -357,5 +349,5 @@ ____exports.Box = Box
 ____exports.Hooks = Hooks
 ____exports.pick = pick
 ____exports.convertedReferences = convertedReferences
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return ____exports

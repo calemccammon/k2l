@@ -18,20 +18,20 @@ You carry: potion, sword
 > e
 The rat king won't let you pass.
 > attack
+You hit the rat king with sword for 4.
+The rat king bites you for 4 (hp 16).
+> attack
 You hit the rat king with sword for 3.
-The rat king bites you for 2 (hp 18).
+The rat king bites you for 4 (hp 12).
 > attack
 You hit the rat king with sword for 6.
-The rat king bites you for 4 (hp 14).
-> attack
-You hit the rat king with sword for 4.
 The rat king dies!
 > attack
 There is nothing to attack.
 > attack
 There is nothing to attack.
 > drink potion
-You feel better (14 -> 20).
+You feel better (12 -> 20).
 > attack
 There is nothing to attack.
 > take the key

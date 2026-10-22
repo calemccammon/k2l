@@ -24,5 +24,5 @@ walled-in: null
   G: area=2 perimeter=6 price=12
 total price: 406
 areas by plant: {A=[6], B=[6], C=[5], D=[7], E=[5], F=[4], G=[2]}
-guard visits 41 cells, loop=false
-obstacles creating loops (near start): 5
+guard visits 33 cells, loop=false
+obstacles creating loops (near start): 2

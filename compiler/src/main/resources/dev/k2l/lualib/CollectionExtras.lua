@@ -211,14 +211,6 @@ function X.filterCharsTo(chars, destination, predicate)
     return destination
 end
 
--- hasSurrogatePairAt(index) with --strings utf16 (`U` is __K2L_Utf16); a byte string has no surrogates
-function X.hasSurrogatePairAt(s, i, U)
-    if U == nil or i < 0 or i > U.len(s) - 2 then
-        return false
-    end
-    return U.isHighSurrogate(U.charAt(s, i)) and U.isLowSurrogate(U.charAt(s, i + 1))
-end
-
 -- replaceIndent(newIndent): trimIndent() with each line indented by newIndent
 function X.replaceIndent(s, indent)
     local trimmed = Text.trimIndent(s)

@@ -46,7 +46,7 @@ fun main() {
     val any: Any = p
     println(shape(any.toString()))
     println(p.toString() == p.toString())
-    println(p.toString() == "app.P@" + Integer.toHexString(p.hashCode()))
+    println(p.toString() == "app.P@" + p.hashCode().toString(16))
     println(p.hashCode() == p.hashCode())
     println(P(1).toString() != p.toString())
     // toString uses an overridden hashCode

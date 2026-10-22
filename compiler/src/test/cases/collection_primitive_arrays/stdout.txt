@@ -1,14 +1,13 @@
-CharArray abc 3
+array abc 3
 x, y
-IntArray 6
-LongArray 3
-DoubleArray 3.5
-FloatArray 3.5
-BooleanArray [true, false]
-ByteArray [1, 2]
-ShortArray [1, 2]
+array 6
+array 3
+array 3.5
+array 3.5
+array [true, false]
+array [1, 2]
+array [1, 2]
 [a, b, c]
-[z, y]
 [3, 4]
 kj 4.0
 bc
@@ -17,7 +16,7 @@ bc
 [1.25]
 0
 qr
-IntArray [1, 2]
+array [1, 2]
 [1.5, 2.5]
 [true]
 [7]
@@ -40,3 +39,4 @@ ol
 a
 2
 abc
+[1, 2] [x] false true

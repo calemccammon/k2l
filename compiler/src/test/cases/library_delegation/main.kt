@@ -52,8 +52,7 @@ fun comparators() {
     println(words.sortedWith(byLength.reversed()))
     val natural = Plain<String>(naturalOrder())
     println("${words.sortedWith(natural)} ${natural.compare("a", "b")} ${words.maxWith(natural)} ${(natural as Any) is Comparator<*>}")
-    val tree = java.util.TreeSet(Plain<Int>(reverseOrder()))
-    tree.addAll(listOf(3, 1, 2))
+    val tree = sortedSetOf(Plain<Int>(reverseOrder()), 3, 1, 2)
     println(tree)
 }
 

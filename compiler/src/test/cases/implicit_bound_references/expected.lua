@@ -1,11 +1,9 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Filter = __K2L_Class("Filter")
@@ -29,7 +27,7 @@ end
 
 function Filter:deferred()
     return function()
-        return __K2L_ReadOnlyListOf(1, 5, 9):filter(function(...) return self:small(...) end)
+        return __K2L_ListOf(1, 5, 9):filter(function(...) return self:small(...) end)
     end
 end
 
@@ -72,13 +70,9 @@ function Registry:register(name)
 end
 
 function Registry:registerAll(xs)
-    local ____mod = xs.____modCount
     for ____i = 1, xs.size do
         local it = xs[____i];
         (function(...) return self:register(...) end)(it)
-        if xs.____modCount ~= ____mod and xs:____comodified(____i) then
-            break
-        end
     end
     return self.names
 end
@@ -105,15 +99,15 @@ end
 
 local function main()
     local f = Filter.new(6)
-    print(__K2L_Str(f:apply(__K2L_ReadOnlyListOf(3, 8, 5))))
+    print(__K2L_Str(f:apply(__K2L_ListOf(3, 8, 5))))
     print(__K2L_Str(f:deferred()()))
     print(f:countRef():get())
-    print(__K2L_Str(Filter.Report.new(f):lines(__K2L_ReadOnlyListOf(1, 2))))
-    print(__K2L_Str(Loud.new(2):shout(__K2L_SingletonListOf(1))))
-    print(__K2L_Str(Loud.new(4):apply(__K2L_ReadOnlyListOf(1, 7))))
-    print(__K2L_Str(Registry:registerAll(__K2L_ReadOnlyListOf("a", "b"))))
+    print(__K2L_Str(Filter.Report.new(f):lines(__K2L_ListOf(1, 2))))
+    print(__K2L_Str(Loud.new(2):shout(__K2L_ListOf(1))))
+    print(__K2L_Str(Loud.new(4):apply(__K2L_ListOf(1, 7))))
+    print(__K2L_Str(Registry:registerAll(__K2L_ListOf("a", "b"))))
     print(__K2L_Str(fib(8)))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Filter = Filter, Loud = Loud, Registry = Registry, fib = fib}

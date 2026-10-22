@@ -5,7 +5,7 @@ fib 9 = 34
 [fib] ok, 291 steps
 a: 3 b: 1
 11 12
-len: 11 3.5 2 yes
+len: 12 3.5 2 yes
 mix 1truenil
 [closures] ok, 32 steps
 1 2 F 4 B F 7 8 F B 11 F 13 14 FB 

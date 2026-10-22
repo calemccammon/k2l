@@ -132,7 +132,7 @@ class SourceMapTest {
     }
 
     @Test
-    fun `an uncaught Lua error through the try driver shows the traceback of its site`() {
+    fun `an uncaught Lua error in a program with try blocks shows the traceback of its site`() {
         val interpreters = installedInterpreters
         assumeTrue(interpreters.isNotEmpty(), "no Lua interpreter found")
         val source = """
@@ -159,10 +159,7 @@ class SourceMapTest {
             assertEquals("", result.diagnostics.joinToString("\n"))
             result.writeTo(out)
             val code = Files.readAllLines(out.resolve("main.lua"))
-            if (target != LuaTarget.Lua51 && target != LuaTarget.LuaJIT) {
-                assertTrue(code.any { "__K2L_DeepMain" in it }, "$lua: main does not run in the driver")
-            }
-            // the frame of process(), which called fail(): the driver re-raises the error, but with the failing stack
+            // the frame of process(), which called fail()
             val processLine = code.indexOfFirst { it.trim() == "return fail(n) + 1" } + 1
             val (status, output) = runLua(lua, out)
             assertEquals(1, status, output)

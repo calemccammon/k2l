@@ -1,20 +1,17 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
-local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_ListBase = ____lualib.__K2L_ListBase
+local __K2L_ListIterator = ____lualib.__K2L_ListIterator
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_Map = ____lualib.__K2L_Map
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyOverride = ____lualib.__K2L_PropertyOverride
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -49,7 +46,7 @@ end
 local InMemoryRepository = __K2L_Class("generics.delegation.InMemoryRepository", nil, Repository)
 
 function InMemoryRepository:____init()
-    self.store = __K2L_SortedMapOf()
+    self.store = __K2L_SortedMapOf(nil)
     self.reads = 0
 end
 
@@ -83,7 +80,7 @@ local CachingRepository = __K2L_Class("generics.delegation.CachingRepository", n
 function CachingRepository:____init(inner)
     self.inner = inner
     self.____delegate_Repository = inner
-    self.cache = __K2L_HashMap.new()
+    self.cache = __K2L_Map.new()
     self.hits = 0
 end
 
@@ -255,11 +252,11 @@ function Labeled:removeAt(index)
 end
 
 function Labeled:listIterator()
-    return __K2L_JdkCollections.listIterator(self.____delegate_MutableList)
+    return __K2L_ListIterator(self.____delegate_MutableList)
 end
 
 function Labeled:listIteratorAt(index)
-    return __K2L_JdkCollections.listIterator(self.____delegate_MutableList, index)
+    return __K2L_ListIterator(self.____delegate_MutableList, index)
 end
 
 function Labeled:subList(fromIndex, toIndex)
@@ -337,7 +334,7 @@ function Product.new(id, price, stock)
 end
 
 function Product:toString()
-    return "Product(id=" .. self.id .. ", price=" .. __K2L_Str(self.price) .. ", stock=" .. self.stock .. ")"
+    return "Product(id=" .. self.id .. ", price=" .. self.price .. ", stock=" .. self.stock .. ")"
 end
 
 function Product:hashCode()
@@ -345,7 +342,7 @@ function Product:hashCode()
 end
 
 function Product:equals(other)
-    return getmetatable(other) == Product and self.id == other.id and __K2L_DoubleEquals(self.price, other.price) and self.stock == other.stock
+    return getmetatable(other) == Product and self.id == other.id and self.price == other.price and self.stock == other.stock
 end
 
 local ____lambda_1 = function(it) return it.id end
@@ -357,7 +354,7 @@ local function getMiddle(____this_1)
     if ____this_1:isEmpty() then
         return nil
     else
-        return ____this_1:get(____this_1.size >= 0 and ____this_1.size // 2 or 0 - -____this_1.size // 2)
+        return ____this_1:get(____this_1.size // 2)
     end
 end
 
@@ -391,13 +388,13 @@ local function main()
     local log = __K2L_ListOf()
     local base = InMemoryRepository.new()
     local users = AuditingRepository.new(CachingRepository.new(base), log)
-    users:saveAll(__K2L_ReadOnlyListOf(User.new(3, "carol", "admin"), User.new(1, "alice", "dev"), User.new(2, "bob", "dev")))
+    users:saveAll(__K2L_ListOf(User.new(3, "carol", "admin"), User.new(1, "alice", "dev"), User.new(2, "bob", "dev")))
     users:save(User.new(2, "bob", "lead"))
     print("count=" .. users:count() .. " ids=" .. __K2L_Str(getIds(users)) .. " exists(4)=" .. tostring(users:exists(4)))
     print("devs=" .. __K2L_Str(users:findWhere(____lambda_3):map(____lambda_4)))
     print("update=" .. __K2L_Str(update(users, 1, ____lambda_5)) .. " missing=" .. __K2L_Str(update(users, 9, ____lambda_6)))
     print("require(3)=" .. users:require(3).name .. " again=" .. users:require(3).role)
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         users:require(42)
     end)
     if not ____ok then
@@ -417,7 +414,7 @@ local function main()
     end
     print("== products")
     local products = CachingRepository.new(InMemoryRepository.new())
-    products:saveAll(__K2L_ReadOnlyListOf(Product.new("kb", 49.5, 10), Product.new("mouse", 19.99, 0), Product.new("cable", 4.25, 120)))
+    products:saveAll(__K2L_ListOf(Product.new("kb", 49.5, 10), Product.new("mouse", 19.99, 0), Product.new("cable", 4.25, 120)))
     for it = 0, 2 do
         products:findById("kb")
     end
@@ -438,17 +435,17 @@ local function main()
     end
     print("view=" .. ____arg_2 .. " kb=" .. __K2L_Str(____result_1))
     local stock = products:findAll():associate(____lambda_8)
-    print("most stocked=" .. __K2L_Str(keyOfMax(stock)) .. " empty=" .. __K2L_Str(keyOfMax(__K2L_ReadOnlyMapOf())))
+    print("most stocked=" .. __K2L_Str(keyOfMax(stock)) .. " empty=" .. __K2L_Str(keyOfMax(__K2L_MapOf())))
     print("in stock by price band=" .. __K2L_Str(countBy(products:findWhere(____lambda_9), ____lambda_10)))
     print("== delegated list")
     local tags = Labeled.new(__K2L_ListOf("a"), "tags")
     tags:add("b")
     tags:add("c")
-    tags:addAll(__K2L_ReadOnlyListOf("d", "e"))
+    tags:addAll(__K2L_ListOf("d", "e"))
     tags:removeAt(0)
     print(__K2L_Str(tags) .. " size=" .. tags.size .. " middle=" .. __K2L_Str(getMiddle(tags)) .. " contains(c)=" .. tostring(tags:contains("c")) .. " sorted=" .. __K2L_Str(tags:sortedDescending()))
-    print("empty middle=" .. __K2L_Str(getMiddle(__K2L_ReadOnlyListOf())))
+    print("empty middle=" .. __K2L_Str(getMiddle(__K2L_ListOf())))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Identified = Identified, Repository = Repository, InMemoryRepository = InMemoryRepository, CachingRepository = CachingRepository, AuditingRepository = AuditingRepository, ReadOnly = ReadOnly, readOnly = readOnly, Labeled = Labeled, User = User, Product = Product, getIds = getIds, getMiddle = getMiddle, update = update, keyOfMax = keyOfMax, countBy = countBy}

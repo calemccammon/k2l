@@ -33,19 +33,17 @@ return {Logged = Logged, ____shared_delegate = ____shared_delegate, ____sharedLo
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_KProperty = ____lualib.__K2L_KProperty
 local __K2L_Lazy = ____lualib.__K2L_Lazy
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNullProperty = ____lualib.__K2L_NotNullProperty
 local __K2L_ObservableProperty = ____lualib.__K2L_ObservableProperty
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_VetoableProperty = ____lualib.__K2L_VetoableProperty
@@ -229,7 +227,7 @@ local Registry = __K2L_Class("app.Registry")
 function Registry:____init()
     self.____items_delegate = __K2L_Lazy(function()
         print("loading registry")
-        return __K2L_ReadOnlyListOf("a", "b")
+        return __K2L_ListOf("a", "b")
     end)
     self.____hits_delegate = __K2L_ObservableProperty(0, function(_, _, new)
         print("hits=" .. new)
@@ -313,7 +311,7 @@ local function main()
     print(s:getPositive())
     s:setPositive(s:getPositive() + 10)
     print(s:getPositive())
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         print(s:getName())
     end)
     if not ____ok then
@@ -350,7 +348,7 @@ local function main()
     config:setPort(9090)
     config:setHost("example.org")
     print(config:getHost() .. ":" .. config:getPort())
-    local user = User.new(__K2L_ReadOnlyMapOf(__K2L_Pair.new("name", "Grace"), __K2L_Pair.new("age", 36)))
+    local user = User.new(__K2L_MapOf(__K2L_Pair.new("name", "Grace"), __K2L_Pair.new("age", 36)))
     print(user:getName() .. " is " .. user:getAge())
     local backing = __K2L_MapOf(__K2L_Pair.new("title", "Dr"))
     local ____title_delegate = backing
@@ -378,7 +376,7 @@ local function main()
         end
         return "ok after " .. attempts
     end)
-    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_1 = pcall(function()
         print(____flaky_delegate:getValue())
     end)
     if not ____ok_1 then
@@ -394,5 +392,5 @@ local function main()
     print(____flaky_delegate:getValue())
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Tracking = Tracking, Uppercase = Uppercase, Clamped = Clamped, ____topLazy_delegate = ____topLazy_delegate, ____topObservable_delegate = ____topObservable_delegate, Settings = Settings, Config = Config, User = User, Registry = Registry, WithCompanion = WithCompanion}

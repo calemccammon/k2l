@@ -1,0 +1,74 @@
+magic: true
+dot: [abc, a.c]
+class: [aabbcc, cab]
+negated class: [h, ll, w, rld]
+class members: [1,234.5, -7, +, -, *, /]
+class ] and ^: []^], ^]
+\d \D: 123 ab
+\w \W: [snake_case, x2, , , !]
+\s \S: [one, two, three, a, bc]
+\w in a class: [well-known, self_made]
+^: true false [a]
+$: true false true
+?: [color, colour]
+*: [a, ab, abbb]
++: [1, 22, 333]
+lazy *?: [<a>, <bb>] <a><bb>
+lazy +?: a <><a>
+{n}: 2024-03-15
+{n,m}: [xx, xxx, xxx]
+{n,}: [aa, aaaa]
+groups: [me@home.com, me, home]
+nested groups: [hello!, hello, h, ello]
+back-reference: [oo, kk, ee, aa]
+\b before: [0, 11]
+\b after: [singing, ring]
+\b both: [12, 78]
+ignore case: [Hello ABC, hello cab]
+ignore case class: [42, !]
+(?i): [Error, ERROR, error, eRRor]
+LITERAL: true false
+DOT_MATCHES_ALL: true false
+escapes: true
+\Q...\E: true
+non-ASCII: 3..7 2
+options set: true
+const val: [me@home.com, me, home]
+const ignore case: ABCa
+fromLiteral at run time: 2..3 true
+escape at run time: \Q*\E
+value: 10-20
+range: 6..10
+groupValues: [10-20, 10, 20]
+destructured: 10 20
+groups: 10 3
+next: 3-4 null
+matchEntire: [key=value, key, value] null
+matches: true false true
+containsMatchIn: true false
+find from: 3..3
+findAll from: [1, 2, 3, 2, 3]
+matchAt: 12 false false
+replace: home:me work:you
+replace %: 5% and 6%
+replace escapes: cost $5
+replace transform: a2b44
+replace empty matches: -a-b-c- -a-b-c-
+replaceFirst: f0o boo
+split: [a, b, c, , d, a, b2c]
+splitToSequence: [x, y, z]
+escape: \Q1+1\E true
+escapeReplacement: a$1\b
+pattern: a+b a+b
+  replacement '$': IllegalArgumentException
+  replacement '\': IllegalArgumentException
+  replacement '$3': IndexOutOfBoundsException
+String.split: [a, b, c]
+String.split limit: [a, b c d]
+String.replace: 15/03/2024
+String.replace transform: A-B
+String.replaceFirst: baa
+String.matches: true false
+String.contains: true false
+toRegex: 2 true
+plain: [a, b, c, a%b, x, y, a$1b]

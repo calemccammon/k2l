@@ -1,13 +1,10 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
-local __K2L_FdLibm = ____lualib.__K2L_FdLibm
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 
 local Vec = __K2L_Class("Vec")
 
@@ -41,7 +38,7 @@ function Vec:dot(o)
 end
 
 function Vec:getLength()
-    return __K2L_FdLibm.hypot(self.x, self.y)
+    return __K2L_Num.hypot(self.x, self.y)
 end
 
 function Vec:normalized()
@@ -52,7 +49,7 @@ function Vec:normalized()
 end
 
 function Vec:toString()
-    return "(" .. __K2L_StringFormat("%.4f", self.x) .. ", " .. __K2L_StringFormat("%.4f", self.y) .. ")"
+    return "(" .. string.format("%.4f", self.x) .. ", " .. string.format("%.4f", self.y) .. ")"
 end
 
 function Vec:hashCode()
@@ -60,7 +57,7 @@ function Vec:hashCode()
 end
 
 function Vec:equals(other)
-    return getmetatable(other) == Vec and __K2L_DoubleEquals(self.x, other.x) and __K2L_DoubleEquals(self.y, other.y)
+    return getmetatable(other) == Vec and self.x == other.x and self.y == other.y
 end
 
 function Vec:____initCompanion()
@@ -139,7 +136,6 @@ end
 
 function World:step(dt)
     local ____list_2 = self.balls
-    local ____mod = ____list_2.____modCount
     for ____i_2 = 1, ____list_2.size do
         local b = ____list_2[____i_2]
         local v = b.vel:plus(Vec.new(0.0, self.gravity * dt))
@@ -148,18 +144,11 @@ function World:step(dt)
         end
         b.vel = v
         b.pos = b.pos:plus(v:times(dt))
-        if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
-            break
-        end
     end
     local ____list_3 = self.balls
-    local ____mod_1 = ____list_3.____modCount
     for ____i_3 = 1, ____list_3.size do
         local b = ____list_3[____i_3]
         self:bounceWalls(b)
-        if ____list_3.____modCount ~= ____mod_1 and ____list_3:____comodified(____i_3) then
-            break
-        end
     end
     for i = 0, self.balls.size - 1 do
         for j = i + 1, self.balls.size - 1 do
@@ -221,7 +210,7 @@ end
 function World:report(label)
     local ke = self:kinetic()
     local pe = self:potential()
-    print(label .. " t=" .. __K2L_StringFormat("%.3f", self.time) .. " KE=" .. __K2L_StringFormat("%.4f", ke) .. " PE=" .. __K2L_StringFormat("%.4f", pe) .. " E=" .. __K2L_StringFormat("%.4f", ke + pe) .. " p=" .. __K2L_Str(self:momentum()))
+    print(label .. " t=" .. string.format("%.3f", self.time) .. " KE=" .. string.format("%.4f", ke) .. " PE=" .. string.format("%.4f", pe) .. " E=" .. string.format("%.4f", ke + pe) .. " p=" .. __K2L_Str(self:momentum()))
 end
 
 local function projectile()
@@ -235,11 +224,11 @@ local function projectile()
         vel = vel:plus(Vec.new(0.0, -9.81 * dt))
         pos = pos:plus(vel:times(dt))
         t = t + dt
-        apex = __K2L_Num.maxD(apex, pos.y)
+        apex = math.max(apex, pos.y)
     end
-    print("flight " .. __K2L_StringFormat("%.2f", t) .. "s range " .. __K2L_StringFormat("%.4f", pos.x) .. " apex " .. __K2L_StringFormat("%.4f", apex))
+    print("flight " .. string.format("%.2f", t) .. "s range " .. string.format("%.4f", pos.x) .. " apex " .. string.format("%.4f", apex))
     local analyticRange = 2 * 20.0 * 20.0 / 9.81
-    print("analytic range " .. __K2L_StringFormat("%.4f", analyticRange) .. " error " .. __K2L_StringFormat("%.4f", math.abs(pos.x - analyticRange)))
+    print("analytic range " .. string.format("%.4f", analyticRange) .. " error " .. string.format("%.4f", math.abs(pos.x - analyticRange)))
 end
 
 local function bouncing()
@@ -252,23 +241,19 @@ local function bouncing()
     world:report("start")
     for frame = 1, 600 do
         world:step(1.0 / 120)
-        if (frame >= 0 and frame % 150 or 0 - -frame % 150) == 0 then
+        if frame % 150 == 0 then
             world:report("frame " .. frame)
         end
     end
     local ____list_4 = world.balls
-    local ____mod_2 = ____list_4.____modCount
     for ____i_4 = 1, ____list_4.size do
         local b = ____list_4[____i_4]
-        print("ball " .. b.id .. " pos=" .. __K2L_Str(b.pos) .. " vel=" .. __K2L_Str(b.vel) .. " speed=" .. __K2L_StringFormat("%.4f", b.vel:getLength()))
-        if ____list_4.____modCount ~= ____mod_2 and ____list_4:____comodified(____i_4) then
-            break
-        end
+        print("ball " .. b.id .. " pos=" .. __K2L_Str(b.pos) .. " vel=" .. __K2L_Str(b.vel) .. " speed=" .. string.format("%.4f", b.vel:getLength()))
     end
     print("wall hits " .. world.wallHits .. ", ball hits " .. world.ballHits)
 end
 
-local ____lambda_2 = function(it) return __K2L_StringFormat("%.3f", it.vel.x) end
+local ____lambda_2 = function(it) return string.format("%.3f", it.vel.x) end
 local function newtonsCradle()
     print("-- cradle")
     local world = World.new(20.0, 2.0, 0.0, 1.0)
@@ -284,7 +269,7 @@ local function newtonsCradle()
         world:step(0.005)
     end
     print(world.balls:joinToString(nil, nil, nil, nil, nil, ____lambda_2))
-    print("energy kept: " .. __K2L_StringFormat("%.6f", world:kinetic() / before))
+    print("energy kept: " .. string.format("%.6f", world:kinetic() / before))
     print("momentum: " .. __K2L_Str(world:momentum()))
 end
 
@@ -306,14 +291,14 @@ local function orbit()
             local acc = pos:normalized():unaryMinus():times(gm / (r * r))
             vel = vel:plus(acc:times(dt))
             pos = pos:plus(vel:times(dt))
-            minR = __K2L_Num.minD(minR, pos:getLength())
-            maxR = __K2L_Num.maxD(maxR, pos:getLength())
+            minR = math.min(minR, pos:getLength())
+            maxR = math.max(maxR, pos:getLength())
         end
     end
     print("after one period: " .. __K2L_Str(pos))
-    print("radius " .. __K2L_StringFormat("%.6f", minR) .. ".." .. __K2L_StringFormat("%.6f", maxR))
-    print("energy drift " .. __K2L_StringFormat("%.3e", energy() - e0))
-    print("unit circle " .. __K2L_Str(math.sqrt(0.5) * math.sqrt(2.0)) .. " " .. __K2L_Str(Vec.new(3.0, 4.0):normalized()))
+    print("radius " .. string.format("%.6f", minR) .. ".." .. string.format("%.6f", maxR))
+    print("energy drift " .. string.format("%.3e", energy() - e0))
+    print("unit circle " .. math.sqrt(0.5) * math.sqrt(2.0) .. " " .. __K2L_Str(Vec.new(3.0, 4.0):normalized()))
 end
 
 local function main()
@@ -323,5 +308,5 @@ local function main()
     orbit()
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Vec = Vec, Ball = Ball, World = World, projectile = projectile, bouncing = bouncing, newtonsCradle = newtonsCradle, orbit = orbit}

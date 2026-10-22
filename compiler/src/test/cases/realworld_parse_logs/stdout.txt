@@ -36,10 +36,10 @@ status classes: {200=4, 300=1, 500=1}
 [one, two, four]
 ranges 1+2+3+4+5, 10+11+12 and 7
 10/10/2024 true
-2..6 flag '' 7..6
+2..6 flag ''
 0: 1:xx 3: 4:
 7
-PatternSyntaxException
-bad pattern: true
-bad pattern: true
-compiled ok+
+literal (unclosed: true
+literal [a-: true
+literal a|b: true
+literal ok+: false

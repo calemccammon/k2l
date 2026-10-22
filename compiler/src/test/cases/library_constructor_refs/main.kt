@@ -1,5 +1,4 @@
 // References to library constructors are functions making the same call as the constructor would.
-import java.util.TreeMap
 import kotlin.reflect.KFunction1
 
 fun <T> build(n: Int, make: () -> T): List<T> = List(n) { make() }
@@ -22,8 +21,6 @@ fun main() {
     println(sets().apply { add(3) })
     val copy: (Collection<Int>) -> ArrayList<Int> = ::ArrayList
     println(copy(listOf(1, 2, 3)))
-    val sorted: () -> TreeMap<String, Int> = ::TreeMap
-    println(sorted().apply { put("b", 1); put("a", 2) })
     val deque: () -> ArrayDeque<Int> = ::ArrayDeque
     println(deque().apply { addFirst(1); addFirst(2) })
 
@@ -53,13 +50,13 @@ fun main() {
         println("caught ${e.message}")
     }
 
-    // Regex
-    val patterns = listOf("a+b", "[0-9]+").map(::Regex)
+    // Regex.fromLiteral (a Regex's pattern must be a constant, so ::Regex is a compile error)
+    val patterns = listOf("a+b", "aab").map(Regex::fromLiteral)
     println(patterns.map { it.matches("aab") })
 
     // a source constructor held as a KFunction, and a library one taking an option
     val holder: KFunction1<MutableList<String>, Holder> = ::Holder
     println(holder(mutableListOf("x")).items)
-    val ref: (String, RegexOption) -> Regex = ::Regex
-    println(ref("X*", RegexOption.IGNORE_CASE).matches("xxx"))
+    val ref: (String) -> StringBuilder = ::StringBuilder
+    println(ref("xxx").append("!"))
 }

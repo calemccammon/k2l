@@ -3,14 +3,13 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClosedRange = ____lualib.__K2L_ClosedRange
 local __K2L_ClosedRangeMixin = ____lualib.__K2L_ClosedRangeMixin
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_RangeEnd = ____lualib.__K2L_RangeEnd
 local __K2L_RangeStart = ____lualib.__K2L_RangeStart
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Week
@@ -53,11 +52,10 @@ function Span:____init(start, endInclusive)
 end
 
 function Span:toString()
-    return "Span(" .. __K2L_Str(self.start) .. ", " .. __K2L_Str(self.endInclusive) .. ")"
+    return "Span(" .. self.start .. ", " .. self.endInclusive .. ")"
 end
 
 Week = __K2L_Class("Week", __K2L_IterableBase, __K2L_ClosedRangeMixin)
-Week.____readOnly = true
 
 function Week:____init(start, endInclusive)
     self.start = start
@@ -103,12 +101,12 @@ local function main()
     print(describe(span))
     print(describe(week))
     print(describe(grades))
-    print(describe(__K2L_ClosedRange.new(0.5, 2.5, __K2L_DoubleToString)))
+    print(describe(__K2L_ClosedRange.new(0.5, 2.5)))
     print(describe(__K2L_IntRange.new(3, 1)))
     print(describe(__K2L_ClosedRange.new("a", "f")))
-    local ranges = __K2L_ReadOnlyListOf(span, __K2L_ClosedRange.new(0.25, 1.5, __K2L_DoubleToString))
+    local ranges = __K2L_ListOf(span, __K2L_ClosedRange.new(0.25, 1.5))
     print(__K2L_Str(ranges:map(____lambda_3)))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Day = Day, Span = Span, Week = Week, Grades = Grades, describe = describe}

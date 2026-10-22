@@ -1,16 +1,13 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_List = ____lualib.__K2L_List
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
@@ -42,7 +39,7 @@ local ____lambda_1 = function(it) return it.value > 30 end
 local ____lambda_2 = function(it) return it.value + 1 end
 local ____lambda_3 = function() return 3 end
 local function main()
-    local ages = __K2L_ReadOnlyMapOf(__K2L_Pair.new("ann", 31), __K2L_Pair.new("bob", 25))
+    local ages = __K2L_MapOf(__K2L_Pair.new("ann", 31), __K2L_Pair.new("bob", 25))
     print(__K2L_Str(ages))
     print(__K2L_Str(ages:get("ann")))
     print(__K2L_Str(ages:get("zed")))
@@ -66,7 +63,7 @@ local function main()
         end
     end
     print()
-    for k, v in ages:iter(true) do
+    for _, k, v in ages:iter() do
         io.write(k .. ":" .. v .. " ")
     end
     print()
@@ -92,7 +89,7 @@ local function main()
         counts:set(c, (counts:get(c) or 0) + 1)
     end
     print(__K2L_Str(counts))
-    local m = __K2L_HashMap.new()
+    local m = __K2L_Map.new()
     m:set("a", 1)
     m:put("b", 2)
     m:remove("a")
@@ -113,12 +110,12 @@ local function main()
     s:remove(3)
     print(__K2L_Str(s))
     print(s:contains(2))
-    local t = __K2L_ReadOnlySetOf(2, 4, 6)
+    local t = __K2L_SetOf(2, 4, 6)
     print(__K2L_Str(s:intersect(t)))
     print(__K2L_Str(s:union(t)))
     print(__K2L_Str(s:subtract(t)))
-    print(__K2L_Equals(__K2L_ReadOnlySetOf(1, 2), __K2L_ReadOnlySetOf(2, 1)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 3, 1):toSet()))
+    print(__K2L_Equals(__K2L_SetOf(1, 2), __K2L_SetOf(2, 1)))
+    print(__K2L_Str(__K2L_ListOf(3, 3, 1):toSet()))
     local sum = 0
     local ____items_2, ____n_3 = s:____array()
     for ____i_4 = 1, ____n_3 do
@@ -126,7 +123,7 @@ local function main()
         sum = sum + x
     end
     print(sum)
-    local ____list_1 = __K2L_ReadOnlyListOf("apple", "avocado", "banana")
+    local ____list_1 = __K2L_ListOf("apple", "avocado", "banana")
     local ____result = __K2L_Map.new()
     local ____items_3, ____n_4 = ____list_1:____array()
     for ____i_5 = 1, ____n_4 do
@@ -140,7 +137,7 @@ local function main()
         ____group:add(it)
     end
     print(__K2L_Str(____result))
-    local ____list_2 = __K2L_ReadOnlyListOf("a", "bb", "ccc")
+    local ____list_2 = __K2L_ListOf("a", "bb", "ccc")
     local ____result_1 = __K2L_Map.new()
     local ____items_4, ____n_5 = ____list_2:____array()
     for ____i_6 = 1, ____n_5 do
@@ -151,5 +148,5 @@ local function main()
     print(__K2L_Str(____result_1))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Key = Key}

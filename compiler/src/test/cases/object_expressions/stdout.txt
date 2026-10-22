@@ -12,8 +12,5 @@ Corner desk helps Di
 1 2
 [100, 200, 300]
 false
-app.MainKt$main$Local
-app.Shop$greeter$1 app.MainKt$main$point$1
-app.Shop$counter$1 app.MainKt$main$made$1$1
-null Local null
+null Local
 true

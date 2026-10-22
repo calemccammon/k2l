@@ -1,4 +1,4 @@
--- The ASCII Char tests of the default --strings bytes mode as lookup tables, by the one-character string a Char is:
+-- The ASCII Char tests as lookup tables, by the one-character string a Char is:
 -- `__K2L_IsDigit[c] == true` is `c:match("^%d$") ~= nil` without the pattern call (each table is built with that match).
 local function charClass(pattern)
     local t = {}

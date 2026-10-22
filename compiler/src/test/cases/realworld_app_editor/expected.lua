@@ -132,7 +132,6 @@ end
 
 Noop:____init()
 local BoundedStack = __K2L_Class("editor.history.BoundedStack", __K2L_IterableBase)
-BoundedStack.____readOnly = true
 
 function BoundedStack:____init(limit)
     self.limit = limit
@@ -189,13 +188,9 @@ end
 
 function History:notify(event)
     local ____list = self.listeners
-    local ____mod = ____list.____modCount
     for ____i = 1, ____list.size do
         local it = ____list[____i]
         it(event)
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-            break
-        end
     end
 end
 
@@ -261,13 +256,11 @@ return {Command = Command, Insert = Insert, Delete = Delete, Batch = Batch, Noop
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringReplace = ____lualib.__K2L_StringReplace
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
@@ -377,9 +370,9 @@ local function main()
     print("selection " .. __K2L_Str(sel:getStart()) .. ".." .. __K2L_Str(sel:getEnd()) .. " empty=" .. tostring(sel:getIsEmpty()) .. " " .. tostring(____Document.Selection.new(____Document.Pos.new(1, 1), ____Document.Pos.new(1, 1)):getIsEmpty()))
     print("extract: '" .. __K2L_StringReplace(doc:extract(doc:clamp(sel:getStart()), doc:clamp(sel:getEnd())), "\n", "|") .. "'")
     print("clamp: " .. __K2L_Str(doc:clamp(____Document.Pos.new(99, 99))) .. " " .. __K2L_Str(doc:clamp(____Document.Pos.new(-3, 2))))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(____Commands.Insert.new(____Document.Pos.new(0, 0), "x"), ____Commands.Delete.new(sel), ____Commands.Batch.new("b", __K2L_ReadOnlyListOf()), ____Commands.Noop):map(describe)))
+    print(__K2L_Str(__K2L_ListOf(____Commands.Insert.new(____Document.Pos.new(0, 0), "x"), ____Commands.Delete.new(sel), ____Commands.Batch.new("b", __K2L_ListOf()), ____Commands.Noop):map(describe)))
     print(____Commands.Insert.new(____Document.Pos.new(1, 1), "ab"):equals(____Commands.Insert.new(____Document.Pos.new(1, 1), "ab")))
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         ____Commands.Delete.new(sel):revert(doc)
     end)
     if not ____ok then
@@ -391,10 +384,10 @@ local function main()
             error(____error, 0)
         end
     end
-    print(__K2L_Str(__K2L_ReadOnlyListOf(____Document.Pos.new(2, 1), ____Document.Pos.new(0, 9), ____Document.Pos.new(2, 0)):sorted()))
+    print(__K2L_Str(__K2L_ListOf(____Document.Pos.new(2, 1), ____Document.Pos.new(0, 9), ____Document.Pos.new(2, 0)):sorted()))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Macro = Macro, describe = describe, show = show}
 -- ==== text/Document.lua ====
 local ____lualib = require("lualib_bundle")

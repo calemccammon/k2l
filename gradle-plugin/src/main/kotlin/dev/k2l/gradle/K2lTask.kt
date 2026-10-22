@@ -42,15 +42,6 @@ abstract class K2lTask(private val exec: ExecOperations) : DefaultTask() {
     @get:Input
     abstract val luaLibImport: Property<String>
 
-    @get:Input
-    abstract val intOverflow: Property<String>
-
-    @get:Input
-    abstract val strings: Property<String>
-
-    @get:Input
-    abstract val long64: Property<String>
-
     /** A JDK 21 to run the compiler with; unset means the JVM running Gradle (which then must be 21 or newer). */
     @get:Internal
     abstract val javaLauncher: Property<JavaLauncher>
@@ -66,12 +57,6 @@ abstract class K2lTask(private val exec: ExecOperations) : DefaultTask() {
                 luaTarget.get(),
                 "--lualib",
                 luaLibImport.get(),
-                "--int-overflow",
-                intOverflow.get(),
-                "--strings",
-                strings.get(),
-                "--long64",
-                long64.get(),
             )
         args += extra
         val libraries = classpath.files.filter { it.exists() }

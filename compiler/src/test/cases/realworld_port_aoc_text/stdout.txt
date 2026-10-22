@@ -1,15 +1,16 @@
-nice: 2 / 2 -> [qjhvhtzxzqqjkmpb, xxyxx]
-passwords: (4, 2)
+nice: 3 / 3 -> [lomolomo, aeiouxxtyty, momoxoxo]
+passwords: (4, 1)
 passports: present=5 valid=3
 tls: [true, false, false, true, false]
-syntax: (26397, 288957)
-crates: CMZ MCD
+syntax: (26451, 8)
+crates: YX W TX Q
 stream {} -> (1, 0)
-stream {{{}}} -> (6, 0)
-stream {{<!!>},{<!!>},{<!!>},{<!!>}} -> (9, 0)
-stream {{<a!>},{<a!>},{<a!>},{<ab>}} -> (3, 17)
-stream <{o"i!a,<{i<a> -> (0, 10)
-stream {{<ab>},{<ab>},{<ab>},{<ab>}} -> (9, 8)
-escapes: [2/0/6, 5/3/9, 10/7/16, 6/1/11, 7/4/13] total=15,25
-next passwords: abcdffaa ghjaabcc abcdffbb
-calibration: 142 299 [12, 38, 15, 77, 29, 83, 13, 24, 42, 14, 76, 18]
+stream {{}{}} -> (5, 0)
+stream {<x!>y>,{}} -> (3, 2)
+stream {{<!!!>>},{<abc>}} -> (5, 3)
+stream <!!!!> -> (0, 0)
+stream {{{<{}>}},{<>}} -> (8, 2)
+stream <a{b!c> -> (0, 3)
+escapes: [4/2/8, 6/3/12, 10/2/16, 6/2/14, 8/5/14] total=20,30
+next passwords: qrsuuvxx tuvaacgg pqrhhmnn
+calibration: 194 431 [49, 77, 13, 55, 63, 98, 24, 59, 87, 21, 35, 44]

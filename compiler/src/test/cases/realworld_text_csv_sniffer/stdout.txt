@@ -1,8 +1,8 @@
 == semicolon: Dialect(delimiter=';', quote='"', header=true), 4 rows
 name:text | city:text | amount:decimal | paid:bool | since:date
-Müller; Hans | Zürich   | 1.234,50 | yes  | 2019-03-01
-Smith        | New⏎York |     99.5 | no   | 2020-11-30
-O"Brien      | Dublin   |        7 | yes  |
+Müller; Hans | Zürich    | 1.234,50 | yes  | 2019-03-01
+Smith         | New⏎York |     99.5 | no   | 2020-11-30
+O"Brien       | Dublin     |        7 | yes  |
   amount: n=2 sum=106.50 min=7.0 max=99.5
   > name,city,amount,paid,since
   > Müller; Hans,Zürich,"1.234,50",yes,2019-03-01

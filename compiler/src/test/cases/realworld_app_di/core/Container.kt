@@ -1,6 +1,5 @@
 package app.di.core
 
-import kotlin.reflect.KClass
 
 /** Something that can produce instances of [T]; the container decides how often it is asked. */
 fun interface Provider<out T : Any> {
@@ -12,7 +11,7 @@ enum class Scope { SINGLETON, PROTOTYPE, SCOPED }
 class ResolutionException(message: String, val chain: List<String>) : RuntimeException(message)
 
 internal class Binding<T : Any>(
-    val type: KClass<T>,
+    val type: String,
     val scope: Scope,
     val qualifier: String?,
     val factory: Container.() -> T,
@@ -26,11 +25,11 @@ internal class Binding<T : Any>(
         return container.factory()
     }
 
-    override fun toString(): String = "Binding(${type.simpleName}${qualifier?.let { "@$it" } ?: ""}, $scope)"
+    override fun toString(): String = "Binding($type${qualifier?.let { "@$it" } ?: ""}, $scope)"
 }
 
-internal data class Key(val type: KClass<*>, val qualifier: String?) {
-    override fun toString() = (type.simpleName ?: "?") + (qualifier?.let { "#$it" } ?: "")
+internal data class Key(val type: String, val qualifier: String?) {
+    override fun toString() = type + (qualifier?.let { "#$it" } ?: "")
 }
 
 /**
@@ -45,7 +44,7 @@ open class Container internal constructor(private val parent: Container?, val na
 
     constructor(name: String = "root") : this(null, name)
 
-    fun <T : Any> register(type: KClass<T>, scope: Scope, qualifier: String? = null, factory: Container.() -> T) {
+    fun <T : Any> register(type: String, scope: Scope, qualifier: String? = null, factory: Container.() -> T) {
         val key = Key(type, qualifier)
         require(key !in bindings) { "duplicate binding for $key in $name" }
         bindings[key] = Binding(type, scope, qualifier, factory)
@@ -57,20 +56,20 @@ open class Container internal constructor(private val parent: Container?, val na
     }
 
     inline fun <reified T : Any> single(qualifier: String? = null, noinline factory: Container.() -> T) =
-        register(T::class, Scope.SINGLETON, qualifier, factory)
+        register(T::class.simpleName!!, Scope.SINGLETON, qualifier, factory)
 
     inline fun <reified T : Any> factory(qualifier: String? = null, noinline factory: Container.() -> T) =
-        register(T::class, Scope.PROTOTYPE, qualifier, factory)
+        register(T::class.simpleName!!, Scope.PROTOTYPE, qualifier, factory)
 
-    inline fun <reified T : Any> scoped(noinline factory: Container.() -> T) = register(T::class, Scope.SCOPED, null, factory)
+    inline fun <reified T : Any> scoped(noinline factory: Container.() -> T) = register(T::class.simpleName!!, Scope.SCOPED, null, factory)
 
-    inline fun <reified T : Any> get(qualifier: String? = null): T = resolve(T::class, qualifier)
+    inline fun <reified T : Any> get(qualifier: String? = null): T = resolve(T::class.simpleName!!, qualifier)
 
     inline fun <reified T : Any> provider(qualifier: String? = null): Provider<T> = Provider { get<T>(qualifier) }
 
     inline fun <reified T : Any> lazyGet(): Lazy<T> = lazy { get<T>() }
 
-    fun <T : Any> resolve(type: KClass<T>, qualifier: String? = null): T {
+    fun <T : Any> resolve(type: String, qualifier: String? = null): T {
         val key = Key(type, qualifier)
         if (key in resolving) {
             val chain = (resolving.map { it.toString() } + key.toString())

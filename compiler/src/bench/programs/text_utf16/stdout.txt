@@ -1,4 +1,0 @@
-units 257651 width 129571 letters 200401 surrogates 15768 slugs 488807
-case 822477
-builder 288 279
-déjà=2664, lua=2664, タワー=2664, kotlin=2663, straße=2652

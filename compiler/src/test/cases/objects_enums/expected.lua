@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Registry = __K2L_Class("Registry")
@@ -115,11 +115,11 @@ local function main()
     print(d == Direction.EAST)
     local e = Planet.EARTH
     print(e.name .. " " .. tostring(e:getGravity() > 9.7 and e:getGravity() < 9.9))
-    print(__K2L_Str(Planet.MERCURY.mass))
+    print(Planet.MERCURY.mass)
     local p = Point:of(1, 2):plus(Point:of(3, 4))
     print(p.x .. "," .. p.y .. " created=" .. Point.created)
     print(Point.ORIGIN.x)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Registry = Registry, Direction = Direction, Planet = Planet, Point = Point}

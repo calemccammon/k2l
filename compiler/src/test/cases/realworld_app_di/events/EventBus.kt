@@ -1,6 +1,5 @@
 package app.di.events
 
-import kotlin.reflect.KClass
 
 sealed interface Event {
     val source: String
@@ -37,12 +36,12 @@ class Subscription internal constructor(private val onCancel: () -> Unit) {
 }
 
 class EventBus {
-    private val handlers = linkedMapOf<KClass<out Event>, MutableList<Handler<Event>>>()
+    private val handlers = linkedMapOf<String, MutableList<Handler<Event>>>()
     private val deadLetters = mutableListOf<Event>()
     var published = 0
         private set
 
-    fun <E : Event> subscribe(type: KClass<E>, handler: Handler<E>): Subscription {
+    fun <E : Event> subscribe(type: String, handler: Handler<E>): Subscription {
         @Suppress("UNCHECKED_CAST")
         val h = handler as Handler<Event>
         val list = handlers.getOrPut(type) { mutableListOf() }
@@ -50,11 +49,11 @@ class EventBus {
         return Subscription { list.remove(h) }
     }
 
-    inline fun <reified E : Event> on(noinline handler: (E) -> Unit): Subscription = subscribe(E::class, handler)
+    inline fun <reified E : Event> on(noinline handler: (E) -> Unit): Subscription = subscribe(E::class.simpleName!!, handler)
 
     fun publish(event: Event): Delivery {
         published++
-        val targets = handlers[event::class].orEmpty().toList()
+        val targets = handlers[event::class.simpleName!!].orEmpty().toList()
         if (targets.isEmpty()) {
             deadLetters += event
             return Delivery.Dropped
@@ -72,7 +71,7 @@ class EventBus {
 
     val dead: List<Event> get() = deadLetters
 
-    fun subscriberCounts(): Map<String, Int> = handlers.map { (k, v) -> (k.simpleName ?: "?") to v.size }.toMap()
+    fun subscriberCounts(): Map<String, Int> = handlers.map { (k, v) -> k to v.size }.toMap()
 }
 
 /** Extension in another package: counts how many of a kind of event were dropped. */

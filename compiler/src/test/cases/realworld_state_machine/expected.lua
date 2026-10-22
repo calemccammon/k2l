@@ -2,19 +2,12 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
-local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
@@ -22,18 +15,16 @@ local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotNull = ____lualib.__K2L_NotNull
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Event = __K2L_Class("machine.Event")
-__K2L_ClassInfo(Event, "machine.Event", "machine.Event", "interface")
 Event.Placed = __K2L_Class("machine.Event$Placed", nil, Event)
-__K2L_ClassInfo(Event.Placed, "machine.Event.Placed", "machine.Event$Placed", "class")
 
 function Event.Placed:____init(orderId, amount)
     self.orderId = orderId
@@ -45,7 +36,7 @@ function Event.Placed.new(orderId, amount)
 end
 
 function Event.Placed:toString()
-    return "Placed(orderId=" .. self.orderId .. ", amount=" .. __K2L_Str(self.amount) .. ")"
+    return "Placed(orderId=" .. self.orderId .. ", amount=" .. self.amount .. ")"
 end
 
 function Event.Placed:hashCode()
@@ -53,11 +44,10 @@ function Event.Placed:hashCode()
 end
 
 function Event.Placed:equals(other)
-    return getmetatable(other) == Event.Placed and self.orderId == other.orderId and __K2L_DoubleEquals(self.amount, other.amount)
+    return getmetatable(other) == Event.Placed and self.orderId == other.orderId and self.amount == other.amount
 end
 
 Event.Paid = __K2L_Class("machine.Event$Paid", nil, Event)
-__K2L_ClassInfo(Event.Paid, "machine.Event.Paid", "machine.Event$Paid", "class")
 
 function Event.Paid:____init(orderId, amount)
     self.orderId = orderId
@@ -69,7 +59,7 @@ function Event.Paid.new(orderId, amount)
 end
 
 function Event.Paid:toString()
-    return "Paid(orderId=" .. self.orderId .. ", amount=" .. __K2L_Str(self.amount) .. ")"
+    return "Paid(orderId=" .. self.orderId .. ", amount=" .. self.amount .. ")"
 end
 
 function Event.Paid:hashCode()
@@ -77,11 +67,10 @@ function Event.Paid:hashCode()
 end
 
 function Event.Paid:equals(other)
-    return getmetatable(other) == Event.Paid and self.orderId == other.orderId and __K2L_DoubleEquals(self.amount, other.amount)
+    return getmetatable(other) == Event.Paid and self.orderId == other.orderId and self.amount == other.amount
 end
 
 Event.Shipped = __K2L_Class("machine.Event$Shipped", nil, Event)
-__K2L_ClassInfo(Event.Shipped, "machine.Event.Shipped", "machine.Event$Shipped", "class")
 
 function Event.Shipped:____init(orderId, carrier)
     self.orderId = orderId
@@ -105,7 +94,6 @@ function Event.Shipped:equals(other)
 end
 
 Event.Cancelled = __K2L_Class("machine.Event$Cancelled", nil, Event)
-__K2L_ClassInfo(Event.Cancelled, "machine.Event.Cancelled", "machine.Event$Cancelled", "class")
 
 function Event.Cancelled:____init(orderId, reason)
     self.orderId = orderId
@@ -129,7 +117,6 @@ function Event.Cancelled:equals(other)
 end
 
 Event.Delivered = __K2L_Class("machine.Event$Delivered", nil, Event)
-__K2L_ClassInfo(Event.Delivered, "machine.Event.Delivered", "machine.Event$Delivered", "class")
 
 function Event.Delivered:____init(orderId)
     self.orderId = orderId
@@ -152,7 +139,6 @@ function Event.Delivered:equals(other)
 end
 
 local OrderState = __K2L_Class("machine.OrderState")
-__K2L_ClassInfo(OrderState, "machine.OrderState", "machine.OrderState", "class")
 
 function OrderState:____init(name, ordinal, terminal)
     if terminal == nil then
@@ -178,7 +164,6 @@ end
 
 do
     local ____NEW = __K2L_Class("OrderState", OrderState)
-    __K2L_ClassInfo(____NEW, "machine.OrderState.NEW", "machine.OrderState$NEW", "class", "NEW")
     function ____NEW:next(event)
         local ____mt = getmetatable(event)
         if ____mt == Event.Paid then
@@ -193,7 +178,6 @@ do
 end
 do
     local ____PAID = __K2L_Class("OrderState", OrderState)
-    __K2L_ClassInfo(____PAID, "machine.OrderState.PAID", "machine.OrderState$PAID", "class", "PAID")
     function ____PAID:next(event)
         local ____mt_1 = getmetatable(event)
         if ____mt_1 == Event.Shipped then
@@ -208,7 +192,6 @@ do
 end
 do
     local ____SHIPPED = __K2L_Class("OrderState", OrderState)
-    __K2L_ClassInfo(____SHIPPED, "machine.OrderState.SHIPPED", "machine.OrderState$SHIPPED", "class", "SHIPPED")
     function ____SHIPPED:next(event)
         return getmetatable(event) == Event.Delivered and OrderState.DELIVERED or nil
     end
@@ -216,7 +199,6 @@ do
 end
 do
     local ____DELIVERED = __K2L_Class("OrderState", OrderState)
-    __K2L_ClassInfo(____DELIVERED, "machine.OrderState.DELIVERED", "machine.OrderState$DELIVERED", "class", "DELIVERED")
     function ____DELIVERED:next(event)
         return nil
     end
@@ -224,7 +206,6 @@ do
 end
 do
     local ____CANCELLED = __K2L_Class("OrderState", OrderState)
-    __K2L_ClassInfo(____CANCELLED, "machine.OrderState.CANCELLED", "machine.OrderState$CANCELLED", "class", "CANCELLED")
     function ____CANCELLED:next(event)
         return nil
     end
@@ -232,7 +213,6 @@ do
 end
 do
     local ____REFUNDED = __K2L_Class("OrderState", OrderState)
-    __K2L_ClassInfo(____REFUNDED, "machine.OrderState.REFUNDED", "machine.OrderState$REFUNDED", "class", "REFUNDED")
     function ____REFUNDED:next(event)
         return nil
     end
@@ -243,18 +223,15 @@ do
 end
 OrderState.____values = {OrderState.NEW, OrderState.PAID, OrderState.SHIPPED, OrderState.DELIVERED, OrderState.CANCELLED, OrderState.REFUNDED}
 local Listener = __K2L_Class("machine.Listener")
-__K2L_ClassInfo(Listener, "machine.Listener", "machine.Listener", "interface")
 local IllegalTransition = __K2L_Class("machine.IllegalTransition", __K2L_IllegalStateException)
-__K2L_ClassInfo(IllegalTransition, "machine.IllegalTransition", "machine.IllegalTransition", "class")
 
 function IllegalTransition:____init(state, event)
-    __K2L_IllegalStateException.____init(self, "cannot apply " .. __K2L_Str(__K2L_KClassOfValue(event).simpleName) .. " in state " .. __K2L_Str(state))
+    __K2L_IllegalStateException.____init(self, "cannot apply " .. __K2L_Str(__K2L_SimpleName(event)) .. " in state " .. __K2L_Str(state))
     self.state = state
     self.event = event
 end
 
 local EventBus = __K2L_Class("machine.EventBus")
-__K2L_ClassInfo(EventBus, "machine.EventBus", "machine.EventBus", "class")
 
 function EventBus:____init()
     self.listeners = __K2L_MapOf()
@@ -279,15 +256,11 @@ function EventBus:publish(event)
     if self.history.size > 4 then
         self.history:removeFirst()
     end
-    local topic = __K2L_KClassOfValue(event).simpleName or "?"
-    local ____list = (self.listeners:get(topic) or __K2L_ReadOnlyListOf()):plusAll(self.listeners:get("*") or __K2L_ReadOnlyListOf())
-    local ____mod = ____list.____modCount
+    local topic = __K2L_SimpleName(event) or "?"
+    local ____list = (self.listeners:get(topic) or __K2L_ListOf()):plusAll(self.listeners:get("*") or __K2L_ListOf())
     for ____i = 1, ____list.size do
         local it = ____list[____i]
         it:onEvent(event)
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-            break
-        end
     end
 end
 
@@ -296,8 +269,6 @@ function EventBus:recent()
 end
 
 local Order = __K2L_Class("machine.Order")
-__K2L_ClassInfo(Order, "machine.Order", "machine.Order", "class")
-__K2L_CompanionInfo(Order, "machine.Order.Factory", "machine.Order$Factory", "Factory")
 
 function Order:____init(id, amount)
     self.id = id
@@ -330,7 +301,7 @@ function Order:apply(event)
 end
 
 function Order:toString()
-    return "Order#" .. self.id .. "[" .. __K2L_Str(self:getState()) .. ", " .. __K2L_StringFormat("%.2f", self.amount) .. "]"
+    return "Order#" .. self.id .. "[" .. __K2L_Str(self:getState()) .. ", " .. string.format("%.2f", self.amount) .. "]"
 end
 
 function Order:create(amount)
@@ -349,7 +320,6 @@ end
 
 Order:____initCompanion()
 local OrderRegistry = __K2L_Class("machine.OrderRegistry")
-__K2L_ClassInfo(OrderRegistry, "machine.OrderRegistry", "machine.OrderRegistry", "class")
 
 function OrderRegistry:____init()
     self.orders = __K2L_MapOf()
@@ -392,9 +362,7 @@ end
 
 OrderRegistry:____init()
 local Metrics = __K2L_Class("machine.Metrics")
-__K2L_ClassInfo(Metrics, "machine.Metrics", "machine.Metrics", "interface")
 local Processor = __K2L_Class("machine.Processor", nil, Metrics)
-__K2L_ClassInfo(Processor, "machine.Processor", "machine.Processor", "class")
 
 function Processor:____init(bus, metrics)
     self.bus = bus
@@ -421,9 +389,9 @@ function Processor:handle(event)
     if getmetatable(event) == Event.Placed then
         return
     end
-    local ____ok, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok, ____result_2 = pcall(function()
         OrderRegistry:get(event.orderId):apply(event)
-        self:count(__K2L_NotNull(__K2L_KClassOfValue(event).simpleName):lower())
+        self:count(__K2L_NotNull(__K2L_SimpleName(event)):lower())
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result_2)
@@ -466,11 +434,10 @@ local ____lambda_6 = function(it) return it:getLabel() end
 local function main()
     local bus = EventBus.new()
     local log = __K2L_ListOf()
-    local counts = __K2L_SortedMapOf()
+    local counts = __K2L_SortedMapOf(nil)
     local ____object_1 = __K2L_Class("machine.MainKt$main$metrics$1", nil, Metrics)
-    __K2L_ClassInfo(____object_1, nil, "machine.MainKt$main$metrics$1", "class", false)
     function ____object_1:count(name)
-        counts:merge(name, 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_3))
+        counts:merge(name, 1, ____lambda_3)
     end
     function ____object_1:report()
         return counts:getEntries():joinToString(", ", nil, nil, nil, nil, ____lambda_4)
@@ -493,17 +460,16 @@ local function main()
     end
     local cancellations = 0
     local ____object_2 = __K2L_Class("machine.MainKt$main$2", nil, Listener)
-    __K2L_ClassInfo(____object_2, nil, "machine.MainKt$main$2", "class", false)
     function ____object_2:onEvent(event)
         cancellations = cancellations + 1
         local ____arg = cancellations
         if getmetatable(event) ~= Event.Cancelled then
-            __K2L_CastFail(event, "machine.Event$Cancelled", "machine.Event.Cancelled")
+            __K2L_CastFail(event, "machine.Event.Cancelled")
         end
         log:add("cancelled #" .. ____arg .. ": " .. event.reason)
     end
     bus:subscribe("Cancelled", ____object_2)
-    local script = __K2L_ReadOnlyListOf(Event.Placed.new(0, 25.0), Event.Placed.new(0, 99.5), Event.Placed.new(0, 7.25), Event.Paid.new(100, 25.0), Event.Shipped.new(100, "UPS"), Event.Delivered.new(100), Event.Paid.new(101, 99.5), Event.Cancelled.new(101, "changed mind"), Event.Delivered.new(102), Event.Cancelled.new(102, "out of stock"), Event.Paid.new(102, 7.25), Event.Paid.new(999, 1.0))
+    local script = __K2L_ListOf(Event.Placed.new(0, 25.0), Event.Placed.new(0, 99.5), Event.Placed.new(0, 7.25), Event.Paid.new(100, 25.0), Event.Shipped.new(100, "UPS"), Event.Delivered.new(100), Event.Paid.new(101, 99.5), Event.Cancelled.new(101, "changed mind"), Event.Delivered.new(102), Event.Cancelled.new(102, "out of stock"), Event.Paid.new(102, 7.25), Event.Paid.new(999, 1.0))
     for step = 0, script.size - 1 do
         local event = script[step + 1]
         if step == 7 then
@@ -511,13 +477,9 @@ local function main()
         end
         processor:handle(event)
     end
-    local ____mod_1 = log.____modCount
     for ____i_2 = 1, log.size do
         local it = log[____i_2];
         (____lambda_5)(it)
-        if log.____modCount ~= ____mod_1 and log:____comodified(____i_2) then
-            break
-        end
     end
     local ____list_2 = processor:failures__1()
     for ____i_3 = 1, ____list_2.size do
@@ -538,7 +500,7 @@ local function main()
     for ____i_4 = 1, ____n_1 do
         local it = ____items_1[____i_4]
         ____count = ____count + 1
-        ____out[____count] = __K2L_KClassOfValue(it).simpleName
+        ____out[____count] = __K2L_SimpleName(it)
     end
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     local ____values = OrderState.____values
@@ -553,7 +515,7 @@ local function main()
     end
     print(__K2L_ListWrap(____out_1, ____count_1):joinToString(nil, nil, nil, nil, nil, ____lambda_6))
     print(__K2L_Str(__K2L_EnumValueOf(OrderState, "PAID"):next(Event.Shipped.new(1, "DHL"))))
-    local sameEvents = __K2L_ReadOnlySetOf(Event.Paid.new(1, 2.0), Event.Paid.new(1, 2.0), Event.Delivered.new(1))
+    local sameEvents = __K2L_SetOf(Event.Paid.new(1, 2.0), Event.Paid.new(1, 2.0), Event.Delivered.new(1))
     print(sameEvents.size)
     local describe = function(e)
         local ____mt_2 = getmetatable(e)
@@ -568,5 +530,5 @@ local function main()
     print(__K2L_Str(script:take(5):map(describe):distinct()))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Event = Event, OrderState = OrderState, Listener = Listener, IllegalTransition = IllegalTransition, EventBus = EventBus, Order = Order, OrderRegistry = OrderRegistry, Metrics = Metrics, Processor = Processor}

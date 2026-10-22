@@ -66,8 +66,29 @@ data class Select(val col: String, val agg: String? = null) {
 
 data class Query(val select: List<Select>, val where: Cond?, val groupBy: String?, val orderBy: String?, val desc: Boolean, val limit: Int?)
 
+// The kinds of tokens, tried in turn (Lua patterns have no alternation); a quoted string may contain '' (a quote).
+private val QUOTED = Regex("'[^']*'")
+private val TOKENS = listOf(QUOTED, Regex("[A-Za-z_]\\w*"), Regex("\\d+\\.?\\d*"), Regex("[<>!]="), Regex("[(),*=<>]"))
+
+fun tokenize(src: String): List<String> {
+    val out = mutableListOf<String>()
+    var i = 0
+    while (i < src.length) {
+        val m = TOKENS.firstNotNullOfOrNull { it.matchAt(src, i) }
+        if (m == null) {
+            i++
+            continue
+        }
+        var end = m.range.last + 1
+        while (m.value.startsWith("'") && end < src.length && src[end] == '\'') end = QUOTED.matchAt(src, end)?.range?.last?.plus(1) ?: break
+        out += src.substring(i, end)
+        i = end
+    }
+    return out
+}
+
 class QueryParser(src: String) {
-    private val toks = Regex("""'(?:[^']|'')*'|[A-Za-z_][\w]*|\d+(?:\.\d+)?|<=|>=|!=|[(),*=<>]""").findAll(src).map { it.value }.toList()
+    private val toks = tokenize(src)
     private var p = 0
     private fun peek() = toks.getOrNull(p)
     private fun kw(w: String) = peek()?.equals(w, ignoreCase = true) == true

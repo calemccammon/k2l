@@ -1,7 +1,0 @@
-eval 8999 finallies=6001
-depth 5000
-caught at 2500: bottom
-runCatching 1000
-use 1000 closed=1000
-error: division by zero
-StackOverflowError, finally blocks ran: true

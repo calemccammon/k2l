@@ -19,5 +19,5 @@ momentum: (3.0000, 0.0000)
 -- orbit
 after one period: (1.0000, 0.0008)
 radius 0.999500..1.000501
-energy drift 8.682e-14
-unit circle 1.0000000000000002 (0.6000, 0.8000)
+energy drift 8.660e-14
+unit circle 1.0 (0.6000, 0.8000)

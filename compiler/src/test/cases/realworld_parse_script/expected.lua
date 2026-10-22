@@ -1,34 +1,33 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
+local __K2L_IsLetter = ____lualib.__K2L_IsLetter
+local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
+local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Num = ____lualib.__K2L_Num
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
+local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringToDouble = ____lualib.__K2L_StringToDouble
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_Utf16 = ____lualib.__K2L_Utf16
-local __K2L_Utf16Case = ____lualib.__K2L_Utf16Case
+local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local T = __K2L_Class("T")
-__K2L_ClassInfo(T, "T", "T", "class")
 
 function T:____init(name, ordinal)
     self.name = name
@@ -51,7 +50,6 @@ T.PUNCT = T.new("PUNCT", 4)
 T.EOF = T.new("EOF", 5)
 T.____values = {T.NUM, T.STR, T.ID, T.KW, T.PUNCT, T.EOF}
 local Pos = __K2L_Class("Pos")
-__K2L_ClassInfo(Pos, "Pos", "Pos", "class")
 
 function Pos:____init(line, col)
     self.line = line
@@ -75,7 +73,6 @@ function Pos:equals(other)
 end
 
 local Tok = __K2L_Class("Tok")
-__K2L_ClassInfo(Tok, "Tok", "Tok", "class")
 
 function Tok:____init(____type, text, pos)
     self.type = ____type
@@ -100,7 +97,6 @@ function Tok:equals(other)
 end
 
 local ScriptError = __K2L_Class("ScriptError", __K2L_Exception)
-__K2L_ClassInfo(ScriptError, "ScriptError", "ScriptError", "class")
 
 function ScriptError:____init(msg, pos)
     __K2L_Exception.____init(self, msg .. " at " .. __K2L_Str(pos))
@@ -108,29 +104,25 @@ function ScriptError:____init(msg, pos)
 end
 
 local LexError = __K2L_Class("LexError", ScriptError)
-__K2L_ClassInfo(LexError, "LexError", "LexError", "class")
 
 function LexError:____init(msg, pos)
     ScriptError.____init(self, msg, pos)
 end
 
 local SyntaxError = __K2L_Class("SyntaxError", ScriptError)
-__K2L_ClassInfo(SyntaxError, "SyntaxError", "SyntaxError", "class")
 
 function SyntaxError:____init(msg, pos)
     ScriptError.____init(self, msg, pos)
 end
 
 local RuntimeErr = __K2L_Class("RuntimeErr", ScriptError)
-__K2L_ClassInfo(RuntimeErr, "RuntimeErr", "RuntimeErr", "class")
 
 function RuntimeErr:____init(msg, pos)
     ScriptError.____init(self, msg, pos)
 end
 
-local keywords = __K2L_ReadOnlySetOf("let", "fn", "if", "else", "while", "return", "true", "false", "and", "or", "not", "nil")
+local keywords = __K2L_SetOf("let", "fn", "if", "else", "while", "return", "true", "false", "and", "or", "not", "nil")
 local Lexer = __K2L_Class("Lexer")
-__K2L_ClassInfo(Lexer, "Lexer", "Lexer", "class")
 
 function Lexer:____init(src)
     self.src = src
@@ -143,14 +135,14 @@ function Lexer:peek(off)
     if off == nil then
         off = 0
     end
-    return self.i + off < __K2L_Utf16.len(self.src) and __K2L_Text.get(self.src, self.i + off) or "\000"
+    return self.i + off < #self.src and (self.i + off >= 0 and self.i + off < #self.src and self.src:sub(self.i + off + 1, self.i + off + 1) or __K2L_IndexError(self.i + off, #self.src, "string")) or "\000"
 end
 
 function Lexer:advance()
     local ____arg = self.src
     local ____old = self.i
     self.i = self.i + 1
-    local c = __K2L_Text.get(____arg, ____old)
+    local c = ____old >= 0 and ____old < #____arg and ____arg:sub(____old + 1, ____old + 1) or __K2L_IndexError(____old, #____arg, "string")
     if c == "\n" then
         self.line = self.line + 1
         self.col = 1
@@ -162,40 +154,40 @@ end
 
 function Lexer:lex()
     local out = __K2L_ListOf()
-    while self.i < __K2L_Utf16.len(self.src) do
+    while self.i < #self.src do
         local c = self:peek()
         local start = Pos.new(self.line, self.col)
         if c == "#" then
-            while self.i < __K2L_Utf16.len(self.src) and self:peek() ~= "\n" do
+            while self.i < #self.src and self:peek() ~= "\n" do
                 self:advance()
             end
-        elseif __K2L_Utf16Case.isWhitespace(c) then
+        elseif __K2L_IsWhitespace[c] == true then
             self:advance()
-        elseif __K2L_Utf16Case.isDigit(c) then
+        elseif __K2L_IsDigit[c] == true then
             local sb = __K2L_StringBuilder.new()
-            while __K2L_Utf16Case.isDigit(self:peek()) or self:peek() == "." and __K2L_Utf16Case.isDigit(self:peek(1)) do
+            while __K2L_IsDigit[self:peek()] == true or self:peek() == "." and __K2L_IsDigit[self:peek(1)] == true do
                 sb:append(self:advance())
             end
             out:add(Tok.new(T.NUM, sb:toString(), start))
         elseif c == "\"" then
             out:add(Tok.new(T.STR, self:string(start), start))
-        elseif __K2L_Utf16Case.isLetter(c) or c == "_" then
+        elseif __K2L_IsLetter[c] == true or c == "_" then
             local sb = __K2L_StringBuilder.new()
-            while __K2L_Utf16Case.isLetterOrDigit(self:peek()) or self:peek() == "_" do
+            while __K2L_IsLetterOrDigit[self:peek()] == true or self:peek() == "_" do
                 sb:append(self:advance())
             end
             local w = sb:toString()
             out:add(Tok.new(keywords:contains(w) and T.KW or T.ID, w, start))
         else
-            local two = __K2L_Utf16.norm(c .. self:peek(1))
-            if __K2L_ReadOnlySetOf("==", "!=", "<=", ">=", "->"):contains(two) then
+            local two = c .. self:peek(1)
+            if __K2L_SetOf("==", "!=", "<=", ">=", "->"):contains(two) then
                 self:advance()
                 self:advance()
                 out:add(Tok.new(T.PUNCT, two, start))
-            elseif __K2L_Text.contains("+-*/%<>=(){},;", c) then
+            elseif __K2L_StringContains("+-*/%<>=(){},;", c) then
                 out:add(Tok.new(T.PUNCT, self:advance(), start))
             else
-                error(LexError.new(__K2L_Utf16.norm("unexpected '" .. c .. "'"), start))
+                error(LexError.new("unexpected '" .. c .. "'", start))
             end
         end
     end
@@ -207,7 +199,7 @@ function Lexer:string(start)
     self:advance()
     local sb = __K2L_StringBuilder.new()
     while true do
-        if self.i >= __K2L_Utf16.len(self.src) or self:peek() == "\n" then
+        if self.i >= #self.src or self:peek() == "\n" then
             error(LexError.new("unterminated string", start))
         end
         local c = self:advance()
@@ -222,7 +214,7 @@ function Lexer:string(start)
             elseif e == "\"" or e == "\\" then
                 sb:append(e)
             else
-                error(LexError.new(__K2L_Utf16.norm("bad escape '\\" .. e .. "'"), Pos.new(self.line, self.col - 2)))
+                error(LexError.new("bad escape '\\" .. e .. "'", Pos.new(self.line, self.col - 2)))
             end
         else
             sb:append(c)
@@ -231,7 +223,6 @@ function Lexer:string(start)
 end
 
 local Node = __K2L_Class("Node")
-__K2L_ClassInfo(Node, "Node", "Node", "class")
 
 function Node:____init(pos)
     self.pos = pos
@@ -242,7 +233,6 @@ function Node.new(pos)
 end
 
 local NumLit = __K2L_Class("NumLit", Node)
-__K2L_ClassInfo(NumLit, "NumLit", "NumLit", "class")
 
 function NumLit:____init(v, p)
     Node.____init(self, p)
@@ -250,7 +240,6 @@ function NumLit:____init(v, p)
 end
 
 local StrLit = __K2L_Class("StrLit", Node)
-__K2L_ClassInfo(StrLit, "StrLit", "StrLit", "class")
 
 function StrLit:____init(v, p)
     Node.____init(self, p)
@@ -258,7 +247,6 @@ function StrLit:____init(v, p)
 end
 
 local BoolLit = __K2L_Class("BoolLit", Node)
-__K2L_ClassInfo(BoolLit, "BoolLit", "BoolLit", "class")
 
 function BoolLit:____init(v, p)
     Node.____init(self, p)
@@ -266,14 +254,12 @@ function BoolLit:____init(v, p)
 end
 
 local NilLit = __K2L_Class("NilLit", Node)
-__K2L_ClassInfo(NilLit, "NilLit", "NilLit", "class")
 
 function NilLit:____init(p)
     Node.____init(self, p)
 end
 
 local Name = __K2L_Class("Name", Node)
-__K2L_ClassInfo(Name, "Name", "Name", "class")
 
 function Name:____init(id, p)
     Node.____init(self, p)
@@ -281,7 +267,6 @@ function Name:____init(id, p)
 end
 
 local Bin = __K2L_Class("Bin", Node)
-__K2L_ClassInfo(Bin, "Bin", "Bin", "class")
 
 function Bin:____init(op, l, r, p)
     Node.____init(self, p)
@@ -291,7 +276,6 @@ function Bin:____init(op, l, r, p)
 end
 
 local Un = __K2L_Class("Un", Node)
-__K2L_ClassInfo(Un, "Un", "Un", "class")
 
 function Un:____init(op, e, p)
     Node.____init(self, p)
@@ -300,7 +284,6 @@ function Un:____init(op, e, p)
 end
 
 local CallN = __K2L_Class("CallN", Node)
-__K2L_ClassInfo(CallN, "CallN", "CallN", "class")
 
 function CallN:____init(callee, args, p)
     Node.____init(self, p)
@@ -309,7 +292,6 @@ function CallN:____init(callee, args, p)
 end
 
 local FnLit = __K2L_Class("FnLit", Node)
-__K2L_ClassInfo(FnLit, "FnLit", "FnLit", "class")
 
 function FnLit:____init(params, body, p)
     Node.____init(self, p)
@@ -318,7 +300,6 @@ function FnLit:____init(params, body, p)
 end
 
 local LetS = __K2L_Class("LetS", Node)
-__K2L_ClassInfo(LetS, "LetS", "LetS", "class")
 
 function LetS:____init(id, e, p)
     Node.____init(self, p)
@@ -327,7 +308,6 @@ function LetS:____init(id, e, p)
 end
 
 local AssignS = __K2L_Class("AssignS", Node)
-__K2L_ClassInfo(AssignS, "AssignS", "AssignS", "class")
 
 function AssignS:____init(id, e, p)
     Node.____init(self, p)
@@ -336,7 +316,6 @@ function AssignS:____init(id, e, p)
 end
 
 local IfS = __K2L_Class("IfS", Node)
-__K2L_ClassInfo(IfS, "IfS", "IfS", "class")
 
 function IfS:____init(c, t, f, p)
     Node.____init(self, p)
@@ -346,7 +325,6 @@ function IfS:____init(c, t, f, p)
 end
 
 local WhileS = __K2L_Class("WhileS", Node)
-__K2L_ClassInfo(WhileS, "WhileS", "WhileS", "class")
 
 function WhileS:____init(c, body, p)
     Node.____init(self, p)
@@ -355,7 +333,6 @@ function WhileS:____init(c, body, p)
 end
 
 local ReturnS = __K2L_Class("ReturnS", Node)
-__K2L_ClassInfo(ReturnS, "ReturnS", "ReturnS", "class")
 
 function ReturnS:____init(e, p)
     Node.____init(self, p)
@@ -363,12 +340,11 @@ function ReturnS:____init(e, p)
 end
 
 local Parser = __K2L_Class("Parser")
-__K2L_ClassInfo(Parser, "Parser", "Parser", "class")
 
 function Parser:____init(toks)
     self.toks = toks
     self.k = 0
-    self.levels = __K2L_ReadOnlyListOf(__K2L_SingletonListOf("or"), __K2L_SingletonListOf("and"), __K2L_ReadOnlyListOf("==", "!="), __K2L_ReadOnlyListOf("<", "<=", ">", ">="), __K2L_ReadOnlyListOf("+", "-"), __K2L_ReadOnlyListOf("*", "/", "%"))
+    self.levels = __K2L_ListOf(__K2L_ListOf("or"), __K2L_ListOf("and"), __K2L_ListOf("==", "!="), __K2L_ListOf("<", "<=", ">", ">="), __K2L_ListOf("+", "-"), __K2L_ListOf("*", "/", "%"))
 end
 
 function Parser:getCur()
@@ -457,7 +433,7 @@ function Parser:ifTail(p)
         if self:at("if") then
             local q = self:getCur().pos
             self.k = self.k + 1
-            f = __K2L_SingletonListOf(self:ifTail(q))
+            f = __K2L_ListOf(self:ifTail(q))
         else
             f = self:block()
         end
@@ -589,15 +565,14 @@ function Parser:fnTail(p)
     end
     self.k = self.k + 1
     local e = self:expr()
-    return FnLit.new(ps, __K2L_SingletonListOf(ReturnS.new(e, e.pos)), p)
+    return FnLit.new(ps, __K2L_ListOf(ReturnS.new(e, e.pos)), p)
 end
 
 local Env = __K2L_Class("Env")
-__K2L_ClassInfo(Env, "Env", "Env", "class")
 
 function Env:____init(parent)
     self.parent = parent
-    self.vars = __K2L_HashMap.new()
+    self.vars = __K2L_Map.new()
 end
 
 function Env:define(n, v)
@@ -627,7 +602,6 @@ function Env:assign(n, v, p)
 end
 
 local Closure = __K2L_Class("Closure")
-__K2L_ClassInfo(Closure, "Closure", "Closure", "class")
 
 function Closure:____init(fn, env)
     self.fn = fn
@@ -643,7 +617,6 @@ function Closure:toString()
 end
 
 local Native = __K2L_Class("Native")
-__K2L_ClassInfo(Native, "Native", "Native", "class")
 
 function Native:____init(name, arity, f)
     self.name = name
@@ -656,7 +629,6 @@ function Native.new(name, arity, f)
 end
 
 local ReturnSignal = __K2L_Class("ReturnSignal", __K2L_RuntimeException)
-__K2L_ClassInfo(ReturnSignal, "ReturnSignal", "ReturnSignal", "class")
 
 function ReturnSignal:____init(value)
     __K2L_RuntimeException.____init(self)
@@ -667,7 +639,7 @@ local function show(v)
     if v == nil then
         return "nil"
     elseif math.type(v) == "float" then
-        return v == (v == 0 and v * 1.0 or math.floor(v) + 0.0) and not __K2L_Num.isInfinite(v) and tostring(__K2L_DoubleToLong(v)) or __K2L_Str(v)
+        return v == math.floor(v) and not __K2L_Num.isInfinite(v) and tostring(__K2L_Truncate(v)) or tostring(v)
     elseif getmetatable(v) == Native then
         return "<native " .. v.name .. ">"
     else
@@ -676,7 +648,6 @@ local function show(v)
 end
 
 local Interp = __K2L_Class("Interp")
-__K2L_ClassInfo(Interp, "Interp", "Interp", "class")
 
 local ____lambda_1 = function(it) return show(it) end
 local ____lambda_2 = function(args) return show(args:get(0)) end
@@ -684,7 +655,7 @@ function Interp:____init(out)
     self.out = out
     local ____value_6 = Env.new(nil)
     ____value_6:define("print", Native.new("print", -1, function(args)
-        self.out:append(__K2L_Utf16.norm(args:joinToString(" ", nil, nil, nil, nil, ____lambda_1))):append("\n")
+        self.out:append(args:joinToString(" ", nil, nil, nil, nil, ____lambda_1)):append("\n")
         return nil
     end))
     ____value_6:define("len", Native.new("len", 1, function(args)
@@ -693,7 +664,7 @@ function Interp:____init(out)
         local ____result_1
         if ____receiver ~= nil then
             local ____cast_1 = args:get(0)
-            ____result_1 = __K2L_Utf16.len(type(____cast_1) == "string" and ____cast_1 or nil)
+            ____result_1 = #(type(____cast_1) == "string" and ____cast_1 or nil)
         end
         local ____receiver_1 = ____result_1
         return ____receiver_1 and ____receiver_1 + 0.0
@@ -708,13 +679,9 @@ function Interp:run(prog)
 end
 
 function Interp:exec(body, env)
-    local ____mod = body.____modCount
     for ____i_1 = 1, body.size do
         local s = body[____i_1]
         self:stmt(s, env)
-        if body.____modCount ~= ____mod and body:____comodified(____i_1) then
-            break
-        end
     end
 end
 
@@ -869,18 +836,14 @@ function Interp:call(f, args, p)
         end
         local ____local = Env.new(f.env)
         local ____list_2 = f.fn.params:zip(args)
-        local ____mod_1 = ____list_2.____modCount
         for ____i_3 = 1, ____list_2.size do
             local ____it = ____list_2[____i_3]
             do
                 local n, v = ____it.first, ____it.second
                 ____local:define(n, v)
             end
-            if ____list_2.____modCount ~= ____mod_1 and ____list_2:____comodified(____i_3) then
-                break
-            end
         end
-        local ____ok, ____result_5, ____returned = __K2L_DeepPcall(function()
+        local ____ok, ____result_5, ____returned = pcall(function()
             self:exec(f.fn.body, ____local)
             return true, nil
         end)
@@ -905,20 +868,20 @@ end
 local function runScript(name, src)
     local out = __K2L_StringBuilder.new()
     local interp = Interp.new(out)
-    local ____ok_1, ____result_6 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_6 = pcall(function()
         interp:run(Parser.new(Lexer.new(src):lex()):program())
-        io.write(__K2L_Utf16.out(__K2L_Str(out)))
-        print(__K2L_Utf16.out("[" .. name .. "] ok, " .. interp.steps .. " steps"))
+        io.write(__K2L_Str(out))
+        print("[" .. name .. "] ok, " .. interp.steps .. " steps")
     end)
     if not ____ok_1 then
         local ____error_1 = __K2L_ToThrowable(____result_6)
         if __K2L_InstanceOf(____error_1, ScriptError) then
             local e = ____error_1
-            io.write(__K2L_Utf16.out(__K2L_Str(out)))
+            io.write(__K2L_Str(out))
             local lineText = __K2L_StringLines(src):get(e.pos.line - 1)
-            print(__K2L_Utf16.out("[" .. name .. "] " .. __K2L_Str(__K2L_KClassOfValue(e).simpleName) .. ": " .. __K2L_Str(e.message)))
-            print(__K2L_Utf16.out("  | " .. lineText))
-            print(__K2L_Utf16.out("  | " .. __K2L_Text.repeatCount(" ", e.pos.col - 1) .. "^"))
+            print("[" .. name .. "] " .. __K2L_Str(__K2L_SimpleName(e)) .. ": " .. __K2L_Str(e.message))
+            print("  | " .. lineText)
+            print("  | " .. __K2L_Text.repeatCount(" ", e.pos.col - 1) .. "^")
         else
             error(____error_1, 0)
         end
@@ -942,5 +905,5 @@ local function main()
     runScript("type", "print(\"a\" - 1);")
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {T = T, Pos = Pos, Tok = Tok, ScriptError = ScriptError, LexError = LexError, SyntaxError = SyntaxError, RuntimeErr = RuntimeErr, keywords = keywords, Lexer = Lexer, Node = Node, NumLit = NumLit, StrLit = StrLit, BoolLit = BoolLit, NilLit = NilLit, Name = Name, Bin = Bin, Un = Un, CallN = CallN, FnLit = FnLit, LetS = LetS, AssignS = AssignS, IfS = IfS, WhileS = WhileS, ReturnS = ReturnS, Parser = Parser, Env = Env, Closure = Closure, Native = Native, ReturnSignal = ReturnSignal, show = show, Interp = Interp, runScript = runScript}

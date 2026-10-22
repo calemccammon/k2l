@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaBackingFieldSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaPropertySymbol
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaType
@@ -80,20 +81,10 @@ internal fun FileTransformer.assignTarget(e: KtExpression): Target? = with(sessi
     }
 }
 
-/**
- * A property of a library class that the lualib represents as a plain table of fields, such as a `HexFormat.Builder`;
- * any other target outside the program is not supported.
- */
+/** A property of a library class: not supported. */
+@Suppress("UNUSED_PARAMETER")
 private fun FileTransformer.libraryFieldTarget(e: KtExpression, ref: KtNameReferenceExpression?, receiverExpr: KtExpression?): Target? =
-    with(session) {
-        val symbol = ref?.mainReference?.resolveToSymbol() as? KaPropertySymbol
-        if (ref == null || symbol == null || symbol.callableId?.classId?.asString() !in HEX_FORMAT_CLASSES) {
-            return unsupported(e, "Assignment to this target").let { null }
-        }
-        val receiver = if (receiverExpr != null) cache(expression(receiverExpr), "object") else implicitReceiverOf(ref) ?: return null
-        val field = LuaIndex(receiver, LuaString(symbol.name.asString()))
-        return Target(field) { assign(field, it) }
-    }
+    unsupported(e, "Assignment to this target").let { null }
 
 private fun FileTransformer.assignedReference(ex: KtExpression) = when (ex) {
     is KtNameReferenceExpression -> ex
@@ -130,10 +121,6 @@ private fun FileTransformer.indexTarget(e: KtArrayAccessExpression): Target? = w
 /** `xs[i] = v` and `map[k] = v` on a library type, whose index operators are mapped. */
 private fun FileTransformer.libraryIndexTarget(e: KtArrayAccessExpression, type: KaType?, receiver: LuaExpr, keys: List<LuaExpr>): Target? =
     with(session) {
-        // `bits[i] = v` and `bits[from, to] = v` of a java.util.BitSet are its get and set
-        if ((type?.withoutFlexibility as? KaClassType)?.classId?.asString() == "java/util/BitSet") {
-            return Target(LuaMethodCall(receiver, "get", keys)) { LuaCallStmt(LuaMethodCall(receiver, "set", keys + it)) }
-        }
         if (keys.size > 1) return unsupported(e, "Multi-index access on '${type.pretty()}'").let { null }
         val key = keys[0]
         val userClass = type?.expandedSymbol?.psi as? KtClassOrObject
@@ -166,12 +153,9 @@ private fun FileTransformer.libraryIndexTarget(e: KtArrayAccessExpression, type:
 internal fun FileTransformer.increment(e: KtUnaryExpression, target: Target): Unit = with(session) {
     val op = if (e.operationToken == KtTokens.PLUSPLUS) LuaBinOp.Add else LuaBinOp.Sub
     val type = e.baseExpression?.expressionType
-    emit(target.update(if (type?.isCharType == true) charStepped(op, target.read) else stepped(op, target.read, type)))
+    emit(target.update(if (type?.isCharType == true) charStepped(op, target.read) else stepped(op, target.read)))
 }
 
 /** `c++` on a Char: the Char whose code is one more (or less). */
-private fun FileTransformer.charStepped(op: LuaBinOp, read: LuaExpr): LuaExpr = if (utf16) {
-    u16("char", LuaBinary(op, u16("code", read), LuaNumber("1")))
-} else {
+private fun charStepped(op: LuaBinOp, read: LuaExpr): LuaExpr =
     lua("string.char", LuaBinary(op, LuaMethodCall(read, "byte", emptyList()), LuaNumber("1")))
-}

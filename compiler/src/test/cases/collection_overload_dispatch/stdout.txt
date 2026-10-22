@@ -1,0 +1,22 @@
+true
+[1, 3, 5]
+true
+[3, 5]
+true
+[5]
+false
+[5] removeAll(elements) own removeAll(predicate) retainAll(elements) 
+true
+false
+true
+2
+true
+{} remove(a, 9) remove(a, 1) remove(b) remove(c, 3) 
+false
+true
+2
+{}
+true
+[b, d]
+true
+[d]

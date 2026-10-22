@@ -4,29 +4,107 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
-local __K2L_HashSet = ____lualib.__K2L_HashSet
-local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_PriorityQueue = ____lualib.__K2L_PriorityQueue
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
+local __K2L_Set = ____lualib.__K2L_Set
 local __K2L_SetOf = ____lualib.__K2L_SetOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_Text = ____lualib.__K2L_Text
 
 local Dir
+local MinQueue = __K2L_Class("MinQueue")
+
+function MinQueue:____init(comparator)
+    self.comparator = comparator
+    self.heap = __K2L_List.new()
+end
+
+function MinQueue:getSize()
+    return self.heap.size
+end
+
+function MinQueue:isEmpty()
+    return self.heap:isEmpty()
+end
+
+function MinQueue:isNotEmpty()
+    return self.heap:isNotEmpty()
+end
+
+function MinQueue:peek()
+    return self.heap:firstOrNull()
+end
+
+function MinQueue:add(item)
+    self.heap:add(item)
+    local i = self.heap.size - 1
+    while i > 0 do
+        local parent = (i - 1) // 2
+        if self.comparator(self.heap:get(i), self.heap:get(parent)) >= 0 then
+            break
+        end
+        local t = self.heap:get(i)
+        local ____object = self.heap
+        local ____key = i
+        ____object:set(____key, self.heap:get(parent))
+        local ____object_1 = self.heap
+        ____object_1:set(parent, t)
+        i = parent
+    end
+    return true
+end
+
+function MinQueue:offer(item)
+    return self:add(item)
+end
+
+function MinQueue:plusAssign(item)
+    self:add(item)
+end
+
+function MinQueue:poll()
+    if self.heap:isEmpty() then
+        error(__K2L_NoSuchElementException.new("queue is empty"))
+    end
+    local top = self.heap:get(0)
+    local last = self.heap:removeAt(self.heap.size - 1)
+    if self.heap:isNotEmpty() then
+        local ____object_2 = self.heap
+        ____object_2:set(0, last)
+        local i = 0
+        while true do
+            local l = 2 * i + 1
+            if l >= self.heap.size then
+                break
+            end
+            local r = l + 1
+            local c = r < self.heap.size and self.comparator(self.heap:get(r), self.heap:get(l)) < 0 and r or l
+            if self.comparator(self.heap:get(c), self.heap:get(i)) >= 0 then
+                break
+            end
+            local t = self.heap:get(i)
+            local ____object_3 = self.heap
+            local ____key_1 = i
+            ____object_3:set(____key_1, self.heap:get(c))
+            local ____object_4 = self.heap
+            ____object_4:set(c, t)
+            i = c
+        end
+    end
+    return top
+end
+
 local Pos = __K2L_Class("Pos")
 
 function Pos:____init(row, col)
@@ -70,13 +148,13 @@ end
 
 function Dir:turnRight()
     local ____values = Dir.____values
-    local ____index = __K2L_IRem(self.ordinal + 1, __K2L_EnumValues(Dir).size)
+    local ____index = (self.ordinal + 1) % __K2L_EnumValues(Dir).size
     return ____values[____index + 1] or __K2L_IndexError(____index, #____values)
 end
 
 function Dir:turnLeft()
     local ____values_1 = Dir.____values
-    local ____index_1 = __K2L_IRem(self.ordinal + 3, __K2L_EnumValues(Dir).size)
+    local ____index_1 = (self.ordinal + 3) % __K2L_EnumValues(Dir).size
     return ____values_1[____index_1 + 1] or __K2L_IndexError(____index_1, #____values_1)
 end
 
@@ -132,12 +210,12 @@ function Grid:get(p)
 end
 
 function Grid:set(p, c)
-    local ____object = self.cells:get(p.row)
-    local ____key = p.col
-    if ____key < 0 or ____key >= ____object.size then
-        __K2L_IndexError(____key, ____object.size, "array")
+    local ____object_5 = self.cells:get(p.row)
+    local ____key_2 = p.col
+    if ____key_2 < 0 or ____key_2 >= ____object_5.size then
+        __K2L_IndexError(____key_2, ____object_5.size, "array")
     end
-    ____object[____key + 1] = c
+    ____object_5[____key_2 + 1] = c
 end
 
 function Grid:contains(p)
@@ -223,7 +301,7 @@ end
 local MAZE = "\n    #################\n    #S..#.....#.....#\n    #.#.#.###.#.###.#\n    #.#...#...#...#.#\n    #.#####.#####.#.#\n    #.....#.....#.#.#\n    #####.#####.#.#.#\n    #...#.....#...#E#\n    #.#.#####.#####.#\n    #.#.......#.....#\n    #################\n"
 
 local function bfs(grid, start, goal)
-    local previous = __K2L_HashMap.new()
+    local previous = __K2L_Map.new()
     local queue = __K2L_ArrayDeque.new()
     local seen = __K2L_SetOf(start)
     queue:addLast(start)
@@ -239,7 +317,6 @@ local function bfs(grid, start, goal)
             return path:asReversed()
         end
         local ____list_3 = grid:neighbours(cur)
-        local ____mod = ____list_3.____modCount
         for ____i_5 = 1, ____list_3.size do
             local n = ____list_3[____i_5]
             do
@@ -250,9 +327,6 @@ local function bfs(grid, start, goal)
                 queue:addLast(n)
             end
             ::____continue::
-            if ____list_3.____modCount ~= ____mod and ____list_3:____comodified(____i_5) then
-                break
-            end
         end
     end
     return nil
@@ -290,7 +364,7 @@ local ____lambda_2 = function(____a, ____b)
 end
 local function cheapestRoute(grid, start, goal)
     local best = __K2L_MapOf()
-    local pq = __K2L_PriorityQueue.new(____lambda_2)
+    local pq = MinQueue.new(____lambda_2)
     local first = State.new(start, Dir.RIGHT)
     best:set(first, 0)
     pq:add(__K2L_Pair.new(0, first))
@@ -304,8 +378,7 @@ local function cheapestRoute(grid, start, goal)
             if cost > (best:get(state) or 2147483647) then
                 goto ____continue_1
             end
-            local moves = __K2L_ReadOnlyListOf(__K2L_Pair.new(State.new(state.pos:plus(state.dir), state.dir), 1), __K2L_Pair.new(State.new(state.pos, state.dir:turnLeft()), 1000), __K2L_Pair.new(State.new(state.pos, state.dir:turnRight()), 1000))
-            local ____mod_1 = moves.____modCount
+            local moves = __K2L_ListOf(__K2L_Pair.new(State.new(state.pos:plus(state.dir), state.dir), 1), __K2L_Pair.new(State.new(state.pos, state.dir:turnLeft()), 1000), __K2L_Pair.new(State.new(state.pos, state.dir:turnRight()), 1000))
             for ____i_6 = 1, moves.size do
                 local ____item = moves[____i_6]
                 local ____next, step = ____item.first, ____item.second
@@ -320,9 +393,6 @@ local function cheapestRoute(grid, start, goal)
                     end
                 end
                 ::____continue_2::
-                if moves.____modCount ~= ____mod_1 and moves:____comodified(____i_6) then
-                    break
-                end
             end
         end
         ::____continue_1::
@@ -360,7 +430,7 @@ function Region:equals(other)
 end
 
 local function regions(grid)
-    local visited = __K2L_HashSet.new()
+    local visited = __K2L_Set.new()
     local result = __K2L_ListOf()
     for _, start in grid:positions():iter() do
         do
@@ -370,7 +440,7 @@ local function regions(grid)
             local plant = __K2L_NotNull(grid:get(start))
             local area = 0
             local perimeter = 0
-            local stack = __K2L_ArrayDeque.new(__K2L_SingletonListOf(start))
+            local stack = __K2L_ArrayDeque.new(__K2L_ListOf(start))
             visited:add(start)
             while stack:isNotEmpty() do
                 local p = stack:removeLast()
@@ -393,7 +463,7 @@ local function regions(grid)
     return result
 end
 
-local PATROL = "\n    ....#.....\n    .........#\n    ..........\n    ..#.......\n    .......#..\n    ..........\n    .#..^.....\n    ........#.\n    #.........\n    ......#...\n"
+local PATROL = "\n    ..#..#....\n    .......#..\n    .#..#.....\n    ..........\n    ..........\n    .....#....\n    #.^.......\n    ..#.......\n    #.........\n    ...#..#...\n"
 
 local function patrol(grid)
     local pos = grid:positions():first(function(it)
@@ -441,7 +511,6 @@ local function main()
     print("first steps: " .. path:take(5):joinToString(" -> "))
     local drawn = maze:copy()
     local ____list_4 = path:zipWithNext()
-    local ____mod_2 = ____list_4.____modCount
     for ____i_8 = 1, ____list_4.size do
         local ____it = ____list_4[____i_8]
         do
@@ -451,9 +520,6 @@ local function main()
                 drawn:set(b, d.symbol)
             end
         end
-        if ____list_4.____modCount ~= ____mod_2 and ____list_4:____comodified(____i_8) then
-            break
-        end
     end
     print(drawn:render())
     print("cheapest route: " .. cheapestRoute(maze, start, ____end))
@@ -461,13 +527,9 @@ local function main()
     local garden = Grid:parse(GARDEN)
     local rs = regions(garden)
     local ____list_5 = rs:sortedWith(____lambda_3)
-    local ____mod_3 = ____list_5.____modCount
     for ____i_9 = 1, ____list_5.size do
         local it = ____list_5[____i_9]
         print("  " .. it.plant .. ": area=" .. it.area .. " perimeter=" .. it.perimeter .. " price=" .. it:getPrice())
-        if ____list_5.____modCount ~= ____mod_3 and ____list_5:____comodified(____i_9) then
-            break
-        end
     end
     local ____sum = 0
     local ____items_3, ____n_3 = rs:____array()
@@ -521,5 +583,5 @@ local function main()
     print("obstacles creating loops (near start): " .. loops)
 end
 
-__K2L_Main(main)
-return {Pos = Pos, Dir = Dir, Grid = Grid, MAZE = MAZE, bfs = bfs, State = State, cheapestRoute = cheapestRoute, GARDEN = GARDEN, Region = Region, regions = regions, PATROL = PATROL, patrol = patrol}
+__K2L_RunMain(main)
+return {MinQueue = MinQueue, Pos = Pos, Dir = Dir, Grid = Grid, MAZE = MAZE, bfs = bfs, State = State, cheapestRoute = cheapestRoute, GARDEN = GARDEN, Region = Region, regions = regions, PATROL = PATROL, patrol = patrol}

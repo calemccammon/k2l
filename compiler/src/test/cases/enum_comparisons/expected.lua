@@ -5,13 +5,12 @@ local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_SortedSet = ____lualib.__K2L_SortedSet
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local companions
@@ -99,15 +98,15 @@ local ____lambda_3 = function(it) return it.level end
 local function main()
     print(__K2L_Compare(E.A, E.B) < 0)
     print(__K2L_Compare(E.C, E.A))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(E.C, E.A, E.B):sorted()))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(E.C, E.A, E.B):max()))
-    print(__K2L_Str(__K2L_ReadOnlyMapOf(__K2L_Pair.new(E.C, 1), __K2L_Pair.new(E.A, 2)):getEntries():sortedBy(____lambda_1, true)))
+    print(__K2L_Str(__K2L_ListOf(E.C, E.A, E.B):sorted()))
+    print(__K2L_Str(__K2L_ListOf(E.C, E.A, E.B):max()))
+    print(__K2L_Str(__K2L_MapOf(__K2L_Pair.new(E.C, 1), __K2L_Pair.new(E.A, 2)):getEntries():sortedBy(____lambda_1, true)))
     local c = E.B
     print(__K2L_Compare(c, E.A))
     print(__K2L_Str(__K2L_Num.maxOf(E.A, E.C)))
     print(__K2L_Str(__K2L_Num.coerceIn(E.B, E.C, E.C)))
-    print(__K2L_Str(__K2L_SortedSet.new(__K2L_ReadOnlyListOf(E.B, E.C, E.A, E.B))))
-    local ____list = __K2L_ReadOnlyListOf(Level.HIGH, Level.LOW):sorted()
+    print(__K2L_Str(__K2L_ListOf(E.B, E.C, E.A, E.B):toSortedSet()))
+    local ____list = __K2L_ListOf(Level.HIGH, Level.LOW):sorted()
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list:____array()
@@ -118,7 +117,7 @@ local function main()
     end
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(__K2L_Compare(Level.HIGH, Level.LOW) > 0)
-    local tasks = __K2L_ReadOnlyListOf(Task.new("x", Level.HIGH), Task.new("y", Level.LOW), Task.new("z", Level.HIGH))
+    local tasks = __K2L_ListOf(Task.new("x", Level.HIGH), Task.new("y", Level.LOW), Task.new("z", Level.HIGH))
     print(__K2L_Str(tasks:sortedWith(____lambda_2)))
     print(tasks:maxBy(____lambda_3).name)
     companions()
@@ -170,5 +169,5 @@ function companions()
     print(__K2L_Str(Size:parse("l")) .. " " .. __K2L_Str(Size:parse("x")) .. " " .. Size:count() .. " " .. __K2L_Str(Size:named("small")))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {E = E, Level = Level, Task = Task, Size = Size, companions = companions}

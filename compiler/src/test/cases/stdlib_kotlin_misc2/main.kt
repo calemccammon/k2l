@@ -1,10 +1,6 @@
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.Instant
-import kotlin.time.TestTimeSource
-import kotlin.time.asClock
 
 // More of kotlin and kotlin.text: Any(), String(), AutoCloseable { }, assert, the kotlin exceptions, hashCode of enums and
-// Results, primitive iterators, Appendable, unsigned hex formatting, hasSurrogatePairAt and TimeSource.asClock
+// Results, primitive iterators, Appendable and hasSurrogatePairAt
 fun t(label: String, f: () -> Any?) {
     try {
         println("$label = ${f()}")
@@ -30,7 +26,7 @@ fun main() {
     // Any() and String()
     val lock = Any()
     val other = Any()
-    t("Any") { listOf(lock == lock, lock == other, lock.hashCode() == lock.hashCode(), lock.toString().startsWith("java.lang.Object@")) }
+    t("Any") { listOf(lock == lock, lock == other, lock.hashCode() == lock.hashCode(), lock.toString().startsWith("kotlin.Any@")) }
     t("String()") { "[" + String() + "]" }
 
     // AutoCloseable { }
@@ -44,14 +40,6 @@ fun main() {
     assert(evaluated++ == 100)
     assert(false) { "never built" }
     t("assert") { evaluated }
-
-    // kotlin's own exceptions
-    t("KotlinNullPointerException") { throw KotlinNullPointerException("knpe") }
-    t("NoWhenBranchMatchedException") { throw NoWhenBranchMatchedException("no branch") }
-    t("TypeCastException") { throw TypeCastException("bad cast") }
-    t("hierarchy") {
-        listOf(KotlinNullPointerException() is NullPointerException, TypeCastException() is ClassCastException, NoWhenBranchMatchedException() is RuntimeException)
-    }
 
     // hashCode of enums (identity) and Results (their value's)
     t("enum hashCode") { listOf(Color.RED.hashCode() == Color.RED.hashCode(), Color.RED.hashCode() == Color.GREEN.hashCode()) }
@@ -75,18 +63,8 @@ fun main() {
     t("Appendable") { render(StringBuilder(), listOf(1, 2, 3)).toString() }
 
     // unsigned hex
-    t("unsigned toHexString") { listOf(255u.toHexString(), 255.toUByte().toHexString(), 65535.toUShort().toHexString(), 4_000_000_000u.toHexString()) }
-    t("ULong toHexString") { listOf(0uL.toHexString(), 255uL.toHexString()) }
-    t("hexToU") { listOf("ff".hexToUByte(), "ffff".hexToUShort(), "ffffffff".hexToUInt(), "ff".hexToULong()) }
-    t("unsigned with format") { listOf(255u.toHexString(HexFormat { number.removeLeadingZeros = true }), "0Xffh".hexToUInt(HexFormat { number.prefix = "0x"; number.suffix = "H" })) }
 
     // hasSurrogatePairAt: no surrogate pairs in ASCII text
     t("hasSurrogatePairAt") { listOf("abc".hasSurrogatePairAt(0), "".hasSurrogatePairAt(0)) }
 
-    // a TimeSource as a Clock
-    val source = TestTimeSource()
-    val clock = source.asClock(Instant.fromEpochSeconds(100))
-    t("asClock") { clock.now() }
-    source += 2.seconds
-    t("asClock later") { clock.now() }
 }

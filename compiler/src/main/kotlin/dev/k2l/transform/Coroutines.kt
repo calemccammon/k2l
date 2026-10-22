@@ -11,21 +11,17 @@ import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.psi.*
 
 /**
- * The function that runs a `try` block: [deepPcall], or on Lua 5.1 (which cannot yield across pcall)
- * `__K2L_CoPcall` when the block contains a suspension point, so the enclosing coroutine can still
- * suspend inside it.
+ * The function that runs a `try` block: Lua's `pcall`, or on Lua 5.1 (which cannot yield across pcall) `__K2L_CoPcall`
+ * when the block contains a suspension point, so the enclosing coroutine can still suspend inside it.
  */
 internal fun FileTransformer.protectedCall(e: KtTryExpression): LuaExpr {
-    if (target.yieldsAcrossPcall) return deepPcall()
+    if (target.yieldsAcrossPcall) return luaPcall()
     val protected = listOf(e.tryBlock) + e.catchClauses
-    return if (protected.any { containsSuspensionPoint(it) }) lualibRef("CoPcall", "__K2L_CoPcall") else deepPcall()
+    return if (protected.any { containsSuspensionPoint(it) }) lualibRef("CoPcall", "__K2L_CoPcall") else luaPcall()
 }
 
-/**
- * `pcall` for the protected blocks of the program, which may nest as deeply as the recursion through them: on Lua 5.2+
- * every hundredth nested one runs in a coroutine of its own (see DeepPcall.lua), as Lua allows only some 200 nested C calls.
- */
-internal fun FileTransformer.deepPcall(): LuaExpr = lualibRef("DeepPcall", "__K2L_DeepPcall")
+/** `pcall`, which the protected blocks of the program run in. */
+internal fun luaPcall(): LuaExpr = LuaName("pcall")
 
 /** Whether [element] calls a suspend function (including `yield` in a sequence builder) anywhere inside it. */
 internal fun FileTransformer.containsSuspensionPoint(element: KtElement): Boolean = with(session) {
@@ -42,7 +38,7 @@ internal fun FileTransformer.containsSuspensionPoint(element: KtElement): Boolea
     return found
 }
 
-/** Library objects used as values: `EmptyCoroutineContext`, `Result` (its companion), `Unit`, `TimeSource.Monotonic` and `Clock.System`. */
+/** Library objects used as values: `EmptyCoroutineContext`, `Result` (its companion) and `Unit`. */
 internal val LIBRARY_OBJECTS = setOf(
     "kotlin/coroutines/EmptyCoroutineContext",
     "kotlin/Result",
@@ -50,8 +46,6 @@ internal val LIBRARY_OBJECTS = setOf(
     "kotlin/Unit",
     "kotlin/coroutines/ContinuationInterceptor",
     "kotlin/coroutines/ContinuationInterceptor.Key",
-    "kotlin/time/TimeSource.Monotonic",
-    "kotlin/time/Clock.System",
 )
 
 /** The Lua value of one of the [LIBRARY_OBJECTS]. */
@@ -62,10 +56,6 @@ internal fun FileTransformer.libraryObject(classId: String): LuaExpr = when (cla
 
     "kotlin/coroutines/ContinuationInterceptor", "kotlin/coroutines/ContinuationInterceptor.Key" ->
         lualibRef(COROUTINES_FEATURE, "__K2L_ContinuationInterceptor")
-
-    "kotlin/time/TimeSource.Monotonic" -> lualibRef(DURATION_FEATURE, "__K2L_Monotonic")
-
-    "kotlin/time/Clock.System" -> lualibRef(INSTANT_FEATURE, "__K2L_SystemClock")
 
     else -> lualibRef(RESULT_FEATURE, "__K2L_Result")
 }

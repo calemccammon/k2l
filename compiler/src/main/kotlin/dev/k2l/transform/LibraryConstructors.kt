@@ -12,20 +12,13 @@ typealias ConstructorArea = (classId: String?, site: CallSite) -> LuaExpr?
  * [REFERENCE_AREAS].
  */
 internal object LibraryConstructors {
-    /** Collections, ranges, text builders and arrays, big numbers, the JDK's other collections, code points and stream statistics. */
+    /** Collections, ranges, text builders and arrays. */
     private val REFERENCE_AREAS = listOf<ConstructorArea>(
         { id, site -> CoreConstructors.construct(id, site) },
-        { id, site -> BigNumberMappings.construct(id, site) },
-        { id, site -> JdkCollectionsMappings.construct(id, site) },
-        { id, site -> Utf16Mappings.construct(id, site) },
-        { id, site -> StreamMappings.construct(id, site) },
     )
 
-    /** [REFERENCE_AREAS], then time, `java.util`, deep recursion and the rest of the kotlin package. */
+    /** [REFERENCE_AREAS], then deep recursion and the rest of the kotlin package. */
     private val CALL_AREAS = REFERENCE_AREAS + listOf<ConstructorArea>(
-        { id, site -> TimeMappings.construct(id, site) },
-        { id, site -> JavaUtilMappings.construct(id, site) },
-        { id, site -> DeepRecursiveMappings.construct(id, site) },
         { id, site -> CollectionExtrasMappings.construct(id, site) },
         { id, site -> KotlinMiscMappings.construct(id, site) },
     )

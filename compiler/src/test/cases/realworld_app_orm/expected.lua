@@ -1,13 +1,12 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_TouchObject = ____lualib.__K2L_TouchObject
@@ -18,7 +17,7 @@ local ____Model = require("model.Model")
 
 local ____lambda_1 = function(self) return self:getId():eq(2) end
 local ____lambda_2 = function(____this)
-    return ____this:update(__K2L_TouchObject(____Model.Posts), ____Model.Posts:getAuthor():eq(1), __K2L_SingletonMapOf(__K2L_Pair.new(____Model.Posts:getAuthor(), 3)))
+    return ____this:update(__K2L_TouchObject(____Model.Posts), ____Model.Posts:getAuthor():eq(1), __K2L_MapOf(__K2L_Pair.new(____Model.Posts:getAuthor(), 3)))
 end
 local ____lambda_3 = function(____this_3) return 1 end
 local ____lambda_4 = function(____this_2)
@@ -50,7 +49,7 @@ local function main()
     posts:save(____Model.Post.new(10, 1, "Notes on the engine", true, 42))
     posts:save(____Model.Post.new(11, 1, "Draft"))
     posts:save(____Model.Post.new(12, 2, "Hello", true))
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         authors:save(____Model.Author.new(1, "Impostor"))
     end)
     if not ____ok then
@@ -91,7 +90,7 @@ local function main()
     print("bob: " .. __K2L_Str(bob) .. " changes=" .. __K2L_Str(bob.changes) .. " reloaded=" .. __K2L_Str(authors:find(____lambda_1)))
     local moved = db:transaction(____lambda_2)
     print("moved " .. moved .. " posts")
-    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_1 = pcall(function()
         db:transaction(function(____this_1)
             ____this_1:insert(__K2L_TouchObject(____Model.Posts), ____Model.Post.new(13, 3, "ok"))
             ____this_1:insert(__K2L_TouchObject(____Model.Posts), ____Model.Post.new(13, 3, "duplicate"))
@@ -108,7 +107,7 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_2 = pcall(function()
         db:transaction(____lambda_4)
     end)
     if not ____ok_2 then
@@ -149,7 +148,7 @@ local function main()
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 -- ==== model/Model.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
@@ -157,11 +156,10 @@ local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_KProperty = ____lualib.__K2L_KProperty
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_TouchObject = ____lualib.__K2L_TouchObject
 
@@ -294,7 +292,7 @@ function Authors:toEntity(row)
 end
 
 function Authors:toRow(entity)
-    return __K2L_ReadOnlyMapOf(__K2L_Pair.new(self:getId(), entity.id), __K2L_Pair.new(self:getName(), entity:getName()), __K2L_Pair.new(self:getRole(), entity:getRole()), __K2L_Pair.new(self:getBio(), entity.bio))
+    return __K2L_MapOf(__K2L_Pair.new(self:getId(), entity.id), __K2L_Pair.new(self:getName(), entity:getName()), __K2L_Pair.new(self:getRole(), entity:getRole()), __K2L_Pair.new(self:getBio(), entity.bio))
 end
 
 __K2L_LazyObject(Authors, "____init")
@@ -344,7 +342,7 @@ function Posts:toEntity(row)
 end
 
 function Posts:toRow(entity)
-    return __K2L_ReadOnlyMapOf(__K2L_Pair.new(self:getId(), entity.id), __K2L_Pair.new(self:getAuthor(), entity.authorId), __K2L_Pair.new(self:getTitle(), entity.title), __K2L_Pair.new(self:getPublished(), entity.published), __K2L_Pair.new(self:getLikes(), entity.likes))
+    return __K2L_MapOf(__K2L_Pair.new(self:getId(), entity.id), __K2L_Pair.new(self:getAuthor(), entity.authorId), __K2L_Pair.new(self:getTitle(), entity.title), __K2L_Pair.new(self:getPublished(), entity.published), __K2L_Pair.new(self:getLikes(), entity.likes))
 end
 
 __K2L_LazyObject(Posts, "____init")
@@ -367,7 +365,7 @@ end
 
 function AuthorDao:rename(author, newName)
     author:setName(newName)
-    self.db:update(self.table, self.table:getId():eq(author.id), __K2L_SingletonMapOf(__K2L_Pair.new(self.table:getName(), newName)))
+    self.db:update(self.table, self.table:getId():eq(author.id), __K2L_MapOf(__K2L_Pair.new(self.table:getName(), newName)))
 end
 
 local PostDao = __K2L_Class("db.model.PostDao", ____Database.Dao)
@@ -393,7 +391,6 @@ return {Role = Role, Author = Author, Post = Post, Authors = Authors, Posts = Po
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -444,7 +441,7 @@ function Database:render(c, v)
     if v ~= nil then
         local ____result
         if getmetatable(c) ~= ____Table.Column then
-            __K2L_CastFail(c, "db.orm.Column", "db.orm.Column")
+            __K2L_CastFail(c, "db.orm.Column")
         end
         ____result = c.type:render(v)
         ____result_1 = ____result
@@ -493,14 +490,10 @@ function Database:insert(____table, entity)
         error(DatabaseException.new("duplicate key " .. key .. " in " .. ____table.tableName))
     end
     local ____list_2 = ____table:getAllColumns()
-    local ____mod = ____list_2.____modCount
     for ____i_2 = 1, ____list_2.size do
         local c = ____list_2[____i_2]
         if not c.nullable and values:get(c) == nil and c.default == nil then
             error(DatabaseException.new(__K2L_Str(c) .. " may not be null"))
-        end
-        if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
-            break
         end
     end
     self.statements:add("INSERT INTO " .. ____table.tableName .. " VALUES (" .. ____table:getAllColumns():joinToString(nil, nil, nil, nil, nil, function(it)
@@ -557,7 +550,6 @@ function Database:update(____table, where, changes)
     end) .. " WHERE " .. where.sql)
     local n = 0
     local ____list_5 = self:rows(____table)
-    local ____mod_2 = ____list_5.____modCount
     for ____i_6 = 1, ____list_5.size do
         local row = ____list_5[____i_6]
         do
@@ -565,7 +557,6 @@ function Database:update(____table, where, changes)
                 goto ____continue
             end
             local ____items_4, ____n_4 = changes:____entryArray()
-            local ____mod_1 = changes.____modCount
             for ____i_5 = 1, ____n_4 do
                 local ____entry = ____items_4[____i_5]
                 do
@@ -574,16 +565,10 @@ function Database:update(____table, where, changes)
                     local ____receiver_3 = self:render(c, v)
                     row:set(____key_1, ____receiver_3 and __K2L_Text.trimChars(____receiver_3, 3, "'"))
                 end
-                if changes.____modCount ~= ____mod_1 and changes:____comodified(____i_5, ____n_4) then
-                    break
-                end
             end
             n = n + 1
         end
         ::____continue::
-        if ____list_5.____modCount ~= ____mod_2 and ____list_5:____comodified(____i_6) then
-            break
-        end
     end
     return n
 end
@@ -605,20 +590,19 @@ function Database:transaction(block)
         return __K2L_ListWrap(____out_2, ____count_2)
     end)
     self.statements:add("BEGIN")
-    local ____ok, ____result_7, ____returned = __K2L_DeepPcall(function()
+    local ____ok, ____result_7, ____returned = pcall(function()
         local ____value_2 = block(self)
         self.statements:add("COMMIT")
         return true, ____value_2
     end)
     if not ____ok then
-        ____ok, ____result_7, ____returned = __K2L_DeepPcall(function()
+        ____ok, ____result_7, ____returned = pcall(function()
             local ____error = __K2L_ToThrowable(____result_7)
             if getmetatable(____error) == DatabaseException then
                 local e = ____error
                 self.statements:add("ROLLBACK")
                 local ____collection = __K2L_NotNull(self.snapshot)
                 local ____items_6, ____n_6 = ____collection:____entryArray()
-                local ____mod_3 = ____collection.____modCount
                 for ____i_9 = 1, ____n_6 do
                     local ____entry_1 = ____items_6[____i_9]
                     do
@@ -633,9 +617,6 @@ function Database:transaction(block)
                             ____out_3[____count_3] = it:toMutableMap()
                         end
                         ____object_1:set(name, __K2L_ListWrap(____out_3, ____count_3):toMutableList())
-                    end
-                    if ____collection.____modCount ~= ____mod_3 and ____collection:____comodified(____i_9, ____n_6) then
-                        break
                     end
                 end
                 error(DatabaseException.new("transaction failed", e))

@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____greeter = require("lib.greeter")
@@ -22,8 +22,8 @@ local function main()
     print(counter.count)
     print(counter.describe(counter))
     local v = ____vector.new(3.0, 4.0):add(____vector.new(0.0, 0.0))
-    print(__K2L_Str(v:length()))
-    print(__K2L_Str(v.x))
+    print(v:length())
+    print(v.x)
     local config = {}
     config.retries = 3
     print(config.retries ~= nil)
@@ -38,4 +38,4 @@ local function main()
     print(ok)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)

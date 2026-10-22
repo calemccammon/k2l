@@ -1,14 +1,12 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CheckStep = ____lualib.__K2L_CheckStep
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 
 local ____exports = {}
 
@@ -101,7 +99,7 @@ local function main()
     end))
     print(tostring(9 >= 1 and 9 <= 10 and (9 - 1) % 2 == 0) .. " " .. tostring(10 >= 1 and 10 <= 10 and (10 - 1) % 2 == 0) .. " " .. __K2L_IntRange.new(1, 10):withStep(2).last)
     print(tostring(4 >= 1 and 4 <= 10 and (10 - 4) % 3 == 0) .. " " .. tostring(1 >= 1 and 1 <= 10 and (10 - 1) % 3 == 0) .. " " .. tostring(0 >= 1 and 0 <= 10 and (10 - 0) % 3 == 0))
-    local ____list = __K2L_ReadOnlyListOf(0, 5, 10, 14, 17, 21, -3, 25, 26)
+    local ____list = __K2L_ListOf(0, 5, 10, 14, 17, 21, -3, 25, 26)
     for ____i = 1, ____list.size do
         local x = ____list[____i]
         io.write(classify(x) .. " ")
@@ -160,13 +158,12 @@ local function main()
     local ____value_12 = -6
     local ____value_13 = -7
     print(tostring(____value_12 >= -10 and ____value_12 <= 10 and (10 - ____value_12) % 4 == 0) .. " " .. tostring(not (____value_13 >= -10 and ____value_13 <= 10 and (10 - ____value_13) % 4 == 0)) .. " " .. tostring(10 >= 0 and 10 < 10 and (10 - 0) % 5 == 0))
-    print(tostring(7 >= 1 and 7 <= 10 and (7 - 1) % 3 == 0) .. " " .. tostring(not (8 >= 1 and 8 <= 10 and (8 - 1) % 3 == 0)) .. " " .. tostring(not math.ult(5, 1) and not math.ult(9, 5) and __K2L_Unsigned.urem(9 - 5, 2) == 0) .. " " .. tostring(not math.ult(4, 1) and not math.ult(9, 4) and __K2L_Unsigned.urem(9 - 4, 2) == 0))
     local longs = __K2L_IntRange.new(-5, 15):filter(____lambda_9)
     print(__K2L_Str(longs))
-    local ____list_1 = __K2L_ReadOnlyListOf(2, 0, -3)
+    local ____list_1 = __K2L_ListOf(2, 0, -3)
     for ____i_1 = 1, ____list_1.size do
         local s = ____list_1[____i_1]
-        local ____ok, ____result = __K2L_DeepPcall(function()
+        local ____ok, ____result = pcall(function()
             local ____step_4 = __K2L_CheckStep(s)
             print(5 >= 1 and 5 <= 10 and (5 - 1) % ____step_4 == 0)
         end)
@@ -180,7 +177,7 @@ local function main()
             end
         end
     end
-    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_1 = pcall(function()
         for i = 0, 4, __K2L_CheckStep(lo - 3) do
             io.write(tostring(i))
         end
@@ -210,5 +207,5 @@ ____exports.traced = traced
 ____exports.t = t
 ____exports.classify = classify
 ____exports.charKind = charKind
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return ____exports

@@ -139,7 +139,7 @@ fun subclasses() {
     val d = Derived(100)
     d.add(1)
     d += 2
-    println("derived $d ${d.total()} ${d.extra} ${d.javaClass.simpleName}")
+    println("derived $d ${d.total()} ${d.extra} ${d::class.simpleName}")
     val s = Snapshot(listOf(3, 1, 2))
     s.sort()
     println("snapshot $s ${s.size}")
@@ -154,10 +154,10 @@ fun subclasses() {
     shelf.addAll(listOf("c", "a", "b"))
     shelf.sort()
     println("shelf $shelf sets=${shelf.sets}")
-    java.util.Collections.reverse(shelf)
+    shelf.reverse()
     shelf.replaceAll { it.uppercase() }
     println("reverse/replaceAll $shelf ${shelf.sets > 0}")
-    shelf.shuffle(java.util.Random(4))
+    shelf.shuffle(kotlin.random.Random(4))
     println("shuffle ${shelf.sorted()} ${shelf.size}")
     shelf.removeIf { it == "A" }
     shelf.add(0, "Z")

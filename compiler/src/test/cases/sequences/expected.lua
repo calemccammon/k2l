@@ -1,9 +1,8 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_GenerateSequenceLazy = ____lualib.__K2L_GenerateSequenceLazy
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -16,19 +15,17 @@ local __K2L_Iterator = ____lualib.__K2L_Iterator
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_SequenceFromIterator = ____lualib.__K2L_SequenceFromIterator
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
 
 local Countdown
@@ -71,7 +68,7 @@ end
 local ____lambda_3 = function(it) return #it end
 local function laziness()
     print("-- laziness")
-    local result = __K2L_AsSequence(__K2L_ReadOnlyListOf(1, 2, 3, 4)):map(function(it)
+    local result = __K2L_AsSequence(__K2L_ListOf(1, 2, 3, 4)):map(function(it)
         print("map " .. it)
         return it * 10
     end):filter(function(it)
@@ -99,9 +96,7 @@ local function laziness()
     print("folded " .. folded)
 end
 
-local ____lambda_4 = function(it)
-    return (it >= 0 and it % 3 or 0 - -it % 3) == 0
-end
+local ____lambda_4 = function(it) return it % 3 == 0 end
 local ____lambda_5 = function(it) return it * it end
 local ____lambda_6 = function(it) return it * it > 50 end
 local ____lambda_7 = function(it) return it < 6 end
@@ -144,7 +139,7 @@ local function infinite()
         end
     end)
     print(__K2L_Str(countdown:toList()))
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         countdown:toList()
     end)
     if not ____ok then
@@ -169,9 +164,7 @@ local ____lambda_17 = function(it)
 end
 local ____lambda_18 = function(i, item) return i .. ":" .. item.name end
 local ____lambda_19 = function(it) return __K2L_AsSequence(it.name) end
-local ____lambda_20 = function(it)
-    return __K2L_ReadOnlyListOf(it.price, -it.price)
-end
+local ____lambda_20 = function(it) return __K2L_ListOf(it.price, -it.price) end
 local ____lambda_21 = function(it) return it.price end
 local ____lambda_22 = function(it) return it.price end
 local ____lambda_23 = function(it) return it.name end
@@ -223,7 +216,7 @@ local ____lambda_62 = function() return __K2L_SequenceOf(0) end
 local ____lambda_63 = function() return __K2L_SequenceOf(0) end
 local function operations()
     print("-- operations")
-    local items = __K2L_ReadOnlyListOf(Item.new("apple", 3), Item.new("pear", 5), Item.new("fig", 2), Item.new("kiwi", 5))
+    local items = __K2L_ListOf(Item.new("apple", 3), Item.new("pear", 5), Item.new("fig", 2), Item.new("kiwi", 5))
     local seq = __K2L_AsSequence(items)
     print(__K2L_Str(seq:map(____lambda_14):toList()))
     print(__K2L_Str(seq:filterNot(____lambda_15):map(____lambda_16):toSet()))
@@ -238,8 +231,8 @@ local function operations()
         return i * item.price
     end):sum())
     print(seq:sumOf(____lambda_24))
-    print(__K2L_Str(seq:map(____lambda_25):sum(0.0)))
-    print(__K2L_Str(seq:map(____lambda_26):average()))
+    print(seq:map(____lambda_25):sum(0.0))
+    print(seq:map(____lambda_26):average())
     print(seq:count(____lambda_27))
     print(seq:all(____lambda_28))
     print(seq:none(____lambda_29))
@@ -281,7 +274,7 @@ local function operations()
     print(__K2L_Str(seq:map(____lambda_54):chunked(3):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_IntRange.new(1, 7)):windowed(3, 2):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_IntRange.new(1, 7)):windowed(3, 3, true):map(____lambda_55):toList()))
-    print(__K2L_Str(__K2L_SequenceOf(1, 2, 3):plus(4):plusAll(__K2L_ReadOnlyListOf(5, 6)):plusAll(__K2L_SequenceOf(7)):toList()))
+    print(__K2L_Str(__K2L_SequenceOf(1, 2, 3):plus(4):plusAll(__K2L_ListOf(5, 6)):plusAll(__K2L_SequenceOf(7)):toList()))
     print(__K2L_Str(__K2L_SequenceOf(1, 2, 3, 2):minus(2):toList()))
     print(__K2L_Str(__K2L_SequenceOf(3, 1, 2):zip(__K2L_SequenceOf("c", "a"), ____lambda_56):toList()))
     print(__K2L_Str(__K2L_SequenceOf(1, 2, 3):zipWithNext():toList()))
@@ -299,7 +292,7 @@ local function operations()
     local ____value = __K2L_SequenceOf(1, 2):toMutableList()
     ____value:add(3)
     print(__K2L_Str(____value))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlyListOf(3, 4)):ifEmpty(____lambda_62):toList()))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_ListOf(3, 4)):ifEmpty(____lambda_62):toList()))
     print(__K2L_Str(__K2L_SequenceOf():ifEmpty(____lambda_63):toList()))
 end
 
@@ -307,7 +300,7 @@ local ____lambda_64 = function(it) return it:upper() end
 local ____lambda_65 = function(it) return it.key .. "=" .. it.value end
 local ____lambda_66 = function(it) return it ~= 6 end
 local ____lambda_67 = function()
-    return __K2L_IteratorOf(__K2L_ReadOnlyListOf(1, 2, 3))
+    return __K2L_IteratorOf(__K2L_ListOf(1, 2, 3))
 end
 local ____lambda_68 = function(it) return it * 2 end
 local ____lambda_69 = function(it) return it + 1 end
@@ -316,9 +309,9 @@ local ____lambda_71 = function(it) return it * 10 end
 local function sources()
     print("-- sources")
     print(__K2L_AsSequence("hey"):map(____lambda_64):joinToString(""))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlyMapOf(__K2L_Pair.new(1, "one"), __K2L_Pair.new(2, "two"))):map(____lambda_65):toList()))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 5, 6, 7)):filter(____lambda_66):toList()))
-    print(__K2L_Str(__K2L_AsSequence(__K2L_ReadOnlySetOf("s", "t")):toList()))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_MapOf(__K2L_Pair.new(1, "one"), __K2L_Pair.new(2, "two"))):map(____lambda_65):toList()))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_ArrayOf(5, 6, 7)):filter(____lambda_66):toList()))
+    print(__K2L_Str(__K2L_AsSequence(__K2L_SetOf("s", "t")):toList()))
     print(__K2L_Str(__K2L_AsSequence(__K2L_IntRange.new(10, 1, -1):withStep(3)):toList()))
     local custom = __K2L_SequenceFromIterator(____lambda_67)
     print(__K2L_Str(custom:map(____lambda_68):toList()))
@@ -328,9 +321,9 @@ local function sources()
         io.write(it:next() .. " ")
     end
     print()
-    local once = __K2L_AsSequence(__K2L_IteratorOf(__K2L_ReadOnlyListOf(7, 8)))
+    local once = __K2L_AsSequence(__K2L_IteratorOf(__K2L_ListOf(7, 8)))
     print(__K2L_Str(once:toList()))
-    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_1 = pcall(function()
         once:toList()
     end)
     if not ____ok_1 then
@@ -342,7 +335,7 @@ local function sources()
             error(____error_1, 0)
         end
     end
-    local reusable = __K2L_AsSequence(__K2L_ReadOnlyListOf(1, 2)):map(____lambda_69)
+    local reusable = __K2L_AsSequence(__K2L_ListOf(1, 2)):map(____lambda_69)
     print(__K2L_Str(reusable:toList():plusAll(reusable:toList())))
     local s = reusable
     print(__K2L_InstanceOf(s, __K2L_Sequence))
@@ -350,7 +343,7 @@ local function sources()
         local i, v = ____item.index, ____item.value
         print(i .. " -> " .. v)
     end
-    print(__K2L_Str(__K2L_SingletonListOf(0):plusAll(__K2L_SequenceOf(1, 2))))
+    print(__K2L_Str(__K2L_ListOf(0):plusAll(__K2L_SequenceOf(1, 2))))
     local target = __K2L_ListOf(1)
     target:addAll(__K2L_SequenceOf(2, 3))
     print(__K2L_Str(target))
@@ -385,7 +378,7 @@ end
 local ____lambda_72 = function(a, b) return a + b end
 local function errors()
     print("-- errors")
-    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_2 = pcall(function()
         __K2L_SequenceOf():first()
     end)
     if not ____ok_2 then
@@ -397,7 +390,7 @@ local function errors()
             error(____error_2, 0)
         end
     end
-    local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
+    local ____ok_3, ____result_3 = pcall(function()
         __K2L_SequenceOf(1, 2):single()
     end)
     if not ____ok_3 then
@@ -409,7 +402,7 @@ local function errors()
             error(____error_3, 0)
         end
     end
-    local ____ok_4, ____result_4 = __K2L_DeepPcall(function()
+    local ____ok_4, ____result_4 = pcall(function()
         naturals():take(3):elementAt(5)
     end)
     if not ____ok_4 then
@@ -421,7 +414,7 @@ local function errors()
             error(____error_4, 0)
         end
     end
-    local ____ok_5, ____result_5 = __K2L_DeepPcall(function()
+    local ____ok_5, ____result_5 = pcall(function()
         __K2L_SequenceOf():reduce(____lambda_72)
     end)
     if not ____ok_5 then
@@ -433,7 +426,7 @@ local function errors()
             error(____error_5, 0)
         end
     end
-    local ____ok_6, ____result_6 = __K2L_DeepPcall(function()
+    local ____ok_6, ____result_6 = pcall(function()
         naturals():take(-1)
     end)
     if not ____ok_6 then
@@ -445,7 +438,7 @@ local function errors()
             error(____error_6, 0)
         end
     end
-    local ____ok_7, ____result_7 = __K2L_DeepPcall(function()
+    local ____ok_7, ____result_7 = pcall(function()
         for _, it in __K2L_SequenceOf(1, 2, 3):map(function(it)
             if it == 2 then
                 error(__K2L_IllegalStateException.new("bad " .. it))
@@ -475,5 +468,5 @@ local function main()
     errors()
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Item = Item, naturals = naturals, fibonacci = fibonacci, laziness = laziness, infinite = infinite, operations = operations, sources = sources, Countdown = Countdown, errors = errors}

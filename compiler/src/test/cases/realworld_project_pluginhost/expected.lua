@@ -2,23 +2,21 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
 
 local Plugin = __K2L_Class("arena.core.Plugin")
-__K2L_ClassInfo(Plugin, "arena.core.Plugin", "arena.core.Plugin", "interface")
 
 function Plugin:getDependsOn()
-    return __K2L_ReadOnlyListOf()
+    return __K2L_ListOf()
 end
 
 function Plugin:onTick(tick, world) end
@@ -28,9 +26,7 @@ function Plugin:onEvent(event, world)
 end
 
 local PluginFactory = __K2L_Class("arena.core.PluginFactory")
-__K2L_ClassInfo(PluginFactory, "arena.core.PluginFactory", "arena.core.PluginFactory", "interface")
 local BasePlugin = __K2L_Class("arena.core.BasePlugin", nil, Plugin)
-__K2L_ClassInfo(BasePlugin, "arena.core.BasePlugin", "arena.core.BasePlugin", "class")
 
 function BasePlugin:____init(id, ...)
     local deps = __K2L_ArrayOf(...)
@@ -55,7 +51,6 @@ function BasePlugin:toString()
 end
 
 local PluginException = __K2L_Class("arena.core.PluginException", __K2L_RuntimeException)
-__K2L_ClassInfo(PluginException, "arena.core.PluginException", "arena.core.PluginException", "class")
 
 function PluginException:____init(pluginId, cause)
     __K2L_RuntimeException.____init(self, "plugin " .. pluginId .. " failed: " .. __K2L_Str(cause.message), cause)
@@ -63,7 +58,6 @@ function PluginException:____init(pluginId, cause)
 end
 
 local PluginRegistry = __K2L_Class("arena.core.PluginRegistry")
-__K2L_ClassInfo(PluginRegistry, "arena.core.PluginRegistry", "arena.core.PluginRegistry", "class")
 
 function PluginRegistry:____init()
     self.factories = __K2L_MapOf()
@@ -106,25 +100,17 @@ function PluginRegistry:discover()
             error(__K2L_IllegalStateException.new("dependency cycle at " .. id))
         end
         local ____list = plugin:getDependsOn():sorted()
-        local ____mod = ____list.____modCount
         for ____i = 1, ____list.size do
             local it = ____list[____i]
             visit(it, id)
-            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-                break
-            end
         end
         visiting:remove(id)
         ordered:set(id, plugin)
     end
     local ____list_1 = created:getKeys():sorted()
-    local ____mod_1 = ____list_1.____modCount
     for ____i_1 = 1, ____list_1.size do
         local it = ____list_1[____i_1]
         visit(it, nil)
-        if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_1) then
-            break
-        end
     end
     return ordered:getValues():toList()
 end
@@ -139,14 +125,12 @@ return {Plugin = Plugin, PluginFactory = PluginFactory, BasePlugin = BasePlugin,
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 
 local Unit = __K2L_Class("arena.core.Unit")
-__K2L_ClassInfo(Unit, "arena.core.Unit", "arena.core.Unit", "class")
 
 function Unit:____init(name, hp, x, team)
     self.name = name
@@ -172,9 +156,7 @@ function Unit:equals(other)
 end
 
 local Event = __K2L_Class("arena.core.Event")
-__K2L_ClassInfo(Event, "arena.core.Event", "arena.core.Event", "interface")
 Event.Moved = __K2L_Class("arena.core.Event$Moved", nil, Event)
-__K2L_ClassInfo(Event.Moved, "arena.core.Event.Moved", "arena.core.Event$Moved", "class")
 
 function Event.Moved:____init(unit, to)
     self.unit = unit
@@ -198,7 +180,6 @@ function Event.Moved:equals(other)
 end
 
 Event.Attack = __K2L_Class("arena.core.Event$Attack", nil, Event)
-__K2L_ClassInfo(Event.Attack, "arena.core.Event.Attack", "arena.core.Event$Attack", "class")
 
 function Event.Attack:____init(attacker, target, power)
     self.attacker = attacker
@@ -223,7 +204,6 @@ function Event.Attack:equals(other)
 end
 
 Event.Died = __K2L_Class("arena.core.Event$Died", nil, Event)
-__K2L_ClassInfo(Event.Died, "arena.core.Event.Died", "arena.core.Event$Died", "class")
 
 function Event.Died:____init(unit)
     self.unit = unit
@@ -246,7 +226,6 @@ function Event.Died:equals(other)
 end
 
 Event.RoundOver = __K2L_Class("arena.core.Event$RoundOver", nil, Event)
-__K2L_ClassInfo(Event.RoundOver, "arena.core.Event.RoundOver", "arena.core.Event$RoundOver", "class")
 
 function Event.RoundOver:toString()
     return "RoundOver"
@@ -257,7 +236,6 @@ function Event.RoundOver:hashCode()
 end
 
 local World = __K2L_Class("arena.core.World")
-__K2L_ClassInfo(World, "arena.core.World", "arena.core.World", "class")
 
 function World:____init(width)
     self.width = width
@@ -316,11 +294,10 @@ local function getTeams(____this)
 end
 
 local Context = __K2L_Class("arena.core.Context")
-__K2L_ClassInfo(Context, "arena.core.Context", "arena.core.Context", "class")
 
 function Context:____init(logger)
     self.logger = logger
-    self.services = __K2L_HashMap.new()
+    self.services = __K2L_Map.new()
 end
 
 function Context:log(msg)
@@ -340,14 +317,11 @@ return {Unit = Unit, Event = Event, World = World, alive = alive, getTeams = get
 -- ==== host/Host.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
@@ -355,7 +329,6 @@ local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
 local ____World = require("core.World")
 local ____Plugin = require("core.Plugin")
 local Host = __K2L_Class("arena.host.Host")
-__K2L_ClassInfo(Host, "arena.host.Host", "arena.host.Host", "class")
 
 function Host:____init(world, maxTicks)
     self.world = world
@@ -379,7 +352,7 @@ function Host:getInstalled()
         end
         return __K2L_ListWrap(____out, ____count)
     else
-        return __K2L_ReadOnlyListOf()
+        return __K2L_ListOf()
     end
 end
 
@@ -390,13 +363,9 @@ end
 function Host:boot(registry)
     self.plugins = registry:discover()
     local ____list_1 = self.plugins or __K2L_Uninitialized("plugins")
-    local ____mod = ____list_1.____modCount
     for ____i_1 = 1, ____list_1.size do
         local it = ____list_1[____i_1]
         it:install(self.context)
-        if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_1) then
-            break
-        end
     end
 end
 
@@ -405,10 +374,9 @@ function Host:run()
     while tick < self.maxTicks and ____World.getTeams(self.world).size > 1 do
         tick = tick + 1
         local ____list_2 = self.plugins or __K2L_Uninitialized("plugins")
-        local ____mod_1 = ____list_2.____modCount
         for ____i_2 = 1, ____list_2.size do
             local p = ____list_2[____i_2]
-            local ____ok, ____result = __K2L_DeepPcall(function()
+            local ____ok, ____result = pcall(function()
                 p:onTick(tick, self.world)
             end)
             if not ____ok then
@@ -419,9 +387,6 @@ function Host:run()
                 else
                     error(____error, 0)
                 end
-            end
-            if ____list_2.____modCount ~= ____mod_1 and ____list_2:____comodified(____i_2) then
-                break
             end
         end
         self:drain()
@@ -461,11 +426,11 @@ end
 return {Host = Host}
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_TouchObject = ____lualib.__K2L_TouchObject
 
@@ -487,7 +452,7 @@ local function main()
     local ____receiver = __K2L_RunCatching(____lambda_1):exceptionOrNull()
     print(__K2L_Str(____receiver and ____receiver.message))
     local world = ____World.World.new(8)
-    world.units:addAll(__K2L_ReadOnlyListOf(____World.Unit.new("knight", 9, 0, "A"), ____World.Unit.new("archer", 6, 1, "A"), ____World.Unit.new("mage", 7, 7, "B"), ____World.Unit.new("brute", 12, 6, "B")))
+    world.units:addAll(__K2L_ListOf(____World.Unit.new("knight", 9, 0, "A"), ____World.Unit.new("archer", 6, 1, "A"), ____World.Unit.new("mage", 7, 7, "B"), ____World.Unit.new("brute", 12, 6, "B")))
     local host = ____Host.Host.new(world, 20)
     print("installed before boot: " .. __K2L_Str(host:getInstalled()))
     host:boot(__K2L_TouchObject(____Plugin.PluginRegistry))
@@ -507,9 +472,9 @@ local function main()
     local ____result
     do
         local ____this = host:getCtx()
-        local ____value = ____this:lookup(__K2L_KClassOf(____Scoring.Scoreboard))
+        local ____value = ____this:lookup(__K2L_NotNull("Scoreboard"))
         if ____value == nil then
-            error(__K2L_IllegalStateException.new("no service " .. __K2L_Str(__K2L_KClassOf(____Scoring.Scoreboard).simpleName)))
+            error(__K2L_IllegalStateException.new("no service " .. __K2L_Str("Scoreboard")))
         end
         ____result = ____value
     end
@@ -520,31 +485,26 @@ local function main()
     print("cleared " .. __K2L_Str(____Plugin.PluginRegistry:getIds()) .. " " .. __K2L_Str(____Plugin.PluginRegistry:discover()))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 -- ==== plugins/Combat.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_Fmod = ____lualib.__K2L_Fmod
-local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_Lazy = ____lualib.__K2L_Lazy
+local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
 
 local ____Plugin = require("core.Plugin")
-local ____Movement = require("plugins.Movement")
 local ____World = require("core.World")
 local ____damageTable_delegate = __K2L_Lazy(function()
     print("building damage table")
-    return __K2L_ReadOnlyMapOf(__K2L_Pair.new("k", 4), __K2L_Pair.new("a", 3), __K2L_Pair.new("m", 5))
+    return __K2L_MapOf(__K2L_Pair.new("k", 4), __K2L_Pair.new("a", 3), __K2L_Pair.new("m", 5))
 end)
 local CombatPlugin = __K2L_Class("arena.plugins.combat.CombatPlugin", ____Plugin.BasePlugin)
-__K2L_ClassInfo(CombatPlugin, "arena.plugins.combat.CombatPlugin", "arena.plugins.combat.CombatPlugin", "class")
 
 function CombatPlugin:____init(critEvery)
     ____Plugin.BasePlugin.____init(self, "combat", "movement")
@@ -556,15 +516,14 @@ function CombatPlugin:onTick(tick, world)
     local ____result
     do
         local ____this = self.ctx or __K2L_Uninitialized("ctx")
-        local ____value = ____this:lookup(__K2L_KClassOf(____Movement.Grid))
+        local ____value = ____this:lookup(__K2L_NotNull("Grid"))
         if ____value == nil then
-            error(__K2L_IllegalStateException.new("no service " .. __K2L_Str(__K2L_KClassOf(____Movement.Grid).simpleName)))
+            error(__K2L_IllegalStateException.new("no service " .. __K2L_Str("Grid")))
         end
         ____result = ____value
     end
     local grid = ____result
     local ____list = ____World.alive(world)
-    local ____mod = ____list.____modCount
     for ____i_1 = 1, ____list.size do
         local u = ____list[____i_1]
         do
@@ -584,12 +543,9 @@ function CombatPlugin:onTick(tick, world)
             local target = ____result_1
             self.swings = self.swings + 1
             local base = ____damageTable_delegate:getValue():get(__K2L_Text.first(u.name)) or 1
-            world:post(____World.Event.Attack.new(u.name, target.name, (self.critEvery ~= 0 and __K2L_Fmod(self.swings, self.critEvery) + 0 or __K2L_IRem(self.swings, self.critEvery)) == 0 and base * 2 or base))
+            world:post(____World.Event.Attack.new(u.name, target.name, self.swings % self.critEvery == 0 and base * 2 or base))
         end
         ::____continue::
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i_1) then
-            break
-        end
     end
 end
 
@@ -613,7 +569,6 @@ function CombatPlugin:onEvent(event, world)
 end
 
 CombatPlugin.Factory = __K2L_Class("arena.plugins.combat.CombatPlugin$Factory", nil, ____Plugin.PluginFactory)
-__K2L_ClassInfo(CombatPlugin.Factory, "arena.plugins.combat.CombatPlugin.Factory", "arena.plugins.combat.CombatPlugin$Factory", "class")
 
 function CombatPlugin.Factory:____init()
     self.pluginId = "combat"
@@ -632,10 +587,9 @@ return {____damageTable_delegate = ____damageTable_delegate, CombatPlugin = Comb
 -- ==== plugins/Movement.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
@@ -643,7 +597,6 @@ local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
 local ____Plugin = require("core.Plugin")
 local ____World = require("core.World")
 local Grid = __K2L_Class("arena.plugins.movement.Grid")
-__K2L_ClassInfo(Grid, "arena.plugins.movement.Grid", "arena.plugins.movement.Grid", "class")
 
 function Grid:____init(width)
     self.width = width
@@ -662,7 +615,6 @@ function Grid:distance(a, b)
 end
 
 local MovementPlugin = __K2L_Class("arena.plugins.movement.MovementPlugin", ____Plugin.BasePlugin)
-__K2L_ClassInfo(MovementPlugin, "arena.plugins.movement.MovementPlugin", "arena.plugins.movement.MovementPlugin", "class")
 
 function MovementPlugin:____init()
     ____Plugin.BasePlugin.____init(self, "movement")
@@ -670,22 +622,21 @@ function MovementPlugin:____init()
 end
 
 function MovementPlugin:setup()
-    (self.ctx or __K2L_Uninitialized("ctx")):provide(__K2L_KClassOf(Grid), Grid.new(8))
+    (self.ctx or __K2L_Uninitialized("ctx")):provide(__K2L_NotNull("Grid"), Grid.new(8))
 end
 
 function MovementPlugin:onTick(tick, world)
     local ____result
     do
         local ____this = self.ctx or __K2L_Uninitialized("ctx")
-        local ____value = ____this:lookup(__K2L_KClassOf(Grid))
+        local ____value = ____this:lookup(__K2L_NotNull("Grid"))
         if ____value == nil then
-            error(__K2L_IllegalStateException.new("no service " .. __K2L_Str(__K2L_KClassOf(Grid).simpleName)))
+            error(__K2L_IllegalStateException.new("no service " .. __K2L_Str("Grid")))
         end
         ____result = ____value
     end
     local grid = ____result
     local ____list = ____World.alive(world)
-    local ____mod = ____list.____modCount
     for ____i_1 = 1, ____list.size do
         local u = ____list[____i_1]
         do
@@ -712,9 +663,6 @@ function MovementPlugin:onTick(tick, world)
             end
         end
         ::____continue::
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i_1) then
-            break
-        end
     end
 end
 
@@ -726,7 +674,6 @@ function MovementPlugin:onEvent(event, world)
 end
 
 MovementPlugin.Companion = __K2L_Class("arena.plugins.movement.MovementPlugin$Companion", nil, ____Plugin.PluginFactory)
-__K2L_ClassInfo(MovementPlugin.Companion, "arena.plugins.movement.MovementPlugin.Companion", "arena.plugins.movement.MovementPlugin$Companion", "class")
 
 function MovementPlugin.Companion:____init()
     self.pluginId__Companion = "movement"
@@ -745,10 +692,9 @@ return {Grid = Grid, MovementPlugin = MovementPlugin}
 -- ==== plugins/Scoring.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
@@ -756,10 +702,9 @@ local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
 local ____Plugin = require("core.Plugin")
 local ____World = require("core.World")
 local Scoreboard = __K2L_Class("arena.plugins.scoring.Scoreboard")
-__K2L_ClassInfo(Scoreboard, "arena.plugins.scoring.Scoreboard", "arena.plugins.scoring.Scoreboard", "class")
 
 function Scoreboard:____init()
-    self.kills = __K2L_SortedMapOf()
+    self.kills = __K2L_SortedMapOf(nil)
 end
 
 function Scoreboard:credit(unit)
@@ -768,7 +713,6 @@ function Scoreboard:credit(unit)
 end
 
 local ScoringPlugin = __K2L_Class("arena.plugins.scoring.ScoringPlugin", ____Plugin.BasePlugin, ____Plugin.PluginFactory)
-__K2L_ClassInfo(ScoringPlugin, "arena.plugins.scoring.ScoringPlugin", "arena.plugins.scoring.ScoringPlugin", "class")
 
 function ScoringPlugin:____init()
     ____Plugin.BasePlugin.____init(self, "scoring", "combat")
@@ -784,7 +728,7 @@ function ScoringPlugin:create()
 end
 
 function ScoringPlugin:setup()
-    (self.ctx or __K2L_Uninitialized("ctx")):provide(__K2L_KClassOf(Scoreboard), Scoreboard.new())
+    (self.ctx or __K2L_Uninitialized("ctx")):provide(__K2L_NotNull("Scoreboard"), Scoreboard.new())
 end
 
 function ScoringPlugin:onEvent(event, world)
@@ -799,9 +743,9 @@ function ScoringPlugin:onEvent(event, world)
         local ____result
         do
             local ____this = self.ctx or __K2L_Uninitialized("ctx")
-            local ____value = ____this:lookup(__K2L_KClassOf(Scoreboard))
+            local ____value = ____this:lookup(__K2L_NotNull("Scoreboard"))
             if ____value == nil then
-                error(__K2L_IllegalStateException.new("no service " .. __K2L_Str(__K2L_KClassOf(Scoreboard).simpleName)))
+                error(__K2L_IllegalStateException.new("no service " .. __K2L_Str("Scoreboard")))
             end
             ____result = ____value
         end
@@ -815,14 +759,12 @@ end
 
 ScoringPlugin:____init()
 local BrokenPlugin = __K2L_Class("arena.plugins.scoring.BrokenPlugin", ____Plugin.BasePlugin)
-__K2L_ClassInfo(BrokenPlugin, "arena.plugins.scoring.BrokenPlugin", "arena.plugins.scoring.BrokenPlugin", "class")
 
 function BrokenPlugin:____init()
     ____Plugin.BasePlugin.____init(self, "broken", "teleport")
 end
 
 BrokenPlugin.Companion = __K2L_Class("arena.plugins.scoring.BrokenPlugin$Companion", nil, ____Plugin.PluginFactory)
-__K2L_ClassInfo(BrokenPlugin.Companion, "arena.plugins.scoring.BrokenPlugin.Companion", "arena.plugins.scoring.BrokenPlugin$Companion", "class")
 
 function BrokenPlugin.Companion:____init()
     self.pluginId__Companion = "broken"

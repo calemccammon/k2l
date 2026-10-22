@@ -49,16 +49,17 @@ GitHub Actions, store the values above as repository secrets named `MAVEN_CENTRA
 
 ## Cutting a release (0.2.0)
 
-For 0.2.0, `gradle.properties` already says `version=0.2.0`, and `CHANGELOG.md` already has a `## [0.2.0] - YYYY-MM-DD`
-section, so the checklist starts at the date. For a later release, first set `version=X.Y.Z` in `gradle.properties`.
-Then move the entries under `## [Unreleased]` into a new `## [X.Y.Z] - YYYY-MM-DD` section, and add its link at the
-bottom of the file.
+For 0.2.0, `gradle.properties` already says `version=0.2.0`, and `CHANGELOG.md` has its notes under
+`## [Unreleased] (0.2.0)`, so the checklist starts at the heading. For a later release, first set `version=X.Y.Z` in
+`gradle.properties`, then move the entries under `## [Unreleased]` into a new `## [X.Y.Z] - YYYY-MM-DD` section.
 
 Careful: `./gradlew publish` (without a suffix) also uploads to Maven Central. For local checks, use only
 `publishToMavenLocal`.
 
-1. **Set the date.** Replace `YYYY-MM-DD` in the `## [0.2.0]` heading of `CHANGELOG.md` with the release date. Commit
-   this ("Release 0.2.0") on `main`, and wait for CI to be green on that commit.
+1. **Date the notes.** In `CHANGELOG.md`, rename `## [Unreleased] (0.2.0)` to `## [0.2.0] - YYYY-MM-DD` with the
+   release date, add an empty `## [Unreleased]` above it, and set the links at the bottom of the file
+   (`[Unreleased]: .../compare/v0.2.0...HEAD`, `[0.2.0]: .../releases/tag/v0.2.0`). Commit this ("Release 0.2.0") on
+   `main`, and wait for CI to be green on that commit.
 2. **Check locally**, with no credentials in the environment, so nothing is signed or uploaded.
    `-Dmaven.repo.local` keeps the artifacts out of `~/.m2`:
    ```sh

@@ -1,18 +1,17 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
@@ -21,10 +20,9 @@ local __K2L_StringPadEnd = ____lualib.__K2L_StringPadEnd
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function editDistance(a, b)
-    local dp = __K2L_ListOfSize(#a + 1, function(it) return __K2L_ListOfSize(#b + 1, 0, "[I") end, "[[I")
+    local dp = __K2L_ListOfSize(#a + 1, function(it) return __K2L_ListOfSize(#b + 1, 0, true) end, true)
     for i = 0, #a do
         local ____object = dp[i + 1] or __K2L_IndexError(i, dp.size, "array")
         if 0 < 0 or 0 >= ____object.size then
@@ -54,7 +52,7 @@ local function editDistance(a, b)
 end
 
 local function longestCommonSubsequence(a, b)
-    local dp = __K2L_ListOfSize(#a + 1, function(it) return __K2L_ListOfSize(#b + 1, 0, "[I") end, "[[I")
+    local dp = __K2L_ListOfSize(#a + 1, function(it) return __K2L_ListOfSize(#b + 1, 0, true) end, true)
     local ____range = __K2L_IntRange.new(0, #a - 1):reversed()
     for i = ____range.first, ____range.last, ____range.step do
         local ____range_1 = __K2L_IntRange.new(0, #b - 1):reversed()
@@ -113,8 +111,8 @@ end
 local function knapsack(items, capacity)
     local n = items.size
     local best = __K2L_ListOfSize(n + 1, function(it)
-        return __K2L_ListOfSize(capacity + 1, 0, "[I")
-    end, "[[I")
+        return __K2L_ListOfSize(capacity + 1, 0, true)
+    end, true)
     for i = 0, items.size - 1 do
         local item = items[i + 1]
         for w = 0, capacity do
@@ -146,7 +144,7 @@ local function knapsack(items, capacity)
 end
 
 local function coinChangeWays(coins, amount)
-    local ways = __K2L_ListOfSize(amount + 1, 0, "[J")
+    local ways = __K2L_ListOfSize(amount + 1, 0, true)
     if 0 < 0 or 0 >= ways.size then
         __K2L_IndexError(0, ways.size, "array")
     end
@@ -162,9 +160,8 @@ end
 
 local function minCoins(coins, amount)
     local inf = 2147483647
-    local dp = __K2L_ListOfSize(amount + 1, function(it) return it == 0 and 0 or inf end, "[I")
+    local dp = __K2L_ListOfSize(amount + 1, function(it) return it == 0 and 0 or inf end, true)
     for v = 1, amount do
-        local ____mod = coins.____modCount
         for ____i_1 = 1, coins.size do
             local c = coins[____i_1]
             if c <= v and (dp[v - c + 1] or __K2L_IndexError(v - c, dp.size, "array")) ~= inf then
@@ -173,9 +170,6 @@ local function minCoins(coins, amount)
                     __K2L_IndexError(v, dp.size, "array")
                 end
                 dp[v + 1] = ____value_4
-            end
-            if coins.____modCount ~= ____mod and coins:____comodified(____i_1) then
-                break
             end
         end
     end
@@ -187,7 +181,7 @@ local ____lambda_1 = function(it) return -1 end
 local function longestIncreasingSubsequence(xs)
     local tails = __K2L_ListOf()
     local tailIndex = __K2L_ListOf()
-    local parent = __K2L_ListOfSize(xs.size, ____lambda_1, "[I")
+    local parent = __K2L_ListOfSize(xs.size, ____lambda_1, true)
     for i = 0, xs.size - 1 do
         local x = xs[i + 1]
         local pos = tails:binarySearch(x)
@@ -214,7 +208,7 @@ local function longestIncreasingSubsequence(xs)
     local result = __K2L_List.new()
     local ____value_7 = tailIndex:lastOrNull()
     if ____value_7 == nil then
-        return __K2L_ReadOnlyListOf()
+        return __K2L_ListOf()
     end
     local k = ____value_7
     while k >= 0 do
@@ -229,7 +223,7 @@ local Arrangements = __K2L_Class("Arrangements")
 function Arrangements:____init(pattern, groups)
     self.pattern = pattern
     self.groups = groups
-    self.memo = __K2L_HashMap.new()
+    self.memo = __K2L_Map.new()
     self.hits = 0
 end
 
@@ -336,14 +330,14 @@ local ____lambda_3 = function(it) return it.name end
 local ____lambda_4 = function(it) return it:joinToString("+") end
 local ____lambda_5 = function(it) return partitions(it).size end
 local function main()
-    local ____list = __K2L_ReadOnlyListOf(__K2L_Pair.new("kitten", "sitting"), __K2L_Pair.new("flaw", "lawn"), __K2L_Pair.new("", "abc"), __K2L_Pair.new("intention", "execution"))
+    local ____list = __K2L_ListOf(__K2L_Pair.new("kitten", "sitting"), __K2L_Pair.new("flaw", "lawn"), __K2L_Pair.new("", "abc"), __K2L_Pair.new("intention", "execution"))
     for ____i_5 = 1, ____list.size do
         local ____item = ____list[____i_5]
         local a, b = ____item.first, ____item.second
         print("edit(" .. a .. ", " .. b .. ") = " .. editDistance(a, b))
     end
     print("lcs = " .. longestCommonSubsequence("AGGTAB", "GXTXAYB") .. " / " .. longestCommonSubsequence("ABCBDAB", "BDCABA"))
-    local items = __K2L_ReadOnlyListOf(Item.new("map", 9, 150), Item.new("compass", 13, 35), Item.new("water", 153, 200), Item.new("sandwich", 50, 160), Item.new("glucose", 15, 60), Item.new("tin", 68, 45), Item.new("banana", 27, 60), Item.new("apple", 39, 40), Item.new("cheese", 23, 30), Item.new("beer", 52, 10), Item.new("suntan", 11, 70), Item.new("camera", 32, 30))
+    local items = __K2L_ListOf(Item.new("map", 9, 150), Item.new("compass", 13, 35), Item.new("water", 153, 200), Item.new("sandwich", 50, 160), Item.new("glucose", 15, 60), Item.new("tin", 68, 45), Item.new("banana", 27, 60), Item.new("apple", 39, 40), Item.new("cheese", 23, 30), Item.new("beer", 52, 10), Item.new("suntan", 11, 70), Item.new("camera", 32, 30))
     local ____destructured_1 = knapsack(items, 400)
     local value, chosen = ____destructured_1.first, ____destructured_1.second
     local ____sum = 0
@@ -354,15 +348,14 @@ local function main()
     end
     print("knapsack value=" .. value .. " weight=" .. ____sum)
     print("  items: " .. chosen:joinToString(nil, nil, nil, nil, nil, ____lambda_3))
-    print("ways(100) = " .. coinChangeWays(__K2L_TypedArrayOf("[I", 1, 5, 10, 25, 50), 100))
-    print("ways(1000) = " .. coinChangeWays(__K2L_TypedArrayOf("[I", 1, 2, 5, 10, 20, 50, 100, 200), 1000))
-    print("minCoins: " .. __K2L_Str(minCoins(__K2L_ReadOnlyListOf(1, 3, 4), 6)) .. " " .. __K2L_Str(minCoins(__K2L_SingletonListOf(2), 3)) .. " " .. __K2L_Str(minCoins(__K2L_ReadOnlyListOf(186, 419, 83, 408), 6249)))
-    local seq = __K2L_ReadOnlyListOf(10, 9, 2, 5, 3, 7, 101, 18, 4, 8, 6, 12, 15)
+    print("ways(100) = " .. coinChangeWays(__K2L_ArrayOf(1, 5, 10, 25, 50), 100))
+    print("ways(1000) = " .. coinChangeWays(__K2L_ArrayOf(1, 2, 5, 10, 20, 50, 100, 200), 1000))
+    print("minCoins: " .. __K2L_Str(minCoins(__K2L_ListOf(1, 3, 4), 6)) .. " " .. __K2L_Str(minCoins(__K2L_ListOf(2), 3)) .. " " .. __K2L_Str(minCoins(__K2L_ListOf(186, 419, 83, 408), 6249)))
+    local seq = __K2L_ListOf(10, 9, 2, 5, 3, 7, 101, 18, 4, 8, 6, 12, 15)
     print("lis = " .. __K2L_Str(longestIncreasingSubsequence(seq)))
-    print("lis(empty) = " .. __K2L_Str(longestIncreasingSubsequence(__K2L_ReadOnlyListOf())))
-    local lines = __K2L_ReadOnlyListOf("???.### 1,1,3", ".??..??...?##. 1,1,3", "?#?#?#?#?#?#?#? 1,3,1,6", "?###???????? 3,2,1")
+    print("lis(empty) = " .. __K2L_Str(longestIncreasingSubsequence(__K2L_ListOf())))
+    local lines = __K2L_ListOf("???.### 1,1,3", ".??..??...?##. 1,1,3", "?#?#?#?#?#?#?#? 1,3,1,6", "?###???????? 3,2,1")
     local total = 0
-    local ____mod_1 = lines.____modCount
     for ____i_7 = 1, lines.size do
         local line = lines[____i_7]
         local ____destructured_2 = unfold(line, 1)
@@ -374,9 +367,6 @@ local function main()
         local b = big:count()
         total = total + b
         print(__K2L_StringPadEnd(line, 26) .. " -> " .. a .. " / " .. b .. " (memo hits " .. big.hits .. ")")
-        if lines.____modCount ~= ____mod_1 and lines:____comodified(____i_7) then
-            break
-        end
     end
     print("total unfolded = " .. total)
     print("fib(78) = " .. fib(78) .. ", memo size " .. fibMemo.size)
@@ -409,5 +399,5 @@ local function main()
     print("partition counts: " .. __K2L_Str(__K2L_IntRange.new(1, 12):map(____lambda_5)))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {editDistance = editDistance, longestCommonSubsequence = longestCommonSubsequence, Item = Item, knapsack = knapsack, coinChangeWays = coinChangeWays, minCoins = minCoins, longestIncreasingSubsequence = longestIncreasingSubsequence, Arrangements = Arrangements, unfold = unfold, fibMemo = fibMemo, fib = fib, triangleMaxPath = triangleMaxPath, partitions = partitions}

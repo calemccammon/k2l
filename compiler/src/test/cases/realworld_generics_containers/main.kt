@@ -228,7 +228,7 @@ fun main() {
     println(accepted.joinToString(" "))
     println("peek=${top.peek()?.name} ordered=${top.map { it.name }}")
     println("drained=${top.drainDescending().map { "${it.name}(${it.priority})" }} empty=${top.poll()}")
-    val words = BoundedQueue<String>(4, Comparator.comparing(String::length).thenComparing(Comparator.reverseOrder()))
+    val words = BoundedQueue<String>(4, compareBy(String::length).then(reverseOrder()))
     "kotlin lua generic variance bound star projection reified".split(" ").forEach { words.offer(it) }
     println("longest=${words.toList()}")
 

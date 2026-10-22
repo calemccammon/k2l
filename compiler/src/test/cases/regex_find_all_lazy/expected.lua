@@ -1,8 +1,8 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
@@ -15,7 +15,7 @@ end
 local ____lambda_4 = function(it) return it > 1 end
 local ____lambda_5 = function(it) return it.value:upper() end
 local function main()
-    local re = __K2L_Regex.new("(\\w)=(\\d+)")
+    local re = __K2L_Regex.new("(\\w)=(\\d+)", "([%w_])=(%d+)")
     local text = "a=1, b=22, c=333, d=4"
     for _, m in __K2L_Sequence.new(re:findAllFactory(text)):iter() do
         do
@@ -34,7 +34,7 @@ local function main()
         seen:add(it.value)
     end):first(____lambda_1)
     print(firstLong.value .. " after " .. __K2L_Str(seen))
-    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("x*"):findAllFactory("axb")):map(____lambda_2):toList()))
+    print(__K2L_Str(__K2L_Sequence.new(__K2L_Regex.new("x*", "x*"):findAllFactory("axb")):map(____lambda_2):toList()))
     print(__K2L_Sequence.new(re:findAllFactory(text)):count() + __K2L_Sequence.new(re:findAllFactory("")):count())
     print(__K2L_Sequence.new(re:findAllFactory(text)):map(____lambda_3):filter(____lambda_4):sum())
     local matches = __K2L_Sequence.new(re:findAllFactory(text))
@@ -42,7 +42,7 @@ local function main()
     print(__K2L_Str(__K2L_RunCatching(function()
         return __K2L_Sequence.new(re:findAllFactory(text, 99))
     end):exceptionOrNull()))
-    print(__K2L_Sequence.new(__K2L_Regex.new("[aeiou]"):findAllFactory("sequence")):joinToString("", nil, nil, nil, nil, ____lambda_5))
+    print(__K2L_Sequence.new(__K2L_Regex.new("[aeiou]", "[aeiou]"):findAllFactory("sequence")):joinToString("", nil, nil, nil, nil, ____lambda_5))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)

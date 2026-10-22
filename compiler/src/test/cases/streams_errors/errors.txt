@@ -1,8 +1,0 @@
-7:29: Library API 'java.util.stream.Stream.spliterator' is not supported yet
-  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see "Calling Lua from Kotlin" in the README)
-7:43: Library API 'java.util.Spliterator.estimateSize' is not supported yet
-  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see "Calling Lua from Kotlin" in the README)
-8:46: Library API 'java.util.stream.Collectors.teeing' is not supported yet
-  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see "Calling Lua from Kotlin" in the README)
-9:46: Library API 'java.util.stream.Collectors.groupingByConcurrent' is not supported yet
-  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see "Calling Lua from Kotlin" in the README)

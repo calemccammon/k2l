@@ -24,7 +24,7 @@ object ScoringPlugin : BasePlugin("scoring", "combat"), PluginFactory {
     private var lastAttacker = mutableMapOf<String, String>()
 
     override fun setup() {
-        ctx.provide(Scoreboard::class, Scoreboard())
+        ctx.provide(Scoreboard::class.simpleName!!, Scoreboard())
     }
 
     override fun onEvent(event: Event, world: World): Boolean = when (event) {

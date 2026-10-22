@@ -29,20 +29,20 @@ fun main() {
     println(m.range.first)
     println(date.find("none"))
 
-    val named = Regex("(?<key>\\w+)=(?<value>\\w+)")
+    val named = Regex("(\\w+)=(\\w+)")
     val kv = named.find("a=1, b=2")!!
-    println(kv.groups["key"]?.value)
-    println(kv.groups["value"]?.value)
+    println(kv.groups[1]?.value)
+    println(kv.groups[2]?.value)
     println(named.findAll("a=1, b=2").map { it.groupValues[1] to it.groupValues[2] }.toList())
     println(named.replace("a=1, b=2", "$2:$1"))
 
-    val opt = Regex("(a)(b)?")
+    val opt = Regex("(a)(b?)")
     println(opt.find("a")!!.groupValues)
-    println(opt.find("a")!!.groups[2])
+    println(opt.find("a")!!.groups[2]?.value?.isEmpty())
 
     println(Regex("a.c", RegexOption.IGNORE_CASE).matches("AbC"))
-    println(Regex("^b", RegexOption.MULTILINE).findAll("a\nb\nbb").count())
-    println(Regex("a|b").pattern)
+    println(Regex("^b").findAll("b\nbb").count())
+    println(Regex("a+b").pattern)
     println(Regex.escape("a.b*c"))
     println(Regex("colou?r").findAll("color colour colr").map { it.value }.toList())
     println(Regex("(\\w)\\1").find("hello")?.value)

@@ -1,21 +1,16 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Fmod = ____lualib.__K2L_Fmod
-local __K2L_IDiv = ____lualib.__K2L_IDiv
-local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
 local __K2L_StringPadEnd = ____lualib.__K2L_StringPadEnd
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
@@ -27,7 +22,7 @@ local __K2L_Text = ____lualib.__K2L_Text
 local function wrap(text, width)
     local lines = __K2L_ListOf()
     local line = __K2L_StringBuilder.new()
-    local ____list = __K2L_Regex.new("\\s+"):split(text)
+    local ____list = __K2L_Regex.new("\\s+", "%s+"):split(text)
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list:____array()
@@ -39,7 +34,6 @@ local function wrap(text, width)
         end
     end
     local ____list_1 = __K2L_ListWrap(____out, ____count)
-    local ____mod = ____list_1.____modCount
     for ____i_1 = 1, ____list_1.size do
         local word = ____list_1[____i_1]
         if line:isNotEmpty() and line:getLength() + 1 + #word > width then
@@ -50,9 +44,6 @@ local function wrap(text, width)
             line:append(" ")
         end
         line:append(word)
-        if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_1) then
-            break
-        end
     end
     if line:isNotEmpty() then
         lines:add(line:toString())
@@ -73,21 +64,15 @@ local function justify(line, width)
         ____sum = ____sum + #it
     end
     local spaces = width - ____sum
-    local each = __K2L_IDiv(spaces, gaps)
-    local extra = gaps ~= 0 and __K2L_Fmod(spaces, gaps) + 0 or __K2L_IRem(spaces, gaps)
+    local each = spaces // gaps
+    local extra = spaces % gaps
     local ____builder = __K2L_StringBuilder.new()
-    do
-        local ____mod_1 = words.____modCount
-        for ____i_3 = 1, words.size do
-            local w = words[____i_3]
-            local i = ____i_3 - 1
-            ____builder:append(w)
-            if i < gaps then
-                ____builder:append(__K2L_Text.repeatCount(" ", each + (i < extra and 1 or 0)))
-            end
-            if words.____modCount ~= ____mod_1 and words:____comodified(____i_3) then
-                break
-            end
+    for ____i_3 = 1, words.size do
+        local w = words[____i_3]
+        local i = ____i_3 - 1
+        ____builder:append(w)
+        if i < gaps then
+            ____builder:append(__K2L_Text.repeatCount(" ", each + (i < extra and 1 or 0)))
         end
     end
     return ____builder:toString()
@@ -100,8 +85,7 @@ local function center(s, width, fill)
     if #s >= width then
         return s
     end
-    local ____dividend = width - #s
-    local left = ____dividend >= 0 and ____dividend // 2 or 0 - -____dividend // 2
+    local left = (width - #s) // 2
     return __K2L_StringPadEnd(__K2L_StringPadStart(s, #s + left, fill), width, fill)
 end
 
@@ -110,7 +94,7 @@ local function columns(items, cols, gutter)
     if gutter == nil then
         gutter = 2
     end
-    local rows = __K2L_IDiv(items.size + cols - 1, cols)
+    local rows = (items.size + cols - 1) // cols
     local widths = __K2L_IntRange.new(0, cols - 1):map(function(c)
         return __K2L_IntRange.new(0, rows - 1):mapNotNull(function(r) return items:getOrNull(c * rows + r) end):maxOfOrNull(____lambda_1) or 0
     end)
@@ -219,7 +203,6 @@ function Table:render()
     sb:append(__K2L_ListWrap(____out_3, ____count_3):joinToString("|", "|", "|")):append("\n")
     sb:append(__K2L_StringReplace(sep, "-", "=")):append("\n")
     local ____list_5 = self.rows
-    local ____mod_2 = ____list_5.____modCount
     for ____i_9 = 1, ____list_5.size do
         local r = ____list_5[____i_9]
         local ____out_4 = {}
@@ -232,9 +215,6 @@ function Table:render()
             ____out_4[____count_4] = " " .. cell(c, i) .. " "
         end
         sb:append(__K2L_ListWrap(____out_4, ____count_4):joinToString("|", "|", "|")):append("\n")
-        if ____list_5.____modCount ~= ____mod_2 and ____list_5:____comodified(____i_9) then
-            break
-        end
     end
     sb:append(sep)
     return sb:toString()
@@ -243,71 +223,49 @@ end
 local LOREM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor\nincididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation\nullamco laboris nisi ut aliquip ex ea commodo consequat."
 
 local function formatSamples()
-    local ints = __K2L_ReadOnlyListOf(0, 7, -7, 42, 1234567, -98765, 2147483647, -2147483648)
-    local ____mod_3 = ints.____modCount
+    local ints = __K2L_ListOf(0, 7, -7, 42, 1234567, -98765, 2147483647, -2147483648)
     for ____i_10 = 1, ints.size do
         local n = ints[____i_10]
-        print(__K2L_StringFormat("[%d] [%5d] [%-6d] [%05d] [%+d] [%,d] [%(d] [% d] [%x] [%X] [%o] [%#x] [%#o]", n, n, n, n, n, n, n, n, n, n, n, n, n))
-        if ints.____modCount ~= ____mod_3 and ints:____comodified(____i_10) then
-            break
-        end
+        print(string.format("[%d] [%5d] [%-6d] [%05d] [%+d] [%s] [% d] [%x] [%X] [%o] [%#x] [%#o]", n, n, n, n, n, __K2L_Text.grouped(string.format("%d", n)), n, n, n, n, n, n))
     end
-    local longs = __K2L_ReadOnlyListOf(0, 9007199254740991, -1, -4503599627370496, -9223372036854775807 - 1, 255)
-    local ____mod_4 = longs.____modCount
+    local longs = __K2L_ListOf(0, 9007199254740991, -1, -4503599627370496, -9223372036854775807 - 1, 255)
     for ____i_11 = 1, longs.size do
         local n = longs[____i_11]
-        print(__K2L_StringFormat("%d %,d %x %X %o %20d|%-20d|", n, n, __K2L_Text.sized(n, 64), __K2L_Text.sized(n, 64), __K2L_Text.sized(n, 64), n, n))
-        if longs.____modCount ~= ____mod_4 and longs:____comodified(____i_11) then
-            break
-        end
+        print(string.format("%d %s %x %X %o %20d|%-20d|", n, __K2L_Text.grouped(string.format("%d", n)), n, n, n, n, n))
     end
-    local doubles = __K2L_ReadOnlyListOf(0.0, -0.0, 0.125, 2.675, 1.005, 3.14159265358979, -1234.5678, 1.0E-7, 6.02214076E23, 999.9999, 0.5, 1.5, 2.5)
-    local ____mod_5 = doubles.____modCount
+    local doubles = __K2L_ListOf(0.0, -0.0, 0.126, 2.675, 1.005, 3.14159265358979, -1234.5678, 1.0E-7, 6.02214076E23, 999.9999, 0.6, 1.6, 2.6)
     for ____i_12 = 1, doubles.size do
         local d = doubles[____i_12]
-        print(__K2L_StringFormat("%f|%.2f|%10.3f|%-10.1f|%+.0f|%e|%.3E|%g|%,.2f|%08.2f|%(.1f", d, d, d, d, d, d, d, d, d, d, d))
-        if doubles.____modCount ~= ____mod_5 and doubles:____comodified(____i_12) then
-            break
-        end
+        print(string.format("%f|%.2f|%10.3f|%-10.1f|%+.0f|%e|%.3E|%g|%s|%08.2f", d, d, d, d, d, d, d, d, __K2L_Text.grouped(string.format("%.2f", d)), d))
     end
-    print(__K2L_StringFormat("%.0f %.0f %.0f %.0f %.1f %.1f", 0.5, 1.5, 2.5, -0.5, 0.05, 0.15))
-    print(__K2L_StringFormat("%s %S %10s %-10s| %.3s %10.2s|", "text", "text", "right", "left", "truncate", "ab"))
-    print(__K2L_StringFormat("%c %c %3c %-3c| %b %B %5b %b", "x", 65, "y", "z", true, false, nil, "nonnull"))
-    print(__K2L_StringFormat("%2$s %1$s %2$s %<s %s %s", "a", "b"))
-    print(__K2L_StringFormat("%%d means decimal; 100%% done%nnext line"))
-    print(__K2L_StringFormat("%h %h %H", "hello", 42, "Kotlin"))
-    print(__K2L_StringFormat("[%10.4f] [%-12.6e] [%.10f]", 3.141592653589793, 2.718281828459045, 1.0 / 3))
-    print(__K2L_StringFormat("%,d bytes = %,.1f KiB = %.2f MiB", 123456789, 123456789 / 1024.0, 123456789 / 1048576.0))
-    print(__K2L_StringFormat("%s", __K2L_ReadOnlyListOf(1, 2, 3)) .. __K2L_StringFormat(" %s", __K2L_SingletonMapOf(__K2L_Pair.new("k", 1.5))) .. __K2L_StringFormat(" %s", nil))
-    print(__K2L_StringFormat("%x %x %o", -1, -255, -8))
-    print(__K2L_StringFormat("%08X %#010x %+,d", 48879, 48879, 1000000))
-    print(__K2L_StringFormat("%.3g %.3g %.3g %g %g", 1.234E-4, 123456.0, 1.0, 0.0, 100000.0))
+    print(string.format("%.0f %.0f %.0f %.0f %.1f %.1f", 0.4, 1.6, 2.7, -0.4, 0.06, 0.16))
+    print(string.format("%s %s %10s %-10s| %.3s %10.2s|", "text", string.upper("text"), "right", "left", "truncate", "ab"))
+    print(string.format("%s %c %3s %-3s| %s %s %5s %s", "x", 65, "y", "z", tostring(not not true), string.upper(tostring(not not false)), tostring(not not nil), tostring(not not "nonnull")))
+    print(string.format("%%d means decimal; 100%% done\nnext line"))
+    print(string.format("[%10.4f] [%-12.6e] [%.10f]", 3.141592653589793, 2.718281828459045, 1.0 / 3))
+    print(string.format("%s bytes = %s KiB = %.2f MiB", __K2L_Text.grouped(string.format("%d", 123456789)), __K2L_Text.grouped(string.format("%.1f", 123456789 / 1024.0)), 123456789 / 1048576.0))
+    print(string.format("%s", __K2L_Str(__K2L_ListOf(1, 2, 3))) .. string.format(" %s", __K2L_Str(__K2L_MapOf(__K2L_Pair.new("k", 1.5)))) .. string.format(" %s", __K2L_Str(nil)))
+    print(string.format("%x %x %o", -1, -255, -8))
+    print(string.format("%08X %#010x %s", 48879, 48879, __K2L_Text.grouped(string.format("%+d", 1000000))))
+    print(string.format("%.3g %.3g %.3g %g %g", 1.234E-4, 123456.0, 1.0, 0.0, 100000.0))
 end
 
 local function main()
     local lines = wrap(LOREM, 40)
     print(center(" Wrapped (40) ", 44, "*"))
-    local ____mod_6 = lines.____modCount
     for ____i_13 = 1, lines.size do
         local it = lines[____i_13]
         print("|" .. __K2L_StringPadEnd(it, 40) .. "|")
-        if lines.____modCount ~= ____mod_6 and lines:____comodified(____i_13) then
-            break
-        end
     end
     print(center(" Justified ", 44, "~"))
     local ____list_6 = lines:dropLast(1)
-    local ____mod_7 = ____list_6.____modCount
     for ____i_14 = 1, ____list_6.size do
         local it = ____list_6[____i_14]
         print("|" .. justify(it, 40) .. "|")
-        if ____list_6.____modCount ~= ____mod_7 and ____list_6:____comodified(____i_14) then
-            break
-        end
     end
     print("|" .. __K2L_StringPadEnd(lines:last(), 40) .. "|")
     print(center("x", 7, ".") .. center("odd", 8, "_") .. center("toolongforit", 4))
-    local ____list_7 = __K2L_Regex.new("[^A-Za-z]+"):split(LOREM)
+    local ____list_7 = __K2L_Regex.new("[^A-Za-z]+", "[^A-Za-z]+"):split(LOREM)
     local ____out_5 = {}
     local ____count_5 = 0
     local ____items_7, ____n_7 = ____list_7:____array()
@@ -330,14 +288,14 @@ local function main()
     local words = __K2L_ListWrap(____out_6, ____count_6):distinct():sorted()
     print(columns(words, 4))
     print()
-    local t = Table.new(__K2L_ReadOnlyListOf("Item", "Qty", "Price", "Note"), __K2L_ReadOnlyListOf(Align.LEFT, Align.RIGHT, Align.RIGHT, Align.CENTER))
-    t:add("Widget", 3, __K2L_StringFormat("%.2f", 4.5), "ok")
-    t:add("Gadget with a long name", 12, __K2L_StringFormat("%.2f", 1234.5), nil)
-    t:add("Unicode", 1, __K2L_StringFormat("%.2f", 0.1 + 0.2), "e")
-    t:add("Nothing", 0, __K2L_StringFormat("%.2f", 0.0), "")
+    local t = Table.new(__K2L_ListOf("Item", "Qty", "Price", "Note"), __K2L_ListOf(Align.LEFT, Align.RIGHT, Align.RIGHT, Align.CENTER))
+    t:add("Widget", 3, string.format("%.2f", 4.5), "ok")
+    t:add("Gadget with a long name", 12, string.format("%.2f", 1234.5), nil)
+    t:add("Unicode", 1, string.format("%.2f", 0.1 + 0.2), "e")
+    t:add("Nothing", 0, string.format("%.2f", 0.0), "")
     print(t:render())
     formatSamples()
-    local items = __K2L_ReadOnlyListOf(__K2L_Pair.new("coffee", 3.5), __K2L_Pair.new("bagel", 2.25), __K2L_Pair.new("orange juice", 4.0), __K2L_Pair.new("tip", 1.75))
+    local items = __K2L_ListOf(__K2L_Pair.new("coffee", 3.5), __K2L_Pair.new("bagel", 2.25), __K2L_Pair.new("orange juice", 4.0), __K2L_Pair.new("tip", 1.75))
     local ____sum_1 = 0.0
     local ____items_9, ____n_9 = items:____array()
     for ____i_17 = 1, ____n_9 do
@@ -345,19 +303,15 @@ local function main()
         ____sum_1 = ____sum_1 + it.second
     end
     local total = ____sum_1
-    local ____mod_8 = items.____modCount
     for ____i_18 = 1, items.size do
         local ____item = items[____i_18]
         local name, price = ____item.first, ____item.second
-        print(__K2L_StringPadEnd(name, 20, ".") .. __K2L_StringFormat("$%7.2f", price))
-        if items.____modCount ~= ____mod_8 and items:____comodified(____i_18) then
-            break
-        end
+        print(__K2L_StringPadEnd(name, 20, ".") .. string.format("$%7.2f", price))
     end
     print(("-"):rep(28))
-    print(__K2L_StringPadEnd("TOTAL", 20) .. __K2L_StringFormat("$%7.2f", total))
-    print(__K2L_StringFormat("tax 8.25%%: %.2f, grand total: %.2f", total * 0.0825, total * 1.0825))
+    print(__K2L_StringPadEnd("TOTAL", 20) .. string.format("$%7.2f", total))
+    print(string.format("tax 8.25%%: %.2f, grand total: %.2f", total * 0.0825, total * 1.0825))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {wrap = wrap, justify = justify, center = center, columns = columns, Align = Align, Table = Table, LOREM = LOREM, formatSamples = formatSamples}

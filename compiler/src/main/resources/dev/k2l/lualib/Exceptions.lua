@@ -31,32 +31,16 @@ local __K2L_ArithmeticException = __K2L_Class("java.lang.ArithmeticException", _
 local __K2L_UnsupportedOperationException = __K2L_Class("java.lang.UnsupportedOperationException", __K2L_RuntimeException)
 local __K2L_ClassCastException = __K2L_Class("java.lang.ClassCastException", __K2L_RuntimeException)
 local __K2L_NumberFormatException = __K2L_Class("java.lang.NumberFormatException", __K2L_IllegalArgumentException)
-local __K2L_PatternSyntaxException = __K2L_Class("java.util.regex.PatternSyntaxException", __K2L_IllegalArgumentException)
 local __K2L_NoSuchElementException = __K2L_Class("java.util.NoSuchElementException", __K2L_RuntimeException)
-local __K2L_ConcurrentModificationException = __K2L_Class("java.util.ConcurrentModificationException", __K2L_RuntimeException)
--- java.util.Stack's pop() and peek() of an empty stack (no message, as on the JVM)
-local __K2L_EmptyStackException = __K2L_Class("java.util.EmptyStackException", __K2L_RuntimeException)
--- java.util.Formatter's exceptions (String.format), with the JDK's messages
-local __K2L_IllegalFormatException = __K2L_Class("java.util.IllegalFormatException", __K2L_IllegalArgumentException)
-local __K2L_MissingFormatArgumentException = __K2L_Class("java.util.MissingFormatArgumentException", __K2L_IllegalFormatException)
-local __K2L_UnknownFormatConversionException = __K2L_Class("java.util.UnknownFormatConversionException", __K2L_IllegalFormatException)
-local __K2L_MissingFormatWidthException = __K2L_Class("java.util.MissingFormatWidthException", __K2L_IllegalFormatException)
-local __K2L_IllegalFormatConversionException = __K2L_Class("java.util.IllegalFormatConversionException", __K2L_IllegalFormatException)
-local __K2L_IllegalFormatPrecisionException = __K2L_Class("java.util.IllegalFormatPrecisionException", __K2L_IllegalFormatException)
-local __K2L_FormatFlagsConversionMismatchException =
-    __K2L_Class("java.util.FormatFlagsConversionMismatchException", __K2L_IllegalFormatException)
 local __K2L_NotImplementedError = __K2L_Class("kotlin.NotImplementedError", __K2L_Error)
-local __K2L_KotlinNullPointerException = __K2L_Class("kotlin.KotlinNullPointerException", __K2L_NullPointerException)
-local __K2L_NoWhenBranchMatchedException = __K2L_Class("kotlin.NoWhenBranchMatchedException", __K2L_RuntimeException)
-local __K2L_TypeCastException = __K2L_Class("kotlin.TypeCastException", __K2L_ClassCastException)
+local __K2L_AssertionError = __K2L_Class("java.lang.AssertionError", __K2L_Error)
 local __K2L_VirtualMachineError = __K2L_Class("java.lang.VirtualMachineError", __K2L_Error)
--- Lua's "stack overflow" and "C stack overflow" errors (see ToThrowable.lua and DeepPcall.lua)
+-- Lua's "stack overflow" and "C stack overflow" errors (see ToThrowable.lua)
 local __K2L_StackOverflowError = __K2L_Class("java.lang.StackOverflowError", __K2L_VirtualMachineError)
 local __K2L_UninitializedPropertyAccessException = __K2L_Class("kotlin.UninitializedPropertyAccessException", __K2L_RuntimeException)
-local __K2L_KotlinReflectionNotSupportedError = __K2L_Class("kotlin.jvm.KotlinReflectionNotSupportedError", __K2L_Error)
 
 -- Kotlin's Throwable.addSuppressed (which ignores the exception itself): the exceptions are kept in `____suppressed`
--- (see Suppressed.lua and Uncaught.lua)
+-- (see Suppressed.lua)
 function __K2L_Throwable:addSuppressed(exception)
     if exception == self then
         return

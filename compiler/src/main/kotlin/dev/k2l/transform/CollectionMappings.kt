@@ -7,23 +7,11 @@ import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.KtClassOrObject
 
 /** The empty collection `null.orEmpty()` is, by kind. */
-private val EMPTY_OF = mapOf(CollectionKind.Set to "__K2L_ReadOnlySetOf", CollectionKind.Array to "__K2L_ArrayOf")
-private const val EMPTY_LIST = "__K2L_ReadOnlyListOf"
+private val EMPTY_OF = mapOf(CollectionKind.Set to "__K2L_SetOf", CollectionKind.Array to "__K2L_ArrayOf")
+private const val EMPTY_LIST = "__K2L_ListOf"
 
 /** `StringBuilder.append(text, start, end)` */
 private const val APPEND_RANGE_ARITY = 3
-
-/** The number of the stdlib's class of `asList()` of each primitive array (`kotlin.collections.ArraysKt___ArraysJvmKt$asList$3`). */
-private val PRIMITIVE_AS_LIST = mapOf(
-    "ByteArray" to 1,
-    "ShortArray" to 2,
-    "IntArray" to 3,
-    "LongArray" to 4,
-    "FloatArray" to 5,
-    "DoubleArray" to 6,
-    "BooleanArray" to 7,
-    "CharArray" to 8,
-)
 
 /** Collection, string and pair functions of the Kotlin stdlib. */
 @Suppress("TooManyFunctions") // one small mapper per receiver kind
@@ -50,10 +38,8 @@ object CollectionMappings {
         "requireNoNulls", "asReversed", "asList", "binarySearch", "binarySearchBy", "sortedArray", "sortedArrayDescending",
         "sortedArrayWith", "reversedArray", "copyOfRange", "copyInto", "iterator", "addFirst", "addLast", "removeFirstOrNull",
         "removeLastOrNull",
-        "replaceAll", "offer", "poll", "peek", "push", "pop", "offerFirst", "offerLast", "pollFirst", "pollLast", "peekFirst",
-        "peekLast", "element", "getFirst", "getLast", "descendingIterator", "groupingBy", "sliceArray", "contentDeepToString",
-        "contentHashCode", "contentDeepHashCode", "contentDeepEquals", "toSortedSet", "floor", "lower", "ceiling", "higher",
-        "headSet", "tailSet", "subSet", "descendingSet", "foldRightIndexed", "mapIndexedTo",
+        "replaceAll", "getFirst", "getLast", "toSortedSet", "groupingBy", "sliceArray", "contentDeepToString",
+        "contentHashCode", "contentDeepHashCode", "contentDeepEquals", "foldRightIndexed", "mapIndexedTo",
         "maxOfWith", "minOfWith", "maxOfWithOrNull", "minOfWithOrNull", "reduceIndexedOrNull", "runningFoldIndexed",
         "scanIndexed", "runningReduceIndexed",
         "filterNotNullTo", "mapIndexedNotNullTo", "flatMapIndexedTo", "joinTo",
@@ -73,11 +59,7 @@ object CollectionMappings {
         "remove", "clear", "isEmpty", "isNotEmpty", "map", "mapNotNull", "flatMap", "any", "all", "none", "count", "filter",
         "filterKeys", "filterValues", "mapValues", "mapKeys", "toList", "toMap", "toMutableMap", "maxByOrNull", "minByOrNull",
         "forEach", "hashCode", "putIfAbsent", "merge", "compute", "computeIfAbsent", "computeIfPresent", "replaceAll", "onEach",
-        "filterNot", "mapValuesTo", "mapKeysTo", "orEmpty", "iterator", "asIterable", "toSortedMap", "firstKey", "lastKey",
-        "firstEntry", "lastEntry", "floorKey", "lowerKey", "ceilingKey", "higherKey", "floorEntry", "lowerEntry", "ceilingEntry",
-        "higherEntry", "pollFirstEntry", "pollLastEntry", "headMap", "tailMap", "subMap", "descendingMap", "descendingKeySet",
-        "navigableKeySet",
-        "filterTo", "ifEmpty",
+        "filterNot", "mapValuesTo", "mapKeysTo", "orEmpty", "iterator", "asIterable", "filterTo", "ifEmpty", "toSortedMap",
     )
 
     private val ITERATOR_METHODS =
@@ -95,7 +77,7 @@ object CollectionMappings {
         val name = site.name ?: return null
         return when (kind) {
             CollectionKind.List, CollectionKind.Array, CollectionKind.Set, CollectionKind.Iterable ->
-                iterable(kind, name, site)?.let { if (site.utf16 && name == "joinToString") site.transformer.u16Norm(it) else it }
+                iterable(kind, name, site)
 
             CollectionKind.Map -> mapMember(name, site)
 
@@ -246,69 +228,22 @@ object CollectionMappings {
 
             "setCharAt" -> LuaMethodCall(self, "set", args)
 
-            // repeat(text, count) and repeat(codePoint, count) (JDK 21)
-            "repeat" -> LuaMethodCall(
-                self,
-                "append",
-                listOf(
-                    site.libMember(
-                        "JavaUtil",
-                        "__K2L_JavaUtil",
-                        if (site.isIntegral(site.argTypes[0])) "repeatCodePoint" else "repeatText",
-                        if (site.isIntegral(site.argTypes[0])) args[0] else site.str(args[0], site.argTypes[0]),
-                        args[1],
-                    ),
-                ),
-            )
-
-            "appendCodePoint" ->
-                if (site.utf16) {
-                    LuaMethodCall(
-                        self,
-                        "appendCodePoint",
-                        args,
-                    )
-                } else {
-                    site.unsupported("'appendCodePoint' without --strings utf16")
-                }
-
-            // the code point functions of String, on the builder's text
-            "codePointAt", "codePointBefore", "codePointCount", "offsetByCodePoints" ->
-                if (site.utf16) {
-                    site.u16(name, LuaMethodCall(self, "toString", emptyList()), *args.toTypedArray())
-                } else {
-                    site.unsupported("'$name' without --strings utf16")
-                }
-
             else -> null
         }
     }
 
-    private fun substringOf(site: CallSite, text: Int, from: Int, to: Int): LuaExpr = if (site.utf16) {
-        site.libMember(
-            "Strings",
-            "__K2L_Text",
-            "substring",
-            site.str(site.arg(text), site.argTypes.getOrNull(text)),
-            site.arg(from),
-            site.arg(to),
-        )
-    } else {
-        LuaMethodCall(
-            site.str(site.arg(text), site.argTypes.getOrNull(text)),
-            "sub",
-            listOf(LuaBinary(LuaBinOp.Add, site.arg(from), LuaNumber("1")), site.arg(to)),
-        )
-    }
+    private fun substringOf(site: CallSite, text: Int, from: Int, to: Int): LuaExpr = LuaMethodCall(
+        site.str(site.arg(text), site.argTypes.getOrNull(text)),
+        "sub",
+        listOf(LuaBinary(LuaBinOp.Add, site.arg(from), LuaNumber("1")), site.arg(to)),
+    )
 
-    private fun concatToString(site: CallSite, self: LuaExpr): LuaExpr =
-        LuaMethodCall(self, "joinToString", listOf(LuaString(""))).let { if (site.utf16) site.transformer.u16Norm(it) else it }
+    private fun concatToString(self: LuaExpr): LuaExpr = LuaMethodCall(self, "joinToString", listOf(LuaString("")))
 
     private fun isCollection(site: CallSite, type: KaType?) = type != null && with(site.session) { type.collectionKind() } in ELEMENT_GROUPS
 
-    /** The start value of `sum`/`sumOf` over elements of [type]: BigInteger/BigDecimal zero, `0.0`, or none (Lua's 0). */
+    /** The start value of `sum`/`sumOf` over elements of [type]: `0.0`, or none (Lua's 0). */
     internal fun zeroFor(site: CallSite, type: KaType?): List<LuaExpr> = with(site.session) {
-        BigNumberMappings.zero(site, type)?.let { return listOf(it) }
         if (type != null && (type.isDoubleType || type.isFloatType)) listOf(LuaNumber("0.0")) else emptyList()
     }
 
@@ -318,15 +253,9 @@ object CollectionMappings {
         val classId = (type as? KaClassType)?.classId?.asString()
         when (classId) {
             "kotlin/DoubleArray", "kotlin/FloatArray" -> LuaNumber("0.0")
-
-            "kotlin/IntArray", "kotlin/LongArray", "kotlin/ShortArray", "kotlin/ByteArray", "kotlin/UIntArray", "kotlin/ULongArray",
-            "kotlin/UByteArray", "kotlin/UShortArray",
-            -> LuaNumber("0")
-
+            "kotlin/IntArray", "kotlin/LongArray", "kotlin/ShortArray", "kotlin/ByteArray" -> LuaNumber("0")
             "kotlin/BooleanArray" -> LuaBool(false)
-
             "kotlin/CharArray" -> LuaString("\u0000")
-
             else -> LuaNil
         }
     }
@@ -336,7 +265,8 @@ object CollectionMappings {
         val component = name.removePrefix("component").toIntOrNull()
         return when {
             name in RANDOM_METHODS -> LuaMethodCall(self, name, listOf(site.args.firstOrNull() ?: site.defaultRandom()))
-            name == "joinToString" -> FloatMappings.joinToString(site) ?: iterableByName(kind, name, site)
+            name == "joinToString" -> iterableByName(kind, name, site)
+            name == "contains" -> mapViewContains(site) ?: iterableByName(kind, name, site)
             component != null && name.startsWith("component") -> LuaMethodCall(self, "elementAt", listOf(LuaNumber("${component - 1}")))
             else -> iterableByName(kind, name, site)
         }
@@ -363,6 +293,14 @@ object CollectionMappings {
 
             "indices" -> LuaMethodCall(self, "getIndices", emptyList())
 
+            "listIterator" -> if (kind ==
+                CollectionKind.List
+            ) {
+                LuaCall(site.ref("ListIterator", "__K2L_ListIterator"), listOf(self) + site.args)
+            } else {
+                null
+            }
+
             // of a class of the program (which may override size): its getLastIndex, which calls size()
             "lastIndex" -> if (isSourceClass(site)) {
                 LuaMethodCall(self, "getLastIndex", emptyList())
@@ -372,8 +310,7 @@ object CollectionMappings {
 
             "add", "addAll", "asList", "remove" -> renamedMember(name, site)
 
-            "sum" -> FloatMappings.sum(site)
-                ?: LuaMethodCall(self, "sum", zeroFor(site, with(site.session) { site.receiverType?.elementType }))
+            "sum" -> LuaMethodCall(self, "sum", zeroFor(site, with(site.session) { site.receiverType?.elementType }))
 
             "sumOf" -> LuaMethodCall(self, "sumOf", site.args + zeroFor(site, (site.argTypes.getOrNull(0) as? KaFunctionType)?.returnType))
 
@@ -395,12 +332,9 @@ object CollectionMappings {
                 LuaMethodCall(self, "copyOfSize", listOf(site.arg(0), padFor(site)))
             }
 
-            "concatToString" -> concatToString(site, self)
+            "concatToString" -> concatToString(self)
 
             "toString" -> null
-
-            // the array type of the result (`listOf("a").toTypedArray()` is a String[])
-            "toTypedArray" -> LuaMethodCall(self, name, listOfNotNull(FactoryMappings.arrayBinary(site)?.let { LuaString(it) }))
 
             "isNullOrEmpty" -> LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.Eq, self, LuaNil), LuaMethodCall(self, "isEmpty", emptyList()))
 
@@ -417,19 +351,12 @@ object CollectionMappings {
     }
 
     /** Members whose lualib name depends on the arguments or the receiver's type. */
-    private fun renamedMember(name: String, site: CallSite): LuaExpr {
+    private fun renamedMember(name: String, site: CallSite): LuaExpr? {
         val self = site.self
         return when (name) {
             "add", "addAll" -> LuaMethodCall(self, if (site.args.size == 2) name + "At" else name, site.args)
-
-            // a primitive array's asList() is the read-only view numbered like the stdlib's class (see __K2L_Array.asList)
-            "asList" -> {
-                val array = site.receiverType?.let { with(site.session) { it.expandedSymbol?.classId?.shortClassName?.asString() } }
-                LuaMethodCall(self, "asList", listOfNotNull(PRIMITIVE_AS_LIST[array]?.let { LuaNumber(it.toString()) }))
-            }
-
-            // Queue.remove() takes the head; remove(element) is another method
-            else -> LuaMethodCall(self, if (site.args.isEmpty()) "removeHead" else "remove", site.args)
+            "asList" -> LuaMethodCall(self, "asList", emptyList())
+            else -> if (site.args.isEmpty()) null else LuaMethodCall(self, "remove", site.args)
         }
     }
 
@@ -452,8 +379,10 @@ object CollectionMappings {
 
             "contains" -> LuaMethodCall(self, "containsKey", site.args)
 
+            "withDefault" -> LuaCall(site.ref("WithDefault", "__K2L_WithDefault"), listOf(self, site.arg(0)))
+
             // null.orEmpty() is emptyMap()
-            "orEmpty" -> LuaBinary(LuaBinOp.Or, self, LuaCall(site.ref("Collections", "__K2L_ReadOnlyMapOf"), emptyList()))
+            "orEmpty" -> LuaBinary(LuaBinOp.Or, self, LuaCall(site.ref("Collections", "__K2L_MapOf"), emptyList()))
 
             "plusAssign" -> LuaMethodCall(self, if (isMapOrIterable(site)) "putAll" else "set", pairArguments(site))
 

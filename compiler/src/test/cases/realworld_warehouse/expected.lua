@@ -2,7 +2,6 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -14,10 +13,10 @@ local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringPadEnd = ____lualib.__K2L_StringPadEnd
 local __K2L_Unpack = ____lualib.__K2L_Unpack
@@ -31,15 +30,13 @@ end
 local Discounted = __K2L_Class("warehouse.Discounted", nil, Priced)
 
 function Discounted:price(quantity)
-    local ____dividend = Priced.price(self, quantity) * (100 - self.discountPercent)
-    return ____dividend >= 0 and ____dividend // 100 or 0 - -____dividend // 100
+    return Priced.price(self, quantity) * (100 - self.discountPercent) // 100
 end
 
 local Taxed = __K2L_Class("warehouse.Taxed", nil, Priced)
 
 function Taxed:price(quantity)
-    local ____dividend_1 = Priced.price(self, quantity) * 108
-    return ____dividend_1 >= 0 and ____dividend_1 // 100 or 0 - -____dividend_1 // 100
+    return Priced.price(self, quantity) * 108 // 100
 end
 
 local Product = __K2L_Class("warehouse.Product", nil, Priced)
@@ -48,7 +45,7 @@ function Product:____init(sku, name)
     self.sku = sku
     self.name = name
     self.fragile = false
-    if not __K2L_Regex.new("[A-Z]{2}-\\d{3}"):matches(self.sku) then
+    if not __K2L_Regex.new("[A-Z]{2}-\\d{3}", "[A-Z][A-Z]%-%d%d%d"):matches(self.sku) then
         error(__K2L_IllegalArgumentException.new("bad sku '" .. self.sku .. "'"))
     end
 end
@@ -157,9 +154,9 @@ function Grid:____init(rows, cols)
     self.rows = rows
     self.cols = cols
     self.cells = __K2L_ListOfSize(self.rows, function(it)
-        return __K2L_ListOfSize(self.cols, nil, "[Lwarehouse.Product;")
-    end, "[[Lwarehouse.Product;")
-    self.counts = __K2L_ListOfSize(self.rows, function(it) return __K2L_ListOfSize(self.cols, 0, "[I") end, "[[I")
+        return __K2L_ListOfSize(self.cols, nil, true)
+    end, true)
+    self.counts = __K2L_ListOfSize(self.rows, function(it) return __K2L_ListOfSize(self.cols, 0, true) end, true)
 end
 
 function Grid:get(slot)
@@ -316,19 +313,15 @@ local function main()
     local drill = PowerTool.new("PT-100", "drill", 8000, 650)
     local vase = Glassware.new("GL-007", "vase", 2500, 20)
     local glasses = Glassware.new("GL-008", "glasses", 400, 5)
-    local products = __K2L_ReadOnlyListOf(hammer, wrench, drill, vase, glasses)
+    local products = __K2L_ListOf(hammer, wrench, drill, vase, glasses)
     local ____receiver_2 = __K2L_RunCatching(____lambda_1):exceptionOrNull()
     print(__K2L_Str(____receiver_2 and ____receiver_2.message))
-    local ____mod = products.____modCount
     for ____i_3 = 1, products.size do
         local p = products[____i_3]
         print(__K2L_StringPadEnd(p:getLabel(), 24) .. " 1=" .. p:price(1) .. " 10=" .. p:price(10))
-        if products.____modCount ~= ____mod and products:____comodified(____i_3) then
-            break
-        end
     end
     local grid = Grid.new(3, 4)
-    local stock = __K2L_ReadOnlyListOf(__K2L_Pair.new(hammer, 10), __K2L_Pair.new(drill, 2), __K2L_Pair.new(vase, 4), __K2L_Pair.new(glasses, 30), __K2L_Pair.new(wrench, 15), __K2L_Pair.new(hammer, 5))
+    local stock = __K2L_ListOf(__K2L_Pair.new(hammer, 10), __K2L_Pair.new(drill, 2), __K2L_Pair.new(vase, 4), __K2L_Pair.new(glasses, 30), __K2L_Pair.new(wrench, 15), __K2L_Pair.new(hammer, 5))
     local ____out = {}
     local ____count = 0
     local ____items_1, ____n_1 = stock:____array()
@@ -358,8 +351,7 @@ local function main()
     print(__K2L_Str(____receiver_3 and ____receiver_3.message))
     print(grid:render())
     print("units=" .. grid:getTotalUnits())
-    local orders = __K2L_ReadOnlyListOf(Order:invoke(__K2L_Pair.new(hammer, 3), __K2L_Pair.new(vase, 1)), Order:invoke(__K2L_Pair.new(glasses, 12), __K2L_Pair.new(drill, 1), __K2L_Pair.new(wrench, 2)), Order:invoke(__K2L_Pair.new(vase, 10)))
-    local ____mod_1 = orders.____modCount
+    local orders = __K2L_ListOf(Order:invoke(__K2L_Pair.new(hammer, 3), __K2L_Pair.new(vase, 1)), Order:invoke(__K2L_Pair.new(glasses, 12), __K2L_Pair.new(drill, 1), __K2L_Pair.new(wrench, 2)), Order:invoke(__K2L_Pair.new(vase, 10)))
     for ____i_8 = 1, orders.size do
         local order = orders[____i_8]
         local ____list_2 = order.lines
@@ -407,9 +399,6 @@ local function main()
         end
         local picked = __K2L_ListWrap(____out_3, ____count_3)
         print("order " .. order.id .. " route=" .. path:joinToString(">", nil, nil, nil, nil, ____lambda_2) .. " " .. __K2L_Str(picked) .. " total=" .. total)
-        if orders.____modCount ~= ____mod_1 and orders:____comodified(____i_8) then
-            break
-        end
     end
     print(grid:render())
     print(__K2L_Str(grid:get(Slot.new(0, 0))))
@@ -423,7 +412,7 @@ local function main()
     end
     local bySku = ____result_3
     print(bySku:get("GL-007") == vase)
-    print(products:toSet().size == __K2L_ReadOnlySetOf(Tool.new1("TL-001", 1), hammer).size + 3)
+    print(products:toSet().size == __K2L_SetOf(Tool.new1("TL-001", 1), hammer).size + 3)
     local ____destructured = products:partition(____lambda_3)
     local fragile, sturdy = ____destructured.first, ____destructured.second
     print("fragile=" .. __K2L_Str(fragile) .. " sturdy=" .. __K2L_Str(sturdy))
@@ -454,5 +443,5 @@ local function main()
     print(__K2L_Str(__K2L_ListWrap(____out_5, ____count_5)))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Priced = Priced, Discounted = Discounted, Taxed = Taxed, Product = Product, Tool = Tool, Glassware = Glassware, PowerTool = PowerTool, Slot = Slot, Grid = Grid, Order = Order, route = route}

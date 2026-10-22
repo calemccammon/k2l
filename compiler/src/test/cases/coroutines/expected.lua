@@ -3,8 +3,6 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Continuation = ____lualib.__K2L_Continuation
 local __K2L_CoroutineContext = ____lualib.__K2L_CoroutineContext
 local __K2L_CreateCoroutine = ____lualib.__K2L_CreateCoroutine
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -12,9 +10,9 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
 local __K2L_Str = ____lualib.__K2L_Str
@@ -80,9 +78,9 @@ local ____lambda_1 = function()
     return true, failLater()
 end
 local function recovering()
-    local ____ok, ____result, ____returned = __K2L_DeepPcall(____lambda_1)
+    local ____ok, ____result, ____returned = pcall(____lambda_1)
     if not ____ok then
-        ____ok, ____result, ____returned = __K2L_DeepPcall(function()
+        ____ok, ____result, ____returned = pcall(function()
             local ____error = __K2L_ToThrowable(____result)
             if __K2L_InstanceOf(____error, __K2L_IllegalStateException) then
                 local e = ____error
@@ -108,8 +106,7 @@ function Counter:____init()
 end
 
 function Counter:tick()
-    local ____dividend = immediate(1)
-    self.count = self.count + (____dividend >= 0 and ____dividend // 2 or 0 - -____dividend // 2)
+    self.count = self.count + immediate(1) // 2
     return self.count
 end
 
@@ -118,21 +115,17 @@ local function loopAndWhen(n)
     for i = 1, n do
         local doubled = immediate(i)
         local ____temp
-        if (doubled >= 0 and doubled % 4 or 0 - -doubled % 4) == 0 then
+        if doubled % 4 == 0 then
             ____temp = "four:" .. doubled
         else
             ____temp = "other:" .. doubled
         end
         out:add(____temp)
     end
-    local ____list = __K2L_ReadOnlyListOf(10, 20)
-    local ____mod = ____list.____modCount
+    local ____list = __K2L_ListOf(10, 20)
     for ____i = 1, ____list.size do
         local it = ____list[____i]
         out:add("each:" .. immediate(it))
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-            break
-        end
     end
     return out
 end
@@ -158,7 +151,7 @@ local function main()
     cont:resumeWith(__K2L_Result.success(5))
     print("main: after resume")
     print("-- resume twice")
-    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_1 = pcall(function()
         cont:resumeWith(__K2L_Result.success(6))
     end)
     if not ____ok_1 then
@@ -187,7 +180,7 @@ local function main()
     end, completion("created"))
     print("not started yet")
     created:resumeWith(__K2L_Result.success(__K2L_Unit))
-    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_2 = pcall(function()
         created:resumeWith(__K2L_Result.success(__K2L_Unit))
     end)
     if not ____ok_2 then
@@ -233,7 +226,7 @@ local function main()
         error(__K2L_IllegalStateException.new("broken"))
     end):exceptionOrNull()))
     print(__K2L_Equals(ok, __K2L_Result.success(3)))
-    local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
+    local ____ok_3, ____result_3 = pcall(function()
         bad:getOrThrow()
     end)
     if not ____ok_3 then
@@ -322,5 +315,5 @@ ____exports.shout = shout
 ____exports.Source = Source
 ____exports.Parked = Parked
 ____exports.nested = nested
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return ____exports

@@ -1,20 +1,16 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_BigDecimal = ____lualib.__K2L_BigDecimal
-local __K2L_BigInteger = ____lualib.__K2L_BigInteger
-local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_IsNumber = ____lualib.__K2L_IsNumber
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_NumberTo = ____lualib.__K2L_NumberTo
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local function describe(x)
     if x == nil then
         return "null"
     elseif __K2L_IsNumber(x) then
-        return "number " .. __K2L_DoubleToString(__K2L_NumberTo(x, "toDouble"))
+        return "number " .. x + 0.0
     elseif type(x) == "string" then
         return "text '" .. x .. "'"
     else
@@ -25,14 +21,10 @@ end
 local ____lambda_1 = function(x) return __K2L_IsNumber(x) end
 local ____lambda_2 = function(x) return __K2L_IsNumber(x) end
 local function main()
-    local values = __K2L_ReadOnlyListOf(1, 2.5, "3", 4, nil, __K2L_BigInteger.TEN, __K2L_BigDecimal.parse("1.5"), __K2L_SingletonListOf(1), true, 3.0)
-    local ____mod = values.____modCount
+    local values = __K2L_ListOf(1, 2.5, "3", 4, nil, __K2L_ListOf(1), true, 3.0)
     for ____i = 1, values.size do
         local it = values[____i]
         print(describe(it))
-        if values.____modCount ~= ____mod and values:____comodified(____i) then
-            break
-        end
     end
     print(values:filter(____lambda_1).size)
     local ____out = {}
@@ -43,7 +35,7 @@ local function main()
         local ____result
         do
             local ____receiver = __K2L_IsNumber(it) and it or nil
-            ____result = ____receiver and __K2L_NumberTo(__K2L_IsNumber(it) and it or nil, "toInt")
+            ____result = ____receiver and __K2L_Truncate(__K2L_IsNumber(it) and it or nil)
         end
         ____count = ____count + 1
         ____out[____count] = ____result
@@ -63,11 +55,11 @@ local function main()
     local ____items_2, ____n_2 = ____list:____array()
     for ____i_3 = 1, ____n_2 do
         local it = ____items_2[____i_3]
-        ____sum = ____sum + __K2L_NumberTo(it, "toDouble")
+        ____sum = ____sum + (it + 0.0)
     end
     local total = ____sum
-    print(__K2L_DoubleToString(total))
+    print(total)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {describe = describe}

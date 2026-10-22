@@ -5,3 +5,6 @@ build/
 *.iml
 out/
 .scratch/
+
+# Claude Code's local state and worktrees
+.claude/

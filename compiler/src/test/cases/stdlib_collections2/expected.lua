@@ -1,4 +1,5 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
@@ -6,7 +7,6 @@ local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NaturalOrder = ____lualib.__K2L_NaturalOrder
@@ -14,16 +14,12 @@ local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NullsFirst = ____lualib.__K2L_NullsFirst
 local __K2L_NullsLast = ____lualib.__K2L_NullsLast
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local ____lambda_1 = function(it) return -it end
 local ____lambda_2 = function(____a, ____b)
-    local ____x_1, ____y_1 = ____a >= 0 and ____a % 2 or 0 - -____a % 2, ____b >= 0 and ____b % 2 or 0 - -____b % 2
+    local ____x_1, ____y_1 = ____a % 2, ____b % 2
     if ____x_1 ~= ____y_1 then
         return ____x_1 < ____y_1 and -1 or 1
     end
@@ -58,15 +54,15 @@ local ____lambda_8 = function(____a_3, ____b_3)
     return 0
 end
 local function ordering()
-    local xs = __K2L_ReadOnlyListOf(3, 1, 2)
-    local words = __K2L_ReadOnlyListOf("bb", "a", "ccc")
+    local xs = __K2L_ListOf(3, 1, 2)
+    local words = __K2L_ListOf("bb", "a", "ccc")
     print(__K2L_Str(xs:sortedBy(____lambda_1, true)))
     print(__K2L_Str(xs:sortedWith(____lambda_2)))
     print(__K2L_Str(xs:sortedWith(____lambda_3)))
     print(__K2L_Str(xs:sortedWith(____lambda_4)))
     print(__K2L_Str(words:sortedWith(____lambda_5)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(3, nil, 1):sortedWith(__K2L_NullsFirst(__K2L_NaturalOrder))))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(3, nil, 1):sortedWith(__K2L_NullsLast(__K2L_NaturalOrder))))
+    print(__K2L_Str(__K2L_ListOf(3, nil, 1):sortedWith(__K2L_NullsFirst(__K2L_NaturalOrder))))
+    print(__K2L_Str(__K2L_ListOf(3, nil, 1):sortedWith(__K2L_NullsLast(__K2L_NaturalOrder))))
     print(__K2L_Str(xs:sortedDescending()))
     print(words:maxBy(____lambda_6))
     print(__K2L_Str(words:minByOrNull(____lambda_7)))
@@ -79,7 +75,7 @@ local ____lambda_10 = function(it) return __K2L_Pair.new(it, #it) end
 local ____lambda_11 = function(it) return #it > 1 end
 local ____lambda_12 = function(it) return #it end
 local function grouping()
-    local words = __K2L_ReadOnlyListOf("bb", "a", "ccc", "dd")
+    local words = __K2L_ListOf("bb", "a", "ccc", "dd")
     local ____result = __K2L_Map.new()
     local ____items, ____n = words:____array()
     for ____i = 1, ____n do
@@ -104,8 +100,8 @@ local function grouping()
     print(__K2L_Str(____result_1))
     print(__K2L_Str(words:associate(____lambda_10)))
     print(__K2L_Str(words:partition(____lambda_11)))
-    print(__K2L_Str(words:zip(__K2L_ReadOnlyListOf(1, 2, 3))))
-    print(__K2L_Str(words:zip(__K2L_ReadOnlyListOf(1, 2, 3)):unzip()))
+    print(__K2L_Str(words:zip(__K2L_ListOf(1, 2, 3))))
+    print(__K2L_Str(words:zip(__K2L_ListOf(1, 2, 3)):unzip()))
     print(__K2L_Str(words:distinctBy(____lambda_12)))
 end
 
@@ -119,7 +115,7 @@ local ____lambda_19 = function(i, a, b) return a + b * i end
 local ____lambda_20 = function(a, b) return a - b end
 local ____lambda_21 = function(a, b) return a + b end
 local function windows()
-    local xs = __K2L_ReadOnlyListOf(3, 1, 2, 5, 4)
+    local xs = __K2L_ListOf(3, 1, 2, 5, 4)
     print(__K2L_Str(xs:chunked(2)))
     print(__K2L_Str(xs:chunked(2, ____lambda_13)))
     print(__K2L_Str(xs:windowed(3)))
@@ -144,7 +140,7 @@ local ____lambda_27 = function(it) return -2 end
 local ____lambda_28 = function(it) return it > 2 end
 local ____lambda_29 = function(it) return it > 2 end
 local function slicing()
-    local xs = __K2L_ReadOnlyListOf(3, 1, 2, 5, 4)
+    local xs = __K2L_ListOf(3, 1, 2, 5, 4)
     print(__K2L_Str(xs:take(2)))
     print(__K2L_Str(xs:drop(2)))
     print(__K2L_Str(xs:takeLast(2)))
@@ -154,7 +150,7 @@ local function slicing()
     print(__K2L_Str(xs:takeLastWhile(____lambda_24)))
     print(__K2L_Str(xs:dropLastWhile(____lambda_25)))
     print(__K2L_Str(xs:slice(__K2L_IntRange.new(1, 3))))
-    print(__K2L_Str(xs:slice(__K2L_ReadOnlyListOf(0, 4))))
+    print(__K2L_Str(xs:slice(__K2L_ListOf(0, 4))))
     print(__K2L_Str(xs:elementAtOrNull(9)))
     print(xs:elementAtOrElse(9, ____lambda_26))
     print(xs:getOrElse(9, ____lambda_27))
@@ -169,7 +165,7 @@ local ____lambda_31 = function(it) return "<" .. it .. ">" end
 local ____lambda_32 = function(i, v) return i > 0 and v or nil end
 local ____lambda_33 = function(i, v) return i + v end
 local function aggregates()
-    local xs = __K2L_ReadOnlyListOf(3, 1, 2)
+    local xs = __K2L_ListOf(3, 1, 2)
     local ____sum = 0
     local ____items_2, ____n_2 = xs:____array()
     for ____i_2 = 1, ____n_2 do
@@ -183,8 +179,8 @@ local function aggregates()
         local it = ____items_3[____i_3]
         ____sum_1 = ____sum_1 + (it + 0.0)
     end
-    print(__K2L_Str(____sum_1))
-    print(__K2L_Str(xs:average()))
+    print(____sum_1)
+    print(xs:average())
     local ____best
     local ____has = false
     local ____items_4, ____n_4 = xs:____array()
@@ -210,17 +206,17 @@ local function aggregates()
         end
     end
     print(____result_2)
-    print(__K2L_Str(__K2L_ReadOnlyListOf():maxOrNull()))
+    print(__K2L_Str(__K2L_ListOf():maxOrNull()))
     print(xs:joinToString(", ", "[", "]"))
     print(xs:joinToString("-", nil, nil, nil, nil, ____lambda_31))
     print(xs:joinToString(nil, nil, nil, 2, "..."))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(__K2L_SingletonListOf(1), __K2L_ReadOnlyListOf(2, 3)):flatten()))
+    print(__K2L_Str(__K2L_ListOf(__K2L_ListOf(1), __K2L_ListOf(2, 3)):flatten()))
     local ____out = {}
     local ____count = 0
     local ____items_6, ____n_6 = xs:____array()
     for ____i_6 = 1, ____n_6 do
         local it = ____items_6[____i_6]
-        local ____inner, ____m = __K2L_ReadOnlyListOf(it, it):____array()
+        local ____inner, ____m = __K2L_ListOf(it, it):____array()
         for ____j = 1, ____m do
             ____count = ____count + 1
             ____out[____count] = ____inner[____j]
@@ -230,10 +226,10 @@ local function aggregates()
     print(__K2L_Str(xs:mapIndexedNotNull(____lambda_32)))
     print(__K2L_Str(xs:mapIndexedTo(__K2L_ListOf(), ____lambda_33)))
     print(__K2L_Str(xs:plus(4)))
-    print(__K2L_Str(xs:plusAll(__K2L_ReadOnlyListOf(4, 5))))
+    print(__K2L_Str(xs:plusAll(__K2L_ListOf(4, 5))))
     print(__K2L_Str(xs:minus(1)))
-    print(__K2L_Str(xs:minusAll(__K2L_ReadOnlyListOf(1, 2))))
-    print(xs:containsAll(__K2L_ReadOnlyListOf(1, 2)))
+    print(__K2L_Str(xs:minusAll(__K2L_ListOf(1, 2))))
+    print(xs:containsAll(__K2L_ListOf(1, 2)))
 end
 
 local ____lambda_34 = function(it) return it > 3 end
@@ -244,7 +240,7 @@ local function mutation()
     print(__K2L_Str(ml:removeFirstOrNull()))
     print(__K2L_Str(ml:removeLastOrNull()))
     print(__K2L_Str(ml))
-    ml:addAll(__K2L_ReadOnlyListOf(9, 8))
+    ml:addAll(__K2L_ListOf(9, 8))
     ml:retainAll(____lambda_34)
     print(__K2L_Str(ml))
     ml:sortDescending()
@@ -281,19 +277,17 @@ local ____lambda_41 = function(it) return it.value * 2 end
 local ____lambda_42 = function(it) return it.key:upper() end
 local ____lambda_43 = function(it) return it.value end
 local ____lambda_44 = function(it) return it.value end
-local ____lambda_45 = function()
-    return __K2L_SingletonMapOf(__K2L_Pair.new("e", 0))
-end
+local ____lambda_45 = function() return __K2L_MapOf(__K2L_Pair.new("e", 0)) end
 local ____lambda_46 = function(it) return it end
 local ____lambda_47 = function(it)
-    return __K2L_ListOfSize(2, ____lambda_46, "[Ljava.lang.Integer;")
+    return __K2L_ListOfSize(2, ____lambda_46, true)
 end
-local ____lambda_48 = function() return __K2L_SingletonListOf(0) end
+local ____lambda_48 = function() return __K2L_ListOf(0) end
 local function misc()
-    local mixed = __K2L_ReadOnlyListOf(1, "a", 2, "b", 3.5)
+    local mixed = __K2L_ListOf(1, "a", 2, "b", 3.5)
     print(__K2L_Str(mixed:filter(____lambda_37)))
     print(__K2L_Str(mixed:filter(____lambda_38)))
-    local mp = __K2L_ReadOnlyMapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2), __K2L_Pair.new("c", 3))
+    local mp = __K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2), __K2L_Pair.new("c", 3))
     print(__K2L_Str(mp:filterTo(__K2L_MapOf(), ____lambda_39)))
     print(__K2L_Str(mp:filter(____lambda_40)))
     print(__K2L_Str(mp:mapValues(____lambda_41)))
@@ -312,13 +306,13 @@ local function misc()
     print(__K2L_Str(____receiver and ____receiver.key))
     print(__K2L_Str(mp:toList()))
     print(mp:getOrDefault("z", 0))
-    print(__K2L_Str(__K2L_ReadOnlyMapOf():ifEmpty(____lambda_45)))
+    print(__K2L_Str(__K2L_MapOf():ifEmpty(____lambda_45)))
     print(__K2L_Str(mp:minus("a")))
     print(__K2L_Str(mp:plus(__K2L_Pair.new("d", 4))))
-    print(__K2L_Str(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 3, 1, 2):sortedArray():toList()))
-    print(__K2L_TypedArrayOf("[I", 3, 1, 2):sum())
-    print(__K2L_ListOfSize(2, ____lambda_47, "[[Ljava.lang.Integer;"):contentDeepToString())
-    print(__K2L_Str(__K2L_ReadOnlyListOf():ifEmpty(____lambda_48)))
+    print(__K2L_Str(__K2L_ArrayOf(3, 1, 2):sortedArray():toList()))
+    print(__K2L_ArrayOf(3, 1, 2):sum())
+    print(__K2L_ListOfSize(2, ____lambda_47, true):contentDeepToString())
+    print(__K2L_Str(__K2L_ListOf():ifEmpty(____lambda_48)))
 end
 
 local function main()
@@ -331,5 +325,5 @@ local function main()
     misc()
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {ordering = ordering, grouping = grouping, windows = windows, slicing = slicing, aggregates = aggregates, mutation = mutation, misc = misc}

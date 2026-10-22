@@ -1,10 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_HashMap = ____lualib.__K2L_HashMap
-local __K2L_HashSet = ____lualib.__K2L_HashSet
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -13,10 +9,10 @@ local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
-local __K2L_SortedMap = ____lualib.__K2L_SortedMap
+local __K2L_Set = ____lualib.__K2L_Set
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -47,40 +43,39 @@ function Holder.new(items)
 end
 
 local ____lambda_1 = function() return __K2L_List.new() end
-local ____lambda_2 = function() return __K2L_HashMap.new() end
+local ____lambda_2 = function() return __K2L_Map.new() end
 local ____lambda_3 = function() return __K2L_Map.new() end
-local ____lambda_4 = function() return __K2L_HashSet.new() end
+local ____lambda_4 = function() return __K2L_Set.new() end
 local ____lambda_5 = function(____p1) return ____p1:toMutableList() end
-local ____lambda_6 = function() return __K2L_SortedMap.new() end
-local ____lambda_7 = function() return __K2L_ArrayDeque.new() end
-local ____lambda_8 = function() return __K2L_StringBuilder.new() end
+local ____lambda_6 = function() return __K2L_ArrayDeque.new() end
+local ____lambda_7 = function() return __K2L_StringBuilder.new() end
+local ____lambda_8 = function(____p1)
+    return __K2L_StringBuilder.new(__K2L_Str(____p1))
+end
 local ____lambda_9 = function(____p1)
     return __K2L_StringBuilder.new(__K2L_Str(____p1))
 end
-local ____lambda_10 = function(____p1)
-    return __K2L_StringBuilder.new(__K2L_Str(____p1))
-end
-local ____lambda_11 = function(____p1, ____p2)
+local ____lambda_10 = function(____p1, ____p2)
     return __K2L_Pair.new(____p1, ____p2)
 end
-local ____lambda_12 = function(____p1, ____p2, ____p3)
+local ____lambda_11 = function(____p1, ____p2, ____p3)
     return __K2L_Triple.new(____p1, ____p2, ____p3)
 end
-local ____lambda_13 = function(____p1)
+local ____lambda_12 = function(____p1)
     return __K2L_IllegalStateException.new(____p1)
 end
-local ____lambda_14 = function(____p1, ____p2)
+local ____lambda_13 = function(____p1, ____p2)
     return __K2L_RuntimeException.new(____p1, ____p2)
 end
-local ____lambda_15 = function()
+local ____lambda_14 = function()
     return __K2L_UnsupportedOperationException.new()
 end
-local ____lambda_16 = function(____p1)
+local ____lambda_15 = function(____p1)
     return __K2L_IllegalArgumentException.new(____p1)
 end
-local ____lambda_17 = function(____p1) return __K2L_Regex.new(____p1) end
-local ____lambda_18 = function(____p1, ____p2)
-    return __K2L_Regex.new(____p1, ____p2)
+local ____lambda_16 = function(____p1) return __K2L_Regex.fromLiteral(____p1) end
+local ____lambda_17 = function(____p1)
+    return __K2L_StringBuilder.new(__K2L_Str(____p1))
 end
 local function main()
     local lists = build(2, ____lambda_1)
@@ -100,22 +95,17 @@ local function main()
     ____value_1:add(3)
     print(__K2L_Str(____value_1))
     local copy = ____lambda_5
-    print(__K2L_Str(copy(__K2L_ReadOnlyListOf(1, 2, 3))))
-    local sorted = ____lambda_6
-    local ____value_2 = sorted()
-    ____value_2:put("b", 1)
-    ____value_2:put("a", 2)
+    print(__K2L_Str(copy(__K2L_ListOf(1, 2, 3))))
+    local deque = ____lambda_6
+    local ____value_2 = deque()
+    ____value_2:addFirst(1)
+    ____value_2:addFirst(2)
     print(__K2L_Str(____value_2))
-    local deque = ____lambda_7
-    local ____value_3 = deque()
-    ____value_3:addFirst(1)
-    ____value_3:addFirst(2)
-    print(__K2L_Str(____value_3))
-    local empty = ____lambda_8
-    local fromText = ____lambda_9
+    local empty = ____lambda_7
+    local fromText = ____lambda_8
     print(__K2L_Str(empty():append("x"):append(tostring(1))))
     print(__K2L_Str(fromText("hi"):append("!")))
-    local ____list = __K2L_ReadOnlyListOf("a", "b"):map(____lambda_10)
+    local ____list = __K2L_ListOf("a", "b"):map(____lambda_9)
     local ____out_1 = {}
     local ____count = 0
     local ____items, ____n = ____list:____array()
@@ -125,10 +115,10 @@ local function main()
         ____out_1[____count] = it:reverse():append("?"):toString()
     end
     print(__K2L_Str(__K2L_ListWrap(____out_1, ____count)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2, 3):zip(__K2L_ReadOnlyListOf("one", "two", "three"), ____lambda_11)))
-    local triple = ____lambda_12
+    print(__K2L_Str(__K2L_ListOf(1, 2, 3):zip(__K2L_ListOf("one", "two", "three"), ____lambda_10)))
+    local triple = ____lambda_11
     print(__K2L_Str(triple(1, "t", true)))
-    local errors = __K2L_ReadOnlyListOf("bad", "worse"):map(____lambda_13)
+    local errors = __K2L_ListOf("bad", "worse"):map(____lambda_12)
     local ____out_2 = {}
     local ____count_1 = 0
     local ____items_1, ____n_1 = errors:____array()
@@ -138,14 +128,14 @@ local function main()
         ____out_2[____count_1] = it.message
     end
     print(__K2L_Str(__K2L_ListWrap(____out_2, ____count_1)))
-    local wrap = ____lambda_14
+    local wrap = ____lambda_13
     local wrapped = wrap("outer", errors:get(0))
     local ____receiver = wrapped.cause
     print(__K2L_Str(wrapped.message) .. " " .. __K2L_Str(____receiver and ____receiver.message))
-    local noMessage = ____lambda_15
+    local noMessage = ____lambda_14
     print(__K2L_Str(noMessage().message))
-    local ____ok, ____result = __K2L_DeepPcall(function()
-        error(apply("from a reference", ____lambda_16))
+    local ____ok, ____result = pcall(function()
+        error(apply("from a reference", ____lambda_15))
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result)
@@ -156,7 +146,7 @@ local function main()
             error(____error, 0)
         end
     end
-    local patterns = __K2L_ReadOnlyListOf("a+b", "[0-9]+"):map(____lambda_17)
+    local patterns = __K2L_ListOf("a+b", "aab"):map(____lambda_16)
     local ____out_3 = {}
     local ____count_2 = 0
     local ____items_2, ____n_2 = patterns:____array()
@@ -168,9 +158,9 @@ local function main()
     print(__K2L_Str(__K2L_ListWrap(____out_3, ____count_2)))
     local holder = Holder.new
     print(__K2L_Str(holder(__K2L_ListOf("x")).items))
-    local ref = ____lambda_18
-    print(ref("X*", "IGNORE_CASE"):matches("xxx"))
+    local ref = ____lambda_17
+    print(__K2L_Str(ref("xxx"):append("!")))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {build = build, apply = apply, Holder = Holder}

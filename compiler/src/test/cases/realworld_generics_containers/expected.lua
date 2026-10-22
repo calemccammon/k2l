@@ -1,11 +1,7 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_GenerateSequenceLazy = ____lualib.__K2L_GenerateSequenceLazy
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -14,14 +10,12 @@ local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReverseOrder = ____lualib.__K2L_ReverseOrder
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
@@ -152,7 +146,6 @@ function LruCache:toString()
 end
 
 local BoundedQueue = __K2L_Class("generics.containers.BoundedQueue", __K2L_IterableBase)
-BoundedQueue.____readOnly = true
 
 function BoundedQueue:____init(limit, comparator)
     self.limit = limit
@@ -200,8 +193,7 @@ end
 function BoundedQueue:siftUp(start)
     local i = start
     while i > 0 do
-        local ____dividend = i - 1
-        local parent = ____dividend >= 0 and ____dividend // 2 or 0 - -____dividend // 2
+        local parent = (i - 1) // 2
         if self.comparator(self.heap:get(i), self.heap:get(parent)) >= 0 then
             break
         end
@@ -263,7 +255,7 @@ end
 Trie.Node = __K2L_Class("generics.containers.Trie$Node")
 
 function Trie.Node:____init()
-    self.children = __K2L_SortedMapOf()
+    self.children = __K2L_SortedMapOf(nil)
     self.value = nil
     self.terminal = false
 end
@@ -311,15 +303,11 @@ function Trie:withPrefix(prefix)
         end
         local ____map = node.children
         local ____keys, ____values, ____n = ____map:____arrays()
-        local ____mod = ____map.____modCount
         for ____i_2 = 1, ____n do
             local c, child = ____keys[____i_2], ____values[____i_2]
             path:append(__K2L_Str(c))
             walk(child, path)
             path:setLength(path:getLength() - 1)
-            if ____map.____modCount ~= ____mod and ____map:____comodified(____i_2, ____n) then
-                break
-            end
         end
     end
     local ____receiver_2 = self:find(prefix)
@@ -333,8 +321,7 @@ function Trie:longestPrefixOf(text)
     local node = self.root
     local best = nil
     local ____collection = __K2L_StringToList(text):withIndex()
-    local ____items, ____n_1 = __K2L_LoopItems(____collection)
-    local ____mod_1 = ____collection.____modCount
+    local ____items, ____n_1 = ____collection:____array()
     for ____i_3 = 1, ____n_1 do
         local ____item = ____items[____i_3]
         local i, c = ____item.index, ____item.value
@@ -345,9 +332,6 @@ function Trie:longestPrefixOf(text)
         node = ____value_8
         if node.terminal then
             best = __K2L_Text.substring(text, 0, i + 1)
-        end
-        if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_3, ____n_1) then
-            break
         end
     end
     return best
@@ -366,7 +350,7 @@ function Task.new(name, priority, cost)
 end
 
 function Task:toString()
-    return "Task(name=" .. self.name .. ", priority=" .. self.priority .. ", cost=" .. __K2L_Str(self.cost) .. ")"
+    return "Task(name=" .. self.name .. ", priority=" .. self.priority .. ", cost=" .. self.cost .. ")"
 end
 
 function Task:hashCode()
@@ -374,7 +358,7 @@ function Task:hashCode()
 end
 
 function Task:equals(other)
-    return getmetatable(other) == Task and self.name == other.name and self.priority == other.priority and __K2L_DoubleEquals(self.cost, other.cost)
+    return getmetatable(other) == Task and self.name == other.name and self.priority == other.priority and self.cost == other.cost
 end
 
 local PORT = Key.new("port", 8080)
@@ -402,19 +386,16 @@ local function main()
     local ____key_3 = HOST
     config:set(____key_3, "localhost")
     local ____key_4 = TAGS
-    config:set(____key_4, __K2L_ReadOnlyListOf("web", "api"))
+    config:set(____key_4, __K2L_ListOf("web", "api"))
     local ____key_5 = PORT
     config:set(____key_5, 9000)
     local ____arg = #config:require(HOST)
-    local ____value_9 = config:get(TAGS)
-    if ____value_9 ~= nil and not __K2L_InstanceOf(____value_9, __K2L_List) then
-        __K2L_CastFail(____value_9, "java.util.List", "kotlin.collections.List")
-    end
-    print("host length=" .. ____arg .. " tags=" .. __K2L_Str(____value_9 and ____value_9:joinToString("|")))
+    local ____receiver_3 = config:get(TAGS)
+    print("host length=" .. ____arg .. " tags=" .. __K2L_Str(____receiver_3 and ____receiver_3:joinToString("|")))
     print("retries=" .. config:update(RETRIES, ____lambda_3) .. " then " .. config:update(RETRIES, ____lambda_4))
     print("contains HOST=" .. tostring(config:contains(HOST)) .. " contains Key(host)=" .. tostring(config:contains(Key.new("host"))))
     print(__K2L_Str(config))
-    local ____ok, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok, ____result_1 = pcall(function()
         config:require(Key.new("timeout"))
     end)
     if not ____ok then
@@ -432,18 +413,14 @@ local function main()
         evicted:add(k .. "=" .. v)
     end)
     local ____list = __K2L_StringSplit("the quick brown fox jumps over the lazy dog the end", " ")
-    local ____mod_2 = ____list.____modCount
     for ____i_4 = 1, ____list.size do
         local w = ____list[____i_4]
         cache:getOrPut(w, ____lambda_5)
-        if ____list.____modCount ~= ____mod_2 and ____list:____comodified(____i_4) then
-            break
-        end
     end
     print(__K2L_Str(cache))
     print("evicted: " .. __K2L_Str(evicted))
     print("keys=" .. __K2L_Str(cache:getKeys()) .. " get(the)=" .. __K2L_Str(cache:get("the")) .. " get(fox)=" .. __K2L_Str(cache:get("fox")))
-    local ____ok_1, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_2 = pcall(function()
         LruCache.new(0)
     end)
     if not ____ok_1 then
@@ -456,37 +433,29 @@ local function main()
         end
     end
     print("== bounded queue")
-    local tasks = __K2L_ReadOnlyListOf(Task.new("deploy", 5, 2.5), Task.new("lint", 1, 0.25), Task.new("test", 4, 7.0), Task.new("docs", 2, 1.0), Task.new("bench", 4, 12.0), Task.new("release", 5, 0.5), Task.new("audit", 3, 3.25))
+    local tasks = __K2L_ListOf(Task.new("deploy", 5, 2.5), Task.new("lint", 1, 0.25), Task.new("test", 4, 7.0), Task.new("docs", 2, 1.0), Task.new("bench", 4, 12.0), Task.new("release", 5, 0.5), Task.new("audit", 3, 3.25))
     local top = BoundedQueue.new(3, ____lambda_6)
     local accepted = tasks:map(function(t)
         return t.name .. ":" .. (top:offer(t) and "+" or "-")
     end)
     print(accepted:joinToString(" "))
-    local ____receiver_3 = top:peek()
-    print("peek=" .. __K2L_Str(____receiver_3 and ____receiver_3.name) .. " ordered=" .. __K2L_Str(top:map(____lambda_7)))
+    local ____receiver_4 = top:peek()
+    print("peek=" .. __K2L_Str(____receiver_4 and ____receiver_4.name) .. " ordered=" .. __K2L_Str(top:map(____lambda_7)))
     print("drained=" .. __K2L_Str(top:drainDescending():map(____lambda_8)) .. " empty=" .. __K2L_Str(top:poll()))
-    local words = BoundedQueue.new(4, __K2L_Then(__K2L_CompareBy(__K2L_PropertyRef.new("length", "kotlin/String.length", ____lambda_9)), __K2L_ReverseOrder))
+    local words = BoundedQueue.new(4, __K2L_Then(__K2L_CompareBy(____lambda_9), __K2L_ReverseOrder))
     local ____list_1 = __K2L_StringSplit("kotlin lua generic variance bound star projection reified", " ")
-    local ____mod_3 = ____list_1.____modCount
     for ____i_5 = 1, ____list_1.size do
         local it = ____list_1[____i_5]
         words:offer(it)
-        if ____list_1.____modCount ~= ____mod_3 and ____list_1:____comodified(____i_5) then
-            break
-        end
     end
     print("longest=" .. __K2L_Str(words:toList()))
     print("== trie")
     local trie = Trie.new()
-    local ____list_2 = __K2L_ReadOnlyListOf("car", "card", "care", "cart", "cat", "dog", "do")
-    local ____mod_4 = ____list_2.____modCount
+    local ____list_2 = __K2L_ListOf("car", "card", "care", "cart", "cat", "dog", "do")
     for ____i_6 = 1, ____list_2.size do
         local w = ____list_2[____i_6]
         local i = ____i_6 - 1
         trie:set(w, i * 10)
-        if ____list_2.____modCount ~= ____mod_4 and ____list_2:____comodified(____i_6) then
-            break
-        end
     end
     trie:set("car", -1)
     print("size=" .. trie.size .. " car=" .. __K2L_Str(trie:get("car")) .. " ca=" .. __K2L_Str(trie:get("ca")) .. " dog=" .. __K2L_Str(trie:get("dog")))
@@ -499,21 +468,17 @@ local function main()
     print("longest prefix of 'cartography'=" .. __K2L_Str(trie:longestPrefixOf("cartography")) .. " of 'dots'=" .. __K2L_Str(trie:longestPrefixOf("dots")))
     local counts = Trie.new()
     local ____list_3 = __K2L_Text.windowed("abracadabra", 3)
-    local ____mod_5 = ____list_3.____modCount
     for ____i_7 = 1, ____list_3.size do
         local gram = ____list_3[____i_7]
         local i = ____i_7 - 1
         do
-            local ____value_11 = counts:get(gram)
-            if ____value_11 == nil then
-                local ____value_10 = __K2L_ListOf()
-                counts:set(gram, ____value_10)
-                ____value_11 = ____value_10
+            local ____value_10 = counts:get(gram)
+            if ____value_10 == nil then
+                local ____value_9 = __K2L_ListOf()
+                counts:set(gram, ____value_9)
+                ____value_10 = ____value_9
             end
-            ____value_11:add(i)
-        end
-        if ____list_3.____modCount ~= ____mod_5 and ____list_3:____comodified(____i_7) then
-            break
+            ____value_10:add(i)
         end
     end
     print("trigrams: " .. counts:withPrefix(""):joinToString(nil, nil, nil, nil, nil, function(____destructured_2)
@@ -522,5 +487,5 @@ local function main()
     end))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Key = Key, TypedMap = TypedMap, LruCache = LruCache, BoundedQueue = BoundedQueue, Trie = Trie, Task = Task, PORT = PORT, HOST = HOST, TAGS = TAGS, RETRIES = RETRIES}

@@ -1,17 +1,16 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_Map = ____lualib.__K2L_Map
+local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Random = ____lualib.__K2L_Random
-local __K2L_RandomLong = ____lualib.__K2L_RandomLong
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
-local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 
 local SplitMix = __K2L_Class("SplitMix")
 
@@ -54,8 +53,8 @@ local Chunk = __K2L_Class("Chunk")
 function Chunk:____init(cx, cy, seed)
     self.cx = cx
     self.cy = cy
-    self.heights = __K2L_ListOfSize(16, 0, "[I")
-    local rng = __K2L_Random.seededLong(seed)
+    self.heights = __K2L_ListOfSize(16, 0, true)
+    local rng = __K2L_Random.seeded(seed)
     for i = 0, self.heights.size - 1 do
         local ____object = self.heights
         ____object[i + 1] = rng:nextInt(0, 256)
@@ -75,14 +74,14 @@ function Chunk:____init(cx, cy, seed)
     else
         self.biome = Biome.FOREST
     end
-    self.ore = __K2L_RandomLong.nextLong(rng, 1 << 40, 1 << 62)
+    self.ore = rng:nextLong(1 << 40, 1 << 62)
 end
 
 local World = __K2L_Class("World")
 
 function World:____init(seed)
     self.seed = seed
-    self.chunks = __K2L_HashMap.new()
+    self.chunks = __K2L_Map.new()
 end
 
 function World:chunk(cx, cy)
@@ -107,11 +106,9 @@ function World:totalOre(size)
     return total
 end
 
-local ____lambda_1 = function(it) return __K2L_Unsigned.toString(it) end
-local ____lambda_2 = function(it) return __K2L_Unsigned.toString(it) end
 local function longDraws()
     print("-- long draws")
-    local r = __K2L_Random.seededLong(9223372036854775807)
+    local r = __K2L_Random.seeded(9223372036854775807)
     local ____out = {}
     for ____i = 1, 3 do
         local it = ____i - 1
@@ -121,93 +118,81 @@ local function longDraws()
     local ____out_1 = {}
     for ____i_1 = 1, 3 do
         local it = ____i_1 - 1
-        ____out_1[____i_1] = __K2L_RandomLong.nextLong(r, nil, 9223372036854775807)
+        ____out_1[____i_1] = r:nextLong(9223372036854775807)
     end
     print(__K2L_Str(__K2L_ListWrap(____out_1, 3)))
     local ____out_2 = {}
     for ____i_2 = 1, 3 do
         local it = ____i_2 - 1
-        ____out_2[____i_2] = __K2L_RandomLong.nextLong(r, nil, 1 << 53)
+        ____out_2[____i_2] = r:nextLong(1 << 53)
     end
     print(__K2L_Str(__K2L_ListWrap(____out_2, 3)))
     local ____out_3 = {}
     for ____i_3 = 1, 3 do
         local it = ____i_3 - 1
-        ____out_3[____i_3] = __K2L_RandomLong.nextLong(r, nil, 1 << 62)
+        ____out_3[____i_3] = r:nextLong(1 << 62)
     end
     print(__K2L_Str(__K2L_ListWrap(____out_3, 3)))
     local ____out_4 = {}
     for ____i_4 = 1, 3 do
         local it = ____i_4 - 1
-        ____out_4[____i_4] = __K2L_RandomLong.nextLong(r, nil, 3000000000000000001)
+        ____out_4[____i_4] = r:nextLong(3000000000000000001)
     end
     print(__K2L_Str(__K2L_ListWrap(____out_4, 3)))
     local ____out_5 = {}
     for ____i_5 = 1, 3 do
         local it = ____i_5 - 1
-        ____out_5[____i_5] = __K2L_RandomLong.nextLong(r, -9223372036854775807 - 1, 9223372036854775807)
+        ____out_5[____i_5] = r:nextLong(-9223372036854775807 - 1, 9223372036854775807)
     end
     print(__K2L_Str(__K2L_ListWrap(____out_5, 3)))
     local ____out_6 = {}
     for ____i_6 = 1, 3 do
         local it = ____i_6 - 1
-        ____out_6[____i_6] = __K2L_RandomLong.nextLong(r, -1 << 60, 1 << 60)
+        ____out_6[____i_6] = r:nextLong(-1 << 60, 1 << 60)
     end
     print(__K2L_Str(__K2L_ListWrap(____out_6, 3)))
     local ____out_7 = {}
     for ____i_7 = 1, 3 do
         local it = ____i_7 - 1
-        ____out_7[____i_7] = __K2L_RandomLong.nextLongIn(r, __K2L_IntRange.new(0, 9223372036854775807))
+        ____out_7[____i_7] = r:nextLongRange(__K2L_IntRange.new(0, 9223372036854775807))
     end
     print(__K2L_Str(__K2L_ListWrap(____out_7, 3)))
     local ____out_8 = {}
     for ____i_8 = 1, 3 do
         local it = ____i_8 - 1
-        ____out_8[____i_8] = __K2L_RandomLong.nextLongIn(r, __K2L_IntRange.new(-9223372036854775807 - 1, 9223372036854775807))
+        ____out_8[____i_8] = r:nextLongRange(__K2L_IntRange.new(-9223372036854775807 - 1, 9223372036854775807))
     end
     print(__K2L_Str(__K2L_ListWrap(____out_8, 3)))
     local ____out_9 = {}
     for ____i_9 = 1, 3 do
         local it = ____i_9 - 1
-        ____out_9[____i_9] = __K2L_RandomLong.nextLongIn(r, __K2L_IntRange.new(10, 20))
+        ____out_9[____i_9] = r:nextLongRange(__K2L_IntRange.new(10, 20))
     end
     print(__K2L_Str(__K2L_ListWrap(____out_9, 3)))
     local ____out_10 = {}
     for ____i_10 = 1, 2 do
         local it = ____i_10 - 1
-        ____out_10[____i_10] = __K2L_RandomLong.nextULong(r)
+        ____out_10[____i_10] = r:nextLongRange(__K2L_IntRange.new(1, 9223372036854775807), false)
     end
-    print(__K2L_ListWrap(____out_10, 2):joinToString(nil, nil, nil, nil, nil, ____lambda_1))
+    print(__K2L_Str(__K2L_ListWrap(____out_10, 2)))
     local ____out_11 = {}
-    for ____i_11 = 1, 2 do
+    for ____i_11 = 1, 6 do
         local it = ____i_11 - 1
-        ____out_11[____i_11] = __K2L_RandomLong.nextULong(r, nil, __K2L_Unsigned.udiv(0xffffffffffffffff, 3))
+        ____out_11[____i_11] = r:nextBits(31)
     end
-    print(__K2L_ListWrap(____out_11, 2):joinToString(nil, nil, nil, nil, nil, ____lambda_2))
-    local ____out_12 = {}
-    for ____i_12 = 1, 2 do
-        local it = ____i_12 - 1
-        ____out_12[____i_12] = __K2L_RandomLong.nextLongIn(r, __K2L_IntRange.new(1, 9223372036854775807), false)
-    end
-    print(__K2L_Str(__K2L_ListWrap(____out_12, 2)))
-    local ____out_13 = {}
-    for ____i_13 = 1, 6 do
-        local it = ____i_13 - 1
-        ____out_13[____i_13] = r:nextBits(31)
-    end
-    local ____list = __K2L_ListWrap(____out_13, 6)
+    local ____list = __K2L_ListWrap(____out_11, 6)
     local ____sum = 0
     local ____items, ____n = ____list:____array()
-    for ____i_14 = 1, ____n do
-        local it = ____items[____i_14]
+    for ____i_12 = 1, ____n do
+        local it = ____items[____i_12]
         ____sum = ____sum + it
     end
     print(____sum)
-    local ____list_1 = __K2L_ReadOnlyListOf(-9223372036854775807 - 1, 9223372036854775807, 1 << 53, (1 << 53) + 1, -1 << 40, 81985529216486895)
-    for ____i_15 = 1, ____list_1.size do
-        local seed = ____list_1[____i_15]
-        local s = __K2L_Random.seededLong(seed)
-        print(seed .. " -> " .. s:nextInt() .. " " .. s:nextLong() .. " " .. __K2L_RandomLong.nextLong(s, nil, 1000))
+    local ____list_1 = __K2L_ListOf(-9223372036854775807 - 1, 9223372036854775807, 1 << 53, (1 << 53) + 1, -1 << 40, 81985529216486895)
+    for ____i_13 = 1, ____list_1.size do
+        local seed = ____list_1[____i_13]
+        local s = __K2L_Random.seeded(seed)
+        print(seed .. " -> " .. s:nextInt() .. " " .. s:nextLong() .. " " .. s:nextLong(1000))
     end
 end
 
@@ -217,14 +202,14 @@ local function worlds()
     print(SplitMix:mix(1))
     print(SplitMix:mix(-9223372036854775807 - 1))
     print(SplitMix:chunkSeed(42, -3, 7))
-    local ____list_2 = __K2L_ReadOnlyListOf(42, 8675309, -9000000000000000000)
-    for ____i_17 = 1, ____list_2.size do
-        local seed = ____list_2[____i_17]
+    local ____list_2 = __K2L_ListOf(42, 8675309, -9000000000000000000)
+    for ____i_15 = 1, ____list_2.size do
+        local seed = ____list_2[____i_15]
         local world = World.new(seed)
         print("world " .. seed)
         local ____list_3 = world:render(5)
-        for ____i_16 = 1, ____list_3.size do
-            local it = ____list_3[____i_16]
+        for ____i_14 = 1, ____list_3.size do
+            local it = ____list_3[____i_14]
             print("  " .. it)
         end
         print("  ore=" .. world:totalOre(5) .. " max=" .. __K2L_IntRange.new(0, 5 - 1):maxOf(function(it) return world:chunk(it - 2, 0).ore end))
@@ -235,55 +220,47 @@ end
 
 local function lottery()
     print("-- lottery")
-    local draw = __K2L_Random.seededLong(20240101)
-    local ____out_14 = {}
-    for ____i_18 = 1, 5 do
-        local it = ____i_18 - 1
+    local draw = __K2L_Random.seeded(20240101)
+    local ____out_12 = {}
+    for ____i_16 = 1, 5 do
+        local it = ____i_16 - 1
         local ____result
         do
-            local ____out_15 = {}
-            for ____i_19 = 1, 6 do
-                local it = ____i_19 - 1
-                ____out_15[____i_19] = draw:nextInt(1, 50)
+            local ____out_13 = {}
+            for ____i_17 = 1, 6 do
+                local it = ____i_17 - 1
+                ____out_13[____i_17] = draw:nextInt(1, 50)
             end
-            ____result = __K2L_ListWrap(____out_15, 6):distinct():sorted()
+            ____result = __K2L_ListWrap(____out_13, 6):distinct():sorted()
         end
-        ____out_14[____i_18] = ____result
+        ____out_12[____i_16] = ____result
     end
-    local tickets = __K2L_ListWrap(____out_14, 5)
-    local ____mod = tickets.____modCount
-    for ____i_20 = 1, tickets.size do
-        local t = tickets[____i_20]
-        local i = ____i_20 - 1
+    local tickets = __K2L_ListWrap(____out_12, 5)
+    for ____i_18 = 1, tickets.size do
+        local t = tickets[____i_18]
+        local i = ____i_18 - 1
         print("ticket " .. i .. ": " .. __K2L_Str(t))
-        if tickets.____modCount ~= ____mod and tickets:____comodified(____i_20) then
-            break
-        end
     end
     local winning = __K2L_IntRange.new(1, 49):shuffled(draw):take(6):sorted()
     print("winning: " .. __K2L_Str(winning))
-    local ____mod_1 = tickets.____modCount
-    for ____i_22 = 1, tickets.size do
-        local t = tickets[____i_22]
+    for ____i_20 = 1, tickets.size do
+        local t = tickets[____i_20]
         local ____result_1 = 0
         local ____items_1, ____n_1 = t:____array()
-        for ____i_21 = 1, ____n_1 do
-            local it = ____items_1[____i_21]
+        for ____i_19 = 1, ____n_1 do
+            local it = ____items_1[____i_19]
             if winning:contains(it) then
                 ____result_1 = ____result_1 + 1
             end
         end
         print("matches: " .. ____result_1)
-        if tickets.____modCount ~= ____mod_1 and tickets:____comodified(____i_22) then
-            break
-        end
     end
-    local ____out_16 = {}
-    for ____i_23 = 1, 4 do
-        local it = ____i_23 - 1
-        ____out_16[____i_23] = __K2L_StringPadStart(__K2L_Unsigned.toRadix(draw:nextLong(), 16), 16, "0")
+    local ____out_14 = {}
+    for ____i_21 = 1, 4 do
+        local it = ____i_21 - 1
+        ____out_14[____i_21] = __K2L_StringPadStart(__K2L_Num.toRadix(draw:nextLong() >> 12, 16), 16, "0")
     end
-    local ids = __K2L_ListWrap(____out_16, 4)
+    local ids = __K2L_ListWrap(____out_14, 4)
     print(__K2L_Str(ids))
 end
 
@@ -293,5 +270,5 @@ local function main()
     lottery()
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {SplitMix = SplitMix, Biome = Biome, Chunk = Chunk, World = World, longDraws = longDraws, worlds = worlds, lottery = lottery}

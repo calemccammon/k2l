@@ -50,7 +50,7 @@ fun main() {
         val hex = n.toString(16)
         val bin = n.toString(2)
         val dec = "%.4f".format(n / 7.0)
-        parsed += hex.toInt(16) + bin.length + dec.toDouble().toLong() + Integer.toHexString(n).length + "$n".padStart(6, '0').length
+        parsed += hex.toInt(16) + bin.length + dec.toDouble().toLong() + n.toString(16).length + "$n".padStart(6, '0').length
     }
     println("parsed $parsed")
 }

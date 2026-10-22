@@ -55,7 +55,7 @@ internal fun FileTransformer.loopedCollectionCall(
 
 /** An Int, a Double, or a Long that is a Lua number: summed and compared with Lua's operators. */
 private fun FileTransformer.isPlainNumber(t: KaType?): Boolean = with(session) {
-    t != null && (t.isIntType || t.isDoubleType || (t.isLongType && !emulatesLong))
+    t != null && (t.isIntType || t.isDoubleType || t.isLongType)
 }
 
 /** What the loop walks: an enum's `____values` for `E.entries`, else the receiver's `____array()`. */

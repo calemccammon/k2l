@@ -1,11 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArithmeticException = ____lualib.__K2L_ArithmeticException
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_FloorDiv = ____lualib.__K2L_FloorDiv
-local __K2L_IDiv = ____lualib.__K2L_IDiv
-local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
@@ -15,14 +11,13 @@ local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Random = ____lualib.__K2L_Random
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unit = ____lualib.__K2L_Unit
 
 local function id(x)
@@ -30,7 +25,7 @@ local function id(x)
 end
 
 local function t(label, f)
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         print(label .. " = " .. __K2L_Str(f()))
     end)
     if not ____ok then
@@ -58,38 +53,36 @@ end
 
 local ____lambda_1 = function() return __K2L_StringToInt("x") end
 local ____lambda_2 = function() return __K2L_Num.digitToInt("x") end
-local ____lambda_3 = function() return __K2L_ReadOnlyListOf():first() end
-local ____lambda_4 = function() return __K2L_ReadOnlyListOf():last() end
-local ____lambda_5 = function() return __K2L_ReadOnlyListOf():max() end
+local ____lambda_3 = function() return __K2L_ListOf():first() end
+local ____lambda_4 = function() return __K2L_ListOf():last() end
+local ____lambda_5 = function() return __K2L_ListOf():max() end
 local ____lambda_6 = function(a, b) return a + b end
-local ____lambda_7 = function()
-    return __K2L_ReadOnlyListOf():reduce(____lambda_6)
-end
+local ____lambda_7 = function() return __K2L_ListOf():reduce(____lambda_6) end
 local ____lambda_8 = function()
-    return __K2L_ReadOnlyListOf():random(__K2L_Random.default())
+    return __K2L_ListOf():random(__K2L_Random.default())
 end
-local ____lambda_9 = function() return __K2L_ReadOnlyListOf():average() end
-local ____lambda_10 = function() return __K2L_IDiv(1, id(0)) end
-local ____lambda_11 = function() return __K2L_IRem(1, id(0)) end
-local ____lambda_12 = function() return __K2L_IRem(1, id(0)) end
-local ____lambda_13 = function() return __K2L_Num.mod(1, id(0)) end
-local ____lambda_14 = function() return __K2L_FloorDiv(1, id(0)) end
-local ____lambda_15 = function() return __K2L_IDiv(1, id(0)) end
-local ____lambda_16 = function() return __K2L_IRem(1, id(0)) end
-local ____lambda_17 = function() return __K2L_Num.mod(1, id(0)) end
+local ____lambda_9 = function() return __K2L_ListOf():average() end
+local ____lambda_10 = function() return 1 // id(0) end
+local ____lambda_11 = function() return 1 % id(0) end
+local ____lambda_12 = function() return 1 % id(0) end
+local ____lambda_13 = function() return 1 % id(0) end
+local ____lambda_14 = function() return 1 // id(0) end
+local ____lambda_15 = function() return 1 // id(0) end
+local ____lambda_16 = function() return 1 % id(0) end
+local ____lambda_17 = function() return 1 % id(0) end
 local ____lambda_18 = function() return 1.0 / id(0) end
-local ____lambda_19 = function() return math.fmod(1.5, id(0) + 0.0) end
-local ____lambda_20 = function() return math.fmod(-1.5, 0.0) end
-local ____lambda_21 = function() return math.fmod(5.5, -2.0) end
-local ____lambda_22 = function() return math.fmod(-5.5, 2.0) end
+local ____lambda_19 = function() return 1.5 % (id(0) + 0.0) end
+local ____lambda_20 = function() return -1.5 % 0.0 end
+local ____lambda_21 = function() return 5.5 % -2.0 end
+local ____lambda_22 = function() return -5.5 % 2.0 end
 local ____lambda_23 = function() return -5.5 % 2.0 end
 local ____lambda_24 = function() return 5.5 % 0.0 end
 local ____lambda_25 = function() return 0.0 / 0.0 end
-local ____lambda_26 = function() return __K2L_Num.mod(-7, id(3)) end
-local ____lambda_27 = function() return __K2L_Num.mod(7, id(-3)) end
-local ____lambda_28 = function() return __K2L_FloorDiv(-7, id(2)) end
-local ____lambda_29 = function() return __K2L_IRem(-7, id(3)) end
-local ____lambda_30 = function() return __K2L_IRem(7, id(-3)) end
+local ____lambda_26 = function() return -7 % id(3) end
+local ____lambda_27 = function() return 7 % id(-3) end
+local ____lambda_28 = function() return -7 // id(2) end
+local ____lambda_29 = function() return -7 % id(3) end
+local ____lambda_30 = function() return 7 % id(-3) end
 local function main()
     local s = "hello"
     local e = ""
@@ -137,10 +130,10 @@ local function main()
     t("windowed(0)", function() return __K2L_Text.windowed(s, id(0)) end)
     t("toInt", ____lambda_1)
     t("digitToInt", ____lambda_2)
-    local list = __K2L_ReadOnlyListOf(1, 2, 3)
+    local list = __K2L_ListOf(1, 2, 3)
     local mlist = __K2L_ListOf(1, 2, 3)
-    local arr = __K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2, 3)
-    local ia = __K2L_TypedArrayOf("[I", 1, 2, 3)
+    local arr = __K2L_ArrayOf(1, 2, 3)
+    local ia = __K2L_ArrayOf(1, 2, 3)
     t("list[3]", function() return list:get(id(3)) end)
     t("list[-1]", function() return list:get(id(-1)) end)
     t("list.get(3)", function() return list:get(id(3)) end)
@@ -219,9 +212,9 @@ local function main()
     t("ifloor", ____lambda_28)
     t("irem", ____lambda_29)
     t("irem2", ____lambda_30)
-    local data = __K2L_TypedArrayOf("[I", 5, 6, 7)
+    local data = __K2L_ArrayOf(5, 6, 7)
     local text = "abc"
-    local numbers = __K2L_ReadOnlyListOf(1, 2, 3)
+    local numbers = __K2L_ListOf(1, 2, 3)
     local total = 0
     for i = 0, data.size - 1 do
         total = total + data[i + 1]
@@ -253,5 +246,5 @@ local function main()
     end)
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {id = id, t = t}

@@ -21,16 +21,17 @@ internal fun FileTransformer.forEachLoop(collection: LuaExpr, type: KaType?, lam
             emit(LuaGenericFor(listOf(k, v), listOf(luaCall(LuaName("pairs"), collection)), body(k, v)))
         }
 
-        // Map.forEach(BiConsumer) runs over the whole map, then throws if the action changed it (`iter(true)`)
+        // Map.forEach(BiConsumer)
         kind == CollectionKind.Map && params.size == 2 -> {
             val k = varName(0, "key")
             val v = varName(1, "value")
-            emit(LuaGenericFor(listOf(k, v), listOf(LuaMethodCall(collection, "iter", listOf(LuaBool(true)))), body(k, v)))
+            // the index comes first, a key may be nil
+            emit(LuaGenericFor(listOf("_", k, v), listOf(LuaMethodCall(collection, "iter", emptyList())), body(k, v)))
         }
 
         kind == CollectionKind.Map -> {
             val entry = varName(0, "entry")
-            val source = arraySource(collection, "____entryArray", mayChangeCollections(lambdaBody(lambda)))
+            val source = arraySource(collection, "____entryArray")
             elementsLoop(source, entry, null, body(entry))
         }
 
@@ -68,8 +69,7 @@ private fun FileTransformer.forEachBody(lambda: KtExpression, vararg vars: Strin
 }
 
 /**
- * `forEach` over a list-like value, with an index when [indexed] (`forEachIndexed`): Kotlin's forEach is a `for` loop
- * over the collection's iterator, so it is checked for changes of the collection like one (see [elementsLoop]).
+ * `forEach` over a list-like value, with an index when [indexed] (`forEachIndexed`), as a `for` loop over its elements.
  */
 private fun FileTransformer.forEachList(
     collection: LuaExpr,
@@ -79,13 +79,7 @@ private fun FileTransformer.forEachList(
     params: List<KtParameter>,
 ): Unit = with(session) {
     val kind = type?.let { loopKind(it) }
-    val checked = mayChangeCollections(lambdaBody(lambda))
-    val source = when {
-        kind == CollectionKind.Array -> listSource(collection, false)
-        checked && type?.mayBeJavaArrayDeque() == true -> dequeSource(collection)
-        kind?.isIndexable == true -> listSource(collection, checked)
-        else -> arraySource(collection, checked = checked)
-    }
+    val source = if (kind?.isIndexable == true) listSource(collection) else arraySource(collection)
     if (indexed) {
         val index = forEachVar(params, 0, "index")
         val value = forEachVar(params, 1, "value")

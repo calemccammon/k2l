@@ -1,6 +1,6 @@
-// Ports of text-heavy Advent of Code puzzles (with small embedded inputs): nice strings, password policies,
-// passport validation, ABBA addresses, syntax scoring, crate stacks, stream garbage, string escapes,
-// password increments and calibration values with spelled-out digits.
+// Small text-processing puzzles of the kind found in programming-puzzle calendars, with made-up inputs: word rules,
+// password policies, record validation, bracketed address checks, bracket matching and scoring, crate stacks, a
+// stream with groups and garbage, string escapes, password increments and digits spelled out in words.
 
 fun niceOld(s: String) = s.count { it in "aeiou" } >= 3 && s.zipWithNext().any { (a, b) -> a == b } &&
     listOf("ab", "cd", "pq", "xy").none { it in s }
@@ -26,7 +26,13 @@ fun validPassport(fields: Map<String, String>): Boolean {
         "iyr" to { v -> v.toIntOrNull() in 2010..2020 },
         "eyr" to { v -> v.toIntOrNull() in 2020..2030 },
         "hgt" to { v ->
-            Regex("(\\d+)(cm|in)").matchEntire(v)?.destructured?.let { (n, u) -> if (u == "cm") n.toInt() in 150..193 else n.toInt() in 59..76 } ?: false
+            Regex("(\\d+)([a-z]+)").matchEntire(v)?.destructured?.let { (n, u) ->
+                when (u) {
+                    "cm" -> n.toInt() in 150..193
+                    "in" -> n.toInt() in 59..76
+                    else -> false
+                }
+            } ?: false
         },
         "hcl" to { v -> v.matches(Regex("#[0-9a-f]{6}")) },
         "ecl" to { v -> v in setOf("amb", "blu", "brn", "gry", "grn", "hzl", "oth") },
@@ -104,8 +110,17 @@ fun stream(s: String): Pair<Int, Int> {
     return score to garbage
 }
 
-fun decodedLength(lit: String): Int =
-    lit.substring(1, lit.length - 1).replace(Regex("""\\x[0-9a-f]{2}|\\.""")) { "_" }.length
+// each escape is one character: \xhh (four characters) or a backslash and any other one
+fun decodedLength(lit: String): Int {
+    val body = lit.substring(1, lit.length - 1)
+    var i = 0
+    var n = 0
+    while (i < body.length) {
+        i += if (body[i] != '\\') 1 else if (Regex("""\\x[0-9a-f]{2}""").matchesAt(body, i)) 4 else 2
+        n++
+    }
+    return n
+}
 
 fun encodedLength(lit: String): Int = 2 + lit.sumOf { (if (it == '"' || it == '\\') 2 else 1).toInt() }
 
@@ -139,61 +154,63 @@ fun calibration(line: String, words: Boolean): Int {
 }
 
 fun main() {
-    val words = listOf("ugknbfddgicrmopn", "aaa", "jchzalrnumimnmhp", "haegwjzuvuyypxyu", "dvszwmarrgswjxmb", "qjhvhtzxzqqjkmpb", "xxyxx", "uurcxstgmygtbstg", "ieodomkazucvgmuy")
+    val words = listOf("eeiou", "sootheabout", "rrr", "lomolomo", "uvwuvwkk", "aeiouxxtyty", "babkkeeoi", "momoxoxo", "ffiiuunnoo")
     println("nice: ${words.count(::niceOld)} / ${words.count(::niceNew)} -> ${words.filter(::niceNew)}")
 
-    println("passwords: " + passwordPolicies(listOf("1-3 a: abcde", "1-3 b: cdefg", "2-9 c: ccccccccc", "3-4 x: xxyx", "2-2 z: zz")))
+    println("passwords: " + passwordPolicies(listOf("2-4 k: kakkm", "1-2 r: tqrs", "3-5 m: mmmmmm", "1-4 j: jxyj", "2-3 w: awwb")))
 
     val passports = """
-        eyr:1972 cid:100
-        hcl:#18171d ecl:amb hgt:170 pid:186cm iyr:2018 byr:1926
+        ecl:gry pid:000123456 eyr:2025 hcl:#a1b2c3
+        byr:1950 iyr:2015 cid:7 hgt:180cm
 
-        pid:087499704 hgt:74in ecl:grn iyr:2012 eyr:2030 byr:1980
-        hcl:#623a2f
+        iyr:2011 hgt:65in ecl:oth hcl:#00ff00
+        pid:987654321 byr:1999
 
-        hcl:#888785
-        hgt:164cm byr:2001 iyr:2015 cid:88
-        pid:545766238 ecl:hzl
-        eyr:2022
+        hcl:#123abc byr:1985 eyr:2029 pid:111222333 ecl:hzl iyr:2019 hgt:70in
 
-        iyr:2010 hgt:158cm hcl:#b6652a ecl:blu byr:1944 eyr:2021 pid:093154719
+        byr:2010 iyr:2009 eyr:2031 hgt:190 hcl:123abc ecl:xyz pid:12345
 
-        hgt:59cm ecl:zzz eyr:2038 hcl:74454a iyr:2023 pid:3556412378 byr:2007
+        pid:555666777 hgt:150cm ecl:amb
+        hcl:#ffffff
+        iyr:2020 byr:1920 eyr:2020
+
+        hgt:194cm ecl:blu byr:1970 iyr:2014 eyr:2024 hcl:#abcdeg pid:0123456789
     """.trimIndent().split(Regex("\n\\s*\n")).map { block ->
         block.split(Regex("\\s+")).associate { it.substringBefore(':') to it.substringAfter(':') }
     }
     println("passports: present=${passports.count { it.keys.containsAll(listOf("byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid")) }} valid=${passports.count(::validPassport)}")
 
-    val ips = listOf("abba[mnop]qrst", "abcd[bddb]xyyx", "aaaa[qwer]tyui", "ioxxoj[asdfgh]zxcvbn", "xyx[abc]ddmn[poop]q")
+    val ips = listOf("kxxk[abcd]efgh", "mnop[qrrq]stts", "zzzz[abcd]efgh", "abcdeffe[xyz]qq", "pqr[stu]vwwvx[lmml]z")
     println("tls: " + ips.map(::supportsTls))
 
     val chunks = """
-        [({(<(())[]>[[{[]{<()<>>
-        [(()[<>])]({[<{<<[]>>(
-        {([(<{}[<>[]}>{[]{[(<()>
-        (((({<>}<{<{<>}{[]{[]{}
-        [[<[([]))<([[{}[[()]]]
-        [{[{({}]{}}([{[{{{}}([]
-        {<[[]]>}<{[{[{[]{()[[[]
-        [<(<(<(<{}))><([]([]()
-        <{([([[(<>()){}]>(<<{{
-        <{([{{}}[<[[[<>{}]]]>[]]
+        [<>({}){}[([])<>]]
+        {([(<>)]
+        <{[()]}>)
+        [(<{}>]
+        <([]){}}
+        ({<[]>}
+        [[<{(
+        {<(>
+        <<[]{()}
+        (<[{}]>{[]}]
     """.trimIndent().lines()
     println("syntax: " + syntaxScore(chunks))
 
-    val crateInput = "    [D]    \n[N] [C]    \n[Z] [M] [P]\n 1   2   3 \n\nmove 1 from 2 to 1\nmove 3 from 1 to 3\nmove 2 from 2 to 1\nmove 1 from 1 to 2"
+    val crateInput = "[Q]         [T]\n[R] [W]     [U]\n[S] [X] [Y] [V]\n 1   2   3   4 \n\n" +
+        "move 2 from 4 to 3\nmove 1 from 1 to 2\nmove 3 from 3 to 1\nmove 2 from 2 to 4"
     println("crates: ${crates(crateInput, false)} ${crates(crateInput, true)}")
 
-    for (s in listOf("{}", "{{{}}}", "{{<!!>},{<!!>},{<!!>},{<!!>}}", "{{<a!>},{<a!>},{<a!>},{<ab>}}", "<{o\"i!a,<{i<a>", "{{<ab>},{<ab>},{<ab>},{<ab>}}")) {
+    for (s in listOf("{}", "{{}{}}", "{<x!>y>,{}}", "{{<!!!>>},{<abc>}}", "<!!!!>", "{{{<{}>}},{<>}}", "<a{b!c>")) {
         println("stream $s -> ${stream(s)}")
     }
 
-    val literals = listOf("\"\"", "\"abc\"", "\"aaa\\\"aaa\"", "\"\\x27\"", "\"\\\\x41\"")
+    val literals = listOf("\"hi\"", "\"a\\\"b\"", "\"\\x4f\\x6b\"", "\"\\\\\\\\\"", "\"z\\\\x41\"")
     println("escapes: " + literals.map { "${it.length}/${decodedLength(it)}/${encodedLength(it)}" } +
         " total=" + literals.sumOf { it.length - decodedLength(it) } + "," + literals.sumOf { encodedLength(it) - it.length })
 
-    println("next passwords: ${nextPassword("abcdfezz")} ${nextPassword("ghjaabbz")} ${nextPassword("abcdffaa")}")
+    println("next passwords: ${nextPassword("qrsuuvwz")} ${nextPassword("tuvaacfz")} ${nextPassword("pqrhhmmz")}")
 
-    val cal = listOf("1abc2", "pqr3stu8vwx", "a1b2c3d4e5f", "treb7uchet", "two1nine", "eightwothree", "abcone2threexyz", "xtwone3four", "4nineeightseven2", "zoneight234", "7pqrstsixteen", "oneight")
+    val cal = listOf("k4m9", "77", "x1y2z3", "nope5here", "sixabc3", "nineight", "q2threefour", "fivesevenine", "8kseven", "twoone", "threeeight5", "abfour")
     println("calibration: ${cal.take(4).sumOf { calibration(it, false) }} ${cal.drop(4).sumOf { calibration(it, true) }} ${cal.map { calibration(it, true) }}")
 }

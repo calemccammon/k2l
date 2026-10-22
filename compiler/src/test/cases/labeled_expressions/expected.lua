@@ -1,12 +1,11 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local function twice(f)
-    return __K2L_ReadOnlyListOf(f(), f())
+    return __K2L_ListOf(f(), f())
 end
 
 local function sign(x)
@@ -28,13 +27,13 @@ local function main()
     local y = five > 3 and "big" or "small"
     print(y)
     local half = function(x)
-        if (x >= 0 and x % 2 or 0 - -x % 2) ~= 0 then
+        if x % 2 ~= 0 then
             return -1
         end
-        return x >= 0 and x // 2 or 0 - -x // 2
+        return x // 2
     end
-    print(__K2L_Str(__K2L_ReadOnlyListOf(4, 5, 6):map(half)))
-    local ____list = __K2L_ReadOnlyListOf(1, 2, 3)
+    print(__K2L_Str(__K2L_ListOf(4, 5, 6):map(half)))
+    local ____list = __K2L_ListOf(1, 2, 3)
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list:____array()
@@ -103,5 +102,5 @@ local function main()
     print(__K2L_Str(____pairs))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {twice = twice, sign = sign}

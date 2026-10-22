@@ -1,17 +1,25 @@
-// A regex-driven log analyzer: several line formats matched with named groups, key=value extraction with findAll,
-// redaction with replace lambdas, multi-line stack traces glued back together, and a per-endpoint latency report.
+// A regex-driven log analyzer: several line formats matched with capture groups, key=value extraction, redaction with
+// replace lambdas, multi-line stack traces glued back together, and a per-endpoint latency report. The regexes stay
+// within what Lua patterns express: alternatives and optional parts are checked in Kotlin instead.
 
 data class Entry(val time: String, val level: String, val source: String, val message: String, val fields: Map<String, String>)
 
+// groups: ip, user, time, method, path, status, bytes, and the rest: nothing or " <ms>ms"
 val accessLine = Regex(
-    """^(?<ip>\d{1,3}(?:\.\d{1,3}){3}) - (?<user>\S+) \[(?<time>[^\]]+)] "(?<method>[A-Z]+) (?<path>\S+) HTTP/[\d.]+" (?<status>\d{3}) (?<bytes>\d+|-)(?: (?<ms>\d+)ms)?$""",
+    """^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) - (\S+) \[([^\]]+)] "([A-Z]+) (\S+) HTTP/[\d.]+" (\d{3}) ([\d-]+)(.*)$""",
 )
-val appLine = Regex("""^(?<time>\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s+\[(?<level>trace|debug|info|warn|error)]\s+(?<src>[\w.$]+):\s*(?<msg>.*)$""", RegexOption.IGNORE_CASE)
-val kvPair = Regex("""(\w+)=("(?:[^"\\]|\\.)*"|\S+)""")
+val accessMs = Regex(""" (\d+)ms""")
+
+// groups: time, level, source, message
+val appLine = Regex("""^(\d{2}:\d{2}:\d{2}\.?\d*)\s+\[([a-z]+)]\s+([\w.$]+):\s*(.*)$""", RegexOption.IGNORE_CASE)
+val levels = setOf("trace", "debug", "info", "warn", "error")
+val kvKey = Regex("""(\w+)=""")
+val nonBlank = Regex("""\S+""")
 val traceLine = Regex("""^\s+at\s+([\w.$<>]+)\((\w+\.\w+):(\d+)\)""")
-val emailish = Regex("""\b([\w.+-]+)@([\w-]+(?:\.[\w-]+)+)\b""")
-val token = Regex("""(?i)(token|password|secret)=\S+""")
-val numberedPath = Regex("""/\d+(?=/|$)""")
+val emailish = Regex("""([\w.+-]+)@([\w-]+\.[\w.-]*\w)\b""")
+val assignment = Regex("""(\w+)=\S+""")
+val secrets = setOf("token", "password", "secret")
+val digits = Regex("""\d+""")
 
 class LogReport {
     val entries = mutableListOf<Entry>()
@@ -21,36 +29,58 @@ class LogReport {
     val statuses = mutableMapOf<Int, Int>()
 }
 
-fun redact(s: String): String = token.replace(s) { m -> "${m.groupValues[1].lowercase()}=***" }
-    .replace(emailish) { m -> m.groupValues[1].first() + "…@" + m.groupValues[2] }
+fun redact(s: String): String = assignment.replace(s) { m ->
+    val key = m.groupValues[1].lowercase()
+    if (key in secrets) "$key=***" else m.value
+}.replace(emailish) { m -> m.groupValues[1].first() + "…@" + m.groupValues[2] }
 
-fun parseFields(msg: String): Map<String, String> = kvPair.findAll(msg).associate { m ->
-    val (k, raw) = m.destructured
-    k to if (raw.startsWith('"')) raw.substring(1, raw.length - 1).replace("\\\"", "\"") else raw
+/** The quoted value at [start], with its quotes (a backslash escapes the next character), or null. */
+fun quotedAt(s: String, start: Int): String? {
+    var i = start + 1
+    while (i < s.length && s[i] != '"') i += if (s[i] == '\\') 2 else 1
+    return if (i < s.length) s.substring(start, i + 1) else null
 }
+
+/** key=value and key="quoted \"value\"" pairs. */
+fun parseFields(msg: String): Map<String, String> {
+    val fields = mutableMapOf<String, String>()
+    var from = 0
+    while (from < msg.length) {
+        val key = kvKey.find(msg, from) ?: break
+        val at = key.range.last + 1
+        val raw = (if (msg.startsWith("\"", at)) quotedAt(msg, at) else null) ?: nonBlank.matchAt(msg, at)?.value
+        if (raw != null) fields[key.groupValues[1]] = if (raw.startsWith('"')) raw.substring(1, raw.length - 1).replace("\\\"", "\"") else raw
+        from = at + (raw?.length ?: 0)
+    }
+    return fields
+}
+
+fun route(path: String): String = path.split('/').joinToString("/") { if (it.matches(digits)) "{id}" else it }
 
 fun analyze(text: String): LogReport {
     val r = LogReport()
     var lastApp = -1
     for ((n, line) in text.lines().withIndex()) {
         if (line.isBlank()) continue
-        val access = accessLine.matchEntire(line)
-        val app = appLine.matchEntire(line)
+        val access = accessLine.matchEntire(line)?.takeIf { it.groupValues[8].isEmpty() || accessMs.matches(it.groupValues[8]) }
+        val app = appLine.matchEntire(line)?.takeIf { it.groupValues[2].lowercase() in levels }
         val trace = traceLine.find(line)
         when {
             access != null -> {
-                val g = access.groups
-                val route = numberedPath.replace(g["path"]!!.value.substringBefore('?'), "/{id}")
-                val status = g["status"]!!.value.toInt()
+                val (ip, _, time, method, path) = access.destructured
+                val g = access.groupValues
+                val route = route(path.substringBefore('?'))
+                val status = g[6].toInt()
                 r.statuses.merge(status / 100 * 100, 1, Int::plus)
-                g["ms"]?.let { r.latency.getOrPut("${g["method"]!!.value} $route") { mutableListOf() } += it.value.toInt() }
-                val fields = mapOf("ip" to g["ip"]!!.value, "status" to status.toString(), "bytes" to g["bytes"]!!.value.replace("-", "0"))
-                r.entries += Entry(g["time"]!!.value.substringAfter(':').substringBefore(' '), if (status >= 500) "ERROR" else "INFO", "http", route, fields)
+                accessMs.matchEntire(g[8])?.let { r.latency.getOrPut("$method $route") { mutableListOf() } += it.groupValues[1].toInt() }
+                val fields = mapOf("ip" to ip, "status" to status.toString(), "bytes" to g[7].replace("-", "0"))
+                r.entries += Entry(time.substringAfter(':').substringBefore(' '), if (status >= 500) "ERROR" else "INFO", "http", route, fields)
                 lastApp = -1
             }
             app != null -> {
-                val msg = redact(app.groups["msg"]!!.value)
-                r.entries += Entry(app.groups["time"]!!.value, app.groups["level"]!!.value.uppercase(), app.groups["src"]!!.value, msg, parseFields(msg))
+                val (time, level, source, message) = app.destructured
+                val msg = redact(message)
+                r.entries += Entry(time, level.uppercase(), source, msg, parseFields(msg))
                 lastApp = r.entries.lastIndex
             }
             trace != null && lastApp >= 0 -> {
@@ -109,23 +139,19 @@ fun main() {
     val csvish = "a, b;c ;; d,e"
     println(csvish.split(Regex("""\s*[,;]\s*""")))
     println(csvish.split(Regex("""\s*[,;]\s*"""), limit = 3))
-    println("CamelCaseHTTPServerName".split(Regex("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")))
-    println(Regex("^\\s*(\\w+):", RegexOption.MULTILINE).findAll("one: 1\n  two: 2\nthree 3\nfour:4").map { it.groupValues[1] }.toList())
+    println("CamelCaseHTTPServerName".replace(Regex("([a-z])([A-Z])"), "$1 $2").replace(Regex("([A-Z])([A-Z][a-z])"), "$1 $2").split(" "))
+    println("one: 1\n  two: 2\nthree 3\nfour:4".lines().mapNotNull { Regex("^\\s*(\\w+):").find(it)?.groupValues?.get(1) })
     println(Regex("(\\d+)-(\\d+)").replace("ranges 1-5, 10-12 and 7-7") { m ->
         val (a, b) = m.destructured.toList().map(String::toInt)
         if (a == b) "$a" else (a..b).joinToString("+")
     })
-    println("2024-10-10".replace(Regex("(\\d+)-(\\d+)-(\\d+)"), "$3/$2/$1") + " " + Regex.escape("a.b*c") .let { Regex(it).matches("a.b*c") })
-    val m = Regex("(?<key>\\w+)(?:=(?<value>\\w*))?").find("  flag=")!!
-    println("${m.range} ${m.groups["key"]?.value} '${m.groups["value"]?.value}' ${m.groups[2]?.range}")
+    println("2024-10-10".replace(Regex("(\\d+)-(\\d+)-(\\d+)"), "$3/$2/$1") + " " + Regex(Regex.escape("a.b*c")).matches("a.b*c"))
+    val m = Regex("(\\w+)=?(\\w*)").find("  flag=")!!
+    println("${m.range} ${m.groups[1]?.value} '${m.groups[2]?.value}'")
     println(Regex("x*").findAll("axxb").map { "${it.range.first}:${it.value}" }.joinToString(" "))
     println(Regex("[aeiou]", RegexOption.IGNORE_CASE).findAll("Regular EXPRESSIONS").count())
-    println(runCatching { Regex("(unclosed") }.exceptionOrNull()?.javaClass?.simpleName)
-    for (bad in listOf("[a-", "(?<n>x)(?<n>y)", "ok+")) {
-        try {
-            println("compiled ${Regex(bad).pattern}")
-        } catch (e: java.util.regex.PatternSyntaxException) {
-            println("bad pattern: ${e is IllegalArgumentException}")
-        }
+    // a text known only at run time is matched literally with Regex.fromLiteral
+    for (needle in listOf("(unclosed", "[a-", "a|b", "ok+")) {
+        println("literal $needle: ${Regex.fromLiteral(needle).containsMatchIn("x (unclosed a|b [a-")}")
     }
 }

@@ -1,5 +1,0 @@
-floor(0)=null ceiling(6)=9 higher(9)=null lower(1)=null
-entries: null 5=e null
-[null, 1, 9, 9]
-first: 1, missing: null
-sb=ab 2

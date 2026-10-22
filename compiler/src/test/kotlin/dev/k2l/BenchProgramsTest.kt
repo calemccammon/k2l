@@ -20,7 +20,7 @@ class BenchProgramsTest {
     fun benchProgramsTranspile(): List<DynamicTest> = programs.flatMap { dir ->
         LuaTarget.entries.map { target ->
             DynamicTest.dynamicTest("${dir.name} on ${target.id}") {
-                assertTrue(File(dir, "stdout.txt").isFile, "${dir.name} has no stdout.txt (run :compiler:benchOracle -PupdateOracle)")
+                assertTrue(File(dir, "stdout.txt").isFile, "${dir.name} has no stdout.txt (run ./gradlew :compiler:bench -PupdateGolden)")
                 val result = K2lCompiler(
                     caseOptions(dir).copy(luaTarget = target),
                 ).compile(session, modules.single { it.name == dir.name })

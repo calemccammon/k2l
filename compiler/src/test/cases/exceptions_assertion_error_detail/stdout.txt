@@ -1,0 +1,12 @@
+error AssertionError: plain (assertion: true)
+error AssertionError: null (assertion: true)
+no error
+error CheckFailed: expected <1>, actual <2>. (assertion: true)
+java.lang.AssertionError: shown
+shown
+CheckFailed: sub
+42
+null
+java.lang.IllegalStateException: inner / inner
+outer / true
+caught rethrown true true

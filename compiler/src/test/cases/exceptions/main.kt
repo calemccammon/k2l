@@ -45,7 +45,6 @@ fun main() {
         println("outer: $e")
     }
     println(safeDivide(10, 2))
-    println(safeDivide(1, 0))
     val e = ValidationError("name")
     println(e is IllegalArgumentException)
     println(e is RuntimeException)

@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Response = __K2L_Class("Response")
@@ -88,5 +88,5 @@ local function main()
     print(__K2L_Str(companion))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Response = Response, Counter = Counter}

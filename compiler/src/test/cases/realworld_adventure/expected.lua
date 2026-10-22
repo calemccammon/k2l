@@ -1,6 +1,5 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -12,9 +11,9 @@ local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Random = ____lualib.__K2L_Random
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Regex = ____lualib.__K2L_Regex
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringEqualsIgnoreCase = ____lualib.__K2L_StringEqualsIgnoreCase
@@ -335,13 +334,13 @@ function Command.Unknown:equals(other)
 end
 
 local function parseCommand(line)
-    local ____list_1 = __K2L_Regex.new("\\s+"):split(__K2L_StringTrim(line):lower())
+    local ____list_1 = __K2L_Regex.new("\\s+", "%s+"):split(__K2L_StringTrim(line):lower())
     local ____out = {}
     local ____count = 0
     local ____items_1, ____n_1 = ____list_1:____array()
     for ____i_2 = 1, ____n_1 do
         local it = ____items_1[____i_2]
-        if #it > 0 and not __K2L_ReadOnlySetOf("the", "a", "an"):contains(it) then
+        if #it > 0 and not __K2L_SetOf("the", "a", "an"):contains(it) then
             ____count = ____count + 1
             ____out[____count] = it
         end
@@ -393,8 +392,8 @@ function Game:____init(seed)
     cellar.items:add(Item.Key.new("vault"))
     cellar.monster = Monster.new("rat king", 12, __K2L_IntRange.new(1, 4))
     vault.lockedBy = "vault"
-    vault.items:addAll(__K2L_ReadOnlyListOf(Item.Treasure.new("crown", 50), Item.Treasure.new("coins", 20)))
-    local ____list_2 = __K2L_ReadOnlyListOf(hall, armory, cellar, vault)
+    vault.items:addAll(__K2L_ListOf(Item.Treasure.new("crown", 50), Item.Treasure.new("coins", 20)))
+    local ____list_2 = __K2L_ListOf(hall, armory, cellar, vault)
     local ____result_1 = __K2L_Map.new()
     local ____items_2, ____n_2 = ____list_2:____array()
     for ____i_3 = 1, ____n_2 do
@@ -412,7 +411,6 @@ end
 
 function Game:run(script)
     self:say(self.player.room:toString())
-    local ____mod = script.____modCount
     for ____i_4 = 1, script.size do
         local line = script[____i_4]
         if self.over then
@@ -420,9 +418,6 @@ function Game:run(script)
         end
         self:say("> " .. line)
         self:step(parseCommand(line))
-        if script.____modCount ~= ____mod and script:____comodified(____i_4) then
-            break
-        end
     end
     self:say("Final: hp=" .. self.player.hp .. " score=" .. self.player.score .. " moves=" .. self.player.moves .. " carried=" .. self.player:getCarried())
     return self.out
@@ -579,16 +574,12 @@ end
 
 local ____lambda_5 = function(____p1) return print(__K2L_Str(____p1)) end
 local function main()
-    local script = __K2L_ReadOnlyListOf("look", "take potion", "go east", "take sword", "take dagger", "i", "w", "s", "e", "attack", "attack", "attack", "attack", "attack", "drink potion", "attack", "take the key", "e", "take crown", "take coins", "drop dagger", "take coins", "dance", "go up", "n")
+    local script = __K2L_ListOf("look", "take potion", "go east", "take sword", "take dagger", "i", "w", "s", "e", "attack", "attack", "attack", "attack", "attack", "drink potion", "attack", "take the key", "e", "take crown", "take coins", "drop dagger", "take coins", "dance", "go up", "n")
     local game = Game.new(42)
     local ____list_4 = game:run(script)
-    local ____mod_1 = ____list_4.____modCount
     for ____i_7 = 1, ____list_4.size do
         local it = ____list_4[____i_7];
         (____lambda_5)(it)
-        if ____list_4.____modCount ~= ____mod_1 and ____list_4:____comodified(____i_7) then
-            break
-        end
     end
     print("rooms=" .. game:roomCount() .. " alive=" .. tostring(game.player.hp > 0))
     local r1 = __K2L_Random.seeded(7)
@@ -605,8 +596,8 @@ local function main()
         ____out_2[____i_9] = r2:nextInt(100)
     end
     print(__K2L_Equals(____arg, __K2L_ListWrap(____out_2, 5)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("n", "go west", "take", "hit", "   ", "walk e"):map(parseCommand)))
+    print(__K2L_Str(__K2L_ListOf("n", "go west", "take", "hit", "   ", "walk e"):map(parseCommand)))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Direction = Direction, Item = Item, Monster = Monster, Room = Room, Player = Player, Command = Command, parseCommand = parseCommand, Game = Game}

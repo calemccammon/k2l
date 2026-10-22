@@ -3,12 +3,11 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 
 local Grid = __K2L_Class("Grid")
 
@@ -85,19 +84,19 @@ local function widest(...)
 end
 
 local function main()
-    print(__K2L_TypedArrayOf("[I", 1, 2, 3):contentHashCode() .. " " .. __K2L_TypedArrayOf("[I"):contentHashCode() .. " " .. __K2L_TypedArrayOf("[Ljava.lang.String;", "a", "b"):contentHashCode())
-    print(__K2L_TypedArrayOf("[Z", true, false):contentHashCode() .. " " .. __K2L_TypedArrayOf("[C", "a", "b"):contentHashCode() .. " " .. __K2L_TypedArrayOf("[J", 5, 7):contentHashCode())
-    print(__K2L_TypedArrayOf("[[I", __K2L_TypedArrayOf("[I", 1), __K2L_TypedArrayOf("[I", 2, 3)):contentDeepHashCode() .. " " .. __K2L_TypedArrayOf("[[Ljava.lang.String;", __K2L_TypedArrayOf("[Ljava.lang.String;", "x"), __K2L_TypedArrayOf("[Ljava.lang.String;", "y", "z")):contentDeepHashCode())
-    print(__K2L_TypedArrayOf("[I", 4, 5):contentHashCode() == __K2L_Hash(__K2L_ReadOnlyListOf(4, 5)))
-    local a = __K2L_TypedArrayOf("[[I", __K2L_TypedArrayOf("[I", 1, 2), __K2L_TypedArrayOf("[I", 3))
-    local b = __K2L_TypedArrayOf("[[I", __K2L_TypedArrayOf("[I", 1, 2), __K2L_TypedArrayOf("[I", 3))
-    print(tostring(a:contentEquals(b)) .. " " .. tostring(a:contentDeepEquals(b)) .. " " .. tostring(a:contentDeepEquals(__K2L_TypedArrayOf("[[I", __K2L_TypedArrayOf("[I", 1, 2), __K2L_TypedArrayOf("[I", 4)))))
-    print(tostring(__K2L_TypedArrayOf("[Ljava.lang.String;", "p", nil):contentDeepEquals(__K2L_TypedArrayOf("[Ljava.lang.String;", "p", nil))) .. " " .. a:contentDeepToString())
-    local g1 = Grid.new(__K2L_TypedArrayOf("[I", 1, 2, 3), __K2L_TypedArrayOf("[I", 4, 5, 6))
-    local g2 = Grid.new(__K2L_TypedArrayOf("[I", 1, 2, 3), __K2L_TypedArrayOf("[I", 4, 5, 6))
+    print(__K2L_ArrayOf(1, 2, 3):contentHashCode() .. " " .. __K2L_ArrayOf():contentHashCode() .. " " .. __K2L_ArrayOf("a", "b"):contentHashCode())
+    print(__K2L_ArrayOf(true, false):contentHashCode() .. " " .. __K2L_ArrayOf("a", "b"):contentHashCode() .. " " .. __K2L_ArrayOf(5, 7):contentHashCode())
+    print(__K2L_ArrayOf(__K2L_ArrayOf(1), __K2L_ArrayOf(2, 3)):contentDeepHashCode() .. " " .. __K2L_ArrayOf(__K2L_ArrayOf("x"), __K2L_ArrayOf("y", "z")):contentDeepHashCode())
+    print(__K2L_ArrayOf(4, 5):contentHashCode() == __K2L_Hash(__K2L_ListOf(4, 5)))
+    local a = __K2L_ArrayOf(__K2L_ArrayOf(1, 2), __K2L_ArrayOf(3))
+    local b = __K2L_ArrayOf(__K2L_ArrayOf(1, 2), __K2L_ArrayOf(3))
+    print(tostring(a:contentEquals(b)) .. " " .. tostring(a:contentDeepEquals(b)) .. " " .. tostring(a:contentDeepEquals(__K2L_ArrayOf(__K2L_ArrayOf(1, 2), __K2L_ArrayOf(4)))))
+    print(tostring(__K2L_ArrayOf("p", nil):contentDeepEquals(__K2L_ArrayOf("p", nil))) .. " " .. a:contentDeepToString())
+    local g1 = Grid.new(__K2L_ArrayOf(1, 2, 3), __K2L_ArrayOf(4, 5, 6))
+    local g2 = Grid.new(__K2L_ArrayOf(1, 2, 3), __K2L_ArrayOf(4, 5, 6))
     print(tostring(g1:equals(g2)) .. " " .. tostring(g1:hashCode() == g2:hashCode()) .. " " .. g1:hashCode() .. " " .. g1.width .. " " .. g1.corner)
-    print(__K2L_ReadOnlySetOf(g1, g2).size .. " " .. total(__K2L_TypedArrayOf("[[I", __K2L_TypedArrayOf("[I", 1, 2), __K2L_TypedArrayOf("[I", 3, 4, 5))) .. " " .. widest(__K2L_TypedArrayOf("[D", 1.0), __K2L_TypedArrayOf("[D", 2.0, 3.0)))
+    print(__K2L_SetOf(g1, g2).size .. " " .. total(__K2L_ArrayOf(__K2L_ArrayOf(1, 2), __K2L_ArrayOf(3, 4, 5))) .. " " .. widest(__K2L_ArrayOf(1.0), __K2L_ArrayOf(2.0, 3.0)))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Grid = Grid, total = total, widest = widest}

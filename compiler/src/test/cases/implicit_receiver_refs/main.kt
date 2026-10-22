@@ -33,13 +33,13 @@ class Scaler(val k: Int) {
 fun main() {
     println(Util.all(listOf(1, 2)))
     println(listOf(3, 4).map(Util::twice))
-    println("${Util.counter().get()} ${Util.counter().name}")
+    println("${Util.counter()()} ${Util.counter().name}")
     val s = Scaler(3)
     println("${s.scaleAll(listOf(1, 2))} ${s.scaleAllThis(listOf(5))}")
     val ref = s.totalRef()
-    println("${ref.get()} ${ref.name}")
-    ref.set(100)
-    println("${s.total} ${s.kRef().get()}")
+    println("${ref()} ${ref.name}")
+    s.total = 100
+    println("${s.total} ${s.kRef()()}")
     println(s.Report().lines(listOf(1, 10)))
     println(Scaler.parseAll(listOf("7", "8")))
     println(listOf("9").map(Scaler.Companion::parse).map { it.k })

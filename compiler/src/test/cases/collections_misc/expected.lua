@@ -5,13 +5,12 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Triple = ____lualib.__K2L_Triple
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
 local windowedSumPairs
@@ -82,7 +81,7 @@ local ____lambda_5 = function(a, b) return b - a end
 local function main()
     print(sumAll())
     print(sumAll(1, 2, 3))
-    local nums = __K2L_TypedArrayOf("[I", 4, 5)
+    local nums = __K2L_ArrayOf(4, 5)
     print(sumAll(__K2L_Unpack(nums)))
     print(describe("parts", "a", "b"))
     local pair = __K2L_Pair.new("x", 1)
@@ -92,7 +91,7 @@ local function main()
     print(name .. "=" .. value)
     local triple = __K2L_Triple.new(1, "two", 3.0)
     print(__K2L_Str(triple))
-    local versions = __K2L_ReadOnlyListOf(Version.new(1, 2), Version.new(0, 9), Version.new(1, 0))
+    local versions = __K2L_ListOf(Version.new(1, 2), Version.new(0, 9), Version.new(1, 0))
     print(__K2L_Str(versions:sorted()))
     print(__K2L_Compare(Version.new(1, 0), Version.new(1, 2)) < 0)
     print(__K2L_Str(versions:maxOrNull()))
@@ -105,7 +104,7 @@ local function main()
     local ____items, ____n = ____list:____array()
     for ____i_1 = 1, ____n do
         local it = ____items[____i_1]
-        if (it >= 0 and it % 3 or 0 - -it % 3) == 0 then
+        if it % 3 == 0 then
             ____count = ____count + 1
             ____out[____count] = it
         end
@@ -122,7 +121,7 @@ local function main()
     print(__K2L_Str(r))
     local evens = __K2L_IntRange.new(0, 10 - 1):withStep(2):toList()
     print(__K2L_Str(evens))
-    local words = __K2L_ReadOnlyListOf("banana", "Apple", "cherry")
+    local words = __K2L_ListOf("banana", "Apple", "cherry")
     print(__K2L_Str(words:sortedBy(____lambda_4)))
     local ____out_1 = {}
     local ____count_1 = 0
@@ -149,12 +148,12 @@ local function main()
         return __K2L_Pair.new(w, i)
     end)
     print(__K2L_Str(lookup))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1, 2):sortedWith(____lambda_5)))
+    print(__K2L_Str(__K2L_ListOf(3, 1, 2):sortedWith(____lambda_5)))
     local queue = __K2L_List.new()
-    queue:addAll(__K2L_ReadOnlyListOf(1, 2, 3))
+    queue:addAll(__K2L_ListOf(1, 2, 3))
     print(queue:removeFirst())
     print(__K2L_Str(queue))
-    print(__K2L_Str(windowedSumPairs(__K2L_ReadOnlyListOf(1, 2, 3, 4))))
+    print(__K2L_Str(windowedSumPairs(__K2L_ListOf(1, 2, 3, 4))))
 end
 
 function windowedSumPairs(self)
@@ -175,5 +174,5 @@ function windowedSumPairs(self)
     return __K2L_ListWrap(____out_3, ____count_3)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Version = Version, sumAll = sumAll, describe = describe, windowedSumPairs = windowedSumPairs}

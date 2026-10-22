@@ -8,7 +8,7 @@
   ],
   "stars": 1234,
   "ratio": 0.875,
-  "big": 1.5E20,
+  "big": 1.5e+20,
   "neg": -0.04225,
   "nested": {
     "a/b": {
@@ -36,7 +36,7 @@
     []
   ]
 }
-{"name":"k2l","version":"0.2.0","tags":["kotlin","lua","transpiler"],"stars":1234,"ratio":0.875,"big":1.5E20,"neg":-0.04225,"nested":{"a/b":{"m~n":[1,2,{"deep":true}]},"empty":{},"none":null},"escaped":"line1\nline2\t\"quoted\" \\ éA","matrix":[[1,2],[3,4],[]]}
+{"name":"k2l","version":"0.2.0","tags":["kotlin","lua","transpiler"],"stars":1234,"ratio":0.875,"big":1.5e+20,"neg":-0.04225,"nested":{"a/b":{"m~n":[1,2,{"deep":true}]},"empty":{},"none":null},"escaped":"line1\nline2\t\"quoted\" \\ éA","matrix":[[1,2],[3,4],[]]}
 {|	"name": "k2l",|	"version": "0.2.0",|	"tags": [
 pointer '/name' -> "k2l"
 pointer '/tags/1' -> "lua"
@@ -59,4 +59,4 @@ name    |   age|langs
 Ada     |  36.0|en+fr
 Linus   |  54.5|-
 Grace   |  85.0|en
-average age 58.500, 5.850000e+01, 58.5000
+average age 58.500, 5.850000e+01, 58.5

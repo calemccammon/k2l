@@ -1,26 +1,22 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArithmeticException = ____lualib.__K2L_ArithmeticException
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CloseAfter = ____lualib.__K2L_CloseAfter
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Suppressed = ____lualib.__K2L_Suppressed
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
 
 local Resource = __K2L_Class("Resource")
-__K2L_ClassInfo(Resource, "Resource", "Resource", "class")
 
 function Resource:____init(name, failClose, log)
     self.name = name
@@ -66,7 +62,7 @@ local function main()
     for ____i_1 = 1, ____n_1 do
         local it = ____items_1[____i_1]
         ____count_1 = ____count_1 + 1
-        ____out_1[____count_1] = __K2L_KClassOfValue(it).simpleName
+        ____out_1[____count_1] = __K2L_SimpleName(it)
     end
     print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     print(__K2L_Suppressed(____main).size)
@@ -76,10 +72,10 @@ local function main()
     ____main:addSuppressed(__K2L_Exception.new("third"))
     print("copy " .. copy.size .. ", now " .. __K2L_Suppressed(____main).size)
     local log = __K2L_ListOf()
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         local ____resource = Resource.new("a", true, log)
         local ____result_1
-        local ____ok_1, ____result_2 = __K2L_DeepPcall(function()
+        local ____ok_1, ____result_2 = pcall(function()
             local ____result_3
             error(__K2L_IllegalStateException.new("body failed"))
             ____result_1 = ____result_3
@@ -104,10 +100,10 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_2, ____result_4 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_4 = pcall(function()
         local ____resource_1 = Resource.new("b", true, log)
         local ____result_5
-        local ____ok_3, ____result_6 = __K2L_DeepPcall(function()
+        local ____ok_3, ____result_6 = pcall(function()
             ____result_5 = "ok"
         end)
         if ____ok_3 then
@@ -128,15 +124,15 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_4, ____result_7 = __K2L_DeepPcall(function()
+    local ____ok_4, ____result_7 = pcall(function()
         local ____resource_2 = Resource.new("outer", true, log)
         local ____result_8
-        local ____ok_5, ____result_9 = __K2L_DeepPcall(function()
+        local ____ok_5, ____result_9 = pcall(function()
             local ____result_10
             do
                 local ____resource_3 = Resource.new("inner", true, log)
                 local ____result_11
-                local ____ok_6, ____result_12 = __K2L_DeepPcall(function()
+                local ____ok_6, ____result_12 = pcall(function()
                     local ____result_13
                     error(__K2L_IllegalStateException.new("nested body"))
                     ____result_11 = ____result_13
@@ -180,10 +176,10 @@ local function main()
             error(____error_2, 0)
         end
     end
-    local ____ok_7, ____result_14 = __K2L_DeepPcall(function()
+    local ____ok_7, ____result_14 = pcall(function()
         local ____resource_4 = Resource.new("c", false, log)
         local ____result_15
-        local ____ok_8, ____result_16 = __K2L_DeepPcall(function()
+        local ____ok_8, ____result_16 = pcall(function()
             local ____result_17
             error(__K2L_ArithmeticException.new("plain"))
             ____result_15 = ____result_17
@@ -208,7 +204,7 @@ local function main()
     end
     local ____resource_5 = Resource.new("d", false, log)
     local ____result_18
-    local ____ok_9, ____result_19 = __K2L_DeepPcall(function()
+    local ____ok_9, ____result_19 = pcall(function()
         ____result_18 = 42
     end)
     if ____ok_9 then
@@ -226,8 +222,8 @@ local function main()
     local ____arg_1 = __K2L_Suppressed(outer).size
     local ____receiver = outer.cause
     local ____receiver_1 = ____receiver and __K2L_Suppressed(____receiver)
-    print(__K2L_Str(__K2L_ReadOnlyListOf(____arg_1, ____receiver_1 and ____receiver_1.size)))
+    print(__K2L_Str(__K2L_ListOf(____arg_1, ____receiver_1 and ____receiver_1.size)))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Resource = Resource, report = report}

@@ -1,11 +1,10 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -13,7 +12,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local Greeter = __K2L_Class("Greeter")
 
 local function main()
-    local ____list = __K2L_ReadOnlyListOf(1, 2)
+    local ____list = __K2L_ListOf(1, 2)
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list:____array()
@@ -42,7 +41,7 @@ local function main()
     print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     local ____value = errors:first()
     print(__K2L_InstanceOf(____value, __K2L_Exception))
-    local ____list_1 = __K2L_ReadOnlyListOf("a", "b")
+    local ____list_1 = __K2L_ListOf("a", "b")
     local ____out_2 = {}
     local ____count_2 = 0
     local ____items_2, ____n_2 = ____list_1:____array()
@@ -55,7 +54,7 @@ local function main()
                 __K2L_RuntimeException.____init(self, "oops " .. s)
                 self.code = code
             end
-            local ____ok, ____result_2 = __K2L_DeepPcall(function()
+            local ____ok, ____result_2 = pcall(function()
                 error(Oops.new(#s))
             end)
             if not ____ok then
@@ -97,5 +96,5 @@ local function main()
     print(____value_1 ~= nil)
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Greeter = Greeter}

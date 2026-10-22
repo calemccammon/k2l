@@ -1,2 +1,0 @@
-5.3: Lua 5.3 and 5.4 shift by 64 or more bits, divide by 1 << 63 and hash small negative Longs differently (see long64_edges); this case compares the emulated targets with the JVM
-5.4: Lua 5.3 and 5.4 shift by 64 or more bits, divide by 1 << 63 and hash small negative Longs differently (see long64_edges); this case compares the emulated targets with the JVM

@@ -62,8 +62,8 @@ tasks.test {
     inputs.dir(benchPrograms)
     systemProperty("k2l.casesDir", testCases.asFile.absolutePath)
     systemProperty("k2l.benchDir", benchPrograms.asFile.absolutePath)
+    // -PupdateGolden: rewrites every case's expected.lua, stdout.txt and stdout.<target>.txt (see CasesTest)
     systemProperty("k2l.updateGolden", providers.gradleProperty("updateGolden").isPresent)
-    providers.gradleProperty("lua").orNull?.let { systemProperty("k2l.lua", it) }
     // -Plua51=/path/to/lua5.1 (and lua52, lua53, lua54, luajit): the interpreter the run tests use for that target
     for (name in listOf("lua51", "lua52", "lua53", "lua54", "luajit")) {
         providers.gradleProperty(name).orNull?.let { systemProperty("k2l.$name", it) }
@@ -71,52 +71,7 @@ tasks.test {
     providers.gradleProperty("only").orNull?.let { systemProperty("k2l.only", it) } // -Ponly=casts,objects_enums
     // -PluaTargets=5.1,JIT: only those targets' tests, each needing its interpreter; the rest go with 5.4 (CI splits on it)
     providers.gradleProperty("luaTargets").orNull?.let { systemProperty("k2l.luaTargets", it) }
-    // -Pk2l.snapshot=<dir>: SnapshotTest writes the output of every case on every target there (see "Development" in the README)
-    providers.gradleProperty("k2l.snapshot").orNull?.let { systemProperty("k2l.snapshot", rootProject.file(it).absolutePath) }
 }
-
-// ---- Kotlin/JVM oracle: the expected stdout of every test case comes from running it on the JVM ----
-
-// The oracle itself (src/oracle) compiles every case in one JVM: starting kotlinc once per case made it the slowest part of CI.
-val oracle: SourceSet = sourceSets.create("oracle")
-
-dependencies {
-    "oracleImplementation"("org.jetbrains.kotlin:kotlin-compiler-embeddable:${libs.versions.kotlin.get()}")
-}
-
-/** Runs [dev.k2l.oracle] on the cases in [cases]; `-Ponly=floats,unsigned` (or [onlyProperty]) limits it to some cases. */
-fun registerOracle(name: String, description: String, cases: Directory, work: String, onlyProperty: String) =
-    tasks.register<JavaExec>(name) {
-        this.description = description
-        group = "verification"
-        classpath = oracle.runtimeClasspath
-        mainClass.set("dev.k2l.oracle.OracleKt")
-        jvmArgs("-XX:+UseParallelGC")
-        maxHeapSize = "3g"
-        systemProperty("k2l.oracle.cases", cases.asFile.absolutePath)
-        systemProperty("k2l.oracle.work", layout.buildDirectory.dir(work).get().asFile.absolutePath)
-        systemProperty("k2l.oracle.update", providers.gradleProperty("updateOracle").isPresent)
-        systemProperty("k2l.oracle.only", providers.gradleProperty(onlyProperty).orNull.orEmpty())
-        // -PoracleThreads=N compiles and runs N cases at a time (default: the processors, at most 4).
-        providers.gradleProperty("oracleThreads").orNull?.let { systemProperty("k2l.oracle.threads", it) }
-        outputs.upToDateWhen { false }
-    }
-
-registerOracle(
-    "kotlinOracle",
-    "Runs every test case on Kotlin/JVM and checks (or with -PupdateOracle, writes) its stdout.txt.",
-    testCases,
-    "oracle",
-    if (providers.gradleProperty("only").isPresent) "only" else "oracleCases",
-)
-
-registerOracle(
-    "benchOracle",
-    "Runs every benchmark program on Kotlin/JVM and checks (or with -PupdateOracle, writes) its stdout.txt.",
-    benchPrograms,
-    "bench-oracle",
-    "benchOnly",
-)
 
 // ---- Benchmarks: ./gradlew :compiler:bench (local only, see "Benchmarks" in the README) ----
 
@@ -133,7 +88,8 @@ tasks.check { dependsOn(tasks.named("compileBenchKotlin")) }
 
 tasks.register<JavaExec>("bench") {
     description = "Transpiles and times the programs in src/bench/programs on every Lua found (-PbenchRuns, -PbenchOnly, " +
-        "-PbenchTargets, -PbenchSave, -PbenchCompare, -PbenchProfile)."
+        "-PbenchTargets, -PbenchSave, -PbenchCompare, -PbenchProfile, " +
+        "-PupdateGolden to rewrite the programs' stdout files)."
     group = "benchmark"
     classpath = bench.runtimeClasspath
     mainClass.set("dev.k2l.bench.BenchKt")
@@ -145,33 +101,7 @@ tasks.register<JavaExec>("bench") {
         listOf("benchProfileRepeat") +
         listOf("lua51", "lua52", "lua53", "lua54", "luajit")
     names.forEach { name -> providers.gradleProperty(name).orNull?.let { systemProperty("k2l.$name", it) } }
-    outputs.upToDateWhen { false }
-}
-
-// ---- Standard library coverage: ./gradlew :compiler:stdlibCoverage writes docs/stdlib-coverage.md (see the README) ----
-
-val coverage: SourceSet = sourceSets.create("coverage") {
-    compileClasspath += sourceSets.main.get().output
-    runtimeClasspath += sourceSets.main.get().output
-}
-configurations["coverageImplementation"].extendsFrom(configurations.implementation.get())
-configurations["coverageRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
-
-// `check` only compiles the audit: running it takes a while, and its report is committed.
-tasks.check { dependsOn(tasks.named("compileCoverageKotlin")) }
-
-tasks.register<JavaExec>("stdlibCoverage") {
-    description = "Probes which Kotlin stdlib and JDK APIs k2l translates and writes docs/stdlib-coverage.md."
-    group = "documentation"
-    classpath = coverage.runtimeClasspath
-    mainClass.set("dev.k2l.coverage.CoverageKt")
-    jvmArgs("-Xss8m", "-XX:+UseParallelGC")
-    maxHeapSize = "3g"
-    systemProperty("k2l.coverage.report", rootProject.file("docs/stdlib-coverage.md").absolutePath)
-    systemProperty("k2l.coverage.work", layout.buildDirectory.dir("coverage").get().asFile.absolutePath)
-    systemProperty("k2l.coverage.sources", layout.projectDirectory.dir("src/main/kotlin").asFile.absolutePath)
-    // -PcoverageOnly=kotlin.time,java.lang.Math probes only those areas and prints the result instead of writing the report.
-    providers.gradleProperty("coverageOnly").orNull?.let { systemProperty("k2l.coverage.only", it) }
+    systemProperty("k2l.updateGolden", providers.gradleProperty("updateGolden").isPresent)
     outputs.upToDateWhen { false }
 }
 

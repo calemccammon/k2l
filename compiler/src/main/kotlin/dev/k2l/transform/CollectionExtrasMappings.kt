@@ -167,17 +167,10 @@ internal object CollectionExtrasMappings {
         type != null && with(session) { (type.withoutFlexibility as? KaClassType)?.classId?.asString() } == classId
 
     /** The characters of a string as a list. */
-    private fun CallSite.chars(text: LuaExpr): LuaExpr = if (utf16) {
-        requireUtf16()
-        libMember(TEXT_TABLE, "toList", text)
-    } else {
-        LuaCall(ref("Strings", "__K2L_StringToList"), listOf(text))
-    }
+    private fun CallSite.chars(text: LuaExpr): LuaExpr = LuaCall(ref("Strings", "__K2L_StringToList"), listOf(text))
 
     private fun text(name: String, site: CallSite): LuaExpr? = with(site) {
         fun at(i: Int) = args.getOrElse(i) { LuaNil }
-        // ignoreCase needs the Unicode case folding of --strings utf16
-        if (at(2) != LuaNil && at(2) != LuaBool(false)) requireUtf16Case()
         when (name) {
             "findAnyOf", "findLastAnyOf" -> extra("findAnyOf", self, arg(0), at(1), at(2), LuaBool(name == "findLastAnyOf"))
 
@@ -201,7 +194,8 @@ internal object CollectionExtrasMappings {
                 LuaString("char sequence"),
             )
 
-            "hasSurrogatePairAt" -> extra("hasSurrogatePairAt", self, arg(0), if (utf16) ref(UTF16_TABLE) else LuaNil)
+            // a byte string has no surrogates
+            "hasSurrogatePairAt" -> LuaBool(false)
 
             "replaceIndent" -> extra("replaceIndent", self, at(0))
 

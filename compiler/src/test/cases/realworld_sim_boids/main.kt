@@ -11,8 +11,6 @@ import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.ln
 import kotlin.math.log10
-import kotlin.math.nextDown
-import kotlin.math.nextUp
 import kotlin.math.pow
 import kotlin.math.round
 import kotlin.math.roundToInt
@@ -21,7 +19,6 @@ import kotlin.math.sign
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.truncate
-import kotlin.math.ulp
 import kotlin.math.withSign
 import kotlin.random.Random
 
@@ -127,12 +124,6 @@ fun mathTour() {
     show("absoluteValue", edges.map { it.absoluteValue })
     println("1/-0.0 = ${1.0 / -0.0}, -0.0 == 0.0: ${-0.0 == 0.0}, compare: ${(-0.0).compareTo(0.0)}")
     println("min/max with -0.0: ${minOf(0.0, -0.0)} ${maxOf(-0.0, 0.0)} ${kotlin.math.min(Double.NaN, 1.0)}")
-
-    println("-- ulp and neighbours")
-    show("ulp", listOf(1.0, 0.0, -2.0, 1e300, Double.MAX_VALUE, Double.MIN_VALUE).map { it.ulp })
-    show("nextUp", listOf(1.0, 0.0, -0.0, -Double.MIN_VALUE, Double.MAX_VALUE).map { it.nextUp() })
-    show("nextDown", listOf(1.0, 0.0, Double.MIN_VALUE, Double.NEGATIVE_INFINITY).map { it.nextDown() })
-    println("ulp(NaN)=${Double.NaN.ulp} ulp(inf)=${Double.POSITIVE_INFINITY.ulp}")
 
     println("-- IEEErem vs %")
     val pairs = listOf(5.0 to 3.0, -5.0 to 3.0, 7.5 to 2.0, 6.5 to 2.0, 10.0 to -4.0, 1.0 to 0.0, Double.POSITIVE_INFINITY to 2.0, 3.0 to Double.POSITIVE_INFINITY)

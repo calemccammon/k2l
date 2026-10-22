@@ -74,15 +74,13 @@ local function getTotalCents(self)
 end
 
 local function withTax(____this)
-    local ____arg = getTotalCents(____this)
-    local ____dividend = getTotalCents(____this) * ____Settings.TAX_PERCENT
-    return ____arg + (____dividend >= 0 and ____dividend // 100 or 0 - -____dividend // 100)
+    return getTotalCents(____this) + getTotalCents(____this) * ____Settings.TAX_PERCENT // 100
 end
 
 local function money(____this_1)
     local sign = ____this_1 < 0 and "-" or ""
     local abs = ____this_1 < 0 and -____this_1 or ____this_1
-    return sign .. (abs >= 0 and abs // 100 or 0 - -abs // 100) .. "." .. __K2L_StringPadStart(tostring(abs >= 0 and abs % 100 or 0 - -abs % 100), 2, "0") .. " " .. ____Settings.currency
+    return sign .. abs // 100 .. "." .. __K2L_StringPadStart(tostring(abs % 100), 2, "0") .. " " .. ____Settings.currency
 end
 
 local ____lambda_1 = function(it) return withTax(it) end
@@ -132,9 +130,9 @@ ____exports.dumpJournal = dumpJournal
 return ____exports
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_TouchObject = ____lualib.__K2L_TouchObject
@@ -184,14 +182,14 @@ local function main()
     ____Settings.currency = "USD"
     print("value " .. ____Pricing.money(____Store.Store:value()))
     local crate = ____Pricing.times(____Item.Item.new("T-9", "nails", 5, 10), 3)
-    print(__K2L_Str(crate) .. " " .. ____Pricing.money(____Pricing.getTotalCents(crate)) .. " " .. ____Pricing.money(____Pricing.grandTotal(__K2L_ReadOnlyListOf(crate, crate))))
+    print(__K2L_Str(crate) .. " " .. ____Pricing.money(____Pricing.getTotalCents(crate)) .. " " .. ____Pricing.money(____Pricing.grandTotal(__K2L_ListOf(crate, crate))))
     print(____Pricing.money(-1234))
     local mark = ____Log.log("done")
     print("journal from " .. mark .. ": " .. ____Log.dumpJournal(mark - 1))
     print("journal head: " .. __K2L_Text.take(____Log.dumpJournal(), 60))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 -- ==== model/Item.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class

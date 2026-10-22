@@ -2,20 +2,17 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -86,7 +83,7 @@ end
 
 local function inOrder(____this_1)
     if __K2L_Equals(____this_1, Tree.Empty) then
-        return __K2L_ReadOnlyListOf()
+        return __K2L_ListOf()
     elseif getmetatable(____this_1) == Tree.Node then
         return inOrder(____this_1.left):plus(____this_1.value):plusAll(inOrder(____this_1.right))
     end
@@ -134,7 +131,7 @@ local Rose = __K2L_Class("generics.trees.Rose")
 
 function Rose:____init(value, children)
     if children == nil then
-        children = __K2L_ReadOnlyListOf()
+        children = __K2L_ListOf()
     end
     self.value = value
     self.children = children
@@ -172,20 +169,16 @@ function Rose:flatten()
     return __K2L_SequenceBuilder(function(____this_6)
         ____this_6:yield(self.value)
         local ____list_2 = self.children
-        local ____mod = ____list_2.____modCount
         for ____i_2 = 1, ____list_2.size do
             local c = ____list_2[____i_2]
             ____this_6:yieldAll(c:flatten())
-            if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
-                break
-            end
         end
     end)
 end
 
 function Rose:paths()
     if self.children:isEmpty() then
-        return __K2L_SingletonListOf(__K2L_SingletonListOf(self.value))
+        return __K2L_ListOf(__K2L_ListOf(self.value))
     else
         local ____list_3 = self.children
         local ____out_2 = {}
@@ -202,7 +195,7 @@ function Rose:paths()
                 for ____i_3 = 1, ____n_2 do
                     local it = ____items_2[____i_3]
                     ____count_3 = ____count_3 + 1
-                    ____out_3[____count_3] = __K2L_SingletonListOf(self.value):plusAll(it)
+                    ____out_3[____count_3] = __K2L_ListOf(self.value):plusAll(it)
                 end
                 ____result = __K2L_ListWrap(____out_3, ____count_3)
             end
@@ -405,9 +398,9 @@ end
 local function variables(____this_8)
     local ____mt_1 = getmetatable(____this_8)
     if ____mt_1 == Expr.Lit then
-        return __K2L_ReadOnlySetOf()
+        return __K2L_SetOf()
     elseif ____mt_1 == Expr.Var then
-        return __K2L_ReadOnlySetOf(____this_8.name)
+        return __K2L_SetOf(____this_8.name)
     elseif ____mt_1 == Expr.Neg then
         return variables(____this_8.inner)
     elseif ____mt_1 == Expr.Bin then
@@ -476,22 +469,22 @@ local function main()
     print("upper=" .. __K2L_Str(__K2L_ListWrap(____out_5, ____count_5)))
     print("== expressions")
     local e = Expr.Bin.new("+", Expr.Bin.new("*", Expr.Var.new("x"), Expr.Lit.new(3)), Expr.Neg.new(Expr.Var.new("y")))
-    print(show(e) .. " = " .. eval(e, Ints, __K2L_ReadOnlyMapOf(__K2L_Pair.new("x", 4), __K2L_Pair.new("y", 5))) .. " vars=" .. __K2L_Str(variables(e)))
+    print(show(e) .. " = " .. eval(e, Ints, __K2L_MapOf(__K2L_Pair.new("x", 4), __K2L_Pair.new("y", 5))) .. " vars=" .. __K2L_Str(variables(e)))
     local b = Expr.Bin.new("*", Expr.Var.new("p"), Expr.Neg.new(Expr.Bin.new("+", Expr.Var.new("q"), Expr.Lit.new(false))))
-    local ____list_7 = __K2L_ReadOnlyListOf(true, false)
+    local ____list_7 = __K2L_ListOf(true, false)
     for ____i_8 = 1, ____list_7.size do
         local p = ____list_7[____i_8]
-        local ____list_8 = __K2L_ReadOnlyListOf(true, false)
+        local ____list_8 = __K2L_ListOf(true, false)
         for ____i_7 = 1, ____list_8.size do
             local q = ____list_8[____i_7]
-            io.write(Bools:show(eval(b, Bools, __K2L_ReadOnlyMapOf(__K2L_Pair.new("p", p), __K2L_Pair.new("q", q)))) .. " ")
+            io.write(Bools:show(eval(b, Bools, __K2L_MapOf(__K2L_Pair.new("p", p), __K2L_Pair.new("q", q)))) .. " ")
         end
     end
     print()
     local s = Expr.Bin.new("+", Expr.Bin.new("*", Expr.Lit.new("ab"), Expr.Var.new("v")), Expr.Neg.new(Expr.Lit.new("xyz")))
-    print(show(s) .. " = " .. Texts:show(eval(s, Texts, __K2L_SingletonMapOf(__K2L_Pair.new("v", "12")))))
+    print(show(s) .. " = " .. Texts:show(eval(s, Texts, __K2L_MapOf(__K2L_Pair.new("v", "12")))))
     local shared = Expr.Var.new("z")
-    local reused = __K2L_ReadOnlyListOf(shared, Expr.Lit.new(1), Expr.Lit.new("a"))
+    local reused = __K2L_ListOf(shared, Expr.Lit.new(1), Expr.Lit.new("a"))
     local ____out_6 = {}
     local ____count_6 = 0
     local ____items_6, ____n_6 = reused:____array()
@@ -513,8 +506,8 @@ local function main()
         end
     end
     print("reused=" .. ____arg_2 .. " vars=" .. __K2L_Str(__K2L_ListWrap(____out_7, ____count_7)))
-    local ____ok, ____result_1 = __K2L_DeepPcall(function()
-        eval(e, Ints, __K2L_SingletonMapOf(__K2L_Pair.new("x", 1)))
+    local ____ok, ____result_1 = pcall(function()
+        eval(e, Ints, __K2L_MapOf(__K2L_Pair.new("x", 1)))
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result_1)
@@ -525,8 +518,8 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_2 = __K2L_DeepPcall(function()
-        eval(Expr.Bin.new("/", Expr.Lit.new(1), Expr.Lit.new(2)), Ints, __K2L_ReadOnlyMapOf())
+    local ____ok_1, ____result_2 = pcall(function()
+        eval(Expr.Bin.new("/", Expr.Lit.new(1), Expr.Lit.new(2)), Ints, __K2L_MapOf())
     end)
     if not ____ok_1 then
         local ____error_1 = __K2L_ToThrowable(____result_2)
@@ -539,5 +532,5 @@ local function main()
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Tree = Tree, insert = insert, contains = contains, inOrder = inOrder, getHeight = getHeight, map = map, fold = fold, treeOf = treeOf, render = render, Rose = Rose, rose = rose, Expr = Expr, Domain = Domain, Ints = Ints, Bools = Bools, Texts = Texts, eval = eval, variables = variables, show = show}

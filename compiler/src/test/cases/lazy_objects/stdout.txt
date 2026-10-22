@@ -23,8 +23,7 @@ before Service
 Nested initialized
 3
 Service companion initialized
-true
-[one]
+[]
 5
 0
 before Level

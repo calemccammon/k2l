@@ -1,46 +1,7 @@
--- requires: Class, Exceptions, EnumValues, EnumValueOf
--- More of the kotlin package: KotlinVersion, Any(), AutoCloseable { }, and the library enums LazyThreadSafetyMode and
+-- requires: Class, EnumValues, EnumValueOf
+-- More of the kotlin package: Any(), AutoCloseable { }, and the library enums LazyThreadSafetyMode and
 -- DeprecationLevel.
-local __K2L_KotlinVersion = __K2L_Class("kotlin.KotlinVersion")
-
-function __K2L_KotlinVersion:____init(major, minor, patch)
-    patch = patch or 0
-    if major < 0 or major > 255 or minor < 0 or minor > 255 or patch < 0 or patch > 255 then
-        error(__K2L_IllegalArgumentException.new("Version components are out of range: " .. major .. "." .. minor .. "." .. patch))
-    end
-    self.major, self.minor, self.patch = major, minor, patch
-    self.version = major * 65536 + minor * 256 + patch
-end
-
-function __K2L_KotlinVersion:toString()
-    return self.major .. "." .. self.minor .. "." .. self.patch
-end
-
-__K2L_KotlinVersion.__tostring = __K2L_KotlinVersion.toString
-
-function __K2L_KotlinVersion:equals(other)
-    return getmetatable(other) == __K2L_KotlinVersion and other.version == self.version
-end
-
-function __K2L_KotlinVersion:hashCode()
-    return self.version
-end
-
-function __K2L_KotlinVersion:compareTo(other)
-    return self.version - other.version
-end
-
-function __K2L_KotlinVersion:isAtLeast(major, minor, patch)
-    if self.major ~= major then
-        return self.major > major
-    elseif patch == nil or self.minor ~= minor then
-        return self.minor >= minor
-    end
-    return self.patch >= patch
-end
-
--- Any(): an object with only identity
-local __K2L_Object = __K2L_Class("java.lang.Object")
+local __K2L_Object = __K2L_Class("kotlin.Any")
 
 -- AutoCloseable { }: close() runs the block
 local function __K2L_AutoCloseableOf(block)

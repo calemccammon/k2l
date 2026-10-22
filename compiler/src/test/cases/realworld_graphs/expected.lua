@@ -3,12 +3,8 @@ local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
-local __K2L_HashMap = ____lualib.__K2L_HashMap
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
@@ -17,12 +13,12 @@ local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_PriorityQueue = ____lualib.__K2L_PriorityQueue
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Sequence = ____lualib.__K2L_Sequence
-local __K2L_SortedMap = ____lualib.__K2L_SortedMap
+local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
@@ -32,11 +28,93 @@ local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Triple = ____lualib.__K2L_Triple
 
+local MinQueue = __K2L_Class("MinQueue")
+
+function MinQueue:____init(comparator)
+    self.comparator = comparator
+    self.heap = __K2L_List.new()
+end
+
+function MinQueue:getSize()
+    return self.heap.size
+end
+
+function MinQueue:isEmpty()
+    return self.heap:isEmpty()
+end
+
+function MinQueue:isNotEmpty()
+    return self.heap:isNotEmpty()
+end
+
+function MinQueue:peek()
+    return self.heap:firstOrNull()
+end
+
+function MinQueue:add(item)
+    self.heap:add(item)
+    local i = self.heap.size - 1
+    while i > 0 do
+        local parent = (i - 1) // 2
+        if self.comparator(self.heap:get(i), self.heap:get(parent)) >= 0 then
+            break
+        end
+        local t = self.heap:get(i)
+        local ____object = self.heap
+        local ____key = i
+        ____object:set(____key, self.heap:get(parent))
+        local ____object_1 = self.heap
+        ____object_1:set(parent, t)
+        i = parent
+    end
+    return true
+end
+
+function MinQueue:offer(item)
+    return self:add(item)
+end
+
+function MinQueue:plusAssign(item)
+    self:add(item)
+end
+
+function MinQueue:poll()
+    if self.heap:isEmpty() then
+        error(__K2L_NoSuchElementException.new("queue is empty"))
+    end
+    local top = self.heap:get(0)
+    local last = self.heap:removeAt(self.heap.size - 1)
+    if self.heap:isNotEmpty() then
+        local ____object_2 = self.heap
+        ____object_2:set(0, last)
+        local i = 0
+        while true do
+            local l = 2 * i + 1
+            if l >= self.heap.size then
+                break
+            end
+            local r = l + 1
+            local c = r < self.heap.size and self.comparator(self.heap:get(r), self.heap:get(l)) < 0 and r or l
+            if self.comparator(self.heap:get(c), self.heap:get(i)) >= 0 then
+                break
+            end
+            local t = self.heap:get(i)
+            local ____object_3 = self.heap
+            local ____key_1 = i
+            ____object_3:set(____key_1, self.heap:get(c))
+            local ____object_4 = self.heap
+            ____object_4:set(c, t)
+            i = c
+        end
+    end
+    return top
+end
+
 local Graph = __K2L_Class("Graph")
 
 function Graph:____init(directed)
     self.directed = directed
-    self.adj = __K2L_SortedMap.new()
+    self.adj = __K2L_SortedMapOf(nil)
 end
 
 function Graph:getNodes()
@@ -57,7 +135,7 @@ function Graph:addEdge(from, to, weight)
 end
 
 function Graph:edges(from)
-    return self.adj:get(from) or __K2L_ReadOnlyListOf()
+    return self.adj:get(from) or __K2L_ListOf()
 end
 
 function Graph:allEdges()
@@ -107,7 +185,7 @@ function CycleException:____init(cycle)
 end
 
 local function topoSort(self)
-    local state = __K2L_HashMap.new()
+    local state = __K2L_Map.new()
     local order = __K2L_ArrayDeque.new()
     local stack = __K2L_List.new()
     local function visit(n)
@@ -129,15 +207,11 @@ local function topoSort(self)
         state:set(n, 1)
         stack:add(n)
         local ____list_2 = self:edges(n)
-        local ____mod = ____list_2.____modCount
         for ____i_3 = 1, ____list_2.size do
             local ____it_1 = ____list_2[____i_3]
             do
                 local m = ____it_1.first
                 visit(m)
-            end
-            if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_3) then
-                break
             end
         end
         stack:removeAt(stack.size - 1)
@@ -146,13 +220,9 @@ local function topoSort(self)
     end
     local ____collection = self:getNodes()
     local ____items_3, ____n_3 = ____collection:____array()
-    local ____mod_1 = ____collection.____modCount
     for ____i_4 = 1, ____n_3 do
         local it = ____items_3[____i_4]
         visit(it)
-        if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_4, ____n_3) then
-            break
-        end
     end
     return order:toList()
 end
@@ -161,8 +231,8 @@ local UnionFind = __K2L_Class("UnionFind")
 
 local ____lambda_4 = function(it) return it end
 function UnionFind:____init(n)
-    self.parent = __K2L_ListOfSize(n, ____lambda_4, "[I")
-    self.rank = __K2L_ListOfSize(n, 0, "[I")
+    self.parent = __K2L_ListOfSize(n, ____lambda_4, true)
+    self.rank = __K2L_ListOfSize(n, 0, true)
     self.components = n
 end
 
@@ -174,12 +244,12 @@ function UnionFind:find(x)
     local cur = x
     while (self.parent[cur + 1] or __K2L_IndexError(cur, self.parent.size, "array")) ~= root do
         local ____next = self.parent[cur + 1] or __K2L_IndexError(cur, self.parent.size, "array")
-        local ____object = self.parent
-        local ____key = cur
-        if ____key < 0 or ____key >= ____object.size then
-            __K2L_IndexError(____key, ____object.size, "array")
+        local ____object_5 = self.parent
+        local ____key_2 = cur
+        if ____key_2 < 0 or ____key_2 >= ____object_5.size then
+            __K2L_IndexError(____key_2, ____object_5.size, "array")
         end
-        ____object[____key + 1] = root
+        ____object_5[____key_2 + 1] = root
         cur = ____next
     end
     return root
@@ -196,16 +266,16 @@ function UnionFind:union(a, b)
         rb = ra
         ra = ____value
     end
-    local ____object_1 = self.parent
-    local ____key_1 = rb
-    if ____key_1 < 0 or ____key_1 >= ____object_1.size then
-        __K2L_IndexError(____key_1, ____object_1.size, "array")
+    local ____object_6 = self.parent
+    local ____key_3 = rb
+    if ____key_3 < 0 or ____key_3 >= ____object_6.size then
+        __K2L_IndexError(____key_3, ____object_6.size, "array")
     end
-    ____object_1[____key_1 + 1] = ra
+    ____object_6[____key_3 + 1] = ra
     if (self.rank[ra + 1] or __K2L_IndexError(ra, self.rank.size, "array")) == (self.rank[rb + 1] or __K2L_IndexError(rb, self.rank.size, "array")) then
-        local ____object_2 = self.rank
-        local ____key_2 = ra
-        ____object_2[____key_2 + 1] = (____object_2[____key_2 + 1] or __K2L_IndexError(____key_2, ____object_2.size, "array")) + 1
+        local ____object_7 = self.rank
+        local ____key_4 = ra
+        ____object_7[____key_4 + 1] = (____object_7[____key_4 + 1] or __K2L_IndexError(____key_4, ____object_7.size, "array")) + 1
     end
     self.components = self.components - 1
     return true
@@ -257,8 +327,8 @@ end
 local function dijkstra(____this_1, source)
     local dist = __K2L_MapOf(__K2L_Pair.new(source, 0))
     local prev = __K2L_MapOf()
-    local queue = __K2L_PriorityQueue.new(____lambda_6)
-    queue:add(__K2L_Pair.new(source, 0))
+    local queue = MinQueue.new(____lambda_6)
+    queue:plusAssign(__K2L_Pair.new(source, 0))
     while queue:isNotEmpty() do
         do
             local ____destructured_3 = queue:poll()
@@ -267,7 +337,6 @@ local function dijkstra(____this_1, source)
                 goto ____continue
             end
             local ____list_4 = ____this_1:edges(u)
-            local ____mod_2 = ____list_4.____modCount
             for ____i_6 = 1, ____list_4.size do
                 local ____item = ____list_4[____i_6]
                 local v, w = ____item.first, ____item.second
@@ -275,10 +344,7 @@ local function dijkstra(____this_1, source)
                 if nd < (dist:get(v) or 2147483647) then
                     dist:set(v, nd)
                     prev:set(v, u)
-                    queue:add(__K2L_Pair.new(v, nd))
-                end
-                if ____list_4.____modCount ~= ____mod_2 and ____list_4:____comodified(____i_6) then
-                    break
+                    queue:plusAssign(__K2L_Pair.new(v, nd))
                 end
             end
         end
@@ -301,34 +367,30 @@ local function dijkstra(____this_1, source)
 end
 
 local function floydWarshall(n, edges)
-    local inf = __K2L_IDiv(9223372036854775807, 4)
+    local inf = 9223372036854775807 // 4
     local d = __K2L_ListOfSize(n, function(i)
-        return __K2L_ListOfSize(n, function(j) return i == j and 0 or inf end, "[J")
-    end, "[[J")
-    local ____mod_3 = edges.____modCount
+        return __K2L_ListOfSize(n, function(j) return i == j and 0 or inf end, true)
+    end, true)
     for ____i_8 = 1, edges.size do
         local ____item_1 = edges[____i_8]
         local a, b, w = ____item_1.first, ____item_1.second, ____item_1.third
-        local ____object_3 = d[a + 1] or __K2L_IndexError(a, d.size, "array")
+        local ____object_8 = d[a + 1] or __K2L_IndexError(a, d.size, "array")
         local ____value_2 = math.min((d[a + 1] or __K2L_IndexError(a, d.size, "array")):get(b), w)
-        if b < 0 or b >= ____object_3.size then
-            __K2L_IndexError(b, ____object_3.size, "array")
+        if b < 0 or b >= ____object_8.size then
+            __K2L_IndexError(b, ____object_8.size, "array")
         end
-        ____object_3[b + 1] = ____value_2
-        if edges.____modCount ~= ____mod_3 and edges:____comodified(____i_8) then
-            break
-        end
+        ____object_8[b + 1] = ____value_2
     end
     for k = 0, n - 1 do
         for i = 0, n - 1 do
             for j = 0, n - 1 do
                 if (d[i + 1] or __K2L_IndexError(i, d.size, "array")):get(k) + (d[k + 1] or __K2L_IndexError(k, d.size, "array")):get(j) < (d[i + 1] or __K2L_IndexError(i, d.size, "array")):get(j) then
-                    local ____object_4 = d[i + 1] or __K2L_IndexError(i, d.size, "array")
+                    local ____object_9 = d[i + 1] or __K2L_IndexError(i, d.size, "array")
                     local ____value_3 = (d[i + 1] or __K2L_IndexError(i, d.size, "array")):get(k) + (d[k + 1] or __K2L_IndexError(k, d.size, "array")):get(j)
-                    if j < 0 or j >= ____object_4.size then
-                        __K2L_IndexError(j, ____object_4.size, "array")
+                    if j < 0 or j >= ____object_9.size then
+                        __K2L_IndexError(j, ____object_9.size, "array")
                     end
-                    ____object_4[j + 1] = ____value_3
+                    ____object_9[j + 1] = ____value_3
                 end
             end
         end
@@ -345,21 +407,17 @@ local function tarjan(n, edges)
         ____out_4[____i_9] = __K2L_ListOf()
     end
     local adj = __K2L_ListWrap(____out_4, n)
-    local ____mod_4 = edges.____modCount
     for ____i_10 = 1, edges.size do
         local ____it_4 = edges[____i_10]
         do
             local a, b = ____it_4.first, ____it_4.second
             adj:get(a):add(b)
         end
-        if edges.____modCount ~= ____mod_4 and edges:____comodified(____i_10) then
-            break
-        end
     end
     local counter = 0
-    local index = __K2L_ListOfSize(n, ____lambda_7, "[I")
-    local low = __K2L_ListOfSize(n, 0, "[I")
-    local onStack = __K2L_ListOfSize(n, false, "[Z")
+    local index = __K2L_ListOfSize(n, ____lambda_7, true)
+    local low = __K2L_ListOfSize(n, 0, true)
+    local onStack = __K2L_ListOfSize(n, false, true)
     local stack = __K2L_ArrayDeque.new()
     local result = __K2L_ListOf()
     local function strong(v)
@@ -375,7 +433,6 @@ local function tarjan(n, edges)
         stack:addLast(v)
         onStack:set(v, true)
         local ____list_6 = adj:get(v)
-        local ____mod_5 = ____list_6.____modCount
         for ____i_11 = 1, ____list_6.size do
             local w = ____list_6[____i_11]
             if (index[w + 1] or __K2L_IndexError(w, index.size, "array")) == -1 then
@@ -391,9 +448,6 @@ local function tarjan(n, edges)
                     __K2L_IndexError(v, low.size, "array")
                 end
                 low[v + 1] = ____value_5
-            end
-            if ____list_6.____modCount ~= ____mod_5 and ____list_6:____comodified(____i_11) then
-                break
             end
         end
         if (low[v + 1] or __K2L_IndexError(v, low.size, "array")) == (index[v + 1] or __K2L_IndexError(v, index.size, "array")) then
@@ -425,7 +479,7 @@ local ____lambda_9 = function(____a_2, ____b_2)
     return __K2L_CompareValues(____b_2.key, ____a_2.key)
 end
 local ____lambda_10 = function(it)
-    return it >= __K2L_IDiv(9223372036854775807, 4) and "  ∞" or __K2L_StringPadStart(tostring(it), 3)
+    return it >= 9223372036854775807 // 4 and "  ∞" or __K2L_StringPadStart(tostring(it), 3)
 end
 local ____lambda_11 = function(____a_3, ____b_3)
     local ____x_6, ____y_6 = ____b_3.size, ____a_3.size
@@ -451,21 +505,17 @@ local function main()
         ____out_5[____count_4] = __K2L_StringSplit(it, " -> ")
     end
     local ____list_8 = __K2L_ListWrap(____out_5, ____count_4)
-    local ____mod_6 = ____list_8.____modCount
     for ____i_13 = 1, ____list_8.size do
         local ____it_5 = ____list_8[____i_13]
         do
             local a, b = ____it_5[1], ____it_5[2]
             tasks:addEdge(a, b)
         end
-        if ____list_8.____modCount ~= ____mod_6 and ____list_8:____comodified(____i_13) then
-            break
-        end
     end
     print("tasks: " .. __K2L_Str(tasks))
     print("order: " .. __K2L_Str(topoSort(tasks)))
     tasks:addEdge("commute", "wake")
-    local ____ok, ____result_4 = __K2L_DeepPcall(function()
+    local ____ok, ____result_4 = pcall(function()
         topoSort(tasks)
     end)
     if not ____ok then
@@ -478,7 +528,7 @@ local function main()
         end
     end
     local roads = Graph.new(false)
-    local edgePattern = __K2L_Regex.new("([A-Z])-([A-Z]) (\\d+)")
+    local edgePattern = __K2L_Regex.new("([A-Z])-([A-Z]) (\\d+)", "([A-Z])%-([A-Z]) (%d+)")
     for _, m in __K2L_Sequence.new(edgePattern:findAllFactory(ROADS)):iter() do
         do
             local ____destructured_4 = m.destructured
@@ -501,18 +551,14 @@ local function main()
     print("mst: " .. ____arg .. " total=" .. ____sum)
     local routes = dijkstra(roads, "A")
     local ____keys, ____values, ____n_8 = routes:____arrays()
-    local ____mod_7 = routes.____modCount
     for ____i_15 = 1, ____n_8 do
         local node, info = ____keys[____i_15], ____values[____i_15]
         local dist, path = info.first, info.second
         print("  A to " .. node .. ": " .. __K2L_StringPadStart(tostring(dist), 2) .. " via " .. path:joinToString(""))
-        if routes.____modCount ~= ____mod_7 and routes:____comodified(____i_15, ____n_8) then
-            break
-        end
     end
     local farthest = routes:getEntries():maxWith(____lambda_9)
     print("farthest from A: " .. farthest.key .. " at " .. farthest.value.first)
-    local fwEdges = __K2L_ReadOnlyListOf(__K2L_Triple.new(0, 1, 3), __K2L_Triple.new(1, 2, 1), __K2L_Triple.new(2, 0, 2), __K2L_Triple.new(2, 3, 7), __K2L_Triple.new(3, 4, 1), __K2L_Triple.new(0, 3, 15))
+    local fwEdges = __K2L_ListOf(__K2L_Triple.new(0, 1, 3), __K2L_Triple.new(1, 2, 1), __K2L_Triple.new(2, 0, 2), __K2L_Triple.new(2, 3, 7), __K2L_Triple.new(3, 4, 1), __K2L_Triple.new(0, 3, 15))
     local d = floydWarshall(5, fwEdges)
     for ____i_16 = 1, d.size do
         local row = d[____i_16]
@@ -520,11 +566,11 @@ local function main()
     end
     local reachable = d:getIndices():associateWith(function(i)
         return (d[i + 1] or __K2L_IndexError(i, d.size, "array")):getIndices():count(function(j)
-            return (d[i + 1] or __K2L_IndexError(i, d.size, "array")):get(j) < __K2L_IDiv(9223372036854775807, 4)
+            return (d[i + 1] or __K2L_IndexError(i, d.size, "array")):get(j) < 9223372036854775807 // 4
         end)
     end)
     print("reachable counts: " .. __K2L_Str(reachable))
-    local sccEdges = __K2L_ReadOnlyListOf(__K2L_Pair.new(0, 1), __K2L_Pair.new(1, 2), __K2L_Pair.new(2, 0), __K2L_Pair.new(2, 3), __K2L_Pair.new(3, 4), __K2L_Pair.new(4, 5), __K2L_Pair.new(5, 3), __K2L_Pair.new(6, 5), __K2L_Pair.new(6, 7), __K2L_Pair.new(7, 6), __K2L_Pair.new(8, 8))
+    local sccEdges = __K2L_ListOf(__K2L_Pair.new(0, 1), __K2L_Pair.new(1, 2), __K2L_Pair.new(2, 0), __K2L_Pair.new(2, 3), __K2L_Pair.new(3, 4), __K2L_Pair.new(4, 5), __K2L_Pair.new(5, 3), __K2L_Pair.new(6, 5), __K2L_Pair.new(6, 7), __K2L_Pair.new(7, 6), __K2L_Pair.new(8, 8))
     local sccs = tarjan(9, sccEdges)
     local ____arg_1 = __K2L_Str(sccs)
     local ____result_5 = 0
@@ -537,8 +583,7 @@ local function main()
     end
     print("sccs: " .. ____arg_1 .. " (" .. ____result_5 .. " non-trivial)")
     local uf = UnionFind.new(10)
-    local ____list_9 = __K2L_ReadOnlyListOf(__K2L_Pair.new(1, 2), __K2L_Pair.new(3, 4), __K2L_Pair.new(2, 3), __K2L_Pair.new(5, 6), __K2L_Pair.new(7, 7), __K2L_Pair.new(9, 0), __K2L_Pair.new(4, 1))
-    local ____mod_8 = ____list_9.____modCount
+    local ____list_9 = __K2L_ListOf(__K2L_Pair.new(1, 2), __K2L_Pair.new(3, 4), __K2L_Pair.new(2, 3), __K2L_Pair.new(5, 6), __K2L_Pair.new(7, 7), __K2L_Pair.new(9, 0), __K2L_Pair.new(4, 1))
     for ____i_18 = 1, ____list_9.size do
         local ____it_6 = ____list_9[____i_18]
         do
@@ -547,9 +592,6 @@ local function main()
             if not merged then
                 print("  " .. a .. " and " .. b .. " already connected")
             end
-        end
-        if ____list_9.____modCount ~= ____mod_8 and ____list_9:____comodified(____i_18) then
-            break
         end
     end
     local ____list_10 = __K2L_IntRange.new(0, 10 - 1):groupBy(function(...) return uf:find(...) end):getValues()
@@ -603,5 +645,5 @@ local function main()
     print("nodes by degree: " .. __K2L_Str(degrees))
 end
 
-__K2L_DeepMain(main)
-return {Graph = Graph, CycleException = CycleException, topoSort = topoSort, UnionFind = UnionFind, kruskal = kruskal, dijkstra = dijkstra, floydWarshall = floydWarshall, tarjan = tarjan, TASKS = TASKS, ROADS = ROADS}
+__K2L_RunMain(main)
+return {MinQueue = MinQueue, Graph = Graph, CycleException = CycleException, topoSort = topoSort, UnionFind = UnionFind, kruskal = kruskal, dijkstra = dijkstra, floydWarshall = floydWarshall, tarjan = tarjan, TASKS = TASKS, ROADS = ROADS}

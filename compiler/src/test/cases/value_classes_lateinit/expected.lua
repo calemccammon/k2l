@@ -1,20 +1,17 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -23,7 +20,6 @@ local __K2L_UninitializedPropertyAccessException = ____lualib.__K2L_Uninitialize
 
 local ____exports = {}
 local UserId = __K2L_Class("UserId")
-__K2L_ClassInfo(UserId, "UserId", "UserId", "class")
 
 function UserId:____init(raw)
     self.raw = raw
@@ -53,7 +49,6 @@ function UserId:equals(other)
 end
 
 local Email = __K2L_Class("Email")
-__K2L_ClassInfo(Email, "Email", "Email", "class")
 
 function Email:____init(address)
     self.address = address
@@ -80,7 +75,6 @@ function Email:equals(other)
 end
 
 local Account = __K2L_Class("Account")
-__K2L_ClassInfo(Account, "Account", "Account", "class")
 
 function Account:____init(id, email)
     self.id = id
@@ -104,7 +98,6 @@ function Account:equals(other)
 end
 
 local Session = __K2L_Class("Session")
-__K2L_ClassInfo(Session, "Session", "Session", "class")
 
 function Session:login(account)
     self.user = account
@@ -124,24 +117,24 @@ local function main()
     print(__K2L_Str(a))
     print(a:equals(UserId.new(7)))
     print(a:hashCode() == __K2L_Hash(7))
-    print(__K2L_ReadOnlySetOf(UserId.new(1), UserId.new(1), UserId.new(2)).size)
-    print(__K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new(UserId.new(3), "x")):get(UserId.new(3))))
+    print(__K2L_SetOf(UserId.new(1), UserId.new(1), UserId.new(2)).size)
+    print(__K2L_Str(__K2L_MapOf(__K2L_Pair.new(UserId.new(3), "x")):get(UserId.new(3))))
     print(__K2L_Str(a:getNext()) .. " " .. a:describe() .. " " .. Email.new("a@b.org"):getDomain())
     print(Account.new(UserId.new(1), Email.new("x@y.z")):equals(Account.new(UserId.new(1), Email.new("x@y.z"))))
     print(__K2L_Str(Account.new(UserId.new(1), Email.new("x@y.z"))))
     local ____receiver = __K2L_RunCatching(____lambda_1):exceptionOrNull()
     print(__K2L_Str(____receiver and ____receiver.message))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(UserId.new(3), UserId.new(1)):sortedBy(____lambda_2, true)))
+    print(__K2L_Str(__K2L_ListOf(UserId.new(3), UserId.new(1)):sortedBy(____lambda_2, true)))
     local s = Session.new()
     print(s:status())
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         print(__K2L_Str(s.user or __K2L_Uninitialized("user")))
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result)
         if __K2L_InstanceOf(____error, __K2L_UninitializedPropertyAccessException) then
             local e = ____error
-            print(__K2L_Str(__K2L_KClassOfValue(e).simpleName) .. ": " .. __K2L_Str(e.message))
+            print(__K2L_Str(__K2L_SimpleName(e)) .. ": " .. __K2L_Str(e.message))
         else
             error(____error, 0)
         end
@@ -172,5 +165,5 @@ ____exports.UserId = UserId
 ____exports.Email = Email
 ____exports.Account = Account
 ____exports.Session = Session
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return ____exports

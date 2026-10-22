@@ -29,7 +29,6 @@ List has more than one element.
 Key b is missing in the map.
 ioobe
 java.lang.NumberFormatException: For input string: "abc"
-java.lang.ArithmeticException: / by zero
 size 0 must be greater than zero.
 Requested element count -1 is less than zero.
 1

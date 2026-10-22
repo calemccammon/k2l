@@ -10,11 +10,10 @@ local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReadOnlyProperty = ____lualib.__K2L_ReadOnlyProperty
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
@@ -79,13 +78,9 @@ function Observed:setValue(thisRef, property, value)
     self.value = value
     if not __K2L_Equals(old, value) then
         local ____list = self.listeners
-        local ____mod = ____list.____modCount
         for ____i = 1, ____list.size do
             local it = ____list[____i]
             it(old, value)
-            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-                break
-            end
         end
     end
 end
@@ -136,7 +131,7 @@ function Settings:____init()
     self.____name_delegate = Validated.new("app", notBlank, self.errors)
     self.____mode_delegate = Validated.new("dev", oneOf("dev", "prod"), self.errors)
     self.____debug_delegate = Observed.new(false, self.changes)
-    self.____tags_delegate = Observed.new(__K2L_ReadOnlyListOf(), self.changes)
+    self.____tags_delegate = Observed.new(__K2L_ListOf(), self.changes)
     self.____summary_delegate = computed(function()
         return self:getName() .. "[" .. self:getMode() .. "] threads=" .. self:getThreads() .. " debug=" .. tostring(self:getDebug()) .. " tags=" .. __K2L_Str(self:getTags())
     end)
@@ -276,7 +271,7 @@ local Store = __K2L_Class("generics.properties.Store")
 
 function Store:____init(key)
     self.key = key
-    self.items = __K2L_SortedMapOf()
+    self.items = __K2L_SortedMapOf(nil)
     self.listeners = __K2L_ListOf()
 end
 
@@ -287,13 +282,9 @@ end
 function Store:put(item)
     local event = self.items:put(self.key(item), item) == nil and "added" or "replaced"
     local ____list_1 = self.listeners
-    local ____mod_1 = ____list_1.____modCount
     for ____i_1 = 1, ____list_1.size do
         local it = ____list_1[____i_1]
         it(event, item)
-        if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_1) then
-            break
-        end
     end
 end
 
@@ -336,7 +327,7 @@ local function main()
     s:setMode("prod")
     s:setDebug(true)
     s:setDebug(true)
-    s:setTags(__K2L_ReadOnlyListOf("a", "b"))
+    s:setTags(__K2L_ListOf("a", "b"))
     print(s:getSummary())
     local ____list_2 = s.errors
     for ____i_2 = 1, ____list_2.size do
@@ -348,9 +339,9 @@ local function main()
     local square = __K2L_FunInterface(Mapper, "map", ____lambda_3)
     local show = __K2L_FunInterface(Mapper, "map", ____lambda_4)
     local pipeline = ____then(____then(parse, square), show)
-    print(__K2L_Str(__K2L_ReadOnlyListOf(" 3", "12 ", "-5"):map(function(...) return pipeline:map(...) end)))
+    print(__K2L_Str(__K2L_ListOf(" 3", "12 ", "-5"):map(function(...) return pipeline:map(...) end)))
     local lengthCheck = ____and(notBlank, __K2L_FunInterface(Validator, "validate", ____lambda_5))
-    local ____list_3 = __K2L_ReadOnlyListOf("", "ok", "toolong")
+    local ____list_3 = __K2L_ListOf("", "ok", "toolong")
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list_3:____array()
@@ -383,7 +374,7 @@ local function main()
     local ____receiver = books:get(Id.new(10))
     print("values=" .. ____arg .. " get=" .. __K2L_Str(____receiver and ____receiver.title) .. " missing=" .. __K2L_Str(books:get(Id.new(99))))
     print("log=" .. __K2L_Str(log))
-    local ids = __K2L_ReadOnlyListOf(Id.new(3), Id.new(1), Id.new(2)):sorted()
+    local ids = __K2L_ListOf(Id.new(3), Id.new(1), Id.new(2)):sorted()
     local ____arg_1 = __K2L_Str(ids)
     local ____arg_2 = __K2L_Str(ids:max())
     local ____sum = 0
@@ -409,22 +400,22 @@ local function main()
     print("by author=" .. __K2L_Str(____result))
     print("== arrays and aliases")
     local ____result_1
-    ____result_1 = __K2L_ListOfSize(5, ____lambda_7, "[Ljava.lang.Integer;")
+    ____result_1 = __K2L_ListOfSize(5, ____lambda_7, true)
     local squares = ____result_1
     local ____result_2
-    ____result_2 = __K2L_ListOfSize(3, ____lambda_8, "[Ljava.lang.String;")
+    ____result_2 = __K2L_ListOfSize(3, ____lambda_8, true)
     local labels = ____result_2
     print(squares:contentToString() .. " " .. labels:joinToString() .. " " .. squares.size + labels.size)
-    local mixed = __K2L_ReadOnlyListOf(1, "a", 2, "b", 3.5)
+    local mixed = __K2L_ListOf(1, "a", 2, "b", 3.5)
     local ____result_3
-    ____result_3 = mixed:filter(____lambda_9):toTypedArray("[Ljava.lang.Integer;")
+    ____result_3 = mixed:filter(____lambda_9):toTypedArray()
     local ints = ____result_3
     local ____result_4
-    ____result_4 = mixed:filter(____lambda_10):toTypedArray("[Ljava.lang.String;")
+    ____result_4 = mixed:filter(____lambda_10):toTypedArray()
     local strs = ____result_4
     print("ints=" .. ints:contentToString() .. " sum=" .. ints:sum() .. " strs=" .. strs:contentToString())
-    local ____table = __K2L_SortedMapOf()
-    local ____list_6 = __K2L_ReadOnlyListOf("apple", "avocado", "banana", "blueberry", "cherry")
+    local ____table = __K2L_SortedMapOf(nil)
+    local ____list_6 = __K2L_ListOf("apple", "avocado", "banana", "blueberry", "cherry")
     for ____i_7 = 1, ____list_6.size do
         local w = ____list_6[____i_7]
         record(____table, __K2L_Text.first(w), w)
@@ -432,5 +423,5 @@ local function main()
     print(__K2L_Str(____table))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Validator = Validator, ____and = ____and, Mapper = Mapper, ____then = ____then, Validated = Validated, Observed = Observed, computed = computed, positive = positive, atMost = atMost, notBlank = notBlank, oneOf = oneOf, Settings = Settings, Id = Id, Author = Author, Book = Book, Store = Store, record = record}

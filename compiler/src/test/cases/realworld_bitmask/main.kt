@@ -41,7 +41,7 @@ class Sudoku(puzzle: String) {
         var bestCount = 10
         for (i in 0 until 81) {
             if (grid[i] != 0) continue
-            val n = Integer.bitCount(candidates(i))
+            val n = candidates(i).countOneBits()
             if (n < bestCount) {
                 best = i
                 bestCount = n
@@ -54,7 +54,7 @@ class Sudoku(puzzle: String) {
             val bit = cands and -cands
             cands = cands xor bit
             guesses++
-            place(best, Integer.numberOfTrailingZeros(bit))
+            place(best, bit.countTrailingZeroBits())
             if (solve()) return true
             remove(best)
         }
@@ -133,7 +133,7 @@ class BitSieve(val limit: Int) {
     }
 
     fun primes() = (2..limit).filterNot { this[it] }
-    fun count() = limit + 1 - bits.sumOf { Integer.bitCount(it) } + Integer.bitCount(bits.last() ushr ((limit and 31) + 1))
+    fun count() = limit + 1 - bits.sumOf { it.countOneBits() } + (bits.last() ushr ((limit and 31) + 1)).countOneBits()
 }
 
 fun main() {
@@ -166,11 +166,11 @@ fun main() {
 
     val codes = (0 until 8).map { gray(it) }
     println("gray: ${codes.map { it.toString(2).padStart(3, '0') }} back=${codes.map(::fromGray)}")
-    println("one bit apart: ${codes.zipWithNext { a, b -> Integer.bitCount(a xor b) }.all { it == 1 }}")
+    println("one bit apart: ${codes.zipWithNext { a, b -> (a xor b).countOneBits() }.all { it == 1 }}")
     println("subsets of [3,34,4,12,5,2] summing to 9: ${subsetsWithSum(intArrayOf(3, 34, 4, 12, 5, 2), 9)}")
     val x = 0b1011_0110
     println("bits of $x: count=${x.countOneBits()} lowest=${x.takeLowestOneBit()} highest=${x.takeHighestOneBit()} tz=${x.countTrailingZeroBits()} lz=${x.countLeadingZeroBits()}")
-    println("swap nibbles: ${((x and 0x0F) shl 4 or (x and 0xF0 shr 4)).toString(2)} reversed bits: ${Integer.reverse(x) ushr 24}")
+    println("swap nibbles: ${((x and 0x0F) shl 4 or (x and 0xF0 shr 4)).toString(2)}")
     println("masks: ${(-1 ushr 28)} ${(1 shl 31)} ${(1 shl 31) ushr 31} ${-16 shr 2} ${-16 ushr 28} ${0x7FFFFFFF + 0}")
     val sieve = BitSieve(200)
     println("primes ≤ 200: ${sieve.primes().size}, count()=${sieve.count()}, last ${sieve.primes().takeLast(3)}, 97 prime? ${!sieve[97]}")

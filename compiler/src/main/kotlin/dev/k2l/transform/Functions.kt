@@ -1,6 +1,7 @@
 package dev.k2l.transform
 
 import dev.k2l.codegen.*
+import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
 import org.jetbrains.kotlin.psi.*
 
 // Functions: parameters, varargs, default arguments and bodies.
@@ -42,7 +43,8 @@ internal fun FileTransformer.packVararg(vararg: KtParameter?) {
 
 /**
  * Callee-side defaults: `if x == nil then x = <default> end`. Callers pass nil for omitted arguments. An override of [fn]
- * applies the defaults it inherits.
+ * applies the defaults it inherits. A parameter that can be null, with a default that is not, also takes the marker of
+ * a null argument (`elseif x == __K2L_NULL_ARGUMENT then x = nil`, see [nullArgument]).
  */
 internal fun FileTransformer.defaultArguments(params: List<KtParameter>, fn: KtNamedFunction? = null): Unit = with(session) {
     val inherited = fn?.let { inheritedDefaults(it) }.orEmpty()
@@ -55,7 +57,16 @@ internal fun FileTransformer.defaultArguments(params: List<KtParameter>, fn: KtN
         } else {
             withParametersOf(fn!!, base) { valueInto(default) { listOf(assign(name, it)) } }
         }
-        emit(LuaIf(LuaBinary(LuaBinOp.Eq, name, LuaNil), assignment))
+        val type = p.returnType
+        val nullable = (type.isMarkedNullable || type is KaTypeParameterType) && !isNullDefault(default)
+        val marker = if (nullable) {
+            listOf(
+                LuaIf(LuaBinary(LuaBinOp.Eq, name, lualibRef(NULL_ARGUMENT_FEATURE, "__K2L_NULL_ARGUMENT")), listOf(assign(name, LuaNil))),
+            )
+        } else {
+            null
+        }
+        emit(LuaIf(LuaBinary(LuaBinOp.Eq, name, LuaNil), assignment, marker))
     }
 }
 

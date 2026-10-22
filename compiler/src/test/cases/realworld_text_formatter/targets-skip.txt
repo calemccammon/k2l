@@ -1,0 +1,1 @@
+5.2: Lua 5.2's string.format rejects %x and %o of a negative number

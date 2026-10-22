@@ -1,0 +1,14 @@
+java.lang.AssertionError: values differ
+values differ
+true
+false
+assertion: x
+runtime: y
+null
+42
+null
+java.lang.IllegalArgumentException: bad
+true
+true
+caught as Error: 7
+true

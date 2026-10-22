@@ -1,5 +1,5 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 
 local function main()
     for i = 1, 3 do
@@ -71,7 +71,7 @@ local function main()
     local sum = 0
     for k = 1, 100 do
         do
-            if (k >= 0 and k % 2 or 0 - -k % 2) == 0 then
+            if k % 2 == 0 then
                 goto ____continue_2
             end
             sum = sum + k
@@ -81,4 +81,4 @@ local function main()
     print(sum)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)

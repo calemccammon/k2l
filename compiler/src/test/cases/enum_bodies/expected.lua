@@ -1,12 +1,11 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
@@ -297,7 +296,7 @@ local function main()
     print(d:describe())
     print(__K2L_EnumValueOf(Color, "GREEN").ordinal)
     print(__K2L_EnumValues(Color).size)
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         __K2L_EnumValueOf(Color, "BLUE")
     end)
     if not ____ok then
@@ -311,5 +310,5 @@ local function main()
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Op = Op, Level = Level, Shape = Shape, Describable = Describable, Planet = Planet, Color = Color, classify = classify}

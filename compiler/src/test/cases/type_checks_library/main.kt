@@ -1,4 +1,3 @@
-import java.math.BigInteger
 
 class Name(val s: String) : CharSequence {
     override val length get() = s.length
@@ -22,7 +21,7 @@ fun kind(x: Any?): String = when (x) {
 }
 
 fun main() {
-    val values = listOf(1, 2.5, 3L, "abc", StringBuilder("xy"), Name("name"), Score(1), Dir.S, true, listOf(1), Pair(1, 2), null, BigInteger.TEN)
+    val values = listOf(1, 2.5, 3L, "abc", StringBuilder("xy"), Name("name"), Score(1), Dir.S, true, listOf(1), Pair(1, 2), null)
     println(values.map(::kind))
     println(values.filterIsInstance<Comparable<*>>().size)
     println(values.filterIsInstance<CharSequence>().joinToString("|"))
@@ -32,6 +31,6 @@ fun main() {
     println(cs.length)
     println((Score(2) as? Comparable<*>) != null)
     println((listOf(1) as? Comparable<*>) == null)
-    val numbers = listOf<Number>(2.7, -3, 10L, BigInteger.valueOf(300), -3300000000.5)
+    val numbers = listOf<Number>(2.7, -3, 10L, -3300000000.5)
     println(numbers.map { "${it.toInt()} ${it.toLong()} ${it.toShort()} ${it.toByte()} ${it.toDouble()}" })
 }

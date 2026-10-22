@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -10,16 +10,13 @@ local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Random = ____lualib.__K2L_Random
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unit = ____lualib.__K2L_Unit
 
 local function seq()
@@ -42,12 +39,12 @@ local ____lambda_9 = function(it) return it > 2 end
 local ____lambda_10 = function(it) return it * 2 end
 local ____lambda_11 = function(it) return __K2L_Pair.new(it, it) end
 local ____lambda_12 = function(it) return it + 1 end
-local ____lambda_13 = function(it) return __K2L_ReadOnlyListOf(it, it) end
-local ____lambda_14 = function(i, x) return __K2L_ReadOnlyListOf(i, x) end
-local ____lambda_15 = function(it) return __K2L_SingletonListOf(it) end
-local ____lambda_16 = function(i, x) return __K2L_SingletonListOf(i + x) end
-local ____lambda_17 = function(it) return it >= 0 and it % 2 or 0 - -it % 2 end
-local ____lambda_18 = function(it) return it >= 0 and it % 2 or 0 - -it % 2 end
+local ____lambda_13 = function(it) return __K2L_ListOf(it, it) end
+local ____lambda_14 = function(i, x) return __K2L_ListOf(i, x) end
+local ____lambda_15 = function(it) return __K2L_ListOf(it) end
+local ____lambda_16 = function(i, x) return __K2L_ListOf(i + x) end
+local ____lambda_17 = function(it) return it % 2 end
+local ____lambda_18 = function(it) return it % 2 end
 local ____lambda_19 = function(i, x) return i > 0 and x or nil end
 local ____lambda_20 = function(i, x) return i * x end
 local ____lambda_21 = function(it) return it > 1 and it or nil end
@@ -241,14 +238,14 @@ local function sequenceFunctions()
     print(__K2L_Str(seq():runningReduceIndexed(____lambda_40):toList()))
     print(__K2L_Str(seq():scanIndexed(1, ____lambda_41):toList()))
     print(seq():sumBy(____lambda_42))
-    print(__K2L_Str(seq():sumByDouble(____lambda_43)))
+    print(seq():sumByDouble(____lambda_43))
     print(seq():requireNoNulls():count())
     print(__K2L_Str(seq():minus(1):toList()))
-    print(__K2L_Str(seq():minusAll(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2)):toList()))
-    print(__K2L_Str(seq():minusAll(__K2L_SingletonListOf(3)):toList()))
+    print(__K2L_Str(seq():minusAll(__K2L_ArrayOf(1, 2)):toList()))
+    print(__K2L_Str(seq():minusAll(__K2L_ListOf(3)):toList()))
     print(__K2L_Str(seq():minusAll(__K2L_SequenceOf(2)):toList()))
     print(__K2L_Str(seq():minus(3):toList()))
-    print(__K2L_Str(seq():plusAll(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 7)):toList()))
+    print(__K2L_Str(seq():plusAll(__K2L_ArrayOf(7)):toList()))
     print(__K2L_Str(seq():plus(8):toList()))
     print(__K2L_Str(seq():joinTo(__K2L_StringBuilder.new(), "-")))
     print(seq():shuffled(__K2L_Random.seeded(1)):count())
@@ -263,13 +260,13 @@ local function sequenceFunctions()
     end)
     print("kotlin.Unit")
     print(__K2L_Str(seq():sortedWith(____lambda_48):toList()))
-    print(__K2L_ReadOnlyListOf(3, 1):maxOfWith(____lambda_49, ____lambda_50))
-    print(__K2L_ReadOnlyListOf(3, 1):minOfWith(____lambda_51, ____lambda_52))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1):maxOfWithOrNull(____lambda_53, ____lambda_54)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf():minOfWithOrNull(____lambda_55, ____lambda_56)))
-    print(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 3, 1):maxOfWith(____lambda_57, ____lambda_58))
-    print(__K2L_TypedArrayOf("[I", 3, 1):minOfWith(____lambda_59, ____lambda_60))
-    print(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):getEntries():maxOfWith(____lambda_61, ____lambda_62))
+    print(__K2L_ListOf(3, 1):maxOfWith(____lambda_49, ____lambda_50))
+    print(__K2L_ListOf(3, 1):minOfWith(____lambda_51, ____lambda_52))
+    print(__K2L_Str(__K2L_ListOf(3, 1):maxOfWithOrNull(____lambda_53, ____lambda_54)))
+    print(__K2L_Str(__K2L_ListOf():minOfWithOrNull(____lambda_55, ____lambda_56)))
+    print(__K2L_ArrayOf(3, 1):maxOfWith(____lambda_57, ____lambda_58))
+    print(__K2L_ArrayOf(3, 1):minOfWith(____lambda_59, ____lambda_60))
+    print(__K2L_MapOf(__K2L_Pair.new(1, 2)):getEntries():maxOfWith(____lambda_61, ____lambda_62))
     print(__K2L_StringToList("ab"):maxOfWith(____lambda_63, ____lambda_64))
     print(seq():count())
     print((seq() or __K2L_SequenceOf()):count())
@@ -277,11 +274,11 @@ local function sequenceFunctions()
 end
 
 local function list()
-    return __K2L_ReadOnlyListOf(3, 1, 2)
+    return __K2L_ListOf(3, 1, 2)
 end
 
 local function nullableList()
-    return __K2L_ReadOnlyListOf(3, nil, 2)
+    return __K2L_ListOf(3, nil, 2)
 end
 
 local ____lambda_66 = function(it) return -it end
@@ -293,9 +290,9 @@ local ____lambda_71 = function(x) return math.type(x) == "integer" end
 local ____lambda_72 = function(it) return it > 2 end
 local ____lambda_73 = function(it) return it * 2 end
 local ____lambda_74 = function(it) return it + 1 end
-local ____lambda_75 = function(i, x) return __K2L_ReadOnlyListOf(i, x) end
-local ____lambda_76 = function(i, x) return __K2L_SingletonListOf(i + x) end
-local ____lambda_77 = function(it) return it >= 0 and it % 2 or 0 - -it % 2 end
+local ____lambda_75 = function(i, x) return __K2L_ListOf(i, x) end
+local ____lambda_76 = function(i, x) return __K2L_ListOf(i + x) end
+local ____lambda_77 = function(it) return it % 2 end
 local ____lambda_78 = function(i, x) return i > 0 and x or nil end
 local ____lambda_79 = function(i, x) return i * x end
 local ____lambda_80 = function(it) return it * 3 end
@@ -457,8 +454,8 @@ local function iterableFunctions()
         end
     end
     print(__K2L_Str(____destination))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(1, "a"):filter(____lambda_70)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(1, "a"):filterTo(__K2L_ListOf(), ____lambda_71)))
+    print(__K2L_Str(__K2L_ListOf(1, "a"):filter(____lambda_70)))
+    print(__K2L_Str(__K2L_ListOf(1, "a"):filterTo(__K2L_ListOf(), ____lambda_71)))
     print(__K2L_Str(nullableList():filterNotNullTo(__K2L_ListOf())))
     local ____list_1 = list()
     local ____destination_1 = __K2L_ListOf()
@@ -487,7 +484,7 @@ local function iterableFunctions()
     local ____items, ____n = ____list_3:____array()
     for ____i_1 = 1, ____n do
         local it = ____items[____i_1]
-        local ____inner, ____m = __K2L_ReadOnlyListOf(it, it):____array()
+        local ____inner, ____m = __K2L_ListOf(it, it):____array()
         for ____j = 1, ____m do
             ____count = ____count + 1
             ____out[____count] = ____inner[____j]
@@ -498,14 +495,14 @@ local function iterableFunctions()
     local ____list_4 = list()
     local ____destination_3 = __K2L_ListOf()
     for _, it in ipairs(____list_4) do
-        ____destination_3:addAll(__K2L_SingletonListOf(it))
+        ____destination_3:addAll(__K2L_ListOf(it))
     end
     print(__K2L_Str(____destination_3))
     print(__K2L_Str(list():flatMapIndexedTo(__K2L_ListOf(), ____lambda_76)))
     local ____list_5 = list()
     local ____destination_4 = __K2L_MapOf()
     for _, it in ipairs(____list_5) do
-        local ____value_1 = it >= 0 and it % 2 or 0 - -it % 2
+        local ____value_1 = it % 2
         local ____group = ____destination_4:get(____value_1)
         if ____group == nil then
             ____group = __K2L_ListOf()
@@ -540,7 +537,7 @@ local function iterableFunctions()
     print(list():reduceIndexed(____lambda_93))
     print(__K2L_Str(list():reduceIndexedOrNull(____lambda_94)))
     print(__K2L_Str(list():reduceOrNull(____lambda_95)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf():reduceOrNull(____lambda_96)))
+    print(__K2L_Str(__K2L_ListOf():reduceOrNull(____lambda_96)))
     print(__K2L_Str(list():runningFoldIndexed(0, ____lambda_97)))
     print(__K2L_Str(list():runningReduceIndexed(____lambda_98)))
     print(__K2L_Str(list():scanIndexed(1, ____lambda_99)))
@@ -555,21 +552,21 @@ local function iterableFunctions()
     for _, it in ipairs(____list_8) do
         ____sum_1 = ____sum_1 + it / 2.0
     end
-    print(__K2L_Str(____sum_1))
+    print(____sum_1)
     print(list():requireNoNulls():count())
     print(__K2L_Str(list():minus(1)))
-    print(__K2L_Str(list():minusAll(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 1, 2))))
-    print(__K2L_Str(list():minusAll(__K2L_SingletonListOf(3))))
+    print(__K2L_Str(list():minusAll(__K2L_ArrayOf(1, 2))))
+    print(__K2L_Str(list():minusAll(__K2L_ListOf(3))))
     print(__K2L_Str(list():minusAll(__K2L_SequenceOf(2))))
     print(__K2L_Str(list():minus(3)))
-    print(__K2L_Str(list():plusAll(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 7))))
+    print(__K2L_Str(list():plusAll(__K2L_ArrayOf(7))))
     print(__K2L_Str(list():plus(8)))
     print(__K2L_Str(list():joinTo(__K2L_StringBuilder.new(), "-")))
     print(list():shuffled(__K2L_Random.seeded(1)):count())
     print(list():elementAt(1))
     print(list():take(2):sum())
     print(__K2L_Str(list():scan(0, ____lambda_100)))
-    print(__K2L_Str(list():zip(__K2L_ReadOnlyListOf("a", "b"), ____lambda_101)))
+    print(__K2L_Str(list():zip(__K2L_ListOf("a", "b"), ____lambda_101)))
     print(__K2L_Str(list():windowed(2, nil, nil, ____lambda_102)))
     print(__K2L_Str(list():chunked(2, ____lambda_103)))
     local ____list_9 = list()
@@ -580,16 +577,16 @@ local function iterableFunctions()
     end
     print("kotlin.Unit")
     print(__K2L_Str(list():sortedWith(____lambda_104)))
-    print(__K2L_ReadOnlyListOf(3, 1):maxOfWith(____lambda_105, ____lambda_106))
-    print(__K2L_ReadOnlyListOf(3, 1):minOfWith(____lambda_107, ____lambda_108))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1):maxOfWithOrNull(____lambda_109, ____lambda_110)))
-    print(__K2L_Str(__K2L_ReadOnlyListOf():minOfWithOrNull(____lambda_111, ____lambda_112)))
-    print(__K2L_TypedArrayOf("[Ljava.lang.Integer;", 3, 1):maxOfWith(____lambda_113, ____lambda_114))
-    print(__K2L_TypedArrayOf("[I", 3, 1):minOfWith(____lambda_115, ____lambda_116))
-    print(__K2L_SingletonMapOf(__K2L_Pair.new(1, 2)):getEntries():maxOfWith(____lambda_117, ____lambda_118))
+    print(__K2L_ListOf(3, 1):maxOfWith(____lambda_105, ____lambda_106))
+    print(__K2L_ListOf(3, 1):minOfWith(____lambda_107, ____lambda_108))
+    print(__K2L_Str(__K2L_ListOf(3, 1):maxOfWithOrNull(____lambda_109, ____lambda_110)))
+    print(__K2L_Str(__K2L_ListOf():minOfWithOrNull(____lambda_111, ____lambda_112)))
+    print(__K2L_ArrayOf(3, 1):maxOfWith(____lambda_113, ____lambda_114))
+    print(__K2L_ArrayOf(3, 1):minOfWith(____lambda_115, ____lambda_116))
+    print(__K2L_MapOf(__K2L_Pair.new(1, 2)):getEntries():maxOfWith(____lambda_117, ____lambda_118))
     print(__K2L_StringToList("ab"):maxOfWith(____lambda_119, ____lambda_120))
     print(list():count())
-    print((list() or __K2L_ReadOnlyListOf()):count())
+    print((list() or __K2L_ListOf()):count())
 end
 
 local ____lambda_121 = function(it) return it + 1 end
@@ -611,7 +608,7 @@ local function interleaving()
         log:add("each " .. it)
     end):groupingBy(function(it)
         log:add("key " .. it)
-        return it >= 0 and it % 2 or 0 - -it % 2
+        return it % 2
     end):eachCount()
     print(__K2L_Str(groups) .. " " .. __K2L_Str(log))
     log:clear()
@@ -631,7 +628,7 @@ end
 local ____lambda_123 = function(a, b) return a > b end
 local ____lambda_124 = function(a, b) return a > b end
 local ____lambda_125 = function(it) return it.size > 5 end
-local ____lambda_126 = function(it) return it >= 0 and it % 2 or 0 - -it % 2 end
+local ____lambda_126 = function(it) return it % 2 end
 local ____lambda_127 = function(it) return it > 1 end
 local ____lambda_128 = function(it) return it end
 local ____lambda_129 = function(it) return it > 2 end
@@ -647,8 +644,8 @@ local function falseValues()
     print(__K2L_Str(__K2L_SequenceOf(1, 2, 3):groupBy(____lambda_126, ____lambda_127)))
     print(__K2L_Str(__K2L_SequenceOf(1, 2, 3):associateBy(____lambda_128, ____lambda_129)))
     print(__K2L_SequenceOf(3, 1, 2):maxBy(____lambda_130))
-    print(__K2L_ReadOnlyListOf(3, 1, 2):maxBy(____lambda_131))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(3, 1, 2):minByOrNull(____lambda_132)))
+    print(__K2L_ListOf(3, 1, 2):maxBy(____lambda_131))
+    print(__K2L_Str(__K2L_ListOf(3, 1, 2):minByOrNull(____lambda_132)))
     print(__K2L_Str(__K2L_Text.chunked("abcd", 2, ____lambda_133)))
     print(__K2L_Str(__K2L_Text.windowed("abcd", 2, nil, nil, ____lambda_134)))
 end
@@ -660,5 +657,5 @@ local function main()
     interleaving()
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {seq = seq, nullableSeq = nullableSeq, sequenceFunctions = sequenceFunctions, list = list, nullableList = nullableList, iterableFunctions = iterableFunctions, interleaving = interleaving, falseValues = falseValues}

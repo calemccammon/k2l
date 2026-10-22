@@ -249,9 +249,9 @@ class LuaPrinter(
             }
         }
 
-        is LuaCall -> "${prefix(e.fn)}(${e.args.joinToString(", ") { expr(it) }})"
+        is LuaCall -> "${prefix(e.fn)}(${arguments(e.args)})"
 
-        is LuaMethodCall -> "${prefix(e.target)}:${e.method}(${e.args.joinToString(", ") { expr(it) }})"
+        is LuaMethodCall -> "${prefix(e.target)}:${e.method}(${arguments(e.args)})"
 
         is LuaBinary -> binary(e, parentPrecedence)
 
@@ -301,6 +301,18 @@ class LuaPrinter(
         return "function($params)\n${sub.out}${indentUnit.repeat(indent)}end"
     }
 
+    /**
+     * A call's arguments. Each needs a register, and a function has at most 255 (its locals' among them): many arguments
+     * (`listOf` of hundreds of elements) are a table, which Lua fills 50 at a time, unpacked to as many values. A last
+     * argument of several values (a spread) keeps the arguments as they are.
+     */
+    private fun arguments(args: List<LuaExpr>): String {
+        val last = args.lastOrNull()
+        val spread = last == LuaName("...") || ((last as? LuaCall)?.fn as? LuaName)?.name in SPREADS
+        if (args.size <= MAX_CALL_ARGUMENTS || spread) return args.joinToString(", ") { expr(it) }
+        return "(table.unpack or unpack)(${table(LuaTable(args.map { LuaField.Positional(it) }))}, 1, ${args.size})"
+    }
+
     private fun table(t: LuaTable): String {
         if (t.fields.isEmpty()) return "{}"
         return t.fields.joinToString(", ", "{", "}") { f ->
@@ -316,6 +328,12 @@ class LuaPrinter(
         private const val MARK_START = '\u0001'
         private const val MARK_END = '\u0002'
         private const val MAX_INLINE_FUNCTION_LENGTH = 60
+
+        /** Calls with more arguments pass them in a table (see [arguments]). */
+        private const val MAX_CALL_ARGUMENTS = 64
+
+        /** The runtime functions whose call as the last argument stands for several values. */
+        private val SPREADS = setOf("__K2L_Unpack", "__K2L_Spread")
         private const val ASCII_LIMIT = 0x80
         private const val FIRST_PRINTABLE = 0x20
         private const val DELETE = 0x7F
@@ -360,7 +378,7 @@ class LuaPrinter(
                             else -> 2
                         }
                         if (isLoneSurrogate(bytes, i)) {
-                            // A lone surrogate (a Char of --strings utf16) in its 3-byte form, which is not valid UTF-8
+                            // A lone surrogate (from a Kotlin literal) in its 3-byte form, which is not valid UTF-8
                             for (k in 0 until len) append("\\").append((bytes[i + k].toInt() and BYTE_MASK).toString())
                         } else {
                             append(String(bytes, i, minOf(len, bytes.size - i), Charsets.UTF_8))

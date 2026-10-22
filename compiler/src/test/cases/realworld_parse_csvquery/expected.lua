@@ -1,46 +1,43 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_ReverseComparator = ____lualib.__K2L_ReverseComparator
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
-local __K2L_Sequence = ____lualib.__K2L_Sequence
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
+local __K2L_StringEqualsIgnoreCase = ____lualib.__K2L_StringEqualsIgnoreCase
 local __K2L_StringReplace = ____lualib.__K2L_StringReplace
+local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 local __K2L_StringToDouble = ____lualib.__K2L_StringToDouble
 local __K2L_StringToDoubleOrNull = ____lualib.__K2L_StringToDoubleOrNull
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
+local __K2L_StringTrim = ____lualib.__K2L_StringTrim
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_Utf16 = ____lualib.__K2L_Utf16
-local __K2L_Utf16Case = ____lualib.__K2L_Utf16Case
+local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local CsvError = __K2L_Class("CsvError", __K2L_Exception)
-__K2L_ClassInfo(CsvError, "CsvError", "CsvError", "class")
 
 function CsvError:____init(msg, record, col)
     __K2L_Exception.____init(self, "record " .. record .. ", column " .. col .. ": " .. msg)
@@ -49,7 +46,6 @@ function CsvError:____init(msg, record, col)
 end
 
 local CsvState = __K2L_Class("CsvState")
-__K2L_ClassInfo(CsvState, "CsvState", "CsvState", "class")
 
 function CsvState:____init(name, ordinal)
     self.name = name
@@ -84,7 +80,8 @@ local function csvRecords(text, sep)
             record:add(field:toString())
             field:setLength(0)
         end
-        for c in __K2L_Utf16.each(text) do
+        for ____i = 1, #text do
+            local c = text:sub(____i, ____i)
             col = col + 1
             local ____subject = state
             if ____subject == CsvState.FIELD_START or ____subject == CsvState.UNQUOTED then
@@ -136,7 +133,7 @@ local function csvRecords(text, sep)
                 elseif c == "\r" then
                     state = state
                 else
-                    error(CsvError.new(__K2L_Utf16.norm("unexpected '" .. c .. "' after closing quote"), recNo, col))
+                    error(CsvError.new("unexpected '" .. c .. "' after closing quote", recNo, col))
                 end
             end
         end
@@ -151,7 +148,6 @@ local function csvRecords(text, sep)
 end
 
 local Table = __K2L_Class("Table")
-__K2L_ClassInfo(Table, "Table", "Table", "class")
 
 function Table:____init(header, rows)
     self.header = header
@@ -177,10 +173,10 @@ local function ____load(text)
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list:____array()
-    for ____i = 1, ____n do
-        local it = ____items[____i]
+    for ____i_1 = 1, ____n do
+        local it = ____items[____i_1]
         ____count = ____count + 1
-        ____out[____count] = __K2L_Utf16Case.lowercase(__K2L_Text.trim(it))
+        ____out[____count] = __K2L_StringTrim(it):lower()
     end
     local header = __K2L_ListWrap(____out, ____count)
     local rows = __K2L_AsSequence(it):onEachIndexed(function(i, r)
@@ -192,9 +188,7 @@ local function ____load(text)
 end
 
 local Cond = __K2L_Class("Cond")
-__K2L_ClassInfo(Cond, "Cond", "Cond", "interface")
 Cond.Cmp = __K2L_Class("Cond$Cmp", nil, Cond)
-__K2L_ClassInfo(Cond.Cmp, "Cond.Cmp", "Cond$Cmp", "class")
 
 function Cond.Cmp:____init(col, op, value)
     self.col = col
@@ -219,7 +213,6 @@ function Cond.Cmp:equals(other)
 end
 
 Cond.And = __K2L_Class("Cond$And", nil, Cond)
-__K2L_ClassInfo(Cond.And, "Cond.And", "Cond$And", "class")
 
 function Cond.And:____init(l, r)
     self.l = l
@@ -243,7 +236,6 @@ function Cond.And:equals(other)
 end
 
 Cond.Or = __K2L_Class("Cond$Or", nil, Cond)
-__K2L_ClassInfo(Cond.Or, "Cond.Or", "Cond$Or", "class")
 
 function Cond.Or:____init(l, r)
     self.l = l
@@ -267,7 +259,6 @@ function Cond.Or:equals(other)
 end
 
 local Select = __K2L_Class("Select")
-__K2L_ClassInfo(Select, "Select", "Select", "class")
 
 function Select:____init(col, agg)
     if agg == nil then
@@ -294,7 +285,6 @@ function Select:equals(other)
 end
 
 local Query = __K2L_Class("Query")
-__K2L_ClassInfo(Query, "Query", "Query", "class")
 
 function Query:____init(____select, where, groupBy, orderBy, desc, limit)
     self.select = ____select
@@ -321,12 +311,42 @@ function Query:equals(other)
     return getmetatable(other) == Query and __K2L_Equals(self.select, other.select) and __K2L_Equals(self.where, other.where) and self.groupBy == other.groupBy and self.orderBy == other.orderBy and self.desc == other.desc and self.limit == other.limit
 end
 
-local QueryParser = __K2L_Class("QueryParser")
-__K2L_ClassInfo(QueryParser, "QueryParser", "QueryParser", "class")
+local QUOTED = __K2L_Regex.new("'[^']*'", "'[^%']*'")
+local TOKENS = __K2L_ListOf(QUOTED, __K2L_Regex.new("[A-Za-z_]\\w*", "[A-Za-z_][%w_]*"), __K2L_Regex.new("\\d+\\.?\\d*", "%d+%.?%d*"), __K2L_Regex.new("[<>!]=", "[%<%>%!]="), __K2L_Regex.new("[(),*=<>]", "[%(%)%,%*%=%<%>]"))
 
-local ____lambda_1 = function(it) return it.value end
+local function tokenize(src)
+    local out = __K2L_ListOf()
+    local i = 0
+    while i < #src do
+        do
+            local m = TOKENS:firstNotNullOfOrNull(function(it) return it:matchAt(src, i) end)
+            if m == nil then
+                i = i + 1
+                goto ____continue
+            end
+            local ____end = m.range.last + 1
+            while __K2L_StringStartsWith(m.value, "'") and ____end < #src and (____end >= 0 and __K2L_StrByte(src, ____end + 1) or __K2L_IndexError(____end, #src, "string")) == 39 do
+                local ____receiver = QUOTED:matchAt(src, ____end)
+                local ____receiver_1 = ____receiver and ____receiver.range
+                local ____receiver_2 = ____receiver_1 and ____receiver_1.last
+                local ____value_2 = ____receiver_2 and ____receiver_2 + 1
+                if ____value_2 == nil then
+                    break
+                end
+                ____end = ____value_2
+            end
+            out:add(__K2L_Text.substring(src, i, ____end))
+            i = ____end
+        end
+        ::____continue::
+    end
+    return out
+end
+
+local QueryParser = __K2L_Class("QueryParser")
+
 function QueryParser:____init(src)
-    self.toks = __K2L_Sequence.new(__K2L_Regex.new("'(?:[^']|'')*'|[A-Za-z_][\\w]*|\\d+(?:\\.\\d+)?|<=|>=|!=|[(),*=<>]"):findAllFactory(src)):map(____lambda_1):toList()
+    self.toks = tokenize(src)
     self.p = 0
 end
 
@@ -335,23 +355,23 @@ function QueryParser:peek()
 end
 
 function QueryParser:kw(w)
-    local ____receiver = self:peek()
-    return (____receiver and __K2L_Utf16Case.equalsIgnoreCase(____receiver, w)) == true
+    local ____receiver_3 = self:peek()
+    return (____receiver_3 and __K2L_StringEqualsIgnoreCase(____receiver_3, w)) == true
 end
 
 function QueryParser:next()
     local ____arg = self.toks
     local ____old = self.p
     self.p = self.p + 1
-    local ____value_2 = ____arg:getOrNull(____old)
-    if ____value_2 == nil then
+    local ____value_3 = ____arg:getOrNull(____old)
+    if ____value_3 == nil then
         error(__K2L_IllegalArgumentException.new("unexpected end of query"))
     end
-    return ____value_2
+    return ____value_3
 end
 
 function QueryParser:expect(w)
-    if not __K2L_Utf16Case.equalsIgnoreCase(self:next(), w) then
+    if not __K2L_StringEqualsIgnoreCase(self:next(), w) then
         error(__K2L_IllegalArgumentException.new("expected " .. w .. " near token " .. self.p - 1))
     end
 end
@@ -363,11 +383,11 @@ function QueryParser:parse()
         if sel:isNotEmpty() then
             self.p = self.p + 1
         end
-        local name = __K2L_Utf16Case.lowercase(self:next())
+        local name = self:next():lower()
         local ____temp
         if self:kw("(") then
             self.p = self.p + 1
-            local c = __K2L_Utf16Case.lowercase(self:next())
+            local c = self:next():lower()
             self:expect(")")
             ____temp = Select.new(c, name)
         else
@@ -386,7 +406,7 @@ function QueryParser:parse()
     if self:kw("group") then
         self.p = self.p + 1
         self:expect("by")
-        group = __K2L_Utf16Case.lowercase(self:next())
+        group = self:next():lower()
     else
         group = nil
     end
@@ -395,14 +415,14 @@ function QueryParser:parse()
     if self:kw("order") then
         self.p = self.p + 1
         self:expect("by")
-        order = __K2L_Utf16Case.lowercase(self:next())
+        order = self:next():lower()
         if self:kw("(") then
             self.p = self.p + 1
-            order = order .. "(" .. __K2L_Utf16Case.lowercase(self:next()) .. ")"
+            order = order .. "(" .. self:next():lower() .. ")"
             self:expect(")")
         end
         if self:kw("desc") or self:kw("asc") then
-            desc = __K2L_Utf16Case.lowercase(self:next()) == "desc"
+            desc = self:next():lower() == "desc"
         end
     end
     local limit
@@ -439,18 +459,18 @@ end
 function QueryParser:atom()
     if self:kw("(") then
         self.p = self.p + 1
-        local ____value_3 = self:____or()
+        local ____value_4 = self:____or()
         self:expect(")")
-        return ____value_3
+        return ____value_4
     end
-    local col = __K2L_Utf16Case.lowercase(self:next())
+    local col = self:next():lower()
     local op = self:next()
-    if not __K2L_ReadOnlySetOf("=", "!=", "<", "<=", ">", ">="):contains(op) then
+    if not __K2L_SetOf("=", "!=", "<", "<=", ">", ">="):contains(op) then
         error(__K2L_IllegalArgumentException.new("bad operator '" .. op .. "'"))
     end
-    local ____value_4 = self:next()
+    local ____value_5 = self:next()
     local ____result
-    ____result = __K2L_Text.startsWith(____value_4, "'") and __K2L_StringReplace(__K2L_Text.substring(____value_4, 1, __K2L_Utf16.len(____value_4) - 1), "''", "'") or ____value_4
+    ____result = __K2L_StringStartsWith(____value_5, "'") and __K2L_StringReplace(__K2L_Text.substring(____value_5, 1, #____value_5 - 1), "''", "'") or ____value_5
     local v = ____result
     return Cond.Cmp.new(col, op, v)
 end
@@ -468,22 +488,22 @@ local function test(____this, t, row)
     elseif ____mt == Cond.Or then
         return test(____this.l, t, row) or test(____this.r, t, row)
     elseif ____mt == Cond.Cmp then
-        local ____value_5 = compare(row:get(t:index(____this.col)), ____this.value)
+        local ____value_6 = compare(row:get(t:index(____this.col)), ____this.value)
         local ____result_1
         do
             local ____subject_1 = ____this.op
             if ____subject_1 == "=" then
-                ____result_1 = ____value_5 == 0
+                ____result_1 = ____value_6 == 0
             elseif ____subject_1 == "!=" then
-                ____result_1 = ____value_5 ~= 0
+                ____result_1 = ____value_6 ~= 0
             elseif ____subject_1 == "<" then
-                ____result_1 = ____value_5 < 0
+                ____result_1 = ____value_6 < 0
             elseif ____subject_1 == "<=" then
-                ____result_1 = ____value_5 <= 0
+                ____result_1 = ____value_6 <= 0
             elseif ____subject_1 == ">" then
-                ____result_1 = ____value_5 > 0
+                ____result_1 = ____value_6 > 0
             else
-                ____result_1 = ____value_5 >= 0
+                ____result_1 = ____value_6 >= 0
             end
         end
         return ____result_1
@@ -491,7 +511,7 @@ local function test(____this, t, row)
 end
 
 local function fmt(d)
-    return d == __K2L_Num.round(d) and tostring(__K2L_DoubleToLong(d)) or __K2L_StringFormat("%.2f", d)
+    return d == __K2L_Num.round(d) and tostring(__K2L_Truncate(d)) or string.format("%.2f", d)
 end
 
 local function run(t, q)
@@ -499,16 +519,16 @@ local function run(t, q)
     local ____out_1 = {}
     local ____count_1 = 0
     local ____items_1, ____n_1 = ____list_1:____array()
-    for ____i_1 = 1, ____n_1 do
-        local it = ____items_1[____i_1]
+    for ____i_2 = 1, ____n_1 do
+        local it = ____items_1[____i_2]
         local ____result_2
         do
-            local ____receiver_1 = q.where
-            local ____value_6 = ____receiver_1 and test(____receiver_1, t, it)
-            if ____value_6 == nil then
-                ____value_6 = true
+            local ____receiver_4 = q.where
+            local ____value_7 = ____receiver_4 and test(____receiver_4, t, it)
+            if ____value_7 == nil then
+                ____value_7 = true
             end
-            ____result_2 = ____value_6
+            ____result_2 = ____value_7
         end
         if ____result_2 then
             ____count_1 = ____count_1 + 1
@@ -520,25 +540,25 @@ local function run(t, q)
     if q.groupBy ~= nil then
         local ____result_3 = __K2L_Map.new()
         local ____items_2, ____n_2 = rows:____array()
-        for ____i_2 = 1, ____n_2 do
-            local it = ____items_2[____i_2]
-            local ____value_7 = it:get(t:index(q.groupBy))
-            local ____group = ____result_3:get(____value_7)
+        for ____i_3 = 1, ____n_2 do
+            local it = ____items_2[____i_3]
+            local ____value_8 = it:get(t:index(q.groupBy))
+            local ____group = ____result_3:get(____value_8)
             if ____group == nil then
                 ____group = __K2L_List.new()
-                ____result_3:put(____value_7, ____group)
+                ____result_3:put(____value_8, ____group)
             end
             ____group:add(it)
         end
         groups = ____result_3
     else
-        groups = __K2L_SingletonMapOf(__K2L_Pair.new("", rows))
+        groups = __K2L_MapOf(__K2L_Pair.new("", rows))
     end
     local ____list_2 = q.select
     local ____result_4 = false
     local ____items_3, ____n_3 = ____list_2:____array()
-    for ____i_3 = 1, ____n_3 do
-        local it = ____items_3[____i_3]
+    for ____i_4 = 1, ____n_3 do
+        local it = ____items_3[____i_4]
         if it.agg ~= nil then
             ____result_4 = true
             break
@@ -550,18 +570,18 @@ local function run(t, q)
         local ____out_2 = {}
         local ____count_2 = 0
         local ____items_5, ____n_5 = rows:____array()
-        for ____i_5 = 1, ____n_5 do
-            local r = ____items_5[____i_5]
+        for ____i_6 = 1, ____n_5 do
+            local r = ____items_5[____i_6]
             local ____result_5
             do
                 local ____list_3 = q.select
                 local ____out_3 = {}
                 local ____count_3 = 0
                 local ____items_4, ____n_4 = ____list_3:____array()
-                for ____i_4 = 1, ____n_4 do
-                    local it = ____items_4[____i_4]
+                for ____i_5 = 1, ____n_4 do
+                    local it = ____items_4[____i_5]
                     local ____result_6
-                    ____result_6 = it.col == "*" and __K2L_Utf16.norm(r:joinToString("|")) or r:get(t:index(it.col))
+                    ____result_6 = it.col == "*" and r:joinToString("|") or r:get(t:index(it.col))
                     ____count_3 = ____count_3 + 1
                     ____out_3[____count_3] = ____result_6
                 end
@@ -578,23 +598,23 @@ local function run(t, q)
             local ____out_4 = {}
             local ____count_4 = 0
             local ____items_7, ____n_7 = ____list_4:____array()
-            for ____i_7 = 1, ____n_7 do
-                local s = ____items_7[____i_7]
+            for ____i_8 = 1, ____n_7 do
+                local s = ____items_7[____i_8]
                 local ____result_7
                 do
                     local ____nums_delegate = __K2L_Lazy(function()
                         local ____out_5 = {}
                         local ____count_5 = 0
                         local ____items_6, ____n_6 = g:____array()
-                        for ____i_6 = 1, ____n_6 do
-                            local it = ____items_6[____i_6]
+                        for ____i_7 = 1, ____n_6 do
+                            local it = ____items_6[____i_7]
                             ____count_5 = ____count_5 + 1
                             ____out_5[____count_5] = __K2L_StringToDouble(it:get(t:index(s.col)))
                         end
                         return __K2L_ListWrap(____out_5, ____count_5)
                     end)
-                    local ____receiver_2 = s.agg
-                    local ____subject_2 = ____receiver_2 and __K2L_Utf16Case.lowercase(____receiver_2)
+                    local ____receiver_5 = s.agg
+                    local ____subject_2 = ____receiver_5 and ____receiver_5:lower()
                     if ____subject_2 == nil then
                         ____result_7 = g:first():get(t:index(s.col))
                     elseif ____subject_2 == "count" then
@@ -617,94 +637,78 @@ local function run(t, q)
             return __K2L_ListWrap(____out_4, ____count_4)
         end)
     end
-    local ____receiver_3 = q.orderBy
-    if ____receiver_3 ~= nil then
+    local ____receiver_6 = q.orderBy
+    if ____receiver_6 ~= nil then
         do
-            local ____value_8 = q.select:indexOfFirst(function(it) return it:getLabel() == ____receiver_3 end)
-            local ____value_9 = ____value_8 >= 0 and ____value_8 or nil
-            if ____value_9 == nil then
-                error(__K2L_IllegalArgumentException.new("ORDER BY " .. ____receiver_3 .. " is not selected"))
+            local ____value_9 = q.select:indexOfFirst(function(it) return it:getLabel() == ____receiver_6 end)
+            local ____value_10 = ____value_9 >= 0 and ____value_9 or nil
+            if ____value_10 == nil then
+                error(__K2L_IllegalArgumentException.new("ORDER BY " .. ____receiver_6 .. " is not selected"))
             end
-            local i = ____value_9
+            local i = ____value_10
             local cmp = function(a, b) return compare(a:get(i), b:get(i)) end
             out = out:sortedWith(q.desc and __K2L_ReverseComparator(cmp) or cmp)
         end
     end
-    local ____receiver_4 = q.limit
-    return ____receiver_4 and out:take(____receiver_4) or out
+    local ____receiver_7 = q.limit
+    return ____receiver_7 and out:take(____receiver_7) or out
 end
 
 local data = "Name,Dept,Salary,City\r\n" .. "\"Smith, Anna\",Eng,120000,\"New York\"\r\n" .. "Bob \"Bobby\" Jones,Ops,85000,Austin\n" .. "\"Chen \"\"CJ\"\" Li\",Eng,135000.50,Seattle\n" .. "Dana,Sales,70000,\"Austin\"\n" .. "Émile,Eng,99000,Montréal\n" .. "\"Multi\nLine\",Ops,60000,\n" .. "Fay,Sales,91000,Seattle"
 
-local ____lambda_2 = function() return ____load(data) end
-local ____lambda_3 = function() return "∅" end
-local ____lambda_4 = function(it)
-    return __K2L_Text.ifEmpty(__K2L_StringReplace(it, "\n", "\\n"), ____lambda_3)
+local ____lambda_1 = function() return ____load(data) end
+local ____lambda_2 = function() return "∅" end
+local ____lambda_3 = function(it)
+    return __K2L_Text.ifEmpty(__K2L_StringReplace(it, "\n", "\\n"), ____lambda_2)
 end
-local ____lambda_5 = function(it) return it:getLabel() end
-local ____lambda_6 = function(it) return "ok " .. __K2L_Str(it) end
-local ____lambda_7 = function(it)
-    return __K2L_Str(__K2L_KClassOfValue(it).simpleName) .. ": " .. __K2L_Str(it.message)
+local ____lambda_4 = function(it) return it:getLabel() end
+local ____lambda_5 = function(it) return "ok " .. __K2L_Str(it) end
+local ____lambda_6 = function(it)
+    return __K2L_Str(__K2L_SimpleName(it)) .. ": " .. __K2L_Str(it.message)
 end
-local ____lambda_8 = function(it) return it:single() end
+local ____lambda_7 = function(it) return it:single() end
 local function main()
-    local ____receiver_5 = __K2L_RunCatching(____lambda_2):exceptionOrNull()
-    print(__K2L_Utf16.out(__K2L_Str(____receiver_5 and ____receiver_5.message)))
+    local ____receiver_8 = __K2L_RunCatching(____lambda_1):exceptionOrNull()
+    print(__K2L_Str(____receiver_8 and ____receiver_8.message))
     local fixed = __K2L_StringReplace(data, "Bob \"Bobby\" Jones", "\"Bob \"\"Bobby\"\" Jones\"")
     local t = ____load(fixed)
-    print(__K2L_Utf16.out(__K2L_Str(t.header) .. " " .. t.rows.size .. " rows"))
+    print(__K2L_Str(t.header) .. " " .. t.rows.size .. " rows")
     local ____list_5 = t.rows
-    local ____mod = ____list_5.____modCount
-    for ____i_8 = 1, ____list_5.size do
-        local r = ____list_5[____i_8]
-        print(__K2L_Utf16.out(__K2L_Utf16.norm(r:joinToString(" | ", nil, nil, nil, nil, ____lambda_4))))
-        if ____list_5.____modCount ~= ____mod and ____list_5:____comodified(____i_8) then
-            break
-        end
+    for ____i_9 = 1, ____list_5.size do
+        local r = ____list_5[____i_9]
+        print(r:joinToString(" | ", nil, nil, nil, nil, ____lambda_3))
     end
-    local queries = __K2L_ReadOnlyListOf("SELECT name, city WHERE dept = 'Eng' AND salary > 100000", "select dept, count(name), sum(salary), avg(salary) group by dept order by sum(salary) desc", "SELECT city, max(salary) GROUP BY city ORDER BY city", "SELECT name WHERE city = 'Austin' OR (dept = 'Sales' AND salary >= 91000) ORDER BY name DESC LIMIT 2", "SELECT * WHERE salary < 70000", "SELECT name WHERE name = 'Bob \"Bobby\" Jones'", "SELECT name, bogus", "SELECT name WHERE salary ~ 3", "SELECT name ORDER BY city", "SELECT name LIMIT", "SELECT name, frob(salary) GROUP BY dept", "UPDATE x")
-    local ____mod_2 = queries.____modCount
-    for ____i_10 = 1, queries.size do
-        local src = queries[____i_10]
-        print(__K2L_Utf16.out("> " .. src))
-        local ____ok, ____result_8 = __K2L_DeepPcall(function()
+    local queries = __K2L_ListOf("SELECT name, city WHERE dept = 'Eng' AND salary > 100000", "select dept, count(name), sum(salary), avg(salary) group by dept order by sum(salary) desc", "SELECT city, max(salary) GROUP BY city ORDER BY city", "SELECT name WHERE city = 'Austin' OR (dept = 'Sales' AND salary >= 91000) ORDER BY name DESC LIMIT 2", "SELECT * WHERE salary < 70000", "SELECT name WHERE name = 'Bob \"Bobby\" Jones'", "SELECT name, bogus", "SELECT name WHERE salary ~ 3", "SELECT name ORDER BY city", "SELECT name LIMIT", "SELECT name, frob(salary) GROUP BY dept", "UPDATE x")
+    for ____i_11 = 1, queries.size do
+        local src = queries[____i_11]
+        print("> " .. src)
+        local ____ok, ____result_8 = pcall(function()
             local q = QueryParser.new(src):parse()
             local res = run(t, q)
-            print(__K2L_Utf16.out("  " .. __K2L_Utf16.norm(q.select:joinToString("\t", nil, nil, nil, nil, ____lambda_5))))
-            local ____mod_1 = res.____modCount
-            for ____i_9 = 1, res.size do
-                local it = res[____i_9]
-                print(__K2L_Utf16.out("  " .. __K2L_Utf16.norm(it:joinToString("\t"))))
-                if res.____modCount ~= ____mod_1 and res:____comodified(____i_9) then
-                    break
-                end
+            print("  " .. q.select:joinToString("\t", nil, nil, nil, nil, ____lambda_4))
+            for ____i_10 = 1, res.size do
+                local it = res[____i_10]
+                print("  " .. it:joinToString("\t"))
             end
         end)
         if not ____ok then
             local ____error = __K2L_ToThrowable(____result_8)
             if __K2L_InstanceOf(____error, __K2L_IllegalArgumentException) then
                 local e = ____error
-                print(__K2L_Utf16.out("  error: " .. __K2L_Str(e.message)))
+                print("  error: " .. __K2L_Str(e.message))
             else
                 error(____error, 0)
             end
         end
-        if queries.____modCount ~= ____mod_2 and queries:____comodified(____i_10) then
-            break
-        end
     end
-    local errs = __K2L_ReadOnlyListOf("a,\"b\nc", "a,\"b\"x,c", "x,y\n1,2,3")
-    local ____mod_3 = errs.____modCount
-    for ____i_11 = 1, errs.size do
-        local e = errs[____i_11]
-        print(__K2L_Utf16.out(__K2L_RunCatching(function() return ____load(e).rows end):fold(____lambda_6, ____lambda_7)))
-        if errs.____modCount ~= ____mod_3 and errs:____comodified(____i_11) then
-            break
-        end
+    local errs = __K2L_ListOf("a,\"b\nc", "a,\"b\"x,c", "x,y\n1,2,3")
+    for ____i_12 = 1, errs.size do
+        local e = errs[____i_12]
+        print(__K2L_RunCatching(function() return ____load(e).rows end):fold(____lambda_5, ____lambda_6))
     end
-    print(__K2L_Utf16.out(__K2L_Str(csvRecords("a;b;\"c;d\"\n;;\n", ";"):toList())))
-    print(__K2L_Utf16.out(__K2L_Str(csvRecords("one\n\ntwo\n"):map(____lambda_8):toList())))
+    print(__K2L_Str(csvRecords("a;b;\"c;d\"\n;;\n", ";"):toList()))
+    print(__K2L_Str(csvRecords("one\n\ntwo\n"):map(____lambda_7):toList()))
 end
 
-__K2L_DeepMain(main)
-return {CsvError = CsvError, CsvState = CsvState, csvRecords = csvRecords, Table = Table, ____load = ____load, Cond = Cond, Select = Select, Query = Query, QueryParser = QueryParser, compare = compare, test = test, fmt = fmt, run = run, data = data}
+__K2L_RunMain(main)
+return {CsvError = CsvError, CsvState = CsvState, csvRecords = csvRecords, Table = Table, ____load = ____load, Cond = Cond, Select = Select, Query = Query, tokenize = tokenize, QueryParser = QueryParser, compare = compare, test = test, fmt = fmt, run = run, data = data}

@@ -1,12 +1,12 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_Iterator = ____lualib.__K2L_Iterator
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Countdown = __K2L_Class("Countdown")
@@ -109,5 +109,5 @@ local function main()
     print()
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Countdown = Countdown, Fib = Fib, Buffer = Buffer}

@@ -51,7 +51,6 @@ internal fun FileTransformer.lambda(e: KtLambdaExpression): LuaExpr = with(sessi
     frame.unitResult = !returnsValue && resultExpected(e)
     val body = inFrame(frame) {
         prologue + collect {
-            checkUncheckedLambdaClosure(e, params)
             lambdaBody(literal, if (returnsValue) ({ listOf(LuaReturn(listOf(it))) }) else null)
             if (frame.unitResult && buffer.lastOrNull() !is LuaReturn) emit(LuaReturn(listOf(unitObject())))
         }
@@ -89,7 +88,6 @@ internal fun FileTransformer.inlineLambda(lambdaExpr: KtExpression, args: List<L
         val frame = FunctionFrame(FunctionFrame.Kind.Inline, lambdaLabels(lambda), literal).also { it.sink = sink }
         val body = collect {
             bindLambdaParameters(literal, names, args)
-            checkUncheckedLambdaParameters(lambda, names.map { lambdaBindings[literal to it] ?: LuaNil })
             if (receiver != null) receiverBindings[literal] = receiver
             inFrame(frame) { lambdaBody(literal, sink) }
         }
@@ -239,6 +237,7 @@ internal fun FileTransformer.symbol(call: KaCallableMemberCall<*, *>) = call.par
  * constructor (`::ArrayList`) becomes a function making the mapped call.
  */
 private fun FileTransformer.constructorReference(e: KtCallableReferenceExpression, symbol: KaConstructorSymbol, psi: PsiElement?): LuaExpr {
+    with(session) { typeAliasedOriginal(symbol) }?.let { return constructorReference(e, it, it.psi) }
     val cls = symbol.containingClassId?.let(classes::classInFile)
         ?: ((psi as? KtConstructor<*>)?.getContainingClassOrObject() ?: psi as? KtClassOrObject)?.takeIf { classes.isSource(it) }
         ?: return libraryConstructorReference(e, symbol)
@@ -262,12 +261,12 @@ internal fun FileTransformer.callableReference(e: KtCallableReferenceExpression)
     val symbol = e.callableReference.mainReference.resolveToSymbol()
     val psi = symbol?.psi
     return when {
-        symbol is KaConstructorSymbol -> named(e, symbol, constructorReference(e, symbol, psi))
+        symbol is KaConstructorSymbol -> constructorReference(e, symbol, psi)
 
         psi is KtNamedFunction && psi.isMemberExtension() -> unsupported(e, "Reference to a member extension function")
 
         psi is KtNamedFunction && classes.isSource(psi) && symbol is KaCallableSymbol ->
-            functionReference(e, psi).let { named(e, symbol, varargAdapter(e, psi.valueParameters, it.leading, it.function), it.receiver) }
+            functionReference(e, psi).let { varargAdapter(e, psi.valueParameters, it.leading, it.function) }
 
         (psi is KtProperty || psi is KtParameter) && classes.isSource(psi) ->
             propertyReference(e, psi as KtNamedDeclaration) ?: unsupported(e, "This property reference")
@@ -275,7 +274,7 @@ internal fun FileTransformer.callableReference(e: KtCallableReferenceExpression)
         symbol is KaPropertySymbol -> libraryPropertyReference(e, symbol)
 
         symbol is KaCallableSymbol ->
-            libraryReference(e, symbol)?.let { named(e, symbol, it.function, it.receiver) } ?: unsupported(e, "This callable reference")
+            libraryReference(e, symbol)?.function ?: unsupported(e, "This callable reference")
 
         else -> unsupported(e, "This callable reference")
     }

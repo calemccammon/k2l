@@ -37,7 +37,7 @@ internal fun FileTransformer.enumValuesTable(c: KtClass): LuaExpr = cache(LuaInd
 internal fun FileTransformer.enumEntriesSource(rangeExpr: KtExpression): LoopSource? {
     val c = enumEntriesOf(rangeExpr) ?: return null
     val values = enumValuesTable(c)
-    return LoopSource(values, LuaUnary(LuaUnOp.Len, values), null, null)
+    return LoopSource(values, LuaUnary(LuaUnOp.Len, values))
 }
 
 /** `xs[i]` read: [enumEntryAt], or the call of `get` (see CollectionMappings). */

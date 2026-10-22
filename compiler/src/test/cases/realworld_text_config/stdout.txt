@@ -8,7 +8,7 @@ flags              TInt    170
 ratio              TFloat  -0.0025
 enabled            TBool   true
 path               TStr    "C:\\Users\\k2l\\#notacomment"
-greeting           TStr    "tab\there, newline\nthere, unicode éß"
+greeting           TStr    "tab\there, newline\nthere, unicode ��"
 ports              TArr    [8080, 8081, 8443]
 matrix             TArr    [[1, 2], [3], []]
 owner.roles        TArr    ["admin", "dev"]
@@ -31,7 +31,7 @@ flags = 170
 ratio = -0.0025
 enabled = true
 path = "C:\\Users\\k2l\\#notacomment"
-greeting = "tab\there, newline\nthere, unicode éß"
+greeting = "tab\there, newline\nthere, unicode ��"
 ports = [8080, 8081, 8443]
 matrix = [[1, 2], [3], []]
 

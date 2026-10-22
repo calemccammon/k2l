@@ -18,17 +18,9 @@ class TransformContext(val options: CompilerOptions) {
     val lualib = sortedSetOf<String>()
     val lualibNames = sortedSetOf<String>()
 
-    /** `Long` constants beyond 2^53 that are boxes in Lua (--long64 emulate on 5.1/5.2): (hi, lo) halves to the local holding the box. */
-    val longLiterals = LinkedHashMap<Pair<Long, Long>, String>()
-
     /** Other files of the module this file requires: Lua module name -> local name. */
     val imports = LinkedHashMap<String, String>()
 
-    /** Expressions wrapped to 32 bits by `--int-overflow wrap`, by identity, mapped to what they wrap (see IntOverflow.kt). */
-    val int32Pending = IdentityHashMap<LuaExpr, LuaExpr>()
-
-    /** Integer products made `x * y + 0` on float targets (never -0), by identity, mapped to the product (see IntOverflow.kt). */
-    val zeroPending = IdentityHashMap<LuaExpr, LuaExpr>()
     private val generated = mutableMapOf<String, Int>()
 
     /** Kotlin position of the statements the transformer emitted; only filled with [CompilerOptions.sourceMap]. */
@@ -61,9 +53,9 @@ class TransformContext(val options: CompilerOptions) {
 }
 
 object LuaNames {
-    /** Globals the generated code relies on; user declarations must not shadow them. */
+    /** Globals the generated code relies on (LuaJIT's `bit` library among them); user declarations must not shadow them. */
     private val RESERVED_GLOBALS = setOf(
-        "_G", "_ENV", "assert", "coroutine", "debug", "error", "getmetatable", "io", "ipairs", "load", "math",
+        "_G", "_ENV", "assert", "bit", "coroutine", "debug", "error", "getmetatable", "io", "ipairs", "load", "math",
         "next", "os", "package", "pairs", "pcall", "print", "rawequal", "rawget", "rawlen", "rawset", "require",
         "select", "self", "setmetatable", "string", "table", "tonumber", "tostring", "type", "unpack", "utf8", "xpcall",
     )

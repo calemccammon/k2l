@@ -1,12 +1,9 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Jump = ____lualib.__K2L_Jump
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NewJump = ____lualib.__K2L_NewJump
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_Text = ____lualib.__K2L_Text
@@ -15,7 +12,7 @@ local function forEachJumps()
     local log = ""
     for i = 0, 4 do
         do
-            local ____list = __K2L_ReadOnlyListOf(1, 2, 3)
+            local ____list = __K2L_ListOf(1, 2, 3)
             for ____i = 1, ____list.size do
                 local it = ____list[____i]
                 if it == 2 and i == 3 then
@@ -37,7 +34,7 @@ local function mapJumps(stopAt)
     local rows = __K2L_ListOf()
     for i = 0, 4 do
         do
-            local ____list_1 = __K2L_ReadOnlyListOf(1, 2, 3)
+            local ____list_1 = __K2L_ListOf(1, 2, 3)
             local ____result = __K2L_ListOf()
             for _, it in ipairs(____list_1) do
                 local ____result_1
@@ -68,7 +65,7 @@ local function labeled()
         do
             for j = 0, 3 do
                 do
-                    local ____list_2 = __K2L_ReadOnlyListOf("a", "b")
+                    local ____list_2 = __K2L_ListOf("a", "b")
                     for ____i_1 = 1, ____list_2.size do
                         local s = ____list_2[____i_1]
                         local k = ____i_1 - 1
@@ -119,7 +116,7 @@ local function scopeFunctions()
         do
             m = m + 1
             local ____value_1 = m
-            if (____value_1 >= 0 and ____value_1 % 2 or 0 - -____value_1 % 2) == 0 then
+            if ____value_1 % 2 == 0 then
                 goto ____continue_5
             end
             log = log .. "-" .. m
@@ -131,7 +128,7 @@ end
 
 local function stringAndSequence()
     local log = ""
-    local ____list_3 = __K2L_ReadOnlyListOf("abc", "xyz", "stop", "end")
+    local ____list_3 = __K2L_ListOf("abc", "xyz", "stop", "end")
     for ____i_2 = 1, ____list_3.size do
         local w = ____list_3[____i_2]
         do
@@ -204,7 +201,7 @@ local function passedOn(s)
     do
         local ____jump = __K2L_NewJump()
         local ____value_2
-        local ____ok, ____result_5 = __K2L_DeepPcall(function()
+        local ____ok, ____result_5 = pcall(function()
             ____value_2 = __K2L_Text.trimWith(s, 3, function(it)
                 if it == "!" then
                     __K2L_Jump(____jump, 1, "returned via trimWith")
@@ -226,7 +223,7 @@ local function passedOn(s)
     do
         local ____jump_1 = __K2L_NewJump()
         local ____value_3
-        local ____ok_1, ____result_8 = __K2L_DeepPcall(function()
+        local ____ok_1, ____result_8 = pcall(function()
             ____value_3 = __K2L_Text.trimWith(s, 3, function(it)
                 local ____result_7
                 if it == "?" then
@@ -257,7 +254,7 @@ local function passedOnJumps()
             do
                 local ____jump_2 = __K2L_NewJump()
                 local ____value_4
-                local ____ok_2, ____result_11 = __K2L_DeepPcall(function()
+                local ____ok_2, ____result_11 = pcall(function()
                     ____value_4 = __K2L_Text.trimWith("ab", 3, function(it)
                         local ____result_10
                         if k == 1 then
@@ -301,10 +298,10 @@ local function viaTrim(s)
             local it = 1 + i
             local ____jump_3 = __K2L_NewJump()
             local ____value_5
-            local ____ok_3, ____result_12 = __K2L_DeepPcall(function()
+            local ____ok_3, ____result_12 = pcall(function()
                 ____value_5 = __K2L_Text.trimWith(s, 3, function(c)
                     if c:byte() > it then
-                        __K2L_Jump(____jump_3, 1, __K2L_ReadOnlyListOf())
+                        __K2L_Jump(____jump_3, 1, __K2L_ListOf())
                     else
                         return true
                     end
@@ -318,7 +315,7 @@ local function viaTrim(s)
             end
         end
     end
-    return __K2L_SingletonListOf(#s)
+    return __K2L_ListOf(#s)
 end
 
 local function nestedInlineReturns(a, b)
@@ -385,5 +382,5 @@ local function main()
     print(returnFromLoopInRun(9))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {forEachJumps = forEachJumps, mapJumps = mapJumps, labeled = labeled, scopeFunctions = scopeFunctions, stringAndSequence = stringAndSequence, twice = twice, userInline = userInline, trimWith = trimWith, trimVia = trimVia, passedOn = passedOn, passedOnJumps = passedOnJumps, capped = capped, viaTrim = viaTrim, nestedInlineReturns = nestedInlineReturns, returnFromLoopInRun = returnFromLoopInRun}

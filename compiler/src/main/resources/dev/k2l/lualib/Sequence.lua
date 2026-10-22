@@ -129,7 +129,6 @@ end
 -- the JVM). Operations that stop early pull only the elements they need, so they also work on infinite sequences; the others,
 -- and a `for` loop, read all of it.
 local __K2L_SequenceIterable = __K2L_Class("kotlin.sequences.SequencesKt$asIterable", __K2L_Iterable)
-__K2L_SequenceIterable.____readOnly = true
 
 function __K2L_SequenceIterable:____init(sequence)
     self.____sequence = sequence
@@ -706,7 +705,7 @@ function __K2L_Sequence:windowed(size, step, partialWindows, transform)
             for i = 1, n do
                 window[i] = buffer[first + i - 1]
             end
-            window.size, window.____modCount = n, 0
+            window.size = n
             setmetatable(window, __K2L_List)
             local dropped = math.min(step, n)
             for i = first, first + dropped - 1 do
@@ -879,9 +878,10 @@ function __K2L_Sequence:toSet()
 end
 
 __K2L_Sequence.toMutableSet = __K2L_Sequence.toSet
--- a HashSet, which iterates in the JVM's hash order
-function __K2L_Sequence:toHashSet()
-    return __K2L_HashSet.new(self:toList())
+__K2L_Sequence.toHashSet = __K2L_Sequence.toSet
+
+function __K2L_Sequence:toSortedSet(comparator)
+    return self:toList():toSortedSet(comparator)
 end
 
 function __K2L_Sequence:forEach(action)
@@ -1529,8 +1529,4 @@ function __K2L_Sequence:shuffled(random)
             return true, last
         end
     end)
-end
-
-function __K2L_Sequence:toSortedSet(comparator)
-    return self:toList():toSortedSet(comparator)
 end

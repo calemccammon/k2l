@@ -3,7 +3,6 @@
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.random.nextLong
-import kotlin.random.nextUInt
 
 // a 32-bit LCG, in Long arithmetic so that no Int overflows (and every product stays below 2^53)
 open class Lcg(seed: Long) : Random() {
@@ -34,7 +33,6 @@ fun show(name: String, rng: Random) {
     println("  longs: ${rng.nextLong(1000L)} ${rng.nextLong(-5L, 5L)} ${rng.nextLong(1L shl 40)} ${rng.nextLong(1L shl 32)} " +
         "${rng.nextLong(3L shl 33)} ${rng.nextLong(10L..20L)}")
     println("  bytes: ${rng.nextBytes(7).toList()} ${rng.nextBytes(ByteArray(8), 1, 6).toList()} ${rng.nextBytes(0).size}")
-    println("  unsigned: ${rng.nextUInt()} ${rng.nextUInt(10u)} ${rng.nextUInt(5u, 50u)}")
     println("  bits: ${rng.nextBits(0)} ${rng.nextBits(1)} ${rng.nextBits(31)}")
 }
 

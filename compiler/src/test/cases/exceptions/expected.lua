@@ -1,15 +1,13 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArithmeticException = ____lualib.__K2L_ArithmeticException
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_NullPointerException = ____lualib.__K2L_NullPointerException
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
@@ -29,7 +27,7 @@ local function parsePositive(n)
 end
 
 local function risky(mode)
-    local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
+    local ____ok, ____result, ____returned = pcall(function()
         if mode == 0 then
             return true, "ok"
         elseif mode == 1 then
@@ -41,7 +39,7 @@ local function risky(mode)
         end
     end)
     if not ____ok then
-        ____ok, ____result, ____returned = __K2L_DeepPcall(function()
+        ____ok, ____result, ____returned = pcall(function()
             local ____error = __K2L_ToThrowable(____result)
             if getmetatable(____error) == ValidationError then
                 local e = ____error
@@ -64,8 +62,8 @@ local function risky(mode)
 end
 
 local function safeDivide(a, b)
-    local ____ok_1, ____result_1, ____returned_1 = __K2L_DeepPcall(function()
-        return true, __K2L_IDiv(a, b)
+    local ____ok_1, ____result_1, ____returned_1 = pcall(function()
+        return true, a // b
     end)
     if ____ok_1 then
         if ____result_1 then
@@ -85,7 +83,7 @@ end
 
 local function main()
     print(parsePositive(5))
-    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_2 = pcall(function()
         parsePositive(-1)
     end)
     if not ____ok_2 then
@@ -100,7 +98,7 @@ local function main()
     print(risky(0))
     print(risky(1))
     print(risky(2))
-    local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
+    local ____ok_3, ____result_3 = pcall(function()
         risky(3)
     end)
     if not ____ok_3 then
@@ -113,12 +111,11 @@ local function main()
         end
     end
     print(safeDivide(10, 2))
-    print(safeDivide(1, 0))
     local e = ValidationError.new("name")
     print(__K2L_InstanceOf(e, __K2L_IllegalArgumentException))
     print(__K2L_InstanceOf(e, __K2L_RuntimeException))
     print(__K2L_Str(e))
-    local ____ok_4, ____result_4 = __K2L_DeepPcall(function()
+    local ____ok_4, ____result_4 = pcall(function()
         if not (1 > 2) then
             error(__K2L_IllegalArgumentException.new("one is not greater"))
         end
@@ -132,7 +129,7 @@ local function main()
             error(____error_4, 0)
         end
     end
-    local ____ok_5, ____result_5 = __K2L_DeepPcall(function()
+    local ____ok_5, ____result_5 = pcall(function()
         if true then
             error(__K2L_IllegalStateException.new("Check failed."))
         end
@@ -147,7 +144,7 @@ local function main()
         end
     end
     local value = nil
-    local ____ok_6, ____result_6 = __K2L_DeepPcall(function()
+    local ____ok_6, ____result_6 = pcall(function()
         print(#__K2L_NotNull(value))
     end)
     if not ____ok_6 then
@@ -162,7 +159,7 @@ local function main()
     local attempts = 0
     while attempts < 3 do
         attempts = attempts + 1
-        local ____ok_7, ____result_7 = __K2L_DeepPcall(function()
+        local ____ok_7, ____result_7 = pcall(function()
             if attempts < 3 then
                 error(__K2L_RuntimeException.new("try again"))
             end
@@ -180,5 +177,5 @@ local function main()
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {ValidationError = ValidationError, parsePositive = parsePositive, risky = risky, safeDivide = safeDivide}

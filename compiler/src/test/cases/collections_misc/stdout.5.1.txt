@@ -1,0 +1,28 @@
+0
+6
+9
+parts: a b
+(x, 1)
+x1
+x=1
+(1, two, 3)
+[Version(major=0, minor=9), Version(major=1, minor=0), Version(major=1, minor=2)]
+true
+Version(major=1, minor=2)
+[Version(major=1, minor=0), Version(major=1, minor=2), Version(major=0, minor=9)]
+[Version(major=1, minor=0), Version(major=1, minor=2), Version(major=0, minor=9)]
+[3, 6, 9]
+[1, 4, 9, 16]
+[10, 6, 2]
+true
+55
+1..10
+[0, 2, 4, 6, 8]
+[Apple, banana, cherry]
+17
+2
+{banana=0, Apple=1, cherry=2}
+[3, 2, 1]
+1
+[2, 3]
+[3, 5, 7]

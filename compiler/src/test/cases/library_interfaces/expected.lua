@@ -14,16 +14,13 @@ local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_Iterator = ____lualib.__K2L_Iterator
-local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NaturalOrder = ____lualib.__K2L_NaturalOrder
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_PropertyOverride = ____lualib.__K2L_PropertyOverride
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_ReverseComparator = ____lualib.__K2L_ReverseComparator
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RunnableMixin = ____lualib.__K2L_RunnableMixin
-local __K2L_SortedSet = ____lualib.__K2L_SortedSet
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
@@ -90,7 +87,6 @@ function Count:next()
 end
 
 local Upto = __K2L_Class("Upto", __K2L_IterableBase)
-Upto.____readOnly = true
 
 function Upto:____init(n)
     self.n = n
@@ -154,7 +150,7 @@ local Check = __K2L_Class("Check")
 local ____lambda_3 = function(it) return it end
 local ____lambda_4 = function(a, b) return __K2L_Text.compare(b, a) end
 local function comparators()
-    local words = __K2L_ReadOnlyListOf("ccc", "a", "bb", "dddd", "ee")
+    local words = __K2L_ListOf("ccc", "a", "bb", "dddd", "ee")
     local byLength = ByLength.new()
     print(__K2L_Str(words:sortedWith(byLength)))
     print("calls " .. byLength.calls .. " " .. byLength:compare("aa", "b"))
@@ -164,21 +160,20 @@ local function comparators()
     print(words:maxWith(byLength) .. " " .. __K2L_Str(words:minWithOrNull(byLength)))
     local mutable = words:toMutableList()
     mutable:sortWith(byLength)
-    __K2L_JdkCollections.sort(mutable, ByLength.new())
+    mutable:sortWith(ByLength.new())
     print(__K2L_Str(mutable))
-    local tree = __K2L_SortedSet.new(ByLength.new())
-    tree:addAll(words)
+    local tree = words:toSortedSet(ByLength.new())
     print(__K2L_Str(tree))
     local sam = ____lambda_4
     print(__K2L_Str(words:sortedWith(sam)) .. " " .. sam("a", "b") .. " " .. __K2L_Str(words:sortedWith(__K2L_ReverseComparator(sam))))
-    local arr = words:toTypedArray("[Ljava.lang.String;")
-    __K2L_JdkCollections.sort_array(arr, byLength)
+    local arr = words:toTypedArray()
+    arr:sortWith(byLength)
     print(__K2L_Str(arr:toList()))
 end
 
 local ____lambda_5 = function(it) return it end
 local function comparables()
-    local vs = __K2L_ReadOnlyListOf(Version.new(1, 2), Version.new(0, 9), Version.new(1, 0))
+    local vs = __K2L_ListOf(Version.new(1, 2), Version.new(0, 9), Version.new(1, 0))
     print(__K2L_Str(vs:sorted()) .. " " .. __K2L_Str(vs:max()) .. " " .. __K2L_Str(vs:minOrNull()) .. " " .. __K2L_Str(vs:sortedDescending()))
     print(tostring(__K2L_Compare(Version.new(1, 0), Version.new(1, 1)) < 0) .. " " .. tostring(__K2L_Compare(Version.new(2, 0), Version.new(1, 9)) >= 0) .. " " .. Version.new(1, 1):compareTo(Version.new(1, 1)))
     print(__K2L_Str(__K2L_Num.coerceIn(Version.new(3, 0), Version.new(1, 0), Version.new(2, 0))) .. " " .. __K2L_Str(__K2L_Num.maxOf(Version.new(1, 0), Version.new(0, 5))) .. " " .. __K2L_Str(vs:sortedBy(____lambda_5, true)))
@@ -186,9 +181,7 @@ local function comparables()
 end
 
 local ____lambda_6 = function(it) return it * it end
-local ____lambda_7 = function(it)
-    return (it >= 0 and it % 2 or 0 - -it % 2) == 0
-end
+local ____lambda_7 = function(it) return it % 2 == 0 end
 local function iterators()
     for _, x in __K2L_Iterator.iter(Count.new(3)) do
         io.write(x .. " ")
@@ -212,27 +205,21 @@ local function iterators()
     print("total " .. total .. " " .. u:first() .. " " .. u:last() .. " " .. tostring(u:contains(3)) .. " " .. __K2L_Str(u:sortedDescending()) .. " " .. __K2L_Str(u:toSet()) .. " " .. __K2L_Str(u:zip(u:drop(1))))
 end
 
-local ____lambda_8 = function(it)
-    return (it >= 0 and it % 2 or 0 - -it % 2) == 0
-end
+local ____lambda_8 = function(it) return it % 2 == 0 end
 local function others()
     local l = Letters.new("hello")
     print(l:getLength() .. " " .. l:get(1) .. " " .. __K2L_Str(l:subSequence(1, 3)) .. " " .. __K2L_Str(l) .. " " .. "[" .. __K2L_Str(l) .. "]" .. " " .. l:toString():upper())
     Task.new("t1"):run()
-    local tasks = __K2L_ReadOnlyListOf(Task.new("t2"), function()
+    local tasks = __K2L_ListOf(Task.new("t2"), function()
         print("lambda runnable")
     end)
-    local ____mod = tasks.____modCount
     for ____i_2 = 1, tasks.size do
         local it = tasks[____i_2]
         it()
-        if tasks.____modCount ~= ____mod and tasks:____comodified(____i_2) then
-            break
-        end
     end
     print(Answer.new():call())
     local d = Doubler.new()
-    print(d:invoke(4) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf(1, 2):map(d)))
+    print(d:invoke(4) .. " " .. __K2L_Str(__K2L_ListOf(1, 2):map(d)))
     local even = __K2L_FunInterface(Check, "test", ____lambda_8)
     print(tostring(even:test(4)) .. " " .. tostring(even:test(3)))
 end
@@ -313,9 +300,7 @@ end
 local ____lambda_9 = function(x, y) return #y - #x end
 local ____lambda_10 = function(it) return it .. it end
 local ____lambda_11 = function(it) return it > 1 end
-local ____lambda_12 = function(it)
-    return (it >= 0 and it % 2 or 0 - -it % 2) == 1
-end
+local ____lambda_12 = function(it) return it % 2 == 1 end
 local ____lambda_13 = function(____a, ____b)
     return __K2L_CompareValues(____a, ____b)
 end
@@ -324,19 +309,19 @@ local function more()
         print("sam lambda")
     end)
     twice(Task.new("t3"))
-    print(smallest(__K2L_ReadOnlyListOf("bb", "a"), ByLength.new()) .. " " .. smallest(__K2L_ReadOnlyListOf("bb", "a"), ____lambda_9))
+    print(smallest(__K2L_ListOf("bb", "a"), ByLength.new()) .. " " .. smallest(__K2L_ListOf("bb", "a"), ____lambda_9))
     local r = Reverse.new()
-    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 3, 2):sortedWith(r)) .. " " .. r.name .. " " .. tostring(type(r) == "function" or __K2L_InstanceOf(r, __K2L_ComparatorMixin)) .. " " .. __K2L_ReadOnlyListOf(5, 9):maxWith(r))
-    print(__K2L_Str(__K2L_ReadOnlyListOf("b", "aa", "c"):sortedWith(__K2L_CompareByWith(ByLength.new(), ____lambda_10))))
+    print(__K2L_Str(__K2L_ListOf(1, 3, 2):sortedWith(r)) .. " " .. r.name .. " " .. tostring(type(r) == "function" or __K2L_InstanceOf(r, __K2L_ComparatorMixin)) .. " " .. __K2L_ListOf(5, 9):maxWith(r))
+    print(__K2L_Str(__K2L_ListOf("b", "aa", "c"):sortedWith(__K2L_CompareByWith(ByLength.new(), ____lambda_10))))
     print(describe(Letters.new("hello")) .. " " .. describe("world") .. " " .. tostring(__K2L_StringContains(__K2L_CharSequenceText(Letters.new("foo")), "o")) .. " " .. __K2L_Text.first(__K2L_CharSequenceText(Letters.new("abc"))))
-    print(countMatching(__K2L_ReadOnlyListOf(1, 2, 3, 4), __K2L_FunInterface(Check, "test", ____lambda_11)) .. " " .. countMatching(__K2L_ReadOnlyListOf(1, 2, 3), __K2L_FunInterface(Check, "test", ____lambda_12)))
-    local b = Backwards.new(__K2L_ReadOnlyListOf("x", "y", "z"))
+    print(countMatching(__K2L_ListOf(1, 2, 3, 4), __K2L_FunInterface(Check, "test", ____lambda_11)) .. " " .. countMatching(__K2L_ListOf(1, 2, 3), __K2L_FunInterface(Check, "test", ____lambda_12)))
+    local b = Backwards.new(__K2L_ListOf("x", "y", "z"))
     local seen = __K2L_ListOf()
     for _, s in __K2L_Iterator.iter(b) do
         seen:add(s)
     end
     print(__K2L_Str(seen) .. " " .. tostring(b:hasPrevious()) .. " " .. b:previous() .. " " .. b:nextIndex())
-    print(__K2L_Str(__K2L_Num.coerceAtLeast(Version.new(1, 5), Version.new(2, 0))) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf(Version.new(0, 1), Version.new(0, 0)):sortedWith(____lambda_13)))
+    print(__K2L_Str(__K2L_Num.coerceAtLeast(Version.new(1, 5), Version.new(2, 0))) .. " " .. __K2L_Str(__K2L_ListOf(Version.new(0, 1), Version.new(0, 0)):sortedWith(____lambda_13)))
 end
 
 local function main()
@@ -347,5 +332,5 @@ local function main()
     others()
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {ByLength = ByLength, Version = Version, Count = Count, Upto = Upto, Letters = Letters, Task = Task, Answer = Answer, Doubler = Doubler, Check = Check, comparators = comparators, comparables = comparables, iterators = iterators, others = others, Named = Named, Reverse = Reverse, Backwards = Backwards, describe = describe, countMatching = countMatching, twice = twice, smallest = smallest, more = more}

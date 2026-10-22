@@ -75,12 +75,7 @@ internal fun FileTransformer.dataClassMembers(c: KtClass, ref: LuaExpr): Unit = 
             props.map { p ->
                 val key = LuaString(p.name!!)
                 val (mine, theirs) = LuaIndex(selfRef(), key) to LuaIndex(other, key)
-                // a Double (Float) property compares with Double.compare (NaN equals NaN, 0.0 and -0.0 differ), not IEEE `==`
-                if (with(session) { isFloating(p.returnType) }) {
-                    LuaCall(lualibRef("Equals", "__K2L_DoubleEquals"), listOf(mine, theirs))
-                } else {
-                    equality(mine, p.returnType, theirs, p.returnType, negated = false)
-                }
+                equality(mine, p.returnType, theirs, p.returnType, negated = false)
             }
         emitMethod(ref, "equals", listOf("other"), listOf(LuaReturn(listOf(checks.reduce { a, b -> LuaBinary(LuaBinOp.And, a, b) }))))
     }
@@ -141,6 +136,11 @@ private fun FileTransformer.dataClassCopy(call: KaCallableMemberCall<*, *>, cls:
     val source = cache(receiver, "source")
     val mapping = (call as KaFunctionCall<*>).valueArgumentMapping.entries.toList()
     val provided = mapping.map { it.value.symbol.name.asString() }.zip(ordered(mapping.map { it.key })).toMap()
-    val args = cls.primaryConstructorParameters.map { p -> provided[p.name] ?: propertyRead(source, p) }
+    val nullable = mapping.filter { it.key.expressionType?.isMarkedNullable == true }.map { it.value.symbol.name.asString() }.toSet()
+    val args = cls.primaryConstructorParameters.map { p ->
+        val value = provided[p.name] ?: return@map propertyRead(source, p)
+        // a null for a constructor parameter whose default is not null (see nullArgument)
+        if (p.name in nullable && p.hasDefaultValue() && !isNullDefault(p.defaultValue)) nullArgument(value) else value
+    }
     return LuaCall(LuaIndex(classRef(cls), LuaString("new")), args)
 }

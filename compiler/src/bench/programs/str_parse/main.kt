@@ -12,14 +12,14 @@ class Lcg(private var seed: Int) {
 
 val LEVELS = listOf("INFO", "WARN", "ERROR", "DEBUG")
 val PATHS = listOf("/api/users", "/api/orders", "/static/app.js", "/login", "/api/items/42", "/health")
-val LINE = Regex("""^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d) \[(\w+)] (\S+) (GET|POST) (\S+) (\d{3}) (\d+)ms(?: user=(\w+))?$""")
+val LINE = Regex("""^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d) \[(\w+)] (\S+) ([A-Z]+) (\S+) (\d{3}) (\d+)ms(.*)$""")
 
 data class Entry(val hour: Int, val level: String, val service: String, val method: String, val path: String, val status: Int, val ms: Int, val user: String?)
 
 fun parse(line: String): Entry? {
     val m = LINE.matchEntire(line) ?: return null
     val g = m.groupValues
-    return Entry(g[4].toInt(), g[7], g[8], g[9], g[10], g[11].toInt(), g[12].toInt(), m.groups[13]?.value)
+    return Entry(g[4].toInt(), g[7], g[8], g[9], g[10], g[11].toInt(), g[12].toInt(), g[13].removePrefix(" user=").ifEmpty { null })
 }
 
 fun parseCsvLine(line: String): List<String> {

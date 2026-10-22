@@ -1,0 +1,22 @@
+[A, B, C, D, Z, AA, AB, AZ, BA, ZZ, AAA]
+[0, 25, 26, 51, 701, 702]
+Col(index=54) 12 true [A1, B1, A2, B2]
+bad reference '1A'
+A1 = 10
+B1 = (A1 * 2)
+C1 = MAX(A1:B3)
+A2 = 32.5
+B2 = (B1 + A3)
+C2 = (C1 / A4)
+A3 = SUM(A1:A2)
+B3 = AVG(A1:B2)
+C3 = ((B3 - A1) - 1)
+order: [A1, B1, A2, A3, B2, B3, C1, C2, C3]
+  1 |    10.00    20.00    62.50
+  2 |    32.50    62.50      nan
+  3 |    42.50    31.25    20.25
+C2 is NaN: true, evaluations=19
+[10, 32.5, 42.5]
+((2 + A1) * 3) refs=[A1]
+cycle: A1 -> C3 -> A1 (length 3)
+UninitializedPropertyAccessException

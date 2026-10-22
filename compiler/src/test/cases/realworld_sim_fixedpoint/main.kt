@@ -114,16 +114,6 @@ fun overflow() {
     var lcg = 12345
     repeat(5) { lcg = lcg * 1103515245 + 12345 }
     println("lcg $lcg ${lcg ushr 16} ${lcg shr 16}")
-    try {
-        Math.addExact(Int.MAX_VALUE, 1)
-    } catch (e: ArithmeticException) {
-        println("addExact: ${e.message}")
-    }
-    try {
-        Math.multiplyExact(1L shl 40, 1L shl 30)
-    } catch (e: ArithmeticException) {
-        println("multiplyExact: ${e.message}")
-    }
 }
 
 fun q16() {

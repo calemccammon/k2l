@@ -1,17 +1,14 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Iterator = ____lualib.__K2L_Iterator
 local __K2L_IteratorBuilder = ____lualib.__K2L_IteratorBuilder
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
@@ -27,9 +24,9 @@ function Node.new(id, children)
 end
 
 local function chain(n)
-    local node = Node.new(n, __K2L_ReadOnlyListOf())
+    local node = Node.new(n, __K2L_ListOf())
     for i = n - 1, 0, -1 do
-        node = Node.new(i, __K2L_SingletonListOf(node))
+        node = Node.new(i, __K2L_ListOf(node))
     end
     return node
 end
@@ -38,20 +35,16 @@ local function tree(depth, id)
     if id == nil then
         id = 1
     end
-    return Node.new(id, depth == 0 and __K2L_ReadOnlyListOf() or __K2L_ReadOnlyListOf(tree(depth - 1, id * 2), tree(depth - 1, id * 2 + 1)))
+    return Node.new(id, depth == 0 and __K2L_ListOf() or __K2L_ListOf(tree(depth - 1, id * 2), tree(depth - 1, id * 2 + 1)))
 end
 
 local function walk(n)
     return __K2L_SequenceBuilder(function(self)
         self:yield(n.id)
         local ____list = n.children
-        local ____mod = ____list.____modCount
         for ____i = 1, ____list.size do
             local c = ____list[____i]
             self:yieldAll(walk(c))
-            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-                break
-            end
         end
     end)
 end
@@ -60,13 +53,9 @@ local function walkIt(n)
     return __K2L_IteratorBuilder(function(____this)
         ____this:yield(n.id)
         local ____list_1 = n.children
-        local ____mod_1 = ____list_1.____modCount
         for ____i_1 = 1, ____list_1.size do
             local c = ____list_1[____i_1]
             ____this:yieldAll(walkIt(c))
-            if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_1) then
-                break
-            end
         end
     end)
 end
@@ -106,11 +95,11 @@ local function catching(n, at, catchAt)
             error(Boom.new("thrown at " .. n))
         end
         ____this_3:yield(n)
-        local ____ok, ____result = __K2L_DeepPcall(function()
+        local ____ok, ____result = pcall(function()
             ____this_3:yieldAll(catching(n + 1, at, catchAt))
         end)
         if not ____ok then
-            ____ok, ____result = __K2L_DeepPcall(function()
+            ____ok, ____result = pcall(function()
                 local ____error = __K2L_ToThrowable(____result)
                 if getmetatable(____error) == Boom then
                     local e = ____error
@@ -123,7 +112,7 @@ local function catching(n, at, catchAt)
                 end
             end)
         end
-        if (n >= 0 and n % 1000 or 0 - -n % 1000) == 0 then
+        if n % 1000 == 0 then
             log:add("finally " .. n)
         end
         if not ____ok then
@@ -143,13 +132,13 @@ end
 
 local function guarded(n, ____until)
     return __K2L_SequenceBuilder(function(____this_5)
-        local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+        local ____ok_1, ____result_1 = pcall(function()
             ____this_5:yield(n)
             if n < ____until then
                 ____this_5:yieldAll(guarded(n + 1, ____until))
             end
         end)
-        if (n >= 0 and n % 1000 or 0 - -n % 1000) == 0 then
+        if n % 1000 == 0 then
             log:add("finally " .. n)
         end
         if not ____ok_1 then
@@ -207,13 +196,13 @@ local function main()
     end):toList()))
     print(tostring(partial:hasNext()) .. " " .. tostring(ahead:hasNext()) .. " " .. tostring(done:hasNext()))
     local mixed = __K2L_SequenceBuilder(function(____this_8)
-        ____this_8:yieldAll(__K2L_ReadOnlyListOf(1, 2))
+        ____this_8:yieldAll(__K2L_ListOf(1, 2))
         ____this_8:yieldAll(walk(chain(2)):map(____lambda_1))
         ____this_8:yieldAll(__K2L_SequenceOf(7))
         ____this_8:yieldAll(walk(tree(1)))
     end)
     print(__K2L_Str(mixed:toList()))
-    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_2 = pcall(function()
         failing(0, 4000):count()
     end)
     if not ____ok_2 then
@@ -225,7 +214,7 @@ local function main()
             error(____error_2, 0)
         end
     end
-    local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
+    local ____ok_3, ____result_3 = pcall(function()
         catching(0, 3000, 1000):count()
     end)
     if not ____ok_3 then
@@ -239,7 +228,7 @@ local function main()
     end
     print(guarded(0, 2500):count())
     local caughtInside = __K2L_SequenceBuilder(function(____this_9)
-        local ____ok_4, ____result_4 = __K2L_DeepPcall(function()
+        local ____ok_4, ____result_4 = pcall(function()
             ____this_9:yieldAll(failing(0, 3))
         end)
         if not ____ok_4 then
@@ -252,7 +241,7 @@ local function main()
             end
         end
     end)
-    local ____ok_5, ____result_5 = __K2L_DeepPcall(function()
+    local ____ok_5, ____result_5 = pcall(function()
         print(__K2L_Str(caughtInside:toList()))
     end)
     if not ____ok_5 then
@@ -266,7 +255,7 @@ local function main()
     end
     local function attempt(label, s)
         local got = __K2L_ListOf()
-        local ____ok_6, ____result_6 = __K2L_DeepPcall(function()
+        local ____ok_6, ____result_6 = pcall(function()
             for _, x in s:iter() do
                 got:add(x)
             end
@@ -283,7 +272,7 @@ local function main()
         end
     end
     attempt("before the first element", __K2L_SequenceBuilder(function(____this_10)
-        local ____ok_7, ____result_7 = __K2L_DeepPcall(function()
+        local ____ok_7, ____result_7 = pcall(function()
             ____this_10:yieldAll(failing(3, 3))
         end)
         if not ____ok_7 then
@@ -297,7 +286,7 @@ local function main()
         end
     end))
     attempt("nested before the first element", __K2L_SequenceBuilder(function(____this_11)
-        local ____ok_8, ____result_8 = __K2L_DeepPcall(function()
+        local ____ok_8, ____result_8 = pcall(function()
             ____this_11:yieldAll(__K2L_SequenceBuilder(function(____this_12)
                 ____this_12:yieldAll(__K2L_SequenceBuilder(function(____this_13)
                     error(Boom.new("deep"))
@@ -316,7 +305,7 @@ local function main()
     end))
     attempt("after some elements", __K2L_SequenceBuilder(function(____this_14)
         ____this_14:yield(1)
-        local ____ok_9, ____result_9 = __K2L_DeepPcall(function()
+        local ____ok_9, ____result_9 = pcall(function()
             ____this_14:yieldAll(failing(5, 5))
         end)
         if not ____ok_9 then
@@ -336,7 +325,7 @@ local function main()
     end)
     started:next()
     attempt("partly read iterator", __K2L_SequenceBuilder(function(____this_16)
-        local ____ok_10, ____result_10 = __K2L_DeepPcall(function()
+        local ____ok_10, ____result_10 = pcall(function()
             ____this_16:yieldAll(started)
         end)
         if not ____ok_10 then
@@ -357,7 +346,7 @@ local function main()
     buffered:next()
     buffered:hasNext()
     attempt("iterator with a pulled element", __K2L_SequenceBuilder(function(____this_18)
-        local ____ok_11, ____result_11 = __K2L_DeepPcall(function()
+        local ____ok_11, ____result_11 = pcall(function()
             ____this_18:yieldAll(buffered)
         end)
         if not ____ok_11 then
@@ -371,7 +360,7 @@ local function main()
         end
     end))
     attempt("deep before the first element", __K2L_SequenceBuilder(function(____this_19)
-        local ____ok_12, ____result_12 = __K2L_DeepPcall(function()
+        local ____ok_12, ____result_12 = pcall(function()
             ____this_19:yieldAll(dive(300))
         end)
         if not ____ok_12 then
@@ -385,7 +374,7 @@ local function main()
         end
     end))
     attempt("deep after the elements", __K2L_SequenceBuilder(function(____this_20)
-        local ____ok_13, ____result_13 = __K2L_DeepPcall(function()
+        local ____ok_13, ____result_13 = pcall(function()
             ____this_20:yieldAll(catching(0, 3000, 0))
         end)
         if not ____ok_13 then
@@ -403,5 +392,5 @@ local function main()
     print(again:sum() .. " " .. again:sum())
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Node = Node, chain = chain, tree = tree, walk = walk, walkIt = walkIt, log = log, countdown = countdown, Boom = Boom, failing = failing, catching = catching, dive = dive, guarded = guarded, Countdown = Countdown}

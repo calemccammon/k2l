@@ -217,11 +217,23 @@ class TomlParser(text: String) {
                 val hex = src.substring(i, minOf(i + n, src.length))
                 val cp = hex.takeIf { it.length == n }?.toIntOrNull(16) ?: fail("bad unicode escape '\\$e$hex'")
                 if (cp in 0xD800..0xDFFF || cp > 0x10FFFF) fail("invalid code point U+${hex.uppercase()}")
-                sb.appendCodePoint(cp)
+                appendUtf8(sb, cp)
                 i += n
             }
             else -> fail("unknown escape '\\$e'")
         }
+    }
+}
+
+// Strings are bytes in Lua: a code point is appended as its UTF-8 bytes, one Char each.
+fun appendUtf8(sb: StringBuilder, cp: Int) {
+    when {
+        cp < 0x80 -> sb.append(cp.toChar())
+        cp < 0x800 -> sb.append((0xC0 or (cp shr 6)).toChar()).append((0x80 or (cp and 0x3F)).toChar())
+        cp < 0x10000 -> sb.append((0xE0 or (cp shr 12)).toChar()).append((0x80 or ((cp shr 6) and 0x3F)).toChar())
+            .append((0x80 or (cp and 0x3F)).toChar())
+        else -> sb.append((0xF0 or (cp shr 18)).toChar()).append((0x80 or ((cp shr 12) and 0x3F)).toChar())
+            .append((0x80 or ((cp shr 6) and 0x3F)).toChar()).append((0x80 or (cp and 0x3F)).toChar())
     }
 }
 
@@ -327,7 +339,7 @@ fun main() {
     val plugins = (table.map["plugin"] as TArr).items.filterIsInstance<TTable>()
     println("plugins: " + plugins.joinToString { (it.map["name"] as TStr).s })
     val owner = (table.map["owner"] as TTable).map["name"] as TStr
-    println("owner length=${owner.s.length} codepoints=${owner.s.codePointCount(0, owner.s.length)} upper=${owner.s.uppercase()}")
+    println("owner length=${owner.s.length} upper=${owner.s.uppercase()}")
     println(table.map["title"] == TStr("TOML → JSON"))
 
     val bad = listOf(

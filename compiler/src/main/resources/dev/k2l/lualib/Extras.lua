@@ -162,7 +162,7 @@ function __K2L_Extras.hexToBytes(s)
         out[i] = b >= 128 and b - 256 or b
     end
     out.size = n
-    return setmetatable(out, __K2L_ArrayClassOf("[B"))
+    return setmetatable(out, __K2L_Array)
 end
 
 function __K2L_Extras.lazyOf(value)

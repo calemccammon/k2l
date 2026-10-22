@@ -1,2 +1,0 @@
-4:31: Library API 'java.lang.Class.methods' is not supported yet
-5:31: Library API 'java.lang.Class.declaredFields' is not supported yet

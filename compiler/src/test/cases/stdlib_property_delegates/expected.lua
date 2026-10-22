@@ -4,10 +4,10 @@ local __K2L_DelegateProvider = ____lualib.__K2L_DelegateProvider
 local __K2L_KProperty = ____lualib.__K2L_KProperty
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ObservableProperty = ____lualib.__K2L_ObservableProperty
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_ReadOnlyProperty = ____lualib.__K2L_ReadOnlyProperty
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____exports = {}
@@ -163,5 +163,5 @@ ____exports.Upper = Upper
 ____exports.upper = upper
 ____exports.____NAME_delegate = ____NAME_delegate
 ____exports.____providedName_delegate = ____providedName_delegate
-__K2L_Main(main)
+__K2L_RunMain(main)
 return ____exports

@@ -57,7 +57,9 @@ fun bar(fraction: Double, width: Int = 20): String {
 class ParseError(msg: String) : Exception(msg)
 
 fun parseSize(input: String): Long {
-    val m = Regex("""^\s*([+-]?\d+(?:\.\d+)?)\s*([kmgt]?)(i?)b?\s*$""", RegexOption.IGNORE_CASE).matchEntire(input)
+    // a number with an optional fraction: Lua patterns have no optional groups, so "1." is rejected after the match
+    val m = Regex("""^\s*([+-]?\d+\.?\d*)\s*([kmgt]?)(i?)b?\s*$""", RegexOption.IGNORE_CASE).matchEntire(input)
+        ?.takeUnless { it.groupValues[1].endsWith('.') }
         ?: throw ParseError("cannot parse size '$input'")
     val (num, prefix, binary) = m.destructured
     val base = if (binary.isNotEmpty()) 1024.0 else 1000.0
@@ -66,9 +68,11 @@ fun parseSize(input: String): Long {
 }
 
 fun parseDuration(input: String): Long {
-    val re = Regex("(\\d+)\\s*(d|h|m|s|ms)\\b")
+    // the unit is checked after the match: Lua patterns have no alternation
+    val re = Regex("(\\d+)\\s*([a-z]+)\\b")
+    val units = setOf("d", "h", "m", "s", "ms")
     val matches = re.findAll(input.lowercase()).toList()
-    if (matches.isEmpty() || re.replace(input.lowercase(), "").isNotBlank()) throw ParseError("cannot parse duration '$input'")
+    if (matches.isEmpty() || matches.any { it.groupValues[2] !in units } || re.replace(input.lowercase(), "").isNotBlank()) throw ParseError("cannot parse duration '$input'")
     return matches.sumOf { m ->
         val n = m.groupValues[1].toLong()
         when (m.groupValues[2]) { "d" -> n * 86_400_000; "h" -> n * 3_600_000; "m" -> n * 60_000; "s" -> n * 1000; else -> n }

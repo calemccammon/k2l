@@ -231,7 +231,7 @@ fun main() {
         println("%-18s %-7s %s".format(path, cfg.lookup(path)?.let { it::class.simpleName } ?: "-", cfg.lookup(path)?.let(::render) ?: "<missing>"))
     }
     val maxConn = (cfg.lookup("database.pool.max") as TInt).v * (cfg.lookup("ports") as TArr).v.size
-    println("max connections: $maxConn, mask bits: ${java.lang.Long.bitCount((cfg.lookup("mask") as TInt).v)}, perms: ${(cfg.lookup("perms") as TInt).v.toString(8)}")
+    println("max connections: $maxConn, mask bits: ${(cfg.lookup("mask") as TInt).v.countOneBits()}, perms: ${(cfg.lookup("perms") as TInt).v.toString(8)}")
     println("--- serialized ---")
     print(serialize(cfg))
     println("--- round trip ---")

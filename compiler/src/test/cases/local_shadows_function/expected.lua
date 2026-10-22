@@ -1,7 +1,6 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local function nullable(x)
@@ -19,22 +18,22 @@ local function label__1(n)
 end
 
 local ____lambda_1 = function(____total_1)
-    return total(__K2L_ReadOnlyListOf(____total_1, 1))
+    return total(__K2L_ListOf(____total_1, 1))
 end
 local function main()
     local ____nullable = nullable(3)
     print(__K2L_Str(____nullable))
     print(__K2L_Str(nullable(-1)))
-    local ____total = total(__K2L_ReadOnlyListOf(1, 2))
-    print(____total + total(__K2L_SingletonListOf(3)))
+    local ____total = total(__K2L_ListOf(1, 2))
+    print(____total + total(__K2L_ListOf(3)))
     local f = ____lambda_1
     print(f(4))
     local label = label__1(1)
     print(label .. " " .. label__1(2))
     for ____total_2 = 1, 2 do
-        print(total(__K2L_SingletonListOf(____total_2)))
+        print(total(__K2L_ListOf(____total_2)))
     end
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {nullable = nullable, total = total, label = label, label__1 = label__1}

@@ -1,19 +1,17 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Result = ____lualib.__K2L_Result
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
 
 local function results(r, which)
@@ -234,9 +232,9 @@ local function folds(xs, arr, which)
 end
 
 local function emptyFolds(which)
-    local ____ok, ____result_15, ____returned = __K2L_DeepPcall(function()
+    local ____ok, ____result_15, ____returned = pcall(function()
         if which == 0 then
-            local ____list = __K2L_ReadOnlyListOf()
+            local ____list = __K2L_ListOf()
             local ____acc_4
             local ____started_2 = false
             for ____i_5 = ____list.size, 1, -1 do
@@ -262,7 +260,7 @@ local function emptyFolds(which)
             end
         end
         if which == 1 then
-            local ____list_1 = __K2L_TypedArrayOf("[I")
+            local ____list_1 = __K2L_ArrayOf()
             local ____acc_5
             local ____started_3 = false
             for ____i_6 = ____list_1.size, 1, -1 do
@@ -288,7 +286,7 @@ local function emptyFolds(which)
             end
         end
         if which == 2 then
-            local ____list_2 = __K2L_ReadOnlyListOf()
+            local ____list_2 = __K2L_ListOf()
             local ____acc_6
             local ____started_4 = false
             for ____i_7 = 1, ____list_2.size do
@@ -315,7 +313,7 @@ local function emptyFolds(which)
             end
         end
         if which == 3 then
-            local ____list_3 = __K2L_TypedArrayOf("[I")
+            local ____list_3 = __K2L_ArrayOf()
             local ____acc_7
             local ____started_5 = false
             for ____i_8 = 1, ____list_3.size do
@@ -342,7 +340,7 @@ local function emptyFolds(which)
             end
         end
         if which == 4 then
-            local ____list_4 = __K2L_ReadOnlyListOf()
+            local ____list_4 = __K2L_ListOf()
             local ____result_20
             for _, it in ipairs(____list_4) do
                 local ____result_21
@@ -362,7 +360,7 @@ local function emptyFolds(which)
             end
         end
         if which == 5 then
-            local ____list_5 = __K2L_ReadOnlyListOf()
+            local ____list_5 = __K2L_ListOf()
             local ____acc_8
             local ____started_6 = false
             for ____i_9 = ____list_5.size, 1, -1 do
@@ -396,7 +394,7 @@ local function emptyFolds(which)
         local ____error = __K2L_ToThrowable(____result_15)
         if __K2L_InstanceOf(____error, __K2L_Exception) then
             local e = ____error
-            return __K2L_Str(__K2L_KClassOfValue(e).simpleName) .. ": " .. __K2L_Str(e.message)
+            return __K2L_Str(__K2L_SimpleName(e)) .. ": " .. __K2L_Str(e.message)
         else
             error(____error, 0)
         end
@@ -431,7 +429,7 @@ local function maps(m, which)
         if which == 2 and it.value == 2 then
             return "filterTo returned, kept " .. __K2L_Str(kept)
         else
-            ____result_25 = (it.value >= 0 and it.value % 2 or 0 - -it.value % 2) == 1
+            ____result_25 = it.value % 2 == 1
         end
         if ____result_25 then
             kept:put(it.key, it.value)
@@ -459,14 +457,14 @@ local function main()
         print(results(ok, which))
         print(results(bad, which))
     end
-    local xs = __K2L_ReadOnlyListOf(1, 2, 3, 4, 5, 6)
+    local xs = __K2L_ListOf(1, 2, 3, 4, 5, 6)
     print(notNull(xs, 99))
     print(notNull(xs, 0))
     print(notNull(xs, 1))
     for which = 0, 4 do
-        print(folds(xs, __K2L_TypedArrayOf("[I", 1, 2, 3), which))
+        print(folds(xs, __K2L_ArrayOf(1, 2, 3), which))
     end
-    print(folds(xs, __K2L_TypedArrayOf("[I", 1, 2, 3), 99))
+    print(folds(xs, __K2L_ArrayOf(1, 2, 3), 99))
     for which = 0, 4 do
         print(emptyFolds(which))
     end
@@ -478,5 +476,5 @@ local function main()
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {results = results, notNull = notNull, folds = folds, emptyFolds = emptyFolds, maps = maps}

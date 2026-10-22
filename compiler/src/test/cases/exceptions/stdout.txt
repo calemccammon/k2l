@@ -8,8 +8,6 @@ finally 2
 validation failed for email: invalid email
 finally 3
 5
-caught / by zero
-0
 true
 true
 ValidationError: invalid name

@@ -1,19 +1,18 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NumberFormatException = ____lualib.__K2L_NumberFormatException
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringEndsWith = ____lualib.__K2L_StringEndsWith
 local __K2L_StringEqualsIgnoreCase = ____lualib.__K2L_StringEqualsIgnoreCase
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
 local __K2L_StringLastIndexOf = ____lualib.__K2L_StringLastIndexOf
@@ -30,7 +29,6 @@ local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_StringTrim = ____lualib.__K2L_StringTrim
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function searching()
     local s = "Hello, World, Hello"
@@ -41,7 +39,7 @@ local function searching()
     print(s:sub(7 + 1, 7 + #"World") == "World")
     print(__K2L_StringEndsWith(s:lower(), ("HELLO"):lower()))
     print(__K2L_StringContains(s:lower(), ("world"):lower()))
-    print(__K2L_Text.indexOfAny(s, __K2L_ReadOnlyListOf("W", "l")))
+    print(__K2L_Text.indexOfAny(s, __K2L_ListOf("W", "l")))
     print(__K2L_Text.commonPrefixWith(s, "Help"))
     print(__K2L_Text.commonSuffixWith(s, "Yellow Hello"))
     print(__K2L_Text.regionMatches("abc", 1, "xbc", 1, 2))
@@ -163,23 +161,23 @@ local function conversions()
     print(__K2L_StringToInt("-12", nil, true))
     print(__K2L_Str(__K2L_StringToIntOrNull("x")))
     print(__K2L_Str(__K2L_StringToIntOrNull("12")))
-    print(__K2L_Str(__K2L_StringToDouble("3.5")))
+    print(__K2L_StringToDouble("3.5"))
     print(__K2L_Str(__K2L_StringToDoubleOrNull("3.5x")))
-    print(__K2L_Str(__K2L_StringToDouble("1e3")))
+    print(__K2L_StringToDouble("1e3"))
     print(__K2L_Text.toBoolean("true"))
     print(__K2L_Text.toBoolean("TRUE"))
     print(__K2L_Text.toBoolean("yes"))
     print(__K2L_Str(__K2L_Text.toBooleanStrictOrNull("true")))
     print(__K2L_Str(__K2L_Text.toBooleanStrictOrNull("maybe")))
     print(__K2L_Text.toCharArray("abc").size)
-    print(__K2L_Text.string(__K2L_TypedArrayOf("[C", "h", "i")))
-    print(__K2L_StringFormat("%05.1f|%-5s|%5s|%x|%c", 3.14159, "ab", "cd", 255, "z"))
-    print(__K2L_StringFormat("%,d", 1234567))
-    print(__K2L_StringFormat("%08.3f", -2.5))
-    print(__K2L_StringFormat("%e", 12345.678))
-    print(__K2L_StringFormat("%b %s %10.4s|", true, nil, "truncated"))
-    print(__K2L_StringFormat("%+d % d", 5, 5))
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    print(__K2L_Text.string(__K2L_ArrayOf("h", "i")))
+    print(string.format("%05.1f|%-5s|%5s|%x|%s", 3.14159, "ab", "cd", 255, "z"))
+    print(string.format("%s", __K2L_Text.grouped(string.format("%d", 1234567))))
+    print(string.format("%08.3f", -2.5))
+    print(string.format("%e", 12345.678))
+    print(string.format("%s %s %10.4s|", tostring(not not true), __K2L_Str(nil), "truncated"))
+    print(string.format("%+d % d", 5, 5))
+    local ____ok, ____result = pcall(function()
         __K2L_StringToInt("abc")
     end)
     if not ____ok then
@@ -191,7 +189,7 @@ local function conversions()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_1 = pcall(function()
         __K2L_StringToDouble("")
     end)
     if not ____ok_1 then
@@ -207,7 +205,7 @@ end
 
 local function builders()
     local sb = __K2L_StringBuilder.new("abc")
-    sb:append(tostring(1)):append("x"):append("yz"):append(__K2L_Str(2.5))
+    sb:append(tostring(1)):append("x"):append("yz"):append(tostring(2.5))
     print(__K2L_Str(sb))
     sb:insert(0, "<<")
     print(__K2L_Str(sb))
@@ -240,5 +238,5 @@ local function main()
     builders()
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {searching = searching, splitting = splitting, substrings = substrings, trimming = trimming, transforming = transforming, conversions = conversions, builders = builders}

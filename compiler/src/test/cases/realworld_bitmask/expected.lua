@@ -1,21 +1,21 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Bits = ____lualib.__K2L_Bits
 local __K2L_CheckStep = ____lualib.__K2L_CheckStep
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Shl = ____lualib.__K2L_Shl
 local __K2L_Shr = ____lualib.__K2L_Shr
 local __K2L_Str = ____lualib.__K2L_Str
@@ -23,7 +23,6 @@ local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Ushr = ____lualib.__K2L_Ushr
 
 local Sudoku = __K2L_Class("Sudoku")
@@ -32,10 +31,10 @@ local ____lambda_1 = function(it)
     return __K2L_IsDigit[it] == true or it == "."
 end
 function Sudoku:____init(puzzle)
-    self.grid = __K2L_ListOfSize(81, 0, "[I")
-    self.rows = __K2L_ListOfSize(9, 0, "[I")
-    self.cols = __K2L_ListOfSize(9, 0, "[I")
-    self.boxes = __K2L_ListOfSize(9, 0, "[I")
+    self.grid = __K2L_ListOfSize(81, 0, true)
+    self.rows = __K2L_ListOfSize(9, 0, true)
+    self.cols = __K2L_ListOfSize(9, 0, true)
+    self.boxes = __K2L_ListOfSize(9, 0, true)
     self.guesses = 0
     local digits = __K2L_Text.filter(puzzle, ____lambda_1)
     if #digits ~= 81 then
@@ -51,14 +50,12 @@ function Sudoku:____init(puzzle)
 end
 
 function Sudoku:box(i)
-    local ____arg = (i >= 0 and i // 27 or 0 - -i // 27) * 3
-    local ____dividend = i >= 0 and i % 9 or 0 - -i % 9
-    return ____arg + (____dividend >= 0 and ____dividend // 3 or 0 - -____dividend // 3)
+    return i // 27 * 3 + i % 9 // 3
 end
 
 function Sudoku:place(i, d)
-    local bit = __K2L_Shl(1, d)
-    if not (self.rows:get(i >= 0 and i // 9 or 0 - -i // 9) & bit == 0 and self.cols:get(i >= 0 and i % 9 or 0 - -i % 9) & bit == 0 and self.boxes:get(self:box(i)) & bit == 0) then
+    local ____bit = __K2L_Shl(1, d)
+    if not (self.rows:get(i // 9) & ____bit == 0 and self.cols:get(i % 9) & ____bit == 0 and self.boxes:get(self:box(i)) & ____bit == 0) then
         error(__K2L_IllegalStateException.new("conflict at " .. i))
     end
     local ____object = self.grid
@@ -67,22 +64,22 @@ function Sudoku:place(i, d)
     end
     ____object[i + 1] = d
     local ____object_1 = self.rows
-    local ____key = i >= 0 and i // 9 or 0 - -i // 9
-    local ____value = self.rows:get(i >= 0 and i // 9 or 0 - -i // 9) | bit
+    local ____key = i // 9
+    local ____value = self.rows:get(i // 9) | ____bit
     if ____key < 0 or ____key >= ____object_1.size then
         __K2L_IndexError(____key, ____object_1.size, "array")
     end
     ____object_1[____key + 1] = ____value
     local ____object_2 = self.cols
-    local ____key_1 = i >= 0 and i % 9 or 0 - -i % 9
-    local ____value_1 = self.cols:get(i >= 0 and i % 9 or 0 - -i % 9) | bit
+    local ____key_1 = i % 9
+    local ____value_1 = self.cols:get(i % 9) | ____bit
     if ____key_1 < 0 or ____key_1 >= ____object_2.size then
         __K2L_IndexError(____key_1, ____object_2.size, "array")
     end
     ____object_2[____key_1 + 1] = ____value_1
     local ____object_3 = self.boxes
     local ____key_2 = self:box(i)
-    local ____value_2 = self.boxes:get(self:box(i)) | bit
+    local ____value_2 = self.boxes:get(self:box(i)) | ____bit
     if ____key_2 < 0 or ____key_2 >= ____object_3.size then
         __K2L_IndexError(____key_2, ____object_3.size, "array")
     end
@@ -92,15 +89,15 @@ end
 function Sudoku:remove(i)
     local mask = ~__K2L_Shl(1, self.grid[i + 1] or __K2L_IndexError(i, self.grid.size, "array"))
     local ____object_4 = self.rows
-    local ____key_3 = i >= 0 and i // 9 or 0 - -i // 9
-    local ____value_3 = self.rows:get(i >= 0 and i // 9 or 0 - -i // 9) & mask
+    local ____key_3 = i // 9
+    local ____value_3 = self.rows:get(i // 9) & mask
     if ____key_3 < 0 or ____key_3 >= ____object_4.size then
         __K2L_IndexError(____key_3, ____object_4.size, "array")
     end
     ____object_4[____key_3 + 1] = ____value_3
     local ____object_5 = self.cols
-    local ____key_4 = i >= 0 and i % 9 or 0 - -i % 9
-    local ____value_4 = self.cols:get(i >= 0 and i % 9 or 0 - -i % 9) & mask
+    local ____key_4 = i % 9
+    local ____value_4 = self.cols:get(i % 9) & mask
     if ____key_4 < 0 or ____key_4 >= ____object_5.size then
         __K2L_IndexError(____key_4, ____object_5.size, "array")
     end
@@ -120,7 +117,7 @@ function Sudoku:remove(i)
 end
 
 function Sudoku:candidates(i)
-    return 1022 & ~(self.rows:get(i >= 0 and i // 9 or 0 - -i // 9) | self.cols:get(i >= 0 and i % 9 or 0 - -i % 9) | self.boxes:get(self:box(i)))
+    return 1022 & ~(self.rows:get(i // 9) | self.cols:get(i % 9) | self.boxes:get(self:box(i)))
 end
 
 function Sudoku:solve()
@@ -147,10 +144,10 @@ function Sudoku:solve()
     end
     local cands = self:candidates(best)
     while cands ~= 0 do
-        local bit = cands & -cands
-        cands = cands ~ bit
+        local ____bit = cands & -cands
+        cands = cands ~ ____bit
         self.guesses = self.guesses + 1
-        self:place(best, __K2L_Num.countTrailingZeroBits(bit))
+        self:place(best, __K2L_Num.countTrailingZeroBits(____bit))
         if self:solve() then
             return true
         end
@@ -172,13 +169,13 @@ local ____lambda_5 = function(it) return it.second end
 local function tsp(dist)
     local n = dist.size
     local full = __K2L_Shl(1, n)
-    local inf = __K2L_IDiv(2147483647, 2)
+    local inf = 2147483647 // 2
     local dp = __K2L_ListOfSize(full, function(it)
-        return __K2L_ListOfSize(n, function(it) return inf end, "[I")
-    end, "[[I")
+        return __K2L_ListOfSize(n, function(it) return inf end, true)
+    end, true)
     local parent = __K2L_ListOfSize(full, function(it)
-        return __K2L_ListOfSize(n, ____lambda_4, "[I")
-    end, "[[I")
+        return __K2L_ListOfSize(n, ____lambda_4, true)
+    end, true)
     local ____object_8 = dp[2] or __K2L_IndexError(1, dp.size, "array")
     if 0 < 0 or 0 >= ____object_8.size then
         __K2L_IndexError(0, ____object_8.size, "array")
@@ -286,7 +283,7 @@ local BitSieve = __K2L_Class("BitSieve")
 
 function BitSieve:____init(limit)
     self.limit = limit
-    self.bits = __K2L_ListOfSize((self.limit >= 0 and self.limit // 32 or 0 - -self.limit // 32) + 1, 0, "[I")
+    self.bits = __K2L_ListOfSize(self.limit // 32 + 1, 0, true)
     self:set(0)
     self:set(1)
     local p = 2
@@ -319,7 +316,7 @@ function BitSieve:primes()
 end
 
 function BitSieve:count()
-    local ____arg_1 = self.limit + 1
+    local ____arg = self.limit + 1
     local ____list_2 = self.bits
     local ____sum = 0
     local ____items_2, ____n_2 = ____list_2:____array()
@@ -327,7 +324,7 @@ function BitSieve:count()
         local it = ____items_2[____i_2]
         ____sum = ____sum + __K2L_Num.countOneBits(it)
     end
-    return ____arg_1 - ____sum + __K2L_Num.countOneBits(__K2L_Ushr(self.bits:last(), (self.limit & 31) + 1))
+    return ____arg - ____sum + __K2L_Num.countOneBits(__K2L_Ushr(self.bits:last(), (self.limit & 31) + 1))
 end
 
 local ____lambda_6 = function() return Sudoku.new("123") end
@@ -346,8 +343,8 @@ local function main()
     print(__K2L_Str(____receiver and ____receiver.message))
     local ____receiver_1 = __K2L_RunCatching(____lambda_7):exceptionOrNull()
     print(__K2L_Str(____receiver_1 and ____receiver_1.message))
-    local cities = __K2L_ReadOnlyListOf("A", "B", "C", "D", "E", "F")
-    local dist = __K2L_TypedArrayOf("[[I", __K2L_TypedArrayOf("[I", 0, 12, 10, 19, 8, 14), __K2L_TypedArrayOf("[I", 12, 0, 3, 7, 2, 11), __K2L_TypedArrayOf("[I", 10, 3, 0, 6, 20, 4), __K2L_TypedArrayOf("[I", 19, 7, 6, 0, 4, 9), __K2L_TypedArrayOf("[I", 8, 2, 20, 4, 0, 13), __K2L_TypedArrayOf("[I", 14, 11, 4, 9, 13, 0))
+    local cities = __K2L_ListOf("A", "B", "C", "D", "E", "F")
+    local dist = __K2L_ArrayOf(__K2L_ArrayOf(0, 12, 10, 19, 8, 14), __K2L_ArrayOf(12, 0, 3, 7, 2, 11), __K2L_ArrayOf(10, 3, 0, 6, 20, 4), __K2L_ArrayOf(19, 7, 6, 0, 4, 9), __K2L_ArrayOf(8, 2, 20, 4, 0, 13), __K2L_ArrayOf(14, 11, 4, 9, 13, 0))
     local ____destructured_1 = tsp(dist)
     local cost, tour = ____destructured_1.first, ____destructured_1.second
     print("tsp cost=" .. cost .. " tour=" .. tour:joinToString("->", nil, nil, nil, nil, function(it) return cities:get(it) end))
@@ -375,14 +372,14 @@ local function main()
         end
     end
     print("one bit apart: " .. tostring(____result_1))
-    print("subsets of [3,34,4,12,5,2] summing to 9: " .. __K2L_Str(subsetsWithSum(__K2L_TypedArrayOf("[I", 3, 34, 4, 12, 5, 2), 9)))
+    print("subsets of [3,34,4,12,5,2] summing to 9: " .. __K2L_Str(subsetsWithSum(__K2L_ArrayOf(3, 34, 4, 12, 5, 2), 9)))
     local x = 182
     print("bits of " .. x .. ": count=" .. __K2L_Num.countOneBits(x) .. " lowest=" .. __K2L_Bits.lowest32(x) .. " highest=" .. __K2L_Bits.highest32(x) .. " tz=" .. __K2L_Num.countTrailingZeroBits(x) .. " lz=" .. __K2L_Num.countLeadingZeroBits(x))
-    print("swap nibbles: " .. __K2L_Num.toRadix((((x & 15) << 4) + 0x80000000 & 0xFFFFFFFF) - 0x80000000 | (x & 240) // 16, 2) .. " reversed bits: " .. ((__K2L_Num.reverseInt(x) & 0xFFFFFFFF) >> 24))
+    print("swap nibbles: " .. __K2L_Num.toRadix((((x & 15) << 4) + 0x80000000 & 0xFFFFFFFF) - 0x80000000 | (x & 240) // 16, 2))
     print("masks: " .. ((-1 & 0xFFFFFFFF) >> 28) .. " " .. ((1 << 31) + 0x80000000 & 0xFFFFFFFF) - 0x80000000 .. " " .. ((((1 << 31) + 0x80000000 & 0xFFFFFFFF) - 0x80000000 & 0xFFFFFFFF) >> 31) .. " " .. -16 // 4 .. " " .. ((-16 & 0xFFFFFFFF) >> 28) .. " " .. 2147483647 + 0)
     local sieve = BitSieve.new(200)
     print("primes ≤ 200: " .. sieve:primes().size .. ", count()=" .. sieve:count() .. ", last " .. __K2L_Str(sieve:primes():takeLast(3)) .. ", 97 prime? " .. tostring(not sieve:get(97)))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Sudoku = Sudoku, tsp = tsp, gray = gray, fromGray = fromGray, subsetsWithSum = subsetsWithSum, BitSieve = BitSieve}

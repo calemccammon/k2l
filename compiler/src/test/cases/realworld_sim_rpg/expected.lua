@@ -5,13 +5,10 @@ local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Random = ____lualib.__K2L_Random
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_Text = ____lualib.__K2L_Text
 
@@ -220,7 +217,6 @@ end
 function LootTable:roll(rng)
     local pick = rng:nextInt(self.total)
     local ____list_3 = self.entries
-    local ____mod = ____list_3.____modCount
     for ____i_3 = 1, ____list_3.size do
         local ____item = ____list_3[____i_3]
         local item, weight = ____item.first, ____item.second
@@ -228,14 +224,11 @@ function LootTable:roll(rng)
             return item
         end
         pick = pick - weight
-        if ____list_3.____modCount ~= ____mod and ____list_3:____comodified(____i_3) then
-            break
-        end
     end
     error(__K2L_IllegalStateException.new("unreachable"))
 end
 
-local loot = LootTable.new(__K2L_ReadOnlyListOf(__K2L_Pair.new(Item.new("potion", nil, nil, 25), 40), __K2L_Pair.new(Item.new("dagger", 3), 20), __K2L_Pair.new(Item.new("flame sword", 7, nil, nil, Element.FIRE), 8), __K2L_Pair.new(Item.new("frost axe", 6, nil, nil, Element.ICE), 8), __K2L_Pair.new(Item.new("venom blade", 5, nil, nil, Element.POISON), 8), __K2L_Pair.new(Item.new("leather", nil, 2), 20), __K2L_Pair.new(Item.new("plate", nil, 6), 6)))
+local loot = LootTable.new(__K2L_ListOf(__K2L_Pair.new(Item.new("potion", nil, nil, 25), 40), __K2L_Pair.new(Item.new("dagger", 3), 20), __K2L_Pair.new(Item.new("flame sword", 7, nil, nil, Element.FIRE), 8), __K2L_Pair.new(Item.new("frost axe", 6, nil, nil, Element.ICE), 8), __K2L_Pair.new(Item.new("venom blade", 5, nil, nil, Element.POISON), 8), __K2L_Pair.new(Item.new("leather", nil, 2), 20), __K2L_Pair.new(Item.new("plate", nil, 6), 6)))
 local Battle = __K2L_Class("Battle")
 
 function Battle:____init(rng, log)
@@ -254,7 +247,6 @@ function Battle:tickEffects(f)
     local frozen = false
     local remaining = __K2L_ListOf()
     local ____list_4 = f.effects
-    local ____mod_1 = ____list_4.____modCount
     for ____i_4 = 1, ____list_4.size do
         local e = ____list_4[____i_4]
         local ____mt = getmetatable(e)
@@ -263,8 +255,7 @@ function Battle:tickEffects(f)
             self:say("  " .. f.name .. " burns for " .. ____value_1)
             f.hp = f.hp - ____value_1
         elseif ____mt == Effect.Poison then
-            local ____dividend = f.maxHp * e.percent
-            local ____value = math.max(1, ____dividend >= 0 and ____dividend // 100 or 0 - -____dividend // 100)
+            local ____value = math.max(1, f.maxHp * e.percent // 100)
             self:say("  " .. f.name .. " takes " .. ____value .. " poison")
             f.hp = f.hp - ____value
         elseif ____mt == Effect.Freeze then
@@ -283,9 +274,6 @@ function Battle:tickEffects(f)
             end
             remaining:add(____temp)
         end
-        if ____list_4.____modCount ~= ____mod_1 and ____list_4:____comodified(____i_4) then
-            break
-        end
     end
     f.effects:clear()
     f.effects:addAll(remaining)
@@ -299,9 +287,9 @@ function Battle:strike(a, d)
     end
     local variance = self.rng:nextDouble(0.85, 1.15)
     local crit = self.rng:nextDouble() < 0.1
-    local damage = __K2L_Num.roundToInt((a:getAttack() * a:getAttack() + 0.0) / (a:getAttack() + d:getDefense()) * variance)
+    local damage = math.floor((a:getAttack() * a:getAttack() + 0.0) / (a:getAttack() + d:getDefense()) * variance + 0.5)
     if crit then
-        damage = __K2L_Num.roundToInt(damage * 1.75)
+        damage = math.floor(damage * 1.75 + 0.5)
     end
     damage = math.max(1, damage)
     d.hp = d.hp - damage
@@ -379,7 +367,6 @@ function Battle:fight(heroes, ____monsters)
             end
         end
         local order = __K2L_ListWrap(____out_2, ____count_2):shuffled(self.rng):sortedByDescending(____lambda_3, true)
-        local ____mod_2 = order.____modCount
         for ____i_11 = 1, order.size do
             local f = order[____i_11]
             do
@@ -415,7 +402,7 @@ function Battle:fight(heroes, ____monsters)
                     end
                 end
                 local potion = ____result_3
-                if potion ~= nil and f.hp < (f.maxHp >= 0 and f.maxHp // 3 or 0 - -f.maxHp // 3) then
+                if potion ~= nil and f.hp < f.maxHp // 3 then
                     f.inventory:remove(potion)
                     f.hp = math.min(f.maxHp, f.hp + potion.heal)
                     self:say("  " .. f.name .. " drinks a " .. potion.name)
@@ -424,9 +411,6 @@ function Battle:fight(heroes, ____monsters)
                 self:strike(f, foes:random(self.rng))
             end
             ::____continue::
-            if order.____modCount ~= ____mod_2 and order:____comodified(____i_11) then
-                break
-            end
         end
     end
     local ____result_4 = false
@@ -442,7 +426,7 @@ function Battle:fight(heroes, ____monsters)
 end
 
 local function party()
-    return __K2L_ReadOnlyListOf(Fighter.new("Knight", 60, 9, 5, 10), Fighter.new("Rogue", 40, 8, 2, 35), Fighter.new("Mage", 35, 11, 1, 15))
+    return __K2L_ListOf(Fighter.new("Knight", 60, 9, 5, 10), Fighter.new("Rogue", 40, 8, 2, 35), Fighter.new("Mage", 35, 11, 1, 15))
 end
 
 local function monsters(rng, depth)
@@ -453,7 +437,7 @@ local function monsters(rng, depth)
         local ____result_5
         do
             local hp = 20 + depth * 6 + rng:nextInt(10)
-            ____result_5 = Fighter.new("Goblin" .. depth .. "_" .. i, hp, 6 + depth, 1 + (depth >= 0 and depth // 2 or 0 - -depth // 2), rng:nextInt(5, 20))
+            ____result_5 = Fighter.new("Goblin" .. depth .. "_" .. i, hp, 6 + depth, 1 + depth // 2, rng:nextInt(5, 20))
         end
         ____out_4[____i_13] = ____result_5
     end
@@ -463,23 +447,15 @@ end
 local function crawl(seed, log)
     local rng = __K2L_Random.seeded(seed)
     local heroes = party()
-    local ____mod_3 = heroes.____modCount
     for ____i_14 = 1, heroes.size do
         local h = heroes[____i_14]
         for it = 0, 1 do
             h.inventory:add(loot:roll(rng))
         end
-        if heroes.____modCount ~= ____mod_3 and heroes:____comodified(____i_14) then
-            break
-        end
     end
-    local ____mod_4 = heroes.____modCount
     for ____i_15 = 1, heroes.size do
         local it = heroes[____i_15]
         it:equipBest()
-        if heroes.____modCount ~= ____mod_4 and heroes:____comodified(____i_15) then
-            break
-        end
     end
     local depth = 0
     local totalRounds = 0
@@ -516,17 +492,13 @@ local function crawl(seed, log)
             end
         end
         local ____list_9 = __K2L_ListWrap(____out_6, ____count_5)
-        local ____mod_5 = ____list_9.____modCount
         for ____i_18 = 1, ____list_9.size do
             local h = ____list_9[____i_18]
             if rng:nextInt(3) == 0 then
                 h.inventory:add(loot:roll(rng))
             end
             h:equipBest()
-            h.hp = math.min(h.maxHp, h.hp + (h.maxHp >= 0 and h.maxHp // 10 or 0 - -h.maxHp // 10))
-            if ____list_9.____modCount ~= ____mod_5 and ____list_9:____comodified(____i_18) then
-                break
-            end
+            h.hp = math.min(h.maxHp, h.hp + h.maxHp // 10)
         end
     end
     local ____out_7 = {}
@@ -567,13 +539,9 @@ local function main()
     print("\n" .. ____value_2)
     print("-- tournament")
     local results = __K2L_IntRange.new(2, 13):map(____lambda_4)
-    local ____mod_6 = results.____modCount
     for ____i_21 = 1, results.size do
         local it = results[____i_21];
         (____lambda_5)(it)
-        if results.____modCount ~= ____mod_6 and results:____comodified(____i_21) then
-            break
-        end
     end
     local ____out_9 = {}
     local ____count_8 = 0
@@ -584,7 +552,7 @@ local function main()
         ____out_9[____count_8] = __K2L_StringToInt(__K2L_Text.substringBefore(__K2L_Text.substringAfter(it, "depth "), " "))
     end
     local depths = __K2L_ListWrap(____out_9, ____count_8)
-    local ____arg_6 = __K2L_StringFormat("%.2f", depths:average())
+    local ____arg_6 = string.format("%.2f", depths:average())
     local ____arg_7 = depths:max()
     local ____result_6 = 0
     local ____items_15, ____n_15 = depths:____array()
@@ -605,5 +573,5 @@ local function main()
     print("loot distribution " .. __K2L_Str(drops))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Element = Element, Item = Item, Effect = Effect, Fighter = Fighter, LootTable = LootTable, loot = loot, Battle = Battle, party = party, monsters = monsters, crawl = crawl}

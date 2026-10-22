@@ -74,8 +74,6 @@ private fun FileTransformer.nonNullTypeTest(value: LuaExpr, type: KaType, elemen
 
         type.isBooleanType -> "boolean"
 
-        emulatesLong && type.isLongType -> return l64Member("isLong", value)
-
         type.isIntegral || type.isDoubleType || type.isFloatType -> {
             val wantInteger = type.isIntegral
             if (target.hasIntegers) {
@@ -114,14 +112,13 @@ private fun FileTransformer.classTest(value: LuaExpr, type: KaType, element: KtE
 
         id == "kotlin/Unit" -> LuaBinary(LuaBinOp.Eq, value, unitObject())
 
-        // Lua numbers, emulated Longs and BigInteger/BigDecimal
         psi is KtObjectDeclaration -> LuaBinary(LuaBinOp.Eq, value, classRef(psi))
 
         psi != null && isFinalSourceClass(type) -> finalClassTest(value, classRef(psi))
 
         psi != null -> lualibCall("InstanceOf", value, classRef(psi))
 
-        type.collectionKind() == CollectionKind.Array -> arrayTypeTest(value, type)
+        type.collectionKind() == CollectionKind.Array -> arrayTypeTest(value, type, element)
 
         collection != null -> {
             val test = lualibCall("InstanceOf", value, lualibRef(featureOf(collection), collection))
@@ -131,8 +128,7 @@ private fun FileTransformer.classTest(value: LuaExpr, type: KaType, element: KtE
             } else {
                 test
             }
-            // Kotlin's read-only collections (emptyList(), a class implementing List) are not mutable ones, as on the JVM
-            if (id in MUTABLE_INTERFACES) LuaBinary(LuaBinOp.And, sized, negate(LuaIndex(value, LuaString("____readOnly")))) else sized
+            sized
         }
 
         id in LIBRARY_CLASSES -> lualibCall("InstanceOf", value, lualibRef(EXCEPTIONS_FEATURE, LIBRARY_CLASSES.getValue(id!!)))
@@ -145,8 +141,7 @@ private fun FileTransformer.classTest(value: LuaExpr, type: KaType, element: KtE
         )
 
         id in TYPE_CHECKS -> {
-            val test = LuaCall(lualibRef("TypeChecks", TYPE_CHECKS.getValue(id!!)), listOf(value))
-            if (id == "kotlin/Number" && emulatesLong) LuaBinary(LuaBinOp.Or, test, l64Member("isLong", value)) else test
+            LuaCall(lualibRef("TypeChecks", TYPE_CHECKS.getValue(id!!)), listOf(value))
         }
 
         else -> unsupported(element, "Type check against '${type.pretty()}'")

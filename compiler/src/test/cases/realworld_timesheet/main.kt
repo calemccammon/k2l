@@ -1,7 +1,6 @@
-import java.util.TreeMap
 
 // Timesheets and payroll: a civil Date with day arithmetic and its own range/iterator,
-// time-of-day parsing, overtime rules, tax brackets via TreeMap.floorEntry and a payslip.
+// time-of-day parsing, overtime rules, tax brackets in a sorted map and a payslip.
 
 data class Date(val year: Int, val month: Int, val day: Int) : Comparable<Date> {
     init {
@@ -100,7 +99,7 @@ fun parseShifts(text: String): List<Shift> = text.trimIndent().lines().filterNot
 
 object Payroll {
     const val HOURLY_CENTS = 2850
-    private val brackets = TreeMap(mapOf(0 to 0.10, 1_000_00 to 0.15, 2_500_00 to 0.25, 6_000_00 to 0.32))
+    private val brackets = mapOf(0 to 0.10, 1_000_00 to 0.15, 2_500_00 to 0.25, 6_000_00 to 0.32).toSortedMap()
 
     fun pay(shifts: List<Shift>): Map<String, Long> {
         var regular = 0L
@@ -130,7 +129,7 @@ object Payroll {
         var remaining = cents
         var tax = 0.0
         while (remaining > 0) {
-            val (floor, rate) = brackets.floorEntry(remaining.toInt())
+            val (floor, rate) = brackets.entries.last { it.key <= remaining }
             tax += (remaining - floor) * rate
             remaining = floor.toLong() - 1
         }

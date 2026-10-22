@@ -30,7 +30,7 @@ Tax owed:
   WEST..    $6.12 (6.00%)
 
 Unit price stats: n=10 mean=9.154 median=6.975 sd=7.4634 range=2.4..21.0
-Revenue stats: mean=61.52 median=59.99 max=98.00
+Revenue stats: mean=61.52 median=59.98 max=98.00
 
 Best sale: #4 on 2024-02-02 by Carla Diaz ($98.00)
   Gadget    32.4% ########

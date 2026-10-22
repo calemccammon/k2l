@@ -4,126 +4,100 @@ local __K2L_Num = {}
 
 do
 
-local LN2 = math.log(2)
-local MAX_LONG = math.maxinteger or 9223372036854775807
 local MIN_LONG = math.mininteger or -9223372036854775808
-local NEG_ZERO = -1 / math.huge -- not the literal: Lua 5.1 folds -0.0 into a function's constant 0
+local exp, log, sqrt, abs, huge = math.exp, math.log, math.sqrt, math.abs, math.huge
+local LN2 = log(2)
 
--- math.log(x, 10) is not available before Lua 5.2, and math.log10 is gone in 5.4.
-function __K2L_Num.log10(x)
-    if math.log10 then
-        return math.log10(x)
-    end
-    return math.log(x, 10)
-end
+-- The functions of kotlin.math that Lua's math library lacks, as short formulas of k2l's own. They are accurate to a few
+-- units in the last place, not the JVM's StrictMath bits.
 
-function __K2L_Num.log2(x)
-    return math.log(x) / LN2
-end
-
-function __K2L_Num.log(x, base)
-    if base <= 0 or base == 1 then
-        return 0 / 0
-    end
-    return math.log(x) / math.log(base)
-end
-
--- x.IEEErem(y) (Math.IEEEremainder): x - n * y for the integer n nearest x / y, ties to even, computed exactly as fdlibm does.
-function __K2L_Num.IEEErem(x, y)
-    if x ~= x or y ~= y or y == 0 or x == math.huge or x == -math.huge then
-        return 0 / 0
-    elseif y == math.huge or y == -math.huge then
+-- exp(x) - 1 without the cancellation near 0 (Kahan): the error of exp(x) cancels in (u - 1) / log(u).
+function __K2L_Num.expm1(x)
+    local u = exp(x)
+    if u == 1 then
         return x
+    elseif u == huge then
+        return u
     end
-    local p = math.abs(y)
-    local negative = x < 0 or (x == 0 and 1 / x < 0)
-    local a = math.abs(x + 0.0)
-    if p < 8.98846567431158e307 then -- 2^1023
-        a = math.abs(math.fmod(a, p + p)) -- now a < 2p
+    local um1 = u - 1
+    if um1 == -1 then
+        return -1
     end
-    if p < 4.450147717014403e-308 then -- 2^-1021: p / 2 may not be exact
-        if a + a > p then
-            a = a - p
-            if a + a >= p then
-                a = a - p
-            end
-        end
+    return um1 * x / log(u)
+end
+
+-- log(1 + x) without the rounding of 1 + x (Kahan): x / (u - 1) corrects for it.
+function __K2L_Num.log1p(x)
+    local u = 1 + x
+    if u == 1 then
+        return x
+    elseif u == huge then
+        return u
+    end
+    return log(u) * x / (u - 1)
+end
+
+local expm1 = __K2L_Num.expm1
+
+-- sinh, cosh and tanh by expm1 (accurate near 0); for large |x| exp(|x| - ln 2), which overflows only when the result does.
+function __K2L_Num.sinh(x)
+    local a = abs(x)
+    local r
+    if a > 20 then
+        r = exp(a - LN2)
     else
-        local half = 0.5 * p
-        if a > half then
-            a = a - p
-            if a >= half then
-                a = a - p
-            end
-        end
+        local e = expm1(a)
+        r = (e + e / (e + 1)) / 2
     end
-    return negative and -a or a
+    return x < 0 and -r or r
 end
 
--- Math.floor(-0.0) is -0.0 (math.floor(x) + 0.0 would be 0.0)
-function __K2L_Num.floor(x)
+function __K2L_Num.cosh(x)
+    local a = abs(x)
+    if a > 20 then
+        return exp(a - LN2)
+    end
+    local e = exp(a)
+    return (e + 1 / e) / 2
+end
+
+function __K2L_Num.tanh(x)
+    local a = abs(x)
+    local r
+    if a > 20 then
+        r = 1
+    else
+        local e = expm1(2 * a)
+        r = e / (e + 2)
+    end
+    return x < 0 and -r or r
+end
+
+-- sqrt(x^2 + y^2) scaled by the larger one, so that neither the squares overflow nor underflow.
+function __K2L_Num.hypot(x, y)
+    x, y = abs(x), abs(y)
+    if x == huge or y == huge then
+        return huge
+    elseif x < y then
+        x, y = y, x
+    end
     if x == 0 then
-        return x * 1.0
-    end
-    return math.floor(x) + 0.0
-end
-
--- Math.ceil(-0.5) is -0.0
-function __K2L_Num.ceil(x)
-    local r = math.ceil(x) + 0.0
-    if r == 0 and (x < 0 or 1 / x < 0) then
-        return NEG_ZERO
-    end
-    return r
-end
-
-function __K2L_Num.truncate(x)
-    if x ~= x or x == math.huge or x == -math.huge then
         return x
     end
-    local r = (x >= 0 and math.floor(x) or math.ceil(x)) + 0.0
-    if r == 0 and (x < 0 or 1 / x < 0) then
-        return NEG_ZERO
-    end
-    return r
+    local r = y / x
+    return x * sqrt(1 + r * r)
 end
 
--- Math.pow: 1 ^ NaN and (+-1) ^ (+-Infinity) are NaN on the JVM, 1 in C.
-function __K2L_Num.pow(x, y)
-    if (x == 1 or x == -1) and (y ~= y or y == math.huge or y == -math.huge) then
-        return 0 / 0
+-- The real cube root: |x|^(1/3) with the sign of x, and one Newton step to correct the rounding of the power.
+function __K2L_Num.cbrt(x)
+    if x == 0 or x ~= x or x == huge or x == -huge then
+        return x
     end
-    return x ^ y
+    local a = abs(x)
+    local r = a ^ (1 / 3)
+    r = r - (r * r * r - a) / (3 * r * r)
+    return x < 0 and -r or r
 end
-
--- Math.max and Math.min of Doubles: NaN wins, and 0.0 is greater than -0.0 (math.max and math.min tell neither).
-local function maxD(a, b)
-    if a > b then
-        return a
-    elseif b > a then
-        return b
-    elseif a ~= a then
-        return a
-    elseif b ~= b or (a == 0 and 1 / a < 0) then
-        return b
-    end
-    return a
-end
-
-local function minD(a, b)
-    if a < b then
-        return a
-    elseif b < a then
-        return b
-    elseif a ~= a then
-        return a
-    elseif b ~= b or (a == 0 and 1 / a > 0) then
-        return b
-    end
-    return a
-end
-
-__K2L_Num.maxD, __K2L_Num.minD = maxD, minD
 
 function __K2L_Num.signInt(x)
     if x > 0 then
@@ -140,62 +114,22 @@ function __K2L_Num.signDouble(x)
     elseif x < 0 then
         return -1.0
     end
-    return x
+    return x -- 0, or NaN
 end
 
 -- Round half to even, as kotlin.math.round and Math.rint do.
 function __K2L_Num.round(x)
-    if x ~= x or x == math.huge or x == -math.huge then
-        return x
-    end
     local f = math.floor(x)
     local d = x - f
-    local r
-    if d < 0.5 then
-        r = f
-    elseif d > 0.5 then
-        r = f + 1
-    elseif f % 2 == 0 then
-        r = f
-    else
-        r = f + 1
-    end
-    if r == 0 and (x < 0 or 1 / x < 0) then
-        return NEG_ZERO
-    end
-    return r + 0.0
-end
-
--- Round half up, as Math.round does.
-local function roundHalfUp(x)
-    local f = math.floor(x)
-    if x - f >= 0.5 then
+    if d > 0.5 or (d == 0.5 and f % 2 ~= 0) then
         return f + 1
     end
-    -- + 0: math.floor(-0.0) is -0.0 where integers are doubles
-    return f + 0
+    return f
 end
 
-function __K2L_Num.roundToInt(x)
-    if x ~= x then
-        error(__K2L_IllegalArgumentException.new("Cannot round NaN value."))
-    elseif x >= 2147483647 then
-        return 2147483647
-    elseif x <= -2147483648 then
-        return -2147483648
-    end
-    return roundHalfUp(x)
-end
-
-function __K2L_Num.roundToLong(x)
-    if x ~= x then
-        error(__K2L_IllegalArgumentException.new("Cannot round NaN value."))
-    elseif x >= 9223372036854775807 then
-        return MAX_LONG
-    elseif x <= -9223372036854775808 then
-        return MIN_LONG
-    end
-    return roundHalfUp(x)
+-- x.IEEErem(y) (Math.IEEEremainder): x - n * y for the integer n nearest x / y, ties to even (inexact when x / y is large)
+function __K2L_Num.IEEErem(x, y)
+    return x - y * __K2L_Num.round(x / y)
 end
 
 function __K2L_Num.isInfinite(x)
@@ -241,62 +175,12 @@ function __K2L_Num.toRadix(n, radix)
     return (negative and "-" or "") .. string.reverse(table.concat(out))
 end
 
--- Integer.toBinaryString / toHexString / toOctalString: the 32-bit two's complement.
-function __K2L_Num.toRadixUnsigned(n, radix)
-    return __K2L_Num.toRadix(n % 4294967296, radix)
-end
-
--- Long.toBinaryString/toOctalString/toHexString where a Long is a double: the digits of the 64-bit two's complement
--- pattern, [shift] bits each (exact while |n| < 2^53).
-function __K2L_Num.longToUnsignedRadix(n, shift)
-    local hi = math.floor(n / 4294967296)
-    local words = {n - hi * 4294967296, hi % 4294967296}
-    local out = {}
-    for first = 0, 63, shift do
-        local d = 0
-        for b = 0, shift - 1 do
-            local i = first + b
-            if i < 64 and math.floor(words[math.floor(i / 32) + 1] / 2 ^ (i % 32)) % 2 == 1 then
-                d = d + 2 ^ b
-            end
-        end
-        out[#out + 1] = ("0123456789abcdef"):sub(d + 1, d + 1)
-    end
-    local digits = string.reverse(table.concat(out)):gsub("^0+", "")
-    return digits == "" and "0" or digits
-end
-
--- Integer.reverse: the 32 bits in reverse order
-function __K2L_Num.reverseInt(x)
-    x = x % 4294967296
-    local r = 0
-    for _ = 1, 32 do
-        local b = x % 2
-        r = r * 2 + b
-        x = math.floor((x - b) / 2)
-    end
-    return r >= 2147483648 and r - 4294967296 or r
-end
-
--- Character.getNumericValue: digits and the Latin letters (a and A are 10, up to 35), -1 for other characters.
-function __K2L_Num.numericValue(c)
-    local b = string.byte(c)
-    if b >= 48 and b <= 57 then
-        return b - 48
-    elseif b >= 97 and b <= 122 then
-        return b - 87
-    elseif b >= 65 and b <= 90 then
-        return b - 55
-    end
-    return -1
-end
-
 local POW2 = {[0] = 1}
 for i = 1, 16 do
     POW2[i] = POW2[i - 1] * 2
 end
 
--- Byte, Short, UByte and UShort .rotateLeft(n) within [bits] (8 or 16) bits; a negative n rotates right.
+-- Byte and Short .rotateLeft(n) within [bits] (8 or 16) bits; a negative n rotates right.
 function __K2L_Num.rotateSmall(x, n, bits, signed)
     local size = POW2[bits]
     local u = x % size
@@ -348,22 +232,6 @@ function __K2L_Num.countLeadingZeroBits(n)
         n = __K2L_FloorDiv(n, 2)
     end
     return 32 - bits
-end
-
-function __K2L_Num.toByte(n)
-    return (n + 128) % 256 - 128
-end
-
-function __K2L_Num.toShort(n)
-    return (n + 32768) % 65536 - 32768
-end
-
--- Int.mod / Math.floorMod: the result has the sign of the divisor, which is Lua's %.
-function __K2L_Num.mod(a, b)
-    if b == 0 then
-        error(__K2L_ArithmeticException.new("/ by zero"))
-    end
-    return a % b
 end
 
 -- Second resolution only; measureTimeMillis uses the CPU clock instead.

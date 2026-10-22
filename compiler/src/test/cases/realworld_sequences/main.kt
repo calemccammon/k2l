@@ -83,10 +83,10 @@ fun main() {
     println("max prime gap below 1000: ${gaps.max()} after ${sieve(1000)[gaps.indexOf(gaps.max())]}")
 
     println("fibonacci: ${fibonacci().take(20).joinToString()}")
-    val firstBig = fibonacci().withIndex().first { it.value.toString().length >= 15 }
-    println("first 15-digit fibonacci: F(${firstBig.index}) = ${firstBig.value}")
+    val firstBig = fibonacci().withIndex().first { it.value.toString().length >= 12 }
+    println("first 12-digit fibonacci: F(${firstBig.index}) = ${firstBig.value}")
     println("even fib sum below 4M: ${fibonacci().takeWhile { it < 4_000_000 }.filter { it % 2 == 0L }.sum()}")
-    println("digit sum of F(75): ${digitsOf(fibonacci().elementAt(75)).sum()}")
+    println("digit sum of F(55): ${digitsOf(fibonacci().elementAt(55)).sum()}")
     println("happy numbers: ${(1..50).filter(::isHappy)}")
 
     val readings = parseReadings(SENSOR).toList()

@@ -23,20 +23,16 @@ class LualibBundleTest {
     }
 
     @TestFactory
-    fun everyFeatureLoadsTogether(): List<DynamicTest> = LuaTarget.entries.filter(LuaInterpreters::selects).flatMap { target ->
-        // --long64 emulate has its own variants of the runtime on the targets without integers
-        listOf(false, true).filter { !it || !target.hasIntegers }.map { emulate ->
-            val label = if (emulate) "all features on ${target.id} with long64=emulate" else "all features on ${target.id}"
-            DynamicTest.dynamicTest(label) {
-                val interpreter = LuaInterpreters.of(target)
-                assumeInterpreter(interpreter != null, "no interpreter for ${target.id} found")
-                val bundle = dir.resolve("bundle_${target.name}_$emulate.lua")
-                // Features that exist only as another target's variant (e.g. IMul.float) are left out.
-                val available = features.filter { runCatching { Lualib.feature(it, target, emulate) }.isSuccess }
-                Files.writeString(bundle, Lualib.bundle(available, target, emulate))
-                val (status, output) = runLua(requireNotNull(interpreter), dir, bundle.fileName.toString())
-                assertEquals(0, status, "bundle of all features failed to load:\n$output")
-            }
+    fun everyFeatureLoadsTogether(): List<DynamicTest> = LuaTarget.entries.filter(LuaInterpreters::selects).map { target ->
+        DynamicTest.dynamicTest("all features on ${target.id}") {
+            val interpreter = LuaInterpreters.of(target)
+            assumeInterpreter(interpreter != null, "no interpreter for ${target.id} found")
+            val bundle = dir.resolve("bundle_${target.name}.lua")
+            // Features that exist only as another target's variant (e.g. IMul.float) are left out.
+            val available = features.filter { runCatching { Lualib.feature(it, target) }.isSuccess }
+            Files.writeString(bundle, Lualib.bundle(available, target))
+            val (status, output) = runLua(requireNotNull(interpreter), dir, bundle.fileName.toString())
+            assertEquals(0, status, "bundle of all features failed to load:\n$output")
         }
     }
 }

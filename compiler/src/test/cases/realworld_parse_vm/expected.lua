@@ -1,35 +1,28 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
-local __K2L_IDiv = ____lualib.__K2L_IDiv
-local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IndexError = ____lualib.__K2L_IndexError
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_List = ____lualib.__K2L_List
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
 local __K2L_Shl = ____lualib.__K2L_Shl
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringEndsWith = ____lualib.__K2L_StringEndsWith
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
@@ -38,9 +31,7 @@ local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Insn = __K2L_Class("Insn")
-__K2L_ClassInfo(Insn, "Insn", "Insn", "class")
 Insn.Push = __K2L_Class("Insn$Push", Insn)
-__K2L_ClassInfo(Insn.Push, "Insn.Push", "Insn$Push", "class")
 
 function Insn.Push:____init(v)
     self.v = v
@@ -63,7 +54,6 @@ function Insn.Push:equals(other)
 end
 
 Insn.Load = __K2L_Class("Insn$Load", Insn)
-__K2L_ClassInfo(Insn.Load, "Insn.Load", "Insn$Load", "class")
 
 function Insn.Load:____init(slot)
     self.slot = slot
@@ -86,7 +76,6 @@ function Insn.Load:equals(other)
 end
 
 Insn.Store = __K2L_Class("Insn$Store", Insn)
-__K2L_ClassInfo(Insn.Store, "Insn.Store", "Insn$Store", "class")
 
 function Insn.Store:____init(slot)
     self.slot = slot
@@ -109,7 +98,6 @@ function Insn.Store:equals(other)
 end
 
 Insn.Jump = __K2L_Class("Insn$Jump", Insn)
-__K2L_ClassInfo(Insn.Jump, "Insn.Jump", "Insn$Jump", "class")
 
 function Insn.Jump:____init(target)
     self.target = target
@@ -132,7 +120,6 @@ function Insn.Jump:equals(other)
 end
 
 Insn.JumpIfZero = __K2L_Class("Insn$JumpIfZero", Insn)
-__K2L_ClassInfo(Insn.JumpIfZero, "Insn.JumpIfZero", "Insn$JumpIfZero", "class")
 
 function Insn.JumpIfZero:____init(target)
     self.target = target
@@ -155,7 +142,6 @@ function Insn.JumpIfZero:equals(other)
 end
 
 Insn.Call = __K2L_Class("Insn$Call", Insn)
-__K2L_ClassInfo(Insn.Call, "Insn.Call", "Insn$Call", "class")
 
 function Insn.Call:____init(target)
     self.target = target
@@ -178,7 +164,6 @@ function Insn.Call:equals(other)
 end
 
 Insn.Arith = __K2L_Class("Insn$Arith", Insn)
-__K2L_ClassInfo(Insn.Arith, "Insn.Arith", "Insn$Arith", "class")
 
 function Insn.Arith:____init(op)
     self.op = op
@@ -201,7 +186,6 @@ function Insn.Arith:equals(other)
 end
 
 Insn.Cmp = __K2L_Class("Insn$Cmp", Insn)
-__K2L_ClassInfo(Insn.Cmp, "Insn.Cmp", "Insn$Cmp", "class")
 
 function Insn.Cmp:____init(op)
     self.op = op
@@ -224,7 +208,6 @@ function Insn.Cmp:equals(other)
 end
 
 Insn.Ret = __K2L_Class("Insn$Ret", Insn)
-__K2L_ClassInfo(Insn.Ret, "Insn.Ret", "Insn$Ret", "class")
 
 function Insn.Ret:toString()
     return "Ret"
@@ -235,7 +218,6 @@ function Insn.Ret:hashCode()
 end
 
 Insn.Dup = __K2L_Class("Insn$Dup", Insn)
-__K2L_ClassInfo(Insn.Dup, "Insn.Dup", "Insn$Dup", "class")
 
 function Insn.Dup:toString()
     return "Dup"
@@ -246,7 +228,6 @@ function Insn.Dup:hashCode()
 end
 
 Insn.Swap = __K2L_Class("Insn$Swap", Insn)
-__K2L_ClassInfo(Insn.Swap, "Insn.Swap", "Insn$Swap", "class")
 
 function Insn.Swap:toString()
     return "Swap"
@@ -257,7 +238,6 @@ function Insn.Swap:hashCode()
 end
 
 Insn.Pop = __K2L_Class("Insn$Pop", Insn)
-__K2L_ClassInfo(Insn.Pop, "Insn.Pop", "Insn$Pop", "class")
 
 function Insn.Pop:toString()
     return "Pop"
@@ -268,7 +248,6 @@ function Insn.Pop:hashCode()
 end
 
 Insn.Print = __K2L_Class("Insn$Print", Insn)
-__K2L_ClassInfo(Insn.Print, "Insn.Print", "Insn$Print", "class")
 
 function Insn.Print:toString()
     return "Print"
@@ -279,7 +258,6 @@ function Insn.Print:hashCode()
 end
 
 Insn.Emit = __K2L_Class("Insn$Emit", Insn)
-__K2L_ClassInfo(Insn.Emit, "Insn.Emit", "Insn$Emit", "class")
 
 function Insn.Emit:toString()
     return "Emit"
@@ -290,7 +268,6 @@ function Insn.Emit:hashCode()
 end
 
 Insn.Halt = __K2L_Class("Insn$Halt", Insn)
-__K2L_ClassInfo(Insn.Halt, "Insn.Halt", "Insn$Halt", "class")
 
 function Insn.Halt:toString()
     return "Halt"
@@ -301,7 +278,6 @@ function Insn.Halt:hashCode()
 end
 
 local AsmError = __K2L_Class("AsmError", __K2L_Exception)
-__K2L_ClassInfo(AsmError, "AsmError", "AsmError", "class")
 
 function AsmError:____init(lineNo, msg)
     __K2L_Exception.____init(self, "asm line " .. lineNo .. ": " .. msg)
@@ -309,7 +285,6 @@ function AsmError:____init(lineNo, msg)
 end
 
 local VmFault = __K2L_Class("VmFault", __K2L_Exception)
-__K2L_ClassInfo(VmFault, "VmFault", "VmFault", "class")
 
 function VmFault:____init(pc, msg)
     __K2L_Exception.____init(self, "fault at pc=" .. pc .. ": " .. msg)
@@ -317,12 +292,11 @@ function VmFault:____init(pc, msg)
 end
 
 local Assembler = __K2L_Class("Assembler")
-__K2L_ClassInfo(Assembler, "Assembler", "Assembler", "class")
 
 function Assembler:____init()
-    self.labelDef = __K2L_Regex.new("^([A-Za-z_][\\w.]*):$")
-    self.arithOps = __K2L_ReadOnlyMapOf(__K2L_Pair.new("add", "+"), __K2L_Pair.new("sub", "-"), __K2L_Pair.new("mul", "*"), __K2L_Pair.new("div", "/"), __K2L_Pair.new("mod", "%"), __K2L_Pair.new("and", "&"), __K2L_Pair.new("or", "|"), __K2L_Pair.new("xor", "^"), __K2L_Pair.new("shl", "<"))
-    self.cmpOps = __K2L_ReadOnlyMapOf(__K2L_Pair.new("eq", "=="), __K2L_Pair.new("ne", "!="), __K2L_Pair.new("lt", "<"), __K2L_Pair.new("le", "<="), __K2L_Pair.new("gt", ">"), __K2L_Pair.new("ge", ">="))
+    self.labelDef = __K2L_Regex.new("^([A-Za-z_][\\w.]*):$", "^([A-Za-z_][%w_%.]*):$")
+    self.arithOps = __K2L_MapOf(__K2L_Pair.new("add", "+"), __K2L_Pair.new("sub", "-"), __K2L_Pair.new("mul", "*"), __K2L_Pair.new("div", "/"), __K2L_Pair.new("mod", "%"), __K2L_Pair.new("and", "&"), __K2L_Pair.new("or", "|"), __K2L_Pair.new("xor", "^"), __K2L_Pair.new("shl", "<"))
+    self.cmpOps = __K2L_MapOf(__K2L_Pair.new("eq", "=="), __K2L_Pair.new("ne", "!="), __K2L_Pair.new("lt", "<"), __K2L_Pair.new("le", "<="), __K2L_Pair.new("gt", ">"), __K2L_Pair.new("ge", ">="))
 end
 
 function Assembler:cleaned(src)
@@ -351,10 +325,9 @@ function Assembler:cleaned(src)
 end
 
 function Assembler:assemble(src)
-    local labels = __K2L_HashMap.new()
+    local labels = __K2L_Map.new()
     local addr = 0
     local ____list_2 = self:cleaned(src)
-    local ____mod = ____list_2.____modCount
     for ____i_2 = 1, ____list_2.size do
         local ____item = ____list_2[____i_2]
         local n, l = ____item.first, ____item.second
@@ -367,13 +340,9 @@ function Assembler:assemble(src)
         else
             addr = addr + 1
         end
-        if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
-            break
-        end
     end
     local out = __K2L_List.new()
     local ____list_3 = self:cleaned(src)
-    local ____mod_1 = ____list_3.____modCount
     for ____i_3 = 1, ____list_3.size do
         local ____item_1 = ____list_3[____i_3]
         local n, l = ____item_1.first, ____item_1.second
@@ -381,7 +350,7 @@ function Assembler:assemble(src)
             if self.labelDef:matches(l) then
                 goto ____continue
             end
-            local parts = __K2L_Regex.new("\\s+"):split(l, 2)
+            local parts = __K2L_Regex.new("\\s+", "%s+"):split(l, 2)
             local op = parts:get(0):lower()
             local arg = parts:getOrNull(1)
             local function need()
@@ -454,9 +423,6 @@ function Assembler:assemble(src)
             out:add(____temp_1)
         end
         ::____continue::
-        if ____list_3.____modCount ~= ____mod_1 and ____list_3:____comodified(____i_3) then
-            break
-        end
     end
     return out
 end
@@ -516,13 +482,12 @@ local function disassemble(code)
             else
                 text = __K2L_Str(insn):lower()
             end
-            self:yield(__K2L_StringFormat("  %03d  %s", pc, text))
+            self:yield(string.format("  %03d  %s", pc, text))
         end
     end)
 end
 
 local Vm = __K2L_Class("Vm")
-__K2L_ClassInfo(Vm, "Vm", "Vm", "class")
 
 function Vm:____init(code, maxSteps)
     if maxSteps == nil then
@@ -530,9 +495,9 @@ function Vm:____init(code, maxSteps)
     end
     self.code = code
     self.maxSteps = maxSteps
-    self.stack = __K2L_ListOfSize(64, 0, "[I")
+    self.stack = __K2L_ListOfSize(64, 0, true)
     self.sp = 0
-    self.regs = __K2L_ListOfSize(8, 0, "[I")
+    self.regs = __K2L_ListOfSize(8, 0, true)
     self.calls = __K2L_ArrayDeque.new()
     self.output = __K2L_StringBuilder.new()
     self.steps = 0
@@ -669,7 +634,7 @@ function Vm:arith(pc, op, a, b)
         if b == 0 then
             error(VmFault.new(pc, "division by zero"))
         else
-            return op == "/" and __K2L_IDiv(a, b) or (b ~= 0 and __K2L_Fmod(a, b) + 0 or __K2L_IRem(a, b))
+            return op == "/" and a // b or a % b
         end
     elseif op == "&" then
         return a & b
@@ -685,7 +650,7 @@ end
 local programs = __K2L_MapOf(__K2L_Pair.new("factorial", "\n        push 10\n        store 0        ; n\n        push 1\n        store 1        ; acc\n    loop:\n        load 0\n        jz done\n        load 1\n        load 0\n        mul\n        store 1\n        load 0\n        push 1\n        sub\n        store 0\n        jmp loop\n    done:\n        load 1\n        print\n        load 1\n        halt\n    "), __K2L_Pair.new("gcd_calls", "\n        push 1071\n        push 462\n        call gcd\n        print\n        push 'O'\n        emit\n        push 'K'\n        emit\n        halt\n    gcd:                 ; (a b -- gcd)\n        dup\n        jz gcd.end\n        swap\n        store 7\n        dup\n        load 7\n        swap\n        mod\n        jmp gcd\n    gcd.end:\n        pop\n        ret\n    "), __K2L_Pair.new("bits", "\n        push 1\n        push 31\n        shl\n        dup\n        print\n        push 0x7fffffff\n        add\n        print\n        push -7\n        push 2\n        div\n        print\n        push -7\n        push 2\n        mod\n        print\n        push 12\n        push 10\n        xor\n        push 3\n        lt\n        print\n        halt\n    "), __K2L_Pair.new("underflow", "push 1\nadd\nhalt"), __K2L_Pair.new("divzero", "push 4\npush 0\ndiv\nhalt"), __K2L_Pair.new("spin", "top:\njmp top"), __K2L_Pair.new("recurse", "f:\ncall f"), __K2L_Pair.new("badret", "ret"), __K2L_Pair.new("badreg", "push 1\nstore 9"), __K2L_Pair.new("falloff", "push 1"))
 
 local ____lambda_1 = function(____p1) return print(__K2L_Str(____p1)) end
-local ____lambda_2 = function(it) return __K2L_KClassOfValue(it).simpleName end
+local ____lambda_2 = function(it) return __K2L_SimpleName(it) end
 local ____lambda_3 = function(____a, ____b)
     local ____x_1, ____y_1 = ____b.value, ____a.value
     if ____x_1 ~= ____y_1 then
@@ -696,7 +661,6 @@ end
 local function main()
     local ____map = programs
     local ____keys, ____values, ____n_3 = ____map:____arrays()
-    local ____mod_2 = ____map.____modCount
     for ____i_5 = 1, ____n_3 do
         local name, src = ____keys[____i_5], ____values[____i_5]
         local code = Assembler:assemble(__K2L_Text.trimIndent(src))
@@ -706,7 +670,7 @@ local function main()
             end
         end
         local vm = Vm.new(code, 500)
-        local ____ok, ____result_2 = __K2L_DeepPcall(function()
+        local ____ok, ____result_2 = pcall(function()
             local top = vm:run()
             print(name .. ": out=[" .. __K2L_StringTrim(vm.output:toString()) .. "] top=" .. top .. " steps=" .. vm.steps)
         end)
@@ -719,20 +683,13 @@ local function main()
                 error(____error, 0)
             end
         end
-        if ____map.____modCount ~= ____mod_2 and ____map:____comodified(____i_5, ____n_3) then
-            break
-        end
     end
-    local bad = __K2L_ReadOnlyListOf("push", "jmp nowhere", "a:\na:\nhalt", "frob 3", "push 12z", "push 'ab'")
-    local ____mod_3 = bad.____modCount
+    local bad = __K2L_ListOf("push", "jmp nowhere", "a:\na:\nhalt", "frob 3", "push 12z", "push 'ab'")
     for ____i_6 = 1, bad.size do
         local src = bad[____i_6]
         local r = __K2L_RunCatching(function() return Assembler:assemble(src) end)
         local ____receiver = r:exceptionOrNull()
         print(____receiver and ____receiver.message or "assembled " .. __K2L_Str(r:getOrNull()))
-        if bad.____modCount ~= ____mod_3 and bad:____comodified(____i_6) then
-            break
-        end
     end
     local ____list_4 = programs:getValues()
     local ____out_3 = {}
@@ -751,5 +708,5 @@ local function main()
     print(__K2L_Equals(Insn.Halt, Assembler:assemble("halt"):single()) and Insn.Push.new(3):equals(Insn.Push.new(3)))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Insn = Insn, AsmError = AsmError, VmFault = VmFault, Assembler = Assembler, disassemble = disassemble, Vm = Vm, programs = programs}

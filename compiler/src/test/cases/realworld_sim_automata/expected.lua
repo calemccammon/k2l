@@ -1,49 +1,45 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
-local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_Num = ____lualib.__K2L_Num
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Random = ____lualib.__K2L_Random
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Shr = ____lualib.__K2L_Shr
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_StringTrimEnd = ____lualib.__K2L_StringTrimEnd
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Life = __K2L_Class("Life")
 
 function Life:____init(width, height)
     self.width = width
     self.height = height
-    self.cells = __K2L_ListOfSize(self.width * self.height, false, "[Z")
-    self.next = __K2L_ListOfSize(self.width * self.height, false, "[Z")
+    self.cells = __K2L_ListOfSize(self.width * self.height, false, true)
+    self.next = __K2L_ListOfSize(self.width * self.height, false, true)
     self.generation = 0
 end
 
 function Life:get(x, y)
-    return self.cells:get(__K2L_Num.mod(y, self.height) * self.width + __K2L_Num.mod(x, self.width))
+    return self.cells:get(y % self.height * self.width + x % self.width)
 end
 
 function Life:set(x, y, alive)
     local ____object = self.cells
-    local ____key = __K2L_Num.mod(y, self.height) * self.width + __K2L_Num.mod(x, self.width)
+    local ____key = y % self.height * self.width + x % self.width
     ____object:set(____key, alive)
 end
 
 function Life:place(pattern, ox, oy)
     local ____list = __K2L_StringLines(__K2L_Text.trimIndent(pattern))
-    local ____mod = ____list.____modCount
     for ____i = 1, ____list.size do
         local row = ____list[____i]
         local dy = ____i - 1
@@ -57,9 +53,6 @@ function Life:place(pattern, ox, oy)
                     self:set(____key_1, ____key_2, true)
                 end
             end
-        end
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-            break
         end
     end
 end
@@ -119,7 +112,7 @@ local function elementary(rule, width, steps, seedCells)
     if seedCells == nil then
         seedCells = nil
     end
-    local row = __K2L_ListOfSize(width, 0, "[I")
+    local row = __K2L_ListOfSize(width, 0, true)
     if seedCells == nil then
         local ____object_2 = row
         local ____key_4 = width - 1
@@ -143,7 +136,7 @@ local function elementary(rule, width, steps, seedCells)
     for it = 0, steps - 1 do
         do
             out:add(__K2L_StringTrimEnd(row:joinToString("", nil, nil, nil, nil, ____lambda_1)))
-            local ____next = __K2L_ListOfSize(width, 0, "[I")
+            local ____next = __K2L_ListOfSize(width, 0, true)
             for i = 0, width - 1 do
                 local l = i == 0 and 0 or (row[i] or __K2L_IndexError(i - 1, row.size, "array"))
                 local c = row[i + 1] or __K2L_IndexError(i, row.size, "array")
@@ -161,22 +154,20 @@ local function elementary(rule, width, steps, seedCells)
 end
 
 local function langtonsAnt(size, steps)
-    local grid = __K2L_ListOfSize(size, function(it) return __K2L_ListOfSize(size, false, "[Z") end, "[[Z")
-    local x = size >= 0 and size // 2 or 0 - -size // 2
-    local y = size >= 0 and size // 2 or 0 - -size // 2
+    local grid = __K2L_ListOfSize(size, function(it) return __K2L_ListOfSize(size, false, true) end, true)
+    local x = size // 2
+    local y = size // 2
     local dir = 0
-    local dx = __K2L_TypedArrayOf("[I", 0, 1, 0, -1)
-    local dy = __K2L_TypedArrayOf("[I", -1, 0, 1, 0)
+    local dx = __K2L_ArrayOf(0, 1, 0, -1)
+    local dy = __K2L_ArrayOf(-1, 0, 1, 0)
     for it = 0, steps - 1 do
         do
-            local ____dividend = dir + 3
-            local ____dividend_1 = dir + 1
-            dir = grid:get(y):get(x) and (____dividend >= 0 and ____dividend % 4 or 0 - -____dividend % 4) or (____dividend_1 >= 0 and ____dividend_1 % 4 or 0 - -____dividend_1 % 4)
+            dir = grid:get(y):get(x) and (dir + 3) % 4 or (dir + 1) % 4
             local ____object_4 = grid:get(y)
             local ____key_5 = x
             ____object_4:set(____key_5, not grid:get(y):get(x))
-            x = __K2L_IRem(x + (dx[dir + 1] or __K2L_IndexError(dir, dx.size, "array")) + size, size)
-            y = __K2L_IRem(y + (dy[dir + 1] or __K2L_IndexError(dir, dy.size, "array")) + size, size)
+            x = (x + (dx[dir + 1] or __K2L_IndexError(dir, dx.size, "array")) + size) % size
+            y = (y + (dy[dir + 1] or __K2L_IndexError(dir, dy.size, "array")) + size) % size
         end
     end
     local ____sum = 0
@@ -202,9 +193,9 @@ local function langtonsAnt(size, steps)
 end
 
 local function sandpile(size, grains)
-    local pile = __K2L_ListOfSize(size, function(it) return __K2L_ListOfSize(size, 0, "[I") end, "[[I")
-    local ____object_5 = pile:get(size >= 0 and size // 2 or 0 - -size // 2)
-    local ____key_6 = size >= 0 and size // 2 or 0 - -size // 2
+    local pile = __K2L_ListOfSize(size, function(it) return __K2L_ListOfSize(size, 0, true) end, true)
+    local ____object_5 = pile:get(size // 2)
+    local ____key_6 = size // 2
     if ____key_6 < 0 or ____key_6 >= ____object_5.size then
         __K2L_IndexError(____key_6, ____object_5.size, "array")
     end
@@ -216,11 +207,9 @@ local function sandpile(size, grains)
         for y = 0, size - 1 do
             for x = 0, size - 1 do
                 if (pile[y + 1] or __K2L_IndexError(y, pile.size, "array")):get(x) >= 4 then
-                    local ____dividend_2 = (pile[y + 1] or __K2L_IndexError(y, pile.size, "array")):get(x)
-                    local q = ____dividend_2 >= 0 and ____dividend_2 // 4 or 0 - -____dividend_2 // 4
+                    local q = (pile[y + 1] or __K2L_IndexError(y, pile.size, "array")):get(x) // 4
                     local ____object_6 = pile[y + 1] or __K2L_IndexError(y, pile.size, "array")
-                    local ____dividend_3 = ____object_6[x + 1] or __K2L_IndexError(x, ____object_6.size, "array")
-                    ____object_6[x + 1] = ____dividend_3 >= 0 and ____dividend_3 % 4 or 0 - -____dividend_3 % 4
+                    ____object_6[x + 1] = (____object_6[x + 1] or __K2L_IndexError(x, ____object_6.size, "array")) % 4
                     topples = topples + q
                     if y > 0 then
                         local ____object_7 = pile[y] or __K2L_IndexError(y - 1, pile.size, "array")
@@ -270,7 +259,7 @@ local function main()
             soup:set(x, y, rng:nextInt(100) < 35)
         end
     end
-    local seen = __K2L_HashMap.new()
+    local seen = __K2L_Map.new()
     local populations = __K2L_ListOf()
     while soup.generation < 400 do
         local sig = soup:signature()
@@ -289,7 +278,7 @@ local function main()
     for ____i_5 = 1, ____n_3 do
         local _ = ____items_3[____i_5]
         local i = ____i_5 - 1
-        if (i >= 0 and i % 10 or 0 - -i % 10) == 0 then
+        if i % 10 == 0 then
             ____count = ____count + 1
             ____out[____count] = _
         end
@@ -297,7 +286,7 @@ local function main()
     print("population trace: " .. __K2L_Str(__K2L_ListWrap(____out, ____count)))
     print("peak " .. populations:max() .. " final " .. soup:population())
     print(soup:render())
-    local ____list_2 = __K2L_ReadOnlyListOf(30, 90, 110)
+    local ____list_2 = __K2L_ListOf(30, 90, 110)
     for ____i_8 = 1, ____list_2.size do
         local rule = ____list_2[____i_8]
         print("-- rule " .. rule)
@@ -316,10 +305,10 @@ local function main()
         end
         print("live cells: " .. ____sum_1)
     end
-    local wide = elementary(110, 200, 200, __K2L_TypedArrayOf("[I", 199))
+    local wide = elementary(110, 200, 200, __K2L_ArrayOf(199))
     print("rule 110 width 200 after 200 steps: " .. __K2L_StringToList(wide:last()):count(____lambda_3) .. " live, hash " .. __K2L_Hash(wide:joinToString("")))
     print("-- langton's ant")
-    local ____list_3 = __K2L_ReadOnlyListOf(200, 11000)
+    local ____list_3 = __K2L_ListOf(200, 11000)
     for ____i_9 = 1, ____list_3.size do
         local steps = ____list_3[____i_9]
         local ____destructured = langtonsAnt(64, steps)
@@ -341,5 +330,5 @@ local function main()
     print("grains left: " .. ____sum_2)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Life = Life, elementary = elementary, langtonsAnt = langtonsAnt, sandpile = sandpile}

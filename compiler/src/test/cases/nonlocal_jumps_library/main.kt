@@ -2,8 +2,7 @@
 // (the lualib implements the function): every call returns "R" or jumps when `f` is true.
 
 fun show(v: Any?): String = when (v) {
-    is Array<*> -> v.contentToString()
-    is IntArray -> v.contentToString()
+    is Array<*> -> v.contentToString() // an IntArray too: all arrays are one Lua class
     else -> "$v"
 }
 

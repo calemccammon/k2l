@@ -2,12 +2,12 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Regex = ____lualib.__K2L_Regex
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 
@@ -94,7 +94,7 @@ end
 
 local Shape = __K2L_Class("app.Shape")
 local Square = __K2L_Class("app.Square", nil, Shape)
-local hash = __K2L_Regex.new("@[0-9a-f]+")
+local hash = __K2L_Regex.new("@[0-9a-f]+", "@[0-9a-f]+")
 
 local function shape(s)
     return hash:replace(s, "@<hex>")
@@ -104,15 +104,15 @@ local function main()
     local p = P.new(1)
     print(shape(__K2L_Str(p)))
     print(shape(__K2L_Str(p)))
-    print(shape(__K2L_Str(__K2L_ReadOnlyListOf(p, Derived.new()))))
-    print(shape(__K2L_Str(__K2L_SingletonMapOf(__K2L_Pair.new("k", Outer.Nested.new())))))
+    print(shape(__K2L_Str(__K2L_ListOf(p, Derived.new()))))
+    print(shape(__K2L_Str(__K2L_MapOf(__K2L_Pair.new("k", Outer.Nested.new())))))
     print(shape(__K2L_Str(Outer.Inner.new(Outer.new()))))
     print(shape(__K2L_Str(Singleton)))
     print(shape(__K2L_Str(Square.new())))
     local any = p
     print(shape(__K2L_Str(any)))
     print(__K2L_Str(p) == __K2L_Str(p))
-    print(__K2L_Str(p) == "app.P@" .. __K2L_Str(__K2L_Num.toRadixUnsigned(__K2L_Hash(p), 16)))
+    print(__K2L_Str(p) == "app.P@" .. __K2L_Num.toRadix(__K2L_Hash(p), 16))
     print(__K2L_Hash(p) == __K2L_Hash(p))
     print(__K2L_Str(P.new(1)) ~= __K2L_Str(p))
     print(__K2L_Str(Hashed.new(2)) .. " " .. __K2L_Str(Hashed.new(3)))
@@ -120,5 +120,5 @@ local function main()
     print(shape(__K2L_StringBuilder.new():append(__K2L_Str(p)):toString()))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {P = P, Hashed = Hashed, Base = Base, Derived = Derived, Outer = Outer, Singleton = Singleton, D = D, E = E, Problem = Problem, Shape = Shape, Square = Square, hash = hash, shape = shape}

@@ -2,8 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_IteratorBuilder = ____lualib.__K2L_IteratorBuilder
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
@@ -66,7 +66,7 @@ end
 local Base = __K2L_Class("Base", __K2L_Sequence)
 
 function Base:iterator()
-    return __K2L_IteratorOf(__K2L_ReadOnlyListOf(7, 8, 9))
+    return __K2L_IteratorOf(__K2L_ListOf(7, 8, 9))
 end
 
 local Derived = __K2L_Class("Derived", Base)
@@ -81,14 +81,10 @@ local function describe(items)
 end
 
 local ____lambda_2 = function(it) return it * it end
-local ____lambda_3 = function(it)
-    return (it >= 0 and it % 2 or 0 - -it % 2) == 1
-end
+local ____lambda_3 = function(it) return it % 2 == 1 end
 local ____lambda_4 = function(it) return it > 2 end
 local ____lambda_5 = function(it) return #it end
-local ____lambda_6 = function(it)
-    return (it >= 0 and it % 2 or (it % 2 - 2) % (-2)) == 0
-end
+local ____lambda_6 = function(it) return it % 2 == 0 end
 local ____lambda_7 = function(it) return it + 1 end
 local ____lambda_8 = function(it) return it == 2 end
 local function main()
@@ -123,5 +119,5 @@ local function main()
     end
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {CountdownIterator = CountdownIterator, Countdown = Countdown, Words = Words, Fibonacci = Fibonacci, Base = Base, Derived = Derived, describe = describe}

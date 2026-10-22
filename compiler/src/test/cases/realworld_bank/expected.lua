@@ -1,25 +1,17 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashSetOf = ____lualib.__K2L_HashSetOf
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_JavaClass = ____lualib.__K2L_JavaClass
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
@@ -27,9 +19,11 @@ local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_ObservableProperty = ____lualib.__K2L_ObservableProperty
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
+local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringPadEnd = ____lualib.__K2L_StringPadEnd
@@ -45,8 +39,6 @@ local __K2L_VetoableProperty = ____lualib.__K2L_VetoableProperty
 
 local Customer
 local Money = __K2L_Class("bank.Money")
-__K2L_ClassInfo(Money, "bank.Money", "bank.Money", "class")
-__K2L_CompanionInfo(Money, "bank.Money.Companion", "bank.Money$Companion", "Companion")
 Money.____comparable = true
 
 function Money:____init(cents)
@@ -84,7 +76,7 @@ end
 function Money:toString()
     local sign = self.cents < 0 and "-" or ""
     local abs = math.abs(self.cents)
-    return sign .. "$" .. (abs >= 0 and abs // 100 or (abs + 99) // 100) .. "." .. __K2L_StringPadStart(tostring(abs >= 0 and abs % 100 or (abs % 100 - 100) % (-100)), 2, "0")
+    return sign .. "$" .. abs // 100 .. "." .. __K2L_StringPadStart(tostring(abs % 100), 2, "0")
 end
 
 function Money:hashCode()
@@ -118,7 +110,6 @@ local function getDollars(self)
 end
 
 local InsufficientFunds = __K2L_Class("bank.InsufficientFunds", __K2L_Exception)
-__K2L_ClassInfo(InsufficientFunds, "bank.InsufficientFunds", "bank.InsufficientFunds", "class")
 
 function InsufficientFunds:____init(account, requested, available)
     __K2L_Exception.____init(self, "account " .. account .. ": requested " .. __K2L_Str(requested) .. " but only " .. __K2L_Str(available) .. " available")
@@ -128,21 +119,18 @@ function InsufficientFunds:____init(account, requested, available)
 end
 
 local TransferFailed = __K2L_Class("bank.TransferFailed", __K2L_RuntimeException)
-__K2L_ClassInfo(TransferFailed, "bank.TransferFailed", "bank.TransferFailed", "class")
 
 function TransferFailed:____init(message, cause)
     __K2L_RuntimeException.____init(self, message, cause)
 end
 
 local Auditable = __K2L_Class("bank.Auditable")
-__K2L_ClassInfo(Auditable, "bank.Auditable", "bank.Auditable", "interface")
 
 function Auditable:audit(entry)
     self:getAuditLog():add("[" .. self:getAuditLog().size + 1 .. "] " .. entry)
 end
 
 local AuditTrail = __K2L_Class("bank.AuditTrail", nil, Auditable)
-__K2L_ClassInfo(AuditTrail, "bank.AuditTrail", "bank.AuditTrail", "class")
 
 function AuditTrail:____init()
     self.auditLog = __K2L_ListOf()
@@ -153,7 +141,6 @@ function AuditTrail:getAuditLog()
 end
 
 local Kind = __K2L_Class("bank.Kind")
-__K2L_ClassInfo(Kind, "bank.Kind", "bank.Kind", "class")
 
 function Kind:____init(name, ordinal)
     self.name = name
@@ -173,7 +160,6 @@ Kind.SAVINGS = Kind.new("SAVINGS", 1)
 Kind.CREDIT = Kind.new("CREDIT", 2)
 Kind.____values = {Kind.CHECKING, Kind.SAVINGS, Kind.CREDIT}
 local Account = __K2L_Class("bank.Account", nil, Auditable)
-__K2L_ClassInfo(Account, "bank.Account", "bank.Account", "class")
 
 function Account:____init(id, owner, trail)
     if trail == nil then
@@ -256,7 +242,6 @@ function Account:audit(...)
 end
 
 local Checking = __K2L_Class("bank.Checking", Account)
-__K2L_ClassInfo(Checking, "bank.Checking", "bank.Checking", "class")
 
 function Checking:____init(id, owner)
     Account.____init(self, id, owner)
@@ -285,7 +270,6 @@ function Checking:monthEnd()
 end
 
 local Savings = __K2L_Class("bank.Savings", Account)
-__K2L_ClassInfo(Savings, "bank.Savings", "bank.Savings", "class")
 
 function Savings:____init(id, owner, ratePercent)
     Account.____init(self, id, owner)
@@ -306,9 +290,7 @@ function Savings:withdraw(amount)
 end
 
 function Savings:monthEnd()
-    local ____dividend = self:getBalance().cents * self.ratePercent
-    local ____dividend_1 = ____dividend >= 0 and ____dividend // 100 or (____dividend + 99) // 100
-    local interest = Money.new(____dividend_1 >= 0 and ____dividend_1 // 12 or (____dividend_1 + 11) // 12)
+    local interest = Money.new(self:getBalance().cents * self.ratePercent // 100 // 12)
     if __K2L_Compare(interest, Money.ZERO) > 0 then
         self:deposit(interest)
     end
@@ -316,7 +298,6 @@ function Savings:monthEnd()
 end
 
 Customer = __K2L_Class("bank.Customer")
-__K2L_ClassInfo(Customer, "bank.Customer", "bank.Customer", "class")
 
 local ____lambda_2 = function(it) return __K2L_Text.first(it):upper() end
 function Customer:____init(name, email)
@@ -356,7 +337,6 @@ function Customer:getInitials()
 end
 
 local Bank = __K2L_Class("bank.Bank")
-__K2L_ClassInfo(Bank, "bank.Bank", "bank.Bank", "class")
 
 function Bank:____init(name)
     self.name = name
@@ -401,7 +381,7 @@ function Bank:transfer(from, to, amount)
         error(__K2L_NoSuchElementException.new("unknown account " .. to))
     end
     local target = ____value_2
-    local ____ok, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok, ____result_1 = pcall(function()
         source:withdraw(amount)
     end)
     if not ____ok then
@@ -420,14 +400,10 @@ end
 local ____lambda_3 = function(self, ...) return self:monthEnd(...) end
 function Bank:monthEnd()
     local ____collection = self.accounts:getValues()
-    local ____items_1, ____n_1 = __K2L_LoopItems(____collection)
-    local ____mod = ____collection.____modCount
+    local ____items_1, ____n_1 = ____collection:____array()
     for ____i_1 = 1, ____n_1 do
         local it = ____items_1[____i_1];
         (____lambda_3)(it)
-        if ____collection.____modCount ~= ____mod and ____collection:____comodified(____i_1, ____n_1) then
-            break
-        end
     end
 end
 
@@ -479,7 +455,7 @@ local function main()
     local alice = Customer.new("Alice  van Dyke", "ALICE@example.com")
     local bob = Customer.new("bob", "bob@example.com")
     print("initials: " .. alice:getInitials() .. " " .. alice:getInitials())
-    local ____ok_1, ____result_3 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_3 = pcall(function()
         bob:setEmail("not-an-email")
     end)
     if not ____ok_1 then
@@ -497,14 +473,14 @@ local function main()
     local a2 = bank:open(alice, Kind.SAVINGS, 12)
     local b1 = bank:open(bob, Kind.CHECKING)
     __K2L_RunCatching(function() return bank:open(bob, Kind.CREDIT) end):onFailure(function(it)
-        print(__K2L_Str(__K2L_KClassOfValue(it).simpleName) .. ": " .. __K2L_Str(it.message))
+        print(__K2L_Str(__K2L_SimpleName(it)) .. ": " .. __K2L_Str(it.message))
     end)
     a1:deposit(Money:of("120.5"))
     a2:deposit(getDollars(1000))
     b1:deposit(Money:of("15.25"))
     bank:transfer(a2.id, b1.id, getDollars(200))
     b1:withdraw(getDollars(240))
-    local ____ok_2, ____result_4 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_4 = pcall(function()
         bank:transfer(b1.id, a1.id, getDollars(100))
     end)
     if not ____ok_2 then
@@ -513,7 +489,7 @@ local function main()
             local e = ____error_2
             local ____cast = e.cause
             if getmetatable(____cast) ~= InsufficientFunds then
-                __K2L_CastFail(____cast, "bank.InsufficientFunds", "bank.InsufficientFunds")
+                __K2L_CastFail(____cast, "bank.InsufficientFunds")
             end
             local cause = ____cast
             print(__K2L_Str(e.message) .. ": " .. __K2L_Str(cause.message) .. " [requested " .. __K2L_Str(cause.requested) .. "]")
@@ -521,7 +497,7 @@ local function main()
             error(____error_2, 0)
         end
     end
-    local ____list_3 = __K2L_ReadOnlyListOf(function()
+    local ____list_3 = __K2L_ListOf(function()
         a2:withdraw(getDollars(1))
     end, function()
         a2:withdraw(getDollars(1))
@@ -530,25 +506,21 @@ local function main()
     end, function()
         bank:transfer("X-1", a1.id, getDollars(1))
     end)
-    local ____mod_1 = ____list_3.____modCount
     for ____i_4 = 1, ____list_3.size do
         local op = ____list_3[____i_4]
         do
-            local ____ok_3, ____result_5 = __K2L_DeepPcall(function()
+            local ____ok_3, ____result_5 = pcall(function()
                 op()
             end)
             if not ____ok_3 then
                 local ____error_3 = __K2L_ToThrowable(____result_5)
                 if __K2L_InstanceOf(____error_3, __K2L_Exception) then
                     local e = ____error_3
-                    print("error " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(e)).simpleName or "") .. ": " .. __K2L_Str(e.message))
+                    print("error " .. __K2L_Str(__K2L_SimpleName(e)) .. ": " .. __K2L_Str(e.message))
                 else
                     error(____error_3, 0)
                 end
             end
-        end
-        if ____list_3.____modCount ~= ____mod_1 and ____list_3:____comodified(____i_4) then
-            break
         end
     end
     b1:setFrozen(true)
@@ -559,13 +531,9 @@ local function main()
     print("bob frozen after verification: " .. tostring(b1:getFrozen()))
     bank:monthEnd()
     local ____list_4 = bank:report()
-    local ____mod_2 = ____list_4.____modCount
     for ____i_5 = 1, ____list_4.size do
         local it = ____list_4[____i_5];
         (____lambda_6)(it)
-        if ____list_4.____modCount ~= ____mod_2 and ____list_4:____comodified(____i_5) then
-            break
-        end
     end
     print("holdings: " .. __K2L_Str(bank:totalHoldings()))
     print("owners: " .. __K2L_Str(bank:getByOwner()))
@@ -592,13 +560,13 @@ local function main()
     end
     local ____arg_1 = a2:getAuditLog().size
     if getmetatable(a2) ~= Savings then
-        __K2L_CastFail(a2, "bank.Savings", "bank.Savings")
+        __K2L_CastFail(a2, "bank.Savings")
     end
     print("a2 audit size: " .. ____arg_1 .. ", savings withdrawals: " .. a2.withdrawalsThisMonth)
-    local set = __K2L_HashSetOf(a1, __K2L_NotNull(bank:get(a1.id)), b1)
-    print("distinct accounts: " .. set.size .. ", max money: " .. __K2L_Str(__K2L_ReadOnlyListOf(getDollars(3), Money:of("3.01"), getDollars(5):unaryMinus()):max()))
+    local set = __K2L_SetOf(a1, __K2L_NotNull(bank:get(a1.id)), b1)
+    print("distinct accounts: " .. set.size .. ", max money: " .. __K2L_Str(__K2L_ListOf(getDollars(3), Money:of("3.01"), getDollars(5):unaryMinus()):max()))
     print(Money:of("7.5"):times(3):equals(Money:of("22.50")))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Money = Money, getDollars = getDollars, InsufficientFunds = InsufficientFunds, TransferFailed = TransferFailed, Auditable = Auditable, AuditTrail = AuditTrail, Kind = Kind, Account = Account, Checking = Checking, Savings = Savings, Customer = Customer, Bank = Bank}

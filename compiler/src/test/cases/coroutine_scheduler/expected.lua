@@ -1,14 +1,13 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Continuation = ____lualib.__K2L_Continuation
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Result = ____lualib.__K2L_Result
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_SuspendCoroutine = ____lualib.__K2L_SuspendCoroutine
@@ -62,13 +61,9 @@ end
 function Scheduler:cancelAll(reason)
     local all = self.waiting:toList()
     self.waiting:clear()
-    local ____mod = all.____modCount
     for ____i = 1, all.size do
         local w = all[____i]
         w.cont:resumeWith(__K2L_Result.failure(__K2L_IllegalStateException.new(reason)))
-        if all.____modCount ~= ____mod and all:____comodified(____i) then
-            break
-        end
     end
 end
 
@@ -87,13 +82,9 @@ function Scheduler:runFrame()
     end
     local due = __K2L_ListWrap(____out, ____count)
     self.waiting:removeAll(due)
-    local ____mod_1 = due.____modCount
     for ____i_2 = 1, due.size do
         local w = due[____i_2]
         w.cont:resumeWith(__K2L_Result.success(__K2L_Unit))
-        if due.____modCount ~= ____mod_1 and due:____comodified(____i_2) then
-            break
-        end
     end
     return self.active > 0
 end
@@ -136,7 +127,7 @@ local function blink(name, times, every)
 end
 
 local function guardedWait()
-    local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
+    local ____ok, ____result, ____returned = pcall(function()
         print("[" .. scheduler.frame .. "] guard: waiting inside try")
         scheduler:waitFrames(2)
         print("[" .. scheduler.frame .. "] guard: woke inside try")
@@ -144,7 +135,7 @@ local function guardedWait()
         return true, "unreachable"
     end)
     if not ____ok then
-        ____ok, ____result, ____returned = __K2L_DeepPcall(function()
+        ____ok, ____result, ____returned = pcall(function()
             local ____error = __K2L_ToThrowable(____result)
             if __K2L_InstanceOf(____error, __K2L_IllegalStateException) then
                 local e = ____error
@@ -208,5 +199,5 @@ local function main()
     print("done at frame " .. scheduler.frame)
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Scheduler = Scheduler, Mailbox = Mailbox, scheduler = scheduler, blink = blink, guardedWait = guardedWait}

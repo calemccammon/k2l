@@ -1,8 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 
 local Shape = __K2L_Class("Shape")
 
@@ -37,7 +36,7 @@ function Rect:setCount(value)
 end
 
 function Rect:describe()
-    return self:getName() .. " " .. self:getLabel() .. " " .. __K2L_Str(self:getArea()) .. " " .. self:getCount()
+    return self:getName() .. " " .. self:getLabel() .. " " .. self:getArea() .. " " .. self:getCount()
 end
 
 local Square = __K2L_Class("Square", Rect)
@@ -128,14 +127,10 @@ function PlainSub:____init(a)
 end
 
 local function main()
-    local shapes = __K2L_ReadOnlyListOf(Rect.new(2.0, 3.0), Square.new(4.0))
-    local ____mod = shapes.____modCount
+    local shapes = __K2L_ListOf(Rect.new(2.0, 3.0), Square.new(4.0))
     for ____i = 1, shapes.size do
         local s = shapes[____i]
-        print(s:getName() .. " " .. __K2L_Str(s:getArea()))
-        if shapes.____modCount ~= ____mod and shapes:____comodified(____i) then
-            break
-        end
+        print(s:getName() .. " " .. s:getArea())
     end
     local r = Square.new(2.0)
     print(r:getLabel())
@@ -147,14 +142,10 @@ local function main()
     local q = Rect.new(1.0, 1.0)
     q:setCount(q:getCount() + 2)
     print(q:describe())
-    local bases = __K2L_ReadOnlyListOf(Impl.new(3), Fixed.new())
-    local ____mod_1 = bases.____modCount
+    local bases = __K2L_ListOf(Impl.new(3), Fixed.new())
     for ____i_1 = 1, bases.size do
         local b = bases[____i_1]
         print(b:getId() .. " " .. b:getDesc())
-        if bases.____modCount ~= ____mod_1 and bases:____comodified(____i_1) then
-            break
-        end
     end
     local c = Doubler.new()
     print(c:getN())
@@ -167,5 +158,5 @@ local function main()
     print(p.a .. " " .. p.b)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Shape = Shape, Rect = Rect, Square = Square, Base = Base, Impl = Impl, Fixed = Fixed, Counter = Counter, Doubler = Doubler, Plain = Plain, PlainSub = PlainSub}

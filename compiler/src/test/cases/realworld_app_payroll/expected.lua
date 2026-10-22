@@ -1,21 +1,18 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IDiv = ____lualib.__K2L_IDiv
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____Employees = require("staff.Employees")
 local ____Payroll = require("pay.Payroll")
 local Contractor = __K2L_Class("corp.Contractor", nil, ____Employees.Payable)
-__K2L_ClassInfo(Contractor, "corp.Contractor", "corp.Contractor", "class")
 
 function Contractor:____init(company, monthly)
     self.company = company
@@ -57,7 +54,7 @@ local ____lambda_6 = function(x)
     return getmetatable(x) == ____Payroll.Deduction
 end
 local ____lambda_7 = function(it) return it.amount end
-local ____lambda_8 = function(it) return __K2L_KClassOfValue(it).simpleName end
+local ____lambda_8 = function(it) return __K2L_SimpleName(it) end
 local function main()
     local ada = ____Employees.Lead.new("Ada", 120000)
     printTrace("lead")
@@ -66,25 +63,21 @@ local function main()
     printTrace("engineers")
     local dee = ____Employees.intern(____Employees.Employee, "Dee", bo)
     printTrace("intern")
-    local eng = ____Employees.Manager.new("Eve", 96000, __K2L_ReadOnlyListOf(ada, bo, cy))
+    local eng = ____Employees.Manager.new("Eve", 96000, __K2L_ListOf(ada, bo, cy))
     eng:plusAssign(dee)
     local ceo = ____Employees.Manager.new("Fay", 180000)
     ceo:plusAssign(eng)
     ceo:plusAssign(____Employees.Intern.new("Gus"))
     printTrace("managers")
     local ____list_1 = ceo:report()
-    local ____mod = ____list_1.____modCount
     for ____i_1 = 1, ____list_1.size do
         local it = ____list_1[____i_1];
         (____lambda_1)(it)
-        if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_1) then
-            break
-        end
     end
     print("headcount " .. ceo:getHeadcount() .. ", everyone: " .. __K2L_Str(ceo:everyone():map(____lambda_2):toList()))
     print(tostring(eng:contains(dee)) .. " " .. tostring(ceo:contains(dee)) .. " " .. tostring(eng:contains(ceo)) .. " " .. ada:payslip() .. " | " .. bo:payslip(3) .. " | " .. ceo:payslip(12))
     print("titles: " .. __K2L_Str(ceo:everyone():map(__K2L_PropertyRef.new("title", "corp/staff/Employee.title", ____lambda_3)):toList()))
-    local ____list_2 = __K2L_ReadOnlyListOf(ada, bo, Contractor.new("Acme", 9000))
+    local ____list_2 = __K2L_ListOf(ada, bo, Contractor.new("Acme", 9000))
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list_2:____array()
@@ -111,7 +104,7 @@ local function main()
     ____result_1 = ledger:get(bo):filter(____lambda_6):sumOf(____lambda_7)
     print("bonuses " .. ____arg .. ", bo's bonuses " .. ____arg_1 .. ", deductions " .. ____result_1)
     local other = ____Employees.Engineer.new("Ada", 1)
-    print(tostring(ada:equals(other)) .. " " .. tostring(ada:equals(ada)) .. " " .. __K2L_ReadOnlySetOf(ada, bo, ada, cy).size .. " " .. tostring(ada:hashCode() == __K2L_Hash("ADA-100")))
+    print(tostring(ada:equals(other)) .. " " .. tostring(ada:equals(ada)) .. " " .. __K2L_SetOf(ada, bo, ada, cy).size .. " " .. tostring(ada:hashCode() == __K2L_Hash("ADA-100")))
     printTrace("other")
     local byTitle = ceo:everyone():groupBy(____lambda_8):mapValues(function(____destructured)
         local v = ____destructured.value
@@ -128,28 +121,24 @@ local function main()
     print(__K2L_Str(byTitle))
     local ctor = ____Employees.Intern.new
     local bound = function(...) return ada:payslip(...) end
-    print(ctor("Hal"):getTitle() .. " " .. bound(7) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf(1, 2):map(function(...) return ada:payslip(...) end)))
-    print(__K2L_IDiv(36000, 12))
+    print(ctor("Hal"):getTitle() .. " " .. bound(7) .. " " .. __K2L_Str(__K2L_ListOf(1, 2):map(function(...) return ada:payslip(...) end)))
+    print(36000 // 12)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Contractor = Contractor, printTrace = printTrace}
 -- ==== pay/Payroll.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 
 local Adjustment = __K2L_Class("corp.pay.Adjustment")
-__K2L_ClassInfo(Adjustment, "corp.pay.Adjustment", "corp.pay.Adjustment", "interface")
 local Bonus = __K2L_Class("corp.pay.Bonus", nil, Adjustment)
-__K2L_ClassInfo(Bonus, "corp.pay.Bonus", "corp.pay.Bonus", "class")
 
 function Bonus:____init(amount, reason)
     self.amount = amount
@@ -173,7 +162,6 @@ function Bonus:equals(other)
 end
 
 local Deduction = __K2L_Class("corp.pay.Deduction", nil, Adjustment)
-__K2L_ClassInfo(Deduction, "corp.pay.Deduction", "corp.pay.Deduction", "class")
 
 function Deduction:____init(amount, reason)
     self.amount = amount
@@ -197,7 +185,6 @@ function Deduction:equals(other)
 end
 
 local Raise = __K2L_Class("corp.pay.Raise", nil, Adjustment)
-__K2L_ClassInfo(Raise, "corp.pay.Raise", "corp.pay.Raise", "class")
 
 function Raise:____init(percent, reason)
     if reason == nil then
@@ -220,14 +207,13 @@ function Raise:equals(other)
 end
 
 local Ledger = __K2L_Class("corp.pay.Ledger")
-__K2L_ClassInfo(Ledger, "corp.pay.Ledger", "corp.pay.Ledger", "class")
 
 function Ledger:____init()
     self.entries = __K2L_Map.new()
 end
 
 function Ledger:get(p)
-    return self.entries:get(p) or __K2L_ReadOnlyListOf()
+    return self.entries:get(p) or __K2L_ListOf()
 end
 
 local ____lambda_1 = function() return __K2L_ListOf() end
@@ -241,7 +227,6 @@ function Ledger:payees()
 end
 
 local Payroll = __K2L_Class("corp.pay.Payroll")
-__K2L_ClassInfo(Payroll, "corp.pay.Payroll", "corp.pay.Payroll", "class")
 
 function Payroll:____init(ledger)
     self.ledger = ledger
@@ -254,21 +239,15 @@ end
 function Payroll:net(e)
     local pay = e:getMonthly()
     local ____list = self.ledger:get(e)
-    local ____mod = ____list.____modCount
     for ____i = 1, ____list.size do
         local adj = ____list[____i]
         local ____mt = getmetatable(adj)
         if ____mt == Raise then
-            local ____arg = pay
-            local ____dividend = pay * adj.percent
-            pay = ____arg + (____dividend >= 0 and ____dividend // 100 or 0 - -____dividend // 100)
+            pay = pay + pay * adj.percent // 100
         elseif ____mt == Bonus then
             pay = pay + adj.amount
         elseif ____mt == Deduction then
             pay = pay - adj.amount
-        end
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-            break
         end
     end
     return pay
@@ -332,23 +311,18 @@ return {Adjustment = Adjustment, Bonus = Bonus, Deduction = Deduction, Raise = R
 -- ==== staff/Employees.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
-local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
+local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local trace = __K2L_ListOf()
 local Payable = __K2L_Class("corp.staff.Payable")
-__K2L_ClassInfo(Payable, "corp.staff.Payable", "corp.staff.Payable", "interface")
 
 function Payable:getCurrency()
     return "EUR"
@@ -362,10 +336,7 @@ function Payable:payslip(month)
 end
 
 local Reportable = __K2L_Class("corp.staff.Reportable")
-__K2L_ClassInfo(Reportable, "corp.staff.Reportable", "corp.staff.Reportable", "interface")
 local Employee = __K2L_Class("corp.staff.Employee", nil, Payable, Reportable)
-__K2L_ClassInfo(Employee, "corp.staff.Employee", "corp.staff.Employee", "class")
-__K2L_CompanionInfo(Employee, "corp.staff.Employee.Companion", "corp.staff.Employee$Companion", "Companion")
 
 function Employee:____init(name, baseSalary)
     self.name = name
@@ -394,18 +365,18 @@ function Employee:getTitle()
 end
 
 function Employee:getMonthly()
-    return self.baseSalary >= 0 and self.baseSalary // 12 or 0 - -self.baseSalary // 12
+    return self.baseSalary // 12
 end
 
 function Employee:report(indent)
     if indent == nil then
         indent = ""
     end
-    return __K2L_SingletonListOf(indent .. __K2L_Str(self))
+    return __K2L_ListOf(indent .. __K2L_Str(self))
 end
 
 function Employee:toString()
-    return __K2L_Str(__K2L_KClassOfValue(self).simpleName) .. "(" .. self.name .. ", " .. self:getTitle() .. ", " .. self:getMonthly() .. ")"
+    return __K2L_Str(__K2L_SimpleName(self)) .. "(" .. self.name .. ", " .. self:getTitle() .. ", " .. self:getMonthly() .. ")"
 end
 
 function Employee:equals(other)
@@ -427,7 +398,6 @@ end
 
 Employee:____initCompanion()
 local Engineer = __K2L_Class("corp.staff.Engineer", Employee)
-__K2L_ClassInfo(Engineer, "corp.staff.Engineer", "corp.staff.Engineer", "class")
 
 function Engineer:____init(name, salary, level)
     if level == nil then
@@ -437,7 +407,7 @@ function Engineer:____init(name, salary, level)
     self.level = level
     self.title__Engineer = "engineer L" .. self.level
     self.bonusRate = 0.1
-    trace:add("Engineer(" .. name .. ") level=" .. self.level .. " bonus=" .. __K2L_Str(self:getBonusRate()))
+    trace:add("Engineer(" .. name .. ") level=" .. self.level .. " bonus=" .. self:getBonusRate())
 end
 
 function Engineer:getTitle()
@@ -449,11 +419,10 @@ function Engineer:getBonusRate()
 end
 
 function Engineer:getMonthly()
-    return Employee.getMonthly(self) + __K2L_DoubleToInt(Employee.getMonthly(self) * self:getBonusRate())
+    return Employee.getMonthly(self) + __K2L_Truncate(Employee.getMonthly(self) * self:getBonusRate())
 end
 
 local Lead = __K2L_Class("corp.staff.Lead", Engineer)
-__K2L_ClassInfo(Lead, "corp.staff.Lead", "corp.staff.Lead", "class")
 
 function Lead:____init(name, salary)
     Engineer.____init(self, name, salary, 3)
@@ -481,7 +450,6 @@ function Lead:payslip(month)
 end
 
 local Intern = __K2L_Class("corp.staff.Intern", Employee)
-__K2L_ClassInfo(Intern, "corp.staff.Intern", "corp.staff.Intern", "class")
 
 function Intern:____init(name)
     Employee.____init1(self, name)
@@ -499,15 +467,14 @@ function Intern:report(indent)
     end
     local ____arg = Employee.report(self, indent)
     local ____receiver = self.mentor
-    return ____arg:plusAll(__K2L_ListOf(____receiver and indent .. "  mentored by " .. ____receiver.name):filterNotNull():toList())
+    return ____arg:plusAll(__K2L_ListOf(____receiver and indent .. "  mentored by " .. ____receiver.name):filterNotNull())
 end
 
 local Manager = __K2L_Class("corp.staff.Manager", Employee)
-__K2L_ClassInfo(Manager, "corp.staff.Manager", "corp.staff.Manager", "class")
 
 function Manager:____init(name, salary, reports)
     if reports == nil then
-        reports = __K2L_ReadOnlyListOf()
+        reports = __K2L_ListOf()
     end
     Employee.____init(self, name, salary)
     self.team = reports:toMutableList()
@@ -577,16 +544,12 @@ function Manager:everyone()
     return __K2L_SequenceBuilder(function(____this)
         ____this:yield(self)
         local ____list_3 = self.team
-        local ____mod = ____list_3.____modCount
         for ____i_3 = 1, ____list_3.size do
             local e = ____list_3[____i_3]
             if getmetatable(e) == Manager then
                 ____this:yieldAll(e:everyone())
             else
                 ____this:yield(e)
-            end
-            if ____list_3.____modCount ~= ____mod and ____list_3:____comodified(____i_3) then
-                break
             end
         end
     end)

@@ -1,7 +1,59 @@
-import java.util.PriorityQueue
-
 // Adapted from realworld_graphs: a generic weighted graph with adjacency lists of Pairs in a HashMap,
-// Dijkstra with a PriorityQueue and a comparator chain, union-find and Kruskal over a sorted edge list.
+// Dijkstra with a binary heap and a comparator chain, union-find and Kruskal over a sorted edge list.
+
+/** A binary min-heap by [comparator]: the part of java.util.PriorityQueue the program uses (k2l has no PriorityQueue). */
+class MinQueue<T>(private val comparator: Comparator<in T>) {
+    private val heap = ArrayList<T>()
+    val size: Int get() = heap.size
+
+    fun isEmpty() = heap.isEmpty()
+
+    fun isNotEmpty() = heap.isNotEmpty()
+
+    fun peek(): T? = heap.firstOrNull()
+
+    fun add(item: T): Boolean {
+        heap.add(item)
+        var i = heap.size - 1
+        while (i > 0) {
+            val parent = (i - 1) / 2
+            if (comparator.compare(heap[i], heap[parent]) >= 0) break
+            val t = heap[i]
+            heap[i] = heap[parent]
+            heap[parent] = t
+            i = parent
+        }
+        return true
+    }
+
+    fun offer(item: T) = add(item)
+
+    operator fun plusAssign(item: T) {
+        add(item)
+    }
+
+    fun poll(): T {
+        if (heap.isEmpty()) throw NoSuchElementException("queue is empty")
+        val top = heap[0]
+        val last = heap.removeAt(heap.size - 1)
+        if (heap.isNotEmpty()) {
+            heap[0] = last
+            var i = 0
+            while (true) {
+                val l = 2 * i + 1
+                if (l >= heap.size) break
+                val r = l + 1
+                val c = if (r < heap.size && comparator.compare(heap[r], heap[l]) < 0) r else l
+                if (comparator.compare(heap[c], heap[i]) >= 0) break
+                val t = heap[i]
+                heap[i] = heap[c]
+                heap[c] = t
+                i = c
+            }
+        }
+        return top
+    }
+}
 
 const val SIZE = 100 // the graph is a SIZE x SIZE grid with extra random edges
 
@@ -24,7 +76,7 @@ class Graph<T : Comparable<T>> {
 fun <T : Comparable<T>> Graph<T>.dijkstra(source: T): Map<T, Int> {
     val dist = HashMap<T, Int>()
     dist[source] = 0
-    val queue = PriorityQueue<Pair<T, Int>>(compareBy<Pair<T, Int>> { it.second }.thenBy { it.first })
+    val queue = MinQueue<Pair<T, Int>>(compareBy<Pair<T, Int>> { it.second }.thenBy { it.first })
     queue += source to 0
     while (queue.isNotEmpty()) {
         val (u, d) = queue.poll()

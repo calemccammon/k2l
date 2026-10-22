@@ -65,15 +65,14 @@ fun comparators() {
     println("${words.maxWith(byLength)} ${words.minWithOrNull(byLength)}")
     val mutable = words.toMutableList()
     mutable.sortWith(byLength)
-    java.util.Collections.sort(mutable, ByLength())
+    mutable.sortWith(ByLength())
     println(mutable)
-    val tree = java.util.TreeSet(ByLength())
-    tree.addAll(words)
+    val tree = words.toSortedSet(ByLength())
     println(tree)
     val sam = Comparator<String> { a, b -> b.compareTo(a) }
     println("${words.sortedWith(sam)} ${sam.compare("a", "b")} ${words.sortedWith(sam.reversed())}")
     val arr = words.toTypedArray()
-    java.util.Arrays.sort(arr, byLength)
+    arr.sortWith(byLength)
     println(arr.toList())
 }
 
