@@ -1,13 +1,13 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_IntRange = ____lualib.__K2L_IntRange
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_StringContains = ____lualib.__K2L_StringContains
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function ____next()
     print("next")
@@ -39,18 +39,18 @@ function Bag:contains(s)
 end
 
 local function main()
-    local ____pairs = __K2L_ReadOnlyMapOf(__K2L_Pair.new(")", "("), __K2L_Pair.new("]", "["))
+    local ____pairs = __K2L_MapOf(__K2L_Pair.new(")", "("), __K2L_Pair.new("]", "["))
     for ____i = 1, #"a(b]z!" do
         local c = ("a(b]z!"):sub(____i, ____i)
-        if ____pairs:getValues():contains(c) then
+        if ____pairs:containsValue(c) then
             print("open " .. c)
-        elseif ____pairs:getKeys():contains(c) then
+        elseif ____pairs:containsKey(c) then
             print("close " .. c)
         else
             print(classify(c) .. " " .. c)
         end
     end
-    local set = __K2L_ReadOnlySetOf(1, 2, 3)
+    local set = __K2L_SetOf(1, 2, 3)
     local ____subject = ____next()
     if set:contains(____subject) then
         print("in set")
@@ -58,14 +58,14 @@ local function main()
         print("no")
     end
     local n = ____next()
-    if __K2L_ReadOnlyListOf(5, 6):contains(n) or set:contains(n) then
+    if __K2L_ListOf(5, 6):contains(n) or set:contains(n) then
         print("n=" .. n .. " in")
     else
         print("no")
     end
     local word = "kotlin"
     local ____temp
-    if __K2L_ReadOnlyListOf("java", "kotlin"):contains(word) then
+    if __K2L_ListOf("java", "kotlin"):contains(word) then
         ____temp = "jvm"
     else
         ____temp = "?"
@@ -78,8 +78,8 @@ local function main()
         ____temp_1 = "?"
     end
     print(____temp_1)
-    local bag = Bag.new(__K2L_ReadOnlySetOf("apple", "pear"))
-    local ____list = __K2L_ReadOnlyListOf("Apple", "kiwi")
+    local bag = Bag.new(__K2L_SetOf("apple", "pear"))
+    local ____list = __K2L_ListOf("Apple", "kiwi")
     for ____i_1 = 1, ____list.size do
         local f = ____list[____i_1]
         local ____temp_2
@@ -92,7 +92,7 @@ local function main()
         end
         print(____temp_2)
     end
-    local ranges = __K2L_ReadOnlyListOf(__K2L_IntRange.new(1, 3), __K2L_IntRange.new(10, 12))
+    local ranges = __K2L_ListOf(__K2L_IntRange.new(1, 3), __K2L_IntRange.new(10, 12))
     local ____temp_3
     if ranges:get(0):contains(11) then
         ____temp_3 = "first"
@@ -103,7 +103,7 @@ local function main()
     end
     print(____temp_3)
     local ____temp_4
-    if __K2L_TypedArrayOf("[C", "x", "y"):contains("x") then
+    if __K2L_ArrayOf("x", "y"):contains("x") then
         ____temp_4 = "xy"
     else
         ____temp_4 = "-"
@@ -111,5 +111,5 @@ local function main()
     print(____temp_4)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {____next = ____next, classify = classify, Bag = Bag}

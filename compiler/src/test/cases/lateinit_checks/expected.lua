@@ -1,13 +1,12 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
@@ -37,7 +36,7 @@ end
 local function main()
     local s = Service.new()
     print(tostring(s:ready()) .. " " .. s:cacheSize())
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         print(s.name or __K2L_Uninitialized("name"))
     end)
     if not ____ok then
@@ -59,7 +58,7 @@ local function main()
     local ____receiver = __K2L_RunCatching(____lambda_1):exceptionOrNull()
     print(__K2L_Str(____receiver and ____receiver.message))
     print(____exports.config ~= nil)
-    ____exports.config = __K2L_SingletonMapOf(__K2L_Pair.new("x", "1"))
+    ____exports.config = __K2L_MapOf(__K2L_Pair.new("x", "1"))
     print(tostring(____exports.config ~= nil) .. " " .. __K2L_Str((____exports.config or __K2L_Uninitialized("config")):get("x")))
     local ____local
     local ____receiver_1 = __K2L_RunCatching(function()
@@ -73,5 +72,5 @@ local function main()
 end
 
 ____exports.Service = Service
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return ____exports

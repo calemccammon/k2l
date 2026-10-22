@@ -1,6 +1,6 @@
 // Adapted from realworld_dynprog and realworld_bignum: Long arithmetic in loops (modular exponentiation, dynamic
-// programming over LongArrays, gcd, prime counting, bit tricks). Values stay below 2^53, so the default
-// `--long64 double` is exact on every target.
+// programming over LongArrays, gcd, prime counting, bit tricks). Values stay below 2^53, so a Long held
+// in a double is exact on every target.
 
 const val SIZE = 300_000 // sieve limit and loop counts
 const val MOD = 67_108_859L // a prime below 2^26: products of two residues stay below 2^53

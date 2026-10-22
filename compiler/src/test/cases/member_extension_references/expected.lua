@@ -2,9 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Builder = __K2L_Class("Builder")
@@ -27,7 +25,7 @@ function Builder:twice(____this_2)
 end
 
 function Builder:fromInside()
-    local ____list = __K2L_ReadOnlyListOf("x", "y")
+    local ____list = __K2L_ListOf("x", "y")
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list:____array()
@@ -37,7 +35,7 @@ function Builder:fromInside()
         ____out[____count] = self:shout(it)
     end
     local ____arg = __K2L_ListWrap(____out, ____count)
-    local ____list_1 = __K2L_SingletonListOf("p")
+    local ____list_1 = __K2L_ListOf("p")
     local ____out_1 = {}
     local ____count_1 = 0
     local ____items_1, ____n_1 = ____list_1:____array()
@@ -50,7 +48,7 @@ function Builder:fromInside()
 end
 
 function Builder:inside()
-    local ____list_2 = __K2L_ReadOnlyListOf(1, 2)
+    local ____list_2 = __K2L_ListOf(1, 2)
     local ____out_2 = {}
     local ____count_2 = 0
     local ____items_2, ____n_2 = ____list_2:____array()
@@ -70,21 +68,17 @@ end
 local function main()
     local b = Builder.new("!")
     do
-        local ____list_3 = __K2L_ReadOnlyListOf("a", "b")
-        local ____mod = ____list_3.____modCount
+        local ____list_3 = __K2L_ListOf("a", "b")
         for ____i_3 = 1, ____list_3.size do
             local it = ____list_3[____i_3]
             b:unaryPlus(it)
-            if ____list_3.____modCount ~= ____mod and ____list_3:____comodified(____i_3) then
-                break
-            end
         end
-        local ____list_4 = __K2L_SingletonListOf("c")
+        local ____list_4 = __K2L_ListOf("c")
         for ____i_4 = 1, ____list_4.size do
             local it = ____list_4[____i_4]
             b:unaryPlus(it)
         end
-        local ____list_5 = __K2L_ReadOnlyListOf("m", "n")
+        local ____list_5 = __K2L_ListOf("m", "n")
         local ____out_3 = {}
         local ____count_3 = 0
         local ____items_3, ____n_3 = ____list_5:____array()
@@ -112,5 +106,5 @@ local function main()
     print(____result_1)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Builder = Builder}

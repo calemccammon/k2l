@@ -114,12 +114,9 @@ fun main() {
     println(made.map { it.next() })
     println(made[0] === made[1])
 
-    // JVM class names of local and anonymous classes
+    // simple names of local and anonymous classes
     class Local
 
-    println(Local().javaClass.name)
-    println(g.javaClass.name + " " + point.javaClass.name)
-    println(shop.counter.javaClass.name + " " + made[0].javaClass.name)
-    println("${point::class.simpleName} ${Local::class.simpleName} ${point::class.qualifiedName}")
+    println("${point::class.simpleName} ${Local::class.simpleName}")
     println(point.toString().startsWith("app.MainKt\$main\$point\$1@"))
 }

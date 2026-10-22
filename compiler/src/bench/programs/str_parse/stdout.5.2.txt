@@ -1,0 +1,4 @@
+parsed 12000, statuses {200=5076, 201=1751, 304=1742, 404=1742, 500=1689}, users 50
+slowest errors [/api/orders:899, /api/users:899, /api/orders:899], busiest hour 17
+plain checksum 3912206
+csv total 2004847.21, quotes 2916, normalized 166442

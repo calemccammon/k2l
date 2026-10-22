@@ -1,15 +1,12 @@
 -- ==== geometry/Point.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____exports = {}
 local Point = __K2L_Class("draw.geometry.Point")
-__K2L_ClassInfo(Point, "draw.geometry.Point", "draw.geometry.Point", "class")
 
 function Point:____init(x, y)
     self.x = x
@@ -25,7 +22,7 @@ function Point:plus(o)
 end
 
 function Point:toString()
-    return "(" .. __K2L_Str(self.x) .. ", " .. __K2L_Str(self.y) .. ")"
+    return "(" .. self.x .. ", " .. self.y .. ")"
 end
 
 function Point:hashCode()
@@ -33,7 +30,7 @@ function Point:hashCode()
 end
 
 function Point:equals(other)
-    return getmetatable(other) == Point and __K2L_DoubleEquals(self.x, other.x) and __K2L_DoubleEquals(self.y, other.y)
+    return getmetatable(other) == Point and self.x == other.x and self.y == other.y
 end
 
 ____exports.count = 0
@@ -44,7 +41,7 @@ local function format(p)
 end
 
 local function describe(self)
-    return "point at x=" .. __K2L_Str(self.x) .. " y=" .. __K2L_Str(self.y)
+    return "point at x=" .. self.x .. " y=" .. self.y
 end
 
 local function origin()
@@ -52,7 +49,6 @@ local function origin()
 end
 
 local Registry = __K2L_Class("draw.geometry.Registry")
-__K2L_ClassInfo(Registry, "draw.geometry.Registry", "draw.geometry.Registry", "class")
 
 function Registry:____init()
     self.names = __K2L_ListOf()
@@ -74,12 +70,10 @@ return ____exports
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____Point = require("geometry.Point")
@@ -87,7 +81,6 @@ local ____Point_1 = require("text.Point")
 local ____format = require("text.format")
 local ____Style_2ecommon = require("text.Style_common")
 local Point = __K2L_Class("draw.Point")
-__K2L_ClassInfo(Point, "draw.Point", "draw.Point", "class")
 
 function Point:____init(label)
     self.label = label
@@ -116,8 +109,8 @@ local function main()
     print(____format.format("title", 8))
     print(____Point.describe(g))
     print(____Point_1.describe(t))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(parsed, t, ____Point_1.Point.new(3, 1)):sorted()))
-    print(__K2L_Str(____format.____select(__K2L_ReadOnlyListOf(parsed, t, ____Point_1.Point.new(3, 1)), 3)))
+    print(__K2L_Str(__K2L_ListOf(parsed, t, ____Point_1.Point.new(3, 1)):sorted()))
+    print(__K2L_Str(____format.____select(__K2L_ListOf(parsed, t, ____Point_1.Point.new(3, 1)), 3)))
     print("counts geo=" .. ____Point.count .. " text=" .. ____Point_1.count)
     ____Point.Registry:register("circle")
     ____Point_1.Registry:register("label")
@@ -134,16 +127,15 @@ local function main()
     local geoCount = "shadowed"
     print(geoCount)
     print(____Point.count)
-    print(__K2L_Str(__K2L_KClassOf(____Point.Point).simpleName) .. " " .. __K2L_Str(__K2L_KClassOf(____Point.Point).qualifiedName))
-    print(__K2L_Str(__K2L_KClassOf(____Point_1.Point).qualifiedName) .. " " .. __K2L_Str(__K2L_KClassOf(Point).qualifiedName))
-    local ____list = __K2L_ReadOnlyListOf(g, t, own)
+    print(__K2L_Str("Point") .. " " .. __K2L_Str("Point") .. " " .. __K2L_Str("Point"))
+    local ____list = __K2L_ListOf(g, t, own)
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list:____array()
     for ____i = 1, ____n do
         local it = ____items[____i]
         ____count = ____count + 1
-        ____out[____count] = __K2L_KClassOfValue(it).simpleName
+        ____out[____count] = __K2L_SimpleName(it)
     end
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(getmetatable(own) == Point)
@@ -151,19 +143,17 @@ local function main()
     print(tostring(getmetatable(any) == ____Point_1.Point) .. " " .. tostring(getmetatable(any) == ____Point.Point))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Point = Point, format = format}
 -- ==== text/Point.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____exports = {}
 local Point = __K2L_Class("draw.text.Point")
-__K2L_ClassInfo(Point, "draw.text.Point", "draw.text.Point", "class")
 Point.____comparable = true
 
 function Point:____init(line, column)
@@ -197,7 +187,6 @@ local function describe(self)
 end
 
 local Registry = __K2L_Class("draw.text.Registry")
-__K2L_ClassInfo(Registry, "draw.text.Registry", "draw.text.Registry", "class")
 
 function Registry:____init()
     self.names = __K2L_ListOf()
@@ -218,12 +207,10 @@ return ____exports
 -- ==== text/Style_common.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_LazyFile = ____lualib.__K2L_LazyFile
 
 local ____exports = {}
 local Style = __K2L_Class("draw.text.Style")
-__K2L_ClassInfo(Style, "draw.text.Style", "draw.text.Style", "class")
 
 function Style:____init(name, ordinal)
     self.name = name

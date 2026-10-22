@@ -1,8 +1,8 @@
 {
-  "title": "TOML \u2192 JSON",
+  "title": "TOML \u00e2\u0086\u0092 JSON",
   "owner": {
-    "name": "Zo\u00eb \"zed\" \u00c5ngstr\u00f6m",
-    "emoji": "\ud83d\ude80 launch"
+    "name": "Zo\u00c3\u00ab \"zed\" \u00c3\u0085ngstr\u00c3\u00b6m",
+    "emoji": "\u00f0\u009f\u009a\u0080 launch"
   },
   "path": "C:\\Users\\cfg",
   "server": {
@@ -59,15 +59,15 @@
   "empty": {
     "quoted key": "tab\there",
     "bounds": [
-      "Infinity",
-      "-Infinity"
+      "inf",
+      "-inf"
     ]
   }
 }
 {TArr=10, TBool=1, TFloat=5, TInt=10, TStr=13, TTable=9}
 ports sum=24081 max=8080 hex=0x1f40, 0x1f41, 0x1f90
 plugins: auth, metrics
-owner length=18 codepoints=18 upper=ZOË "ZED" ÅNGSTRÖM
+owner length=21 upper=ZOë "ZED" ÅNGSTRöM
 true
 error line 2: duplicate key 'a'
 error line 1: expected ',' or ']' in array

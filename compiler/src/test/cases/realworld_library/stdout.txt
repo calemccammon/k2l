@@ -29,7 +29,6 @@ B2, B3, D1, d2
 {FICTION=1, SCIENCE=1, HISTORY=0, KIDS=1}
 #D1 "Alien"
 10 11 20 same class: true
-lib.MainKt$counter$1
   [announcement] library opens
 result: kotlin.Unit
   [announcement] library opens

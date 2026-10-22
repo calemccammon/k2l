@@ -73,7 +73,16 @@ fun isbn13(s: String): Boolean {
     return d.mapIndexed { i, c -> c.digitToInt() * if (i % 2 == 0) 1 else 3 }.sum() % 10 == 0
 }
 
-fun rle(s: String): String = Regex("(.)\\1*").findAll(s).joinToString("") { "${it.value.length}${it.value[0]}" }
+// runs of a character (a regex would need (.)\1*, a repeated back-reference, which Lua patterns lack)
+fun rle(s: String): String = buildString {
+    var i = 0
+    while (i < s.length) {
+        var j = i
+        while (j < s.length && s[j] == s[i]) j++
+        append(j - i).append(s[i])
+        i = j
+    }
+}
 fun unrle(s: String): String = Regex("(\\d+)(\\D)").findAll(s).joinToString("") { it.groupValues[2].repeat(it.groupValues[1].toInt()) }
 
 fun dayOfWeek(y: Int, m: Int, d: Int): Int {
@@ -131,7 +140,7 @@ fun main() {
     println("7fffffff".toLong(16) + 1 to "-8000000000000000".toLong(16) / 2)
     println(listOf("3.14", "-0.0", "1e3", ".5", "5.", "NaN", "-Infinity", "1_000", "0x10", "  7  ", "1.5f", "2d").map { it.toDoubleOrNull() }.joinToString(prefix = "[", postfix = "]") { it.toString() })
     println(listOf("42", "-0", "+7", "0042", " 1", "1e2", "2147483648", "-2147483648").map { it.toIntOrNull() })
-    println(listOf(Int.MAX_VALUE.toString(), Long.MIN_VALUE.toString(), (1L shl 40).toString(), 255.toString(16).uppercase(), Integer.toHexString(-16), java.lang.Long.toBinaryString(10L)))
+    println(listOf(Int.MAX_VALUE.toString(), Long.MIN_VALUE.toString(), (1L shl 40).toString(), 255.toString(16).uppercase(), 10L.toString(2)))
 
     val text = "WWWWWWWWWWWWBWWWWWWWWWWWWBBBWWWWWWWWWWWWWWWWWWWWWWWWBWWWWWWWWWWWWWW"
     val enc = rle(text)

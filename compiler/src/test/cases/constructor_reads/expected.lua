@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Base = __K2L_Class("Base")
@@ -11,7 +11,7 @@ function Base:____init()
     self.enabled = true
     self.ratio = 0.5
     self.note = "n"
-    print("Base sees size=" .. self:getSize() .. " label=" .. self:getLabel() .. " enabled=" .. tostring(self:getEnabled()) .. " ratio=" .. __K2L_Str(self:getRatio()) .. " note=" .. __K2L_Str(self:getNote()))
+    print("Base sees size=" .. self:getSize() .. " label=" .. self:getLabel() .. " enabled=" .. tostring(self:getEnabled()) .. " ratio=" .. self:getRatio() .. " note=" .. __K2L_Str(self:getNote()))
     self:report()
 end
 
@@ -48,7 +48,7 @@ function Child:____init()
     self.enabled__Child = false
     self.ratio__Child = 2.5
     self.note__Child = "c"
-    print("Child sees size=" .. self:getSize() .. " label=" .. self:getLabel() .. " enabled=" .. tostring(self:getEnabled()) .. " ratio=" .. __K2L_Str(self:getRatio()) .. " note=" .. __K2L_Str(self:getNote()))
+    print("Child sees size=" .. self:getSize() .. " label=" .. self:getLabel() .. " enabled=" .. tostring(self:getEnabled()) .. " ratio=" .. self:getRatio() .. " note=" .. __K2L_Str(self:getNote()))
 end
 
 function Child:getSize()
@@ -144,7 +144,7 @@ end
 
 local function main()
     local c = Child.new()
-    print("after: " .. c:getSize() .. " " .. c:getLabel() .. " " .. tostring(c:getEnabled()) .. " " .. __K2L_Str(c:getRatio()) .. " " .. __K2L_Str(c:getNote()))
+    print("after: " .. c:getSize() .. " " .. c:getLabel() .. " " .. tostring(c:getEnabled()) .. " " .. c:getRatio() .. " " .. __K2L_Str(c:getNote()))
     local g = GrandChild.new()
     print("after: " .. g:getSize())
     print(Triangle.new(5).description)
@@ -153,5 +153,5 @@ local function main()
     print(Calmer.new():show())
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Base = Base, Child = Child, GrandChild = GrandChild, Shape = Shape, Triangle = Triangle, Counter = Counter, Offset = Offset, Calm = Calm, Calmer = Calmer}

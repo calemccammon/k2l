@@ -93,7 +93,7 @@ fun ranges() {
     println(('a'..'f').first { it > 'b' })
     println(('a'..'f').last { it < 'e' })
     println((10 downTo 1).first { it < 8 })
-    println(runCatching { (1..0).first() }.exceptionOrNull()?.javaClass?.simpleName)
+    println(runCatching { (1..0).first() }.exceptionOrNull()?.let { it::class.simpleName })
     println((1..0).first)
     println((1L..5L).last { it < 4 })
 }

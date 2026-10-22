@@ -1,11 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
-local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -14,10 +10,10 @@ local __K2L_IteratorBuilder = ____lualib.__K2L_IteratorBuilder
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
@@ -43,7 +39,7 @@ local function primes()
             local ____items, ____n = found:____array()
             for ____i = 1, ____n do
                 local it = ____items[____i]
-                if (it ~= 0 and __K2L_Fmod(n, it) + 0 or __K2L_IRem(n, it)) == 0 then
+                if n % it == 0 then
                     ____result = false
                     break
                 end
@@ -64,7 +60,6 @@ end
 
 local function classify(xs)
     return __K2L_SequenceBuilder(function(____this_2)
-        local ____mod = xs.____modCount
         for ____i_1 = 1, xs.size do
             local x = xs[____i_1]
             do
@@ -72,16 +67,13 @@ local function classify(xs)
                     ____this_2:yield("negative " .. x)
                 elseif x == 0 then
                     goto ____continue
-                elseif (x >= 0 and x % 2 or 0 - -x % 2) == 0 then
+                elseif x % 2 == 0 then
                     emitPair(____this_2, "even", tostring(x))
                 else
                     ____this_2:yield("odd " .. x)
                 end
             end
             ::____continue::
-            if xs.____modCount ~= ____mod and xs:____comodified(____i_1) then
-                break
-            end
         end
         ____this_2:yield("done")
     end)
@@ -136,12 +128,12 @@ end
 
 local function guarded()
     return __K2L_SequenceBuilder(function(____this_6)
-        local ____ok, ____result_1 = __K2L_DeepPcall(function()
+        local ____ok, ____result_1 = pcall(function()
             ____this_6:yield("inside try")
             error(__K2L_IllegalArgumentException.new("oops"))
         end)
         if not ____ok then
-            ____ok, ____result_1 = __K2L_DeepPcall(function()
+            ____ok, ____result_1 = pcall(function()
                 local ____error = __K2L_ToThrowable(____result_1)
                 if __K2L_InstanceOf(____error, __K2L_IllegalArgumentException) then
                     local e = ____error
@@ -156,7 +148,7 @@ local function guarded()
             error(____result_1, 0)
         end
         local label
-        local ____ok_1, ____result_2 = __K2L_DeepPcall(function()
+        local ____ok_1, ____result_2 = pcall(function()
             ____this_6:yield("before")
             label = "value"
         end)
@@ -192,9 +184,7 @@ function Repeater:words()
     end)
 end
 
-local ____lambda_1 = function(it)
-    return (it >= 0 and it % 2 or 0 - -it % 2) == 1
-end
+local ____lambda_1 = function(it) return it % 2 == 1 end
 local ____lambda_2 = function(it) return it * 10 end
 local ____lambda_3 = function(it) return it * 2 end
 local ____lambda_4 = function(it) return it < 8 and it + 1 or nil end
@@ -202,7 +192,7 @@ local ____lambda_5 = function(it) return #it end
 local function main()
     print(__K2L_Str(fibonacci():take(10):toList()))
     print(primes():take(8):joinToString())
-    print(__K2L_Str(classify(__K2L_ReadOnlyListOf(3, 0, -2, 4)):toList()))
+    print(__K2L_Str(classify(__K2L_ListOf(3, 0, -2, 4)):toList()))
     local tree = Tree.new(4, Tree.new(2, Tree.new(1), Tree.new(3)), Tree.new(6, Tree.new(5)))
     print(__K2L_Str(tree:inOrder():toList()))
     print(__K2L_Str(tree:inOrder():filter(____lambda_1):map(____lambda_2):toList()))
@@ -220,12 +210,12 @@ local function main()
     print(logged:first())
     print("-- yieldAll")
     local all = __K2L_SequenceBuilder(function(____this_9)
-        ____this_9:yieldAll(__K2L_ReadOnlyListOf(1, 2))
-        ____this_9:yieldAll(__K2L_ReadOnlySetOf(3))
+        ____this_9:yieldAll(__K2L_ListOf(1, 2))
+        ____this_9:yieldAll(__K2L_SetOf(3))
         ____this_9:yieldAll(__K2L_SequenceOf(4, 5))
         ____this_9:yieldAll(__K2L_GenerateSequence(6, ____lambda_4))
-        ____this_9:yieldAll(__K2L_IteratorOf(__K2L_ReadOnlyListOf(9, 10)))
-        ____this_9:yieldAll(__K2L_ReadOnlyListOf())
+        ____this_9:yieldAll(__K2L_IteratorOf(__K2L_ListOf(9, 10)))
+        ____this_9:yieldAll(__K2L_ListOf())
     end)
     print(__K2L_Str(all:toList()))
     print(all:count())
@@ -245,7 +235,7 @@ local function main()
     while it:hasNext() do
         print("got " .. it:next())
     end
-    local ____ok_2, ____result_3 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_3 = pcall(function()
         it:next()
     end)
     if not ____ok_2 then
@@ -261,7 +251,7 @@ local function main()
         print("loop " .. n)
     end
     print("-- exceptions")
-    local ____ok_3, ____result_4 = __K2L_DeepPcall(function()
+    local ____ok_3, ____result_4 = pcall(function()
         for _, x in failing():iter() do
             print("value " .. x)
         end
@@ -309,5 +299,5 @@ local function main()
     print(__K2L_Str(early:toList()))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {fibonacci = fibonacci, primes = primes, emitPair = emitPair, classify = classify, Tree = Tree, countdown = countdown, failing = failing, guarded = guarded, Repeater = Repeater}

@@ -10,7 +10,7 @@ String: comparable
 Double: comparable
 Boolean: comparable
 null: not comparable
-SingletonList: not comparable
+ArrayList: not comparable
 10
 true
 [not comparable, comparable]

@@ -103,8 +103,7 @@ fun main() {
 
     val c1 = counter(10)
     val c2 = counter(20)
-    println("${c1.next()} ${c1.next()} ${c2.next()} same class: ${c1.javaClass == c2.javaClass}")
-    println(c1::class.java.name)
+    println("${c1.next()} ${c1.next()} ${c2.next()} same class: ${c1::class.simpleName == c2::class.simpleName}")
     val opening: () -> Any = ::announce
     println("result: ${opening()}")
     val actions = listOf<() -> Any?>(::announce, { "lambda" })

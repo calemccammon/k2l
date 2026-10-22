@@ -1,18 +1,13 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_TouchObject = ____lualib.__K2L_TouchObject
 
 local log = __K2L_ListOf()
 local Widget = __K2L_Class("Widget")
-__K2L_ClassInfo(Widget, "Widget", "Widget", "class")
-__K2L_CompanionInfo(Widget, "Widget.Companion", "Widget$Companion", "Companion")
 
 function Widget:____init(name)
     self.name = name
@@ -32,7 +27,6 @@ end
 
 __K2L_LazyObject(Widget, "____initCompanion")
 local Registry = __K2L_Class("Registry")
-__K2L_ClassInfo(Registry, "Registry", "Registry", "class")
 
 function Registry:____init()
     self.names = __K2L_ListOf()
@@ -56,12 +50,12 @@ local function main()
     print(factory("a").name)
     local ____arg = __K2L_TouchObject(Registry)
     local ____result
-    log:add("label " .. __K2L_Str(__K2L_KClassOf(Widget).simpleName))
+    log:add("label " .. __K2L_Str("Widget"))
     ____result = "w"
     ____arg:add(____result, factory)
     print(__K2L_Str(log))
     print(__K2L_Str(__K2L_TouchObject(Registry)))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {log = log, Widget = Widget, Registry = Registry}

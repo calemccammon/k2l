@@ -4,153 +4,113 @@ import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 
-/** `String.format` and `format` of kotlin.text, on the lualib's formatter (`__K2L_StringFormat`). */
+/**
+ * `String.format(format, args)` and `format.format(args)` are Lua's `string.format`. A literal format is translated here:
+ * `%n` is a newline, `%s`, `%S`, `%b` and `%B` take the text of their argument (its `toString()`), `%c` of a Char its string,
+ * the `,` flag of `%d` and `%f` groups the digits by three (`__K2L_Text.grouped`), and the specifiers Lua has no equivalent
+ * of (argument indexes, `%<s`, the `(` flag, `%h`, dates) are reported.
+ * Other formats go through `__K2L_StringFormat` (Strings.lua), which does the same at run time and raises an error there.
+ * The overloads taking a `Locale` are not supported.
+ */
 internal object TextFormat {
+    /** `%[index$][flags][width][.precision]conversion`, as java.util.Formatter reads it. */
+    private val SPECIFIER = Regex("%(\\d+\\$)?([-#+ 0,(<]*)(\\d+)?(\\.\\d+)?([a-zA-Z%])")
+
+    /** The conversions Lua's string.format has with the same meaning. */
+    private const val LUA_CONVERSIONS = "doxXeEfgGaA"
+
     /** `String.format(...)` (no [format] receiver) or `format.format(...)`. */
-    fun format(site: CallSite, format: LuaExpr?): LuaExpr = site.formatCall(format)
-
-    private fun CallSite.text(member: String, vararg args: LuaExpr) =
-        libMember(TEXT_TABLE, member, *args.toList().dropTrailingNil().toTypedArray())
-
-    /**
-     * `String.format(locale, format, args)` and `format.format(locale, args)`. The locale chooses the decimal and grouping
-     * separators and the digits of the numbers (see `LocaleFormat.lua`), and with `--strings utf16` the case rules of `%S`.
-     * `Locale.ROOT`, `en_US` and no locale at all use the formatter's own symbols.
-     */
-    private fun CallSite.formatCall(format: LuaExpr?): LuaExpr {
+    fun format(site: CallSite, format: LuaExpr?): LuaExpr = with(site) {
         // the callee's parameter decides: `"%s %s".format(null, x)` is the Locale overload, as Kotlin resolves it
-        val hasLocale = args.isNotEmpty() && isLocale(parameterTypes.getOrNull(0) ?: argTypes.getOrNull(0))
-        val values = if (hasLocale) args.drop(1) else args
-        val valueTypes = if (hasLocale) argTypes.drop(1) else argTypes
-        val sized = formatArguments(format, values, valueTypes)
-        // a null locale formats without localization, like java.util.Formatter
-        val locale = if (hasLocale) args[0].takeIf { it != LuaNil } else null
-        val formatAndArguments = listOfNotNull(format) + sized
-        val tag = (locale as? LuaString)?.value
-        val uppercase = formatUppercase(formatAndArguments.firstOrNull(), tag, dynamicLocale = locale != null && tag == null)
-        return when {
-            locale != null && tag != "" && tag != "en_US" -> libCall(
-                "LocaleFormat",
-                "__K2L_LocaleFormat",
-                "format",
-                listOf(locale, uppercase ?: LuaNil) + formatAndArguments,
-            )
-
-            uppercase != null -> libCall(TEXT_TABLE, "formatWith", listOf(LuaNil, uppercase) + formatAndArguments)
-
-            else -> LuaCall(ref("Strings", "__K2L_StringFormat"), formatAndArguments)
+        if (args.isNotEmpty() && isLocale(parameterTypes.getOrNull(0) ?: argTypes.getOrNull(0))) {
+            return unsupported("String.format with a Locale")
         }
-    }
-
-    /**
-     * With `--strings utf16`, the Unicode (and, for a locale of Turkish, Azeri or Lithuanian, the locale's) upper-casing of `%S`,
-     * `%C` and `%B`; null when the format has none of them or the strings are byte strings.
-     */
-    private fun CallSite.formatUppercase(format: LuaExpr?, tag: String?, dynamicLocale: Boolean): LuaExpr? {
-        if (!utf16) return null
-        val text = (format as? LuaString)?.value
-        if (text != null && !UPPERCASE_CONVERSION.containsMatchIn(text)) return null
-        if (dynamicLocale || (tag != null && tag.substringBefore('_') in LOCALE_SENSITIVE)) {
-            return luaField(ref("Utf16Locale", "__K2L_Utf16Locale"), "uppercase")
+        val formatExpr = format ?: args.firstOrNull() ?: return unsupported("String.format without a format")
+        val values = if (format == null) args.drop(1) else args
+        val types = if (format == null) argTypes.drop(1) else argTypes
+        val literal = (formatExpr as? LuaString)?.value
+        if (literal == null || values.size != types.size) {
+            return LuaCall(ref("Strings", "__K2L_StringFormat"), listOf(formatExpr) + values)
         }
-        return luaField(ref(UTF16_CASE_TABLE), "uppercase")
+        return literalFormat(literal, values, types)
     }
 
-    private val UPPERCASE_CONVERSION = Regex("%[-#+ 0,(<\\d$.]*[SCB]")
-    private val HASH_CONVERSION = Regex("%[-#+ 0,(<\\d$.]*[hH]")
-    private val SPECIFIER = Regex("%(\\d+\\$)?([-#+ 0,(<]*)(?:\\d+)?(?:\\.\\d+)?([a-zA-Z%])")
-    private val SIZED_BITS = mapOf("kotlin/Byte" to 8, "kotlin/Short" to 16, "kotlin/Long" to 64)
-
-    /**
-     * The arguments after the locale (the format first, unless it is the receiver [format]), as the formatter takes them; loads
-     * `%h`'s hashing when the format may use it.
-     */
-    private fun CallSite.formatArguments(format: LuaExpr?, values: List<LuaExpr>, types: List<KaType?>): List<LuaExpr> {
-        val formatText = ((format ?: values.firstOrNull()) as? LuaString)?.value
-        if (formatText == null || HASH_CONVERSION.containsMatchIn(formatText)) transformer.ctx.lualib += "FormatHash"
-        return typedArguments(values, types, firstArgument = if (format == null) 1 else 0, formatText)
+    /** One specifier of a literal format: its parts, as [SPECIFIER] groups them. */
+    private class Spec(m: MatchResult) {
+        val text = m.value
+        val index = m.groupValues[1]
+        val flags = m.groupValues[2]
+        val width = m.groupValues[3]
+        val precision = m.groupValues[4]
+        val conversion = m.groupValues[5][0]
     }
 
-    /** The (1-based) argument and the conversion of each specifier of a literal format, as java.util.Formatter picks them. */
-    private fun formatSpecifiers(format: String): List<Pair<Int, Char>> {
-        val used = mutableListOf<Pair<Int, Char>>()
-        var ordinary = 0
+    /** `string.format` with [format] translated and each argument as its specifier needs it. */
+    private fun CallSite.literalFormat(format: String, values: List<LuaExpr>, types: List<KaType?>): LuaExpr {
+        val out = StringBuilder()
+        val arguments = mutableListOf<LuaExpr>()
         var last = 0
         for (m in SPECIFIER.findAll(format)) {
-            val (index, flags, conversion) = m.destructured
-            if (conversion == "%" || conversion == "n") continue
-            val arg = when {
-                '<' in flags -> last
-                index.isNotEmpty() -> index.dropLast(1).toInt()
-                else -> ++ordinary
-            }
-            last = arg
-            used += arg to conversion[0]
-        }
-        return used
-    }
-
-    /**
-     * Format arguments as the formatter needs to see them, which their Lua value cannot tell:
-     * - of static type `Byte`, `Short` or `Long` that a `%x` or `%o` prints, `__K2L_Text.sized(x, bits)`, so a negative value
-     *   gives the two's complement of the type's width (`(-1).toByte()` is `ff`, `-1L` sixteen `f`s), as on the JVM;
-     * - that a conversion rejects by the JVM class of their static type (`%f` of an `Int`, `%d` of a `Double`, `%c` of a
-     *   `String`), `__K2L_Text.typed(x, bits, class)`, so it throws `IllegalFormatConversionException` there.
-     *
-     * Arguments of a literal format that no conversion rejects stay as they are; with a format that is not a literal, every
-     * argument of such a type is wrapped. [firstArgument] is the index of the first argument after the format in [values].
-     */
-    private fun CallSite.typedArguments(values: List<LuaExpr>, types: List<KaType?>, firstArgument: Int, format: String?): List<LuaExpr> {
-        if (values.size != types.size) return values
-        val specifiers = format?.let(::formatSpecifiers)
-        return values.mapIndexed { i, v ->
-            val arg = i - firstArgument + 1
-            val classId = with(session) { (types[i]?.withoutFlexibility as? KaClassType)?.classId?.asString() }
-            if (arg < 1 || classId == null) return@mapIndexed v
-            val conversions = specifiers?.filter { it.first == arg }?.map { it.second }
-            // only printed with %s: the text of its static type (a Double `2.0`, which a Lua number cannot tell from `2`)
-            if (classId in FLOATING && onlyAsString(conversions)) {
-                return@mapIndexed str(v, types[i])
-            }
-            val bits = SIZED_BITS[classId]?.takeIf { conversions == null || conversions.any { it in "xXo" } }
-            val boxed = BOXED_CLASSES[classId]
-            val rejected = boxed?.takeIf {
-                if (conversions == null) classId !in RUNTIME_CHECKED else conversions.any { c -> rejects(c, boxed) }
-            }
+            out.append(format, last, m.range.first)
+            last = m.range.last + 1
+            val spec = Spec(m)
             when {
-                rejected != null -> text("typed", v, bits?.let { LuaNumber(it.toString()) } ?: LuaNil, LuaString(rejected))
-                bits != null -> text("sized", v, LuaNumber(bits.toString()))
-                else -> v
+                spec.conversion == '%' -> out.append("%%")
+
+                spec.conversion == 'n' -> out.append('\n')
+
+                spec.index.isNotEmpty() || !isTranslatable(spec.flags, spec.conversion) ->
+                    return unsupported("String.format specifier '${spec.text}'")
+
+                else -> {
+                    val i = arguments.size
+                    val value = values.getOrNull(i) ?: return unsupported("String.format specifier '${spec.text}' without an argument")
+                    val (luaSpec, argument) = specifier(spec, value, types[i])
+                    out.append(luaSpec)
+                    arguments += argument
+                }
             }
         }
+        out.append(format, last, format.length)
+        // arguments no specifier takes are still evaluated, as in Kotlin
+        return lua("string.format", LuaString(out.toString()), *(arguments + values.drop(arguments.size)).toTypedArray())
     }
 
-    private fun onlyAsString(conversions: List<Char>?) = !conversions.isNullOrEmpty() && conversions.all { it == 's' || it == 'S' }
-
-    /** Whether java.util.Formatter's [conversion] rejects an argument of the JVM class [boxed]. */
-    private fun rejects(conversion: Char, boxed: String): Boolean = when (conversion.lowercaseChar()) {
-        'd', 'o', 'x' -> boxed !in INTEGRAL_ARGUMENTS
-        'e', 'f', 'g' -> boxed !in FLOAT_ARGUMENTS
-        'c' -> boxed !in CHAR_ARGUMENTS
-        else -> false
+    /** The Lua specifier for [spec] and the argument it formats. */
+    private fun CallSite.specifier(spec: Spec, value: LuaExpr, type: KaType?): Pair<String, LuaExpr> = with(spec) {
+        if (',' in flags) {
+            // the digits grouped, then padded to the width as a string
+            val inner = "%" + flags.filter { it != ',' && it != '-' } + precision + conversion
+            val grouped = libMember(TEXT_TABLE, "grouped", lua("string.format", LuaString(inner), value))
+            return "%" + (if ('-' in flags) "-" else "") + width + "s" to grouped
+        }
+        val (luaConversion, argument) = argument(conversion, value, type)
+        "%$flags$width$precision$luaConversion" to argument
     }
 
-    /** The JVM classes of the boxed values of the types the formatter checks, by the Kotlin class. */
-    private val BOXED_CLASSES = mapOf(
-        "kotlin/Int" to "java.lang.Integer", "kotlin/Long" to "java.lang.Long", "kotlin/Short" to "java.lang.Short",
-        "kotlin/Byte" to "java.lang.Byte", "kotlin/Double" to "java.lang.Double", "kotlin/Float" to "java.lang.Float",
-        "kotlin/Char" to "java.lang.Character", "kotlin/String" to "java.lang.String", "kotlin/Boolean" to "java.lang.Boolean",
-        "java/math/BigInteger" to "java.math.BigInteger", "java/math/BigDecimal" to "java.math.BigDecimal",
-        "kotlin/UInt" to "kotlin.UInt", "kotlin/ULong" to "kotlin.ULong", "kotlin/UShort" to "kotlin.UShort",
-        "kotlin/UByte" to "kotlin.UByte",
-    )
+    private fun isTranslatable(flags: String, conversion: Char): Boolean = when {
+        '(' in flags || '<' in flags -> false
+        ',' in flags -> (conversion == 'd' || conversion == 'f') && '0' !in flags
+        else -> conversion in LUA_CONVERSIONS || conversion in "sSbBcC"
+    }
 
-    private val FLOATING = setOf("kotlin/Double", "kotlin/Float")
+    /** The Lua conversion for a Java one, and the argument it formats. */
+    private fun CallSite.argument(conversion: Char, value: LuaExpr, type: KaType?): Pair<Char, LuaExpr> = when (conversion) {
+        's' -> 's' to str(value, type)
+        'S' -> 's' to upper(str(value, type))
+        'b' -> 's' to booleanText(value)
+        'B' -> 's' to upper(booleanText(value))
+        'c' -> if (isChar(type)) 's' to value else 'c' to value
+        'C' -> 's' to upper(if (isChar(type)) value else lua("string.char", value))
+        else -> conversion to value
+    }
 
-    /** Types whose Lua values the formatter tells apart itself (booleans, `BigInteger`/`BigDecimal` objects). */
-    private val RUNTIME_CHECKED = setOf("kotlin/Boolean", "java/math/BigInteger", "java/math/BigDecimal")
-    private val INTEGRAL_ARGUMENTS =
-        setOf("java.lang.Integer", "java.lang.Long", "java.lang.Short", "java.lang.Byte", "java.math.BigInteger")
-    private val FLOAT_ARGUMENTS = setOf("java.lang.Double", "java.lang.Float", "java.math.BigDecimal")
-    private val CHAR_ARGUMENTS = setOf("java.lang.Character", "java.lang.Integer", "java.lang.Short", "java.lang.Byte")
+    /** `%b`: "false" for null and false, "true" for anything else, as java.util.Formatter writes it. */
+    private fun booleanText(value: LuaExpr): LuaExpr = luaCall(LuaName("tostring"), LuaUnary(LuaUnOp.Not, LuaUnary(LuaUnOp.Not, value)))
+
+    private fun upper(text: LuaExpr): LuaExpr = lua("string.upper", text)
 }
+
+/** Whether [type] is `java.util.Locale`. */
+internal fun CallSite.isLocale(type: KaType?): Boolean =
+    type != null && with(session) { (type.withoutFlexibility as? KaClassType)?.classId?.asString() == "java/util/Locale" }

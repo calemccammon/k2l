@@ -1,18 +1,13 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_MapOf = ____lualib.__K2L_MapOf
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringFormat = ____lualib.__K2L_StringFormat
@@ -75,16 +70,12 @@ function Tag:render(out, indent)
     end
     out:append(indent .. "<" .. self.name .. attrs .. ">\n")
     local ____list_1 = self.children
-    local ____mod = ____list_1.____modCount
     for ____i_1 = 1, ____list_1.size do
         local c = ____list_1[____i_1]
         if __K2L_InstanceOf(c, Tag) then
             c:render(out, indent .. "  ")
         else
             out:append(indent .. "  " .. __K2L_Str(c) .. "\n")
-        end
-        if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_1) then
-            break
         end
     end
     return out:append(indent .. "</" .. self.name .. ">\n")
@@ -147,14 +138,10 @@ function Ul:items(xs, label)
     if label == nil then
         label = ____lambda_1
     end
-    local ____items_1, ____n_1 = __K2L_LoopItems(xs)
-    local ____mod_1 = xs.____modCount
+    local ____items_1, ____n_1 = xs:____array()
     for ____i_2 = 1, ____n_1 do
         local it = ____items_1[____i_2]
         self:li(label(it))
-        if xs.____modCount ~= ____mod_1 and xs:____comodified(____i_2, ____n_1) then
-            break
-        end
     end
 end
 
@@ -217,7 +204,7 @@ function TableBuilder:number(title, digits, get)
         digits = 2
     end
     self:column(title, Align.RIGHT, function(it)
-        return __K2L_StringFormat("%." .. digits .. "f", __K2L_Text.typed(it, nil, "java.lang.Double"))
+        return __K2L_StringFormat("%." .. digits .. "f", it)
     end, get)
 end
 
@@ -289,13 +276,9 @@ local function ____table(rows, build)
         end
         ____builder:appendLine(line(__K2L_ListWrap(____out_4, ____count_4)))
         ____builder:appendLine(widths:joinToString("-+-", nil, nil, nil, nil, ____lambda_3))
-        local ____mod_2 = cells.____modCount
         for ____i_8 = 1, cells.size do
             local it = cells[____i_8]
             ____builder:appendLine(line(it))
-            if cells.____modCount ~= ____mod_2 and cells:____comodified(____i_8) then
-                break
-            end
         end
     end
     return ____builder:toString()
@@ -326,7 +309,7 @@ function ConfigBuilder:to(____this_3, value)
 end
 
 function ConfigBuilder:from(____this_4, raw)
-    local ____ok, ____result_4 = __K2L_DeepPcall(function()
+    local ____ok, ____result_4 = pcall(function()
         local ____object_2 = self.values
         ____object_2:set(____this_4, ____this_4.parse(raw))
     end)
@@ -376,7 +359,7 @@ local NAME = Setting.new("name", "service", function(it) return it end)
 local RATIO = Setting.new("ratio", 0.5, function(s)
     local ____value_3 = __K2L_StringToDouble(s)
     if not (____value_3 >= 0.0 and ____value_3 <= 1.0) then
-        error(__K2L_IllegalArgumentException.new("ratio out of range: " .. __K2L_Str(____value_3)))
+        error(__K2L_IllegalArgumentException.new("ratio out of range: " .. ____value_3))
     end
     return ____value_3
 end)
@@ -394,7 +377,7 @@ function Planet.new(name, moons, radiusKm, rings)
 end
 
 function Planet:toString()
-    return "Planet(name=" .. self.name .. ", moons=" .. self.moons .. ", radiusKm=" .. __K2L_Str(self.radiusKm) .. ", rings=" .. tostring(self.rings) .. ")"
+    return "Planet(name=" .. self.name .. ", moons=" .. self.moons .. ", radiusKm=" .. self.radiusKm .. ", rings=" .. tostring(self.rings) .. ")"
 end
 
 function Planet:hashCode()
@@ -402,7 +385,7 @@ function Planet:hashCode()
 end
 
 function Planet:equals(other)
-    return getmetatable(other) == Planet and self.name == other.name and self.moons == other.moons and __K2L_DoubleEquals(self.radiusKm, other.radiusKm) and self.rings == other.rings
+    return getmetatable(other) == Planet and self.name == other.name and self.moons == other.moons and self.radiusKm == other.radiusKm and self.rings == other.rings
 end
 
 local ____lambda_4 = function(it) return "<" .. it .. ">" end
@@ -427,13 +410,13 @@ local function main()
             end)
             ____this_6:ul(function(____this_8)
                 ____this_8:li("in")
-                ____this_8:items(__K2L_ReadOnlyListOf("out", "star"), ____lambda_4)
+                ____this_8:items(__K2L_ListOf("out", "star"), ____lambda_4)
                 ____this_8:items(__K2L_IntRange.new(1, 2))
             end)
         end)
     end)
     io.write(__K2L_Str(page:render()))
-    local planets = __K2L_ReadOnlyListOf(Planet.new("Mercury", 0, 2439.7, false), Planet.new("Earth", 1, 6371.0, false), Planet.new("Jupiter", 95, 69911.0, true), Planet.new("Saturn", 146, 58232.0, true))
+    local planets = __K2L_ListOf(Planet.new("Mercury", 0, 2439.7, false), Planet.new("Earth", 1, 6371.0, false), Planet.new("Jupiter", 95, 69911.0, true), Planet.new("Saturn", 146, 58232.0, true))
     io.write(____table(planets, function(____this_9)
         ____this_9:column("name", nil, nil, ____lambda_5)
         ____this_9:column("moons", Align.RIGHT, nil, ____lambda_6)
@@ -441,7 +424,7 @@ local function main()
         ____this_9:column("rings", nil, ____lambda_8, ____lambda_9)
         ____this_9:number("vs earth", nil, ____lambda_10)
     end))
-    io.write(____table(__K2L_ReadOnlyListOf("a", "bbb", "cc"), function(____this_10)
+    io.write(____table(__K2L_ListOf("a", "bbb", "cc"), function(____this_10)
         ____this_10:column("len", Align.RIGHT, nil, ____lambda_11)
         ____this_10:column("upper", nil, nil, ____lambda_12)
     end))
@@ -452,20 +435,10 @@ local function main()
         ____this_11:from(VERBOSE, "yes")
         ____this_11:to(NAME, "api")
     end)
-    local ____value_4 = cfg:get(WORKERS)
-    if ____value_4 ~= nil and type(____value_4) ~= "number" then
-        __K2L_CastFail(____value_4, "java.lang.Number", "kotlin.Number")
-    end
-    local workers = ____value_4
-    local ____arg = workers * 2
-    local ____arg_1 = tostring(cfg:get(VERBOSE))
-    local ____value_5 = cfg:get(NAME)
-    if ____value_5 ~= nil and type(____value_5) ~= "string" then
-        __K2L_CastFail(____value_5, "java.lang.String", "kotlin.String")
-    end
-    print("workers=" .. ____arg .. " verbose=" .. ____arg_1 .. " name=" .. ____value_5:upper() .. " ratio=" .. __K2L_Str(cfg:get(RATIO)))
+    local workers = cfg:get(WORKERS)
+    print("workers=" .. workers * 2 .. " verbose=" .. tostring(cfg:get(VERBOSE)) .. " name=" .. cfg:get(NAME):upper() .. " ratio=" .. cfg:get(RATIO))
     print("errors=" .. __K2L_Str(cfg.errors))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Tag = Tag, Html = Html, Body = Body, Text = Text, Ul = Ul, html = html, Column = Column, Align = Align, TableBuilder = TableBuilder, ____table = ____table, Setting = Setting, ConfigBuilder = ConfigBuilder, Config = Config, config = config, WORKERS = WORKERS, VERBOSE = VERBOSE, NAME = NAME, RATIO = RATIO, Planet = Planet}

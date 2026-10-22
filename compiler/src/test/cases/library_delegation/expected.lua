@@ -6,6 +6,7 @@ local __K2L_CollectionBase = ____lualib.__K2L_CollectionBase
 local __K2L_ComparatorMixin = ____lualib.__K2L_ComparatorMixin
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_Entry = ____lualib.__K2L_Entry
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunctionMixin = ____lualib.__K2L_FunctionMixin
 local __K2L_Hash = ____lualib.__K2L_Hash
@@ -15,28 +16,23 @@ local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_Iterator = ____lualib.__K2L_Iterator
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
-local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_ListBase = ____lualib.__K2L_ListBase
+local __K2L_ListIterator = ____lualib.__K2L_ListIterator
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_MapBase = ____lualib.__K2L_MapBase
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NaturalOrder = ____lualib.__K2L_NaturalOrder
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyOverride = ____lualib.__K2L_PropertyOverride
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_ReverseComparator = ____lualib.__K2L_ReverseComparator
 local __K2L_ReverseOrder = ____lualib.__K2L_ReverseOrder
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RunnableMixin = ____lualib.__K2L_RunnableMixin
 local __K2L_Sequence = ____lualib.__K2L_Sequence
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
 local __K2L_SetBase = ____lualib.__K2L_SetBase
 local __K2L_SetOf = ____lualib.__K2L_SetOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
-local __K2L_SortedSet = ____lualib.__K2L_SortedSet
+local __K2L_SortedSetOf = ____lualib.__K2L_SortedSetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
@@ -118,11 +114,11 @@ function Logging:removeAt(index)
 end
 
 function Logging:listIterator()
-    return __K2L_JdkCollections.listIterator(self.____delegate_MutableList)
+    return __K2L_ListIterator(self.____delegate_MutableList)
 end
 
 function Logging:listIteratorAt(index)
-    return __K2L_JdkCollections.listIterator(self.____delegate_MutableList, index)
+    return __K2L_ListIterator(self.____delegate_MutableList, index)
 end
 
 function Logging:subList(fromIndex, toIndex)
@@ -164,7 +160,6 @@ function Logging:lastIndexOf(element)
 end
 
 local ReadOnly = __K2L_Class("ReadOnly", __K2L_ListBase)
-ReadOnly.____readOnly = true
 
 function ReadOnly:____init(list)
     self.____delegate_List = list
@@ -204,11 +199,11 @@ function ReadOnly:lastIndexOf(element)
 end
 
 function ReadOnly:listIterator()
-    return __K2L_JdkCollections.listIterator(self.____delegate_List)
+    return __K2L_ListIterator(self.____delegate_List)
 end
 
 function ReadOnly:listIteratorAt(index)
-    return __K2L_JdkCollections.listIterator(self.____delegate_List, index)
+    return __K2L_ListIterator(self.____delegate_List, index)
 end
 
 function ReadOnly:subList(fromIndex, toIndex)
@@ -278,7 +273,6 @@ function Tagged:get(key)
 end
 
 local Lookup = __K2L_Class("Lookup", __K2L_MapBase)
-Lookup.____readOnly = true
 
 function Lookup:____init(m)
     self.____delegate_Map = m
@@ -319,7 +313,6 @@ function Lookup:getEntries()
 end
 
 local Unique = __K2L_Class("Unique", __K2L_SetBase)
-Unique.____readOnly = true
 
 function Unique:____init(s)
     self.____delegate_Set = s
@@ -347,7 +340,6 @@ end
 
 __K2L_PropertyOverride(Unique, "size", "getSize")
 local Bag = __K2L_Class("Bag", __K2L_CollectionBase)
-Bag.____readOnly = true
 
 function Bag:____init(c)
     self.____delegate_Collection = c
@@ -375,7 +367,6 @@ end
 
 __K2L_PropertyOverride(Bag, "size", "getSize")
 local Wrap = __K2L_Class("Wrap", __K2L_IterableBase)
-Wrap.____readOnly = true
 
 function Wrap:____init(it)
     self.____delegate_Iterable = it
@@ -451,14 +442,13 @@ local ____lambda_2 = function(____a, ____b)
     return 0
 end
 local function comparators()
-    local words = __K2L_ReadOnlyListOf("ccc", "a", "bb", "dddd")
+    local words = __K2L_ListOf("ccc", "a", "bb", "dddd")
     local byLength = Counting.new(____lambda_2)
     print(__K2L_Str(words:sortedWith(byLength)) .. " " .. tostring(byLength.calls > 0) .. " " .. byLength:compare("aa", "b"))
     print(__K2L_Str(words:sortedWith(__K2L_ReverseComparator(byLength))))
     local natural = Plain.new(__K2L_NaturalOrder)
     print(__K2L_Str(words:sortedWith(natural)) .. " " .. natural("a", "b") .. " " .. words:maxWith(natural) .. " " .. tostring(type(natural) == "function" or __K2L_InstanceOf(natural, __K2L_ComparatorMixin)))
-    local tree = __K2L_SortedSet.new(Plain.new(__K2L_ReverseOrder))
-    tree:addAll(__K2L_ReadOnlyListOf(3, 1, 2))
+    local tree = __K2L_SortedSetOf(Plain.new(__K2L_ReverseOrder), 3, 1, 2)
     print(__K2L_Str(tree))
 end
 
@@ -469,7 +459,7 @@ local function lists()
     local l = Logging.new(__K2L_ListOf(3, 1, 2))
     l:add(4)
     l:add(5)
-    l:addAll(__K2L_ReadOnlyListOf(6, 7))
+    l:addAll(__K2L_ListOf(6, 7))
     l:addAt(0, 9)
     print(__K2L_Str(l.log) .. " " .. __K2L_Str(l.inner) .. " " .. l.size .. " " .. l:get(0) .. " " .. l:indexOf(2) .. " " .. tostring(l:contains(7)) .. " " .. tostring(l:isEmpty()))
     l:removeAt(0)
@@ -483,15 +473,15 @@ local function lists()
         local x = ____items[____i]
         total = total + x
     end
-    print("loop " .. total .. " " .. tostring(l:equals(__K2L_ReadOnlyListOf(1, 2, 4, 5, 6, 30))) .. " " .. tostring(__K2L_Equals(__K2L_ReadOnlyListOf(1, 2, 4, 5, 6, 30), l)) .. " " .. tostring(__K2L_Hash(l) == __K2L_Hash(l.inner)))
+    print("loop " .. total .. " " .. tostring(l:equals(__K2L_ListOf(1, 2, 4, 5, 6, 30))) .. " " .. tostring(__K2L_Equals(__K2L_ListOf(1, 2, 4, 5, 6, 30), l)) .. " " .. tostring(__K2L_Hash(l) == __K2L_Hash(l.inner)))
     print(tostring(__K2L_StringStartsWith(__K2L_Str(l), "Logging@")) .. " " .. __K2L_Str(l:subList(1, 3)) .. " " .. __K2L_Str(l:reversed()) .. " " .. __K2L_Str(l:sortedDescending()) .. " " .. __K2L_Str(l:getIndices()))
-    local it = __K2L_JdkCollections.listIterator(l)
+    local it = __K2L_ListIterator(l)
     it:next()
     it:remove()
     print(__K2L_Str(l.inner) .. " " .. tostring(l:removeIf(____lambda_5)) .. " " .. __K2L_Str(l.inner) .. " " .. __K2L_Str(l.log))
-    local r = ReadOnly.new(__K2L_ReadOnlyListOf("a", "b", "c"))
-    print(r:shout() .. " " .. r.size .. " " .. r:get(1) .. " " .. r:lastIndexOf("c") .. " " .. tostring(r:containsAll(__K2L_ReadOnlyListOf("a", "c"))) .. " " .. __K2L_Str(r:asReversed()) .. " " .. __K2L_Str(r:zip(r:drop(1))))
-    print(tostring(r:equals(__K2L_ReadOnlyListOf("a", "b", "c"))) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(r), "ReadOnly@")) .. " " .. __K2L_Str(r:toList()) .. " " .. __K2L_Str(r:toSet()) .. " " .. __K2L_Str(r:withIndex():last()))
+    local r = ReadOnly.new(__K2L_ListOf("a", "b", "c"))
+    print(r:shout() .. " " .. r.size .. " " .. r:get(1) .. " " .. r:lastIndexOf("c") .. " " .. tostring(r:containsAll(__K2L_ListOf("a", "c"))) .. " " .. __K2L_Str(r:asReversed()) .. " " .. __K2L_Str(r:zip(r:drop(1))))
+    print(tostring(r:equals(__K2L_ListOf("a", "b", "c"))) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(r), "ReadOnly@")) .. " " .. __K2L_Str(r:toList()) .. " " .. __K2L_Str(r:toSet()) .. " " .. __K2L_Str(r:withIndex():last()))
 end
 
 local ____lambda_6 = function(it) return it.key .. it.value end
@@ -504,7 +494,7 @@ local function maps()
     local t = Tagged.new(__K2L_MapOf(__K2L_Pair.new("x", 1)))
     t:set("Y", 2)
     t:put("Z", 3)
-    t:putAll(__K2L_SingletonMapOf(__K2L_Pair.new("W", 4)))
+    t:putAll(__K2L_MapOf(__K2L_Pair.new("W", 4)))
     print(t.size .. " " .. __K2L_Str(t:get("y")) .. " " .. __K2L_Str(t:getKeys()) .. " " .. __K2L_Str(t:getValues()) .. " " .. tostring(t:containsKey("z")) .. " " .. tostring(t:containsValue(4)) .. " " .. tostring(t:containsKey("x")))
     local ____keys, ____values, ____n_1 = t:____arrays()
     for ____i_1 = 1, ____n_1 do
@@ -513,9 +503,9 @@ local function maps()
     end
     print()
     t:remove("x")
-    print(__K2L_Str(t:getEntries():map(____lambda_6)) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(t), "Tagged@")) .. " " .. tostring(t:equals(__K2L_ReadOnlyMapOf(__K2L_Pair.new("y", 2), __K2L_Pair.new("z", 3), __K2L_Pair.new("W", 4)))))
+    print(__K2L_Str(t:getEntries():map(____lambda_6)) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(t), "Tagged@")) .. " " .. tostring(t:equals(__K2L_MapOf(__K2L_Pair.new("y", 2), __K2L_Pair.new("z", 3), __K2L_Pair.new("W", 4)))))
     print(t:getOrDefault("q", 0) .. " " .. t:getOrPut("q", ____lambda_7) .. " " .. __K2L_Str(t:filterValues(____lambda_8)) .. " " .. t:getEntries():maxBy(____lambda_9).key .. " " .. __K2L_Str(t:toList()))
-    local m = Lookup.new(__K2L_ReadOnlyMapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2)))
+    local m = Lookup.new(__K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", 2)))
     print(__K2L_Str(m:get("a")) .. " " .. m:getValue("b") .. " " .. tostring(m:isEmpty()) .. " " .. __K2L_Str(m:mapValues(____lambda_10)) .. " " .. m:count() .. " " .. tostring(m:any(____lambda_11)))
 end
 
@@ -523,9 +513,9 @@ local ____lambda_12 = function(it) return it * it end
 local ____lambda_13 = function(it) return it == "l" end
 local ____lambda_14 = function(it) return it * 2 end
 local function others()
-    local u = Unique.new(__K2L_ReadOnlySetOf(3, 1, 2))
-    print(u.size .. " " .. tostring(u:contains(2)) .. " " .. __K2L_Str(u:sorted()) .. " " .. tostring(u:equals(__K2L_ReadOnlySetOf(1, 2, 3))) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(u), "Unique@")) .. " " .. __K2L_Str(u:intersect(__K2L_ReadOnlySetOf(2, 9))))
-    local b = Bag.new(__K2L_ReadOnlyListOf("x", "y"))
+    local u = Unique.new(__K2L_SetOf(3, 1, 2))
+    print(u.size .. " " .. tostring(u:contains(2)) .. " " .. __K2L_Str(u:sorted()) .. " " .. tostring(u:equals(__K2L_SetOf(1, 2, 3))) .. " " .. tostring(__K2L_StringStartsWith(__K2L_Str(u), "Unique@")) .. " " .. __K2L_Str(u:intersect(__K2L_SetOf(2, 9))))
+    local b = Bag.new(__K2L_ListOf("x", "y"))
     print(b.size .. " " .. tostring(b:contains("y")) .. " " .. b:joinToString() .. " " .. tostring(b:isEmpty()) .. " " .. __K2L_Str(b:toList()))
     local w = Wrap.new(__K2L_IntRange.new(1, 4))
     print(__K2L_Str(w:map(____lambda_12)) .. " " .. w:sum() .. " " .. __K2L_Str(w:toList()) .. " " .. w:count() .. " " .. w:first())
@@ -535,9 +525,9 @@ local function others()
         local x = ____items_1[____i_2]
         s = s + x
     end
-    local steps = Steps.new(__K2L_IteratorOf(__K2L_ReadOnlyListOf(5, 6)))
+    local steps = Steps.new(__K2L_IteratorOf(__K2L_ListOf(5, 6)))
     print(s .. " " .. tostring(steps:hasNext()) .. " " .. steps:next() .. " " .. steps:next() .. " " .. tostring(steps:hasNext()))
-    for _, x in __K2L_Iterator.iter(Steps.new(__K2L_IteratorOf(__K2L_ReadOnlyListOf(7, 8)))) do
+    for _, x in __K2L_Iterator.iter(Steps.new(__K2L_IteratorOf(__K2L_ListOf(7, 8)))) do
         io.write(x .. " ")
     end
     print()
@@ -547,17 +537,13 @@ local function others()
         print("job ran")
     end)
     j()
-    local jobs = __K2L_SingletonListOf(j)
-    local ____mod = jobs.____modCount
+    local jobs = __K2L_ListOf(j)
     for ____i_3 = 1, jobs.size do
         local it = jobs[____i_3]
         it()
-        if jobs.____modCount ~= ____mod and jobs:____comodified(____i_3) then
-            break
-        end
     end
     local twice = Twice.new(____lambda_14)
-    print(twice(21) .. " " .. __K2L_Str(__K2L_ReadOnlyListOf(1, 2):map(twice)))
+    print(twice(21) .. " " .. __K2L_Str(__K2L_ListOf(1, 2):map(twice)))
 end
 
 local Sized = __K2L_Class("Sized", __K2L_SetBase)
@@ -723,6 +709,7 @@ function Release:compareTo(other)
 end
 
 local Pairing = __K2L_Class("Pairing")
+rawget(Pairing, "____interfaces")[__K2L_Entry] = true
 
 function Pairing:____init(e)
     self.____delegate_Entry = e
@@ -750,7 +737,6 @@ function Lines:iterator()
 end
 
 local Window = __K2L_Class("Window", __K2L_ListBase)
-Window.____readOnly = true
 
 function Window:____init(data, from)
     self.data = data
@@ -790,11 +776,11 @@ function Window:iterator()
 end
 
 function Window:listIterator()
-    return __K2L_JdkCollections.listIterator(__K2L_IntRange.new(0, self:getSize() - 1):map(function(it) return self:get(it) end))
+    return __K2L_ListIterator(__K2L_IntRange.new(0, self:getSize() - 1):map(function(it) return self:get(it) end))
 end
 
 function Window:listIteratorAt(index)
-    return __K2L_JdkCollections.listIterator(__K2L_IntRange.new(0, self:getSize() - 1):map(function(it) return self:get(it) end), index)
+    return __K2L_ListIterator(__K2L_IntRange.new(0, self:getSize() - 1):map(function(it) return self:get(it) end), index)
 end
 
 function Window:subList(fromIndex, toIndex)
@@ -803,7 +789,6 @@ end
 
 __K2L_PropertyOverride(Window, "size", "getSize")
 local Layer = __K2L_Class("Layer", __K2L_ListBase)
-Layer.____readOnly = true
 
 function Layer:____init(w)
     self.____delegate_List = w
@@ -838,11 +823,11 @@ function Layer:lastIndexOf(element)
 end
 
 function Layer:listIterator()
-    return __K2L_JdkCollections.listIterator(self.____delegate_List)
+    return __K2L_ListIterator(self.____delegate_List)
 end
 
 function Layer:listIteratorAt(index)
-    return __K2L_JdkCollections.listIterator(self.____delegate_List, index)
+    return __K2L_ListIterator(self.____delegate_List, index)
 end
 
 function Layer:subList(fromIndex, toIndex)
@@ -855,9 +840,7 @@ end
 
 __K2L_PropertyOverride(Layer, "size", "getSize")
 
-local ____lambda_15 = function(it)
-    return (it >= 0 and it % 2 or 0 - -it % 2) == 0
-end
+local ____lambda_15 = function(it) return it % 2 == 0 end
 local ____lambda_16 = function(it) return __K2L_Pair.new(it.key, it.value) end
 local ____lambda_17 = function(it) return #it end
 local ____lambda_18 = function(it) return #it > 1 end
@@ -865,12 +848,12 @@ local ____lambda_19 = function(it) return it + 1 end
 local function more()
     local s = Sized.new(__K2L_SetOf("a"))
     s:add(" b ")
-    s:addAll(__K2L_ReadOnlyListOf("c", "a"))
+    s:addAll(__K2L_ListOf("c", "a"))
     print(s:getSize() .. " " .. s:count() .. " " .. __K2L_Str(s:toList()) .. " " .. tostring(s:contains("b")) .. " " .. tostring(s:isEmpty()) .. " " .. tostring(s:remove("a")) .. " " .. __K2L_Str(s:toSortedSet()))
     local p = Pool.new(__K2L_ListOf(1, 2, 3))
     p:add(4)
     p:removeAll(____lambda_15)
-    print(p.size .. " " .. __K2L_Str(p:toList()) .. " " .. tostring(p:retainAll(__K2L_SingletonListOf(3))) .. " " .. __K2L_Str(p:toList()))
+    print(p.size .. " " .. __K2L_Str(p:toList()) .. " " .. tostring(p:retainAll(__K2L_ListOf(3))) .. " " .. __K2L_Str(p:toList()))
     p:clear()
     print(tostring(p:isEmpty()) .. " " .. p.size)
     local backing = __K2L_ListOf(1, 2, 3)
@@ -883,15 +866,15 @@ local function more()
     print(__K2L_Str(backing))
     local r = Release.new(Version.new(3), "three")
     print(tostring(__K2L_Compare(r, Version.new(2)) > 0) .. " " .. tostring(__K2L_Compare(r, Version.new(3)) < 0) .. " " .. __K2L_Compare(r, Version.new(4)) .. " " .. r.label)
-    local e = Pairing.new(__K2L_SingletonMapOf(__K2L_Pair.new("k", 5)):getEntries():first())
-    print(e.key .. " " .. e.value .. " " .. __K2L_Str(__K2L_SingletonListOf(e):associate(____lambda_16)))
+    local e = Pairing.new(__K2L_MapOf(__K2L_Pair.new("k", 5)):getEntries():first())
+    print(e.key .. " " .. e.value .. " " .. __K2L_Str(__K2L_ListOf(e):associate(____lambda_16)))
     local lines = Lines.new(__K2L_SequenceOf("x", "yy", "zzz"))
     print(__K2L_Str(lines:map(____lambda_17):toList()) .. " " .. lines:filter(____lambda_18):count() .. " " .. lines:first())
     for _, line in lines:iter() do
         io.write(line .. " ")
     end
     print()
-    local layer = Layer.new(Window.new(__K2L_ReadOnlyListOf(1, 2, 3, 4), 1))
+    local layer = Layer.new(Window.new(__K2L_ListOf(1, 2, 3, 4), 1))
     print(layer.size .. " " .. layer:get(0) .. " " .. __K2L_Str(layer:toList()) .. " " .. layer:indexOf(4) .. " " .. __K2L_Str(layer:subList(0, 2)) .. " " .. layer:sum() .. " " .. layer:max())
     local total = 0
     local ____items_2, ____n_3 = layer:____array()
@@ -900,9 +883,8 @@ local function more()
         total = total + x
     end
     local ____object = __K2L_Class("MainKt$more$anonymous$1", __K2L_ListBase)
-    ____object.____readOnly = true
     function ____object:____init()
-        self.____delegate_List = __K2L_ReadOnlyListOf(7, 8)
+        self.____delegate_List = __K2L_ListOf(7, 8)
     end
     function ____object:isEmpty()
         return self.____delegate_List:isEmpty()
@@ -926,10 +908,10 @@ local function more()
         return self.____delegate_List:lastIndexOf(element)
     end
     function ____object:listIterator()
-        return __K2L_JdkCollections.listIterator(self.____delegate_List)
+        return __K2L_ListIterator(self.____delegate_List)
     end
     function ____object:listIteratorAt(index)
-        return __K2L_JdkCollections.listIterator(self.____delegate_List, index)
+        return __K2L_ListIterator(self.____delegate_List, index)
     end
     function ____object:subList(fromIndex, toIndex)
         return self.____delegate_List:subList(fromIndex, toIndex)
@@ -945,7 +927,6 @@ local function more()
 end
 
 local Traced = __K2L_Class("Traced", __K2L_ListBase)
-Traced.____readOnly = true
 
 function Traced:____init(inner)
     self.inner = inner
@@ -984,11 +965,11 @@ function Traced:lastIndexOf(element)
 end
 
 function Traced:listIterator()
-    return __K2L_JdkCollections.listIterator(self.____delegate_List)
+    return __K2L_ListIterator(self.____delegate_List)
 end
 
 function Traced:listIteratorAt(index)
-    return __K2L_JdkCollections.listIterator(self.____delegate_List, index)
+    return __K2L_ListIterator(self.____delegate_List, index)
 end
 
 function Traced:subList(fromIndex, toIndex)
@@ -1003,7 +984,7 @@ __K2L_PropertyOverride(Traced, "size", "getSize")
 
 local ____lambda_20 = function(it) return it * 2 end
 local function traced()
-    local t = Traced.new(__K2L_ReadOnlyListOf(4, 5, 6))
+    local t = Traced.new(__K2L_ListOf(4, 5, 6))
     local ____items_3, ____n_4 = t:____array()
     for ____i_5 = 1, ____n_4 do
         local x = ____items_3[____i_5]
@@ -1022,7 +1003,6 @@ local function traced()
 end
 
 Pair = __K2L_Class("Pair", __K2L_AbstractList)
-Pair.____readOnly = true
 
 function Pair:getSize()
     return 2
@@ -1034,10 +1014,9 @@ end
 
 __K2L_PropertyOverride(Pair, "size", "getSize", true)
 Words = __K2L_Class("Words", __K2L_ListBase)
-Words.____readOnly = true
 
 function Words:____init()
-    self.____delegate_List = __K2L_ReadOnlyListOf("b", "a")
+    self.____delegate_List = __K2L_ListOf("b", "a")
 end
 
 function Words:isEmpty()
@@ -1069,11 +1048,11 @@ function Words:lastIndexOf(element)
 end
 
 function Words:listIterator()
-    return __K2L_JdkCollections.listIterator(self.____delegate_List)
+    return __K2L_ListIterator(self.____delegate_List)
 end
 
 function Words:listIteratorAt(index)
-    return __K2L_JdkCollections.listIterator(self.____delegate_List, index)
+    return __K2L_ListIterator(self.____delegate_List, index)
 end
 
 function Words:subList(fromIndex, toIndex)
@@ -1096,5 +1075,5 @@ local function main()
     traced()
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Counting = Counting, Plain = Plain, Logging = Logging, ReadOnly = ReadOnly, Tagged = Tagged, Lookup = Lookup, Unique = Unique, Bag = Bag, Wrap = Wrap, Steps = Steps, Name = Name, Job = Job, Twice = Twice, comparators = comparators, lists = lists, maps = maps, others = others, Sized = Sized, Pool = Pool, Draining = Draining, Version = Version, Release = Release, Pairing = Pairing, Lines = Lines, Window = Window, Layer = Layer, more = more, Traced = Traced, traced = traced, Pair = Pair, Words = Words}

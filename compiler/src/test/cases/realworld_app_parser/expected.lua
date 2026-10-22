@@ -1,12 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
-local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
@@ -16,25 +10,24 @@ local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
 local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
 local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringToDouble = ____lualib.__K2L_StringToDouble
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_Truncate = ____lualib.__K2L_Truncate
 local __K2L_Unit = ____lualib.__K2L_Unit
 
 local term, factor, json
 local Input = __K2L_Class("parsing.Input")
-__K2L_ClassInfo(Input, "parsing.Input", "parsing.Input", "class")
 
 function Input:____init(text, pos)
     if pos == nil then
@@ -72,9 +65,7 @@ function Input:equals(other)
 end
 
 local ParseResult = __K2L_Class("parsing.ParseResult")
-__K2L_ClassInfo(ParseResult, "parsing.ParseResult", "parsing.ParseResult", "class")
 ParseResult.Success = __K2L_Class("parsing.ParseResult$Success", ParseResult)
-__K2L_ClassInfo(ParseResult.Success, "parsing.ParseResult.Success", "parsing.ParseResult$Success", "class")
 
 function ParseResult.Success:____init(value, rest)
     self.value = value
@@ -98,7 +89,6 @@ function ParseResult.Success:equals(other)
 end
 
 ParseResult.Failure = __K2L_Class("parsing.ParseResult$Failure", ParseResult)
-__K2L_ClassInfo(ParseResult.Failure, "parsing.ParseResult.Failure", "parsing.ParseResult$Failure", "class")
 
 function ParseResult.Failure:____init(expected, at)
     self.expected = expected
@@ -131,8 +121,6 @@ function ParseResult:fold(onSuccess, onFailure)
 end
 
 local Parser = __K2L_Class("parsing.Parser")
-__K2L_ClassInfo(Parser, "parsing.Parser", "parsing.Parser", "interface")
-__K2L_CompanionInfo(Parser, "parsing.Parser.Companion", "parsing.Parser$Companion", "Companion")
 
 function Parser:pure(value)
     return __K2L_FunInterface(Parser, "parse", function(it) return ParseResult.Success.new(value, it) end)
@@ -221,7 +209,7 @@ end
 local function many1(____this_6)
     return map(____then(____this_6, many(____this_6)), function(____destructured)
         local h, t = ____destructured.first, ____destructured.second
-        return __K2L_SingletonListOf(h):plusAll(t)
+        return __K2L_ListOf(h):plusAll(t)
     end)
 end
 
@@ -233,8 +221,8 @@ end
 local function sepBy(____this_8, sep)
     return ____or(map(____then(____this_8, many(skipThen(sep, ____this_8))), function(____destructured_1)
         local h, t = ____destructured_1.first, ____destructured_1.second
-        return __K2L_SingletonListOf(h):plusAll(t)
-    end), Parser:pure(__K2L_ReadOnlyListOf()))
+        return __K2L_ListOf(h):plusAll(t)
+    end), Parser:pure(__K2L_ListOf()))
 end
 
 local function named(____this_9, name)
@@ -289,9 +277,7 @@ end))), function(____destructured_3)
     return h .. t:joinToString("")
 end)), "identifier")
 local Expr = __K2L_Class("parsing.Expr")
-__K2L_ClassInfo(Expr, "parsing.Expr", "parsing.Expr", "interface")
 Expr.Num = __K2L_Class("parsing.Expr$Num", nil, Expr)
-__K2L_ClassInfo(Expr.Num, "parsing.Expr.Num", "parsing.Expr$Num", "class")
 
 function Expr.Num:____init(v)
     self.v = v
@@ -302,7 +288,7 @@ function Expr.Num.new(v)
 end
 
 function Expr.Num:toString()
-    return "Num(v=" .. __K2L_Str(self.v) .. ")"
+    return "Num(v=" .. self.v .. ")"
 end
 
 function Expr.Num:hashCode()
@@ -310,11 +296,10 @@ function Expr.Num:hashCode()
 end
 
 function Expr.Num:equals(other)
-    return getmetatable(other) == Expr.Num and __K2L_DoubleEquals(self.v, other.v)
+    return getmetatable(other) == Expr.Num and self.v == other.v
 end
 
 Expr.Var = __K2L_Class("parsing.Expr$Var", nil, Expr)
-__K2L_ClassInfo(Expr.Var, "parsing.Expr.Var", "parsing.Expr$Var", "class")
 
 function Expr.Var:____init(name)
     self.name = name
@@ -337,7 +322,6 @@ function Expr.Var:equals(other)
 end
 
 Expr.Bin = __K2L_Class("parsing.Expr$Bin", nil, Expr)
-__K2L_ClassInfo(Expr.Bin, "parsing.Expr.Bin", "parsing.Expr$Bin", "class")
 
 function Expr.Bin:____init(op, l, r)
     self.op = op
@@ -362,7 +346,6 @@ function Expr.Bin:equals(other)
 end
 
 Expr.Neg = __K2L_Class("parsing.Expr$Neg", nil, Expr)
-__K2L_ClassInfo(Expr.Neg, "parsing.Expr.Neg", "parsing.Expr$Neg", "class")
 
 function Expr.Neg:____init(e)
     self.e = e
@@ -385,7 +368,6 @@ function Expr.Neg:equals(other)
 end
 
 Expr.Call = __K2L_Class("parsing.Expr$Call", nil, Expr)
-__K2L_ClassInfo(Expr.Call, "parsing.Expr.Call", "parsing.Expr$Call", "class")
 
 function Expr.Call:____init(fn, args)
     self.fn = fn
@@ -432,7 +414,6 @@ factor = lazyParser(function()
 end)
 
 local EvalException = __K2L_Class("parsing.EvalException", __K2L_Exception)
-__K2L_ClassInfo(EvalException, "parsing.EvalException", "parsing.EvalException", "class")
 
 function EvalException:____init(message)
     __K2L_Exception.____init(self, message)
@@ -467,7 +448,7 @@ local function eval(e, env)
                 return l / r
             end
         else
-            return math.fmod(l, r)
+            return l % r
         end
     elseif ____mt_6 == Expr.Call then
         local ____list = e.args
@@ -500,7 +481,7 @@ end
 local function show(e)
     local ____mt_7 = getmetatable(e)
     if ____mt_7 == Expr.Num then
-        return math.fmod(e.v, 1.0) == 0.0 and tostring(__K2L_DoubleToLong(e.v)) or __K2L_Str(e.v)
+        return e.v % 1.0 == 0.0 and tostring(__K2L_Truncate(e.v)) or tostring(e.v)
     elseif ____mt_7 == Expr.Var then
         return e.name
     elseif ____mt_7 == Expr.Neg then
@@ -522,9 +503,7 @@ local function parseAll(____this_10, text)
 end
 
 local Json = __K2L_Class("parsing.Json")
-__K2L_ClassInfo(Json, "parsing.Json", "parsing.Json", "class")
 Json.Str = __K2L_Class("parsing.Json$Str", Json)
-__K2L_ClassInfo(Json.Str, "parsing.Json.Str", "parsing.Json$Str", "class")
 
 function Json.Str:____init(s)
     self.s = s
@@ -547,7 +526,6 @@ function Json.Str:equals(other)
 end
 
 Json.Num = __K2L_Class("parsing.Json$Num", Json)
-__K2L_ClassInfo(Json.Num, "parsing.Json.Num", "parsing.Json$Num", "class")
 
 function Json.Num:____init(n)
     self.n = n
@@ -558,7 +536,7 @@ function Json.Num.new(n)
 end
 
 function Json.Num:toString()
-    return "Num(n=" .. __K2L_Str(self.n) .. ")"
+    return "Num(n=" .. self.n .. ")"
 end
 
 function Json.Num:hashCode()
@@ -566,11 +544,10 @@ function Json.Num:hashCode()
 end
 
 function Json.Num:equals(other)
-    return getmetatable(other) == Json.Num and __K2L_DoubleEquals(self.n, other.n)
+    return getmetatable(other) == Json.Num and self.n == other.n
 end
 
 Json.Arr = __K2L_Class("parsing.Json$Arr", Json)
-__K2L_ClassInfo(Json.Arr, "parsing.Json.Arr", "parsing.Json$Arr", "class")
 
 function Json.Arr:____init(items)
     self.items = items
@@ -593,7 +570,6 @@ function Json.Arr:equals(other)
 end
 
 Json.Obj = __K2L_Class("parsing.Json$Obj", Json)
-__K2L_ClassInfo(Json.Obj, "parsing.Json.Obj", "parsing.Json$Obj", "class")
 
 function Json.Obj:____init(fields)
     self.fields = fields
@@ -616,7 +592,6 @@ function Json.Obj:equals(other)
 end
 
 Json.Null = __K2L_Class("parsing.Json$Null", Json)
-__K2L_ClassInfo(Json.Null, "parsing.Json.Null", "parsing.Json$Null", "class")
 
 local ____lambda_5 = function(it) return it:render() end
 function Json:render()
@@ -624,7 +599,7 @@ function Json:render()
     if ____mt_8 == Json.Str then
         return "\"" .. self.s .. "\""
     elseif ____mt_8 == Json.Num then
-        return math.fmod(self.n, 1.0) == 0.0 and tostring(__K2L_DoubleToLong(self.n)) or __K2L_Str(self.n)
+        return self.n % 1.0 == 0.0 and tostring(__K2L_Truncate(self.n)) or tostring(self.n)
     elseif ____mt_8 == Json.Arr then
         return self.items:joinToString(",", "[", "]", nil, nil, ____lambda_5)
     elseif ____mt_8 == Json.Obj then
@@ -660,14 +635,13 @@ local ____lambda_13 = function(exp, at)
 end
 local ____lambda_14 = function(it) return it * 2 end
 local function main()
-    local env = __K2L_ReadOnlyMapOf(__K2L_Pair.new("x", 3.0), __K2L_Pair.new("y", 4.0), __K2L_Pair.new("rate", 0.5))
-    local inputs = __K2L_ReadOnlyListOf("1 + 2 * 3", "(1 + 2) * 3", "x * x + y * y", "-x + 10 / 4", "max(x, y, 2) * rate", "sum(1, 2, 3, 4) % 3", "min()", "unknown + 1", "foo(1)", "7 / (y - 4)", "2 *", "(1 + 2", "3 $ 4", "  12.5  ")
-    local ____mod = inputs.____modCount
+    local env = __K2L_MapOf(__K2L_Pair.new("x", 3.0), __K2L_Pair.new("y", 4.0), __K2L_Pair.new("rate", 0.5))
+    local inputs = __K2L_ListOf("1 + 2 * 3", "(1 + 2) * 3", "x * x + y * y", "-x + 10 / 4", "max(x, y, 2) * rate", "sum(1, 2, 3, 4) % 3", "min()", "unknown + 1", "foo(1)", "7 / (y - 4)", "2 *", "(1 + 2", "3 $ 4", "  12.5  ")
     for ____i_1 = 1, inputs.size do
         local text = inputs[____i_1]
         local line = parseAll(expr, text):fold(function(e, _)
-            local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
-                return true, show(e) .. " = " .. __K2L_Str(eval(e, env))
+            local ____ok, ____result, ____returned = pcall(function()
+                return true, show(e) .. " = " .. eval(e, env)
             end)
             if ____ok then
                 if ____result then
@@ -680,35 +654,28 @@ local function main()
                     return show(e) .. " fails: " .. __K2L_Str(ex.message)
                 elseif __K2L_InstanceOf(____error, __K2L_NoSuchElementException) then
                     local ex = ____error
-                    return show(e) .. " fails: " .. __K2L_Str(__K2L_KClassOfValue(ex).simpleName)
+                    return show(e) .. " fails: " .. __K2L_Str(__K2L_SimpleName(ex))
                 else
                     error(____error, 0)
                 end
             end
         end, ____lambda_11)
         print(text .. "  =>  " .. line)
-        if inputs.____modCount ~= ____mod and inputs:____comodified(____i_1) then
-            break
-        end
     end
-    local docs = __K2L_ReadOnlyListOf("{\"name\": \"k2l\", \"tags\": [\"lua\", \"kotlin\"], \"stars\": 42, \"meta\": {\"license\": null}}", "[1, 2.5, [], {}]", "{\"a\": [1, 2,]}", "{\"unterminated\": \"abc")
-    local ____mod_1 = docs.____modCount
+    local docs = __K2L_ListOf("{\"name\": \"k2l\", \"tags\": [\"lua\", \"kotlin\"], \"stars\": 42, \"meta\": {\"license\": null}}", "[1, 2.5, [], {}]", "{\"a\": [1, 2,]}", "{\"unterminated\": \"abc")
     for ____i_2 = 1, docs.size do
         local d = docs[____i_2]
         print(parseAll(json, d):fold(____lambda_12, ____lambda_13))
-        if docs.____modCount ~= ____mod_1 and docs:____comodified(____i_2) then
-            break
-        end
     end
     local r = parseAll(json, "{\"k\": [1, 2, 3]}")
     if getmetatable(r) == ParseResult.Success then
         local ____cast = r.value
         if getmetatable(____cast) ~= Json.Obj then
-            __K2L_CastFail(____cast, "parsing.Json$Obj", "parsing.Json.Obj")
+            __K2L_CastFail(____cast, "parsing.Json.Obj")
         end
         local ____cast_1 = ____cast.fields:get("k")
         if getmetatable(____cast_1) ~= Json.Arr then
-            __K2L_CastFail(____cast_1, "parsing.Json$Arr", "parsing.Json.Arr")
+            __K2L_CastFail(____cast_1, "parsing.Json.Arr")
         end
         local items = ____cast_1.items
         local ____arg = items.size
@@ -718,17 +685,17 @@ local function main()
             local it = ____items_1[____i_3]
             local ____result_1
             if getmetatable(it) ~= Json.Num then
-                __K2L_CastFail(it, "parsing.Json$Num", "parsing.Json.Num")
+                __K2L_CastFail(it, "parsing.Json.Num")
             end
             ____result_1 = it.n
             ____sum = ____sum + ____result_1
         end
-        print("k has " .. ____arg .. " items, sum " .. __K2L_Str(____sum))
+        print("k has " .. ____arg .. " items, sum " .. ____sum)
     end
     print(__K2L_Str(map(Parser:pure(5), ____lambda_14):parse(Input.new("rest"))))
     print(__K2L_Str(Parser:fail("nothing"):parse(Input.new(""))))
     print(__K2L_Str(many(____or(char("a"), char("b"))):parse(Input.new("abbac"))))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Input = Input, ParseResult = ParseResult, Parser = Parser, map = map, flatMap = flatMap, ____or = ____or, ____then = ____then, skipThen = skipThen, thenSkip = thenSkip, many = many, many1 = many1, optional = optional, sepBy = sepBy, named = named, lazyParser = lazyParser, satisfy = satisfy, char = char, ws = ws, token = token, symbol = symbol, digit = digit, number = number, identifier = identifier, Expr = Expr, chainLeft = chainLeft, expr = expr, term = term, factor = factor, EvalException = EvalException, eval = eval, show = show, parseAll = parseAll, Json = Json, jsonString = jsonString, json = json}

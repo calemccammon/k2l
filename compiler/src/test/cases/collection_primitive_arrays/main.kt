@@ -1,17 +1,7 @@
 // Collections and boxed arrays to primitive arrays (toCharArray(), toIntArray(), ...) and back.
-import java.util.LinkedList
 
-fun kind(x: Any): String = when (x) {
-    is CharArray -> "CharArray"
-    is IntArray -> "IntArray"
-    is LongArray -> "LongArray"
-    is DoubleArray -> "DoubleArray"
-    is FloatArray -> "FloatArray"
-    is BooleanArray -> "BooleanArray"
-    is ByteArray -> "ByteArray"
-    is ShortArray -> "ShortArray"
-    else -> "other"
-}
+// all arrays are one Lua class, whatever their element type: an IntArray is an `Array<*>` too (`is IntArray` is an error)
+fun kind(x: Any): String = if (x is Array<*>) "array" else "other"
 
 fun main() {
     val list: List<Char> = listOf('a', 'b', 'c')
@@ -30,9 +20,7 @@ fun main() {
     // other collections
     val dq = ArrayDeque(listOf('c', 'a', 'b'))
     println(dq.toCharArray().sorted())
-    val jdq = java.util.ArrayDeque(listOf('z', 'y'))
-    println(jdq.toCharArray().contentToString())
-    println(LinkedList(listOf(3, 4)).toIntArray().contentToString())
+    println(mutableListOf(3, 4).toIntArray().contentToString())
     val m = mapOf('k' to 1.5, 'j' to 2.5)
     println(m.keys.toCharArray().concatToString() + " " + m.values.toDoubleArray().sum())
     println(listOf('a', 'b', 'c', 'd').subList(1, 3).toCharArray().concatToString())
@@ -70,4 +58,7 @@ fun main() {
     println(listOf('a').toTypedArray().toCharArray().concatToString())
     println(sequenceOf('a', 'b').toList().toCharArray().size)
     println("abc".toList().toCharArray().concatToString())
+    // an array prints its elements, as a list does (not the JVM's `[I@1b6d3586`), and compares by identity
+    val arr = intArrayOf(1, 2)
+    println("$arr ${arrayOf("x")} ${arr == intArrayOf(1, 2)} ${arr.contentEquals(intArrayOf(1, 2))}")
 }

@@ -40,16 +40,14 @@ private fun FileTransformer.rangeBounds(x: LuaExpr, first: LuaExpr, last: LuaExp
     return LuaBinary(LuaBinOp.And, compare(LuaBinOp.Ge, x, lo, range), compare(upperOp, x, hi, range))
 }
 
-/** `l op r` on elements of [range]: boxes with `--long64 emulate`, `math.ult` for a `ULong` on 5.3/5.4. */
+/** `l op r` on elements of [range]. */
 private fun FileTransformer.compare(op: LuaBinOp, l: LuaExpr, r: LuaExpr, range: KRange): LuaExpr {
-    val wide = if (emulatesLong) wideRangeType(range) else null
-    if (wide != null) return long64Comparison(op, l, wide, r, wide)!!
     val type = with(session) { range.first.expressionType }
-    // a range of Comparable objects (`e in Level.LOW..Level.HIGH`, `"b" in "a".."c"` with `--strings utf16`) calls compareTo
+    // a range of Comparable objects (`e in Level.LOW..Level.HIGH`) calls compareTo
     if (type != null && with(session) { !type.isNumber && !comparesNatively(type, type) }) {
         return LuaBinary(op, lualibCall("Compare", l, r), LuaNumber("0"))
     }
-    return unsignedLongComparison(op, l, type, r, type) ?: LuaBinary(op, l, r)
+    return LuaBinary(op, l, r)
 }
 
 /**
@@ -66,18 +64,7 @@ private fun FileTransformer.steppedRangeContains(value: LuaExpr, range: KRange, 
     val step = cache(checkedStep(range.step!!, operands[2]), "step")
     val x = cache(if (isChar) charCode(value) else value, "value")
     val (from, to) = if (range.descending) first to x else x to first
-    val wide = if (emulatesLong) wideRangeType(range) else null
-    // a ULong difference is the right bit pattern even when it wraps, and its remainder is unsigned
-    val remainder = when {
-        wide != null && isULongType(wide) -> l64Member("urem", l64("Sub", from, to), step)
-
-        wide != null -> l64("Rem", l64("Sub", from, to), step)
-
-        else -> LuaBinary(LuaBinOp.Sub, from, to).let {
-            unsignedLongDivision(true, it, elementType, step, elementType)
-                ?: LuaBinary(LuaBinOp.Mod, it, step)
-        }
-    }
+    val remainder = LuaBinary(LuaBinOp.Mod, LuaBinary(LuaBinOp.Sub, from, to), step)
     return LuaBinary(LuaBinOp.And, rangeBounds(x, first, last, range), LuaBinary(LuaBinOp.Eq, remainder, LuaNumber("0")))
 }
 

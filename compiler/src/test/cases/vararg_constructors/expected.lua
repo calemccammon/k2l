@@ -2,10 +2,9 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
 local Polygon = __K2L_Class("Polygon")
@@ -27,7 +26,7 @@ function Polygon:____init1(...)
         ____count = ____count + 1
         ____out[____count] = __K2L_Pair.new(it:get(0), it:get(1))
     end
-    Polygon.____init(self, "poly", __K2L_Unpack(__K2L_ListWrap(____out, ____count):toTypedArray("[Lkotlin.Pair;")))
+    Polygon.____init(self, "poly", __K2L_Unpack(__K2L_ListWrap(____out, ____count):toTypedArray()))
 end
 
 function Polygon.new1(...)
@@ -135,10 +134,10 @@ local function main()
     end
     print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     print(__K2L_Str(Outer.Tagged.new(Outer.new("#"), 1, 2, 3)))
-    local arr = __K2L_TypedArrayOf("[Ljava.lang.String;", "x", "y")
+    local arr = __K2L_ArrayOf("x", "y")
     print(__K2L_Str(Bag.new(__K2L_Unpack(arr)):add("z", __K2L_Unpack(arr))))
     print(__K2L_Str(Bag.new():add()))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Polygon = Polygon, Triangle = Triangle, Path = Path, Chord = Chord, Outer = Outer, Bag = Bag}

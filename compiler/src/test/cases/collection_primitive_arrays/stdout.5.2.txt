@@ -1,0 +1,42 @@
+array abc 3
+x, y
+array 6
+array 3
+array 3.5
+array 3.5
+array [true, false]
+array [1, 2]
+array [1, 2]
+[a, b, c]
+[3, 4]
+kj 4
+bc
+3
+[true]
+[1.25]
+0
+qr
+array [1, 2]
+[1.5, 2.5]
+[true]
+[7]
+[7]
+ollhe
+true
+true
+4
+ollhe
+[o, l, l, h, e, !]
+[o, l, h, e]
+[o, l, l, h, e]
+[e, h, l, l, o]
+[o, l, l, h, e]
+3
+ol
+[1, 2]
+[1, 2]
+[1, 2]
+a
+2
+abc
+[1, 2] [x] false true

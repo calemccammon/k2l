@@ -1,0 +1,36 @@
+5:9: Regex alternation `|` is not supported (Lua patterns have no alternation)
+6:9: Regex quantifier on a group is not supported (Lua quantifies single characters and classes only)
+7:9: Regex non-capturing group `(?:...)` is not supported
+8:9: Regex lookaround `(?=...)`, `(?!...)`, `(?<=...)` or `(?<!...)` is not supported
+9:9: Regex lookaround `(?=...)`, `(?!...)`, `(?<=...)` or `(?<!...)` is not supported
+10:9: Regex named group `(?<name>...)` is not supported
+11:9: Regex inline flags `(?...)` are not supported (only a leading `(?i)` is)
+12:9: Regex lazy quantifier `??` is not supported
+13:9: Regex possessive quantifier `*+` is not supported
+14:9: Regex Unicode property `\p{...}` is not supported
+15:9: Regex `\b` is only supported before or after a word character (\w, a letter, a digit or _), where Lua's %f frontier can express it
+16:9: Regex `\B` is not supported (Lua's %f frontier only expresses some `\b`)
+17:9: Regex anchor `^` is only supported at the start of the pattern (as in Lua)
+18:9: Regex anchor `$` is only supported at the end of the pattern (as in Lua)
+19:9: Regex character class intersection `&&` is not supported
+20:9: Regex `\W` inside a character class is not supported
+21:9: Regex non-ASCII character in a character class is not supported (strings are bytes)
+22:9: Regex quantifier on a non-ASCII character is not supported (it is several bytes)
+23:9: Regex back-reference `\1` to a group that is not closed before it is not supported
+24:9: Regex repetition {2,40} above 20 is not supported (it is expanded)
+25:9: Regex lazy repetition `{2,3}?` is not supported
+26:9: Regex syntax error: a `{` that does not start a {n,m} repetition must be escaped
+27:9: Regex empty group `()` is not supported (in Lua it captures a position)
+28:9: Regex syntax error: unclosed group `(`
+29:9: Regex escape `\G` is not supported
+30:9: Regex option MULTILINE is not supported
+31:15: Regex alternation `|` is not supported (Lua patterns have no alternation)
+32:16: Regex quantifier on a group is not supported (Lua quantifies single characters and classes only)
+36:26: Library API 'kotlin.text.MatchGroup.range' is not supported yet
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see "Calling Lua from Kotlin" in the README)
+37:13: Regex named group lookup `groups[name]` is not supported yet
+42:13: Regex pattern must be a compile-time constant (k2l translates it to a Lua pattern)
+43:25: Regex pattern must be a compile-time constant (k2l translates it to a Lua pattern)
+44:13: Regex options must be compile-time constants (RegexOption entries or a setOf of them)
+45:13: Regex options must be compile-time constants (RegexOption entries or a setOf of them)
+46:29: Regex pattern must be a compile-time constant (k2l translates it to a Lua pattern)

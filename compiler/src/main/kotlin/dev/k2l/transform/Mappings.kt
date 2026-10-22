@@ -11,9 +11,6 @@ typealias Mapping = CallSite.() -> LuaExpr?
 /** One area of mappings (an object's `map`): what it produces for the call to [callableId], or null when it doesn't handle it. */
 typealias MappingArea = (callableId: String?, site: CallSite) -> LuaExpr?
 
-/** What wraps the result of the mapping areas, e.g. to round a Float result; [result] is null when no area handled the call. */
-typealias MappingPost = (callableId: String?, site: CallSite, result: LuaExpr?) -> LuaExpr?
-
 /** Stdlib callables by `CallableId` string; the `*Mappings` objects each register their own area. */
 class MappingTable {
     val entries = mutableMapOf<String, Mapping>()

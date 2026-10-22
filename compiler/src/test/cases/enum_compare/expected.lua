@@ -3,17 +3,16 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
-local __K2L_SortedSet = ____lualib.__K2L_SortedSet
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Level = __K2L_Class("Level")
@@ -166,11 +165,11 @@ local ____lambda_8 = function(it) return it.level end
 local ____lambda_9 = function() return Shape:named("hexagon") end
 local function main()
     print(tostring(__K2L_Compare(Level.LOW, Level.HIGH) < 0) .. " " .. tostring(__K2L_Compare(Level.CRITICAL, Level.MEDIUM) <= 0) .. " " .. __K2L_Compare(Level.HIGH, Level.LOW) .. " " .. __K2L_Compare(Level.LOW, Level.LOW))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(Level.HIGH, Level.LOW, Level.CRITICAL, Level.MEDIUM):sorted()))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(Level.HIGH, Level.LOW):sortedDescending()))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(Level.MEDIUM, Level.CRITICAL, Level.LOW):max()) .. " " .. __K2L_Str(__K2L_Num.maxOf(Level.LOW, Level.HIGH)) .. " " .. __K2L_Str(__K2L_Num.minOf(Shape.SQUARE, Shape.TRIANGLE)))
-    print(__K2L_Str(largest(__K2L_ReadOnlyListOf(Shape.TRIANGLE, Shape.SQUARE, Shape.CIRCLE))))
-    local tasks = __K2L_ReadOnlyListOf(Task.new("b", Level.HIGH, Shape.SQUARE), Task.new("a", Level.LOW, Shape.TRIANGLE), Task.new("c", Level.HIGH, Shape.CIRCLE), Task.new("d", Level.MEDIUM, Shape.TRIANGLE))
+    print(__K2L_Str(__K2L_ListOf(Level.HIGH, Level.LOW, Level.CRITICAL, Level.MEDIUM):sorted()))
+    print(__K2L_Str(__K2L_ListOf(Level.HIGH, Level.LOW):sortedDescending()))
+    print(__K2L_Str(__K2L_ListOf(Level.MEDIUM, Level.CRITICAL, Level.LOW):max()) .. " " .. __K2L_Str(__K2L_Num.maxOf(Level.LOW, Level.HIGH)) .. " " .. __K2L_Str(__K2L_Num.minOf(Shape.SQUARE, Shape.TRIANGLE)))
+    print(__K2L_Str(largest(__K2L_ListOf(Shape.TRIANGLE, Shape.SQUARE, Shape.CIRCLE))))
+    local tasks = __K2L_ListOf(Task.new("b", Level.HIGH, Shape.SQUARE), Task.new("a", Level.LOW, Shape.TRIANGLE), Task.new("c", Level.HIGH, Shape.CIRCLE), Task.new("d", Level.MEDIUM, Shape.TRIANGLE))
     local ____list = tasks:sortedBy(____lambda_4, true)
     local ____out = {}
     local ____count = 0
@@ -204,8 +203,8 @@ local function main()
     print(tasks:maxBy(____lambda_7).name .. " " .. __K2L_Str(tasks:minOf(____lambda_8)))
     local c = Level.MEDIUM
     print(tostring(__K2L_Compare(c, Level.LOW) > 0) .. " " .. __K2L_Compare(c, Level.CRITICAL))
-    print(__K2L_Str(__K2L_SortedSet.new(__K2L_ReadOnlyListOf(Shape.SQUARE, Shape.TRIANGLE, Shape.CIRCLE))))
-    print(__K2L_Str(__K2L_SortedMapOf(__K2L_Pair.new(Level.HIGH, 1), __K2L_Pair.new(Level.LOW, 2))))
+    print(__K2L_Str(__K2L_ListOf(Shape.SQUARE, Shape.TRIANGLE, Shape.CIRCLE):toSortedSet()))
+    print(__K2L_Str(__K2L_SortedMapOf(nil, __K2L_Pair.new(Level.HIGH, 1), __K2L_Pair.new(Level.LOW, 2))))
     local ____values_1 = Level.____values
     for ____i_4 = 1, #____values_1 do
         local level = ____values_1[____i_4]
@@ -235,5 +234,5 @@ local function main()
     print(__K2L_Str(__K2L_RunCatching(____lambda_9):exceptionOrNull()))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Level = Level, Shape = Shape, Task = Task, Version = Version, largest = largest}

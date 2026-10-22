@@ -18,7 +18,7 @@ class MovementPlugin private constructor() : BasePlugin("movement") {
     private var moves = 0
 
     override fun setup() {
-        ctx.provide(Grid::class, Grid(8))
+        ctx.provide(Grid::class.simpleName!!, Grid(8))
     }
 
     override fun onTick(tick: Int, world: World) {

@@ -1,7 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 
 local Holder = __K2L_Class("Holder")
 
@@ -75,7 +74,7 @@ function Child:getTag(____this_8)
 end
 
 function Child:getTag__2(____this_9)
-    return "double:" .. __K2L_Str(____this_9)
+    return "double:" .. ____this_9
 end
 
 function Child:more()
@@ -92,5 +91,5 @@ local function main()
     print(c:more())
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Holder = Holder, Parent = Parent, Child = Child}

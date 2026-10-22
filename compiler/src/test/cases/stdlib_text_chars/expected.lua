@@ -1,37 +1,35 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Extras = ____lualib.__K2L_Extras
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Random = ____lualib.__K2L_Random
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_SortedSetOf = ____lualib.__K2L_SortedSetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function t(label, f)
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         print(label .. " = " .. __K2L_Str(f()))
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result)
         if __K2L_InstanceOf(____error, __K2L_Exception) then
             local e = ____error
-            print(label .. " EXC " .. __K2L_Str(__K2L_KClassOfValue(e).simpleName) .. ": " .. __K2L_Str(e.message))
+            print(label .. " EXC " .. __K2L_Str(__K2L_SimpleName(e)) .. ": " .. __K2L_Str(e.message))
         else
             error(____error, 0)
         end
@@ -44,16 +42,14 @@ local ____lambda_3 = function(c, acc) return c > acc and c or acc end
 local ____lambda_4 = function()
     return __K2L_StringToList("abc"):reduceRight(____lambda_3)
 end
-local ____lambda_5 = function(i, acc, c)
-    return (i >= 0 and i % 2 or 0 - -i % 2) == 0 and acc or c
-end
+local ____lambda_5 = function(i, acc, c) return i % 2 == 0 and acc or c end
 local ____lambda_6 = function()
     return __K2L_StringToList("abcd"):reduceIndexed(____lambda_5)
 end
 local ____lambda_7 = function(_, acc, _) return acc end
 local ____lambda_8 = function(_, _, c) return c end
 local ____lambda_9 = function()
-    return __K2L_ReadOnlyListOf(__K2L_StringToList(""):reduceIndexedOrNull(____lambda_7), __K2L_StringToList("xy"):reduceIndexedOrNull(____lambda_8))
+    return __K2L_ListOf(__K2L_StringToList(""):reduceIndexedOrNull(____lambda_7), __K2L_StringToList("xy"):reduceIndexedOrNull(____lambda_8))
 end
 local ____lambda_10 = function(acc, c) return acc .. c end
 local ____lambda_11 = function()
@@ -65,7 +61,7 @@ local ____lambda_13 = function()
 end
 local ____lambda_14 = function(i, acc, c) return acc:plus(i + c:byte()) end
 local ____lambda_15 = function()
-    return __K2L_StringToList("ab"):runningFoldIndexed(__K2L_ReadOnlyListOf(), ____lambda_14)
+    return __K2L_StringToList("ab"):runningFoldIndexed(__K2L_ListOf(), ____lambda_14)
 end
 local ____lambda_16 = function(i, acc, c) return acc .. i .. c end
 local ____lambda_17 = function()
@@ -110,7 +106,7 @@ local ____lambda_30 = function()
         return __K2L_ListWrap(____out, ____size)
     end)
 end
-local ____lambda_31 = function(i, c) return __K2L_ReadOnlyListOf(i, c:byte()) end
+local ____lambda_31 = function(i, c) return __K2L_ListOf(i, c:byte()) end
 local ____lambda_32 = function()
     return __K2L_StringToList("xy"):flatMapIndexedTo(__K2L_ListOf(0), ____lambda_31)
 end
@@ -120,10 +116,10 @@ local ____lambda_34 = function()
 end
 local ____lambda_35 = function(it) return it:byte() end
 local ____lambda_36 = function()
-    return __K2L_StringToList("ab"):associateWithTo(__K2L_SortedMapOf(), ____lambda_35)
+    return __K2L_StringToList("ab"):associateWithTo(__K2L_SortedMapOf(nil), ____lambda_35)
 end
 local ____lambda_37 = function()
-    return __K2L_StringToList("banana"):toCollection(__K2L_SortedSetOf())
+    return __K2L_StringToList("banana"):toCollection(__K2L_SortedSetOf(nil))
 end
 local ____lambda_38 = function()
     return __K2L_StringToList("mississippi"):toHashSet():sorted()
@@ -131,7 +127,7 @@ end
 local ____lambda_39 = function(it) return it:byte() end
 local ____lambda_40 = function(it) return it:byte() end
 local ____lambda_41 = function()
-    return __K2L_ReadOnlyListOf(__K2L_StringToList("abc"):maxOfOrNull(____lambda_39), __K2L_StringToList(""):minOfOrNull(____lambda_40))
+    return __K2L_ListOf(__K2L_StringToList("abc"):maxOfOrNull(____lambda_39), __K2L_StringToList(""):minOfOrNull(____lambda_40))
 end
 local ____lambda_42 = function(it) return __K2L_Num.digitToIntOrNull(it) end
 local ____lambda_43 = function()
@@ -146,7 +142,7 @@ local ____lambda_47 = function()
     return __K2L_StringToList("abc"):firstNotNullOf(____lambda_46, "char sequence")
 end
 local ____lambda_48 = function()
-    return __K2L_ReadOnlyListOf(__K2L_StringToList(""):randomOrNull(__K2L_Random.default()), __K2L_StringToList("aaa"):randomOrNull(__K2L_Random.default()))
+    return __K2L_ListOf(__K2L_StringToList(""):randomOrNull(__K2L_Random.default()), __K2L_StringToList("aaa"):randomOrNull(__K2L_Random.default()))
 end
 local ____lambda_49 = function()
     return __K2L_AsSequence(__K2L_Text.windowed("abcde", 3)):toList()
@@ -163,20 +159,20 @@ local ____lambda_54 = function(x, acc) return x + acc end
 local ____lambda_55 = function(i, x, acc) return acc * 10 + x + i end
 local ____lambda_56 = function(_, x, acc) return x + acc end
 local ____lambda_57 = function()
-    return __K2L_Extras.reduceRight(__K2L_ReadOnlyListOf(), ____lambda_56, true, false, "list")
+    return __K2L_Extras.reduceRight(__K2L_ListOf(), ____lambda_56, true, false, "list")
 end
 local ____lambda_58 = function(i, s, acc) return acc .. s .. i end
 local ____lambda_59 = function()
-    return __K2L_Extras.reduceRight(__K2L_ReadOnlyListOf("a", "b", "c"), ____lambda_58, true, true, "list")
+    return __K2L_Extras.reduceRight(__K2L_ListOf("a", "b", "c"), ____lambda_58, true, true, "list")
 end
 local ____lambda_60 = function(s, acc) return acc .. s end
 local ____lambda_61 = function(i, x, acc) return acc - x * i end
 local ____lambda_62 = function()
-    return __K2L_Extras.reduceRight(__K2L_TypedArrayOf("[I", 5, 6, 7), ____lambda_61, true, false, "array")
+    return __K2L_Extras.reduceRight(__K2L_ArrayOf(5, 6, 7), ____lambda_61, true, false, "array")
 end
 local ____lambda_63 = function(_, s, acc) return s .. acc end
 local ____lambda_64 = function()
-    return __K2L_Extras.reduceRight(__K2L_TypedArrayOf("[Ljava.lang.String;"), ____lambda_63, true, false, "array")
+    return __K2L_Extras.reduceRight(__K2L_ArrayOf(), ____lambda_63, true, false, "array")
 end
 local function main()
     local word = "kotlin"
@@ -213,16 +209,16 @@ local function main()
     t("windowedSequence", ____lambda_49)
     t("windowedSequence step", ____lambda_51)
     t("chunkedSequence", ____lambda_52)
-    local numbers = __K2L_ReadOnlyListOf(1, 2, 3, 4)
+    local numbers = __K2L_ListOf(1, 2, 3, 4)
     t("reduceRightOrNull", function()
-        return __K2L_ReadOnlyListOf(__K2L_Extras.reduceRight(numbers, ____lambda_53, false, true, "list"), __K2L_Extras.reduceRight(__K2L_ReadOnlyListOf(), ____lambda_54, false, true, "list"))
+        return __K2L_ListOf(__K2L_Extras.reduceRight(numbers, ____lambda_53, false, true, "list"), __K2L_Extras.reduceRight(__K2L_ListOf(), ____lambda_54, false, true, "list"))
     end)
     t("reduceRightIndexed", function()
         return __K2L_Extras.reduceRight(numbers, ____lambda_55, true, false, "list")
     end)
     t("reduceRightIndexed empty", ____lambda_57)
     t("reduceRightIndexedOrNull", ____lambda_59)
-    local array = __K2L_TypedArrayOf("[Ljava.lang.String;", "x", "y", "z")
+    local array = __K2L_ArrayOf("x", "y", "z")
     t("array reduceRightOrNull", function()
         return __K2L_Extras.reduceRight(array, ____lambda_60, false, true, "array")
     end)
@@ -230,5 +226,5 @@ local function main()
     t("array empty", ____lambda_64)
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {t = t}

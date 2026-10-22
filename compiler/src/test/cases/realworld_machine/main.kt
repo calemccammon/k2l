@@ -20,14 +20,16 @@ sealed interface Operand {
 
 fun parseOperand(s: String): Operand = s.toLongOrNull()?.let { Operand.Lit(it) } ?: Operand.Reg(s.single())
 
-private val INSTR = Regex("""^(\w{3})(?:\s+(\S+))?(?:\s+(\S+))?$""")
+// an op of three word characters and up to two operands (Lua patterns have no optional groups: split on blanks)
+private val OP = Regex("""\w{3}""")
 
 fun parseProgram(text: String): List<Instr> = text.lines()
     .map { it.substringBefore('#').trim() }
     .filter { it.isNotEmpty() }
     .map { line ->
-        val match = INSTR.matchEntire(line) ?: throw IllegalArgumentException("bad line: '$line'")
-        val (op, a, b) = match.destructured
+        val parts = line.split(Regex("\\s+"))
+        if (parts.size > 3 || !parts[0].matches(OP)) throw IllegalArgumentException("bad line: '$line'")
+        val (op, a, b) = List(3) { parts.getOrElse(it) { "" } }
         when (op) {
             "set" -> Instr.Set(a[0], parseOperand(b))
             "add" -> Instr.Add(a[0], parseOperand(b))
@@ -209,9 +211,9 @@ fun main() {
     val (sum, mem) = runMemory(MEMORY)
     println("memory sum=$sum mem=$mem")
     println("floating: ${floatingAddresses("000000000000000000000000000000X1001X", 42)}")
-    println("mask bits: ${applyMask("1".repeat(36), 0).toString(2).length} ${java.lang.Long.toBinaryString(applyMask("X1X0", 9))}")
-    val bits = (0..16).map { Integer.bitCount(it) }
-    println("bit counts: $bits highest=${Integer.highestOneBit(100)} trailing=${Integer.numberOfTrailingZeros(96)}")
+    println("mask bits: ${applyMask("1".repeat(36), 0).toString(2).length} ${applyMask("X1X0", 9).toString(2)}")
+    val bits = (0..16).map { it.countOneBits() }
+    println("bit counts: $bits highest=${100.takeHighestOneBit()} trailing=${96.countTrailingZeroBits()}")
 
     val circuit = Circuit(CIRCUIT)
     for (w in listOf("d", "e", "f", "g", "h", "i", "x", "y", "a")) print("$w=${circuit.signal(w)} ")

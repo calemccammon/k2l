@@ -1,44 +1,36 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
-local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_GenerateSequenceLazy = ____lualib.__K2L_GenerateSequenceLazy
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
 local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
 local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
-local __K2L_ListBuilderOf = ____lualib.__K2L_ListBuilderOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_Map = ____lualib.__K2L_Map
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringToDoubleOrNull = ____lualib.__K2L_StringToDoubleOrNull
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local Env
 local LangException = __K2L_Class("calc.LangException", __K2L_Exception)
-__K2L_ClassInfo(LangException, "calc.LangException", "calc.LangException", "class")
 
 function LangException:____init(message, line, cause)
     if cause == nil then
@@ -49,18 +41,16 @@ function LangException:____init(message, line, cause)
 end
 
 function LangException:toString()
-    return __K2L_Str(__K2L_KClassOfValue(self).simpleName) .. "(line " .. self.line .. "): " .. __K2L_Str(self.message)
+    return __K2L_Str(__K2L_SimpleName(self)) .. "(line " .. self.line .. "): " .. __K2L_Str(self.message)
 end
 
 local SyntaxError = __K2L_Class("calc.SyntaxError", LangException)
-__K2L_ClassInfo(SyntaxError, "calc.SyntaxError", "calc.SyntaxError", "class")
 
 function SyntaxError:____init(message, line)
     LangException.____init(self, message, line)
 end
 
 local RuntimeError = __K2L_Class("calc.RuntimeError", LangException)
-__K2L_ClassInfo(RuntimeError, "calc.RuntimeError", "calc.RuntimeError", "class")
 
 function RuntimeError:____init(message, line, cause)
     if cause == nil then
@@ -70,7 +60,6 @@ function RuntimeError:____init(message, line, cause)
 end
 
 local TokenType = __K2L_Class("calc.TokenType")
-__K2L_ClassInfo(TokenType, "calc.TokenType", "calc.TokenType", "class")
 
 function TokenType:____init(name, ordinal)
     self.name = name
@@ -99,7 +88,6 @@ TokenType.SEMI = TokenType.new("SEMI", 10)
 TokenType.EOF = TokenType.new("EOF", 11)
 TokenType.____values = {TokenType.NUMBER, TokenType.STRING, TokenType.IDENT, TokenType.KEYWORD, TokenType.OP, TokenType.LPAREN, TokenType.RPAREN, TokenType.LBRACE, TokenType.RBRACE, TokenType.COMMA, TokenType.SEMI, TokenType.EOF}
 local Token = __K2L_Class("calc.Token")
-__K2L_ClassInfo(Token, "calc.Token", "calc.Token", "class")
 
 function Token:____init(____type, text, line)
     self.type = ____type
@@ -124,8 +112,6 @@ function Token:equals(other)
 end
 
 local Lexer = __K2L_Class("calc.Lexer")
-__K2L_ClassInfo(Lexer, "calc.Lexer", "calc.Lexer", "class")
-__K2L_CompanionInfo(Lexer, "calc.Lexer.Companion", "calc.Lexer$Companion", "Companion")
 
 function Lexer:____init(src)
     self.src = src
@@ -134,7 +120,7 @@ function Lexer:____init(src)
 end
 
 function Lexer:tokens()
-    local ____builder = __K2L_ListBuilderOf()
+    local ____builder = __K2L_ListOf()
     while true do
         local t = self:next()
         ____builder:add(t)
@@ -142,7 +128,7 @@ function Lexer:tokens()
             break
         end
     end
-    return ____builder:____build()
+    return ____builder
 end
 
 function Lexer:peekChar(offset)
@@ -254,16 +240,14 @@ function Lexer:skipBlanks()
 end
 
 function Lexer:____initCompanion()
-    self.KEYWORDS = __K2L_ReadOnlySetOf("let", "fun", "if", "else", "while", "return", "print", "true", "false")
-    self.TWO_CHAR_OPS = __K2L_ReadOnlyListOf("==", "!=", "<=", ">=", "&&", "||")
-    self.SINGLE = __K2L_ReadOnlyMapOf(__K2L_Pair.new("(", TokenType.LPAREN), __K2L_Pair.new(")", TokenType.RPAREN), __K2L_Pair.new("{", TokenType.LBRACE), __K2L_Pair.new("}", TokenType.RBRACE), __K2L_Pair.new(",", TokenType.COMMA), __K2L_Pair.new(";", TokenType.SEMI))
+    self.KEYWORDS = __K2L_SetOf("let", "fun", "if", "else", "while", "return", "print", "true", "false")
+    self.TWO_CHAR_OPS = __K2L_ListOf("==", "!=", "<=", ">=", "&&", "||")
+    self.SINGLE = __K2L_MapOf(__K2L_Pair.new("(", TokenType.LPAREN), __K2L_Pair.new(")", TokenType.RPAREN), __K2L_Pair.new("{", TokenType.LBRACE), __K2L_Pair.new("}", TokenType.RBRACE), __K2L_Pair.new(",", TokenType.COMMA), __K2L_Pair.new(";", TokenType.SEMI))
 end
 
 __K2L_LazyObject(Lexer, "____initCompanion")
 local Expr = __K2L_Class("calc.Expr")
-__K2L_ClassInfo(Expr, "calc.Expr", "calc.Expr", "interface")
 Expr.Num = __K2L_Class("calc.Expr$Num", nil, Expr)
-__K2L_ClassInfo(Expr.Num, "calc.Expr.Num", "calc.Expr$Num", "class")
 
 function Expr.Num:____init(value, line)
     self.value = value
@@ -275,7 +259,7 @@ function Expr.Num.new(value, line)
 end
 
 function Expr.Num:toString()
-    return "Num(value=" .. __K2L_Str(self.value) .. ", line=" .. self.line .. ")"
+    return "Num(value=" .. self.value .. ", line=" .. self.line .. ")"
 end
 
 function Expr.Num:hashCode()
@@ -283,11 +267,10 @@ function Expr.Num:hashCode()
 end
 
 function Expr.Num:equals(other)
-    return getmetatable(other) == Expr.Num and __K2L_DoubleEquals(self.value, other.value) and self.line == other.line
+    return getmetatable(other) == Expr.Num and self.value == other.value and self.line == other.line
 end
 
 Expr.Str = __K2L_Class("calc.Expr$Str", nil, Expr)
-__K2L_ClassInfo(Expr.Str, "calc.Expr.Str", "calc.Expr$Str", "class")
 
 function Expr.Str:____init(value, line)
     self.value = value
@@ -311,7 +294,6 @@ function Expr.Str:equals(other)
 end
 
 Expr.Bool = __K2L_Class("calc.Expr$Bool", nil, Expr)
-__K2L_ClassInfo(Expr.Bool, "calc.Expr.Bool", "calc.Expr$Bool", "class")
 
 function Expr.Bool:____init(value, line)
     self.value = value
@@ -335,7 +317,6 @@ function Expr.Bool:equals(other)
 end
 
 Expr.Var = __K2L_Class("calc.Expr$Var", nil, Expr)
-__K2L_ClassInfo(Expr.Var, "calc.Expr.Var", "calc.Expr$Var", "class")
 
 function Expr.Var:____init(name, line)
     self.name = name
@@ -359,7 +340,6 @@ function Expr.Var:equals(other)
 end
 
 Expr.Unary = __K2L_Class("calc.Expr$Unary", nil, Expr)
-__K2L_ClassInfo(Expr.Unary, "calc.Expr.Unary", "calc.Expr$Unary", "class")
 
 function Expr.Unary:____init(op, operand, line)
     self.op = op
@@ -384,7 +364,6 @@ function Expr.Unary:equals(other)
 end
 
 Expr.Binary = __K2L_Class("calc.Expr$Binary", nil, Expr)
-__K2L_ClassInfo(Expr.Binary, "calc.Expr.Binary", "calc.Expr$Binary", "class")
 
 function Expr.Binary:____init(left, op, right, line)
     self.left = left
@@ -410,7 +389,6 @@ function Expr.Binary:equals(other)
 end
 
 Expr.Call = __K2L_Class("calc.Expr$Call", nil, Expr)
-__K2L_ClassInfo(Expr.Call, "calc.Expr.Call", "calc.Expr$Call", "class")
 
 function Expr.Call:____init(callee, args, line)
     self.callee = callee
@@ -435,9 +413,7 @@ function Expr.Call:equals(other)
 end
 
 local Stmt = __K2L_Class("calc.Stmt")
-__K2L_ClassInfo(Stmt, "calc.Stmt", "calc.Stmt", "class")
 Stmt.Let = __K2L_Class("calc.Stmt$Let", Stmt)
-__K2L_ClassInfo(Stmt.Let, "calc.Stmt.Let", "calc.Stmt$Let", "class")
 
 function Stmt.Let:____init(name, init)
     self.name = name
@@ -461,7 +437,6 @@ function Stmt.Let:equals(other)
 end
 
 Stmt.Assign = __K2L_Class("calc.Stmt$Assign", Stmt)
-__K2L_ClassInfo(Stmt.Assign, "calc.Stmt.Assign", "calc.Stmt$Assign", "class")
 
 function Stmt.Assign:____init(name, value)
     self.name = name
@@ -485,7 +460,6 @@ function Stmt.Assign:equals(other)
 end
 
 Stmt.Print = __K2L_Class("calc.Stmt$Print", Stmt)
-__K2L_ClassInfo(Stmt.Print, "calc.Stmt.Print", "calc.Stmt$Print", "class")
 
 function Stmt.Print:____init(expr)
     self.expr = expr
@@ -508,7 +482,6 @@ function Stmt.Print:equals(other)
 end
 
 Stmt.If = __K2L_Class("calc.Stmt$If", Stmt)
-__K2L_ClassInfo(Stmt.If, "calc.Stmt.If", "calc.Stmt$If", "class")
 
 function Stmt.If:____init(cond, ____then, otherwise)
     self.cond = cond
@@ -533,7 +506,6 @@ function Stmt.If:equals(other)
 end
 
 Stmt.While = __K2L_Class("calc.Stmt$While", Stmt)
-__K2L_ClassInfo(Stmt.While, "calc.Stmt.While", "calc.Stmt$While", "class")
 
 function Stmt.While:____init(cond, body)
     self.cond = cond
@@ -557,7 +529,6 @@ function Stmt.While:equals(other)
 end
 
 Stmt.FunDecl = __K2L_Class("calc.Stmt$FunDecl", Stmt)
-__K2L_ClassInfo(Stmt.FunDecl, "calc.Stmt.FunDecl", "calc.Stmt$FunDecl", "class")
 
 function Stmt.FunDecl:____init(name, params, body)
     self.name = name
@@ -582,7 +553,6 @@ function Stmt.FunDecl:equals(other)
 end
 
 Stmt.Return = __K2L_Class("calc.Stmt$Return", Stmt)
-__K2L_ClassInfo(Stmt.Return, "calc.Stmt.Return", "calc.Stmt$Return", "class")
 
 function Stmt.Return:____init(value)
     self.value = value
@@ -605,7 +575,6 @@ function Stmt.Return:equals(other)
 end
 
 Stmt.ExprStmt = __K2L_Class("calc.Stmt$ExprStmt", Stmt)
-__K2L_ClassInfo(Stmt.ExprStmt, "calc.Stmt.ExprStmt", "calc.Stmt$ExprStmt", "class")
 
 function Stmt.ExprStmt:____init(expr)
     self.expr = expr
@@ -628,12 +597,11 @@ function Stmt.ExprStmt:equals(other)
 end
 
 local Parser = __K2L_Class("calc.Parser")
-__K2L_ClassInfo(Parser, "calc.Parser", "calc.Parser", "class")
 
 function Parser:____init(tokens)
     self.tokens = tokens
     self.i = 0
-    self.levels = __K2L_ReadOnlyListOf(__K2L_SingletonListOf("||"), __K2L_SingletonListOf("&&"), __K2L_ReadOnlyListOf("==", "!="), __K2L_ReadOnlyListOf("<", "<=", ">", ">="), __K2L_ReadOnlyListOf("+", "-"), __K2L_ReadOnlyListOf("*", "/", "%"))
+    self.levels = __K2L_ListOf(__K2L_ListOf("||"), __K2L_ListOf("&&"), __K2L_ListOf("==", "!="), __K2L_ListOf("<", "<=", ">", ">="), __K2L_ListOf("+", "-"), __K2L_ListOf("*", "/", "%"))
 end
 
 function Parser:getPeek()
@@ -706,7 +674,7 @@ function Parser:statement()
         local ____then = self:block()
         local otherwise
         if self:match(TokenType.KEYWORD, "else") then
-            otherwise = self:getPeek().text == "if" and __K2L_SingletonListOf(self:statement()) or self:block()
+            otherwise = self:getPeek().text == "if" and __K2L_ListOf(self:statement()) or self:block()
         else
             otherwise = nil
         end
@@ -811,9 +779,7 @@ function Parser:primary()
 end
 
 local Value = __K2L_Class("calc.Value")
-__K2L_ClassInfo(Value, "calc.Value", "calc.Value", "class")
 Value.NumV = __K2L_Class("calc.Value$NumV", Value)
-__K2L_ClassInfo(Value.NumV, "calc.Value.NumV", "calc.Value$NumV", "class")
 
 function Value.NumV:____init(n)
     self.n = n
@@ -824,7 +790,7 @@ function Value.NumV.new(n)
 end
 
 function Value.NumV:toString()
-    return self.n == (self.n == 0 and self.n * 1.0 or math.floor(self.n) + 0.0) and not __K2L_Num.isInfinite(self.n) and tostring(__K2L_DoubleToLong(self.n)) or __K2L_Str(self.n)
+    return self.n == math.floor(self.n) and not __K2L_Num.isInfinite(self.n) and tostring(__K2L_Truncate(self.n)) or tostring(self.n)
 end
 
 function Value.NumV:hashCode()
@@ -832,11 +798,10 @@ function Value.NumV:hashCode()
 end
 
 function Value.NumV:equals(other)
-    return getmetatable(other) == Value.NumV and __K2L_DoubleEquals(self.n, other.n)
+    return getmetatable(other) == Value.NumV and self.n == other.n
 end
 
 Value.StrV = __K2L_Class("calc.Value$StrV", Value)
-__K2L_ClassInfo(Value.StrV, "calc.Value.StrV", "calc.Value$StrV", "class")
 
 function Value.StrV:____init(s)
     self.s = s
@@ -859,7 +824,6 @@ function Value.StrV:equals(other)
 end
 
 Value.BoolV = __K2L_Class("calc.Value$BoolV", Value)
-__K2L_ClassInfo(Value.BoolV, "calc.Value.BoolV", "calc.Value$BoolV", "class")
 
 function Value.BoolV:____init(b)
     self.b = b
@@ -882,14 +846,12 @@ function Value.BoolV:equals(other)
 end
 
 Value.Nil = __K2L_Class("calc.Value$Nil", Value)
-__K2L_ClassInfo(Value.Nil, "calc.Value.Nil", "calc.Value$Nil", "class")
 
 function Value.Nil:toString()
     return "nil"
 end
 
 Value.FunV = __K2L_Class("calc.Value$FunV", Value)
-__K2L_ClassInfo(Value.FunV, "calc.Value.FunV", "calc.Value$FunV", "class")
 
 function Value.FunV:____init(decl, closure)
     self.decl = decl
@@ -905,7 +867,6 @@ function Value.FunV:toString()
 end
 
 Value.Native = __K2L_Class("calc.Value$Native", Value)
-__K2L_ClassInfo(Value.Native, "calc.Value.Native", "calc.Value$Native", "class")
 
 function Value.Native:____init(name, arity, fn)
     self.name = name
@@ -922,14 +883,13 @@ function Value.Native:toString()
 end
 
 Env = __K2L_Class("calc.Env")
-__K2L_ClassInfo(Env, "calc.Env", "calc.Env", "class")
 
 function Env:____init(parent)
     if parent == nil then
         parent = nil
     end
     self.parent = parent
-    self.vars = __K2L_HashMap.new()
+    self.vars = __K2L_Map.new()
 end
 
 function Env:define(name, value)
@@ -967,7 +927,6 @@ function Env:getDepth()
 end
 
 local ReturnSignal = __K2L_Class("calc.ReturnSignal", __K2L_RuntimeException)
-__K2L_ClassInfo(ReturnSignal, "calc.ReturnSignal", "calc.ReturnSignal", "class")
 
 function ReturnSignal:____init(value)
     __K2L_RuntimeException.____init(self)
@@ -975,7 +934,6 @@ function ReturnSignal:____init(value)
 end
 
 local Interpreter = __K2L_Class("calc.Interpreter")
-__K2L_ClassInfo(Interpreter, "calc.Interpreter", "calc.Interpreter", "class")
 
 local ____lambda_1 = function(args)
     return Value.StrV.new(__K2L_Str(args:get(0)))
@@ -1004,13 +962,9 @@ function Interpreter:run(program)
 end
 
 function Interpreter:execBlock(stmts, env)
-    local ____mod = stmts.____modCount
     for ____i = 1, stmts.size do
         local it = stmts[____i]
         self:exec(it, env)
-        if stmts.____modCount ~= ____mod and stmts:____comodified(____i) then
-            break
-        end
     end
 end
 
@@ -1068,7 +1022,7 @@ function Interpreter:num(v, line)
     local ____receiver_9 = getmetatable(v) == Value.NumV and v or nil
     local ____value_12 = ____receiver_9 and (getmetatable(v) == Value.NumV and v or nil).n
     if ____value_12 == nil then
-        error(RuntimeError.new("expected a number, got " .. __K2L_Str(__K2L_KClassOfValue(v).simpleName) .. " " .. __K2L_Str(v), line))
+        error(RuntimeError.new("expected a number, got " .. __K2L_Str(__K2L_SimpleName(v)) .. " " .. __K2L_Str(v), line))
     end
     return ____value_12
 end
@@ -1126,7 +1080,7 @@ function Interpreter:binary(e, env)
         end
         return Value.NumV.new(self:num(l, e.line) / d)
     elseif ____subject_3 == "%" then
-        return Value.NumV.new(math.fmod(self:num(l, e.line), self:num(r, e.line)))
+        return Value.NumV.new(self:num(l, e.line) % self:num(r, e.line))
     elseif ____subject_3 == "==" then
         return Value.BoolV.new(__K2L_Equals(l, r))
     elseif ____subject_3 == "!=" then
@@ -1173,23 +1127,19 @@ function Interpreter:call(e, env)
         end
         local ____local = Env.new(callee.closure)
         local ____list_1 = params:zip(args)
-        local ____mod_1 = ____list_1.____modCount
         for ____i_2 = 1, ____list_1.size do
             local ____it_1 = ____list_1[____i_2]
             do
                 local p, a = ____it_1.first, ____it_1.second
                 ____local:define(p, a)
             end
-            if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_2) then
-                break
-            end
         end
-        local ____ok, ____result_2, ____returned = __K2L_DeepPcall(function()
+        local ____ok, ____result_2, ____returned = pcall(function()
             self:execBlock(callee.decl.body, ____local)
             return true, Value.Nil
         end)
         if not ____ok then
-            ____ok, ____result_2, ____returned = __K2L_DeepPcall(function()
+            ____ok, ____result_2, ____returned = pcall(function()
                 local ____error = __K2L_ToThrowable(____result_2)
                 if getmetatable(____error) == ReturnSignal then
                     local r = ____error
@@ -1217,12 +1167,12 @@ local function runSource(name, src)
     local interp = Interpreter.new(function(it)
         output:add(it)
     end)
-    local ____ok_1, ____result_3 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_3 = pcall(function()
         local program = Parser.new(Lexer.new(src):tokens()):program()
         interp:run(program)
     end)
     if not ____ok_1 then
-        ____ok_1, ____result_3 = __K2L_DeepPcall(function()
+        ____ok_1, ____result_3 = pcall(function()
             local ____error_1 = __K2L_ToThrowable(____result_3)
             if getmetatable(____error_1) == SyntaxError then
                 local e = ____error_1
@@ -1273,5 +1223,5 @@ local function main()
     print(__K2L_Str(wrapped.message) .. " <- " .. __K2L_Str(____receiver_11 and ____receiver_11.message) .. " " .. tostring(__K2L_InstanceOf(____value_15, __K2L_IllegalStateException)))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {LangException = LangException, SyntaxError = SyntaxError, RuntimeError = RuntimeError, TokenType = TokenType, Token = Token, Lexer = Lexer, Expr = Expr, Stmt = Stmt, Parser = Parser, Value = Value, Env = Env, Interpreter = Interpreter, runSource = runSource}

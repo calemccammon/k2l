@@ -2,31 +2,25 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
-local __K2L_KClassNamed = ____lualib.__K2L_KClassNamed
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotImplementedError = ____lualib.__K2L_NotImplementedError
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Spread = ____lualib.__K2L_Spread
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringContains = ____lualib.__K2L_StringContains
@@ -36,7 +30,6 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Unit = ____lualib.__K2L_Unit
 
 local ValidationException = __K2L_Class("toolkit.ValidationException", __K2L_IllegalArgumentException)
-__K2L_ClassInfo(ValidationException, "toolkit.ValidationException", "toolkit.ValidationException", "class")
 
 function ValidationException:____init(field, message)
     __K2L_IllegalArgumentException.____init(self, field .. ": " .. message)
@@ -44,7 +37,6 @@ function ValidationException:____init(field, message)
 end
 
 local Validator = __K2L_Class("toolkit.Validator")
-__K2L_ClassInfo(Validator, "toolkit.Validator", "toolkit.Validator", "class")
 
 function Validator:____init(subject)
     self.subject = subject
@@ -77,7 +69,6 @@ local function validate(subject, block)
 end
 
 local Clock = __K2L_Class("toolkit.Clock")
-__K2L_ClassInfo(Clock, "toolkit.Clock", "toolkit.Clock", "class")
 
 function Clock:____init()
     self.now = 0
@@ -91,7 +82,7 @@ Clock:____init()
 
 local function timed(label, log, block)
     local start = Clock.now
-    local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
+    local ____ok, ____result, ____returned = pcall(function()
         return true, block()
     end)
     log:add(label .. " took " .. Clock.now - start)
@@ -104,7 +95,6 @@ local function timed(label, log, block)
 end
 
 local ResourceScope = __K2L_Class("toolkit.ResourceScope")
-__K2L_ClassInfo(ResourceScope, "toolkit.ResourceScope", "toolkit.ResourceScope", "class")
 
 function ResourceScope:____init()
     self.closers = __K2L_ArrayDeque.new()
@@ -120,7 +110,7 @@ end
 function ResourceScope:closeAll()
     local failures = __K2L_ListOf()
     while self.closers:isNotEmpty() do
-        local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+        local ____ok_1, ____result_1 = pcall(function()
             self.closers:removeFirst()()
         end)
         if not ____ok_1 then
@@ -139,7 +129,7 @@ end
 local function resourceScope(block)
     local scope = ResourceScope.new()
     local result
-    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_2 = pcall(function()
         result = block(scope)
     end)
     if not ____ok_2 then
@@ -160,19 +150,17 @@ local function fatal(message)
 end
 
 local Machine = __K2L_Class("toolkit.Machine")
-__K2L_ClassInfo(Machine, "toolkit.Machine", "toolkit.Machine", "class")
 
 function Machine:____init(name)
     self.name = name
     self.state = Machine.State.IDLE
     self.transitions = __K2L_ListOf()
-    self.start = Machine.Transition.new(self, __K2L_ReadOnlySetOf(Machine.State.IDLE, Machine.State.PAUSED), Machine.State.RUNNING)
-    self.pause = Machine.Transition.new(self, __K2L_ReadOnlySetOf(Machine.State.RUNNING), Machine.State.PAUSED)
+    self.start = Machine.Transition.new(self, __K2L_SetOf(Machine.State.IDLE, Machine.State.PAUSED), Machine.State.RUNNING)
+    self.pause = Machine.Transition.new(self, __K2L_SetOf(Machine.State.RUNNING), Machine.State.PAUSED)
     self.stop = Machine.Transition.new(self, __K2L_EnumValues(Machine.State):toSet():minus(Machine.State.STOPPED), Machine.State.STOPPED)
 end
 
 Machine.State = __K2L_Class("toolkit.Machine$State")
-__K2L_ClassInfo(Machine.State, "toolkit.Machine.State", "toolkit.Machine$State", "class")
 
 function Machine.State:____init(name, ordinal)
     self.name = name
@@ -193,7 +181,6 @@ Machine.State.PAUSED = Machine.State.new("PAUSED", 2)
 Machine.State.STOPPED = Machine.State.new("STOPPED", 3)
 Machine.State.____values = {Machine.State.IDLE, Machine.State.RUNNING, Machine.State.PAUSED, Machine.State.STOPPED}
 Machine.Transition = __K2L_Class("toolkit.Machine$Transition")
-__K2L_ClassInfo(Machine.Transition, "toolkit.Machine.Transition", "toolkit.Machine$Transition", "class")
 
 function Machine.Transition:____init(____outer, from, to)
     self.____outer = ____outer
@@ -215,25 +202,15 @@ function Machine:history()
 end
 
 local function findIndex(grid, target)
-    local ____mod_1 = grid.____modCount
     for ____i_1 = 1, grid.size do
         local row = grid[____i_1]
         local r = ____i_1 - 1
-        do
-            local ____mod = row.____modCount
-            for ____i = 1, row.size do
-                local v = row[____i]
-                local c = ____i - 1
-                if v == target then
-                    return __K2L_Pair.new(r, c)
-                end
-                if row.____modCount ~= ____mod and row:____comodified(____i) then
-                    break
-                end
+        for ____i = 1, row.size do
+            local v = row[____i]
+            local c = ____i - 1
+            if v == target then
+                return __K2L_Pair.new(r, c)
             end
-        end
-        if grid.____modCount ~= ____mod_1 and grid:____comodified(____i_1) then
-            break
         end
     end
     return nil
@@ -248,7 +225,6 @@ local function firstNegativeSums(rows)
         local ____result_3
         do
             local sum = 0
-            local ____mod_2 = row.____modCount
             for ____i_2 = 1, row.size do
                 local it = row[____i_2]
                 if it < 0 then
@@ -256,9 +232,6 @@ local function firstNegativeSums(rows)
                     goto ____inline_end
                 end
                 sum = sum + it
-                if row.____modCount ~= ____mod_2 and row:____comodified(____i_2) then
-                    break
-                end
             end
             ____result_3 = sum
             ::____inline_end::
@@ -284,7 +257,7 @@ local function makeCounters()
 end
 
 local function fib(n)
-    local memo = __K2L_HashMap.new()
+    local memo = __K2L_Map.new()
     local function go(k)
         if k < 2 then
             return k
@@ -308,7 +281,6 @@ local ____lambda_8 = function(x) return type(x) == "string" end
 local ____lambda_9 = function(x) return math.type(x) == "integer" end
 local function main()
     local User = __K2L_Class("toolkit.MainKt$main$User")
-    __K2L_ClassInfo(User, nil, "toolkit.MainKt$main$User", "class")
     function User:____init(name, age, email)
         self.name = name
         self.age = age
@@ -323,8 +295,7 @@ local function main()
     function User:equals(other)
         return getmetatable(other) == User and self.name == other.name and self.age == other.age and self.email == other.email
     end
-    local users = __K2L_ReadOnlyListOf(User.new("ada", 36, "ada@example.com"), User.new("", -1, "nope"), User.new("bob", 17, "bob@example"))
-    local ____mod_3 = users.____modCount
+    local users = __K2L_ListOf(User.new("ada", 36, "ada@example.com"), User.new("", -1, "nope"), User.new("bob", 17, "bob@example"))
     for ____i_4 = 1, users.size do
         local u = users[____i_4]
         local problems = validate(u, function(self)
@@ -334,9 +305,6 @@ local function main()
             self:check("email", ____lambda_6, function() return "is invalid: " .. u.email end)
         end)
         print(__K2L_Text.ifEmpty(u.name, ____lambda_7) .. ": " .. (problems:isEmpty() and "ok" or problems:joinToString("; ")))
-        if users.____modCount ~= ____mod_3 and users:____comodified(____i_4) then
-            break
-        end
     end
     local delays = __K2L_ListOf()
     local calls = 0
@@ -345,7 +313,7 @@ local function main()
         local delay = 10
         for attempt = 0, 4 - 1 - 1 do
             do
-                local ____ok_3, ____result_5 = __K2L_DeepPcall(function()
+                local ____ok_3, ____result_5 = pcall(function()
                     local ____result_6
                     do
                         local attempt = attempt + 1
@@ -384,12 +352,12 @@ local function main()
     end
     local value = ____result_4
     print(value .. " after " .. calls .. " calls, delays " .. __K2L_Str(delays))
-    local ____ok_4, ____result_8 = __K2L_DeepPcall(function()
+    local ____ok_4, ____result_8 = pcall(function()
         do
             local delay = 10
             for attempt = 0, 3 - 1 - 1 do
                 do
-                    local ____ok_5, ____result_9 = __K2L_DeepPcall(function()
+                    local ____ok_5, ____result_9 = pcall(function()
                         do
                             local it = attempt + 1
                             error(__K2L_IllegalArgumentException.new("not retried"))
@@ -432,7 +400,7 @@ local function main()
     local function earlyExit()
         do
             local start = Clock.now
-            local ____ok_6, ____result_10, ____returned_6 = __K2L_DeepPcall(function()
+            local ____ok_6, ____result_10, ____returned_6 = pcall(function()
                 local ____result_11
                 Clock:advance(3)
                 do return true, "left early" end
@@ -462,22 +430,18 @@ local function main()
         local c = ____this_1:closeWith(42, function(it)
             log:add("closed #" .. it)
         end)
-        return __K2L_ReadOnlyListOf(a, b, c)
+        return __K2L_ListOf(a, b, c)
     end)
     local opened, failures = ____destructured.first, ____destructured.second
     print("opened " .. __K2L_Str(opened) .. ", close failures " .. __K2L_Str(failures) .. ", log " .. __K2L_Str(log:drop(2)))
-    local mixed = __K2L_ReadOnlyListOf(1, "two", true, nil, __K2L_SingletonListOf(5))
+    local mixed = __K2L_ListOf(1, "two", true, nil, __K2L_ListOf(5))
     local ____result_12
     do
-        local ____mod_4 = mixed.____modCount
         for ____i_5 = 1, mixed.size do
             local x = mixed[____i_5]
             if type(x) == "string" then
                 ____result_12 = x
                 goto ____inline_end_4
-            end
-            if mixed.____modCount ~= ____mod_4 and mixed:____comodified(____i_5) then
-                break
             end
         end
         ____result_12 = nil
@@ -486,15 +450,11 @@ local function main()
     local ____arg = __K2L_Str(____result_12)
     local ____result_13
     do
-        local ____mod_5 = mixed.____modCount
         for ____i_6 = 1, mixed.size do
             local x = mixed[____i_6]
             if type(x) == "boolean" then
                 ____result_13 = x
                 goto ____inline_end_5
-            end
-            if mixed.____modCount ~= ____mod_5 and mixed:____comodified(____i_6) then
-                break
             end
         end
         ____result_13 = nil
@@ -503,15 +463,11 @@ local function main()
     local ____arg_1 = __K2L_Str(____result_13)
     local ____result_14
     do
-        local ____mod_6 = mixed.____modCount
         for ____i_7 = 1, mixed.size do
             local x = mixed[____i_7]
             if __K2L_InstanceOf(x, __K2L_List) then
                 ____result_14 = x
                 goto ____inline_end_6
-            end
-            if mixed.____modCount ~= ____mod_6 and mixed:____comodified(____i_7) then
-                break
             end
         end
         ____result_14 = nil
@@ -520,15 +476,11 @@ local function main()
     local ____arg_2 = __K2L_Str(____result_14)
     local ____result_15
     do
-        local ____mod_7 = mixed.____modCount
         for ____i_8 = 1, mixed.size do
             local x = mixed[____i_8]
             if __K2L_InstanceOf(x, __K2L_Map) then
                 ____result_15 = x
                 goto ____inline_end_7
-            end
-            if mixed.____modCount ~= ____mod_7 and mixed:____comodified(____i_8) then
-                break
             end
         end
         ____result_15 = nil
@@ -536,30 +488,30 @@ local function main()
     end
     print(____arg .. " " .. ____arg_1 .. " " .. ____arg_2 .. " " .. __K2L_Str(____result_15))
     local ____result_16
-    ____result_16 = __K2L_KClassOf(User).simpleName or "anonymous"
+    ____result_16 = "User" or "anonymous"
     local ____arg_3 = ____result_16
     local ____result_17
-    ____result_17 = __K2L_KClassOf(Machine.State).simpleName or "anonymous"
+    ____result_17 = "State" or "anonymous"
     local ____arg_4 = ____result_17
     local ____result_18
-    ____result_18 = __K2L_KClassOf(Machine.Transition).simpleName or "anonymous"
+    ____result_18 = "Transition" or "anonymous"
     print(____arg_3 .. " " .. ____arg_4 .. " " .. ____result_18)
-    local registry = __K2L_ReadOnlyMapOf(__K2L_Pair.new(__K2L_KClassNamed("kotlin.String"), "text"), __K2L_Pair.new(__K2L_KClassNamed("kotlin.Int"), 7))
+    local registry = __K2L_MapOf(__K2L_Pair.new(__K2L_NotNull("String"), "text"), __K2L_Pair.new(__K2L_NotNull("Int"), 7))
     local ____result_19
     do
-        local ____cast = registry:get(__K2L_KClassNamed("kotlin.String"))
+        local ____cast = registry:get(__K2L_NotNull("String"))
         ____result_19 = type(____cast) == "string" and ____cast or nil
     end
     local ____arg_5 = __K2L_Str(____result_19)
     local ____result_20
     do
-        local ____cast_1 = registry:get(__K2L_KClassNamed("kotlin.Int"))
+        local ____cast_1 = registry:get(__K2L_NotNull("Int"))
         ____result_20 = math.type(____cast_1) == "integer" and ____cast_1 or nil
     end
     local ____arg_6 = __K2L_Str(____result_20)
     local ____result_21
     do
-        local ____cast_2 = registry:get(__K2L_KClassOf(Machine))
+        local ____cast_2 = registry:get(__K2L_NotNull("Machine"))
         ____result_21 = getmetatable(____cast_2) == Machine and ____cast_2 or nil
     end
     print(____arg_5 .. " " .. ____arg_6 .. " " .. __K2L_Str(____result_21))
@@ -611,8 +563,8 @@ local function main()
         local it = ____list[____i_11]
         print("  " .. it)
     end
-    local grid = __K2L_ReadOnlyListOf(__K2L_ReadOnlyListOf(1, 2, 3), __K2L_ReadOnlyListOf(4, 5, 6))
-    print(__K2L_Str(findIndex(grid, 5)) .. " " .. __K2L_Str(findIndex(grid, 9)) .. " " .. __K2L_Str(firstNegativeSums(__K2L_ReadOnlyListOf(__K2L_ReadOnlyListOf(1, 2, -1, 5), __K2L_ReadOnlyListOf(3, 4), __K2L_SingletonListOf(-2)))))
+    local grid = __K2L_ListOf(__K2L_ListOf(1, 2, 3), __K2L_ListOf(4, 5, 6))
+    print(__K2L_Str(findIndex(grid, 5)) .. " " .. __K2L_Str(findIndex(grid, 9)) .. " " .. __K2L_Str(firstNegativeSums(__K2L_ListOf(__K2L_ListOf(1, 2, -1, 5), __K2L_ListOf(3, 4), __K2L_ListOf(-2)))))
     local counters = makeCounters()
     local ____out_1 = {}
     for ____i_12 = 1, 2 do
@@ -643,8 +595,8 @@ local function main()
         error(__K2L_NotImplementedError.new("An operation is not implemented: " .. "parse config"))
     end)
     local ____receiver_1 = lazyTodo:exceptionOrNull()
-    print(__K2L_Str(____receiver_1 and __K2L_Str(__K2L_KClassOfValue(____receiver_1).simpleName) .. ": " .. __K2L_Str(____receiver_1.message)))
-    local ____ok_7, ____result_29 = __K2L_DeepPcall(function()
+    print(__K2L_Str(____receiver_1 and __K2L_Str(__K2L_SimpleName(____receiver_1)) .. ": " .. __K2L_Str(____receiver_1.message)))
+    local ____ok_7, ____result_29 = pcall(function()
         if not (users.size > 5) then
             error(__K2L_IllegalArgumentException.new("need more than 5 users, got " .. users.size))
         end
@@ -662,5 +614,5 @@ local function main()
     print(e.field .. " " .. __K2L_Str(e.message) .. " " .. tostring(__K2L_InstanceOf(e, __K2L_IllegalArgumentException)))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {ValidationException = ValidationException, Validator = Validator, validate = validate, Clock = Clock, timed = timed, ResourceScope = ResourceScope, resourceScope = resourceScope, fatal = fatal, Machine = Machine, findIndex = findIndex, firstNegativeSums = firstNegativeSums, makeCounters = makeCounters, fib = fib}

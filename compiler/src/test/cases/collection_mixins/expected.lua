@@ -1,9 +1,8 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CollectionBase = ____lualib.__K2L_CollectionBase
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -11,18 +10,18 @@ local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_Iterable = ____lualib.__K2L_Iterable
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
-local __K2L_JdkCollections = ____lualib.__K2L_JdkCollections
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListBase = ____lualib.__K2L_ListBase
+local __K2L_ListIterator = ____lualib.__K2L_ListIterator
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapBase = ____lualib.__K2L_MapBase
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyOverride = ____lualib.__K2L_PropertyOverride
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Throwable = ____lualib.__K2L_Throwable
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Named = __K2L_Class("Named")
 
@@ -39,18 +38,16 @@ function Named:describe()
 end
 
 local Mixed = __K2L_Class("Mixed", Named, __K2L_IterableBase)
-Mixed.____readOnly = true
 
 function Mixed:____init()
     Named.____init(self, "mixed")
 end
 
 function Mixed:iterator()
-    return __K2L_IteratorOf(__K2L_ReadOnlyListOf(3, 1, 2))
+    return __K2L_IteratorOf(__K2L_ListOf(3, 1, 2))
 end
 
 local Wrapped = __K2L_Class("Wrapped", __K2L_Exception, __K2L_CollectionBase)
-Wrapped.____readOnly = true
 
 function Wrapped:____init()
     __K2L_Exception.____init(self, "wrapped")
@@ -73,12 +70,11 @@ function Wrapped:containsAll(elements)
 end
 
 function Wrapped:iterator()
-    return __K2L_IteratorOf(__K2L_ReadOnlyListOf(4, 5))
+    return __K2L_IteratorOf(__K2L_ListOf(4, 5))
 end
 
 __K2L_PropertyOverride(Wrapped, "size", "getSize")
 local Row = __K2L_Class("Row", Named, __K2L_ListBase)
-Row.____readOnly = true
 
 function Row:____init(name, cells)
     Named.____init(self, name)
@@ -119,11 +115,11 @@ function Row:lastIndexOf(element)
 end
 
 function Row:listIterator()
-    return __K2L_JdkCollections.listIterator(self.____delegate_List)
+    return __K2L_ListIterator(self.____delegate_List)
 end
 
 function Row:listIteratorAt(index)
-    return __K2L_JdkCollections.listIterator(self.____delegate_List, index)
+    return __K2L_ListIterator(self.____delegate_List, index)
 end
 
 function Row:subList(fromIndex, toIndex)
@@ -136,7 +132,6 @@ end
 
 __K2L_PropertyOverride(Row, "size", "getSize")
 local Scores = __K2L_Class("Scores", Named, __K2L_ListBase)
-Scores.____readOnly = true
 
 function Scores:____init(values)
     Named.____init(self, "scores")
@@ -176,11 +171,11 @@ function Scores:iterator()
 end
 
 function Scores:listIterator()
-    return __K2L_JdkCollections.listIterator(self.values:toList())
+    return __K2L_ListIterator(self.values:toList())
 end
 
 function Scores:listIteratorAt(index)
-    return __K2L_JdkCollections.listIterator(self.values:toList(), index)
+    return __K2L_ListIterator(self.values:toList(), index)
 end
 
 function Scores:subList(fromIndex, toIndex)
@@ -261,7 +256,7 @@ local function main()
     print("loop " .. total .. " " .. tostring(__K2L_InstanceOf(m, __K2L_Iterable)) .. " " .. tostring(__K2L_InstanceOf(m, Named)))
     local w = Wrapped.new()
     print(__K2L_Str(w.message) .. " " .. w:getSize() .. " " .. tostring(w:contains(4)) .. " " .. __K2L_Str(w:toList()) .. " " .. w:joinToString("+") .. " " .. tostring(__K2L_InstanceOf(w, __K2L_Iterable) and w.size ~= nil) .. " " .. tostring(__K2L_InstanceOf(w, __K2L_Throwable)))
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         error(w)
     end)
     if not ____ok then
@@ -270,14 +265,14 @@ local function main()
             local e = ____error
             local ____arg = __K2L_Str(e.message)
             if getmetatable(e) ~= Wrapped then
-                __K2L_CastFail(e, "Wrapped", "Wrapped")
+                __K2L_CastFail(e, "Wrapped")
             end
             print("caught " .. ____arg .. " " .. e:getSize())
         else
             error(____error, 0)
         end
     end
-    local r = Row.new("r1", __K2L_ReadOnlyListOf("a", "b", "c"))
+    local r = Row.new("r1", __K2L_ListOf("a", "b", "c"))
     print(r:describe() .. " " .. r:get(1) .. " " .. r:indexOf("c") .. " " .. __K2L_Str(r:reversed()) .. " " .. r:joinToString("") .. " " .. r.name .. " " .. tostring(__K2L_InstanceOf(r, __K2L_List)))
     local ____items_1, ____n_1 = r:____array()
     for ____i_1 = 1, ____n_1 do
@@ -285,13 +280,13 @@ local function main()
         io.write(cell .. " ")
     end
     print()
-    local s = Scores.new(__K2L_TypedArrayOf("[I", 5, 7, 9))
+    local s = Scores.new(__K2L_ArrayOf(5, 7, 9))
     print(s:getSize() .. " " .. s:get(2) .. " " .. s:max() .. " " .. __K2L_Str(s:subList(0, 2)) .. " " .. __K2L_Str(s:filter(____lambda_2)) .. " " .. s:describe() .. " " .. s:getLastIndex() .. " " .. __K2L_Str(s:getOrNull(5)))
     local sum = 0
     for i = 0, s.size - 1 do
         sum = sum + s:get(i)
     end
-    print("sum " .. sum .. " " .. tostring(__K2L_Equals(s:toList(), __K2L_ReadOnlyListOf(5, 7, 9))))
+    print("sum " .. sum .. " " .. tostring(__K2L_Equals(s:toList(), __K2L_ListOf(5, 7, 9))))
     local settings = Settings.new(__K2L_MapOf(__K2L_Pair.new("theme", "dark")))
     settings:set("font", "mono")
     print(settings.size .. " " .. __K2L_Str(settings:get("theme")) .. " " .. __K2L_Str(settings:getKeys()) .. " " .. __K2L_Str(settings:getEntries():map(____lambda_3)) .. " " .. settings:describe())
@@ -303,5 +298,5 @@ local function main()
     print()
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Named = Named, Mixed = Mixed, Wrapped = Wrapped, Row = Row, Scores = Scores, Settings = Settings}

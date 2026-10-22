@@ -15,8 +15,7 @@ plain **loud**
 **now bold**
 shadowed
 7
-Point draw.geometry.Point
-draw.text.Point draw.Point
+Point Point Point
 [Point, Point, Point]
 true
 true false

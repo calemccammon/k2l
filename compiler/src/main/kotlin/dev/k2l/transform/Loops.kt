@@ -113,11 +113,6 @@ private fun FileTransformer.rangeLoop(
         unsupported(rangeExpr, "Iterating over '${rangeExpr.expressionType.pretty()}'")
         return
     }
-    val wide = if (emulatesLong) wideRangeType(range) else null
-    if (wide != null) {
-        long64RangeLoop(e, frame, param, range, wide)
-        return
-    }
     val values = ordered(listOfNotNull(range.first, range.last, range.step))
         .mapIndexed { i, value -> if (isChar && i < 2) charCode(value) else value } // a Char range's step is an Int
     val limit = if (range.inclusive) values[1] else plusConstant(values[1], -1)
@@ -191,10 +186,6 @@ private fun FileTransformer.textLoop(e: KtForExpression, frame: LoopFrame, range
 /** `for (i in range)` over a range held in a value: a numeric `for` over its `first`, `last` and `step`. */
 private fun FileTransformer.rangeObjectLoop(e: KtForExpression, frame: LoopFrame, rangeExpr: KtExpression, param: KtParameter): Unit =
     with(session) {
-        if (emulatesLong && isWideRange(rangeExpr.expressionType)) {
-            long64RangeObjectLoop(e, frame, param, expression(rangeExpr))
-            return
-        }
         val r = cache(expression(rangeExpr), "range")
         emit(
             LuaNumericFor(
@@ -231,8 +222,7 @@ private fun FileTransformer.withIndexLoop(
 }
 
 /**
- * `for ((k, v) in map)` walks the map's keys and values arrays, `for (e in map)` its entries array, checked like
- * [collectionLoop].
+ * `for ((k, v) in map)` walks the map's keys and values arrays, `for (e in map)` its entries array.
  */
 private fun FileTransformer.mapLoop(e: KtForExpression, frame: LoopFrame, rangeExpr: KtExpression, param: KtParameter): Unit =
     with(session) {
@@ -240,9 +230,9 @@ private fun FileTransformer.mapLoop(e: KtForExpression, frame: LoopFrame, rangeE
         val map = expression(rangeExpr)
         if (destructuring != null && destructuring.entries.size == 2) {
             val names = destructuring.entries.map { naming.entry(it) }
-            elementsLoop(mapPairsSource(map, loopChecked(e, rangeExpr)), names, null, loopBody(frame, e.body))
+            elementsLoop(mapPairsSource(map), names, null, loopBody(frame, e.body))
         } else {
-            val source = arraySource(map, "____entryArray", loopChecked(e, rangeExpr))
+            val source = arraySource(map, "____entryArray")
             val variable = if (destructuring != null) ctx.temp("item") else naming.of(param)
             val prologue = destructuring?.let { listOf(destructure(it.entries, LuaName(variable).also { v -> stable += v })) }.orEmpty()
             elementsLoop(source, variable, null, prologue + loopBody(frame, e.body))
@@ -251,9 +241,7 @@ private fun FileTransformer.mapLoop(e: KtForExpression, frame: LoopFrame, rangeE
 
 /**
  * `for (x in xs)` over a list or array: by index up to its size at the start; over other collections: their elements'
- * array (`____array()`, a map's `keys`, `values` and `entries` read from the map). Unless the body cannot change a
- * collection, the loop checks the collection's `____modCount` after each pass, see [elementsLoop] (arrays never change
- * size).
+ * array (`____array()`, a map's `keys`, `values` and `entries` read from the map).
  */
 private fun FileTransformer.collectionLoop(
     e: KtForExpression,
@@ -263,24 +251,18 @@ private fun FileTransformer.collectionLoop(
     kind: CollectionKind,
 ): Unit = with(session) {
     val destructuring = param.destructuringDeclaration
-    val checked = loopChecked(e, rangeExpr)
-    val source = mapViewSource(rangeExpr, checked) ?: enumEntriesSource(rangeExpr) ?: run {
+    val source = mapViewSource(rangeExpr) ?: enumEntriesSource(rangeExpr) ?: run {
         val collection = expression(rangeExpr)
-        when {
-            kind == CollectionKind.Array -> listSource(collection, false)
-            checked && rangeExpr.expressionType?.mayBeJavaArrayDeque() == true -> dequeSource(collection)
-            kind.isIndexable -> listSource(collection, checked)
-            else -> arraySource(collection, checked = checked)
-        }
+        if (kind.isIndexable) listSource(collection) else arraySource(collection)
     }
     val variable = if (destructuring != null) ctx.temp("item") else naming.of(param)
     val prologue = destructuring?.let { listOf(destructure(it.entries, LuaName(variable).also { v -> stable += v })) }
-        ?: uncheckedElementCheck(rangeExpr, param, variable)
+        .orEmpty()
     elementsLoop(source, variable, null, prologue + loopBody(frame, e.body))
 }
 
 /** `map.keys`, `map.values` or `map.entries` of a library map: the map's arrays, without making the view. */
-internal fun FileTransformer.mapViewSource(rangeExpr: KtExpression, checked: Boolean): LoopSource? = with(session) {
+internal fun FileTransformer.mapViewSource(rangeExpr: KtExpression): LoopSource? = with(session) {
     val qualified = KtPsiUtil.safeDeparenthesize(rangeExpr) as? KtDotQualifiedExpression ?: return null
     val name = (qualified.selectorExpression as? KtNameReferenceExpression)?.getReferencedName() ?: return null
     val method = MAP_VIEW_ARRAYS[name] ?: return null
@@ -291,7 +273,7 @@ internal fun FileTransformer.mapViewSource(rangeExpr: KtExpression, checked: Boo
     if (psi != null && classes.isSource(psi)) return null
     val call = qualified.resolveToCall()?.successfulCallOrNull<KaCallableMemberCall<*, *>>() ?: return null
     if (call.partiallyAppliedSymbol.symbol.callableId?.callableName?.asString() != name) return null
-    return arraySource(expression(qualified.receiverExpression), method, checked)
+    return arraySource(expression(qualified.receiverExpression), method)
 }
 
 private val MAP_VIEW_ARRAYS = mapOf("keys" to "____keyArray", "values" to "____valueArray", "entries" to "____entryArray")
@@ -339,9 +321,6 @@ internal fun FileTransformer.component(entry: KtDestructuringDeclarationEntry, v
     val cls = symbol.callableId?.classId?.let(classes::classInFile) as? KtClass
     if (cls != null && cls.isData()) return propertyRead(value, cls.primaryConstructorParameters[n - 1])
     val receiverType = (call.partiallyAppliedSymbol.extensionReceiver ?: call.partiallyAppliedSymbol.dispatchReceiver)?.type
-    if (receiverType?.expandedSymbol?.classId?.asString() == "kotlin/time/TimedValue") {
-        return LuaIndex(value, LuaString(if (n == 1) "value" else "duration"))
-    }
     return when (receiverType?.collectionKind()) {
         CollectionKind.Pair, CollectionKind.Triple -> LuaIndex(value, LuaString(listOf("first", "second", "third")[n - 1]))
         CollectionKind.Entry -> LuaIndex(value, LuaString(if (n == 1) "key" else "value"))
@@ -359,14 +338,10 @@ internal fun FileTransformer.component(entry: KtDestructuringDeclarationEntry, v
 internal fun FileTransformer.loopKind(type: KaType): CollectionKind? = with(session) {
     val kind = type.collectionKind()
     val psi = type.expandedSymbol?.psi as? KtClassOrObject
-    val implementsList = psi != null && classes.isSource(psi) && (classes.collectionBaseOf(psi) == "__K2L_ListBase" || iteratesItself(psi))
+    val implementsList = psi != null && classes.isSource(psi) && classes.collectionBaseOf(psi) == "__K2L_ListBase"
     if (kind == CollectionKind.List && implementsList) CollectionKind.Iterable else kind
 }
 
 /** [collection] itself when it is already a `List`/`Array`, else a list copy of it. */
 internal fun FileTransformer.asList(kind: CollectionKind?, collection: LuaExpr): LuaExpr =
     if (kind?.isIndexable == true) collection else LuaMethodCall(collection, "toList", emptyList())
-
-/** Whether the loop [e] over [rangeExpr] checks for changes of the collection (see [elementsLoop]). */
-private fun FileTransformer.loopChecked(e: KtForExpression, rangeExpr: KtExpression): Boolean =
-    mayChangeCollections(e.body) && !isFreshReadOnly(rangeExpr)

@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local function greet(name, punctuation)
@@ -69,5 +69,5 @@ local function main()
     print(__K2L_Str(Config.new("c", 5)))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {greet = greet, range = range, withDerived = withDerived, Config = Config}

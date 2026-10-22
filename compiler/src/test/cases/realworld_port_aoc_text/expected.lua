@@ -5,16 +5,16 @@ local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Regex = ____lualib.__K2L_Regex
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Sequence = ____lualib.__K2L_Sequence
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
@@ -47,7 +47,7 @@ local function niceOld(s)
     end
     local ____cond_1 = ____cond
     if ____cond_1 then
-        local ____list_1 = __K2L_ReadOnlyListOf("ab", "cd", "pq", "xy")
+        local ____list_1 = __K2L_ListOf("ab", "cd", "pq", "xy")
         local ____result_2 = true
         local ____items_1, ____n_1 = ____list_1:____array()
         for ____i_1 = 1, ____n_1 do
@@ -63,14 +63,13 @@ local function niceOld(s)
 end
 
 local function niceNew(s)
-    return __K2L_Regex.new("(..).*\\1"):containsMatchIn(s) and __K2L_Regex.new("(.).\\1"):containsMatchIn(s)
+    return __K2L_Regex.new("(..).*\\1", "([^\n\r][^\n\r])[^\n\r]*%1"):containsMatchIn(s) and __K2L_Regex.new("(.).\\1", "([^\n\r])[^\n\r]%1"):containsMatchIn(s)
 end
 
 local function passwordPolicies(lines)
-    local re = __K2L_Regex.new("(\\d+)-(\\d+) (\\w): (\\w+)")
+    local re = __K2L_Regex.new("(\\d+)-(\\d+) (\\w): (\\w+)", "(%d+)%-(%d+) ([%w_]): ([%w_]+)")
     local a = 0
     local b = 0
-    local ____mod = lines.____modCount
     for ____i_2 = 1, lines.size do
         local line = lines[____i_2]
         local ____destructured = __K2L_NotNull(re:matchEntire(line)).destructured
@@ -85,25 +84,22 @@ local function passwordPolicies(lines)
         if __K2L_Text.getOrNull(pw, __K2L_StringToInt(lo) - 1) == c ~= (__K2L_Text.getOrNull(pw, __K2L_StringToInt(hi) - 1) == c) then
             b = b + 1
         end
-        if lines.____modCount ~= ____mod and lines:____comodified(____i_2) then
-            break
-        end
     end
     return __K2L_Pair.new(a, b)
 end
 
 local ____lambda_2 = function(v)
-    return __K2L_Regex.new("#[0-9a-f]{6}"):matches(v)
+    return __K2L_Regex.new("#[0-9a-f]{6}", "#[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]"):matches(v)
 end
 local ____lambda_3 = function(v)
-    return __K2L_ReadOnlySetOf("amb", "blu", "brn", "gry", "grn", "hzl", "oth"):contains(v)
+    return __K2L_SetOf("amb", "blu", "brn", "gry", "grn", "hzl", "oth"):contains(v)
 end
 local ____lambda_4 = function(____p1) return __K2L_IsDigit[____p1] == true end
 local ____lambda_5 = function(v)
     return #v == 9 and __K2L_StringToList(v):all(____lambda_4)
 end
 local function validPassport(fields)
-    local rules = __K2L_ReadOnlyMapOf(__K2L_Pair.new("byr", function(v)
+    local rules = __K2L_MapOf(__K2L_Pair.new("byr", function(v)
         local ____value_1 = __K2L_StringToIntOrNull(v)
         return ____value_1 >= 1920 and ____value_1 <= 2002
     end), __K2L_Pair.new("iyr", function(v)
@@ -113,7 +109,7 @@ local function validPassport(fields)
         local ____value_3 = __K2L_StringToIntOrNull(v)
         return ____value_3 >= 2020 and ____value_3 <= 2030
     end), __K2L_Pair.new("hgt", function(v)
-        local ____receiver = __K2L_Regex.new("(\\d+)(cm|in)"):matchEntire(v)
+        local ____receiver = __K2L_Regex.new("(\\d+)([a-z]+)", "(%d+)([a-z]+)"):matchEntire(v)
         local ____receiver_1 = ____receiver and ____receiver.destructured
         local ____result_4
         if ____receiver_1 ~= nil then
@@ -121,11 +117,13 @@ local function validPassport(fields)
             do
                 local n, u = ____receiver_1[1], ____receiver_1[2]
                 if u == "cm" then
-                    local ____value_4 = __K2L_StringToInt(n)
-                    ____result_3 = ____value_4 >= 150 and ____value_4 <= 193
-                else
                     local ____value_5 = __K2L_StringToInt(n)
-                    ____result_3 = ____value_5 >= 59 and ____value_5 <= 76
+                    ____result_3 = ____value_5 >= 150 and ____value_5 <= 193
+                elseif u == "in" then
+                    local ____value_4 = __K2L_StringToInt(n)
+                    ____result_3 = ____value_4 >= 59 and ____value_4 <= 76
+                else
+                    ____result_3 = false
                 end
             end
             ____result_4 = ____result_3
@@ -174,7 +172,7 @@ local function supportsTls(ip)
     for ____i_4 = 1, ____n_3 do
         local _ = ____items_3[____i_4]
         local i = ____i_4 - 1
-        if (i >= 0 and i % 2 or 0 - -i % 2) == 0 then
+        if i % 2 == 0 then
             ____count = ____count + 1
             ____out[____count] = _
         end
@@ -186,7 +184,7 @@ local function supportsTls(ip)
     for ____i_5 = 1, ____n_4 do
         local _ = ____items_4[____i_5]
         local i = ____i_5 - 1
-        if (i >= 0 and i % 2 or 0 - -i % 2) == 1 then
+        if i % 2 == 1 then
             ____count_1 = ____count_1 + 1
             ____out_1[____count_1] = _
         end
@@ -196,12 +194,11 @@ local function supportsTls(ip)
 end
 
 local function syntaxScore(lines)
-    local close = __K2L_ReadOnlyMapOf(__K2L_Pair.new("(", ")"), __K2L_Pair.new("[", "]"), __K2L_Pair.new("{", "}"), __K2L_Pair.new("<", ">"))
-    local errorPoints = __K2L_ReadOnlyMapOf(__K2L_Pair.new(")", 3), __K2L_Pair.new("]", 57), __K2L_Pair.new("}", 1197), __K2L_Pair.new(">", 25137))
-    local completePoints = __K2L_ReadOnlyMapOf(__K2L_Pair.new(")", 1), __K2L_Pair.new("]", 2), __K2L_Pair.new("}", 3), __K2L_Pair.new(">", 4))
+    local close = __K2L_MapOf(__K2L_Pair.new("(", ")"), __K2L_Pair.new("[", "]"), __K2L_Pair.new("{", "}"), __K2L_Pair.new("<", ">"))
+    local errorPoints = __K2L_MapOf(__K2L_Pair.new(")", 3), __K2L_Pair.new("]", 57), __K2L_Pair.new("}", 1197), __K2L_Pair.new(">", 25137))
+    local completePoints = __K2L_MapOf(__K2L_Pair.new(")", 1), __K2L_Pair.new("]", 2), __K2L_Pair.new("}", 3), __K2L_Pair.new(">", 4))
     local errors = 0
     local completions = __K2L_ListOf()
-    local ____mod_1 = lines.____modCount
     for ____i_7 = 1, lines.size do
         local line = lines[____i_7]
         do
@@ -220,18 +217,15 @@ local function syntaxScore(lines)
             end))
         end
         ::____continue::
-        if lines.____modCount ~= ____mod_1 and lines:____comodified(____i_7) then
-            break
-        end
     end
-    return __K2L_Pair.new(errors, completions:sorted():get(completions.size >= 0 and completions.size // 2 or 0 - -completions.size // 2))
+    return __K2L_Pair.new(errors, completions:sorted():get(completions.size // 2))
 end
 
 local function crates(input, multi)
     local ____destructured_2 = __K2L_StringSplit(input, "\n\n")
     local drawing, moves = ____destructured_2[1], ____destructured_2[2]
     local rows = __K2L_StringLines(drawing)
-    local count = __K2L_Regex.new("\\s+"):split(__K2L_StringTrim(rows:last())).size
+    local count = __K2L_Regex.new("\\s+", "%s+"):split(__K2L_StringTrim(rows:last())).size
     local ____out_2 = {}
     for ____i_8 = 1, count do
         local it = ____i_8 - 1
@@ -239,7 +233,6 @@ local function crates(input, multi)
     end
     local stacks = __K2L_ListWrap(____out_2, count)
     local ____list_3 = rows:dropLast(1)
-    local ____mod_2 = ____list_3.____modCount
     for ____i_9 = 1, ____list_3.size do
         local row = ____list_3[____i_9]
         for i = 0, count - 1 do
@@ -248,11 +241,8 @@ local function crates(input, multi)
                 stacks:get(i):addFirst(c)
             end
         end
-        if ____list_3.____modCount ~= ____mod_2 and ____list_3:____comodified(____i_9) then
-            break
-        end
     end
-    for _, m in __K2L_Sequence.new(__K2L_Regex.new("move (\\d+) from (\\d+) to (\\d+)"):findAllFactory(moves)):iter() do
+    for _, m in __K2L_Sequence.new(__K2L_Regex.new("move (\\d+) from (\\d+) to (\\d+)", "move (%d+) from (%d+) to (%d+)"):findAllFactory(moves)):iter() do
         local ____list_4 = m.destructured:toList()
         local ____out_3 = {}
         local ____count_2 = 0
@@ -266,13 +256,9 @@ local function crates(input, multi)
         local n, from, to = ____destructured_3[1], ____destructured_3[2], ____destructured_3[3]
         local taken = __K2L_IntRange.new(1, n):map(function(it) return stacks:get(from - 1):removeLast() end)
         local ____list_5 = multi and taken:reversed() or taken
-        local ____mod_3 = ____list_5.____modCount
         for ____i_11 = 1, ____list_5.size do
             local it = ____list_5[____i_11]
             stacks:get(to - 1):addLast(it)
-            if ____list_5.____modCount ~= ____mod_3 and ____list_5:____comodified(____i_11) then
-                break
-            end
         end
     end
     local ____out_4 = {}
@@ -315,20 +301,32 @@ local function stream(s)
     return __K2L_Pair.new(score, garbage)
 end
 
-local ____lambda_6 = function(it) return "_" end
 local function decodedLength(lit)
-    return #__K2L_Regex.new("\\\\x[0-9a-f]{2}|\\\\."):replace(__K2L_Text.substring(lit, 1, #lit - 1), ____lambda_6)
+    local body = __K2L_Text.substring(lit, 1, #lit - 1)
+    local i = 0
+    local n = 0
+    while i < #body do
+        local ____temp
+        if (i >= 0 and __K2L_StrByte(body, i + 1) or __K2L_IndexError(i, #body, "string")) ~= 92 then
+            ____temp = 1
+        else
+            ____temp = __K2L_Regex.new("\\\\x[0-9a-f]{2}", "\\x[0-9a-f][0-9a-f]"):matchesAt(body, i) and 4 or 2
+        end
+        i = i + ____temp
+        n = n + 1
+    end
+    return n
 end
 
-local ____lambda_7 = function(it)
+local ____lambda_6 = function(it)
     return (it == "\"" or it == "\\") and 2 or 1
 end
 local function encodedLength(lit)
-    return 2 + __K2L_StringToList(lit):sumOf(____lambda_7)
+    return 2 + __K2L_StringToList(lit):sumOf(____lambda_6)
 end
 
-local ____lambda_8 = function(it) return __K2L_StringContains("iol", it) end
-local ____lambda_9 = function(it) return it.value end
+local ____lambda_7 = function(it) return __K2L_StringContains("iol", it) end
+local ____lambda_8 = function(it) return it.value end
 local function nextPassword(current)
     local function inc(s)
         local i = s.size - 1
@@ -363,7 +361,7 @@ local function nextPassword(current)
                 break
             end
         end
-        return ____result_9 and __K2L_StringToList(s):none(____lambda_8) and __K2L_Sequence.new(__K2L_Regex.new("(.)\\1"):findAllFactory(s)):map(____lambda_9):distinct():count() >= 2
+        return ____result_9 and __K2L_StringToList(s):none(____lambda_7) and __K2L_Sequence.new(__K2L_Regex.new("(.)\\1", "([^\n\r])%1"):findAllFactory(s)):map(____lambda_8):distinct():count() >= 2
     end
     local p = inc(__K2L_Text.toCharArray(current))
     while not valid(__K2L_Text.string(p)) do
@@ -373,40 +371,40 @@ local function nextPassword(current)
 end
 
 local function calibration(line, words)
-    local names = __K2L_ReadOnlyListOf("one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
+    local names = __K2L_ListOf("one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
     local digits = __K2L_IntRange.new(0, #line - 1):mapNotNull(function(i)
         local ____value_10 = __K2L_Num.digitToIntOrNull(i >= 0 and i < #line and line:sub(i + 1, i + 1) or __K2L_IndexError(i, #line, "string"))
         if ____value_10 == nil then
-            local ____temp
+            local ____temp_1
             if words then
                 local ____value_9 = names:indexOfFirst(function(it) return line:sub(i + 1, i + #it) == it end)
                 local ____receiver_3 = ____value_9 >= 0 and ____value_9 or nil
-                ____temp = ____receiver_3 and ____receiver_3 + 1
+                ____temp_1 = ____receiver_3 and ____receiver_3 + 1
             else
-                ____temp = nil
+                ____temp_1 = nil
             end
-            ____value_10 = ____temp
+            ____value_10 = ____temp_1
         end
         return ____value_10
     end)
     return digits:first() * 10 + digits:last()
 end
 
-local ____lambda_10 = function(it)
+local ____lambda_9 = function(it)
     return __K2L_Pair.new(__K2L_Text.substringBefore(it, ":"), __K2L_Text.substringAfter(it, ":"))
 end
 local function main()
-    local words = __K2L_ReadOnlyListOf("ugknbfddgicrmopn", "aaa", "jchzalrnumimnmhp", "haegwjzuvuyypxyu", "dvszwmarrgswjxmb", "qjhvhtzxzqqjkmpb", "xxyxx", "uurcxstgmygtbstg", "ieodomkazucvgmuy")
+    local words = __K2L_ListOf("eeiou", "sootheabout", "rrr", "lomolomo", "uvwuvwkk", "aeiouxxtyty", "babkkeeoi", "momoxoxo", "ffiiuunnoo")
     print("nice: " .. words:count(niceOld) .. " / " .. words:count(niceNew) .. " -> " .. __K2L_Str(words:filter(niceNew)))
-    print("passwords: " .. __K2L_Str(passwordPolicies(__K2L_ReadOnlyListOf("1-3 a: abcde", "1-3 b: cdefg", "2-9 c: ccccccccc", "3-4 x: xxyx", "2-2 z: zz"))))
-    local ____list_7 = __K2L_Regex.new("\n\\s*\n"):split(__K2L_Text.trimIndent("\n        eyr:1972 cid:100\n        hcl:#18171d ecl:amb hgt:170 pid:186cm iyr:2018 byr:1926\n\n        pid:087499704 hgt:74in ecl:grn iyr:2012 eyr:2030 byr:1980\n        hcl:#623a2f\n\n        hcl:#888785\n        hgt:164cm byr:2001 iyr:2015 cid:88\n        pid:545766238 ecl:hzl\n        eyr:2022\n\n        iyr:2010 hgt:158cm hcl:#b6652a ecl:blu byr:1944 eyr:2021 pid:093154719\n\n        hgt:59cm ecl:zzz eyr:2038 hcl:74454a iyr:2023 pid:3556412378 byr:2007\n    "))
+    print("passwords: " .. __K2L_Str(passwordPolicies(__K2L_ListOf("2-4 k: kakkm", "1-2 r: tqrs", "3-5 m: mmmmmm", "1-4 j: jxyj", "2-3 w: awwb"))))
+    local ____list_7 = __K2L_Regex.new("\n\\s*\n", "\n%s*\n"):split(__K2L_Text.trimIndent("\n        ecl:gry pid:000123456 eyr:2025 hcl:#a1b2c3\n        byr:1950 iyr:2015 cid:7 hgt:180cm\n\n        iyr:2011 hgt:65in ecl:oth hcl:#00ff00\n        pid:987654321 byr:1999\n\n        hcl:#123abc byr:1985 eyr:2029 pid:111222333 ecl:hzl iyr:2019 hgt:70in\n\n        byr:2010 iyr:2009 eyr:2031 hgt:190 hcl:123abc ecl:xyz pid:12345\n\n        pid:555666777 hgt:150cm ecl:amb\n        hcl:#ffffff\n        iyr:2020 byr:1920 eyr:2020\n\n        hgt:194cm ecl:blu byr:1970 iyr:2014 eyr:2024 hcl:#abcdeg pid:0123456789\n    "))
     local ____out_5 = {}
     local ____count_4 = 0
     local ____items_8, ____n_8 = ____list_7:____array()
     for ____i_14 = 1, ____n_8 do
         local block = ____items_8[____i_14]
         local ____result_10
-        ____result_10 = __K2L_Regex.new("\\s+"):split(block):associate(____lambda_10)
+        ____result_10 = __K2L_Regex.new("\\s+", "%s+"):split(block):associate(____lambda_9)
         ____count_4 = ____count_4 + 1
         ____out_5[____count_4] = ____result_10
     end
@@ -415,23 +413,23 @@ local function main()
     local ____items_9, ____n_9 = passports:____array()
     for ____i_15 = 1, ____n_9 do
         local it = ____items_9[____i_15]
-        if it:getKeys():containsAll(__K2L_ReadOnlyListOf("byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid")) then
+        if it:getKeys():containsAll(__K2L_ListOf("byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid")) then
             ____result_11 = ____result_11 + 1
         end
     end
     print("passports: present=" .. ____result_11 .. " valid=" .. passports:count(validPassport))
-    local ips = __K2L_ReadOnlyListOf("abba[mnop]qrst", "abcd[bddb]xyyx", "aaaa[qwer]tyui", "ioxxoj[asdfgh]zxcvbn", "xyx[abc]ddmn[poop]q")
+    local ips = __K2L_ListOf("kxxk[abcd]efgh", "mnop[qrrq]stts", "zzzz[abcd]efgh", "abcdeffe[xyz]qq", "pqr[stu]vwwvx[lmml]z")
     print("tls: " .. __K2L_Str(ips:map(supportsTls)))
-    local chunks = __K2L_StringLines(__K2L_Text.trimIndent("\n        [({(<(())[]>[[{[]{<()<>>\n        [(()[<>])]({[<{<<[]>>(\n        {([(<{}[<>[]}>{[]{[(<()>\n        (((({<>}<{<{<>}{[]{[]{}\n        [[<[([]))<([[{}[[()]]]\n        [{[{({}]{}}([{[{{{}}([]\n        {<[[]]>}<{[{[{[]{()[[[]\n        [<(<(<(<{}))><([]([]()\n        <{([([[(<>()){}]>(<<{{\n        <{([{{}}[<[[[<>{}]]]>[]]\n    "))
+    local chunks = __K2L_StringLines(__K2L_Text.trimIndent("\n        [<>({}){}[([])<>]]\n        {([(<>)]\n        <{[()]}>)\n        [(<{}>]\n        <([]){}}\n        ({<[]>}\n        [[<{(\n        {<(>\n        <<[]{()}\n        (<[{}]>{[]}]\n    "))
     print("syntax: " .. __K2L_Str(syntaxScore(chunks)))
-    local crateInput = "    [D]    \n[N] [C]    \n[Z] [M] [P]\n 1   2   3 \n\nmove 1 from 2 to 1\nmove 3 from 1 to 3\nmove 2 from 2 to 1\nmove 1 from 1 to 2"
+    local crateInput = "[Q]         [T]\n[R] [W]     [U]\n[S] [X] [Y] [V]\n 1   2   3   4 \n\n" .. "move 2 from 4 to 3\nmove 1 from 1 to 2\nmove 3 from 3 to 1\nmove 2 from 2 to 4"
     print("crates: " .. crates(crateInput, false) .. " " .. crates(crateInput, true))
-    local ____list_8 = __K2L_ReadOnlyListOf("{}", "{{{}}}", "{{<!!>},{<!!>},{<!!>},{<!!>}}", "{{<a!>},{<a!>},{<a!>},{<ab>}}", "<{o\"i!a,<{i<a>", "{{<ab>},{<ab>},{<ab>},{<ab>}}")
+    local ____list_8 = __K2L_ListOf("{}", "{{}{}}", "{<x!>y>,{}}", "{{<!!!>>},{<abc>}}", "<!!!!>", "{{{<{}>}},{<>}}", "<a{b!c>")
     for ____i_16 = 1, ____list_8.size do
         local s = ____list_8[____i_16]
         print("stream " .. s .. " -> " .. __K2L_Str(stream(s)))
     end
-    local literals = __K2L_ReadOnlyListOf("\"\"", "\"abc\"", "\"aaa\\\"aaa\"", "\"\\x27\"", "\"\\\\x41\"")
+    local literals = __K2L_ListOf("\"hi\"", "\"a\\\"b\"", "\"\\x4f\\x6b\"", "\"\\\\\\\\\"", "\"z\\\\x41\"")
     local ____out_6 = {}
     local ____count_5 = 0
     local ____items_10, ____n_10 = literals:____array()
@@ -455,8 +453,8 @@ local function main()
         ____sum_1 = ____sum_1 + (encodedLength(it) - #it)
     end
     print(____arg_1 .. ____sum_1)
-    print("next passwords: " .. nextPassword("abcdfezz") .. " " .. nextPassword("ghjaabbz") .. " " .. nextPassword("abcdffaa"))
-    local cal = __K2L_ReadOnlyListOf("1abc2", "pqr3stu8vwx", "a1b2c3d4e5f", "treb7uchet", "two1nine", "eightwothree", "abcone2threexyz", "xtwone3four", "4nineeightseven2", "zoneight234", "7pqrstsixteen", "oneight")
+    print("next passwords: " .. nextPassword("qrsuuvwz") .. " " .. nextPassword("tuvaacfz") .. " " .. nextPassword("pqrhhmmz"))
+    local cal = __K2L_ListOf("k4m9", "77", "x1y2z3", "nope5here", "sixabc3", "nineight", "q2threefour", "fivesevenine", "8kseven", "twoone", "threeeight5", "abfour")
     local ____list_9 = cal:take(4)
     local ____sum_2 = 0
     local ____items_13, ____n_13 = ____list_9:____array()
@@ -482,5 +480,5 @@ local function main()
     print("calibration: " .. ____sum_2 .. " " .. ____sum_3 .. " " .. __K2L_Str(__K2L_ListWrap(____out_7, ____count_6)))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {niceOld = niceOld, niceNew = niceNew, passwordPolicies = passwordPolicies, validPassport = validPassport, supportsTls = supportsTls, syntaxScore = syntaxScore, crates = crates, stream = stream, decodedLength = decodedLength, encodedLength = encodedLength, nextPassword = nextPassword, calibration = calibration}

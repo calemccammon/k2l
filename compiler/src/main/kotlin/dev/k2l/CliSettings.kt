@@ -14,9 +14,6 @@ internal val USAGE = """
     |  -o, --out DIR           output directory (default: out)
     |  -t, --target VERSION    Lua version: 5.1, 5.2, 5.3, 5.4 (default) or JIT
     |      --lualib MODE       require (default: one shared lualib_bundle.lua) or inline
-    |      --int-overflow MODE unchecked (default) or wrap: make Int arithmetic wrap to 32 bits like the JVM
-    |      --long64 MODE       double (default) or emulate: exact 64-bit Long and ULong on Lua 5.1, 5.2 and LuaJIT (slower)
-    |      --strings MODE      bytes (default) or utf16: make String and Char behave like the JVM's UTF-16 strings
     |      --classpath PATHS   extra jars or class directories, e.g. Lua bindings ('${java.io.File.pathSeparator}'-separated)
     |      --source-map        write main.lua.map files and make Lua errors and tracebacks show Kotlin positions
     |                          (on by default with --watch)
@@ -39,9 +36,6 @@ internal data class Settings(
     val target: LuaTarget = CompilerOptions().luaTarget,
     val lualib: LuaLibImport = CompilerOptions().luaLibImport,
     val classpath: List<Path> = emptyList(),
-    val intOverflow: IntOverflow = CompilerOptions().intOverflow,
-    val strings: StringSemantics = CompilerOptions().strings,
-    val long64: Long64 = CompilerOptions().long64,
     /** Null when neither k2l.json nor the command line says: then source maps are on exactly in watch mode. */
     val sourceMap: Boolean? = null,
     val watch: Boolean = false,
@@ -55,9 +49,6 @@ internal data class Settings(
     fun compilerOptions() = CompilerOptions(
         luaTarget = target,
         luaLibImport = lualib,
-        intOverflow = intOverflow,
-        strings = strings,
-        long64 = long64,
         sourceMap = sourceMapEnabled,
     )
 }
@@ -71,7 +62,7 @@ private fun exitWith(output: String): Nothing = throw CliExit(output)
 private const val CHARS_PER_TYPO = 3
 
 private val OPTIONS = listOf(
-    "--project", "--out", "--target", "--lualib", "--int-overflow", "--long64", "--strings", "--classpath", "--source-map",
+    "--project", "--out", "--target", "--lualib", "--classpath", "--source-map",
     "--no-source-map", "--check", "--watch", "--help", "--version",
 )
 
@@ -90,12 +81,6 @@ internal fun parseArgs(args: Array<String>): Settings {
             "-t", "--target" -> LuaTarget.parse(value(arg)).let { target -> overrides += { s -> s.copy(target = target) } }
 
             "--lualib" -> parseLualib(value(arg)).let { lualib -> overrides += { s -> s.copy(lualib = lualib) } }
-
-            "--int-overflow" -> IntOverflow.parse(value(arg)).let { mode -> overrides += { s -> s.copy(intOverflow = mode) } }
-
-            "--long64" -> Long64.parse(value(arg)).let { mode -> overrides += { s -> s.copy(long64 = mode) } }
-
-            "--strings" -> StringSemantics.parse(value(arg)).let { mode -> overrides += { s -> s.copy(strings = mode) } }
 
             "--classpath" -> value(arg).split(java.io.File.pathSeparatorChar).filter { p -> p.isNotEmpty() }.map { p -> Paths.get(p) }
                 .let { cp -> overrides += { s -> s.copy(classpath = s.classpath + cp) } }

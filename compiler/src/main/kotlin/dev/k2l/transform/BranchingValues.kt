@@ -90,8 +90,7 @@ internal fun FileTransformer.mayNeedStatements(e: KtExpression): Boolean = with(
 }
 
 private fun FileTransformer.mayExpandOrCheck(element: PsiElement) = with(session) {
-    (element is KtCallExpression && mayExpandInline(element)) || (element is KtBinaryExpressionWithTypeRHS && mayCheckCast(element)) ||
-        (element is KtExpression && mayCheckUnchecked(element))
+    (element is KtCallExpression && mayExpandInline(element)) || (element is KtBinaryExpressionWithTypeRHS && mayCheckCast(element))
 }
 
 private fun FileTransformer.needsStatements(element: PsiElement) = when (element) {

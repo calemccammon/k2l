@@ -1,8 +1,61 @@
-import java.util.PriorityQueue
 import kotlin.random.Random
 
 // A discrete-event simulation of a bank with tellers, plus a cellular automaton and an
 // elevator state machine. Randomness comes from a seeded generator, so runs are reproducible.
+
+/** A binary min-heap by [comparator]: the part of java.util.PriorityQueue the program uses (k2l has no PriorityQueue). */
+class MinQueue<T>(private val comparator: Comparator<in T>) {
+    private val heap = ArrayList<T>()
+    val size: Int get() = heap.size
+
+    fun isEmpty() = heap.isEmpty()
+
+    fun isNotEmpty() = heap.isNotEmpty()
+
+    fun peek(): T? = heap.firstOrNull()
+
+    fun add(item: T): Boolean {
+        heap.add(item)
+        var i = heap.size - 1
+        while (i > 0) {
+            val parent = (i - 1) / 2
+            if (comparator.compare(heap[i], heap[parent]) >= 0) break
+            val t = heap[i]
+            heap[i] = heap[parent]
+            heap[parent] = t
+            i = parent
+        }
+        return true
+    }
+
+    fun offer(item: T) = add(item)
+
+    operator fun plusAssign(item: T) {
+        add(item)
+    }
+
+    fun poll(): T {
+        if (heap.isEmpty()) throw NoSuchElementException("queue is empty")
+        val top = heap[0]
+        val last = heap.removeAt(heap.size - 1)
+        if (heap.isNotEmpty()) {
+            heap[0] = last
+            var i = 0
+            while (true) {
+                val l = 2 * i + 1
+                if (l >= heap.size) break
+                val r = l + 1
+                val c = if (r < heap.size && comparator.compare(heap[r], heap[l]) < 0) r else l
+                if (comparator.compare(heap[c], heap[i]) >= 0) break
+                val t = heap[i]
+                heap[i] = heap[c]
+                heap[c] = t
+                i = c
+            }
+        }
+        return top
+    }
+}
 
 sealed class SimEvent(val time: Int) : Comparable<SimEvent> {
     abstract val priority: Int
@@ -37,7 +90,7 @@ class BankStats {
 }
 
 class Bank(private val tellers: Int, private val log: Boolean = false) {
-    private val events = PriorityQueue<SimEvent>()
+    private val events = MinQueue<SimEvent>(naturalOrder())
     private val queue = ArrayDeque<Customer>()
     private val busy = BooleanArray(tellers)
     private val busyTime = IntArray(tellers)

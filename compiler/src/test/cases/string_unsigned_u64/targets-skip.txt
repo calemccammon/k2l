@@ -1,3 +1,0 @@
-5.1: a ULong is a double without 64-bit integers, so values from 2^53 are inexact
-5.2: a ULong is a double without 64-bit integers, so values from 2^53 are inexact
-JIT: a ULong is a double without 64-bit integers, so values from 2^53 are inexact

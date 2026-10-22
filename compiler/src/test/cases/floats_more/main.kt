@@ -37,7 +37,7 @@ fun main() {
     println(ln(10f))
     println(1.1f.compareTo(1.2f))
     println(String.format("%.3f", 1f / 3))
-    println("%.1f".format(2.25f))
+    println("%.1f".format(2.27f))
     val m = mapOf("a" to 0.1f, "b" to 0.2f + 0.1f)
     println(m)
     val p: Float? = 0.7f * 3

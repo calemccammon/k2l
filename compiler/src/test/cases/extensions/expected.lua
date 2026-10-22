@@ -1,13 +1,13 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 
 local function shout(self)
     return self:upper() .. "!"
 end
 
 local function isEven(____this)
-    return (____this >= 0 and ____this % 2 or 0 - -____this % 2) == 0
+    return ____this % 2 == 0
 end
 
 local function orEmptyText(____this_1)
@@ -51,5 +51,5 @@ local function main()
     print(____shout("ref"))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {shout = shout, isEven = isEven, orEmptyText = orEmptyText, Vec = Vec, length2 = length2, scaled = scaled, describe = describe}

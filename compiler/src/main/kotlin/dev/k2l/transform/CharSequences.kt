@@ -69,3 +69,17 @@ internal fun FileTransformer.charSequenceLoop(text: LuaExpr, variable: String, b
 }
 
 private fun FileTransformer.textMember(member: String, vararg args: LuaExpr): LuaExpr = libCall(TEXT_TABLE, member, args.toList())
+
+/** `for (c in s)` by byte index, `local c = s:sub(i, i)` (LuaJIT compiles `sub`, not the `gmatch(".")` iterator). */
+internal fun FileTransformer.eachChar(text: LuaExpr, variable: String, body: List<LuaStmt>) {
+    val s = cache(text, "text")
+    val i = LuaName(ctx.temp("i"))
+    val char = LuaLocal(listOf(variable), listOf(LuaMethodCall(s, "sub", listOf(i, i))))
+    emit(LuaNumericFor(i.name, LuaNumber("1"), LuaUnary(LuaUnOp.Len, s), null, listOf(char) + body))
+}
+
+/** A Char's code (its byte). */
+internal fun charCode(c: LuaExpr): LuaExpr = LuaMethodCall(c, "byte", emptyList())
+
+/** The Char of a code. */
+internal fun charFromCode(code: LuaExpr): LuaExpr = lua("string.char", code)

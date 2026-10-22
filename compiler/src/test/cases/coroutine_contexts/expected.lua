@@ -13,8 +13,8 @@ local __K2L_CreateCoroutine = ____lualib.__K2L_CreateCoroutine
 local __K2L_EmptyCoroutineContext = ____lualib.__K2L_EmptyCoroutineContext
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Result = ____lualib.__K2L_Result
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_StartCoroutine = ____lualib.__K2L_StartCoroutine
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_SuspendCoroutine = ____lualib.__K2L_SuspendCoroutine
@@ -128,13 +128,9 @@ local function main()
     while waiting:isNotEmpty() do
         local ____next = waiting:toList()
         waiting:clear()
-        local ____mod = ____next.____modCount
         for ____i = 1, ____next.size do
             local it = ____next[____i]
             it:resumeWith(__K2L_Result.success(__K2L_Unit))
-            if ____next.____modCount ~= ____mod and ____next:____comodified(____i) then
-                break
-            end
         end
         dispatcher:runAll()
     end
@@ -174,5 +170,5 @@ local function main()
     print("finished=" .. tostring(finished))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {CoroutineName = CoroutineName, UserId = UserId, QueueDispatcher = QueueDispatcher, DispatchedContinuation = DispatchedContinuation, waiting = waiting, park = park, nameNow = nameNow, worker = worker, launch = launch}

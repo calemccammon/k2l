@@ -1,0 +1,43 @@
+== fib
+  1: fib(0) = 0
+  2: fib(1) = 1
+  3: fib(2) = 1
+  4: fib(3) = 2
+  5: fib(4) = 3
+  6: fib(5) = 5
+  7: fib(6) = 8
+  8: fib(7) = 13
+  9: fib(8) = 21
+  10: fib(9) = 34
+  steps=575
+== closures
+  1: count: 3
+  2: 3.5
+  3: 2
+  4: true
+  steps=17
+== syntax
+  1: syntax: SyntaxError(line 2): unexpected SEMI ';'
+  steps=0
+== undefined
+  1: 1
+  2: runtime: RuntimeError(line 2): undefined variable 'nope'
+  steps=2
+== zero
+  1: 5
+  2: runtime: RuntimeError(line 1): division by zero
+  steps=5
+== strings
+  1: syntax: SyntaxError(line 2): unterminated string
+  steps=0
+== recursion
+  1: runtime: RuntimeError(line 1): stack overflow in r
+  steps=122
+== arity
+  1: runtime: RuntimeError(line 2): two expects 2 args, got 1
+  steps=2
+KEYWORD 'let' | IDENT 'total' | OP '=' | IDENT 'a1' | OP '+' | NUMBER '42' | OP '>=' | IDENT 'b' | SEMI ';' | <eof>
+NUMBER=1, IDENT=3, KEYWORD=1, OP=3, SEMI=1, EOF=1
+Print(expr=Binary(left=Unary(op=-, operand=Var(name=x, line=1), line=1), op=*, right=Binary(left=Var(name=y, line=1), op=+, right=Num(value=2, line=1), line=1), line=1))
+depth=3
+wrapped <- inner true

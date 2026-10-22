@@ -85,8 +85,7 @@ private fun FileTransformer.emitClassTable(c: KtClassOrObject, ref: LuaExpr, inf
     classArgs += mixins
     val create = lualibCall("Class", *classArgs.toTypedArray())
     emit(if (isLocal) LuaLocal(listOf(naming.of(c)), listOf(create)) else assign(ref, create))
-    classInfo(c, ref)
-    readOnlyFlag(c, ref)
+    entryFlag(c, ref)
     comparableFlag(c, ref)
 }
 
@@ -101,7 +100,7 @@ private fun FileTransformer.classBody(c: KtClassOrObject, ref: LuaExpr, info: Su
     delegatedMembers(c, ref)
     libraryDelegatedMembers(c, ref)
     libraryPropertyOverrides(c, ref)
-    collectionOverrides(c, ref)
+    overloadDispatch(c, ref)
     if (c is KtClass && c.hasDataMembers()) dataClassMembers(c, ref)
     if (c is KtObjectDeclaration && c.hasModifier(KtTokens.DATA_KEYWORD)) dataObjectMembers(c, ref)
     if (c is KtClass && c.isEnum()) enumMembers(c, ref)
@@ -114,9 +113,7 @@ private fun FileTransformer.libraryPropertyOverrides(c: KtClassOrObject, ref: Lu
         (c as? KtClass)?.primaryConstructorParameters?.filter { it.hasValOrVar() }.orEmpty()
     // A lualib collection class keeps its size in the field, as the JDK's do: their own code does not call an overriding
     // `size` (Kotlin code calls it when the static type is the class).
-    val concrete = classes.collectionBaseOf(c) in CONCRETE_COLLECTION_BASES
-    for (p in properties.filter { props.overridesLibraryWithAccessor(it) }) {
-        if (concrete && p.name == "size") continue
+    for (p in properties.filter { readsThroughPropertyOverride(it) }) {
         propertyOverride(c, ref, p.name!!, accessorName("get", p))
     }
 }
@@ -280,9 +277,11 @@ internal fun FileTransformer.isMemberProperty(psi: PsiElement?): Boolean = (psi 
 
 internal fun FileTransformer.hasAccessors(p: KtNamedDeclaration) = props.usesAccessors(p) || (p is KtProperty && p.delegate != null)
 
-internal fun FileTransformer.accessorName(prefix: String, p: KtNamedDeclaration) =
-    (p as? KtProperty)?.takeIf { it.isMemberExtension() }?.let { naming.memberAccessor(it, prefix) }
-        ?: (prefix + p.name!!.replaceFirstChar { it.uppercaseChar() })
+internal fun FileTransformer.accessorName(prefix: String, p: KtNamedDeclaration): String {
+    (p as? KtProperty)?.takeIf { it.isMemberExtension() }?.let { return naming.memberAccessor(it, prefix) }
+    val name = prefix + p.name!!.replaceFirstChar { it.uppercaseChar() }
+    return if (accessorTaken(p, name)) "${name}__accessor" else name
+}
 
 internal fun FileTransformer.propertyRead(receiver: LuaExpr, p: KtNamedDeclaration): LuaExpr = if (hasAccessors(p)) {
     LuaMethodCall(receiver, accessorName("get", p), emptyList())

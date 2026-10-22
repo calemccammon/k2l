@@ -3,17 +3,18 @@ local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_Map = ____lualib.__K2L_Map
+local __K2L_NaturalOrder = ____lualib.__K2L_NaturalOrder
+local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Num = ____lualib.__K2L_Num
-local __K2L_PriorityQueue = ____lualib.__K2L_PriorityQueue
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Shl = ____lualib.__K2L_Shl
 local __K2L_Shr = ____lualib.__K2L_Shr
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
@@ -21,16 +22,95 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_StringToList = ____lualib.__K2L_StringToList
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_ToInt32 = ____lualib.__K2L_ToInt32
 local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
-local __K2L_Unsigned = ____lualib.__K2L_Unsigned
 
 local ____exports = {}
+local MinQueue = __K2L_Class("MinQueue")
+
+function MinQueue:____init(comparator)
+    self.comparator = comparator
+    self.heap = __K2L_List.new()
+end
+
+function MinQueue:getSize()
+    return self.heap.size
+end
+
+function MinQueue:isEmpty()
+    return self.heap:isEmpty()
+end
+
+function MinQueue:isNotEmpty()
+    return self.heap:isNotEmpty()
+end
+
+function MinQueue:peek()
+    return self.heap:firstOrNull()
+end
+
+function MinQueue:add(item)
+    self.heap:add(item)
+    local i = self.heap.size - 1
+    while i > 0 do
+        local parent = (i - 1) // 2
+        if self.comparator(self.heap:get(i), self.heap:get(parent)) >= 0 then
+            break
+        end
+        local t = self.heap:get(i)
+        local ____object = self.heap
+        local ____key = i
+        ____object:set(____key, self.heap:get(parent))
+        local ____object_1 = self.heap
+        ____object_1:set(parent, t)
+        i = parent
+    end
+    return true
+end
+
+function MinQueue:offer(item)
+    return self:add(item)
+end
+
+function MinQueue:plusAssign(item)
+    self:add(item)
+end
+
+function MinQueue:poll()
+    if self.heap:isEmpty() then
+        error(__K2L_NoSuchElementException.new("queue is empty"))
+    end
+    local top = self.heap:get(0)
+    local last = self.heap:removeAt(self.heap.size - 1)
+    if self.heap:isNotEmpty() then
+        local ____object_2 = self.heap
+        ____object_2:set(0, last)
+        local i = 0
+        while true do
+            local l = 2 * i + 1
+            if l >= self.heap.size then
+                break
+            end
+            local r = l + 1
+            local c = r < self.heap.size and self.comparator(self.heap:get(r), self.heap:get(l)) < 0 and r or l
+            if self.comparator(self.heap:get(c), self.heap:get(i)) >= 0 then
+                break
+            end
+            local t = self.heap:get(i)
+            local ____object_3 = self.heap
+            local ____key_1 = i
+            ____object_3:set(____key_1, self.heap:get(c))
+            local ____object_4 = self.heap
+            ____object_4:set(c, t)
+            i = c
+        end
+    end
+    return top
+end
+
 local Node = __K2L_Class("Node")
 Node.____comparable = true
 
@@ -45,7 +125,7 @@ end
 local ____lambda_1 = function(receiver) return receiver.weight end
 local ____lambda_2 = function(receiver) return receiver:getMinChar() end
 function Node:compareTo(other)
-    return __K2L_CompareBy(__K2L_PropertyRef.new("weight", "weight@227", ____lambda_1), __K2L_PropertyRef.new("minChar", "/Node.minChar", ____lambda_2))(self, other)
+    return __K2L_CompareBy(__K2L_PropertyRef.new("weight", "weight@1757", ____lambda_1), __K2L_PropertyRef.new("minChar", "/Node.minChar", ____lambda_2))(self, other)
 end
 
 Node.Leaf = __K2L_Class("Node$Leaf", Node)
@@ -74,29 +154,25 @@ end
 
 local ____lambda_3 = function(it) return it end
 local function buildTree(text)
-    local queue = __K2L_PriorityQueue.new()
+    local queue = MinQueue.new(__K2L_NaturalOrder)
     local ____collection = __K2L_StringToList(text):groupingBy(____lambda_3):eachCount()
     local ____items, ____n = ____collection:____entryArray()
-    local ____mod = ____collection.____modCount
     for ____i = 1, ____n do
         local ____entry = ____items[____i]
         do
             local c, n = ____entry.key, ____entry.value
             queue:add(Node.Leaf.new(c, n))
         end
-        if ____collection.____modCount ~= ____mod and ____collection:____comodified(____i, ____n) then
-            break
-        end
     end
-    if queue.size == 1 then
+    if queue:getSize() == 1 then
         return Node.Branch.new(queue:poll(), Node.Leaf.new("\000", 0))
     end
-    while queue.size > 1 do
+    while queue:getSize() > 1 do
         local a = queue:poll()
         local b = queue:poll()
         queue:add(Node.Branch.new(a, b))
     end
-    return queue:single()
+    return queue:poll()
 end
 
 local ____lambda_4 = function() return "0" end
@@ -105,12 +181,12 @@ local function codes(node, prefix, out)
         prefix = ""
     end
     if out == nil then
-        out = __K2L_SortedMapOf()
+        out = __K2L_SortedMapOf(nil)
     end
     local ____mt = getmetatable(node)
     if ____mt == Node.Leaf then
-        local ____key = node.ch
-        out:set(____key, __K2L_Text.ifEmpty(prefix, ____lambda_4))
+        local ____key_2 = node.ch
+        out:set(____key_2, __K2L_Text.ifEmpty(prefix, ____lambda_4))
     elseif ____mt == Node.Branch then
         codes(node.left, prefix .. "0", out)
         codes(node.right, prefix .. "1", out)
@@ -126,7 +202,7 @@ local function decode(tree, bits)
             local b = __K2L_StrByte(bits, ____i_1)
             local ____cast = node
             if getmetatable(____cast) ~= Node.Branch then
-                __K2L_CastFail(____cast, "Node$Branch", "Node.Branch")
+                __K2L_CastFail(____cast, "Node.Branch")
             end
             local ____result
             ____result = b == 48 and ____cast.left or ____cast.right
@@ -220,7 +296,6 @@ end
 
 local function unlz77(tokens)
     local sb = __K2L_StringBuilder.new()
-    local ____mod_1 = tokens.____modCount
     for ____i_2 = 1, tokens.size do
         local t = tokens[____i_2]
         local ____mt_1 = getmetatable(t)
@@ -230,9 +305,6 @@ local function unlz77(tokens)
             for it = 0, t.length - 1 do
                 sb:append(sb:get(sb:getLength() - t.distance))
             end
-        end
-        if tokens.____modCount ~= ____mod_1 and tokens:____comodified(____i_2) then
-            break
         end
     end
     return sb:toString()
@@ -281,26 +353,22 @@ end
 local CRC_TABLE = __K2L_ListOfSize(256, function(n)
     local c = n
     for it = 0, 7 do
-        c = c & 1 ~= 0 and (c & 0xFFFFFFFF) >> 1 ~ __K2L_ToInt32(3988292384) or (c & 0xFFFFFFFF) >> 1
+        c = c & 1 ~= 0 and (c & 0xFFFFFFFF) >> 1 ~ 3988292384 or (c & 0xFFFFFFFF) >> 1
     end
     return c
-end, "[I")
+end, true)
 
 local function crc32(bytes)
     local crc = -1
-    local ____mod_2 = bytes.____modCount
     for ____i_4 = 1, bytes.size do
         local b = bytes[____i_4]
         crc = (CRC_TABLE[((crc ~ b) & 255) + 1] or __K2L_IndexError((crc ~ b) & 255, CRC_TABLE.size, "array")) ~ (crc & 0xFFFFFFFF) >> 8
-        if bytes.____modCount ~= ____mod_2 and bytes:____comodified(____i_4) then
-            break
-        end
     end
     return ~crc & 4294967295
 end
 
 local function memoized(self)
-    local cache = __K2L_HashMap.new()
+    local cache = __K2L_Map.new()
     return function(a)
         return cache:getOrPut(a, function() return self(a) end)
     end
@@ -337,7 +405,7 @@ local function main()
         ____sum = ____sum + ____result_2
     end
     local avg = (____sum + 0.0) / #text
-    print("average code length: " .. __K2L_StringFormat("%.3f", avg))
+    print("average code length: " .. string.format("%.3f", avg))
     print("single symbol: " .. __K2L_Str(codes(buildTree("zzzz"))))
     local sample = "to be or not to be, that is the question; to be or not to be"
     local tokens = lz77(sample)
@@ -358,12 +426,12 @@ local function main()
             return it.c
         else
             if getmetatable(it) ~= Token.Ref then
-                __K2L_CastFail(it, "Token$Ref", "Token.Ref")
+                __K2L_CastFail(it, "Token.Ref")
             end
             return "<" .. it.distance .. "," .. it.length .. ">"
         end
     end))
-    local ____list_2 = __K2L_ReadOnlyListOf("Man", "Ma", "M", "hello, world!", "")
+    local ____list_2 = __K2L_ListOf("Man", "Ma", "M", "hello, world!", "")
     for ____i_8 = 1, ____list_2.size do
         local s = ____list_2[____i_8]
         local bytes = __K2L_StringToList(s):map(____lambda_10)
@@ -380,7 +448,7 @@ local function main()
         local back = __K2L_ListWrap(____out_1, ____count_1):joinToString("")
         print("base64('" .. s .. "') = '" .. enc .. "' -> '" .. back .. "' crc=" .. __K2L_StringPadStart(__K2L_Num.toRadix(crc32(bytes), 16), 8, "0"))
     end
-    print("crc32('123456789') = " .. crc32(__K2L_StringToList("123456789"):map(____lambda_11)) .. " (0x" .. __K2L_Str(__K2L_Unsigned.toRadix(crc32(__K2L_StringToList("123456789"):map(____lambda_12)), 16)) .. ")")
+    print("crc32('123456789') = " .. crc32(__K2L_StringToList("123456789"):map(____lambda_11)) .. " (0x" .. __K2L_Num.toRadix(crc32(__K2L_StringToList("123456789"):map(____lambda_12)), 16) .. ")")
     local ____list_4 = CRC_TABLE:take(4)
     local ____out_2 = {}
     local ____count_2 = 0
@@ -388,11 +456,11 @@ local function main()
     for ____i_9 = 1, ____n_5 do
         local it = ____items_5[____i_9]
         ____count_2 = ____count_2 + 1
-        ____out_2[____count_2] = __K2L_Num.toRadixUnsigned(it, 16)
+        ____out_2[____count_2] = __K2L_Num.toRadix(it, 16)
     end
     print("table: " .. __K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
     local fast = memoized(slowSquare)
-    local results = __K2L_ReadOnlyListOf(3, 4, 3, 3, 5, 4):map(fast)
+    local results = __K2L_ListOf(3, 4, 3, 3, 5, 4):map(fast)
     print("memoized: " .. __K2L_Str(results) .. ", underlying calls " .. ____exports.slowCalls)
     local fib
     fib = memoized(function(n)
@@ -401,6 +469,7 @@ local function main()
     print("fib(60) = " .. (fib or __K2L_Uninitialized("fib"))(60))
 end
 
+____exports.MinQueue = MinQueue
 ____exports.Node = Node
 ____exports.buildTree = buildTree
 ____exports.codes = codes
@@ -414,5 +483,5 @@ ____exports.CRC_TABLE = CRC_TABLE
 ____exports.crc32 = crc32
 ____exports.memoized = memoized
 ____exports.slowSquare = slowSquare
-__K2L_Main(main)
+__K2L_RunMain(main)
 return ____exports

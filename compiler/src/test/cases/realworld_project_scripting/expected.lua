@@ -49,13 +49,9 @@ local function emit(event, payload)
     end
     local list = ____value
     payload.tick = ____exports.tick
-    local ____mod = list.____modCount
     for ____i_1 = 1, list.size do
         local it = list[____i_1]
         it(payload)
-        if list.____modCount ~= ____mod and list:____comodified(____i_1) then
-            break
-        end
     end
     return list.size
 end
@@ -63,16 +59,12 @@ end
 local function names()
     local t = {}
     local ____list_1 = world
-    local ____mod_1 = ____list_1.____modCount
     for ____i_2 = 1, ____list_1.size do
         local e = ____list_1[____i_2]
         local i = ____i_2 - 1
         do
             local ____key = i + 1
             t[____key] = e.name
-        end
-        if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_2) then
-            break
         end
     end
     return t
@@ -93,15 +85,11 @@ local function snapshot()
     t.alive = ____result_1
     local hp = {}
     local ____list_3 = world
-    local ____mod_2 = ____list_3.____modCount
     for ____i_4 = 1, ____list_3.size do
         local it = ____list_3[____i_4]
         do
             local ____key_1 = it.name
             hp[____key_1] = it.hp
-        end
-        if ____list_3.____modCount ~= ____mod_2 and ____list_3:____comodified(____i_4) then
-            break
         end
     end
     t.hp = hp
@@ -132,12 +120,10 @@ return ____exports
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Entity = __K2L_Class("game.engine.Entity")
-__K2L_ClassInfo(Entity, "game.engine.Entity", "game.engine.Entity", "class")
 
 function Entity:____init(name, hp)
     self.name = name
@@ -165,7 +151,6 @@ function Entity:toString()
 end
 
 local Vec = __K2L_Class("game.engine.Vec")
-__K2L_ClassInfo(Vec, "game.engine.Vec", "game.engine.Vec", "class")
 
 function Vec:____init(x, y)
     self.x = x
@@ -195,15 +180,13 @@ end
 return {Entity = Entity, Vec = Vec}
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
@@ -239,18 +222,18 @@ local function main()
         print(s.describe() .. " (priority " .. __K2L_Str(s.priority or "none") .. ") " .. s["repeat"](s, i + 1) .. ": " .. __K2L_Str(s:on_event("hit", payload)))
         print("  on spawn: " .. (s:on_event("spawn", payload) or "ignored"))
     end
-    local n, max, mean = ____scripting.stats(__K2L_ReadOnlyListOf(4, 9, 2))
-    print("stats " .. n .. " " .. max .. " " .. __K2L_Str(mean))
+    local n, max, mean = ____scripting.stats(__K2L_ListOf(4, 9, 2))
+    print("stats " .. n .. " " .. max .. " " .. mean)
     local summary = {}
     summary.scripts = #scripts
     local ____receiver = __K2L_RunCatching(function() return ____scripting["end"](summary) end):exceptionOrNull()
     print(__K2L_Str(____receiver and ____receiver.message))
     summary.tick = ____Api.tick
     print(____scripting["end"](summary))
-    local ____list_1 = __K2L_ReadOnlyListOf("string", "table", "index")
+    local ____list_1 = __K2L_ListOf("string", "table", "index")
     for ____i_1 = 1, ____list_1.size do
         local kind = ____list_1[____i_1]
-        local ____ok, ____result = __K2L_DeepPcall(function()
+        local ____ok, ____result = pcall(function()
             ____scripting.broken(kind)
         end)
         if not ____ok then
@@ -258,7 +241,7 @@ local function main()
             if __K2L_InstanceOf(____error, __K2L_RuntimeException) then
                 local e = ____error
                 local msg = e.message or ""
-                print(kind .. ": " .. __K2L_Str(__K2L_KClassOfValue(e).simpleName) .. " " .. __K2L_Str(kind == "string" and msg or (__K2L_StringStartsWith(msg, "table:") or __K2L_StringContains(msg, "nil"))))
+                print(kind .. ": " .. __K2L_Str(__K2L_SimpleName(e)) .. " " .. __K2L_Str(kind == "string" and msg or (__K2L_StringStartsWith(msg, "table:") or __K2L_StringContains(msg, "nil"))))
             else
                 error(____error, 0)
             end
@@ -270,4 +253,4 @@ local function main()
     print(__K2L_Str(____Entity.Vec.new(1, 2):plus(____Entity.Vec.new(3, 4))))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)

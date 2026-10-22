@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local function main(args)
@@ -17,4 +17,4 @@ local function main(args)
     print(verbose)
 end
 
-__K2L_Main(main, __K2L_ArrayOf(...))
+__K2L_RunMain(main, __K2L_ArrayOf(...))

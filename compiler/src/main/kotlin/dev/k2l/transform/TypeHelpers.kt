@@ -29,8 +29,7 @@ val KaType.elementType: KaType? get() = (withoutFlexibility as? KaClassType)?.ty
 context(s: KaSession)
 val KaType.isIntegral: Boolean get() = with(s) {
     withoutFlexibility.let {
-        it.isIntType || it.isLongType || it.isShortType || it.isByteType || it.isUIntType || it.isULongType || it.isUShortType ||
-            it.isUByteType
+        it.isIntType || it.isLongType || it.isShortType || it.isByteType
     }
 }
 
@@ -44,36 +43,9 @@ val KaType?.isTextual: Boolean get() = with(s) {
     this@isTextual?.withoutFlexibility.let { it != null && !it.isMarkedNullable && (it.isStringType || it.isCharType) }
 }
 
-private val DOUBLE_HOLDERS = setOf(
-    CollectionKind.List,
-    CollectionKind.Set,
-    CollectionKind.Map,
-    CollectionKind.Iterable,
-    CollectionKind.Pair,
-    CollectionKind.Triple,
-)
-
-/**
- * Whether the type is a collection, map or pair whose numbers are all `Double`s, with at least one (`List<Double>`,
- * `Map<String, List<Double?>>`): its toString can print integral numbers as Doubles (see StrDoubles.lua).
- */
-context(s: KaSession)
-fun KaType.holdsOnlyDoubles(): Boolean = with(s) {
-    val type = withoutFlexibility as? KaClassType ?: return false
-    if (type.collectionKind() !in DOUBLE_HOLDERS || type.typeArguments.isEmpty()) return false
-    var double = false
-    for (arg in type.typeArguments) {
-        val t = arg.type?.withoutFlexibility ?: return false
-        when {
-            t.isDoubleType -> double = true
-            t.isStringType || t.isCharType || t.isBooleanType -> {}
-            t.holdsOnlyDoubles() -> double = true
-            else -> return false
-        }
-    }
-    double
-}
-
 @OptIn(KaExperimentalApi::class)
 context(s: KaSession)
 fun KaType?.pretty(): String = with(s) { this@pretty?.render(position = Variance.INVARIANT) ?: "?" }
+
+/** `Double` or `Float`. */
+internal fun KaSession.isFloating(t: KaType?): Boolean = t != null && t.withoutFlexibility.let { it.isDoubleType || it.isFloatType }

@@ -2,14 +2,13 @@ local ____lualib = require("lualib_bundle")
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Num = ____lualib.__K2L_Num
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringContains = ____lualib.__K2L_StringContains
 local __K2L_StringEndsWith = ____lualib.__K2L_StringEndsWith
 local __K2L_StringEqualsIgnoreCase = ____lualib.__K2L_StringEqualsIgnoreCase
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringIndexOf = ____lualib.__K2L_StringIndexOf
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
 local __K2L_StringLastIndexOf = ____lualib.__K2L_StringLastIndexOf
@@ -44,11 +43,11 @@ local function main()
     print(("racecar"):reverse())
     print(__K2L_StringToInt("42") + 1)
     print(__K2L_Str(__K2L_StringToIntOrNull("x")))
-    print(__K2L_Str(__K2L_StringToDouble("3.5") * 2))
+    print(__K2L_StringToDouble("3.5") * 2)
     print(#"" == 0)
     print(__K2L_StringIsBlank("  "))
     print(("Kotlin"):lower():upper())
-    print(__K2L_StringFormat("%d items at %.2f each, %s", 3, 1.5, "ok"))
+    print(string.format("%d items at %.2f each, %s", 3, 1.5, "ok"))
     print(__K2L_Str(__K2L_StringToList("abc")))
     local c = "k"
     print(c:byte())
@@ -88,4 +87,4 @@ local function main()
     print(__K2L_StringEqualsIgnoreCase("Hello", "hello"))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)

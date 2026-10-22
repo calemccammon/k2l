@@ -7,11 +7,7 @@ local function className(value)
 end
 
 local function __K2L_IsNumber(value)
-    if type(value) == "number" then
-        return true
-    end
-    local name = className(value)
-    return name == "java.math.BigInteger" or name == "java.math.BigDecimal"
+    return type(value) == "number"
 end
 
 local function __K2L_IsComparable(value)
@@ -20,12 +16,11 @@ local function __K2L_IsComparable(value)
         return true
     end
     -- classes of the program implementing Comparable have `____comparable` (see SuperEntries.kt), enum classes their entries in
-    -- `____values`; numbers of the lualib (`BigInteger`, `BigDecimal`, emulated Longs) have `____isNumber`. A companion sharing
-    -- its class's table is marked `____companion`
+    -- `____values`. A companion sharing its class's table is marked `____companion`
     if t ~= "table" or rawget(value, "____companion") then
         return false
     end
-    return value.____comparable == true or value.____isNumber == true or value.____values ~= nil
+    return value.____comparable == true or value.____values ~= nil
 end
 
 local function __K2L_IsCharSequence(value)

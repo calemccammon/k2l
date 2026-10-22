@@ -1,6 +1,6 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____host = require("lib.host")
@@ -20,7 +20,7 @@ local function main()
     print("fired " .. __K2L_Str(____Events.Events.fired))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 -- ==== mods/Counter.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_LazyFile = ____lualib.__K2L_LazyFile
@@ -131,7 +131,6 @@ local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 
@@ -152,14 +151,10 @@ function Events:fire(name, detail)
         detail = "-"
     end
     self.fired:add(name)
-    local ls = self.listeners:get(name) or __K2L_ReadOnlyListOf()
-    local ____mod = ls.____modCount
+    local ls = self.listeners:get(name) or __K2L_ListOf()
     for ____i = 1, ls.size do
         local it = ls[____i]
         it(detail)
-        if ls.____modCount ~= ____mod and ls:____comodified(____i) then
-            break
-        end
     end
     return ls.size
 end

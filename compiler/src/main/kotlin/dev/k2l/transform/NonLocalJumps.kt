@@ -140,10 +140,10 @@ private fun FileTransformer.madeJumps(site: JumpSite, token: LuaName, at: KtElem
     }.orEmpty()
 }
 
-/** [deepPcall], or on Lua 5.1 `__K2L_CoPcall` when a lambda can suspend (5.1 cannot yield across pcall). */
+/** `pcall`, or on Lua 5.1 `__K2L_CoPcall` when a lambda can suspend (5.1 cannot yield across pcall). */
 private fun FileTransformer.pcallFor(site: JumpSite): LuaExpr {
     val suspends = !target.yieldsAcrossPcall && site.lambdas.any { containsSuspensionPoint(it) }
-    return if (suspends) lualibRef("CoPcall", "__K2L_CoPcall") else deepPcall()
+    return if (suspends) lualibRef("CoPcall", "__K2L_CoPcall") else luaPcall()
 }
 
 /** `Array(n) { }`, `IntArray(n) { }`, ...: their constructors are inline. */

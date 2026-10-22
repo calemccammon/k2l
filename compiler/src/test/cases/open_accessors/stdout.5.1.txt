@@ -1,0 +1,17 @@
+shape 6
+square 16
+sq rect
+square sq rect 4 0
+set 3
+set 4
+set 14
+14
+set 2
+shape rect 1 2
+3 id=3
+7 id=7
+5
+8
+10 5
+10
+5 5

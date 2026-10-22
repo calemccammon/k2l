@@ -1,24 +1,18 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Spread = ____lualib.__K2L_Spread
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function tryFirst(xs, f)
-    local ____ok, ____result, ____returned = __K2L_DeepPcall(function()
-        local ____mod = xs.____modCount
+    local ____ok, ____result, ____returned = pcall(function()
         for ____i = 1, xs.size do
             local x = xs[____i]
             if f(x) then
                 return true, x
-            end
-            if xs.____modCount ~= ____mod and xs:____comodified(____i) then
-                break
             end
         end
     end)
@@ -41,9 +35,8 @@ end
 local function inTry()
     local ____result_1
     do
-        local xs = __K2L_ReadOnlyListOf(1, 2)
-        local ____ok_1, ____result_2, ____returned_1 = __K2L_DeepPcall(function()
-            local ____mod_1 = xs.____modCount
+        local xs = __K2L_ListOf(1, 2)
+        local ____ok_1, ____result_2, ____returned_1 = pcall(function()
             for ____i_1 = 1, xs.size do
                 local x = xs[____i_1]
                 local ____result_3
@@ -55,9 +48,6 @@ local function inTry()
                 if ____result_3 then
                     ____result_1 = x
                     return 1
-                end
-                if xs.____modCount ~= ____mod_1 and xs:____comodified(____i_1) then
-                    break
                 end
             end
         end)
@@ -114,8 +104,8 @@ local function spreadFirst(xs)
 end
 
 local function main()
-    print(inTry() + spreadFirst(__K2L_TypedArrayOf("[I", 1)))
+    print(inTry() + spreadFirst(__K2L_ArrayOf(1)))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {tryFirst = tryFirst, inTry = inTry, total = total, spreadFirst = spreadFirst}

@@ -1,16 +1,15 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IsArray = ____lualib.__K2L_IsArray
 local __K2L_Jump = ____lualib.__K2L_Jump
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_NewJump = ____lualib.__K2L_NewJump
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Result = ____lualib.__K2L_Result
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToList = ____lualib.__K2L_StringToList
@@ -19,8 +18,6 @@ local __K2L_Unit = ____lualib.__K2L_Unit
 
 local function show(v)
     if __K2L_IsArray(v) then
-        return v:contentToString()
-    elseif __K2L_IsArray(v, "[I") then
         return v:contentToString()
     else
         return __K2L_Str(v)
@@ -32,8 +29,8 @@ local Returns1 = __K2L_Class("Returns1")
 function Returns1:t_list_zipWithNext(f)
     local ____jump = __K2L_NewJump()
     local ____value
-    local ____ok, ____result = __K2L_DeepPcall(function()
-        ____value = __K2L_ReadOnlyListOf(1, 2, 3):zipWithNext(function(a, b)
+    local ____ok, ____result = pcall(function()
+        ____value = __K2L_ListOf(1, 2, 3):zipWithNext(function(a, b)
             if f then
                 __K2L_Jump(____jump, 1, "R")
             end
@@ -53,7 +50,7 @@ end
 function Returns1:t_seq_all(f)
     local ____jump_1 = __K2L_NewJump()
     local ____value_1
-    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_1 = pcall(function()
         ____value_1 = __K2L_SequenceOf(1, 2, 3):all(function(it)
             if f then
                 __K2L_Jump(____jump_1, 1, "R")
@@ -74,7 +71,7 @@ end
 function Returns1:t_seq_any(f)
     local ____jump_2 = __K2L_NewJump()
     local ____value_2
-    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_2 = pcall(function()
         ____value_2 = __K2L_SequenceOf(1, 2, 3):any(function(it)
             if f then
                 __K2L_Jump(____jump_2, 1, "R")
@@ -95,7 +92,7 @@ end
 function Returns1:t_seq_count(f)
     local ____jump_3 = __K2L_NewJump()
     local ____value_3
-    local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
+    local ____ok_3, ____result_3 = pcall(function()
         ____value_3 = __K2L_SequenceOf(1, 2, 3):count(function(it)
             if f then
                 __K2L_Jump(____jump_3, 1, "R")
@@ -116,7 +113,7 @@ end
 function Returns1:t_seq_find(f)
     local ____jump_4 = __K2L_NewJump()
     local ____value_4
-    local ____ok_4, ____result_4 = __K2L_DeepPcall(function()
+    local ____ok_4, ____result_4 = pcall(function()
         ____value_4 = __K2L_SequenceOf(1, 2, 3):find(function(it)
             if f then
                 __K2L_Jump(____jump_4, 1, "R")
@@ -137,7 +134,7 @@ end
 function Returns1:t_seq_first(f)
     local ____jump_5 = __K2L_NewJump()
     local ____value_5
-    local ____ok_5, ____result_5 = __K2L_DeepPcall(function()
+    local ____ok_5, ____result_5 = pcall(function()
         ____value_5 = __K2L_SequenceOf(1, 2, 3):first(function(it)
             if f then
                 __K2L_Jump(____jump_5, 1, "R")
@@ -158,7 +155,7 @@ end
 function Returns1:t_seq_firstOrNull(f)
     local ____jump_6 = __K2L_NewJump()
     local ____value_6
-    local ____ok_6, ____result_6 = __K2L_DeepPcall(function()
+    local ____ok_6, ____result_6 = pcall(function()
         ____value_6 = __K2L_SequenceOf(1, 2, 3):firstOrNull(function(it)
             if f then
                 __K2L_Jump(____jump_6, 1, "R")
@@ -178,7 +175,7 @@ end
 
 function Returns1:t_seq_forEachIndexed(f)
     local ____jump_7 = __K2L_NewJump()
-    local ____ok_7, ____result_7 = __K2L_DeepPcall(function()
+    local ____ok_7, ____result_7 = pcall(function()
         __K2L_SequenceOf(1, 2, 3):forEachIndexed(function(_, _)
             if f then
                 __K2L_Jump(____jump_7, 1, "R")
@@ -198,7 +195,7 @@ end
 function Returns1:t_seq_last(f)
     local ____jump_8 = __K2L_NewJump()
     local ____value_7
-    local ____ok_8, ____result_8 = __K2L_DeepPcall(function()
+    local ____ok_8, ____result_8 = pcall(function()
         ____value_7 = __K2L_SequenceOf(1, 2, 3):last(function(it)
             if f then
                 __K2L_Jump(____jump_8, 1, "R")
@@ -219,7 +216,7 @@ end
 function Returns1:t_seq_lastOrNull(f)
     local ____jump_9 = __K2L_NewJump()
     local ____value_8
-    local ____ok_9, ____result_9 = __K2L_DeepPcall(function()
+    local ____ok_9, ____result_9 = pcall(function()
         ____value_8 = __K2L_SequenceOf(1, 2, 3):lastOrNull(function(it)
             if f then
                 __K2L_Jump(____jump_9, 1, "R")
@@ -240,7 +237,7 @@ end
 function Returns1:t_seq_none(f)
     local ____jump_10 = __K2L_NewJump()
     local ____value_9
-    local ____ok_10, ____result_10 = __K2L_DeepPcall(function()
+    local ____ok_10, ____result_10 = pcall(function()
         ____value_9 = __K2L_SequenceOf(1, 2, 3):none(function(it)
             if f then
                 __K2L_Jump(____jump_10, 1, "R")
@@ -261,7 +258,7 @@ end
 function Returns1:t_seq_associateBy(f)
     local ____jump_11 = __K2L_NewJump()
     local ____value_10
-    local ____ok_11, ____result_11 = __K2L_DeepPcall(function()
+    local ____ok_11, ____result_11 = pcall(function()
         ____value_10 = __K2L_SequenceOf(1, 2, 3):associateBy(function(it)
             if f then
                 __K2L_Jump(____jump_11, 1, "R")
@@ -282,7 +279,7 @@ end
 function Returns1:t_seq_associate(f)
     local ____jump_12 = __K2L_NewJump()
     local ____value_11
-    local ____ok_12, ____result_12 = __K2L_DeepPcall(function()
+    local ____ok_12, ____result_12 = pcall(function()
         ____value_11 = __K2L_SequenceOf(1, 2, 3):associate(function(it)
             if f then
                 __K2L_Jump(____jump_12, 1, "R")
@@ -303,7 +300,7 @@ end
 function Returns1:t_seq_associateWith(f)
     local ____jump_13 = __K2L_NewJump()
     local ____value_12
-    local ____ok_13, ____result_13 = __K2L_DeepPcall(function()
+    local ____ok_13, ____result_13 = pcall(function()
         ____value_12 = __K2L_SequenceOf(1, 2, 3):associateWith(function(it)
             if f then
                 __K2L_Jump(____jump_13, 1, "R")
@@ -324,7 +321,7 @@ end
 function Returns1:t_seq_findLast(f)
     local ____jump_14 = __K2L_NewJump()
     local ____value_13
-    local ____ok_14, ____result_14 = __K2L_DeepPcall(function()
+    local ____ok_14, ____result_14 = pcall(function()
         ____value_13 = __K2L_SequenceOf(1, 2, 3):findLast(function(it)
             if f then
                 __K2L_Jump(____jump_14, 1, "R")
@@ -345,7 +342,7 @@ end
 function Returns1:t_seq_fold(f)
     local ____jump_15 = __K2L_NewJump()
     local ____value_14
-    local ____ok_15, ____result_15 = __K2L_DeepPcall(function()
+    local ____ok_15, ____result_15 = pcall(function()
         ____value_14 = __K2L_SequenceOf(1, 2, 3):fold(0, function(a, x)
             if f then
                 __K2L_Jump(____jump_15, 1, "R")
@@ -366,7 +363,7 @@ end
 function Returns1:t_seq_foldIndexed(f)
     local ____jump_16 = __K2L_NewJump()
     local ____value_15
-    local ____ok_16, ____result_16 = __K2L_DeepPcall(function()
+    local ____ok_16, ____result_16 = pcall(function()
         ____value_15 = __K2L_SequenceOf(1, 2, 3):foldIndexed(0, function(_, a, x)
             if f then
                 __K2L_Jump(____jump_16, 1, "R")
@@ -387,7 +384,7 @@ end
 function Returns1:t_seq_groupBy(f)
     local ____jump_17 = __K2L_NewJump()
     local ____value_16
-    local ____ok_17, ____result_17 = __K2L_DeepPcall(function()
+    local ____ok_17, ____result_17 = pcall(function()
         ____value_16 = __K2L_SequenceOf(1, 2, 3):groupBy(function(it)
             if f then
                 __K2L_Jump(____jump_17, 1, "R")
@@ -408,7 +405,7 @@ end
 function Returns1:t_seq_indexOfFirst(f)
     local ____jump_18 = __K2L_NewJump()
     local ____value_17
-    local ____ok_18, ____result_18 = __K2L_DeepPcall(function()
+    local ____ok_18, ____result_18 = pcall(function()
         ____value_17 = __K2L_SequenceOf(1, 2, 3):indexOfFirst(function(it)
             if f then
                 __K2L_Jump(____jump_18, 1, "R")
@@ -429,7 +426,7 @@ end
 function Returns1:t_seq_maxBy(f)
     local ____jump_19 = __K2L_NewJump()
     local ____value_18
-    local ____ok_19, ____result_19 = __K2L_DeepPcall(function()
+    local ____ok_19, ____result_19 = pcall(function()
         ____value_18 = __K2L_SequenceOf(1, 2, 3):maxBy(function(it)
             if f then
                 __K2L_Jump(____jump_19, 1, "R")
@@ -450,7 +447,7 @@ end
 function Returns1:t_seq_maxByOrNull(f)
     local ____jump_20 = __K2L_NewJump()
     local ____value_19
-    local ____ok_20, ____result_20 = __K2L_DeepPcall(function()
+    local ____ok_20, ____result_20 = pcall(function()
         ____value_19 = __K2L_SequenceOf(1, 2, 3):maxByOrNull(function(it)
             if f then
                 __K2L_Jump(____jump_20, 1, "R")
@@ -471,7 +468,7 @@ end
 function Returns1:t_seq_maxOf(f)
     local ____jump_21 = __K2L_NewJump()
     local ____value_20
-    local ____ok_21, ____result_21 = __K2L_DeepPcall(function()
+    local ____ok_21, ____result_21 = pcall(function()
         ____value_20 = __K2L_SequenceOf(1, 2, 3):maxOf(function(it)
             if f then
                 __K2L_Jump(____jump_21, 1, "R")
@@ -492,7 +489,7 @@ end
 function Returns1:t_seq_maxOfOrNull(f)
     local ____jump_22 = __K2L_NewJump()
     local ____value_21
-    local ____ok_22, ____result_22 = __K2L_DeepPcall(function()
+    local ____ok_22, ____result_22 = pcall(function()
         ____value_21 = __K2L_SequenceOf(1, 2, 3):maxOfOrNull(function(it)
             if f then
                 __K2L_Jump(____jump_22, 1, "R")
@@ -513,7 +510,7 @@ end
 function Returns1:t_seq_minBy(f)
     local ____jump_23 = __K2L_NewJump()
     local ____value_22
-    local ____ok_23, ____result_23 = __K2L_DeepPcall(function()
+    local ____ok_23, ____result_23 = pcall(function()
         ____value_22 = __K2L_SequenceOf(1, 2, 3):minBy(function(it)
             if f then
                 __K2L_Jump(____jump_23, 1, "R")
@@ -534,7 +531,7 @@ end
 function Returns1:t_seq_minByOrNull(f)
     local ____jump_24 = __K2L_NewJump()
     local ____value_23
-    local ____ok_24, ____result_24 = __K2L_DeepPcall(function()
+    local ____ok_24, ____result_24 = pcall(function()
         ____value_23 = __K2L_SequenceOf(1, 2, 3):minByOrNull(function(it)
             if f then
                 __K2L_Jump(____jump_24, 1, "R")
@@ -555,7 +552,7 @@ end
 function Returns1:t_seq_minOf(f)
     local ____jump_25 = __K2L_NewJump()
     local ____value_24
-    local ____ok_25, ____result_25 = __K2L_DeepPcall(function()
+    local ____ok_25, ____result_25 = pcall(function()
         ____value_24 = __K2L_SequenceOf(1, 2, 3):minOf(function(it)
             if f then
                 __K2L_Jump(____jump_25, 1, "R")
@@ -576,7 +573,7 @@ end
 function Returns1:t_seq_minOfOrNull(f)
     local ____jump_26 = __K2L_NewJump()
     local ____value_25
-    local ____ok_26, ____result_26 = __K2L_DeepPcall(function()
+    local ____ok_26, ____result_26 = pcall(function()
         ____value_25 = __K2L_SequenceOf(1, 2, 3):minOfOrNull(function(it)
             if f then
                 __K2L_Jump(____jump_26, 1, "R")
@@ -597,7 +594,7 @@ end
 function Returns1:t_seq_partition(f)
     local ____jump_27 = __K2L_NewJump()
     local ____value_26
-    local ____ok_27, ____result_27 = __K2L_DeepPcall(function()
+    local ____ok_27, ____result_27 = pcall(function()
         ____value_26 = __K2L_SequenceOf(1, 2, 3):partition(function(it)
             if f then
                 __K2L_Jump(____jump_27, 1, "R")
@@ -618,7 +615,7 @@ end
 function Returns1:t_seq_reduce(f)
     local ____jump_28 = __K2L_NewJump()
     local ____value_27
-    local ____ok_28, ____result_28 = __K2L_DeepPcall(function()
+    local ____ok_28, ____result_28 = pcall(function()
         ____value_27 = __K2L_SequenceOf(1, 2, 3):reduce(function(a, x)
             if f then
                 __K2L_Jump(____jump_28, 1, "R")
@@ -639,7 +636,7 @@ end
 function Returns1:t_seq_single(f)
     local ____jump_29 = __K2L_NewJump()
     local ____value_28
-    local ____ok_29, ____result_29 = __K2L_DeepPcall(function()
+    local ____ok_29, ____result_29 = pcall(function()
         ____value_28 = __K2L_SequenceOf(1, 2, 3):single(function(it)
             if f then
                 __K2L_Jump(____jump_29, 1, "R")
@@ -662,7 +659,7 @@ local Returns2 = __K2L_Class("Returns2")
 function Returns2:t_seq_singleOrNull(f)
     local ____jump_30 = __K2L_NewJump()
     local ____value_29
-    local ____ok_30, ____result_30 = __K2L_DeepPcall(function()
+    local ____ok_30, ____result_30 = pcall(function()
         ____value_29 = __K2L_SequenceOf(1, 2, 3):singleOrNull(function(it)
             if f then
                 __K2L_Jump(____jump_30, 1, "R")
@@ -683,7 +680,7 @@ end
 function Returns2:t_seq_sumOf(f)
     local ____jump_31 = __K2L_NewJump()
     local ____value_30
-    local ____ok_31, ____result_31 = __K2L_DeepPcall(function()
+    local ____ok_31, ____result_31 = pcall(function()
         ____value_30 = __K2L_SequenceOf(1, 2, 3):sumOf(function(it)
             if f then
                 __K2L_Jump(____jump_31, 1, "R")
@@ -704,7 +701,7 @@ end
 function Returns2:t_range_zipWithNext(f)
     local ____jump_32 = __K2L_NewJump()
     local ____value_31
-    local ____ok_32, ____result_32 = __K2L_DeepPcall(function()
+    local ____ok_32, ____result_32 = pcall(function()
         ____value_31 = __K2L_IntRange.new(1, 3):zipWithNext(function(a, b)
             if f then
                 __K2L_Jump(____jump_32, 1, "R")
@@ -725,7 +722,7 @@ end
 function Returns2:t_text_trim(f)
     local ____jump_33 = __K2L_NewJump()
     local ____value_32
-    local ____ok_33, ____result_33 = __K2L_DeepPcall(function()
+    local ____ok_33, ____result_33 = pcall(function()
         ____value_32 = __K2L_Text.trimWith("abc", 3, function(it)
             if f then
                 __K2L_Jump(____jump_33, 1, "R")
@@ -746,7 +743,7 @@ end
 function Returns2:t_text_maxOf(f)
     local ____jump_34 = __K2L_NewJump()
     local ____value_33
-    local ____ok_34, ____result_34 = __K2L_DeepPcall(function()
+    local ____ok_34, ____result_34 = pcall(function()
         ____value_33 = __K2L_StringToList("abc"):maxOf(function(it)
             if f then
                 __K2L_Jump(____jump_34, 1, "R")
@@ -767,7 +764,7 @@ end
 function Returns2:t_text_partition(f)
     local ____jump_35 = __K2L_NewJump()
     local ____value_34
-    local ____ok_35, ____result_35 = __K2L_DeepPcall(function()
+    local ____ok_35, ____result_35 = pcall(function()
         ____value_34 = __K2L_Text.partition("abc", function(it)
             if f then
                 __K2L_Jump(____jump_35, 1, "R")
@@ -788,7 +785,7 @@ end
 function Returns2:t_text_trimEnd(f)
     local ____jump_36 = __K2L_NewJump()
     local ____value_35
-    local ____ok_36, ____result_36 = __K2L_DeepPcall(function()
+    local ____ok_36, ____result_36 = pcall(function()
         ____value_35 = __K2L_Text.trimWith("abc", 2, function(it)
             if f then
                 __K2L_Jump(____jump_36, 1, "R")
@@ -809,7 +806,7 @@ end
 function Returns2:t_text_trimStart(f)
     local ____jump_37 = __K2L_NewJump()
     local ____value_36
-    local ____ok_37, ____result_37 = __K2L_DeepPcall(function()
+    local ____ok_37, ____result_37 = pcall(function()
         ____value_36 = __K2L_Text.trimWith("abc", 1, function(it)
             if f then
                 __K2L_Jump(____jump_37, 1, "R")
@@ -830,7 +827,7 @@ end
 function Returns2:t_text_zipWithNext(f)
     local ____jump_38 = __K2L_NewJump()
     local ____value_37
-    local ____ok_38, ____result_38 = __K2L_DeepPcall(function()
+    local ____ok_38, ____result_38 = pcall(function()
         ____value_37 = __K2L_StringToList("abc"):zipWithNext(function(a, b)
             if f then
                 __K2L_Jump(____jump_38, 1, "R")
@@ -851,13 +848,13 @@ end
 function Returns2:t_Array_ctor(f)
     local ____jump_39 = __K2L_NewJump()
     local ____value_38
-    local ____ok_39, ____result_39 = __K2L_DeepPcall(function()
+    local ____ok_39, ____result_39 = pcall(function()
         ____value_38 = __K2L_ListOfSize(3, function(it)
             if f then
                 __K2L_Jump(____jump_39, 1, "R")
             end
             return it
-        end, "[Ljava.lang.Integer;")
+        end, true)
     end)
     if not ____ok_39 then
         if ____result_39 == ____jump_39 then
@@ -872,13 +869,13 @@ end
 function Returns2:t_IntArray_ctor(f)
     local ____jump_40 = __K2L_NewJump()
     local ____value_39
-    local ____ok_40, ____result_40 = __K2L_DeepPcall(function()
+    local ____ok_40, ____result_40 = pcall(function()
         ____value_39 = __K2L_ListOfSize(3, function(it)
             if f then
                 __K2L_Jump(____jump_40, 1, "R")
             end
             return it
-        end, "[I")
+        end, true)
     end)
     if not ____ok_40 then
         if ____result_40 == ____jump_40 then
@@ -893,7 +890,7 @@ end
 function Returns2:t_List_ctor(f)
     local ____jump_41 = __K2L_NewJump()
     local ____value_40
-    local ____ok_41, ____result_41 = __K2L_DeepPcall(function()
+    local ____ok_41, ____result_41 = pcall(function()
         ____value_40 = __K2L_ListOfSize(3, function(it)
             if f then
                 __K2L_Jump(____jump_41, 1, "R")
@@ -914,7 +911,7 @@ end
 function Returns2:t_MutableList_ctor(f)
     local ____jump_42 = __K2L_NewJump()
     local ____value_41
-    local ____ok_42, ____result_42 = __K2L_DeepPcall(function()
+    local ____ok_42, ____result_42 = pcall(function()
         ____value_41 = __K2L_ListOfSize(3, function(it)
             if f then
                 __K2L_Jump(____jump_42, 1, "R")
@@ -935,7 +932,7 @@ end
 function Returns2:t_result_mapCatching(f)
     local ____jump_43 = __K2L_NewJump()
     local ____value_42
-    local ____ok_43, ____result_43 = __K2L_DeepPcall(function()
+    local ____ok_43, ____result_43 = pcall(function()
         ____value_42 = __K2L_Result.success(1):mapCatching(function(it)
             if f then
                 __K2L_Jump(____jump_43, 1, "R")
@@ -956,7 +953,7 @@ end
 function Returns2:t_result_recoverCatching(f)
     local ____jump_44 = __K2L_NewJump()
     local ____value_43
-    local ____ok_44, ____result_44 = __K2L_DeepPcall(function()
+    local ____ok_44, ____result_44 = pcall(function()
         ____value_43 = __K2L_Result.failure(__K2L_Exception.new()):recoverCatching(function(it)
             if f then
                 __K2L_Jump(____jump_44, 1, "R")
@@ -981,7 +978,7 @@ function Breaks1:t_seq_any(f)
     for k = 0, 2 do
         local ____jump_45 = __K2L_NewJump()
         local ____value_44
-        local ____ok_45, ____result_45 = __K2L_DeepPcall(function()
+        local ____ok_45, ____result_45 = pcall(function()
             ____value_44 = __K2L_SequenceOf(1, 2, 3):any(function(it)
                 if f and k == 1 then
                     __K2L_Jump(____jump_45, 1)
@@ -1006,7 +1003,7 @@ function Breaks1:t_seq_fold(f)
     for k = 0, 2 do
         local ____jump_46 = __K2L_NewJump()
         local ____value_45
-        local ____ok_46, ____result_46 = __K2L_DeepPcall(function()
+        local ____ok_46, ____result_46 = pcall(function()
             ____value_45 = __K2L_SequenceOf(1, 2, 3):fold(0, function(a, x)
                 if f and k == 1 then
                     __K2L_Jump(____jump_46, 1)
@@ -1030,7 +1027,7 @@ function Breaks1:t_seq_forEachIndexed(f)
     local log = ""
     for k = 0, 2 do
         local ____jump_47 = __K2L_NewJump()
-        local ____ok_47, ____result_47 = __K2L_DeepPcall(function()
+        local ____ok_47, ____result_47 = pcall(function()
             __K2L_SequenceOf(1, 2, 3):forEachIndexed(function(_, _)
                 if f and k == 1 then
                     __K2L_Jump(____jump_47, 1)
@@ -1054,7 +1051,7 @@ function Breaks1:t_seq_maxOf(f)
     for k = 0, 2 do
         local ____jump_48 = __K2L_NewJump()
         local ____value_46
-        local ____ok_48, ____result_48 = __K2L_DeepPcall(function()
+        local ____ok_48, ____result_48 = pcall(function()
             ____value_46 = __K2L_SequenceOf(1, 2, 3):maxOf(function(it)
                 if f and k == 1 then
                     __K2L_Jump(____jump_48, 1)
@@ -1079,7 +1076,7 @@ function Breaks1:t_seq_partition(f)
     for k = 0, 2 do
         local ____jump_49 = __K2L_NewJump()
         local ____value_47
-        local ____ok_49, ____result_49 = __K2L_DeepPcall(function()
+        local ____ok_49, ____result_49 = pcall(function()
             ____value_47 = __K2L_SequenceOf(1, 2, 3):partition(function(it)
                 if f and k == 1 then
                     __K2L_Jump(____jump_49, 1)
@@ -1104,7 +1101,7 @@ function Breaks1:t_text_trim(f)
     for k = 0, 2 do
         local ____jump_50 = __K2L_NewJump()
         local ____value_48
-        local ____ok_50, ____result_50 = __K2L_DeepPcall(function()
+        local ____ok_50, ____result_50 = pcall(function()
             ____value_48 = __K2L_Text.trimWith("abc", 3, function(it)
                 if f and k == 1 then
                     __K2L_Jump(____jump_50, 1)
@@ -1129,7 +1126,7 @@ function Breaks1:t_text_zipWithNext(f)
     for k = 0, 2 do
         local ____jump_51 = __K2L_NewJump()
         local ____value_49
-        local ____ok_51, ____result_51 = __K2L_DeepPcall(function()
+        local ____ok_51, ____result_51 = pcall(function()
             ____value_49 = __K2L_StringToList("abc"):zipWithNext(function(a, b)
                 if f and k == 1 then
                     __K2L_Jump(____jump_51, 1)
@@ -1154,7 +1151,7 @@ function Breaks1:t_List_ctor(f)
     for k = 0, 2 do
         local ____jump_52 = __K2L_NewJump()
         local ____value_50
-        local ____ok_52, ____result_52 = __K2L_DeepPcall(function()
+        local ____ok_52, ____result_52 = pcall(function()
             ____value_50 = __K2L_ListOfSize(3, function(it)
                 if f and k == 1 then
                     __K2L_Jump(____jump_52, 1)
@@ -1179,13 +1176,13 @@ function Breaks1:t_IntArray_ctor(f)
     for k = 0, 2 do
         local ____jump_53 = __K2L_NewJump()
         local ____value_51
-        local ____ok_53, ____result_53 = __K2L_DeepPcall(function()
+        local ____ok_53, ____result_53 = pcall(function()
             ____value_51 = __K2L_ListOfSize(3, function(it)
                 if f and k == 1 then
                     __K2L_Jump(____jump_53, 1)
                 end
                 return it
-            end, "[I")
+            end, true)
         end)
         if not ____ok_53 then
             if ____result_53 == ____jump_53 then
@@ -1204,7 +1201,7 @@ function Breaks1:t_result_mapCatching(f)
     for k = 0, 2 do
         local ____jump_54 = __K2L_NewJump()
         local ____value_52
-        local ____ok_54, ____result_54 = __K2L_DeepPcall(function()
+        local ____ok_54, ____result_54 = pcall(function()
             ____value_52 = __K2L_Result.success(1):mapCatching(function(it)
                 if f and k == 1 then
                     __K2L_Jump(____jump_54, 1)
@@ -1229,7 +1226,7 @@ function Breaks1:t_result_recoverCatching(f)
     for k = 0, 2 do
         local ____jump_55 = __K2L_NewJump()
         local ____value_53
-        local ____ok_55, ____result_55 = __K2L_DeepPcall(function()
+        local ____ok_55, ____result_55 = pcall(function()
             ____value_53 = __K2L_Result.failure(__K2L_Exception.new()):recoverCatching(function(it)
                 if f and k == 1 then
                     __K2L_Jump(____jump_55, 1)
@@ -1254,7 +1251,7 @@ function Breaks1:t_seq_sumOf(f)
     for k = 0, 2 do
         local ____jump_56 = __K2L_NewJump()
         local ____value_54
-        local ____ok_56, ____result_56 = __K2L_DeepPcall(function()
+        local ____ok_56, ____result_56 = pcall(function()
             ____value_54 = __K2L_SequenceOf(1, 2, 3):sumOf(function(it)
                 if f and k == 1 then
                     __K2L_Jump(____jump_56, 1)
@@ -1282,7 +1279,7 @@ function Continues1:t_seq_any(f)
         do
             local ____jump_57 = __K2L_NewJump()
             local ____value_55
-            local ____ok_57, ____result_57 = __K2L_DeepPcall(function()
+            local ____ok_57, ____result_57 = pcall(function()
                 ____value_55 = __K2L_SequenceOf(1, 2, 3):any(function(it)
                     if f and k == 1 then
                         __K2L_Jump(____jump_57, 1)
@@ -1310,7 +1307,7 @@ function Continues1:t_seq_fold(f)
         do
             local ____jump_58 = __K2L_NewJump()
             local ____value_56
-            local ____ok_58, ____result_58 = __K2L_DeepPcall(function()
+            local ____ok_58, ____result_58 = pcall(function()
                 ____value_56 = __K2L_SequenceOf(1, 2, 3):fold(0, function(a, x)
                     if f and k == 1 then
                         __K2L_Jump(____jump_58, 1)
@@ -1337,7 +1334,7 @@ function Continues1:t_seq_forEachIndexed(f)
     for k = 0, 2 do
         do
             local ____jump_59 = __K2L_NewJump()
-            local ____ok_59, ____result_59 = __K2L_DeepPcall(function()
+            local ____ok_59, ____result_59 = pcall(function()
                 __K2L_SequenceOf(1, 2, 3):forEachIndexed(function(_, _)
                     if f and k == 1 then
                         __K2L_Jump(____jump_59, 1)
@@ -1364,7 +1361,7 @@ function Continues1:t_seq_maxOf(f)
         do
             local ____jump_60 = __K2L_NewJump()
             local ____value_57
-            local ____ok_60, ____result_60 = __K2L_DeepPcall(function()
+            local ____ok_60, ____result_60 = pcall(function()
                 ____value_57 = __K2L_SequenceOf(1, 2, 3):maxOf(function(it)
                     if f and k == 1 then
                         __K2L_Jump(____jump_60, 1)
@@ -1392,7 +1389,7 @@ function Continues1:t_seq_partition(f)
         do
             local ____jump_61 = __K2L_NewJump()
             local ____value_58
-            local ____ok_61, ____result_61 = __K2L_DeepPcall(function()
+            local ____ok_61, ____result_61 = pcall(function()
                 ____value_58 = __K2L_SequenceOf(1, 2, 3):partition(function(it)
                     if f and k == 1 then
                         __K2L_Jump(____jump_61, 1)
@@ -1420,7 +1417,7 @@ function Continues1:t_text_trim(f)
         do
             local ____jump_62 = __K2L_NewJump()
             local ____value_59
-            local ____ok_62, ____result_62 = __K2L_DeepPcall(function()
+            local ____ok_62, ____result_62 = pcall(function()
                 ____value_59 = __K2L_Text.trimWith("abc", 3, function(it)
                     if f and k == 1 then
                         __K2L_Jump(____jump_62, 1)
@@ -1448,7 +1445,7 @@ function Continues1:t_text_zipWithNext(f)
         do
             local ____jump_63 = __K2L_NewJump()
             local ____value_60
-            local ____ok_63, ____result_63 = __K2L_DeepPcall(function()
+            local ____ok_63, ____result_63 = pcall(function()
                 ____value_60 = __K2L_StringToList("abc"):zipWithNext(function(a, b)
                     if f and k == 1 then
                         __K2L_Jump(____jump_63, 1)
@@ -1476,7 +1473,7 @@ function Continues1:t_List_ctor(f)
         do
             local ____jump_64 = __K2L_NewJump()
             local ____value_61
-            local ____ok_64, ____result_64 = __K2L_DeepPcall(function()
+            local ____ok_64, ____result_64 = pcall(function()
                 ____value_61 = __K2L_ListOfSize(3, function(it)
                     if f and k == 1 then
                         __K2L_Jump(____jump_64, 1)
@@ -1504,13 +1501,13 @@ function Continues1:t_IntArray_ctor(f)
         do
             local ____jump_65 = __K2L_NewJump()
             local ____value_62
-            local ____ok_65, ____result_65 = __K2L_DeepPcall(function()
+            local ____ok_65, ____result_65 = pcall(function()
                 ____value_62 = __K2L_ListOfSize(3, function(it)
                     if f and k == 1 then
                         __K2L_Jump(____jump_65, 1)
                     end
                     return it
-                end, "[I")
+                end, true)
             end)
             if not ____ok_65 then
                 if ____result_65 == ____jump_65 then
@@ -1532,7 +1529,7 @@ function Continues1:t_result_mapCatching(f)
         do
             local ____jump_66 = __K2L_NewJump()
             local ____value_63
-            local ____ok_66, ____result_66 = __K2L_DeepPcall(function()
+            local ____ok_66, ____result_66 = pcall(function()
                 ____value_63 = __K2L_Result.success(1):mapCatching(function(it)
                     if f and k == 1 then
                         __K2L_Jump(____jump_66, 1)
@@ -1560,7 +1557,7 @@ function Continues1:t_result_recoverCatching(f)
         do
             local ____jump_67 = __K2L_NewJump()
             local ____value_64
-            local ____ok_67, ____result_67 = __K2L_DeepPcall(function()
+            local ____ok_67, ____result_67 = pcall(function()
                 ____value_64 = __K2L_Result.failure(__K2L_Exception.new()):recoverCatching(function(it)
                     if f and k == 1 then
                         __K2L_Jump(____jump_67, 1)
@@ -1588,7 +1585,7 @@ function Continues1:t_seq_sumOf(f)
         do
             local ____jump_68 = __K2L_NewJump()
             local ____value_65
-            local ____ok_68, ____result_68 = __K2L_DeepPcall(function()
+            local ____ok_68, ____result_68 = pcall(function()
                 ____value_65 = __K2L_SequenceOf(1, 2, 3):sumOf(function(it)
                     if f and k == 1 then
                         __K2L_Jump(____jump_68, 1)
@@ -1682,5 +1679,5 @@ local function main()
     print("Continues1 seq_sumOf: " .. __K2L_Str(Continues1:t_seq_sumOf(false)) .. " / " .. __K2L_Str(Continues1:t_seq_sumOf(true)))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {show = show, Returns1 = Returns1, Returns2 = Returns2, Breaks1 = Breaks1, Continues1 = Continues1}

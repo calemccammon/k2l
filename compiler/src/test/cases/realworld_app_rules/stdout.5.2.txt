@@ -1,0 +1,58 @@
+rule 'base premium' (p100) when age >= 18
+rule 'young driver' (p90) when (age < 25 and premium is set)
+rule 'claims' (p80) when (claims > 2 or points > 6)
+rule 'high risk' (p70) when (risk == "high" and premium is set)
+rule 'discount bronze' (p60) when ((tier == "bronze" and not risk is set) and premium is set)
+rule 'discount silver' (p60) when ((tier == "silver" and not risk is set) and premium is set)
+rule 'discount gold' (p60) when ((tier == "gold" and not risk is set) and premium is set)
+rule 'label' (p10) when (premium is set and not label is set)
+rule 'cleanup' (p5) when manualReview
+rule 'mid age' (p0) when age in 30..50
+== ada
+  round 1: base premium
+  round 1: discount gold
+  round 1: label
+  round 1: mid age
+  round 2: mid age
+notes: [base premium set, gold discount 20%]
+facts: {age=34, claims=0, points=1, tier="gold", premium=400, label="quote: 400", band="mid"} (2 rounds)
+  premium: missing -> 500
+  premium: 500 -> 400
+  label: missing -> "quote: 400"
+  band: missing -> "mid"
+== tom
+  round 1: base premium
+  round 1: young driver
+  round 1: claims
+  round 1: high risk
+  round 1: label
+  round 1: cleanup
+notes: [base premium set, young driver surcharge, high risk: claims=3 points=0, tier dropped for review]
+facts: {age=21, claims=3, points=0, premium=1000, risk="high", manualReview=true, label="quote: 1000"} (2 rounds)
+  premium: missing -> 500
+  premium: 500 -> 750
+  risk: missing -> "high"
+  premium: 750 -> 1000
+  manualReview: missing -> true
+  label: missing -> "quote: 1000"
+  tier removed
+== kid
+  claims: cannot compare missing with 2
+notes: []
+facts: {age=16, tier="bronze"} (1 rounds)
+== odd
+  base premium: cannot compare "forty" with 18
+  young driver: cannot compare "forty" with 25
+  round 1: claims
+  base premium: cannot compare "forty" with 18
+  young driver: cannot compare "forty" with 25
+notes: [high risk: claims=1 points=9]
+facts: {age="forty", claims=1, points=9, risk="high"} (2 rounds)
+  risk: missing -> "high"
+cycle: no fixpoint after 4 rounds after 4
+invalid: rule 'broken' has no action
+invalid: rule 'no condition' has no condition
+{a=1, b="two"} true missing true missing
+[-2, 1.5, 3]
+"pear"
+sort failed: cannot compare "x" with 1

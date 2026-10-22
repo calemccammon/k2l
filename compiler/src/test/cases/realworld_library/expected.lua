@@ -1,22 +1,18 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_CloseAfter = ____lualib.__K2L_CloseAfter
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_IsLowerCase = ____lualib.__K2L_IsLowerCase
-local __K2L_JavaClass = ____lualib.__K2L_JavaClass
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_List = ____lualib.__K2L_List
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringToList = ____lualib.__K2L_StringToList
@@ -28,7 +24,6 @@ local __K2L_Unpack = ____lualib.__K2L_Unpack
 local ____Desk = require("service.Desk")
 local ____Catalog = require("model.Catalog")
 local SimClock = __K2L_Class("lib.SimClock", nil, ____Desk.Clock)
-__K2L_ClassInfo(SimClock, "lib.SimClock", "lib.SimClock", "class")
 
 function SimClock:____init()
     self.today = 1
@@ -39,7 +34,6 @@ function SimClock:advance(days)
 end
 
 local Rule = __K2L_Class("lib.Rule")
-__K2L_ClassInfo(Rule, "lib.Rule", "lib.Rule", "interface")
 
 local ____lambda_1 = function(____p1)
     return __K2L_IsLowerCase[____p1] == true
@@ -53,19 +47,17 @@ local function rules(minTitle)
         return #it.title < minTitle and "title too short" or nil
     end)
     local ____object = __K2L_Class("lib.MainKt$rules$2", nil, Rule)
-    __K2L_ClassInfo(____object, nil, "lib.MainKt$rules$2", "class", false)
     function ____object:check(media)
         return __K2L_StringToList(media.id):any(____lambda_1) and "id must be upper case" or nil
     end
     function ____object:toString()
         return "IdRule"
     end
-    return __K2L_ReadOnlyListOf(____arg, ____object)
+    return __K2L_ListOf(____arg, ____object)
 end
 
 local function counter(start)
     local ____object_1 = __K2L_Class("lib.MainKt$counter$1")
-    __K2L_ClassInfo(____object_1, nil, "lib.MainKt$counter$1", "class", false)
     function ____object_1:____init()
         self.n = start
     end
@@ -89,8 +81,8 @@ local ____lambda_7 = function(x) return getmetatable(x) == ____Catalog.Book end
 local ____lambda_8 = function(it) return it.genre end
 local ____lambda_9 = function() return "lambda" end
 local function main()
-    local records = __K2L_ReadOnlyListOf("id=B1; title=Dune; author=Frank Herbert; isbn=978-0441; genre=fiction", "id=B2; title=A Brief History of Time; author=Stephen Hawking; genre=science", "id=B3; title=Gruffalo; genre=kids", "id=D1; title=Alien; minutes=117", "id=d2; title=Up")
-    local factories = __K2L_ReadOnlyMapOf(__K2L_Pair.new("B", ____Catalog.Book.Companion), __K2L_Pair.new("D", ____Catalog.Dvd.Companion), __K2L_Pair.new("d", ____Catalog.Dvd.Companion))
+    local records = __K2L_ListOf("id=B1; title=Dune; author=Frank Herbert; isbn=978-0441; genre=fiction", "id=B2; title=A Brief History of Time; author=Stephen Hawking; genre=science", "id=B3; title=Gruffalo; genre=kids", "id=D1; title=Alien; minutes=117", "id=d2; title=Up")
+    local factories = __K2L_MapOf(__K2L_Pair.new("B", ____Catalog.Book.Companion), __K2L_Pair.new("D", ____Catalog.Dvd.Companion), __K2L_Pair.new("d", ____Catalog.Dvd.Companion))
     local ____out = {}
     local ____count = 0
     local ____items, ____n = records:____array()
@@ -117,7 +109,6 @@ local function main()
     end
     print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     local ruleSet = rules(3)
-    local ____mod = items.____modCount
     for ____i_3 = 1, items.size do
         local m = items[____i_3]
         local ____out_2 = {}
@@ -135,23 +126,19 @@ local function main()
         if problems:isNotEmpty() then
             print(m.id .. ": " .. __K2L_Str(problems))
         end
-        if items.____modCount ~= ____mod and items:____comodified(____i_3) then
-            break
-        end
     end
     print(__K2L_Str(ruleSet:last()))
     local clock = SimClock.new()
     local outbox = ____Desk.Outbox.new("mail to")
     local desk = ____Desk.Desk.new(clock, outbox)
-    desk:stock(__K2L_Unpack(items:toTypedArray("[Llib.model.Media;")))
+    desk:stock(__K2L_Unpack(items:toTypedArray()))
     local ann = ____Catalog.Member.new("Ann", 1)
     local ben = ____Catalog.Member.new("Ben", 2)
-    local attempts = __K2L_ReadOnlyListOf(__K2L_Pair.new("B1", ann), __K2L_Pair.new("D1", ann), __K2L_Pair.new("B1", ben), __K2L_Pair.new("X9", ben), __K2L_Pair.new("B3", ann), __K2L_Pair.new("B2", ann), __K2L_Pair.new("d2", ben))
-    local ____mod_1 = attempts.____modCount
+    local attempts = __K2L_ListOf(__K2L_Pair.new("B1", ann), __K2L_Pair.new("D1", ann), __K2L_Pair.new("B1", ben), __K2L_Pair.new("X9", ben), __K2L_Pair.new("B3", ann), __K2L_Pair.new("B2", ann), __K2L_Pair.new("d2", ben))
     for ____i_4 = 1, attempts.size do
         local ____item = attempts[____i_4]
         local id, member = ____item.first, ____item.second
-        local ____ok, ____result_1 = __K2L_DeepPcall(function()
+        local ____ok, ____result_1 = pcall(function()
             local loan = desk:checkout(member, id)
             print(member.name .. " borrows " .. loan.media.title .. ", due d" .. loan:getDue())
         end)
@@ -163,9 +150,6 @@ local function main()
             else
                 error(____error, 0)
             end
-        end
-        if attempts.____modCount ~= ____mod_1 and attempts:____comodified(____i_4) then
-            break
         end
     end
     clock:advance(10)
@@ -181,8 +165,8 @@ local function main()
     end
     print("overdue at d" .. ____arg_1 .. ": " .. __K2L_Str(__K2L_ListWrap(____out_3, ____count_3)))
     local ____result_2
-    local ____ok_1, ____result_3 = __K2L_DeepPcall(function()
-        print("fees: " .. __K2L_Str(__K2L_ReadOnlyListOf("D1", "d2"):map(function(...) return desk:checkin(...) end)))
+    local ____ok_1, ____result_3 = pcall(function()
+        print("fees: " .. __K2L_Str(__K2L_ListOf("D1", "d2"):map(function(...) return desk:checkin(...) end)))
         clock:advance(20)
         print("fee B3: " .. desk:checkin("B3"))
     end)
@@ -201,15 +185,11 @@ local function main()
     end):onFailure(function(it)
         print("after close: " .. __K2L_Str(it.message))
     end)
-    print("fines: " .. __K2L_Str(__K2L_ReadOnlyListOf(ann, ben):associate(____lambda_4)))
+    print("fines: " .. __K2L_Str(__K2L_ListOf(ann, ben):associate(____lambda_4)))
     local ____list_2 = ____Desk.Desk.Report.new(desk, "inventory"):lines()
-    local ____mod_2 = ____list_2.____modCount
     for ____i_6 = 1, ____list_2.size do
         local it = ____list_2[____i_6];
         (____lambda_5)(it)
-        if ____list_2.____modCount ~= ____mod_2 and ____list_2:____comodified(____i_6) then
-            break
-        end
     end
     print(desk:getAvailable():joinToString(nil, nil, nil, nil, nil, ____lambda_6))
     print(__K2L_Str(desk:log()))
@@ -231,14 +211,13 @@ local function main()
     print(longest:describe())
     local c1 = counter(10)
     local c2 = counter(20)
-    print(c1:next() .. " " .. c1:next() .. " " .. c2:next() .. " same class: " .. tostring(__K2L_Equals(__K2L_JavaClass(__K2L_KClassOfValue(c1)), __K2L_JavaClass(__K2L_KClassOfValue(c2)))))
-    print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(c1)).name))
+    print(c1:next() .. " " .. c1:next() .. " " .. c2:next() .. " same class: " .. tostring(__K2L_SimpleName(c1) == __K2L_SimpleName(c2)))
     local opening = function(...)
         announce(...)
         return __K2L_Unit
     end
     print("result: " .. __K2L_Str(opening()))
-    local actions = __K2L_ReadOnlyListOf(function(...)
+    local actions = __K2L_ListOf(function(...)
         announce(...)
         return __K2L_Unit
     end, ____lambda_9)
@@ -252,7 +231,6 @@ local function main()
     end
     print(__K2L_Str(__K2L_ListWrap(____out_4, ____count_4)))
     print("desks opened: " .. ____Desk.desksOpened)
-    local ____mod_3 = items.____modCount
     for ____i_9 = 1, items.size do
         local it = items[____i_9]
         do
@@ -261,9 +239,6 @@ local function main()
             end
             io.write(it.id .. " ")
             ::____inline_end::
-        end
-        if items.____modCount ~= ____mod_3 and items:____comodified(____i_9) then
-            break
         end
     end
     print()
@@ -274,7 +249,7 @@ local function main()
         local ____items_5, ____n_5 = items:____array()
         for ____i_10 = 1, ____n_5 do
             local it = ____items_5[____i_10]
-            local ____value_3 = __K2L_KClassOfValue(it).simpleName
+            local ____value_3 = __K2L_SimpleName(it)
             local ____group = ____result_7:get(____value_3)
             if ____group == nil then
                 ____group = __K2L_List.new()
@@ -283,15 +258,11 @@ local function main()
             ____group:add(it)
         end
         local ____items_6, ____n_6 = ____result_7:____entryArray()
-        local ____mod_4 = ____result_7.____modCount
         for ____i_11 = 1, ____n_6 do
             local ____entry = ____items_6[____i_11]
             do
                 local k, v = ____entry.key, ____entry.value
                 ____value_2:append(__K2L_Str(k) .. "=" .. v.size .. ";")
-            end
-            if ____result_7.____modCount ~= ____mod_4 and ____result_7:____comodified(____i_11, ____n_6) then
-                break
             end
         end
         ____result_6 = ____value_2:toString()
@@ -300,18 +271,17 @@ local function main()
     print(summary)
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {SimClock = SimClock, Rule = Rule, rules = rules, announce = announce}
 -- ==== model/Catalog.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
@@ -321,16 +291,13 @@ local __K2L_Text = ____lualib.__K2L_Text
 local Loan
 local MAX_LOANS = 3
 local Identified = __K2L_Class("lib.model.Identified")
-__K2L_ClassInfo(Identified, "lib.model.Identified", "lib.model.Identified", "interface")
 
 function Identified:describe()
     return "#" .. self.id
 end
 
 local Factory = __K2L_Class("lib.model.Factory")
-__K2L_ClassInfo(Factory, "lib.model.Factory", "lib.model.Factory", "interface")
 local Genre = __K2L_Class("lib.model.Genre")
-__K2L_ClassInfo(Genre, "lib.model.Genre", "lib.model.Genre", "class")
 
 function Genre:____init(name, ordinal)
     self.name = name
@@ -351,7 +318,6 @@ Genre.HISTORY = Genre.new("HISTORY", 2)
 Genre.KIDS = Genre.new("KIDS", 3)
 Genre.____values = {Genre.FICTION, Genre.SCIENCE, Genre.HISTORY, Genre.KIDS}
 local Media = __K2L_Class("lib.model.Media", nil, Identified)
-__K2L_ClassInfo(Media, "lib.model.Media", "lib.model.Media", "class")
 Media.____comparable = true
 
 function Media:____init(id, title)
@@ -376,11 +342,10 @@ function Media:describe()
 end
 
 function Media:toString()
-    return __K2L_Str(__K2L_KClassOfValue(self).simpleName) .. "(" .. self.id .. ")"
+    return __K2L_Str(__K2L_SimpleName(self)) .. "(" .. self.id .. ")"
 end
 
 local Book = __K2L_Class("lib.model.Book", Media)
-__K2L_ClassInfo(Book, "lib.model.Book", "lib.model.Book", "class")
 
 function Book:____init(id, title, author, isbn, genre)
     Media.____init(self, id, title)
@@ -399,7 +364,6 @@ function Book:describe()
 end
 
 Book.Companion = __K2L_Class("lib.model.Book$Companion", nil, Factory)
-__K2L_ClassInfo(Book.Companion, "lib.model.Book.Companion", "lib.model.Book$Companion", "class")
 
 function Book.Companion:create(fields)
     local ____arg = fields:getValue("id")
@@ -411,7 +375,6 @@ function Book.Companion:create(fields)
 end
 
 local Dvd = __K2L_Class("lib.model.Dvd", Media)
-__K2L_ClassInfo(Dvd, "lib.model.Dvd", "lib.model.Dvd", "class")
 
 function Dvd:____init(id, title, minutes)
     Media.____init(self, id, title)
@@ -428,7 +391,6 @@ function Dvd:getLateFeePerDay()
 end
 
 Dvd.Companion = __K2L_Class("lib.model.Dvd$Companion", nil, Factory)
-__K2L_ClassInfo(Dvd.Companion, "lib.model.Dvd.Companion", "lib.model.Dvd$Companion", "class")
 
 function Dvd.Companion:create(fields)
     local ____arg_4 = fields:getValue("id")
@@ -438,7 +400,6 @@ function Dvd.Companion:create(fields)
 end
 
 local Member = __K2L_Class("lib.model.Member")
-__K2L_ClassInfo(Member, "lib.model.Member", "lib.model.Member", "class")
 
 function Member:____init(name, id)
     self.name = name
@@ -464,7 +425,6 @@ function Member:equals(other)
 end
 
 Loan = __K2L_Class("lib.model.Loan")
-__K2L_ClassInfo(Loan, "lib.model.Loan", "lib.model.Loan", "class")
 
 function Loan:____init(media, member, day)
     self.media = media
@@ -506,32 +466,25 @@ return {MAX_LOANS = MAX_LOANS, Identified = Identified, Factory = Factory, Genre
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
-local __K2L_ListBuilderOf = ____lualib.__K2L_ListBuilderOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____exports = {}
 local ____Catalog = require("model.Catalog")
 local LibraryException = __K2L_Class("lib.service.LibraryException", __K2L_Exception)
-__K2L_ClassInfo(LibraryException, "lib.service.LibraryException", "lib.service.LibraryException", "class")
 
 function LibraryException:____init(message)
     __K2L_Exception.____init(self, message)
 end
 
 local Clock = __K2L_Class("lib.service.Clock")
-__K2L_ClassInfo(Clock, "lib.service.Clock", "lib.service.Clock", "interface")
 local Notifier = __K2L_Class("lib.service.Notifier")
-__K2L_ClassInfo(Notifier, "lib.service.Notifier", "lib.service.Notifier", "interface")
 local Outbox = __K2L_Class("lib.service.Outbox", nil, Notifier)
-__K2L_ClassInfo(Outbox, "lib.service.Outbox", "lib.service.Outbox", "class")
 
 function Outbox:____init(prefix)
     self.prefix = prefix
@@ -550,25 +503,20 @@ local ____lambda_1 = function(____p1) return print(__K2L_Str(____p1)) end
 function Outbox:close()
     self.closed = true
     local ____list = self.messages
-    local ____mod = ____list.____modCount
     for ____i = 1, ____list.size do
         local it = ____list[____i];
         (____lambda_1)(it)
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-            break
-        end
     end
     self.messages:clear()
 end
 
 ____exports.desksOpened = 0
 local Desk = __K2L_Class("lib.service.Desk", nil, Notifier)
-__K2L_ClassInfo(Desk, "lib.service.Desk", "lib.service.Desk", "class")
 
 function Desk:____init(clock, notifier)
     self.clock = clock
     self.____delegate_Notifier = notifier
-    self.shelf = __K2L_SortedMapOf()
+    self.shelf = __K2L_SortedMapOf(nil)
     self.history = __K2L_ListOf()
     self.active = __K2L_ListOf()
     ____exports.desksOpened = ____exports.desksOpened + 1
@@ -693,7 +641,6 @@ function Desk:log()
 end
 
 Desk.Report = __K2L_Class("lib.service.Desk$Report")
-__K2L_ClassInfo(Desk.Report, "lib.service.Desk.Report", "lib.service.Desk$Report", "class")
 
 function Desk.Report:____init(____outer, title)
     self.____outer = ____outer
@@ -701,12 +648,11 @@ function Desk.Report:____init(____outer, title)
 end
 
 function Desk.Report:lines()
-    local ____builder = __K2L_ListBuilderOf()
+    local ____builder = __K2L_ListOf()
     do
         ____builder:add("== " .. self.title .. " (day " .. self.____outer.clock.today .. ")")
         local ____collection = self.____outer.shelf:getValues()
-        local ____items_5, ____n_5 = __K2L_LoopItems(____collection)
-        local ____mod_1 = ____collection.____modCount
+        local ____items_5, ____n_5 = ____collection:____array()
         for ____i_8 = 1, ____n_5 do
             local m = ____items_5[____i_8]
             do
@@ -723,12 +669,9 @@ function Desk.Report:lines()
                 local loan = ____result_4
                 ____builder:add(m:describe() .. " -> " .. (loan and loan.member.name .. " due d" .. loan:getDue() or "available"))
             end
-            if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_8, ____n_5) then
-                break
-            end
         end
     end
-    return ____builder:____build()
+    return ____builder
 end
 
 function Desk:notify(...)

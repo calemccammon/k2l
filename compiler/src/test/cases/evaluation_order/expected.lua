@@ -1,5 +1,5 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 
 local ____exports = {}
 ____exports.log = ""
@@ -64,5 +64,5 @@ end
 
 ____exports.trace = trace
 ____exports.add = add
-__K2L_Main(main)
+__K2L_RunMain(main)
 return ____exports

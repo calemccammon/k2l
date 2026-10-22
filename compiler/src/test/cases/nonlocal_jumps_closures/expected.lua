@@ -2,8 +2,6 @@ local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CloseAfter = ____lualib.__K2L_CloseAfter
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -11,9 +9,9 @@ local __K2L_IsJump = ____lualib.__K2L_IsJump
 local __K2L_Jump = ____lualib.__K2L_Jump
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_NewJump = ____lualib.__K2L_NewJump
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
 local __K2L_Result = ____lualib.__K2L_Result
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SequenceBuilder = ____lualib.__K2L_SequenceBuilder
 local __K2L_SequenceOf = ____lualib.__K2L_SequenceOf
 local __K2L_Str = ____lualib.__K2L_Str
@@ -23,7 +21,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local function trimOut(s)
     local ____jump = __K2L_NewJump()
     local ____value
-    local ____ok, ____result = __K2L_DeepPcall(function()
+    local ____ok, ____result = pcall(function()
         ____value = __K2L_Text.trimWith(s, 3, function(c)
             if c == "!" then
                 __K2L_Jump(____jump, 1, "bang")
@@ -45,7 +43,7 @@ end
 local function maxOrStop(xs)
     local ____jump_1 = __K2L_NewJump()
     local ____value_1
-    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_1 = pcall(function()
         ____value_1 = __K2L_AsSequence(xs):maxOf(function(it)
             if it < 0 then
                 __K2L_Jump(____jump_1, 1, -1)
@@ -79,7 +77,7 @@ local function sequenceTerminals()
     local function any()
         local ____jump_2 = __K2L_NewJump()
         local ____value_2
-        local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
+        local ____ok_2, ____result_2 = pcall(function()
             ____value_2 = __K2L_SequenceOf(1, 2, 3):any(function(it)
                 if it == 2 then
                     __K2L_Jump(____jump_2, 1, 20)
@@ -98,7 +96,7 @@ local function sequenceTerminals()
     local function first()
         local ____jump_3 = __K2L_NewJump()
         local ____value_3
-        local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
+        local ____ok_3, ____result_3 = pcall(function()
             ____value_3 = __K2L_SequenceOf(1, 2, 3):first(function(it)
                 if it == 2 then
                     __K2L_Jump(____jump_3, 1, 30)
@@ -118,7 +116,7 @@ local function sequenceTerminals()
     local function fold()
         local ____jump_4 = __K2L_NewJump()
         local ____value_4
-        local ____ok_4, ____result_4 = __K2L_DeepPcall(function()
+        local ____ok_4, ____result_4 = pcall(function()
             ____value_4 = __K2L_SequenceOf(1, 2, 3):fold(0, function(acc, x)
                 if x == 3 then
                     __K2L_Jump(____jump_4, 1, -acc)
@@ -137,12 +135,12 @@ local function sequenceTerminals()
     local function count()
         local ____jump_5 = __K2L_NewJump()
         local ____value_5
-        local ____ok_5, ____result_5 = __K2L_DeepPcall(function()
+        local ____ok_5, ____result_5 = pcall(function()
             ____value_5 = __K2L_SequenceOf(1, 2, 3, 4):count(function(it)
                 if it > 3 then
                     __K2L_Jump(____jump_5, 1, -1)
                 end
-                return (it >= 0 and it % 2 or 0 - -it % 2) == 0
+                return it % 2 == 0
             end)
         end)
         if not ____ok_5 then
@@ -157,7 +155,7 @@ local function sequenceTerminals()
     local function sum()
         local ____jump_6 = __K2L_NewJump()
         local ____value_6
-        local ____ok_6, ____result_6 = __K2L_DeepPcall(function()
+        local ____ok_6, ____result_6 = pcall(function()
             ____value_6 = __K2L_SequenceOf(1, 2, 3):sumOf(function(it)
                 if it == 2 then
                     __K2L_Jump(____jump_6, 1, 99)
@@ -176,7 +174,7 @@ local function sequenceTerminals()
     local function none()
         local ____jump_7 = __K2L_NewJump()
         local ____value_7
-        local ____ok_7, ____result_7 = __K2L_DeepPcall(function()
+        local ____ok_7, ____result_7 = pcall(function()
             ____value_7 = __K2L_SequenceOf("a", "b"):none(function(it)
                 if it == "b" then
                     __K2L_Jump(____jump_7, 1, true)
@@ -199,7 +197,7 @@ end
 local function mapCatchingOut(r)
     local ____jump_8 = __K2L_NewJump()
     local ____value_8
-    local ____ok_8, ____result_8 = __K2L_DeepPcall(function()
+    local ____ok_8, ____result_8 = pcall(function()
         ____value_8 = r:mapCatching(function(it)
             if it == 1 then
                 __K2L_Jump(____jump_8, 1, "returned")
@@ -217,7 +215,7 @@ local function mapCatchingOut(r)
     local m = ____value_8
     local ____jump_9 = __K2L_NewJump()
     local ____value_9
-    local ____ok_9, ____result_9 = __K2L_DeepPcall(function()
+    local ____ok_9, ____result_9 = pcall(function()
         ____value_9 = m:recoverCatching(function(it)
             if __K2L_InstanceOf(it, __K2L_IllegalStateException) then
                 __K2L_Jump(____jump_9, 1, "recovered-returned")
@@ -250,7 +248,7 @@ local function breaksAndContinues()
                     end
                     local ____jump_10 = __K2L_NewJump()
                     local ____value_10
-                    local ____ok_10, ____result_10 = __K2L_DeepPcall(function()
+                    local ____ok_10, ____result_10 = pcall(function()
                         ____value_10 = __K2L_Text.trimWith("xyz", 3, function(c)
                             if c == "y" and i == 3 then
                                 __K2L_Jump(____jump_10, 1)
@@ -280,7 +278,7 @@ local function jumpsFromOneLambda(n)
         do
             local ____jump_11 = __K2L_NewJump()
             local ____value_11
-            local ____ok_11, ____result_11 = __K2L_DeepPcall(function()
+            local ____ok_11, ____result_11 = pcall(function()
                 ____value_11 = __K2L_Text.trimWith("  x ", 3, function(c)
                     if i == 1 then
                         __K2L_Jump(____jump_11, 3)
@@ -317,7 +315,7 @@ local function labeledToLambda()
     local f = function(x)
         local ____jump_12 = __K2L_NewJump()
         local ____value_12
-        local ____ok_12, ____result_12 = __K2L_DeepPcall(function()
+        local ____ok_12, ____result_12 = pcall(function()
             ____value_12 = __K2L_Text.trimWith("bc", 3, function(c)
                 if c == "b" and x > 1 then
                     __K2L_Jump(____jump_12, 1, x * 100)
@@ -339,7 +337,7 @@ local function labeledToLambda()
         do
             local ____jump_13 = __K2L_NewJump()
             local ____value_13
-            local ____ok_13, ____result_13 = __K2L_DeepPcall(function()
+            local ____ok_13, ____result_13 = pcall(function()
                 ____value_13 = __K2L_Text.trimWith(" q ", 3, function(it)
                     if r == 1 then
                         __K2L_Jump(____jump_13, 1)
@@ -361,7 +359,7 @@ local function labeledToLambda()
     do
         local ____jump_14 = __K2L_NewJump()
         local ____value_14
-        local ____ok_14, ____result_15 = __K2L_DeepPcall(function()
+        local ____ok_14, ____result_15 = pcall(function()
             ____value_14 = __K2L_SequenceOf(5, 6):maxOf(function(it)
                 if it == 6 then
                     __K2L_Jump(____jump_14, 1, -6)
@@ -387,11 +385,11 @@ end
 local function nested()
     local ____jump_16 = __K2L_NewJump()
     local ____value_16
-    local ____ok_16, ____result_17 = __K2L_DeepPcall(function()
+    local ____ok_16, ____result_17 = pcall(function()
         ____value_16 = __K2L_Text.trimWith("ab", 3, function(a)
             local ____jump_15 = __K2L_NewJump()
             local ____value_15
-            local ____ok_15, ____result_16 = __K2L_DeepPcall(function()
+            local ____ok_15, ____result_16 = pcall(function()
                 ____value_15 = __K2L_Text.trimWith("cd", 3, function(b)
                     if a == "b" and b == "d" then
                         __K2L_Jump(____jump_15, 1, 42)
@@ -421,12 +419,12 @@ local function nestedThroughTry()
     local log = __K2L_ListOf()
     local ____jump_18 = __K2L_NewJump()
     local ____value_18
-    local ____ok_19, ____result_20 = __K2L_DeepPcall(function()
+    local ____ok_19, ____result_20 = pcall(function()
         ____value_18 = __K2L_Text.trimWith("ab", 3, function(a)
-            local ____ok_17, ____result_18 = __K2L_DeepPcall(function()
+            local ____ok_17, ____result_18 = pcall(function()
                 local ____jump_17 = __K2L_NewJump()
                 local ____value_17
-                local ____ok_18, ____result_19 = __K2L_DeepPcall(function()
+                local ____ok_18, ____result_19 = pcall(function()
                     ____value_17 = __K2L_Text.trimWith("cd", 3, function(b)
                         if a == "a" and b == "c" then
                             __K2L_Jump(____jump_17, 1, "returned through two lambdas and a try, log=" .. __K2L_Str(log))
@@ -442,7 +440,7 @@ local function nestedThroughTry()
                 end
             end)
             if not ____ok_17 then
-                ____ok_17, ____result_18 = __K2L_DeepPcall(function()
+                ____ok_17, ____result_18 = pcall(function()
                     local ____error = __K2L_ToThrowable(____result_18)
                     local e = ____error
                     log:add("caught " .. __K2L_Str(e))
@@ -468,7 +466,7 @@ local function nestedFunction()
     local function inner(s)
         local ____jump_19 = __K2L_NewJump()
         local ____value_19
-        local ____ok_20, ____result_21 = __K2L_DeepPcall(function()
+        local ____ok_20, ____result_21 = pcall(function()
             ____value_19 = __K2L_Text.trimWith(s, 3, function(it)
                 if it == "!" then
                     __K2L_Jump(____jump_19, 1, 1)
@@ -490,7 +488,7 @@ end
 local function tailValue(xs)
     local ____jump_20 = __K2L_NewJump()
     local ____value_20
-    local ____ok_21, ____result_22 = __K2L_DeepPcall(function()
+    local ____ok_21, ____result_22 = pcall(function()
         ____value_20 = __K2L_AsSequence(xs):sumOf(function(it)
             if it > 10 then
                 __K2L_Jump(____jump_20, 1, it)
@@ -512,7 +510,7 @@ end
 local function unitFunction(log)
     local ____jump_21 = __K2L_NewJump()
     local ____value_21
-    local ____ok_22, ____result_23 = __K2L_DeepPcall(function()
+    local ____ok_22, ____result_23 = pcall(function()
         ____value_21 = __K2L_Text.trimWith("bac", 3, function(it)
             if it == "b" then
                 log:add("leaving")
@@ -534,16 +532,16 @@ local function throughTryCatch()
     local log = __K2L_ListOf()
     local ____jump_22 = __K2L_NewJump()
     local ____value_22
-    local ____ok_24, ____result_25 = __K2L_DeepPcall(function()
+    local ____ok_24, ____result_25 = pcall(function()
         ____value_22 = __K2L_Text.trimWith("abc", 3, function(c)
-            local ____ok_23, ____result_24 = __K2L_DeepPcall(function()
+            local ____ok_23, ____result_24 = pcall(function()
                 if c == "c" then
                     __K2L_Jump(____jump_22, 1, "returned through try, log=" .. __K2L_Str(log))
                 end
                 log:add("try " .. c)
             end)
             if not ____ok_23 then
-                ____ok_23, ____result_24 = __K2L_DeepPcall(function()
+                ____ok_23, ____result_24 = pcall(function()
                     local ____error_1 = __K2L_ToThrowable(____result_24)
                     local e = ____error_1
                     log:add("caught " .. __K2L_Str(e))
@@ -567,10 +565,10 @@ end
 
 local function tryAroundCall()
     local log = __K2L_ListOf()
-    local ____ok_25, ____result_26, ____returned_25 = __K2L_DeepPcall(function()
+    local ____ok_25, ____result_26, ____returned_25 = pcall(function()
         local ____jump_23 = __K2L_NewJump()
         local ____value_23
-        local ____ok_26, ____result_27 = __K2L_DeepPcall(function()
+        local ____ok_26, ____result_27 = pcall(function()
             ____value_23 = __K2L_Text.trimWith("abc", 3, function(it)
                 if it == "c" then
                     __K2L_Jump(____jump_23, 1, "returned, log=" .. __K2L_Str(log))
@@ -587,7 +585,7 @@ local function tryAroundCall()
         end
     end)
     if not ____ok_25 then
-        ____ok_25, ____result_26, ____returned_25 = __K2L_DeepPcall(function()
+        ____ok_25, ____result_26, ____returned_25 = pcall(function()
             local ____error_2 = __K2L_ToThrowable(____result_26)
             local e = ____error_2
             log:add("caught")
@@ -621,11 +619,11 @@ end
 local function throughUse(log)
     local ____jump_24 = __K2L_NewJump()
     local ____value_24
-    local ____ok_28, ____result_30 = __K2L_DeepPcall(function()
+    local ____ok_28, ____result_30 = pcall(function()
         ____value_24 = __K2L_Text.trimWith("abc", 3, function(c)
             local ____resource = Resource.new("r" .. c, log)
             local ____result_28
-            local ____ok_27, ____result_29 = __K2L_DeepPcall(function()
+            local ____ok_27, ____result_29 = pcall(function()
                 if c == "c" then
                     __K2L_Jump(____jump_24, 1, 7)
                 end
@@ -652,12 +650,12 @@ end
 
 local function throughRunCatching()
     local ____outcome
-    local ____ok_29, ____result_31, ____returned_29 = __K2L_DeepPcall(function()
+    local ____ok_29, ____result_31, ____returned_29 = pcall(function()
         local ____result_32
         do
             local ____jump_25 = __K2L_NewJump()
             local ____value_25
-            local ____ok_30, ____result_33 = __K2L_DeepPcall(function()
+            local ____ok_30, ____result_33 = pcall(function()
                 ____value_25 = __K2L_Text.trimWith("abc", 3, function(it)
                     if it == "c" then
                         __K2L_Jump(____jump_25, 1, "returned out of runCatching")
@@ -705,7 +703,7 @@ local function inSequenceBuilder()
         for i = 1, 5 do
             local ____jump_26 = __K2L_NewJump()
             local ____value_26
-            local ____ok_31, ____result_34 = __K2L_DeepPcall(function()
+            local ____ok_31, ____result_34 = pcall(function()
                 ____value_26 = __K2L_SequenceOf(i):maxOf(function(it)
                     if i == 4 then
                         __K2L_Jump(____jump_26, 1)
@@ -729,7 +727,7 @@ local function yieldsInsideClosure()
         for i = 1, 3 do
             local ____jump_27 = __K2L_NewJump()
             local ____value_27
-            local ____ok_32, ____result_35 = __K2L_DeepPcall(function()
+            local ____ok_32, ____result_35 = pcall(function()
                 ____value_27 = __K2L_Text.trimWith("ab", 3, function(c)
                     ____this:yield(i * 10 + c:byte() - 97)
                     if i == 2 then
@@ -751,8 +749,8 @@ end
 local function main()
     print(trimOut("  a! "))
     print(trimOut("  a "))
-    print(maxOrStop(__K2L_ReadOnlyListOf(1, 5, 3)))
-    print(maxOrStop(__K2L_ReadOnlyListOf(1, -5, 3)))
+    print(maxOrStop(__K2L_ListOf(1, 5, 3)))
+    print(maxOrStop(__K2L_ListOf(1, -5, 3)))
     print(firstSquareOver(50))
     print(__K2L_Str(sequenceTerminals()))
     print(mapCatchingOut(__K2L_Result.success(1)))
@@ -765,8 +763,8 @@ local function main()
     print(nested())
     print(nestedThroughTry())
     print(nestedFunction())
-    print(tailValue(__K2L_ReadOnlyListOf(1, 2)))
-    print(tailValue(__K2L_ReadOnlyListOf(1, 20)))
+    print(tailValue(__K2L_ListOf(1, 2)))
+    print(tailValue(__K2L_ListOf(1, 20)))
     local log = __K2L_ListOf()
     unitFunction(log)
     print(__K2L_Str(log))
@@ -781,5 +779,5 @@ local function main()
     print(__K2L_Str(yieldsInsideClosure()))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {trimOut = trimOut, maxOrStop = maxOrStop, firstSquareOver = firstSquareOver, sequenceTerminals = sequenceTerminals, mapCatchingOut = mapCatchingOut, breaksAndContinues = breaksAndContinues, jumpsFromOneLambda = jumpsFromOneLambda, labeledToLambda = labeledToLambda, nested = nested, nestedThroughTry = nestedThroughTry, nestedFunction = nestedFunction, tailValue = tailValue, unitFunction = unitFunction, throughTryCatch = throughTryCatch, tryAroundCall = tryAroundCall, Resource = Resource, throughUse = throughUse, throughRunCatching = throughRunCatching, failureStillCaught = failureStillCaught, inSequenceBuilder = inSequenceBuilder, yieldsInsideClosure = yieldsInsideClosure}

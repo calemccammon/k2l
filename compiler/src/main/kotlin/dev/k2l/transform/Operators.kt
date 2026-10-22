@@ -100,7 +100,7 @@ internal fun FileTransformer.cast(e: KtBinaryExpressionWithTypeRHS): LuaExpr = w
         if (!castNeedsCheck(e, type)) return value
         val v = cache(value, "cast")
         val test = typeTest(v, type, e) // `as String?` lets null through
-        val fail = lualibCall("CastFail", v, LuaString(jvmClassName(type)), LuaString(kotlinClassName(type)))
+        val fail = lualibCall("CastFail", v, LuaString(kotlinClassName(type)))
         emit(LuaIf(negate(test), listOf(LuaCallStmt(fail))))
         return v
     }
@@ -127,28 +127,6 @@ private fun FileTransformer.castNeedsCheck(e: KtBinaryExpressionWithTypeRHS, typ
     val source = left.expressionType
     val smart = left.smartCastInfo?.smartCastType
     return listOfNotNull(source, smart).none { it.isSubtypeOf(type) }
-}
-
-private val JVM_NAMES = mapOf(
-    "kotlin/String" to "java.lang.String", "kotlin/Int" to "java.lang.Integer", "kotlin/Long" to "java.lang.Long",
-    "kotlin/Double" to "java.lang.Double", "kotlin/Float" to "java.lang.Float", "kotlin/Boolean" to "java.lang.Boolean",
-    "kotlin/Char" to "java.lang.Character", "kotlin/Short" to "java.lang.Short", "kotlin/Byte" to "java.lang.Byte",
-    "kotlin/Any" to "java.lang.Object", "kotlin/collections/List" to "java.util.List",
-    "kotlin/collections/MutableList" to "java.util.List", "kotlin/collections/Set" to "java.util.Set",
-    "kotlin/collections/MutableSet" to "java.util.Set", "kotlin/collections/Map" to "java.util.Map",
-    "kotlin/collections/MutableMap" to "java.util.Map", "kotlin/Throwable" to "java.lang.Throwable",
-)
-
-internal fun FileTransformer.jvmClassName(type: KaType): String = with(session) {
-    val symbol = type.expandedSymbol
-    val psi = symbol?.psi as? KtClassOrObject
-    val id = symbol?.classId?.asString()
-    return when {
-        psi != null && classes.isSource(psi) -> binaryName(psi)
-        id in JVM_NAMES -> JVM_NAMES.getValue(id!!)
-        id != null -> id.replace('/', '.').let { if (it.startsWith("kotlin.")) "java.lang." + it.removePrefix("kotlin.") else it }
-        else -> type.pretty()
-    }
 }
 
 internal fun FileTransformer.kotlinClassName(type: KaType): String = with(session) {

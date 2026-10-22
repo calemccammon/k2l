@@ -43,7 +43,6 @@ internal fun FileTransformer.transformChunk(): LuaChunk {
 
     val requires = ctx.imports.map { (path, name) -> LuaLocal(listOf(name), listOf(luaCall(LuaName("require"), LuaString(path)))) }
     body.addAll(requiresAt, requires)
-    body.addAll(requiresAt + requires.size, hoistedLongs())
     exportsReturn(exported)?.let { body += it }
     return LuaChunk(body)
 }
@@ -89,17 +88,13 @@ private fun FileTransformer.mainInvocation(main: KtNamedFunction): LuaStmt {
     }
     val name = LuaName(naming.of(main))
 
-    // An uncaught error prints as on the JVM and exits with status 1 (Uncaught.lua); with --source-map its traceback
-    // shows Kotlin positions, since the source-map runtime rewrites debug.traceback.
-    fun run() = lualibRef("Uncaught", "__K2L_Main")
-    if (main.hasModifier(KtTokens.SUSPEND_KEYWORD)) {
-        return LuaCallStmt(LuaCall(run(), listOf(lualibRef(COROUTINES_FEATURE, "__K2L_RunSuspend"), name) + args))
+    val call = if (main.hasModifier(KtTokens.SUSPEND_KEYWORD)) {
+        listOf(lualibRef(COROUTINES_FEATURE, "__K2L_RunSuspend"), name) + args
+    } else {
+        listOf(name) + args
     }
-    // protected calls nested deeper than Lua's C stack allows run in coroutines the driver resumes (DeepPcall.lua)
-    if (module.usesTry && target.drivesDeepPcall) {
-        return LuaCallStmt(LuaCall(lualibRef("DeepPcall", "__K2L_DeepMain"), listOf(name) + args))
-    }
-    return LuaCallStmt(LuaCall(run(), listOf(name) + args))
+    // An uncaught error prints the exception's string and the traceback, and exits with status 1 (RunMain.lua)
+    return LuaCallStmt(LuaCall(lualibRef("RunMain", "__K2L_RunMain"), call))
 }
 
 /** The chunk's `return`: the exports table, or a table of the [exported] declarations when not in table mode. */

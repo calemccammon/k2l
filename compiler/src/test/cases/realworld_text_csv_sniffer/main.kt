@@ -55,7 +55,9 @@ fun splitRecords(text: String, d: Char, q: Char): List<List<String>> {
 
 fun sniff(sample: String): Dialect {
     val candidates = listOf(',', ';', '\t', '|', ':')
-    val quote = listOf('"', '\'').maxBy { q -> Regex("${Regex.escape(q.toString())}[^\\n]*?${Regex.escape(q.toString())}").findAll(sample).count() }
+    // a regex is a compile-time constant: one per quote character
+    val quoted = mapOf('"' to Regex("\"[^\\n]*?\""), '\'' to Regex("'[^\\n]*?'"))
+    val quote = quoted.keys.maxBy { q -> quoted.getValue(q).findAll(sample).count() }
     // the delimiter giving the most consistent, non-trivial field counts wins
     val best = candidates.map { d ->
         val counts = splitRecords(sample, d, quote).filter { it.any(String::isNotBlank) }.map { it.size }

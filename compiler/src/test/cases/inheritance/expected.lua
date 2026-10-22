@@ -1,14 +1,13 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_Str = ____lualib.__K2L_Str
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 
 local arrayOfShapes
 local Shape = __K2L_Class("Shape")
 
 function Shape:describe()
-    return self.name .. " with area " .. __K2L_Str(self:area())
+    return self.name .. " with area " .. self:area()
 end
 
 local Named = __K2L_Class("Named")
@@ -108,9 +107,9 @@ local function kind(s)
     if ____mt == Square then
         return "square"
     elseif __K2L_InstanceOf(s, Rect) then
-        return "rect " .. __K2L_Str(s.w) .. "x" .. __K2L_Str(s.h)
+        return "rect " .. s.w .. "x" .. s.h
     elseif ____mt == Circle then
-        return "circle r=" .. __K2L_Str(s.r)
+        return "circle r=" .. s.r
     else
         return "unknown"
     end
@@ -142,5 +141,5 @@ function arrayOfShapes()
     return Rect.new(1.0, 1.0)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Shape = Shape, Named = Named, Polygon = Polygon, Rect = Rect, Square = Square, Circle = Circle, Animal = Animal, Dog = Dog, kind = kind, arrayOfShapes = arrayOfShapes}

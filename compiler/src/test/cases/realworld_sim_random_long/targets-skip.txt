@@ -1,0 +1,1 @@
+JIT: Long bit operations above 2^53 on doubles give results that depend on the LuaJIT build

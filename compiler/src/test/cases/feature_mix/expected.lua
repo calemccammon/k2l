@@ -1,11 +1,11 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Lazy = ____lualib.__K2L_Lazy
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_ObservableProperty = ____lualib.__K2L_ObservableProperty
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Priced = __K2L_Class("Priced")
@@ -141,17 +141,13 @@ local function main()
         ____out[____count] = getLabel(it)
     end
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
-    local items = __K2L_ReadOnlyListOf(Item.new("plain"), Special.new("fancy"))
-    local ____mod = items.____modCount
+    local items = __K2L_ListOf(Item.new("plain"), Special.new("fancy"))
     for ____i_1 = 1, items.size do
         local item = items[____i_1]
         print(item:getShown())
-        if items.____modCount ~= ____mod and items:____comodified(____i_1) then
-            break
-        end
     end
     print(shop:getSales())
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Priced = Priced, Size = Size, getLabel = getLabel, Shop = Shop, getTag = getTag, Item = Item, Special = Special}

@@ -13,7 +13,7 @@ data class FnKey(val source: String, val lineDefined: Int)
  * source map, lines of `lualib_bundle.lua` to the lualib file they come from (`Collections.lua:412`) and the function
  * defined there (`HashMap:get`).
  */
-class Attribution(outputs: List<LuaOutput>, private val kotlinSource: File, lualibDir: File, target: LuaTarget, emulateLong64: Boolean) {
+class Attribution(outputs: List<LuaOutput>, private val kotlinSource: File, lualibDir: File, target: LuaTarget) {
     private class Span(val feature: String, val file: String, val startLine: Int, val endLine: Int, val fileOffset: Int)
 
     private val program = outputs.first { it.path == "main.lua" }
@@ -21,7 +21,7 @@ class Attribution(outputs: List<LuaOutput>, private val kotlinSource: File, lual
     private val mappings = program.sourceMap?.lines.orEmpty()
     private val kotlinLines = kotlinSource.readLines()
     private val bundleLines = outputs.firstOrNull { it.path == "${Lualib.BUNDLE_MODULE}.lua" }?.code?.lines().orEmpty()
-    private val spans: List<Span> = locateFeatures(outputs, lualibDir, target, emulateLong64)
+    private val spans: List<Span> = locateFeatures(outputs, lualibDir, target)
 
     fun isProgram(source: String) = source == program.path
 
@@ -110,11 +110,11 @@ class Attribution(outputs: List<LuaOutput>, private val kotlinSource: File, lual
         }
 
         /** Where each feature's code sits in the bundle; a feature's code appears verbatim, followed by its exports. */
-        fun locateFeatures(outputs: List<LuaOutput>, lualibDir: File, target: LuaTarget, emulate: Boolean): List<Span> {
+        fun locateFeatures(outputs: List<LuaOutput>, lualibDir: File, target: LuaTarget): List<Span> {
             val bundle = outputs.firstOrNull { it.path == "${Lualib.BUNDLE_MODULE}.lua" }?.code ?: return emptyList()
             val names = lualibDir.listFiles().orEmpty().map { it.name.substringBefore('.') }.distinct()
             return names.mapNotNull { name ->
-                val feature = runCatching { Lualib.feature(name, target, emulate) }.getOrNull() ?: return@mapNotNull null
+                val feature = runCatching { Lualib.feature(name, target) }.getOrNull() ?: return@mapNotNull null
                 val index = bundle.indexOf("\n" + feature.code + "\n")
                 if (index < 0) return@mapNotNull null
                 val start = bundle.substring(0, index + 1).count { it == '\n' } + 1

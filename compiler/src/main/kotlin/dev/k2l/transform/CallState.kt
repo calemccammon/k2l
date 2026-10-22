@@ -17,6 +17,9 @@ internal class CallState {
     /** Function values returning Unit passed where a function with a result is expected, see [noteUnitResult]. */
     val unitResults = HashSet<KtExpression>()
 
+    /** Nullable arguments for a parameter whose default is not null: a null is passed as a marker, see [nullArgument]. */
+    val nullArguments = HashSet<KtExpression>()
+
     /** Values substituted for receiver expressions, e.g. the cached receiver of `a?.b`. */
     val overrides = HashMap<KtExpression, LuaExpr>()
 

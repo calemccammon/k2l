@@ -1,55 +1,40 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_Duration = ____lualib.__K2L_Duration
-local __K2L_DurationUnit = ____lualib.__K2L_DurationUnit
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IndexedValue = ____lualib.__K2L_IndexedValue
-local __K2L_JavaUtil = ____lualib.__K2L_JavaUtil
-local __K2L_KotlinVersion = ____lualib.__K2L_KotlinVersion
 local __K2L_List = ____lualib.__K2L_List
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Object = ____lualib.__K2L_Object
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_StringJoiner = ____lualib.__K2L_StringJoiner
-local __K2L_TestTimeSource = ____lualib.__K2L_TestTimeSource
+local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 
-local ____lambda_1 = function(____p1) return __K2L_StringJoiner.new(____p1) end
+local ____lambda_1 = function(____p1)
+    return __K2L_StringBuilder.new(__K2L_Str(____p1))
+end
 local ____lambda_2 = function() return __K2L_List.new() end
-local ____lambda_3 = function() return __K2L_TestTimeSource.new() end
-local ____lambda_4 = function(____p1, ____p2)
+local ____lambda_3 = function(____p1, ____p2)
     return __K2L_IndexedValue.new(____p1, ____p2)
 end
-local ____lambda_5 = function(____p1, ____p2, ____p3)
-    return __K2L_KotlinVersion.new(____p1, ____p2, ____p3)
-end
-local ____lambda_6 = function() return __K2L_Object.new() end
-local ____lambda_7 = function(____p1, ____p2)
+local ____lambda_4 = function() return __K2L_Object.new() end
+local ____lambda_5 = function(____p1, ____p2)
     return __K2L_Pair.new(____p1, ____p2)
 end
 local function main()
-    local joiner = ____lambda_1
-    print(__K2L_Str(joiner(", "):add("a"):add("b")))
-    local stacks = ____lambda_2
-    local s = stacks()
-    __K2L_JavaUtil.push(s, 1)
-    __K2L_JavaUtil.push(s, 2)
-    print(__K2L_Str(__K2L_JavaUtil.pop(s)) .. " " .. __K2L_Str(s))
-    local clock = ____lambda_3
-    local source = clock()
-    local mark = source:markNow()
-    source:plusAssign(__K2L_Duration.ofWhole(3, __K2L_DurationUnit.SECONDS))
-    print(__K2L_Str(mark:elapsedNow()))
-    local indexed = ____lambda_4
-    print(__K2L_Str(__K2L_ReadOnlyListOf("x", "y"):mapIndexed(indexed)))
-    local version = ____lambda_5
-    print(__K2L_Compare(version(1, 9, 0), __K2L_KotlinVersion.new(2, 0)) < 0)
+    local builder = ____lambda_1
+    print(__K2L_Str(builder("ab"):append("c")))
+    local lists = ____lambda_2
+    local s = lists()
+    s:add(1)
+    s:add(2)
+    print(s:removeLast() .. " " .. __K2L_Str(s))
+    local indexed = ____lambda_3
+    print(__K2L_Str(__K2L_ListOf("x", "y"):mapIndexed(indexed)))
     local ____out = {}
     for ____i = 1, 2 do
         local it = ____i - 1
-        ____out[____i] = ____lambda_6
+        ____out[____i] = ____lambda_4
     end
     local ____list = __K2L_ListWrap(____out, 2)
     local ____out_1 = {}
@@ -62,8 +47,8 @@ local function main()
     end
     local anys = __K2L_ListWrap(____out_1, ____count)
     print(__K2L_Equals(anys:get(0), anys:get(1)))
-    local pair = ____lambda_7
-    local ____list_1 = __K2L_ReadOnlyListOf(__K2L_Pair.new(1, "a"), __K2L_Pair.new(2, "b"))
+    local pair = ____lambda_5
+    local ____list_1 = __K2L_ListOf(__K2L_Pair.new(1, "a"), __K2L_Pair.new(2, "b"))
     local ____out_2 = {}
     local ____count_1 = 0
     local ____items_1, ____n_1 = ____list_1:____array()
@@ -80,4 +65,4 @@ local function main()
     print(__K2L_Str(__K2L_ListWrap(____out_2, ____count_1)))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)

@@ -1,8 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_Text = ____lualib.__K2L_Text
@@ -94,7 +93,7 @@ function Counter:getScaled(____this_11)
 end
 
 function Counter:setScaled(____this_11, v)
-    self.count = __K2L_IDiv(v, ____this_11 == 0 and 1 or ____this_11)
+    self.count = v // (____this_11 == 0 and 1 or ____this_11)
 end
 
 function Counter:demo()
@@ -299,5 +298,5 @@ local function main()
     print(Maybe.new(nil):show())
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Builder = Builder, Counter = Counter, Formatter = Formatter, Loud = Loud, Plainer = Plainer, Registry = Registry, Outer = Outer, Html = Html, html = html, Maybe = Maybe, Vec = Vec}

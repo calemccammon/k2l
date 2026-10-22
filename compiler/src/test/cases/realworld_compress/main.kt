@@ -1,7 +1,59 @@
-import java.util.PriorityQueue
-
-// Compression toolkit: Huffman coding with a PriorityQueue of sealed tree nodes, LZ77-style tokens,
+// Compression toolkit: Huffman coding with a binary heap of sealed tree nodes, LZ77-style tokens,
 // base-64 encoding by hand, CRC-32, and a memoizing function wrapper.
+
+/** A binary min-heap by [comparator]: the part of java.util.PriorityQueue the program uses (k2l has no PriorityQueue). */
+class MinQueue<T>(private val comparator: Comparator<in T>) {
+    private val heap = ArrayList<T>()
+    val size: Int get() = heap.size
+
+    fun isEmpty() = heap.isEmpty()
+
+    fun isNotEmpty() = heap.isNotEmpty()
+
+    fun peek(): T? = heap.firstOrNull()
+
+    fun add(item: T): Boolean {
+        heap.add(item)
+        var i = heap.size - 1
+        while (i > 0) {
+            val parent = (i - 1) / 2
+            if (comparator.compare(heap[i], heap[parent]) >= 0) break
+            val t = heap[i]
+            heap[i] = heap[parent]
+            heap[parent] = t
+            i = parent
+        }
+        return true
+    }
+
+    fun offer(item: T) = add(item)
+
+    operator fun plusAssign(item: T) {
+        add(item)
+    }
+
+    fun poll(): T {
+        if (heap.isEmpty()) throw NoSuchElementException("queue is empty")
+        val top = heap[0]
+        val last = heap.removeAt(heap.size - 1)
+        if (heap.isNotEmpty()) {
+            heap[0] = last
+            var i = 0
+            while (true) {
+                val l = 2 * i + 1
+                if (l >= heap.size) break
+                val r = l + 1
+                val c = if (r < heap.size && comparator.compare(heap[r], heap[l]) < 0) r else l
+                if (comparator.compare(heap[c], heap[i]) >= 0) break
+                val t = heap[i]
+                heap[i] = heap[c]
+                heap[c] = t
+                i = c
+            }
+        }
+        return top
+    }
+}
 
 sealed class Node(val weight: Int) : Comparable<Node> {
     abstract val minChar: Char
@@ -17,7 +69,7 @@ sealed class Node(val weight: Int) : Comparable<Node> {
 }
 
 fun buildTree(text: String): Node {
-    val queue = PriorityQueue<Node>()
+    val queue = MinQueue<Node>(naturalOrder())
     text.groupingBy { it }.eachCount().forEach { (c, n) -> queue.add(Node.Leaf(c, n)) }
     if (queue.size == 1) return Node.Branch(queue.poll(), Node.Leaf('\u0000', 0))
     while (queue.size > 1) {
@@ -25,7 +77,7 @@ fun buildTree(text: String): Node {
         val b = queue.poll()
         queue.add(Node.Branch(a, b))
     }
-    return queue.single()
+    return queue.poll()
 }
 
 fun codes(node: Node, prefix: String = "", out: MutableMap<Char, String> = sortedMapOf()): Map<Char, String> {
@@ -147,8 +199,8 @@ fun main() {
         val back = unbase64(enc).map { it.toChar() }.joinToString("")
         println("base64('$s') = '$enc' -> '$back' crc=${crc32(bytes).toString(16).padStart(8, '0')}")
     }
-    println("crc32('123456789') = ${crc32("123456789".map { it.code })} (0x${java.lang.Long.toHexString(crc32("123456789".map { it.code }))})")
-    println("table: ${CRC_TABLE.take(4).map { Integer.toHexString(it) }}")
+    println("crc32('123456789') = ${crc32("123456789".map { it.code })} (0x${crc32("123456789".map { it.code }).toString(16)})")
+    println("table: ${CRC_TABLE.take(4).map { it.toString(16) }}")
 
     val fast = slowSquare.memoized()
     val results = listOf(3, 4, 3, 3, 5, 4).map(fast)

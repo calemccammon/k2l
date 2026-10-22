@@ -1,7 +1,6 @@
-import java.util.TreeMap
 
 // A package manager's dependency resolver: semantic versions with Comparable and ranges,
-// constraint parsing, a registry backed by TreeMap, backtracking resolution and a lock file.
+// constraint parsing, a registry backed by sorted maps, backtracking resolution and a lock file.
 
 data class Version(val major: Int, val minor: Int = 0, val patch: Int = 0, val pre: String? = null) : Comparable<Version> {
     override fun compareTo(other: Version): Int = compareValuesBy(this, other, { it.major }, { it.minor }, { it.patch })
@@ -23,11 +22,17 @@ data class Version(val major: Int, val minor: Int = 0, val patch: Int = 0, val p
     enum class Part { MAJOR, MINOR, PATCH }
 
     companion object {
-        private val PATTERN = Regex("""(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([\w.]+))?""")
+        // MAJOR[.MINOR[.PATCH]][-PRE]: Lua patterns have no optional groups, so the parts are split off
+        private val NUMBER = Regex("""\d+""")
+        private val PRE = Regex("""[\w.]+""")
         fun parse(s: String): Version {
-            val m = PATTERN.matchEntire(s.trim()) ?: throw IllegalArgumentException("invalid version '$s'")
-            val (a, b, c, pre) = m.destructured
-            return Version(a.toInt(), b.toIntOrNull() ?: 0, c.toIntOrNull() ?: 0, pre.ifEmpty { null })
+            val text = s.trim()
+            val numbers = text.substringBefore('-').split('.')
+            val pre = text.substringAfter('-', "")
+            if (numbers.size > 3 || !numbers.all { it.matches(NUMBER) } || ('-' in text && !pre.matches(PRE))) {
+                throw IllegalArgumentException("invalid version '$s'")
+            }
+            return Version(numbers[0].toInt(), numbers.getOrNull(1)?.toInt() ?: 0, numbers.getOrNull(2)?.toInt() ?: 0, pre.ifEmpty { null })
         }
     }
 }
@@ -75,22 +80,22 @@ sealed interface Constraint {
 }
 
 class Registry {
-    private val packages = HashMap<String, TreeMap<Version, Map<String, Constraint>>>()
+    private val packages = HashMap<String, java.util.SortedMap<Version, Map<String, Constraint>>>()
 
     fun publish(name: String, version: String, vararg deps: Pair<String, String>) {
-        val versions = packages.getOrPut(name) { TreeMap() }
+        val versions = packages.getOrPut(name) { sortedMapOf() }
         val v = version.toVersion()
         check(v !in versions) { "$name@$v already published" }
         versions[v] = deps.associate { (n, c) -> n to Constraint.parse(c) }
     }
 
     fun candidates(name: String, c: Constraint): List<Version> =
-        packages[name]?.descendingKeySet()?.filter(c::allows) ?: throw NoSuchElementException("unknown package '$name'")
+        packages[name]?.keys?.reversed()?.filter(c::allows) ?: throw NoSuchElementException("unknown package '$name'")
 
     fun deps(name: String, v: Version): Map<String, Constraint> = packages.getValue(name).getValue(v)
 
-    fun latest(name: String): Version? = packages[name]?.lastKey()
-    fun before(name: String, v: Version): Version? = packages[name]?.lowerKey(v)
+    fun latest(name: String): Version? = packages[name]?.keys?.lastOrNull()
+    fun before(name: String, v: Version): Version? = packages[name]?.keys?.lastOrNull { it < v }
 }
 
 class ResolutionException(msg: String) : RuntimeException(msg)

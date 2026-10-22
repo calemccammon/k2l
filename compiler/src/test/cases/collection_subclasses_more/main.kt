@@ -120,7 +120,7 @@ class DefaultMap : HashMap<String, Int>() {
     override fun get(key: String): Int = super.get(key) ?: 0
 }
 
-class Lru(private val capacity: Int) : LinkedHashMap<String, Int>(16, 0.75f, true) {
+class Lru(private val capacity: Int) : LinkedHashMap<String, Int>() {
     override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Int>?): Boolean = size > capacity
 }
 
@@ -212,7 +212,7 @@ fun concrete() {
     s.add(2)
     s.addAll(listOf(3, 4))
     s += 5
-    println("$s ${s.peek()} ${s.size} pushes=${s.pushes} ${s.sum()} ${s.reversed()} ${s.javaClass.simpleName} ${(s as Any) is ArrayList<*>}")
+    println("$s ${s.peek()} ${s.size} pushes=${s.pushes} ${s.sum()} ${s.reversed()} ${s::class.simpleName} ${(s as Any) is ArrayList<*>}")
     s.removeAt(0)
     s.remove(4)
     s[0] = 20

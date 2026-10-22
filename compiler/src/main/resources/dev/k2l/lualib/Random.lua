@@ -1,96 +1,38 @@
--- requires: Class, Bit, ToInt32, Exceptions, Bits, DoubleToString
--- kotlin.random.Random: Kotlin's XorWow generator, so a seeded Random gives the numbers the JVM gives.
--- Int arithmetic is 32 bits; Long results are exact only where Lua has 64-bit integers (5.3+).
--- __K2L_RandomBase is kotlin.random.Random, the base of the program's own generators: everything is drawn from the
--- abstract nextBits(bitCount) (and nextRaw(), its nextInt(), which is nextBits(32)), as Kotlin's default implementations
--- draw. __K2L_Random is XorWow, whose nextRaw() is its next number and nextBits its upper bits.
+-- requires: Class, Exceptions
+-- kotlin.random.Random. __K2L_RandomBase is the class itself, the base of the program's own generators: everything is
+-- drawn from the abstract nextBits(bitCount), mostly through nextUnit(), a Double in [0, 1) of 53 bits.
+-- Random.Default (__K2L_Random.default()) draws from Lua's math.random. Random(seed) (__K2L_Random) is a linear
+-- congruential generator of k2l's own (see nextBits below): its sequences are the same on every Lua target, but not the
+-- JVM's.
 local __K2L_RandomBase = __K2L_Class("kotlin.random.Random")
-local __K2L_Random = __K2L_Class("kotlin.random.XorWowRandom", __K2L_RandomBase)
+local __K2L_Random = __K2L_Class("kotlin.random.SeededRandom", __K2L_RandomBase)
+local __K2L_DefaultRandom = __K2L_Class("kotlin.random.Random.Default", __K2L_RandomBase)
 
 do
 
--- `str` formats the bounds (Double.toString for nextDouble).
-local function checkRange(from, upTo, str)
+local floor, random = math.floor, math.random
+local TWO_31, TWO_32, TWO_53 = 2147483648, 4294967296, 9007199254740992
+
+local function checkRange(from, upTo)
     if not (upTo > from) then
-        str = str or tostring
-        error(__K2L_IllegalArgumentException.new("Random range is empty: [" .. str(from) .. ", " .. str(upTo) .. ")."))
+        error(__K2L_IllegalArgumentException.new("Random range is empty: [" .. tostring(from) .. ", " .. tostring(upTo) .. ")."))
     end
 end
 
 function __K2L_RandomBase:____init()
 end
 
+-- nextInt(): 32 random bits, as an Int
 function __K2L_RandomBase:nextRaw()
     return self:nextBits(32)
 end
 
-function __K2L_Random:____init(seed1, seed2)
-    self.x, self.y, self.z, self.w = seed1, seed2, 0, 0
-    self.v = __K2L_BNot(seed1)
-    self.addend = __K2L_BXor(__K2L_Shl(seed1, 10), __K2L_Ushr(seed2, 4))
-    for _ = 1, 64 do
-        self:nextRaw()
-    end
+-- a Double in [0, 1), of 53 random bits
+function __K2L_RandomBase:nextUnit()
+    return (self:nextBits(26) * 134217728 + self:nextBits(27)) / TWO_53
 end
 
--- Random(seed: Int)
-function __K2L_Random.seeded(seed)
-    return __K2L_Random.new(seed, seed < 0 and -1 or 0)
-end
-
--- Random(seed: Long)
-function __K2L_Random.seededLong(seed)
-    local low = seed % 4294967296
-    return __K2L_Random.new(__K2L_ToInt32(low), __K2L_ToInt32((seed - low) / 4294967296))
-end
-
-local defaultRandom
-
--- Random.Default
-function __K2L_Random.default()
-    if defaultRandom == nil then
-        local seed = os.time() * 1000 + math.floor(os.clock() * 1000000)
-        defaultRandom = __K2L_Random.seededLong(seed % 2147483647 + 1)
-    end
-    return defaultRandom
-end
-
-function __K2L_Random:nextRaw()
-    local t = self.x
-    t = __K2L_BXor(t, __K2L_Ushr(t, 2))
-    self.x, self.y, self.z = self.y, self.z, self.w
-    local v0 = self.v
-    self.w = v0
-    t = __K2L_BXor(__K2L_BXor(__K2L_BXor(t, __K2L_Shl(t, 1)), v0), __K2L_Shl(v0, 4))
-    self.v = t
-    self.addend = __K2L_ToInt32(self.addend + 362437)
-    return __K2L_ToInt32(t + self.addend)
-end
-
--- nextBits(bitCount): the upper bitCount bits of one draw. XorWow's nextBits draws even for 0 bits (nextInt(1) consumes
--- a number on the JVM).
-function __K2L_Random:nextBits(bitCount)
-    local raw = self:nextRaw()
-    if bitCount == 0 then
-        return 0
-    end
-    return __K2L_Ushr(raw, 32 - bitCount)
-end
-
-local function fastLog2(n)
-    local log = 0
-    while n > 1 do
-        n = (n - n % 2) / 2
-        log = log + 1
-    end
-    return log
-end
-
-local function isPowerOfTwo(n)
-    return 2 ^ fastLog2(n) == n
-end
-
--- nextInt(), nextInt(until) and nextInt(from, until)
+-- nextInt(), nextInt(until) and nextInt(from, until); nextLong the same with Longs
 function __K2L_RandomBase:nextInt(from, upTo)
     if from == nil then
         return self:nextRaw()
@@ -98,31 +40,18 @@ function __K2L_RandomBase:nextInt(from, upTo)
         from, upTo = 0, from
     end
     checkRange(from, upTo)
-    local n = upTo - from
-    -- n is an Int in Kotlin, where 2^31 is Int.MIN_VALUE: a power of two too
-    if n > 0 and n <= 2147483648 then
-        local rnd
-        if isPowerOfTwo(n) then
-            rnd = self:nextBits(fastLog2(n))
-        else
-            local v, bits
-            repeat
-                bits = __K2L_Ushr(self:nextRaw(), 1)
-                v = bits % n
-            until bits - v + (n - 1) <= 2147483647
-            rnd = v
-        end
-        return from + rnd
-    end
-    while true do
-        local rnd = self:nextRaw()
-        if rnd >= from and rnd < upTo then
-            return rnd
-        end
-    end
+    return from + floor(self:nextUnit() * (upTo - from))
 end
 
--- nextInt(range: IntRange); `orNull` true is randomOrNull, false is IntRange.random (NoSuchElementException when empty).
+function __K2L_RandomBase:nextLong(from, upTo)
+    if from == nil then
+        return self:nextBits(32) * TWO_32 + self:nextBits(32) % TWO_32
+    end
+    return self:nextInt(from, upTo)
+end
+
+-- nextInt(range) and nextLong(range); `orNull` true is randomOrNull, false is range.random() (NoSuchElementException when
+-- the range is empty, IllegalArgumentException for nextInt(range))
 function __K2L_RandomBase:nextIntRange(range, orNull)
     local first, last = range.first, range.last
     if last < first then
@@ -131,96 +60,90 @@ function __K2L_RandomBase:nextIntRange(range, orNull)
         end
         local message = "Cannot get random in empty range: " .. first .. ".." .. last
         error((orNull == false and __K2L_NoSuchElementException or __K2L_IllegalArgumentException).new(message))
-    elseif last < 2147483647 then
-        return self:nextInt(first, last + 1)
-    elseif first > -2147483648 then
-        return self:nextInt(first - 1, last) + 1
     end
-    return self:nextRaw()
+    return first + floor(self:nextUnit() * (last - first + 1))
 end
 
-function __K2L_RandomBase:nextLong()
-    local high = self:nextRaw()
-    local low = self:nextRaw()
-    return high * 4294967296 + low
-end
+__K2L_RandomBase.nextLongRange = __K2L_RandomBase.nextIntRange
 
 function __K2L_RandomBase:nextBoolean()
     return self:nextBits(1) ~= 0
 end
 
-local function nextUnit(self)
-    local high = self:nextBits(26)
-    local low = self:nextBits(27)
-    return (high * 134217728 + low) / 9007199254740992
-end
-
 -- nextDouble(), nextDouble(until) and nextDouble(from, until)
 function __K2L_RandomBase:nextDouble(from, upTo)
     if from == nil then
-        return nextUnit(self)
+        return self:nextUnit()
     elseif upTo == nil then
         from, upTo = 0.0, from
     end
-    checkRange(from, upTo, __K2L_DoubleToString)
-    local size = upTo - from
-    local r
-    if size == math.huge and from > -math.huge and upTo < math.huge then
-        local half = nextUnit(self) * (upTo / 2 - from / 2)
-        r = from + half + half
-    else
-        r = from + nextUnit(self) * size
-    end
-    if r >= upTo then
-        return __K2L_Bits.nextDown(upTo)
-    end
-    return r
-end
-
-local function byteOf(v, scale)
-    local b = math.floor(v / scale) % 256
-    if b >= 128 then
-        return b - 256
-    end
-    return b
-end
-
--- nextBytes(array, from, until): four bytes per draw, low byte first, then one draw of the remaining bits, as Kotlin fills them.
-function __K2L_RandomBase:nextBytes(array, from, upTo)
-    local size = array.size
-    from = from or 0
-    upTo = upTo or size
-    if from < 0 or from > size or upTo < 0 or upTo > size then
-        error(__K2L_IllegalArgumentException.new("fromIndex (" .. from .. ") or toIndex (" .. upTo ..
-            ") are out of range: 0.." .. size .. "."))
-    end
-    if from > upTo then
-        error(__K2L_IllegalArgumentException.new("fromIndex (" .. from .. ") must be not greater than toIndex (" .. upTo .. ")."))
-    end
-    local position = from + 1
-    for _ = 1, (upTo - from - (upTo - from) % 4) / 4 do
-        local v = self:nextRaw()
-        array[position], array[position + 1] = byteOf(v, 1), byteOf(v, 256)
-        array[position + 2], array[position + 3] = byteOf(v, 65536), byteOf(v, 16777216)
-        position = position + 4
-    end
-    local remainder = upTo + 1 - position
-    local v = self:nextBits(remainder * 8)
-    local scale = 1
-    for i = 0, remainder - 1 do
-        array[position + i] = byteOf(v, scale)
-        scale = scale * 256
-    end
-    return array
+    checkRange(from, upTo)
+    -- in halves when the size of the range overflows
+    local half = self:nextUnit() * (upTo / 2 - from / 2)
+    local r = from + half + half
+    return r < upTo and r or from
 end
 
 function __K2L_RandomBase:nextFloat()
     return self:nextBits(24) / 16777216
 end
 
--- XorWow's own table holds the shared methods, so that its calls find them in one lookup
-for _, name in ipairs({"nextInt", "nextIntRange", "nextLong", "nextBoolean", "nextDouble", "nextBytes", "nextFloat"}) do
-    __K2L_Random[name] = __K2L_RandomBase[name]
+-- nextBytes(array, from, until): a random Byte for each element
+function __K2L_RandomBase:nextBytes(array, from, upTo)
+    from, upTo = from or 0, upTo or array.size
+    if from < 0 or upTo > array.size or from > upTo then
+        error(__K2L_IllegalArgumentException.new("fromIndex (" .. from .. ") or toIndex (" .. upTo .. ") are out of range: 0.." ..
+            array.size .. "."))
+    end
+    for i = from + 1, upTo do
+        local b = self:nextBits(8)
+        array[i] = b >= 128 and b - 256 or b
+    end
+    return array
+end
+
+-- Random(seed): state' = (A * state + C) mod 2^32. C is odd and A - 1 a multiple of 4, which gives the full period of
+-- 2^32 (Hull and Dobell); A < 2^21 keeps A * state below 2^53, so a step is exact in doubles too. nextBits takes the upper
+-- bits of the state, as the low bits of such a generator repeat with short periods.
+local A, C = 1718273, 2531011
+
+function __K2L_Random:____init(seed)
+    local low = seed % TWO_32
+    self.state = (low + floor((seed - low) / TWO_32)) % TWO_32
+    self:nextBits(32)
+end
+
+function __K2L_Random.seeded(seed)
+    return __K2L_Random.new(seed)
+end
+
+function __K2L_Random:nextBits(bitCount)
+    local state = (A * self.state + C) % TWO_32
+    self.state = state
+    local bits = floor(state / 2 ^ (32 - bitCount))
+    if bitCount == 32 and bits >= TWO_31 then
+        return bits - TWO_32
+    end
+    return bits
+end
+
+-- Random.Default: math.random
+function __K2L_DefaultRandom:nextUnit()
+    return random()
+end
+
+function __K2L_DefaultRandom:nextBits(bitCount)
+    local bits = floor(random() * 2 ^ bitCount)
+    if bitCount == 32 and bits >= TWO_31 then
+        return bits - TWO_32
+    end
+    return bits
+end
+
+local default = __K2L_DefaultRandom.new()
+
+function __K2L_Random.default()
+    return default
 end
 
 end

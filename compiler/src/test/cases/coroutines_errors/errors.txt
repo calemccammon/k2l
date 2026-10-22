@@ -1,2 +1,4 @@
 15:19: Library API 'kotlin.streams.asStream' is not supported yet
   hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see "Calling Lua from Kotlin" in the README)
+15:30: Library API 'java.util.stream.Stream.count' is not supported yet
+  hint: implement it in Kotlin, or bind a Lua function with @LuaExternal (see "Calling Lua from Kotlin" in the README)

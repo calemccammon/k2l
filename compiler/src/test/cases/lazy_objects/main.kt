@@ -139,7 +139,6 @@ fun main() {
     println(Derived.id)
     println("before Service")
     println(Service.Nested.k)
-    println(Service.create("one").javaClass == Service::class.java)
     println(Service.instances)
     println(Quiet.LIMIT)
     println(Quiet.made)

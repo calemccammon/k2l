@@ -1,5 +1,5 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 
 local ____exports = {}
 local isOdd
@@ -77,5 +77,5 @@ ____exports.bump = bump
 ____exports.____end = ____end
 ____exports.outer = outer
 ____exports.unit = unit
-__K2L_Main(main)
+__K2L_RunMain(main)
 return ____exports

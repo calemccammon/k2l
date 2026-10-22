@@ -2,9 +2,6 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -15,17 +12,14 @@ local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
-local __K2L_Num = ____lualib.__K2L_Num
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
 local __K2L_StringLines = ____lualib.__K2L_StringLines
 local __K2L_StringPadEnd = ____lualib.__K2L_StringPadEnd
@@ -106,7 +100,7 @@ function Sale:getMonth()
 end
 
 function Sale:toString()
-    return "Sale(id=" .. self.id .. ", date=" .. self.date .. ", rep=" .. self.rep .. ", region=" .. __K2L_Str(self.region) .. ", product=" .. self.product .. ", units=" .. self.units .. ", unitPrice=" .. __K2L_Str(self.unitPrice) .. ")"
+    return "Sale(id=" .. self.id .. ", date=" .. self.date .. ", rep=" .. self.rep .. ", region=" .. __K2L_Str(self.region) .. ", product=" .. self.product .. ", units=" .. self.units .. ", unitPrice=" .. self.unitPrice .. ")"
 end
 
 function Sale:hashCode()
@@ -114,7 +108,7 @@ function Sale:hashCode()
 end
 
 function Sale:equals(other)
-    return getmetatable(other) == Sale and self.id == other.id and self.date == other.date and self.rep == other.rep and self.region == other.region and self.product == other.product and self.units == other.units and __K2L_DoubleEquals(self.unitPrice, other.unitPrice)
+    return getmetatable(other) == Sale and self.id == other.id and self.date == other.date and self.rep == other.rep and self.region == other.region and self.product == other.product and self.units == other.units and self.unitPrice == other.unitPrice
 end
 
 local RAW = "id,date,rep,region,product,units,unit_price\n1,2024-01-05,\"Smith, Anna\",North,Widget,12,2.50\n2,2024-01-09,Bob Jones,South,Gadget,3,19.99\n3,2024-01-17,\"Smith, Anna\",North,Gizmo,7,7.25\n4,2024-02-02,Carla Diaz,East,Widget,40,2.45\n5,2024-02-11,Bob Jones,South,Widget,15,2.50\n6,2024-02-14,\"O\"\"Brien, Pat\",West,Gadget,2,21.00\n7,2024-02-28,Carla Diaz,East,Gizmo,9,7.00\n8,2024-03-03,\"Smith, Anna\",North,Gadget,5,19.50\n9,2024-03-15,Dev Patel,West,Widget,-4,2.50\n10,2024-03-19,Dev Patel,Weast,Gizmo,4,7.10\n11,2024-03-21,Bob Jones,South,Gizmo,11,6.95\n12,2024-03-30,\"O\"\"Brien, Pat\",West,Widget,25,2.40\n13,2024-03-31,Carla Diaz,East,Gadget,6,\n"
@@ -190,7 +184,7 @@ function RowResult.Bad:equals(other)
 end
 
 local function parseRow(lineNo, header, line)
-    local ____ok, ____result_1, ____returned = __K2L_DeepPcall(function()
+    local ____ok, ____result_1, ____returned = pcall(function()
         local cols = header:zip(parseCsvLine(line)):toMap()
         local function col(name)
             local ____receiver = cols:get(name)
@@ -237,7 +231,7 @@ function Stats.new(count, mean, median, stdDev, min, max)
 end
 
 function Stats:toString()
-    return "Stats(count=" .. self.count .. ", mean=" .. __K2L_Str(self.mean) .. ", median=" .. __K2L_Str(self.median) .. ", stdDev=" .. __K2L_Str(self.stdDev) .. ", min=" .. __K2L_Str(self.min) .. ", max=" .. __K2L_Str(self.max) .. ")"
+    return "Stats(count=" .. self.count .. ", mean=" .. self.mean .. ", median=" .. self.median .. ", stdDev=" .. self.stdDev .. ", min=" .. self.min .. ", max=" .. self.max .. ")"
 end
 
 function Stats:hashCode()
@@ -245,7 +239,7 @@ function Stats:hashCode()
 end
 
 function Stats:equals(other)
-    return getmetatable(other) == Stats and self.count == other.count and __K2L_DoubleEquals(self.mean, other.mean) and __K2L_DoubleEquals(self.median, other.median) and __K2L_DoubleEquals(self.stdDev, other.stdDev) and __K2L_DoubleEquals(self.min, other.min) and __K2L_DoubleEquals(self.max, other.max)
+    return getmetatable(other) == Stats and self.count == other.count and self.mean == other.mean and self.median == other.median and self.stdDev == other.stdDev and self.min == other.min and self.max == other.max
 end
 
 local function stats(self)
@@ -254,7 +248,7 @@ local function stats(self)
     end
     local sorted = self:sorted()
     local mean = self:average()
-    local median = (self.size >= 0 and self.size % 2 or 0 - -self.size % 2) == 1 and sorted:get(self.size >= 0 and self.size // 2 or 0 - -self.size // 2) or (sorted:get((self.size >= 0 and self.size // 2 or 0 - -self.size // 2) - 1) + sorted:get(self.size >= 0 and self.size // 2 or 0 - -self.size // 2)) / 2
+    local median = self.size % 2 == 1 and sorted:get(self.size // 2) or (sorted:get(self.size // 2 - 1) + sorted:get(self.size // 2)) / 2
     local ____sum = 0.0
     local ____items, ____n = self:____array()
     for ____i_1 = 1, ____n do
@@ -266,13 +260,13 @@ local function stats(self)
 end
 
 local function money(x)
-    return "$" .. __K2L_StringFormat("%,.2f", x)
+    return "$" .. string.format("%s", __K2L_Text.grouped(string.format("%.2f", x)))
 end
 
 local ____lambda_1 = function(it) return __K2L_Text.repeatCount("-", it) end
 local function ____table(headers, rows, rightAlign)
     if rightAlign == nil then
-        rightAlign = __K2L_ReadOnlySetOf()
+        rightAlign = __K2L_SetOf()
     end
     local widths = headers:getIndices():map(function(c)
         return math.max(#headers:get(c), rows:maxOfOrNull(function(it) return #it:get(c) end) or 0)
@@ -292,7 +286,7 @@ local function ____table(headers, rows, rightAlign)
         return __K2L_ListWrap(____out, ____count):joinToString(" | ", "| ", " |")
     end
     local sep = widths:joinToString("-+-", "+-", "-+", nil, nil, ____lambda_1)
-    return __K2L_ReadOnlyListOf(sep, fmt(headers), sep):plusAll(rows:map(fmt)):plus(sep):joinToString("\n")
+    return __K2L_ListOf(sep, fmt(headers), sep):plusAll(rows:map(fmt)):plus(sep):joinToString("\n")
 end
 
 local ____lambda_2 = function(it) return getmetatable(it) == RowResult.Ok end
@@ -351,7 +345,7 @@ local function main()
         local it = ____items_4[____i_5]
         local ____result_3
         if getmetatable(it) ~= RowResult.Ok then
-            __K2L_CastFail(it, "RowResult$Ok", "RowResult.Ok")
+            __K2L_CastFail(it, "RowResult.Ok")
         end
         ____result_3 = it.sale
         ____count_3 = ____count_3 + 1
@@ -394,7 +388,7 @@ local function main()
         end
         return __K2L_Triple.new(rep, ____sum_1, ____sum_2)
     end):sortedWith(____lambda_4)
-    local ____arg = __K2L_ReadOnlyListOf("Rep", "Units", "Revenue")
+    local ____arg = __K2L_ListOf("Rep", "Units", "Revenue")
     local ____out_4 = {}
     local ____count_4 = 0
     local ____items_8, ____n_8 = repRows:____array()
@@ -403,12 +397,12 @@ local function main()
         local ____result_5
         do
             local rep, units, rev = ____it_1.first, ____it_1.second, ____it_1.third
-            ____result_5 = __K2L_ReadOnlyListOf(rep, tostring(units), money(rev))
+            ____result_5 = __K2L_ListOf(rep, tostring(units), money(rev))
         end
         ____count_4 = ____count_4 + 1
         ____out_4[____count_4] = ____result_5
     end
-    print(____table(____arg, __K2L_ListWrap(____out_4, ____count_4), __K2L_ReadOnlySetOf(1, 2)))
+    print(____table(____arg, __K2L_ListWrap(____out_4, ____count_4), __K2L_SetOf(1, 2)))
     print("\nMonthly revenue by region:")
     local ____out_5 = {}
     local ____count_5 = 0
@@ -419,7 +413,7 @@ local function main()
         ____out_5[____count_5] = it:getMonth()
     end
     local months = __K2L_ListWrap(____out_5, ____count_5):distinct():sorted()
-    local pivot = sales:groupingBy(____lambda_5):fold(__K2L_ReadOnlyMapOf(), ____lambda_6)
+    local pivot = sales:groupingBy(____lambda_5):fold(__K2L_MapOf(), ____lambda_6)
     local ____values_1 = Region.____values
     local ____out_6 = {}
     local ____count_6 = 0
@@ -438,7 +432,7 @@ local function main()
         local r = ____items_11[____i_14]
         local ____result_6
         do
-            local ____arg_1 = __K2L_SingletonListOf(r.label)
+            local ____arg_1 = __K2L_ListOf(r.label)
             local ____out_8 = {}
             local ____count_8 = 0
             local ____items_10, ____n_10 = months:____array()
@@ -447,7 +441,7 @@ local function main()
                 local ____result_7
                 do
                     local ____receiver_1 = pivot:getValue(r):get(m)
-                    ____result_7 = ____receiver_1 and __K2L_StringFormat("%.2f", ____receiver_1) or "-"
+                    ____result_7 = ____receiver_1 and string.format("%.2f", ____receiver_1) or "-"
                 end
                 ____count_8 = ____count_8 + 1
                 ____out_8[____count_8] = ____result_7
@@ -458,7 +452,7 @@ local function main()
         ____out_7[____count_7] = ____result_6
     end
     local pivotRows = __K2L_ListWrap(____out_7, ____count_7)
-    print(____table(__K2L_SingletonListOf("Region"):plusAll(months), pivotRows, __K2L_IntRange.new(1, months.size):toSet()))
+    print(____table(__K2L_ListOf("Region"):plusAll(months), pivotRows, __K2L_IntRange.new(1, months.size):toSet()))
     print("\nTax owed:")
     local ____list_4 = sales:groupBy(__K2L_PropertyRef.new("region", "region@702", ____lambda_7)):mapValues(function(____destructured_2)
         local region, list = ____destructured_2.key, ____destructured_2.value
@@ -470,15 +464,11 @@ local function main()
         end
         return ____sum_3 * region.taxRate
     end):getEntries():sortedByDescending(____lambda_8, true)
-    local ____mod = ____list_4.____modCount
     for ____i_16 = 1, ____list_4.size do
         local ____it_2 = ____list_4[____i_16]
         do
             local region, tax = ____it_2.key, ____it_2.value
-            print("  " .. __K2L_StringPadEnd(region.name, 6, ".") .. __K2L_StringPadStart(money(tax), 9) .. " (" .. __K2L_StringFormat("%.2f", region.taxRate * 100) .. "%)")
-        end
-        if ____list_4.____modCount ~= ____mod and ____list_4:____comodified(____i_16) then
-            break
+            print("  " .. __K2L_StringPadEnd(region.name, 6, ".") .. __K2L_StringPadStart(money(tax), 9) .. " (" .. string.format("%.2f", region.taxRate * 100) .. "%)")
         end
     end
     local ____out_9 = {}
@@ -491,10 +481,10 @@ local function main()
     end
     local prices = __K2L_ListWrap(____out_9, ____count_9)
     local st = stats(prices)
-    print("\nUnit price stats: n=" .. st.count .. " mean=" .. __K2L_StringFormat("%.3f", st.mean) .. " median=" .. __K2L_Str(st.median) .. " sd=" .. __K2L_StringFormat("%.4f", st.stdDev) .. " range=" .. __K2L_Str(st.min) .. ".." .. __K2L_Str(st.max))
+    print("\nUnit price stats: n=" .. st.count .. " mean=" .. string.format("%.3f", st.mean) .. " median=" .. st.median .. " sd=" .. string.format("%.4f", st.stdDev) .. " range=" .. st.min .. ".." .. st.max)
     local revenues = sales:map(__K2L_PropertyRef.new("revenue", "/Sale.revenue", ____lambda_9))
     local ____value_4 = stats(revenues)
-    print("Revenue stats: " .. __K2L_StringFormat("mean=%.2f median=%.2f max=%.2f", ____value_4.mean, ____value_4.median, ____value_4.max))
+    print("Revenue stats: " .. string.format("mean=%.2f median=%.2f max=%.2f", ____value_4.mean, ____value_4.median, ____value_4.max))
     local best = sales:maxBy(____lambda_10)
     local id, date, rep = best.id, best.date, best.rep
     print("\nBest sale: #" .. id .. " on " .. date .. " by " .. rep .. " (" .. money(best:getRevenue()) .. ")")
@@ -522,17 +512,13 @@ local function main()
     end)
     local totalRevenue = productShare:getValues():sum(0.0)
     local ____list_5 = productShare:toList():sortedBy(____lambda_11, true)
-    local ____mod_1 = ____list_5.____modCount
     for ____i_20 = 1, ____list_5.size do
         local ____it_3 = ____list_5[____i_20]
         do
             local product, rev = ____it_3.first, ____it_3.second
             local pct = rev / totalRevenue * 100
-            local bar = __K2L_Text.repeatCount("#", __K2L_Num.roundToInt(pct / 4))
-            print(__K2L_StringFormat("  %-7s %6.1f%% %s", product, pct, bar))
-        end
-        if ____list_5.____modCount ~= ____mod_1 and ____list_5:____comodified(____i_20) then
-            break
+            local bar = __K2L_Text.repeatCount("#", math.floor(pct / 4 + 0.5))
+            print(string.format("  %-7s %6.1f%% %s", product, pct, bar))
         end
     end
     local ____list_6 = sales:associate(____lambda_12):getEntries()
@@ -562,7 +548,7 @@ local function main()
     print("running units: " .. __K2L_Str(sales:sortedBy(____lambda_14, true):runningFold(0, ____lambda_15):drop(1)))
     local ____source = sales:first()
     local discounted = Sale.new(____source.id, ____source.date, ____source.rep, ____source.region, ____source.product, 100, 2.0)
-    print("copy: " .. __K2L_Str(discounted) .. " revenue=" .. __K2L_Str(discounted:getRevenue()))
+    print("copy: " .. __K2L_Str(discounted) .. " revenue=" .. discounted:getRevenue())
     local ____out_10 = {}
     local ____count_10 = 0
     local ____items_18, ____n_18 = sales:____array()
@@ -585,5 +571,5 @@ local function main()
     print("big orders: " .. __K2L_Str(__K2L_ListWrap(____out_11, ____count_11)))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Region = Region, Sale = Sale, RAW = RAW, parseCsvLine = parseCsvLine, RowResult = RowResult, parseRow = parseRow, Stats = Stats, stats = stats, money = money, ____table = ____table}

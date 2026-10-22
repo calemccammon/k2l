@@ -65,6 +65,10 @@ local function matcher(elements)
     if type(elements) == "function" then
         return elements
     end
+    -- a sequence is read once, into a list, as MutableCollection.removeAll(Sequence) does
+    if elements.____isSequence then
+        elements = elements:toList()
+    end
     return function(it) return elements:contains(it) end
 end
 
@@ -352,9 +356,17 @@ function __K2L_AbstractList:slice(indices)
     return out
 end
 
-__K2L_AbstractList.subList = __K2L_List.subList
-__K2L_AbstractList.____subList = __K2L_List.____subList
-__K2L_AbstractList.____subListClass = __K2L_AbstractSubList
+-- subList(from, to): a new list of the elements (read with get), not a view
+function __K2L_AbstractList:subList(from, to)
+    if from < 0 or to > self.size or from > to then
+        error(__K2L_IndexOutOfBoundsException.new("fromIndex: " .. from .. ", toIndex: " .. to .. ", size: " .. self.size))
+    end
+    local out = __K2L_List.new()
+    for i = from, to - 1 do
+        out:add(self:get(i))
+    end
+    return out
+end
 __K2L_AbstractList.getLastIndex = __K2L_List.getLastIndex
 
 -- The mutators of java.util.AbstractList (Kotlin's AbstractMutableList): set, addAt and removeAt are the subclass's.
@@ -440,7 +452,7 @@ end
 
 -- java.util.AbstractSet.removeAll removes the other collection's elements one by one when that is smaller.
 function __K2L_AbstractSet:removeAll(elements)
-    if type(elements) ~= "function" and self.size > elements.size then
+    if type(elements) ~= "function" and elements.size ~= nil and self.size > elements.size then
         local arr, n = elements:____array()
         local changed = false
         for i = 1, n do
@@ -551,14 +563,14 @@ function __K2L_AbstractMap:____arrays()
     return keys, values, n
 end
 
--- for k, v in map:iter() do ... end
+-- for _, k, v in map:iter() do ... end (the index first: a key may be nil)
 function __K2L_AbstractMap:iter()
     local arr, n = entriesOf(self)
     local i = 0
     return function()
         i = i + 1
         if i <= n then
-            return arr[i].key, arr[i].value
+            return i, arr[i].key, arr[i].value
         end
     end
 end
@@ -571,12 +583,6 @@ function __K2L_AbstractMap:forEach(action)
     local arr, n = entriesOf(self)
     for i = 1, n do
         action(arr[i])
-    end
-end
-
-function __K2L_AbstractMap:forEachKeyValue(action)
-    for k, v in self:iter() do
-        action(k, v)
     end
 end
 
@@ -599,7 +605,7 @@ function __K2L_AbstractMap:equals(other)
     elseif not isA(other, __K2L_Map) or other.size ~= self.size then
         return false
     end
-    for k, v in other:iter() do
+    for _, k, v in other:iter() do
         local ours = self:get(k)
         if not __K2L_Equals(v, ours) or (ours == nil and not self:containsKey(k)) then
             return false
@@ -633,7 +639,7 @@ function __K2L_AbstractMap:putAll(other)
         end
         return
     end
-    for k, v in other:iter() do
+    for _, k, v in other:iter() do
         self:put(k, v)
     end
 end
@@ -660,6 +666,16 @@ function __K2L_AbstractMap:getOrPut(key, default)
     if value == nil then
         value = default()
         self:put(key, value)
+    end
+    return value
+end
+
+-- Map.getOrElse: get, then containsKey for a missing value (not through a copy of the entries, as the other Map
+-- operations below: the persistent maps' iterators call it at every step)
+function __K2L_AbstractMap:getOrElse(key, default)
+    local value = self:get(key)
+    if value == nil and not self:containsKey(key) then
+        return default()
     end
     return value
 end
@@ -732,7 +748,7 @@ end
 -- Other Map operations (map, filter, any, toList, mapValues, ...) read a LinkedHashMap copy of the entries.
 local function snapshot(self)
     local copy = __K2L_Map.new()
-    for k, v in self:iter() do
+    for _, k, v in self:iter() do
         copy:put(k, v)
     end
     return copy

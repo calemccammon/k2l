@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringContains = ____lualib.__K2L_StringContains
@@ -61,4 +61,4 @@ local function main()
     print(____arg .. ____builder_1:toString())
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)

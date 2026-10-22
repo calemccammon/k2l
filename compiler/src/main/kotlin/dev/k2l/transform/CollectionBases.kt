@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.psi.KtCallElement
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtNamedFunction
 
 private const val ABSTRACT_COLLECTION = "__K2L_AbstractCollection"
 private const val ABSTRACT_LIST = "__K2L_AbstractList"
@@ -41,25 +42,16 @@ internal val COLLECTION_BASES: Map<String, String> = buildMap {
     base(ABSTRACT_MAP, "kotlin/collections/AbstractMap", "kotlin/collections/AbstractMutableMap", "java/util/AbstractMap")
     base("__K2L_AbstractIterator", "kotlin/collections/AbstractIterator")
     base("__K2L_List", "java/util/ArrayList")
-    base("__K2L_Set", "java/util/LinkedHashSet")
-    base("__K2L_HashSet", "java/util/HashSet")
-    base("__K2L_Map", "java/util/LinkedHashMap")
-    base("__K2L_HashMap", "java/util/HashMap")
-    base("__K2L_SortedMap", "java/util/TreeMap")
-    base("__K2L_SortedSet", "java/util/TreeSet")
-    base("__K2L_PriorityQueue", "java/util/PriorityQueue")
-    base("__K2L_Deque", "java/util/ArrayDeque")
-    base("__K2L_LinkedList", "java/util/LinkedList")
+    // HashSet and HashMap keep insertion order, as LinkedHashSet and LinkedHashMap
+    base("__K2L_Set", "java/util/LinkedHashSet", "java/util/HashSet")
+    base("__K2L_Map", "java/util/LinkedHashMap", "java/util/HashMap")
 }
 
 /** Bases with state of their own: a subclass's constructor has to run theirs. */
-internal val CONCRETE_COLLECTION_BASES = setOf(
-    "__K2L_List", "__K2L_Set", "__K2L_HashSet", "__K2L_Map", "__K2L_HashMap", "__K2L_SortedMap", "__K2L_SortedSet",
-    "__K2L_PriorityQueue", "__K2L_Deque", "__K2L_LinkedList",
-)
+internal val CONCRETE_COLLECTION_BASES = setOf("__K2L_List", "__K2L_Set", "__K2L_Map")
 
 internal fun collectionBaseFeature(lua: String) = when (lua) {
-    in DEQUE_CLASSES -> DEQUES_FEATURE
+    ARRAY_DEQUE -> DEQUES_FEATURE
     in CONCRETE_COLLECTION_BASES -> "Collections"
     else -> ABSTRACT_COLLECTIONS_FEATURE
 }
@@ -67,24 +59,15 @@ internal fun collectionBaseFeature(lua: String) = when (lua) {
 internal fun FileTransformer.collectionBaseRef(lua: String): LuaExpr = lualibRef(collectionBaseFeature(lua), lua)
 
 /**
- * `class Stack : ArrayList<Int>(elements)`: the lualib constructor of a concrete base, with the collection, map or initial
- * capacity (which decides a HashMap's order) the JDK constructor takes first. Abstract bases have no state to initialize.
+ * `class Stack : ArrayList<Int>(elements)`: the lualib constructor of a concrete base, with the collection or map the
+ * constructor takes first (a capacity is ignored). Abstract bases have no state to initialize.
  */
 internal fun FileTransformer.collectionSuperInit(call: KtCallElement?, lua: String): Unit = with(session) {
     if (lua !in CONCRETE_COLLECTION_BASES) return
     val resolved = call?.resolveToCall()?.successfulCallOrNull<KaFunctionCall<*>>()
     val values = resolved?.let { arguments(emptyList(), callArguments(it)) }.orEmpty()
-    val types = resolved?.let { callArguments(it) }.orEmpty().map { it?.expressionType }
-    val args = when {
-        // LinkedHashMap(initialCapacity, loadFactor, accessOrder) keeps the access order
-        lua == "__K2L_Map" && values.size == LINKED_MAP_ACCESS_ORDER_ARITY -> listOf(LuaNil, values[2])
-
-        // PriorityQueue(initialCapacity, comparator): the capacity is not passed on (ArrayDeque(numElements)'s is)
-        lua == "__K2L_PriorityQueue" ->
-            values.zip(types).filter { (_, type) -> type?.isIntegral != true }.map { it.first }.take(1)
-
-        else -> values.take(1)
-    }
+    if (values.size == LINKED_MAP_ACCESS_ORDER_ARITY) unsupported(call!!, "LinkedHashMap in access order")
+    val args = values.take(1)
     emit(LuaCallStmt(LuaCall(LuaIndex(collectionBaseRef(lua), LuaString(INIT)), listOf(selfRef()) + args)))
 }
 
@@ -125,57 +108,50 @@ internal fun FileTransformer.collectionSuperCall(
  */
 private val STATIC_SUPER_METHODS = setOf("toString", "equals", "hashCode", "iterator")
 
-/** Kotlin's read-only collection interfaces. */
-private val READ_ONLY_INTERFACES = setOf(
-    "kotlin/collections/Iterable",
-    "kotlin/collections/Collection",
-    "kotlin/collections/List",
-    "kotlin/collections/Set",
-    "kotlin/collections/Map",
-)
+/** The lualib bases of maps, whose `remove` Lua method is both `remove(key)` and `remove(key, value)`. */
+private val MAP_BASES = setOf(ABSTRACT_MAP, "__K2L_MapBase", "__K2L_Map")
+
+private const val OVERLOAD_DISPATCH = "OverloadDispatch"
 
 /**
- * Whether [c] is a read-only Kotlin collection: it implements `List` (or another read-only collection interface) and no
- * mutable one, so on the JVM `is MutableList` is false for its objects and `as MutableList` fails.
+ * A class extending or implementing a library collection that overrides one overload of a member the lualib implements as
+ * one Lua method for all of them (see `OverloadDispatch.lua`): `removeAll(elements)` or `retainAll(elements)`, which also
+ * take a predicate, and a map's `remove(key)`, which also takes the value (or a map's own `remove(key, value)`). The class's
+ * method is wrapped so the other overloads keep working when called through the library's interfaces.
  */
-private fun FileTransformer.isReadOnlyCollection(c: KtClassOrObject): Boolean = with(session) {
-    val symbol = c.symbol as? KaClassSymbol ?: return false
-    val ids = symbol.defaultType.allSupertypes.mapNotNull { it.expandedSymbol?.classId?.asString() }.toSet()
-    ids.any { it in READ_ONLY_INTERFACES } && ids.none { it in MUTABLE_INTERFACES }
+internal fun FileTransformer.overloadDispatch(c: KtClassOrObject, ref: LuaExpr) {
+    val base = classes.collectionBaseOf(c) ?: return
+    val functions = c.declarations.filterIsInstance<KtNamedFunction>()
+    for (name in listOf("removeAll", "retainAll")) {
+        val overrides = functions.any {
+            it.name == name && it.hasModifier(KtTokens.OVERRIDE_KEYWORD) && it.valueParameters.size == 1 && naming.function(it) == name
+        }
+        if (overrides) emit(LuaCallStmt(LuaCall(lualibRef(OVERLOAD_DISPATCH, "__K2L_DispatchPredicate"), listOf(ref, LuaString(name)))))
+    }
+    if (base in MAP_BASES) mapRemoveDispatch(c, ref, functions)
 }
 
-/** Members of a library collection that the JDK's and the stdlib's operations call, see `CollectionOverrides.lua`. */
-private val HOOK_MEMBERS = setOf(
-    "size", "iterator", "get", "contains", "isEmpty", "indexOf", "listIterator", "entries", "keys", "values", "containsKey",
-)
-
-private fun overriddenName(d: KtDeclaration): String? = if (d.hasModifier(KtTokens.OVERRIDE_KEYWORD)) d.name else null
-
-/** The names of the members [c] (or a superclass of the program) overrides, of those the library's operations call. */
-private fun FileTransformer.overriddenHooks(c: KtClassOrObject): Set<String> {
-    val own: List<String> = c.declarations.mapNotNull { overriddenName(it) }
-        .filter { it in HOOK_MEMBERS }
-    return own.toSet() + (classes.superInfo(c).base?.let { overriddenHooks(it) }.orEmpty())
+/** `__K2L_DispatchMapRemove(C, valueRemove)` for a map class overriding `remove(key)` or declaring `remove(key, value)`. */
+private fun FileTransformer.mapRemoveDispatch(c: KtClassOrObject, ref: LuaExpr, functions: List<KtNamedFunction>) {
+    val removesKey = functions.any { it.name == "remove" && it.valueParameters.size == 1 && it.hasModifier(KtTokens.OVERRIDE_KEYWORD) }
+    val removesValue = functions.any { it.name == "remove" && it.valueParameters.size == 2 }
+    if (!removesKey && !removesValue) return
+    val valueRemove = classes.hierarchy(c).flatMap { it.declarations.filterIsInstance<KtNamedFunction>() }
+        .lastOrNull { it.name == "remove" && it.valueParameters.size == 2 && it.hasBody() }
+    val name = valueRemove?.let { LuaString(naming.function(it)) } ?: LuaNil
+    emit(LuaCallStmt(LuaCall(lualibRef(OVERLOAD_DISPATCH, "__K2L_DispatchMapRemove"), listOf(ref, name))))
 }
+
+/** Map.Entry's ids: a class of the program implementing it keeps its own members, and is marked for `is Map.Entry`. */
+private val ENTRY_INTERFACES = setOf("kotlin/collections/Map.Entry", "kotlin/collections/MutableMap.MutableEntry", "java/util/Map.Entry")
 
 /**
- * `__K2L_HonorOverrides(C, base)` for a class extending a library collection that overrides a member the library's
- * operations call (size, iterator(), get, entries, ...): the class gets versions of those operations that call it where the
- * JVM does. Only such classes do, so plain collections keep their fast paths.
+ * `C.____interfaces[__K2L_Entry] = true` for a class implementing Map.Entry: its objects are entries for `is Map.Entry` and
+ * the lualib's entry sets (`entries.contains(e)`, an entry set's `equals`) without taking the lualib entry's members.
  */
-internal fun FileTransformer.collectionOverrides(c: KtClassOrObject, ref: LuaExpr) {
-    val base = classes.collectionBaseOf(c)?.takeIf { it in CONCRETE_COLLECTION_BASES } ?: return
-    if (c.declarations.none { overriddenName(it) in HOOK_MEMBERS }) return
-    emit(LuaCallStmt(LuaCall(lualibRef("CollectionOverrides", "__K2L_HonorOverrides"), listOf(ref, collectionBaseRef(base)))))
-}
-
-/** Whether values of [c] are walked with their own iterator(): it extends a library collection and overrides iterator(). */
-internal fun FileTransformer.iteratesItself(c: KtClassOrObject): Boolean =
-    classes.collectionBaseOf(c) in CONCRETE_COLLECTION_BASES && "iterator" in overriddenHooks(c)
-
-/** `C.____readOnly = true` for a read-only collection class (false again in a mutable subclass of one), see MUTABLE_INTERFACES. */
-internal fun FileTransformer.readOnlyFlag(c: KtClassOrObject, ref: LuaExpr) {
-    val readOnly = isReadOnlyCollection(c)
-    val inherited = classes.superInfo(c).base?.let { isReadOnlyCollection(it) } ?: false
-    if (readOnly != inherited) emit(assign(LuaIndex(ref, LuaString("____readOnly")), LuaBool(readOnly)))
+internal fun FileTransformer.entryFlag(c: KtClassOrObject, ref: LuaExpr): Unit = with(session) {
+    val symbol = c.symbol as? KaClassSymbol ?: return
+    if (symbol.superTypes.none { it.expandedSymbol?.classId?.asString() in ENTRY_INTERFACES }) return
+    val entry = lualibRef("Collections", "__K2L_Entry")
+    emit(assign(LuaIndex(luaCall(LuaName("rawget"), ref, LuaString("____interfaces")), entry), LuaBool(true)))
 }

@@ -1,5 +1,5 @@
 -- The and of two unsigned 32-bit patterns held in doubles, eight bits at a time from a table of the and of two bytes
--- (AND8[x * 256 + y + 1]), for the bitwise operations of plain Lua 5.1 (Bit.51, Long64.l64). The table is only built
+-- (AND8[x * 256 + y + 1]), for the bitwise operations of plain Lua 5.1 (Bit.51). The table is only built
 -- where there is no bit32 library to do the work.
 local AND8 = {}
 if not bit32 then
@@ -49,40 +49,3 @@ local function __K2L_UAnd32(a, b)
     return r + AND8[a * 256 + b + 1] * 16777216
 end
 
--- the unsigned xor and or, from the and of the same steps (a + b = (a xor b) + 2 (a and b), a or b = a + b - (a and b)),
--- for Long64.l64
-local function __K2L_UXor32(a, b)
-    local x, y = a % 256, b % 256
-    local n = AND8[x * 256 + y + 1]
-    local p, q = (a - x) / 256, (b - y) / 256
-    if p ~= 0 and q ~= 0 then
-        x, y = p % 256, q % 256
-        n = n + AND8[x * 256 + y + 1] * 256
-        p, q = (p - x) / 256, (q - y) / 256
-        if p ~= 0 and q ~= 0 then
-            x, y = p % 256, q % 256
-            n = n + AND8[x * 256 + y + 1] * 65536
-            p, q = (p - x) / 256, (q - y) / 256
-            n = n + AND8[p * 256 + q + 1] * 16777216
-        end
-    end
-    return a + b - 2 * n
-end
-
-local function __K2L_UOr32(a, b)
-    local x, y = a % 256, b % 256
-    local n = AND8[x * 256 + y + 1]
-    local p, q = (a - x) / 256, (b - y) / 256
-    if p ~= 0 and q ~= 0 then
-        x, y = p % 256, q % 256
-        n = n + AND8[x * 256 + y + 1] * 256
-        p, q = (p - x) / 256, (q - y) / 256
-        if p ~= 0 and q ~= 0 then
-            x, y = p % 256, q % 256
-            n = n + AND8[x * 256 + y + 1] * 65536
-            p, q = (p - x) / 256, (q - y) / 256
-            n = n + AND8[p * 256 + q + 1] * 16777216
-        end
-    end
-    return a + b - n
-end

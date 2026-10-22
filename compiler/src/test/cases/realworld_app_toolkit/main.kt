@@ -1,6 +1,5 @@
 package toolkit
 
-import kotlin.reflect.KClass
 
 // A grab bag of utilities from a real code base: validation, retry with backoff, timing, resource scopes, a tiny
 // state machine, all leaning on inline functions, reified types, closures and labeled returns.
@@ -99,7 +98,7 @@ inline fun <reified T> List<Any?>.firstOfType(): T? {
 
 inline fun <reified T : Any> typeName(): String = T::class.simpleName ?: "anonymous"
 
-inline fun <reified T : Any> Map<KClass<*>, Any>.lookup(): T? = this[T::class] as? T
+inline fun <reified T : Any> Map<String, Any>.lookup(): T? = this[T::class.simpleName!!] as? T
 
 /** A vararg inline function with a reified type: the spread may come before other arguments. */
 inline fun <reified T> countOf(vararg items: Any?): Int = items.count { it is T }
@@ -220,7 +219,7 @@ fun main() {
     val mixed = listOf(1, "two", true, null, listOf(5))
     println("${mixed.firstOfType<String>()} ${mixed.firstOfType<Boolean>()} ${mixed.firstOfType<List<*>>()} ${mixed.firstOfType<Map<*, *>>()}")
     println("${typeName<User>()} ${typeName<Machine.State>()} ${typeName<Machine.Transition>()}")
-    val registry: Map<KClass<*>, Any> = mapOf(String::class to "text", Int::class to 7)
+    val registry: Map<String, Any> = mapOf(String::class.simpleName!! to "text", Int::class.simpleName!! to 7)
     println("${registry.lookup<String>()} ${registry.lookup<Int>()} ${registry.lookup<Machine>()}")
     val extra = arrayOf<Any?>(4, "five", 6)
     println(countOf<Int>(1, "x", *extra, 2))

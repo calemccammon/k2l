@@ -2,6 +2,8 @@
 -- `cls`; the first read or write of a member puts them back and runs the named initializers (methods of `cls`).
 -- Keys starting with `__` (metamethods, `____name`, `____interfaces`, ...) and nested classes stay, so the table can
 -- still be tested with `is` and extended before it is initialized.
+local MACHINERY_KEYS = {____accessors = true, ____at = true, ____atPut = true}
+
 local function __K2L_LazyObject(cls, ...)
     local initializers = {...}
     local shadow = {}
@@ -29,6 +31,16 @@ local function __K2L_LazyObject(cls, ...)
     end
     setmetatable(cls, {
         __index = function(_, key)
+            -- what declaring a class or interface that extends this one reads (see Class.lua) is no member access
+            if MACHINERY_KEYS[key] then
+                local index = original and original.__index
+                if type(index) == "function" then
+                    return index(cls, key)
+                elseif index ~= nil then
+                    return index[key]
+                end
+                return nil
+            end
             initialize()
             return cls[key]
         end,

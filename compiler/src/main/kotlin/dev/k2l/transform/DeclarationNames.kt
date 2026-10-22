@@ -50,7 +50,7 @@ internal class DeclarationNames(private val session: KaSession, private val clas
             }
         }
         val base = if (owner == null) LuaNames.of(name) else LuaNames.member(name)
-        val index = overloads.indexOf(fn).coerceAtLeast(0) + if (hiddenByProperty(fn, name, classes)) 1 else 0
+        val index = overloads.indexOf(fn).coerceAtLeast(0) + if (nameTaken(session, classes, fn, name, owner)) 1 else 0
         if (index == 0) base else "${base}__$index"
     }
 
@@ -158,6 +158,27 @@ private fun hiddenByProperty(fn: KtNamedFunction, name: String, classes: ClassHi
         it is KtProperty && it.name == name && !it.hasAccessorFunctions() && it.delegate == null
     }
     return name in classes.fieldNames(owner)
+}
+
+/**
+ * Whether the first Lua name of a new function is taken: by a property's field ([hiddenByProperty]), or by an override of a
+ * library member in its class's hierarchy (`override fun removeAll(elements)`), which keeps the library's name, so a new
+ * overload (`fun removeAll(predicate)`) is numbered.
+ */
+private fun nameTaken(session: KaSession, classes: ClassHierarchy, fn: KtNamedFunction, name: String, owner: KtClassOrObject?) =
+    hiddenByProperty(fn, name, classes) || (owner != null && takenByLibraryOverride(session, classes, owner, name))
+
+private fun takenByLibraryOverride(session: KaSession, classes: ClassHierarchy, owner: KtClassOrObject, name: String): Boolean =
+    classes.hierarchy(owner).any { c ->
+        c.declarations.any { d ->
+            d is KtNamedFunction && d.name == name && d.hasModifier(KtTokens.OVERRIDE_KEYWORD) &&
+                libraryMember(d, name, classes.collectionBaseOf(c) != null) == name && overridesOnlyLibrary(session, classes, d)
+        }
+    }
+
+private fun overridesOnlyLibrary(session: KaSession, classes: ClassHierarchy, fn: KtNamedFunction): Boolean = with(session) {
+    val overridden = (fn.symbol as? KaNamedFunctionSymbol)?.directlyOverriddenSymbols?.toList().orEmpty()
+    overridden.isNotEmpty() && overridden.none { classes.isSource(it.psi) }
 }
 
 /**

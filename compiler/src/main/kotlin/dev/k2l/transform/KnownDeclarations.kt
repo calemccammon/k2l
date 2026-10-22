@@ -18,40 +18,19 @@ internal val SCOPE_FUNCTIONS = setOf(
     "kotlin/collections/buildList", "kotlin/collections/buildMap", "kotlin/collections/buildSet",
 )
 
-/**
- * The exceptions of `String.format` (java.util.Formatter): they can be caught and type-checked, and `message` reads the JDK's
- * text. Their constructors (which build that text from a conversion or flags) are not mapped.
- */
-internal val FORMATTER_EXCEPTIONS = listOf(
-    "IllegalFormatException",
-    "MissingFormatArgumentException",
-    "UnknownFormatConversionException",
-    "MissingFormatWidthException",
-    "IllegalFormatConversionException",
-    "IllegalFormatPrecisionException",
-    "FormatFlagsConversionMismatchException",
-)
-
 /** Library classes implemented by lualib, by ClassId (JVM typealiases expand to java.lang classes). */
 internal val LIBRARY_CLASSES = listOf(
     "Throwable", "Exception", "Error", "RuntimeException", "IllegalArgumentException", "IllegalStateException",
     "NullPointerException", "IndexOutOfBoundsException", "ArithmeticException", "UnsupportedOperationException",
-    "ClassCastException", "NumberFormatException", "VirtualMachineError", "StackOverflowError",
+    "ClassCastException", "NumberFormatException", "VirtualMachineError", "StackOverflowError", "AssertionError",
 ).flatMap { listOf("java/lang/$it" to "__K2L_$it", "kotlin/$it" to "__K2L_$it") }.toMap() + mapOf(
     "kotlin/Throwable" to "__K2L_Throwable",
     "java/util/NoSuchElementException" to "__K2L_NoSuchElementException",
     "kotlin/NoSuchElementException" to "__K2L_NoSuchElementException",
-    "java/util/ConcurrentModificationException" to "__K2L_ConcurrentModificationException",
-    "kotlin/ConcurrentModificationException" to "__K2L_ConcurrentModificationException",
-    "java/util/EmptyStackException" to "__K2L_EmptyStackException",
     "kotlin/NotImplementedError" to "__K2L_NotImplementedError",
-    "kotlin/KotlinNullPointerException" to "__K2L_KotlinNullPointerException",
-    "kotlin/NoWhenBranchMatchedException" to "__K2L_NoWhenBranchMatchedException",
-    "kotlin/TypeCastException" to "__K2L_TypeCastException",
     "kotlin/UninitializedPropertyAccessException" to "__K2L_UninitializedPropertyAccessException",
     "java/lang/ArrayIndexOutOfBoundsException" to "__K2L_ArrayIndexOutOfBoundsException",
-    "java/util/regex/PatternSyntaxException" to "__K2L_PatternSyntaxException",
-) + FORMATTER_EXCEPTIONS.associate { "java/util/$it" to "__K2L_$it" }
+)
 
 /** Library supertypes that need no runtime support (Comparable is honored via compareTo). */
 internal val MARKER_INTERFACES = setOf(
@@ -65,8 +44,6 @@ internal val MARKER_INTERFACES = setOf(
     "java/lang/AutoCloseable",
     "kotlin/properties/ReadWriteProperty",
     "kotlin/properties/ReadOnlyProperty",
-    // a clock of the program is called through its own now()
-    "kotlin/time/Clock",
     // implemented by objects with resumeWith()/hasNext()/next(), as the lualib calls them
     "kotlin/coroutines/Continuation",
     "kotlin/collections/Iterator",
@@ -83,18 +60,6 @@ internal val MARKER_INTERFACES = setOf(
     "kotlin/coroutines/CoroutineContext.Element",
     "kotlin/coroutines/CoroutineContext.Key",
     "kotlin/coroutines/ContinuationInterceptor",
-)
-
-/**
- * Kotlin's mutable collection interfaces: on the JVM `is MutableList` is false for the read-only collections of the
- * Kotlin stdlib (EmptyList, ...) and classes implementing only `List`; their lualib classes have `____readOnly` set.
- */
-internal val MUTABLE_INTERFACES = setOf(
-    "kotlin/collections/MutableList",
-    "kotlin/collections/MutableSet",
-    "kotlin/collections/MutableMap",
-    "kotlin/collections/MutableCollection",
-    "kotlin/collections/MutableIterable",
 )
 
 /** `Collection` types, which an `is` check tells apart from other Iterables by their `size`. */

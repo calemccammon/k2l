@@ -24,7 +24,3 @@ any@2
 any@3
 click 0,0@4
 any@4
-== defaults by type
-int=1 strings=[x] ints=3
-nullable=null type=java.util.Map<java.lang.String, java.util.List<generics.reified.Point>> (Kotlin reflection is not available)
-error: no default for java.util.List<generics.reified.Level> (Kotlin reflection is not available)

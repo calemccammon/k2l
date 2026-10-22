@@ -1,10 +1,9 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 
@@ -93,20 +92,20 @@ function Scaler:parseAll(xs)
 end
 
 local function main()
-    print(__K2L_Str(Util:all(__K2L_ReadOnlyListOf(1, 2))))
-    local ____arg = __K2L_ReadOnlyListOf(3, 4)
+    print(__K2L_Str(Util:all(__K2L_ListOf(1, 2))))
+    local ____arg = __K2L_ListOf(3, 4)
     local ____receiver = Util
     print(__K2L_Str(____arg:map(function(...) return ____receiver:twice(...) end)))
     print(Util:counter():get() .. " " .. Util:counter().name)
     local s = Scaler.new(3)
-    print(__K2L_Str(s:scaleAll(__K2L_ReadOnlyListOf(1, 2))) .. " " .. __K2L_Str(s:scaleAllThis(__K2L_SingletonListOf(5))))
+    print(__K2L_Str(s:scaleAll(__K2L_ListOf(1, 2))) .. " " .. __K2L_Str(s:scaleAllThis(__K2L_ListOf(5))))
     local ref = s:totalRef()
     print(ref:get() .. " " .. ref.name)
-    ref:set(100)
+    s.total = 100
     print(s.total .. " " .. s:kRef():get())
-    print(__K2L_Str(Scaler.Report.new(s):lines(__K2L_ReadOnlyListOf(1, 10))))
-    print(__K2L_Str(Scaler:parseAll(__K2L_ReadOnlyListOf("7", "8"))))
-    local ____arg_1 = __K2L_SingletonListOf("9")
+    print(__K2L_Str(Scaler.Report.new(s):lines(__K2L_ListOf(1, 10))))
+    print(__K2L_Str(Scaler:parseAll(__K2L_ListOf("7", "8"))))
+    local ____arg_1 = __K2L_ListOf("9")
     local ____receiver_1 = Scaler
     local ____list_1 = ____arg_1:map(function(...) return ____receiver_1:parse(...) end)
     local ____out_1 = {}
@@ -119,8 +118,8 @@ local function main()
     end
     print(__K2L_Str(__K2L_ListWrap(____out_1, ____count_1)))
     local ____value_1 = Scaler.new(10)
-    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2):map(function(...) return ____value_1:scale(...) end)))
+    print(__K2L_Str(__K2L_ListOf(1, 2):map(function(...) return ____value_1:scale(...) end)))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Util = Util, Scaler = Scaler}

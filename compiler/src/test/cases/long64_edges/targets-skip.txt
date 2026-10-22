@@ -1,2 +1,0 @@
-5.3: Lua's own shifts give 0 for counts of 64 and over and shr divides by 1 << n, which overflows for n = 63; Long.hashCode() of a small negative number is the Int hash; ULong ranges across 2^63 are not checked
-5.4: Lua's own shifts give 0 for counts of 64 and over and shr divides by 1 << n, which overflows for n = 63; Long.hashCode() of a small negative number is the Int hash; ULong ranges across 2^63 are not checked

@@ -29,9 +29,9 @@ Stack[1, 2, 3, 4, 5] 5 5 pushes=3 15 [5, 4, 3, 2, 1] Stack true
 Stack[20, 3, 5] 1 true true true
 Seeded.add(b)
 Seeded.add(a)
-seeded [a, b]
-[a, c, d] attempts=6 3
+seeded [b, a]
+[c, d, a] attempts=6 3
 ordered [1, 2, 3]
 default 1 0 1 {x=1}
-lru {a=1, c=3} [a, c]
+lru {b=2, c=3} [b, c]
 copied {p=1, q=2, r=3, s=4} puts=1

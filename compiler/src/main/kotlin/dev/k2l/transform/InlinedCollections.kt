@@ -325,15 +325,8 @@ internal fun FileTransformer.summing(source: Source, lambda: KtExpression, full:
     val result = declare("sum", LuaNumber(if (isDouble) "0.0" else "0"))
     eachElement(source, lambda, 0) { item, _ ->
         val term = inlineValue(lambda, listOf(item), null)
-        emit(
-            assign(
-                result.name,
-                if (emulatesLong && isWide(full.expressionType)) l64("Add", result, term) else LuaBinary(LuaBinOp.Add, result, term),
-            ),
-        )
+        emit(assign(result.name, LuaBinary(LuaBinOp.Add, result, term)))
     }
-    // modular arithmetic: wrapping the total equals wrapping every step
-    if (wrapsInt && full.expressionType?.isIntType == true) emit(assign(result.name, wrapInt32(result)))
     return result
 }
 

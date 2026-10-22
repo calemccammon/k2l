@@ -1,0 +1,7 @@
+42
+once
+4
+false
+ok
+caught blank
+6

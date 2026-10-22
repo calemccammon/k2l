@@ -59,8 +59,7 @@ fun main() {
     println(geoCount)
     println(draw.geometry.count)
 
-    println(GPoint::class.simpleName + " " + GPoint::class.qualifiedName)
-    println(TPoint::class.qualifiedName + " " + Point::class.qualifiedName)
+    println(GPoint::class.simpleName + " " + TPoint::class.simpleName + " " + Point::class.simpleName)
     println(listOf<Any>(g, t, own).map { it::class.simpleName })
     println(own is Point)
     val any: Any = t

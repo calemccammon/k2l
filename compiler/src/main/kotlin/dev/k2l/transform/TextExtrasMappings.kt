@@ -68,7 +68,6 @@ internal object TextExtrasMappings {
             name in REPLACE_AROUND -> extrasMember(name, self, *args.toTypedArray())
 
             bits != null -> {
-                requireUtf16Case()
                 extrasMember(
                     if (name.endsWith("OrNull")) "toSmallOrNull" else "toSmall",
                     self,

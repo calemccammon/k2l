@@ -10,10 +10,10 @@ import org.jetbrains.kotlin.psi.*
 
 /**
  * `forEach` resolves to Kotlin's inline extension or, for (k, v) lambdas, to `java.util.Map.forEach`; those are expanded as a
- * loop. The `forEach` of a stream is a method of the stream.
+ * loop.
  */
 private fun effectiveCallableId(callableId: String, simpleName: String?): String {
-    val isLibrary = callableId.startsWith("kotlin/") || (callableId.startsWith("java/") && !callableId.startsWith("java/util/stream/"))
+    val isLibrary = callableId.startsWith("kotlin/") || callableId.startsWith("java/")
     return if (simpleName == "forEach" && isLibrary) "kotlin/collections/forEach" else callableId
 }
 
@@ -54,11 +54,11 @@ internal fun FileTransformer.scopeFunction(
 
         "kotlin/text/buildString" -> buildStringCall(args)
 
-        "kotlin/collections/buildList" -> buildCollectionCall("__K2L_ListBuilderOf", args)
+        "kotlin/collections/buildList" -> buildCollectionCall("__K2L_ListOf", args)
 
-        "kotlin/collections/buildMap" -> buildCollectionCall("__K2L_MapBuilderOf", args)
+        "kotlin/collections/buildMap" -> buildCollectionCall("__K2L_MapOf", args)
 
-        "kotlin/collections/buildSet" -> buildCollectionCall("__K2L_SetBuilderOf", args)
+        "kotlin/collections/buildSet" -> buildCollectionCall("__K2L_SetOf", args)
 
         "kotlin/collections/forEach", "kotlin/sequences/forEach", "java/lang/Iterable.forEach", "java/util/Map.forEach",
         "kotlin/text/forEach",
@@ -166,11 +166,11 @@ private fun FileTransformer.buildStringCall(args: List<KtExpression?>): LuaExpr 
     return LuaMethodCall(builder, "toString", emptyList())
 }
 
-/** `buildList { add(1) }`: a new builder that the lambda fills through its receiver, read-only afterwards (`____build()`). */
+/** `buildList { add(1) }`: a new list (set, map) that the lambda fills through its receiver. */
 private fun FileTransformer.buildCollectionCall(factory: String, args: List<KtExpression?>): LuaExpr = with(session) {
     val target = cache(LuaCall(lualibRef("Collections", factory), emptyList()), "builder")
     inlineLambda(args.last()!!, emptyList(), target, null)
-    return LuaMethodCall(target, "____build", emptyList())
+    return target
 }
 
 private fun FileTransformer.forEachCall(receiver: LuaExpr, type: KaType?, args: List<KtExpression?>, indexed: Boolean): LuaExpr =

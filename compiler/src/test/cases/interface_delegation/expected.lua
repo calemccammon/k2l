@@ -5,7 +5,7 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 
@@ -205,7 +205,7 @@ function Square:getArea()
 end
 
 function Square:toString()
-    return "Square(" .. __K2L_Str(self.side) .. ")"
+    return "Square(" .. self.side .. ")"
 end
 
 local Framed = __K2L_Class("Framed", nil, Shape)
@@ -398,7 +398,7 @@ local function main()
     local w = Wrapper.new(p)
     print(w:describe() .. " " .. w.calls .. " " .. w:greet("Carol"))
     local framed = Framed.new(Square.new(2.0))
-    print(__K2L_Str(framed) .. " " .. __K2L_Str(framed:getArea()))
+    print(__K2L_Str(framed) .. " " .. framed:getArea())
     local via = Via.new(Impl.new())
     print(via:full() .. " " .. via:id() .. " " .. tostring(__K2L_InstanceOf(via, Base)))
     print(Holder.Companion:count() + Holder.Companion:count())
@@ -409,5 +409,5 @@ local function main()
     print(tostring(Pin.new("a", here):equals(Pin.new("a", here))) .. " " .. tostring(Pin.new("a", here):equals(Pin.new("a", Here.new()))))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Named = Named, Person = Person, Polite = Polite, Stack = Stack, ListStack = ListStack, Counter = Counter, Ticker = Ticker, makeStack = makeStack, Logged = Logged, Wrapper = Wrapper, Shape = Shape, Square = Square, Framed = Framed, Base = Base, Derived = Derived, Impl = Impl, Via = Via, IntStack = IntStack, Defaults = Defaults, makeTicker = makeTicker, Shared = Shared, Point = Point, Located = Located, Here = Here, Pin = Pin, Holder = Holder}

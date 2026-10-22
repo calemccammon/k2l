@@ -76,7 +76,7 @@ infix fun Formula.times(other: Formula) = Formula.Op('*', this, other)
 fun parseFormula(text: String): Formula {
     val t = text.trim()
     t.toDoubleOrNull()?.let { return Formula.Const(it) }
-    Regex("""(SUM|AVG|MAX)\((\w+):(\w+)\)""").matchEntire(t)?.let { m ->
+    Regex("""([A-Z]+)\((\w+):(\w+)\)""").matchEntire(t)?.takeIf { it.groupValues[1] in setOf("SUM", "AVG", "MAX") }?.let { m ->
         val (name, a, b) = m.destructured
         return Formula.Fn(name, Ref.parse(a)..Ref.parse(b))
     }
@@ -194,5 +194,5 @@ fun main() {
         println("${e.message} (length ${e.path.size})")
     }
     val fresh = Sheet()
-    println(runCatching { fresh.lastOrder }.exceptionOrNull()?.javaClass?.simpleName)
+    println(runCatching { fresh.lastOrder }.exceptionOrNull()?.let { it::class.simpleName })
 }

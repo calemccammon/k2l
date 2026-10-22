@@ -1,0 +1,68 @@
+title              TStr    "k2l \"demo\" service"
+version            TInt    3
+pi_ish             TFloat  3.14159
+big                TInt    9.007199254741e+15
+mask               TInt    65535
+perms              TInt    493
+flags              TInt    170
+ratio              TFloat  -0.0025
+enabled            TBool   true
+path               TStr    "C:\\Users\\k2l\\#notacomment"
+greeting           TStr    "tab\there, newline\nthere, unicode ��"
+ports              TArr    [8080, 8081, 8443]
+matrix             TArr    [[1, 2], [3], []]
+owner.roles        TArr    ["admin", "dev"]
+owner.id           TInt    36
+database.port      TInt    5432
+database.timeout   TFloat  inf
+database.pool.max  TInt    16
+logging.level      TStr    "INFO"
+nope               -       <missing>
+owner.nope         -       <missing>
+max connections: 48, mask bits: 16, perms: 755
+--- serialized ---
+title = "k2l \"demo\" service"
+version = 3
+pi_ish = 3.14159
+big = 9.007199254741e+15
+mask = 65535
+perms = 493
+flags = 170
+ratio = -0.0025
+enabled = true
+path = "C:\\Users\\k2l\\#notacomment"
+greeting = "tab\there, newline\nthere, unicode ��"
+ports = [8080, 8081, 8443]
+matrix = [[1, 2], [3], []]
+
+[owner]
+name = "Ada"
+id = 36
+roles = ["admin", "dev"]
+
+[database]
+host = "db.local"
+port = 5432
+timeout = inf
+pool = { min = 2, max = 16 }
+
+[logging]
+level = "INFO"
+--- round trip ---
+true
+APP_DATABASE_PORT -> database.port: 5432 => 6543
+APP_LOGGING_LEVEL -> logging.level: "INFO" => "DEBUG"
+APP_UNKNOWN -> unknown: (none) => "X"
+error line 2: duplicate key 'a'
+error line 1: expected ',' or ']' in array (column 7)
+error line 1: unterminated string (column 6)
+error line 1: misplaced underscore in '12__3' (column 7)
+error line 1: bad hex '0xZZ' (column 6)
+error line 3: 'v' is not a table
+error line 1: expected 'key = value' but got 'just some words'
+error line 1: unknown escape '\q' (column 9)
+error line 1: bad unicode escape '\u12"' (column 5)
+error line 1: bad float '1.2.3' (column 7)
+error line 1: unknown word 'yes' (column 5)
+error line 1: expected ',' or '}' (column 10)
+error line 1: trailing characters (column 4)

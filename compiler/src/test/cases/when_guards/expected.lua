@@ -6,9 +6,9 @@ local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
 local __K2L_IsUpperCase = ____lualib.__K2L_IsUpperCase
 local __K2L_List = ____lualib.__K2L_List
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
 
@@ -123,9 +123,9 @@ local function describe(e, ____debug)
 end
 
 local function main()
-    print(__K2L_Str(__K2L_ReadOnlyListOf(-3, 0, 7, 42, 500, "", "Hello", "hey", __K2L_ReadOnlyListOf(1, 2), 2.5, nil):map(classify)))
+    print(__K2L_Str(__K2L_ListOf(-3, 0, 7, 42, 500, "", "Hello", "hey", __K2L_ListOf(1, 2), 2.5, nil):map(classify)))
     print("guard calls: " .. ____exports.guardCalls)
-    local events = __K2L_ReadOnlyListOf(Event.Click.new(3, 3), Event.Click.new(1, 2), Event.Key.new("a", true), Event.Key.new("1", true), Event.Key.new("b", false), Event.Tick)
+    local events = __K2L_ListOf(Event.Click.new(3, 3), Event.Click.new(1, 2), Event.Key.new("a", true), Event.Key.new("1", true), Event.Key.new("b", false), Event.Tick)
     local ____out = {}
     local ____count = 0
     local ____items, ____n = events:____array()
@@ -138,10 +138,10 @@ local function main()
     print(describe(Event.Tick, true))
     local n = 15
     local fizz
-    local ____subject = n >= 0 and n % 15 or 0 - -n % 15
+    local ____subject = n % 15
     if ____subject == 0 then
         fizz = "FizzBuzz"
-    elseif (n >= 0 and n % 3 or 0 - -n % 3) == 0 then
+    elseif n % 3 == 0 then
         fizz = "Fizz"
     else
         fizz = tostring(n)
@@ -153,5 +153,5 @@ ____exports.Event = Event
 ____exports.big = big
 ____exports.classify = classify
 ____exports.describe = describe
-__K2L_Main(main)
+__K2L_RunMain(main)
 return ____exports

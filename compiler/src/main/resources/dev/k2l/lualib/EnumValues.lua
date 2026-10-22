@@ -8,6 +8,6 @@ local function __K2L_EnumValues(cls)
     for i = 1, n do
         out[i] = values[i]
     end
-    out.size, out.____modCount = n, 0
+    out.size = n
     return setmetatable(out, __K2L_List)
 end

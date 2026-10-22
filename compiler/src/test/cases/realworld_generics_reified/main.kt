@@ -1,10 +1,6 @@
 package generics.reified
 
-import kotlin.reflect.KClass
-import kotlin.reflect.KType
-import kotlin.reflect.typeOf
-
-// Inline reified helpers of a small serialization library: casts by type, a registry of codecs keyed by `T::class`,
+// Inline reified helpers of a small serialization library: casts by type, a registry of codecs keyed by `T::class.simpleName`,
 // typed lookups in a heterogeneous bag, and an event dispatcher filtered by event type.
 
 inline fun <reified T> Any?.castOrNull(): T? = this as? T
@@ -23,39 +19,39 @@ interface Codec<T : Any> {
 }
 
 class Registry {
-    private val codecs = linkedMapOf<KClass<*>, Codec<*>>()
+    private val codecs = linkedMapOf<String, Codec<*>>()
 
-    fun <T : Any> register(type: KClass<T>, codec: Codec<T>) {
-        check(type !in codecs) { "codec for ${type.simpleName} already registered" }
+    fun <T : Any> register(type: String, codec: Codec<T>) {
+        check(type !in codecs) { "codec for $type already registered" }
         codecs[type] = codec
     }
 
-    inline fun <reified T : Any> register(codec: Codec<T>) = register(T::class, codec)
+    inline fun <reified T : Any> register(codec: Codec<T>) = register(T::class.simpleName!!, codec)
 
     inline fun <reified T : Any> register(crossinline encode: (T) -> String, crossinline decode: (String) -> T) =
-        register(T::class, object : Codec<T> {
+        register(T::class.simpleName!!, object : Codec<T> {
             override fun encode(value: T) = encode(value)
             override fun decode(text: String) = decode(text)
         })
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> codecFor(type: KClass<T>): Codec<T> =
-        codecs[type] as Codec<T>? ?: throw IllegalArgumentException("no codec for ${type.simpleName}")
+    fun <T : Any> codecFor(type: String): Codec<T> =
+        codecs[type] as Codec<T>? ?: throw IllegalArgumentException("no codec for $type")
 
-    inline fun <reified T : Any> encode(value: T): String = codecFor(T::class).encode(value)
+    inline fun <reified T : Any> encode(value: T): String = codecFor<T>(T::class.simpleName!!).encode(value)
 
-    inline fun <reified T : Any> decode(text: String): T = codecFor(T::class).decode(text)
+    inline fun <reified T : Any> decode(text: String): T = codecFor<T>(T::class.simpleName!!).decode(text)
 
     inline fun <reified T : Any> decodeList(text: String): List<T> =
         if (text.isEmpty()) emptyList() else text.split(";").map { decode<T>(it) }
 
     @Suppress("UNCHECKED_CAST")
     fun encodeAny(value: Any): String {
-        val codec = codecs[value::class] as Codec<Any>? ?: return "<${value::class.simpleName}?>"
+        val codec = codecs[value::class.simpleName!!] as Codec<Any>? ?: return "<${value::class.simpleName}?>"
         return "${value::class.simpleName}:${codec.encode(value)}"
     }
 
-    val types get() = codecs.keys.map { it.simpleName }
+    val types get() = codecs.keys.toList()
 }
 
 data class Point(val x: Int, val y: Int)
@@ -83,34 +79,18 @@ class Key(at: Int, val char: Char) : Event(at)
 class Tick(at: Int) : Event(at)
 
 class Dispatcher {
-    val handlers = mutableListOf<Pair<KClass<out Event>, (Event) -> Unit>>()
+    val handlers = mutableListOf<Pair<(Event) -> Boolean, (Event) -> Unit>>()
 
     inline fun <reified E : Event> on(noinline handler: (E) -> Unit) {
         @Suppress("UNCHECKED_CAST")
-        handlers += E::class to (handler as (Event) -> Unit)
+        handlers += { x: Event -> x is E } to (handler as (Event) -> Unit)
     }
 
     fun dispatch(e: Event): Int {
-        val matching = handlers.filter { (type, _) -> type.isInstance(e) }
+        val matching = handlers.filter { (accepts, _) -> accepts(e) }
         matching.forEach { (_, h) -> h(e) }
         return matching.size
     }
-}
-
-/** Default values keyed by the full type, so `List<Int>` and `List<String>` get different entries. */
-class Defaults {
-    private val values = HashMap<KType, Any?>()
-
-    inline fun <reified T> put(value: T) = put(typeOf<T>(), value)
-
-    fun put(type: KType, value: Any?) {
-        values[type] = value
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    inline fun <reified T> get(): T = lookup(typeOf<T>()) as T
-
-    fun lookup(type: KType): Any? = if (type in values) values[type] else throw NoSuchElementException("no default for $type")
 }
 
 fun main() {
@@ -164,18 +144,4 @@ fun main() {
     val counts = listOf(Click(1, 10, 20), Key(2, 'q'), Tick(3), Click(4, 0, 0)).map(d::dispatch)
     println("counts=$counts")
     log.forEach(::println)
-
-    println("== defaults by type")
-    val defaults = Defaults()
-    defaults.put(0)
-    defaults.put(listOf("x"))
-    defaults.put(listOf(1, 2))
-    defaults.put<String?>(null)
-    println("int=${defaults.get<Int>() + 1} strings=${defaults.get<List<String>>()} ints=${defaults.get<List<Int>>().sum()}")
-    println("nullable=${defaults.get<String?>()} type=${typeOf<Map<String, List<Point>>>()}")
-    try {
-        defaults.get<List<Level>>()
-    } catch (e: NoSuchElementException) {
-        println("error: ${e.message}")
-    }
 }

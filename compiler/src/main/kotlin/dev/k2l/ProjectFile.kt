@@ -12,7 +12,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 private val PROJECT_KEYS =
-    listOf("srcDirs", "outDir", "luaTarget", "luaLibImport", "classpath", "intOverflow", "strings", "long64", "sourceMap")
+    listOf("srcDirs", "outDir", "luaTarget", "luaLibImport", "classpath", "sourceMap")
 
 /** Comments and trailing commas are accepted: k2l.json is written by hand. */
 @OptIn(ExperimentalSerializationApi::class)
@@ -23,8 +23,8 @@ private val LENIENT_JSON = Json {
 
 /**
  * k2l.json, with paths relative to its directory:
- * `{"srcDirs": ["src"], "outDir": "out", "luaTarget": "5.4", "luaLibImport": "require", "classpath": [], "intOverflow": "unchecked",
- * "strings": "bytes", "long64": "double", "sourceMap": false}`
+ * `{"srcDirs": ["src"], "outDir": "out", "luaTarget": "5.4", "luaLibImport": "require", "classpath": [],
+ * "sourceMap": false}`
  */
 internal fun readProject(file: Path): Settings {
     require(Files.isRegularFile(file)) { "project file $file not found" }
@@ -44,9 +44,6 @@ internal fun readProject(file: Path): Settings {
         target = project.string("luaTarget")?.let(LuaTarget::parse) ?: LuaTarget.Lua54,
         lualib = project.string("luaLibImport")?.let(::parseLualib) ?: LuaLibImport.Require,
         classpath = project.paths("classpath").map(dir::resolve),
-        intOverflow = project.string("intOverflow")?.let(IntOverflow::parse) ?: IntOverflow.Unchecked,
-        strings = project.string("strings")?.let(StringSemantics::parse) ?: StringSemantics.Bytes,
-        long64 = project.string("long64")?.let(Long64::parse) ?: Long64.AsDouble,
         sourceMap = project.boolean("sourceMap"),
     )
 }

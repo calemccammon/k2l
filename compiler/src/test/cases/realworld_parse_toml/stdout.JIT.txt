@@ -1,0 +1,84 @@
+{
+  "title": "TOML \u00e2\u0086\u0092 JSON",
+  "owner": {
+    "name": "Zo\u00c3\u00ab \"zed\" \u00c3\u0085ngstr\u00c3\u00b6m",
+    "emoji": "\u00f0\u009f\u009a\u0080 launch"
+  },
+  "path": "C:\\Users\\cfg",
+  "server": {
+    "host": "0.0.0.0",
+    "ports": [
+      8000,
+      8001,
+      8080
+    ],
+    "timeout": 25,
+    "ratio": -0.125,
+    "debug": false,
+    "masks": [
+      493,
+      170
+    ],
+    "limits": {
+      "max-body": 1048576,
+      "rates": {
+        "burst": 20,
+        "sustained": 5
+      }
+    }
+  },
+  "plugin": [
+    {
+      "name": "auth",
+      "tags": [
+        "core",
+        "sec"
+      ]
+    },
+    {
+      "name": "metrics",
+      "options": {
+        "interval": 15,
+        "sinks": [
+          "stdout",
+          "statsd"
+        ]
+      },
+      "nested": [
+        [
+          1,
+          2
+        ],
+        [],
+        [
+          "a\tb"
+        ]
+      ]
+    }
+  ],
+  "empty": {
+    "quoted key": "tab\there",
+    "bounds": [
+      "inf",
+      "-inf"
+    ]
+  }
+}
+{TArr=10, TBool=1, TFloat=5, TInt=10, TStr=13, TTable=9}
+ports sum=24081 max=8080 hex=0x1f40, 0x1f41, 0x1f90
+plugins: auth, metrics
+owner length=21 upper=ZOë "ZED" ÅNGSTRöM
+true
+error line 2: duplicate key 'a'
+error line 1: expected ',' or ']' in array
+error line 1: unterminated string
+error line 1: misplaced underscore in '1__000'
+error line 1: invalid code point U+D800
+error line 1: unknown escape '\q'
+error line 3: key 'k' already holds a TInt
+error line 2: cannot extend inline table 't'
+error line 1: bad integer '0xZZ'
+error line 1: expected end of line, found 'j'
+ok?? [[arr]]\n[arr.x]\ny=1\n[arr]
+error line 1: bad float '1.2.3'
+error line 1: expected a key

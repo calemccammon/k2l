@@ -1,0 +1,23 @@
+-- projectile
+flight 4.07s range 81.4000 apex 20.2874
+analytic range 81.5494 error 0.1494
+-- bouncing balls
+start t=0.000 KE=16.1250 PE=210.9150 E=227.0400 p=(1.0000, 4.5000)
+frame 150 t=1.250 KE=141.8293 PE=25.1569 E=166.9862 p=(1.0000, 9.5010)
+frame 300 t=2.500 KE=69.0772 PE=71.4005 E=140.4777 p=(2.1537, -10.8762)
+frame 450 t=3.750 KE=26.5659 PE=82.5289 E=109.0948 p=(2.1537, 8.9341)
+frame 600 t=5.000 KE=76.7181 PE=19.2612 E=95.9793 p=(-0.9461, -9.9014)
+ball 0 pos=(3.9752, 1.1213) vel=(-5.5880, -7.7051) speed=9.5181
+ball 1 pos=(1.3051, 0.8640) vel=(0.5762, 2.5665) speed=2.6304
+ball 2 pos=(7.9979, 2.1253) vel=(4.5936, -7.6608) speed=8.9325
+ball 3 pos=(5.1058, 0.7010) vel=(0.7951, -2.3326) speed=2.4644
+wall hits 23, ball hits 11
+-- cradle
+0.000, 0.000, 0.000, 0.000, 3.000
+energy kept: 1.000000
+momentum: (3.0000, 0.0000)
+-- orbit
+after one period: (1.0000, 0.0008)
+radius 0.999500..1.000501
+energy drift 8.660e-14
+unit circle 1 (0.6000, 0.8000)

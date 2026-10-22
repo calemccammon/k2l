@@ -210,7 +210,7 @@ fun main() {
         try {
             op()
         } catch (e: Exception) {
-            println("error ${e.javaClass.simpleName}: ${e.message}")
+            println("error ${e::class.simpleName}: ${e.message}")
         }
     }
 

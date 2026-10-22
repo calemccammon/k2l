@@ -1,22 +1,16 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
-local __K2L_JavaClass = ____lualib.__K2L_JavaClass
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 
 local Greeter = __K2L_Class("app.Greeter")
-__K2L_ClassInfo(Greeter, "app.Greeter", "app.Greeter", "interface")
 local Counter = __K2L_Class("app.Counter")
-__K2L_ClassInfo(Counter, "app.Counter", "app.Counter", "interface")
 local Animal = __K2L_Class("app.Animal")
-__K2L_ClassInfo(Animal, "app.Animal", "app.Animal", "class")
 
 function Animal:____init(name)
     self.name = name
@@ -35,7 +29,6 @@ function Animal:describe()
 end
 
 local Ticker = __K2L_Class("app.Ticker", nil, Counter)
-__K2L_ClassInfo(Ticker, "app.Ticker", "app.Ticker", "class")
 
 function Ticker:____init()
     self.n = 0
@@ -47,14 +40,12 @@ function Ticker:next()
 end
 
 local Shop = __K2L_Class("app.Shop")
-__K2L_ClassInfo(Shop, "app.Shop", "app.Shop", "class")
 
 function Shop:____init(title)
     self.title = title
     self.visits = 0
     local ____this = self
     local ____object = __K2L_Class("app.Shop$counter$1", nil, Counter)
-    __K2L_ClassInfo(____object, nil, "app.Shop$counter$1", "class", false)
     function ____object:____init()
         self.count = 10
     end
@@ -70,7 +61,6 @@ end
 function Shop:greeter()
     local ____this_1 = self
     local ____object_1 = __K2L_Class("app.Shop$greeter$1", nil, Greeter)
-    __K2L_ClassInfo(____object_1, nil, "app.Shop$greeter$1", "class", false)
     function ____object_1:greet(name)
         ____this_1.visits = ____this_1.visits + 1
         return "Welcome to " .. ____this_1.title .. ", " .. name .. " (visit " .. ____this_1.visits .. ")"
@@ -79,7 +69,6 @@ function Shop:greeter()
 end
 
 Shop.Desk = __K2L_Class("app.Shop$Desk")
-__K2L_ClassInfo(Shop.Desk, "app.Shop.Desk", "app.Shop$Desk", "class")
 
 function Shop.Desk:____init(____outer)
     self.____outer = ____outer
@@ -89,7 +78,6 @@ function Shop.Desk:helper()
     local ____this_2 = self
     local ____this_3 = self.____outer
     local ____object_2 = __K2L_Class("app.Shop$Desk$helper$1", nil, Greeter)
-    __K2L_ClassInfo(____object_2, nil, "app.Shop$Desk$helper$1", "class", false)
     function ____object_2:greet(name)
         return ____this_3.title .. " desk helps " .. name
     end
@@ -99,7 +87,6 @@ end
 local function makeCounter(start)
     local current = start
     local ____object_3 = __K2L_Class("app.MainKt$makeCounter$c$1", nil, Counter)
-    __K2L_ClassInfo(____object_3, nil, "app.MainKt$makeCounter$c$1", "class", false)
     function ____object_3:next()
         current = current + 2
         return current
@@ -117,13 +104,11 @@ end
 local ____lambda_1 = function(name) return "Hi " .. name end
 local function main()
     local ____object_4 = __K2L_Class("app.MainKt$main$1", nil, Greeter)
-    __K2L_ClassInfo(____object_4, nil, "app.MainKt$main$1", "class", false)
     function ____object_4:greet(name)
         return "Hi " .. name
     end
     print(use(____object_4))
     local ____object_5 = __K2L_Class("app.MainKt$main$dog$1", Animal, Counter)
-    __K2L_ClassInfo(____object_5, nil, "app.MainKt$main$dog$1", "class", false)
     function ____object_5:____init()
         Animal.____init(self, "Rex")
         print("init of the dog object")
@@ -141,7 +126,6 @@ local function main()
     print(dog:describe() .. " " .. dog:describe() .. " " .. dog:next())
     print(tostring(__K2L_InstanceOf(dog, Animal)) .. " " .. tostring(__K2L_InstanceOf(dog, Counter)) .. " " .. dog.name)
     local ____object_6 = __K2L_Class("app.MainKt$main$point$1")
-    __K2L_ClassInfo(____object_6, nil, "app.MainKt$main$point$1", "class", false)
     function ____object_6:____init()
         self.x = 3
         self.y = 4
@@ -162,7 +146,6 @@ local function main()
     print(shop.counter:next() + shop.counter:next())
     print(Shop.Desk.new(shop):helper():greet("Di"))
     local ____object_7 = __K2L_Class("app.MainKt$main$ticker$1", nil, Counter)
-    __K2L_ClassInfo(____object_7, nil, "app.MainKt$main$ticker$1", "class", false)
     function ____object_7:____init()
         self.____delegate_Counter = Ticker.new()
     end
@@ -174,7 +157,6 @@ local function main()
     print(ticker:next() .. " " .. ticker:next())
     local made = __K2L_IntRange.new(1, 3):map(function(i)
         local ____object_8 = __K2L_Class("app.MainKt$main$made$1$1", nil, Counter)
-        __K2L_ClassInfo(____object_8, nil, "app.MainKt$main$made$1$1", "class", false)
         function ____object_8:next()
             return i * 100
         end
@@ -191,13 +173,9 @@ local function main()
     print(__K2L_Str(__K2L_ListWrap(____out, ____count)))
     print(made:get(0) == made:get(1))
     local Local = __K2L_Class("app.MainKt$main$Local")
-    __K2L_ClassInfo(Local, nil, "app.MainKt$main$Local", "class")
-    print(__K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(Local.new())).name))
-    print(__K2L_JavaClass(__K2L_KClassOfValue(g)).name .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(point)).name))
-    print(__K2L_JavaClass(__K2L_KClassOfValue(shop.counter)).name .. " " .. __K2L_Str(__K2L_JavaClass(__K2L_KClassOfValue(made:get(0))).name))
-    print(__K2L_Str(__K2L_KClassOfValue(point).simpleName) .. " " .. __K2L_Str(__K2L_KClassOf(Local).simpleName) .. " " .. __K2L_Str(__K2L_KClassOfValue(point).qualifiedName))
+    print(__K2L_Str(__K2L_SimpleName(point)) .. " " .. __K2L_Str("Local"))
     print(__K2L_StringStartsWith(__K2L_Str(point), "app.MainKt$main$point$1@"))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Greeter = Greeter, Counter = Counter, Animal = Animal, Ticker = Ticker, Shop = Shop, makeCounter = makeCounter, use = use}

@@ -1,5 +1,6 @@
 // A small Markdown-to-HTML converter: headings with slugs, paragraphs, emphasis, inline code, links,
-// images, ordered and unordered lists, block quotes, fenced code, horizontal rules, tables and a TOC.
+// images, ordered and unordered lists, block quotes, fenced code, horizontal rules, tables and a TOC. The regexes stay
+// within what Lua patterns express: alternatives and look-arounds are separate patterns and checks in Kotlin.
 
 fun escapeHtml(s: String): String = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
 
@@ -9,10 +10,10 @@ fun slug(text: String): String = text.lowercase()
     .replace(Regex("\\s+"), "-")
 
 private val CODE_SPAN = Regex("`([^`]+)`")
-private val IMAGE = Regex("""!\[([^\]]*)]\(([^)\s]+)(?:\s+"([^"]*)")?\)""")
+private val IMAGE = Regex("""!\[([^\]]*)]\(([^)\s]+)\)""")
 private val LINK = Regex("""\[([^\]]+)]\(([^)\s]+)\)""")
-private val STRONG = Regex("""\*\*(.+?)\*\*|__(.+?)__""")
-private val EM = Regex("""(?<![*\w])\*(?!\s)(.+?)(?<!\s)\*(?!\*)|(?<!\w)_(.+?)_(?!\w)""")
+private val STRONG = listOf(Regex("""\*\*(.+?)\*\*"""), Regex("""__(.+?)__"""))
+private val EM = listOf(Regex("""\*(\S[^*]*)\*"""), Regex("""_([^_]+)_"""))
 private val AUTOLINK = Regex("""<(https?://[^>]+)>""")
 private val STRIKE = Regex("~~(.+?)~~")
 
@@ -26,15 +27,40 @@ fun inline(text: String): String {
     s = AUTOLINK.replace(s) { "<a href=\"${it.groupValues[1]}\">${it.groupValues[1]}</a>" }
     s = escapeHtml(s).replace("&lt;a href=&quot;", "<a href=\"").replace("&quot;&gt;", "\">").replace("&lt;/a&gt;", "</a>")
     s = IMAGE.replace(s) { m ->
-        val (alt, src, title) = m.destructured
-        "<img src=\"$src\" alt=\"$alt\"" + (if (title.isNotEmpty()) " title=\"$title\"" else "") + ">"
+        val (alt, src) = m.destructured
+        "<img src=\"$src\" alt=\"$alt\">"
     }
     s = LINK.replace(s, "<a href=\"$2\">$1</a>")
-    s = STRONG.replace(s) { m -> "<strong>" + (m.groups[1]?.value ?: m.groups[2]!!.value) + "</strong>" }
-    s = EM.replace(s) { m -> "<em>" + (m.groups[1] ?: m.groups[2])!!.value + "</em>" }
+    for (strong in STRONG) s = strong.replace(s, "<strong>$1</strong>")
+    for (em in EM) s = emphasis(s, em)
     s = STRIKE.replace(s, "<del>$1</del>")
     return Regex("\u0000(\\d+)\u0000").replace(s) { codes[it.groupValues[1].toInt()] }
 }
+
+fun isWordChar(c: Char?) = c != null && (c.isLetterOrDigit() || c == '_')
+
+/** `*text*` or `_text_` as <em>: not inside a word (nor next to another `*`), and not with a blank before the closing mark. */
+fun emphasis(s: String, em: Regex): String = em.replace(s) { m ->
+    val mark = m.value[0]
+    val before = s.getOrNull(m.range.first - 1)
+    val after = s.getOrNull(m.range.last + 1)
+    val body = m.groupValues[1]
+    val inWord = isWordChar(before) || before == mark || after == mark || (mark == '_' && isWordChar(after))
+    if (inWord || body.last().isWhitespace()) m.value else "<em>$body</em>"
+}
+
+fun isRule(line: String) = listOf('*', '-').any { c -> line.firstOrNull() == c && line.count { it == c } >= 3 && line.all { it == c || it.isWhitespace() } }
+
+private val SEPARATOR_CELL = Regex(""":?-+:?""")
+
+fun isSeparator(row: String) = row.trim().removePrefix("|").removeSuffix("|").split("|").all { it.trim().matches(SEPARATOR_CELL) }
+
+private val BULLET = Regex("""^\s*[-*+] (.*)$""")
+private val NUMBERED = Regex("""^\s*\d+[.)] (.*)$""")
+private val CHECKBOX = Regex("""^\[[ xX]] """)
+
+/** The text of a list item line, or null. */
+fun listItem(line: String): String? = (BULLET.matchEntire(line) ?: NUMBERED.matchEntire(line))?.groupValues?.get(1)
 
 data class Heading(val level: Int, val text: String, val id: String)
 
@@ -72,7 +98,7 @@ class Converter {
                     out.append("<h$level id=\"$id\">${inline(text)}</h$level>\n")
                     i++
                 }
-                line.matches(Regex("^(\\*\\s*){3,}$|^(-\\s*){3,}$")) -> {
+                isRule(line) -> {
                     out.append("<hr>\n")
                     i++
                 }
@@ -81,7 +107,7 @@ class Converter {
                     while (i < lines.size && lines[i].startsWith(">")) quoted += lines[i++].removePrefix(">").removePrefix(" ")
                     out.append("<blockquote>\n").append(Converter().convert(quoted.joinToString("\n"))).append("</blockquote>\n")
                 }
-                line.contains('|') && i + 1 < lines.size && lines[i + 1].matches(Regex("^\\s*\\|?\\s*:?-+:?\\s*(\\|\\s*:?-+:?\\s*)*\\|?\\s*$")) -> {
+                line.contains('|') && i + 1 < lines.size && isSeparator(lines[i + 1]) -> {
                     fun cells(row: String) = row.trim().removePrefix("|").removeSuffix("|").split("|").map { it.trim() }
                     val header = cells(line)
                     val aligns = cells(lines[i + 1]).map {
@@ -103,21 +129,20 @@ class Converter {
                     }
                     out.append("</table>\n")
                 }
-                Regex("^\\s*([-*+]|\\d+[.)]) ").find(line) != null -> {
+                listItem(line) != null -> {
                     val ordered = line.trimStart().first().isDigit()
                     val start = if (ordered) line.trim().takeWhile { it.isDigit() }.toInt() else 1
                     val tag = if (ordered) "ol" else "ul"
                     out.append(if (ordered && start != 1) "<ol start=\"$start\">\n" else "<$tag>\n")
-                    val item = Regex("^\\s*(?:[-*+]|\\d+[.)]) (\\[[ xX]] )?(.*)$")
                     while (i < lines.size) {
-                        val m = item.matchEntire(lines[i]) ?: break
-                        val check = m.groupValues[1]
+                        val text = listItem(lines[i]) ?: break
+                        val check = CHECKBOX.find(text)?.value.orEmpty()
                         val box = when {
                             check.isEmpty() -> ""
                             check[1] == ' ' -> "<input type=\"checkbox\" disabled> "
                             else -> "<input type=\"checkbox\" checked disabled> "
                         }
-                        out.append("  <li>").append(box).append(inline(m.groupValues[2])).append("</li>\n")
+                        out.append("  <li>").append(box).append(inline(text.removePrefix(check))).append("</li>\n")
                         i++
                     }
                     out.append("</$tag>\n")

@@ -1,23 +1,12 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_CompanionInfo = ____lualib.__K2L_CompanionInfo
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_EnumMap = ____lualib.__K2L_EnumMap
-local __K2L_EnumSets = ____lualib.__K2L_EnumSets
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IDiv = ____lualib.__K2L_IDiv
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_JavaClass = ____lualib.__K2L_JavaClass
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -25,10 +14,9 @@ local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
@@ -40,7 +28,6 @@ local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local State = __K2L_Class("State")
-__K2L_ClassInfo(State, "State", "State", "class")
 
 function State:____init(name, ordinal, canSend)
     if canSend == nil then
@@ -76,9 +63,7 @@ State.LAST_ACK = State.new("LAST_ACK", 9)
 State.TIME_WAIT = State.new("TIME_WAIT", 10)
 State.____values = {State.CLOSED, State.LISTEN, State.SYN_SENT, State.SYN_RECEIVED, State.ESTABLISHED, State.FIN_WAIT_1, State.FIN_WAIT_2, State.CLOSE_WAIT, State.CLOSING, State.LAST_ACK, State.TIME_WAIT}
 local Event = __K2L_Class("Event")
-__K2L_ClassInfo(Event, "Event", "Event", "interface")
 Event.PassiveOpen = __K2L_Class("Event$PassiveOpen", nil, Event)
-__K2L_ClassInfo(Event.PassiveOpen, "Event.PassiveOpen", "Event$PassiveOpen", "class")
 
 function Event.PassiveOpen:toString()
     return "PassiveOpen"
@@ -89,7 +74,6 @@ function Event.PassiveOpen:hashCode()
 end
 
 Event.ActiveOpen = __K2L_Class("Event$ActiveOpen", nil, Event)
-__K2L_ClassInfo(Event.ActiveOpen, "Event.ActiveOpen", "Event$ActiveOpen", "class")
 
 function Event.ActiveOpen:toString()
     return "ActiveOpen"
@@ -100,7 +84,6 @@ function Event.ActiveOpen:hashCode()
 end
 
 Event.Syn = __K2L_Class("Event$Syn", nil, Event)
-__K2L_ClassInfo(Event.Syn, "Event.Syn", "Event$Syn", "class")
 
 function Event.Syn:toString()
     return "Syn"
@@ -111,7 +94,6 @@ function Event.Syn:hashCode()
 end
 
 Event.SynAck = __K2L_Class("Event$SynAck", nil, Event)
-__K2L_ClassInfo(Event.SynAck, "Event.SynAck", "Event$SynAck", "class")
 
 function Event.SynAck:toString()
     return "SynAck"
@@ -122,7 +104,6 @@ function Event.SynAck:hashCode()
 end
 
 Event.Ack = __K2L_Class("Event$Ack", nil, Event)
-__K2L_ClassInfo(Event.Ack, "Event.Ack", "Event$Ack", "class")
 
 function Event.Ack:toString()
     return "Ack"
@@ -133,7 +114,6 @@ function Event.Ack:hashCode()
 end
 
 Event.Fin = __K2L_Class("Event$Fin", nil, Event)
-__K2L_ClassInfo(Event.Fin, "Event.Fin", "Event$Fin", "class")
 
 function Event.Fin:toString()
     return "Fin"
@@ -144,7 +124,6 @@ function Event.Fin:hashCode()
 end
 
 Event.Close = __K2L_Class("Event$Close", nil, Event)
-__K2L_ClassInfo(Event.Close, "Event.Close", "Event$Close", "class")
 
 function Event.Close:toString()
     return "Close"
@@ -155,7 +134,6 @@ function Event.Close:hashCode()
 end
 
 Event.Send = __K2L_Class("Event$Send", nil, Event)
-__K2L_ClassInfo(Event.Send, "Event.Send", "Event$Send", "class")
 
 function Event.Send:____init(bytes)
     self.bytes = bytes
@@ -178,7 +156,6 @@ function Event.Send:equals(other)
 end
 
 Event.Tick = __K2L_Class("Event$Tick", nil, Event)
-__K2L_ClassInfo(Event.Tick, "Event.Tick", "Event$Tick", "class")
 
 function Event.Tick:____init(ms)
     self.ms = ms
@@ -201,7 +178,6 @@ function Event.Tick:equals(other)
 end
 
 Event.Reset = __K2L_Class("Event$Reset", nil, Event)
-__K2L_ClassInfo(Event.Reset, "Event.Reset", "Event$Reset", "class")
 
 function Event.Reset:toString()
     return "Reset"
@@ -212,7 +188,6 @@ function Event.Reset:hashCode()
 end
 
 local InvalidTransition = __K2L_Class("InvalidTransition", __K2L_IllegalStateException)
-__K2L_ClassInfo(InvalidTransition, "InvalidTransition", "InvalidTransition", "class")
 
 function InvalidTransition:____init(from, event)
     __K2L_IllegalStateException.____init(self, "no transition from " .. __K2L_Str(from) .. " on " .. __K2L_Str(event))
@@ -221,7 +196,6 @@ function InvalidTransition:____init(from, event)
 end
 
 local Step = __K2L_Class("Step")
-__K2L_ClassInfo(Step, "Step", "Step", "class")
 
 function Step:____init(from, event, to)
     self.from = from
@@ -246,14 +220,12 @@ function Step:equals(other)
 end
 
 local Connection = __K2L_Class("Connection")
-__K2L_ClassInfo(Connection, "Connection", "Connection", "class")
-__K2L_CompanionInfo(Connection, "Connection.Companion", "Connection$Companion", "Companion")
 
 function Connection:____init(name)
     self.name = name
     self.state = State.CLOSED
     self.history = __K2L_ListOf()
-    self.visits = __K2L_EnumMap.new(__K2L_JavaClass(__K2L_KClassOf(State)))
+    self.visits = __K2L_MapOf()
     self.timeWaitMs = 0
     self.sent = 0
     local ____object = self.visits
@@ -266,7 +238,7 @@ function Connection:fire(event)
     local ____next = self:next(event)
     self.history:add(Step.new(self.state, event, ____next))
     if ____next ~= self.state then
-        self.visits:merge(____next, 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_1))
+        self.visits:merge(____next, 1, ____lambda_1)
     end
     if ____next == State.TIME_WAIT and self.state ~= State.TIME_WAIT then
         self.timeWaitMs = 0
@@ -299,17 +271,20 @@ function Connection:next(e)
     end
 end
 
+local ____lambda_2 = function(it) return it.ordinal end
 function Connection:visited()
-    return __K2L_EnumSets.copyOf(self.visits:getKeys())
+    return self.visits:getKeys():sortedBy(____lambda_2, true):toSet()
 end
 
+local ____lambda_3 = function(it) return it.key.ordinal end
+local ____lambda_4 = function(it) return __K2L_Pair.new(it.key, it.value) end
 function Connection:visitCounts()
-    return self.visits
+    return self.visits:getEntries():sortedBy(____lambda_3):associate(____lambda_4)
 end
 
 function Connection:____initCompanion()
     self.MSL = 30
-    self.table = __K2L_ReadOnlyMapOf(__K2L_Pair.new(State.CLOSED, __K2L_ReadOnlyMapOf(__K2L_Pair.new(Event.PassiveOpen, State.LISTEN), __K2L_Pair.new(Event.ActiveOpen, State.SYN_SENT))), __K2L_Pair.new(State.LISTEN, __K2L_ReadOnlyMapOf(__K2L_Pair.new(Event.Syn, State.SYN_RECEIVED), __K2L_Pair.new(Event.Close, State.CLOSED))), __K2L_Pair.new(State.SYN_SENT, __K2L_ReadOnlyMapOf(__K2L_Pair.new(Event.SynAck, State.ESTABLISHED), __K2L_Pair.new(Event.Close, State.CLOSED))), __K2L_Pair.new(State.SYN_RECEIVED, __K2L_ReadOnlyMapOf(__K2L_Pair.new(Event.Ack, State.ESTABLISHED), __K2L_Pair.new(Event.Close, State.FIN_WAIT_1))), __K2L_Pair.new(State.ESTABLISHED, __K2L_ReadOnlyMapOf(__K2L_Pair.new(Event.Close, State.FIN_WAIT_1), __K2L_Pair.new(Event.Fin, State.CLOSE_WAIT))), __K2L_Pair.new(State.FIN_WAIT_1, __K2L_ReadOnlyMapOf(__K2L_Pair.new(Event.Ack, State.FIN_WAIT_2), __K2L_Pair.new(Event.Fin, State.CLOSING))), __K2L_Pair.new(State.FIN_WAIT_2, __K2L_SingletonMapOf(__K2L_Pair.new(Event.Fin, State.TIME_WAIT))), __K2L_Pair.new(State.CLOSING, __K2L_SingletonMapOf(__K2L_Pair.new(Event.Ack, State.TIME_WAIT))), __K2L_Pair.new(State.CLOSE_WAIT, __K2L_SingletonMapOf(__K2L_Pair.new(Event.Close, State.LAST_ACK))), __K2L_Pair.new(State.LAST_ACK, __K2L_SingletonMapOf(__K2L_Pair.new(Event.Ack, State.CLOSED))))
+    self.table = __K2L_MapOf(__K2L_Pair.new(State.CLOSED, __K2L_MapOf(__K2L_Pair.new(Event.PassiveOpen, State.LISTEN), __K2L_Pair.new(Event.ActiveOpen, State.SYN_SENT))), __K2L_Pair.new(State.LISTEN, __K2L_MapOf(__K2L_Pair.new(Event.Syn, State.SYN_RECEIVED), __K2L_Pair.new(Event.Close, State.CLOSED))), __K2L_Pair.new(State.SYN_SENT, __K2L_MapOf(__K2L_Pair.new(Event.SynAck, State.ESTABLISHED), __K2L_Pair.new(Event.Close, State.CLOSED))), __K2L_Pair.new(State.SYN_RECEIVED, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.ESTABLISHED), __K2L_Pair.new(Event.Close, State.FIN_WAIT_1))), __K2L_Pair.new(State.ESTABLISHED, __K2L_MapOf(__K2L_Pair.new(Event.Close, State.FIN_WAIT_1), __K2L_Pair.new(Event.Fin, State.CLOSE_WAIT))), __K2L_Pair.new(State.FIN_WAIT_1, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.FIN_WAIT_2), __K2L_Pair.new(Event.Fin, State.CLOSING))), __K2L_Pair.new(State.FIN_WAIT_2, __K2L_MapOf(__K2L_Pair.new(Event.Fin, State.TIME_WAIT))), __K2L_Pair.new(State.CLOSING, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.TIME_WAIT))), __K2L_Pair.new(State.CLOSE_WAIT, __K2L_MapOf(__K2L_Pair.new(Event.Close, State.LAST_ACK))), __K2L_Pair.new(State.LAST_ACK, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.CLOSED))))
 end
 
 __K2L_LazyObject(Connection, "____initCompanion")
@@ -380,18 +355,14 @@ local function parseEvents(script)
     return __K2L_ListWrap(____out_2, ____count_2)
 end
 
-local ____lambda_2 = function(it) return it.to.name end
+local ____lambda_5 = function(it) return it.to.name end
 local function runConnection(name, script)
     local c = Connection.new(name)
-    local ____ok, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok, ____result_1 = pcall(function()
         local ____list_3 = parseEvents(script)
-        local ____mod = ____list_3.____modCount
         for ____i_3 = 1, ____list_3.size do
             local e = ____list_3[____i_3]
             c:fire(e)
-            if ____list_3.____modCount ~= ____mod and ____list_3:____comodified(____i_3) then
-                break
-            end
         end
         print(name .. ": ended in " .. __K2L_Str(c.state) .. (c.state:getIsTerminal() and " (terminal)" or "") .. ", sent " .. c.sent .. " bytes")
     end)
@@ -418,7 +389,7 @@ local function runConnection(name, script)
             ____out_3[____count_3] = it
         end
     end
-    local path = __K2L_ListWrap(____out_3, ____count_3):joinToString(" -> ", "  path: CLOSED -> ", nil, nil, nil, ____lambda_2)
+    local path = __K2L_ListWrap(____out_3, ____count_3):joinToString(" -> ", "  path: CLOSED -> ", nil, nil, nil, ____lambda_5)
     local ____list_5 = c.history
     local ____result_2 = false
     local ____items_4, ____n_4 = ____list_5:____array()
@@ -436,7 +407,6 @@ local function runConnection(name, script)
 end
 
 local Coin = __K2L_Class("Coin")
-__K2L_ClassInfo(Coin, "Coin", "Coin", "class")
 
 function Coin:____init(name, ordinal, cents)
     self.name = name
@@ -458,29 +428,25 @@ Coin.QUARTER = Coin.new("QUARTER", 2, 25)
 Coin.DOLLAR = Coin.new("DOLLAR", 3, 100)
 Coin.____values = {Coin.NICKEL, Coin.DIME, Coin.QUARTER, Coin.DOLLAR}
 local VendingMachine = __K2L_Class("VendingMachine")
-__K2L_ClassInfo(VendingMachine, "VendingMachine", "VendingMachine", "class")
 
-local ____lambda_3 = function(it) return it.value.first end
-local ____lambda_4 = function(it) return it.value.second end
+local ____lambda_6 = function(it) return it.value.first end
+local ____lambda_7 = function(it) return it.value.second end
 function VendingMachine:____init(stock)
-    self.prices = stock:mapValues(____lambda_3)
-    self.counts = stock:mapValues(____lambda_4):toMutableMap()
+    self.prices = stock:mapValues(____lambda_6)
+    self.counts = stock:mapValues(____lambda_7):toMutableMap()
     self.credit = 0
     self.log = __K2L_StringBuilder.new()
     self.mode = VendingMachine.Mode.Idle
 end
 
 VendingMachine.Mode = __K2L_Class("VendingMachine$Mode")
-__K2L_ClassInfo(VendingMachine.Mode, "VendingMachine.Mode", "VendingMachine$Mode", "class")
 VendingMachine.Mode.Idle = __K2L_Class("VendingMachine$Mode$Idle", VendingMachine.Mode)
-__K2L_ClassInfo(VendingMachine.Mode.Idle, "VendingMachine.Mode.Idle", "VendingMachine$Mode$Idle", "class")
 
 function VendingMachine.Mode.Idle:toString()
     return "Idle"
 end
 
 VendingMachine.Mode.HasCredit = __K2L_Class("VendingMachine$Mode$HasCredit", VendingMachine.Mode)
-__K2L_ClassInfo(VendingMachine.Mode.HasCredit, "VendingMachine.Mode.HasCredit", "VendingMachine$Mode$HasCredit", "class")
 
 function VendingMachine.Mode.HasCredit:____init(cents)
     self.cents = cents
@@ -503,7 +469,6 @@ function VendingMachine.Mode.HasCredit:equals(other)
 end
 
 VendingMachine.Mode.SoldOut = __K2L_Class("VendingMachine$Mode$SoldOut", VendingMachine.Mode)
-__K2L_ClassInfo(VendingMachine.Mode.SoldOut, "VendingMachine.Mode.SoldOut", "VendingMachine$Mode$SoldOut", "class")
 
 function VendingMachine.Mode.SoldOut:____init(item)
     self.item = item
@@ -531,7 +496,7 @@ function VendingMachine:insert(c)
     self.log:append("+" .. c.name:lower() .. " ")
 end
 
-local ____lambda_5 = function(it) return it.value .. "x" .. __K2L_Str(it.key) end
+local ____lambda_8 = function(it) return it.value .. "x" .. __K2L_Str(it.key) end
 function VendingMachine:select(item)
     local ____value_3 = self.prices:get(item)
     if ____value_3 == nil then
@@ -555,7 +520,7 @@ function VendingMachine:select(item)
         if change:isEmpty() then
             ____temp = "none"
         else
-            ____temp = change:getEntries():joinToString(nil, nil, nil, nil, nil, ____lambda_5)
+            ____temp = change:getEntries():joinToString(nil, nil, nil, nil, nil, ____lambda_8)
         end
         return "vend " .. item .. ", change " .. ____temp
     end
@@ -576,16 +541,12 @@ function VendingMachine:makeChange(amount)
         end
     end
     local ____list_7 = __K2L_ListWrap(____out_4, ____count_4)
-    local ____mod_1 = ____list_7.____modCount
     for ____i_7 = 1, ____list_7.size do
         local coin = ____list_7[____i_7]
-        local n = __K2L_IDiv(rest, coin.cents)
+        local n = rest // coin.cents
         if n > 0 then
             out:set(coin, n)
             rest = rest - n * coin.cents
-        end
-        if ____list_7.____modCount ~= ____mod_1 and ____list_7:____comodified(____i_7) then
-            break
         end
     end
     if rest ~= 0 then
@@ -601,8 +562,8 @@ function VendingMachine:refund()
     return ____value_4
 end
 
-local ____lambda_6 = function() return __K2L_EnumValueOf(State, "OPEN") end
-local ____lambda_7 = function(it) return it.size > 1 end
+local ____lambda_9 = function() return __K2L_EnumValueOf(State, "OPEN") end
+local ____lambda_10 = function(it) return it.size > 1 end
 local function main()
     runConnection("client", "open, synack, send(512), send(1024), close, ack, fin, tick(30), tick(29), tick(1)")
     runConnection("server", "listen, syn, ack, send(64), fin, send(8), close, ack")
@@ -622,9 +583,8 @@ local function main()
         end
     end
     print(__K2L_Str(__K2L_Pair.new(____arg, ____result_3)))
-    local ____receiver_1 = __K2L_RunCatching(____lambda_6):exceptionOrNull()
-    local ____receiver_2 = ____receiver_1 and __K2L_JavaClass(__K2L_KClassOfValue(____receiver_1))
-    print(__K2L_Str(____receiver_2 and (____receiver_2.simpleName or "")))
+    local ____receiver_1 = __K2L_RunCatching(____lambda_9):exceptionOrNull()
+    print(__K2L_Str(____receiver_1 and __K2L_SimpleName(____receiver_1)))
     local ____values_1 = State.____values
     local ____result_4 = __K2L_Map.new()
     for ____i_9 = 1, #____values_1 do
@@ -637,11 +597,10 @@ local function main()
         end
         ____group:add(it)
     end
-    local byPrefix = ____result_4:filterValues(____lambda_7)
+    local byPrefix = ____result_4:filterValues(____lambda_10)
     print(__K2L_Str(byPrefix))
-    local vm = VendingMachine.new(__K2L_ReadOnlyMapOf(__K2L_Pair.new("cola", __K2L_Pair.new(125, 2)), __K2L_Pair.new("chips", __K2L_Pair.new(65, 1)), __K2L_Pair.new("gum", __K2L_Pair.new(35, 0))))
-    local actions = __K2L_ReadOnlyListOf("Q", "Q", "cola", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "cola", "gum", "chips", "$", "N", "chips", "chips", "Q", "nachos", "refund")
-    local ____mod_2 = actions.____modCount
+    local vm = VendingMachine.new(__K2L_MapOf(__K2L_Pair.new("cola", __K2L_Pair.new(125, 2)), __K2L_Pair.new("chips", __K2L_Pair.new(65, 1)), __K2L_Pair.new("gum", __K2L_Pair.new(35, 0))))
+    local actions = __K2L_ListOf("Q", "Q", "cola", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "cola", "gum", "chips", "$", "N", "chips", "chips", "Q", "nachos", "refund")
     for ____i_10 = 1, actions.size do
         local a = actions[____i_10]
         local result
@@ -665,12 +624,9 @@ local function main()
         if result ~= nil then
             print(a .. " -> " .. result .. "  [" .. __K2L_Str(vm.mode) .. "]")
         end
-        if actions.____modCount ~= ____mod_2 and actions:____comodified(____i_10) then
-            break
-        end
     end
     print(__K2L_StringTrimEnd(vm.log:toString()))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {State = State, Event = Event, InvalidTransition = InvalidTransition, Step = Step, Connection = Connection, parseEvents = parseEvents, runConnection = runConnection, Coin = Coin, VendingMachine = VendingMachine}

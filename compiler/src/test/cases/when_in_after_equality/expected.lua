@@ -1,12 +1,10 @@
 local ____lualib = require("lualib_bundle")
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local Color = __K2L_Class("Color")
 
@@ -31,9 +29,9 @@ Color.____values = {Color.RED, Color.GREEN, Color.BLUE}
 local function classify(n)
     if n == 0 then
         return "zero"
-    elseif __K2L_ReadOnlyListOf(1, 2, 3):contains(n) then
+    elseif __K2L_ListOf(1, 2, 3):contains(n) then
         return "small"
-    elseif __K2L_ReadOnlySetOf(10, 20):contains(n) then
+    elseif __K2L_SetOf(10, 20):contains(n) then
         return "round"
     elseif not (n >= 0 and n <= 100) then
         return "out of range"
@@ -45,7 +43,7 @@ end
 local function warm(c)
     if c == Color.BLUE then
         return false
-    elseif __K2L_SingletonListOf(Color.RED):contains(c) then
+    elseif __K2L_ListOf(Color.RED):contains(c) then
         return true
     else
         return false
@@ -56,7 +54,7 @@ local function cool(c)
     local shade = c
     if shade == Color.RED then
         return "warm"
-    elseif __K2L_ReadOnlyListOf(Color.GREEN, Color.BLUE):contains(shade) then
+    elseif __K2L_ListOf(Color.GREEN, Color.BLUE):contains(shade) then
         return "cool " .. __K2L_Str(shade)
     else
         return "?"
@@ -66,7 +64,7 @@ end
 local function word(s)
     if s == "" then
         return "empty"
-    elseif __K2L_TypedArrayOf("[Ljava.lang.String;", "a", "e", "i", "o", "u"):contains(s) then
+    elseif __K2L_ArrayOf("a", "e", "i", "o", "u"):contains(s) then
         return "vowel"
     elseif __K2L_ListOf("y"):contains(s) then
         return "sometimes"
@@ -76,7 +74,7 @@ local function word(s)
 end
 
 local function main()
-    local ____list = __K2L_ReadOnlyListOf(0, 2, 10, 50, 500)
+    local ____list = __K2L_ListOf(0, 2, 10, 50, 500)
     for ____i = 1, ____list.size do
         local n = ____list[____i]
         print(n .. " " .. classify(n))
@@ -86,12 +84,12 @@ local function main()
         local c = ____values[____i_1]
         print(__K2L_Str(c) .. " " .. tostring(warm(c)) .. " " .. cool(c))
     end
-    local ____list_1 = __K2L_ReadOnlyListOf("", "e", "y", "k")
+    local ____list_1 = __K2L_ListOf("", "e", "y", "k")
     for ____i_2 = 1, ____list_1.size do
         local s = ____list_1[____i_2]
         print("'" .. s .. "' " .. word(s))
     end
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Color = Color, classify = classify, warm = warm, cool = cool, word = word}

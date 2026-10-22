@@ -100,11 +100,6 @@ fun errors() {
         println(e)
     }
     try {
-        println(1 / (listOf(0)[0]))
-    } catch (e: ArithmeticException) {
-        println(e)
-    }
-    try {
         listOf(1, 2, 3).chunked(0)
     } catch (e: IllegalArgumentException) {
         println(e.message)

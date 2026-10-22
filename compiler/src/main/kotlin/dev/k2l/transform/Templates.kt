@@ -15,7 +15,6 @@ import org.jetbrains.kotlin.psi.*
 internal fun FileTransformer.template(e: KtStringTemplateExpression): LuaExpr = with(session) {
     val parts = mutableListOf<LuaExpr>()
     var lone: Pair<KtExpression, LuaExpr>? = null
-    var hasChar = false
     val pending = StringBuilder()
     fun flush() {
         if (pending.isNotEmpty()) parts += LuaString(pending.toString())
@@ -36,13 +35,12 @@ internal fun FileTransformer.template(e: KtStringTemplateExpression): LuaExpr = 
                 flush()
                 val value = values.next()
                 lone = expr to value
-                if (expr.expressionType?.isCharType == true && expr.evaluate() == null) hasChar = true
                 parts += if (texts != null) value else str(value, templateType(expr), forConcat = true)
             }
         }
     }
     flush()
-    return joined(templateParts(parts, lone), hasChar)
+    return templateParts(parts, lone)
 }
 
 /**
@@ -82,51 +80,21 @@ private fun FileTransformer.templateParts(parts: List<LuaExpr>, lone: Pair<KtExp
 }
 
 /**
- * Converts [value] to a string the way Kotlin's `toString()` would. With [forConcat], numbers that
- * Lua's `..` already formats identically are left alone.
+ * Converts [value] to a string the way `toString()` does: numbers and booleans as Lua's `tostring` writes them, other values
+ * by `__K2L_Str`. With [forConcat], numbers are left alone, as Lua's `..` writes them the same way.
  */
 internal fun FileTransformer.str(value: LuaExpr, type: KaType?, forConcat: Boolean = false): LuaExpr = with(session) {
-    if (!target.hasIntegers && type?.holdsOnlyDoubles() == true) return lualibCall("StrDoubles", value)
-    val t = type?.takeUnless { it.isMarkedNullable || isPlatformNullable(it) } ?: return nullableStr(value, type)
+    val t = type?.takeUnless { it.isMarkedNullable || isPlatformNullable(it) } ?: return lualibCall("Str", value)
     return when {
-        t.withoutFlexibility.isFloatType -> lualibCall("FloatToString", value)
-
-        // At runtime 2.0 and 2 look the same without integers, so use the static type.
-        (!target.hasIntegers || usesFloat) && t.withoutFlexibility.isDoubleType ->
-            lualibCall("DoubleToString", value)
-
-        // tostring() keeps only 14 digits of a large Long when numbers are doubles.
-        !target.hasIntegers && t.withoutFlexibility.isLongType -> lualibCall("Str", value)
-
-        t.withoutFlexibility.isULongType ->
-            libCall(UNSIGNED_TABLE, "toString", listOf(value))
-
         t.isStringType || t.isCharType -> value
-
         t.isUnitType && (value is LuaName || value is LuaNil) -> LuaString("kotlin.Unit")
-
-        t.isIntegral -> if (forConcat) value else luaCall(LuaName("tostring"), value)
-
+        t.isNumber -> if (forConcat) value else luaCall(LuaName("tostring"), value)
         t.isBooleanType -> luaCall(LuaName("tostring"), value)
-
         else -> lualibCall("Str", value)
     }
 }
 
-/** A `Double?` or `Float?` prints by its static type too (the lualib functions print nil as "null"). */
-private fun FileTransformer.nullableStr(value: LuaExpr, type: KaType?): LuaExpr = with(session) {
-    when ((type?.withoutFlexibility as? KaClassType)?.classId?.asString()) {
-        "kotlin/Float" -> lualibCall("FloatToString", value)
-        "kotlin/Double" if !target.hasIntegers || usesFloat -> lualibCall("DoubleToString", value)
-        else -> lualibCall("Str", value)
-    }
-}
-
-/**
- * A platform type from a Java method (`treeMap.higherKey(k)` is `Int!`) may be null; Java strings, and the floating-point
- * types that print by their static type, are taken as non-null.
- */
+/** A platform type from a Java method (`treeMap.higherKey(k)` is `Int!`) may be null; Java strings are taken as non-null. */
 private fun FileTransformer.isPlatformNullable(type: KaType): Boolean = with(session) {
-    type is KaFlexibleType && type.upperBound.isMarkedNullable &&
-        type.lowerBound.let { !it.isStringType && !it.isDoubleType && !it.isFloatType }
+    type is KaFlexibleType && type.upperBound.isMarkedNullable && !type.lowerBound.isStringType
 }

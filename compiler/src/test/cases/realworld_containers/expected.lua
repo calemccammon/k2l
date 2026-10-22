@@ -5,12 +5,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Fmod = ____lualib.__K2L_Fmod
-local __K2L_IDiv = ____lualib.__K2L_IDiv
-local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -22,25 +17,20 @@ local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
-local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NaturalOrder = ____lualib.__K2L_NaturalOrder
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_ReverseOrder = ____lualib.__K2L_ReverseOrder
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SetOf = ____lualib.__K2L_SetOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Source = __K2L_Class("containers.Source", __K2L_IterableBase)
-Source.____readOnly = true
 
 function Source:isEmpty()
     return self.size == 0
@@ -70,7 +60,6 @@ end
 
 local Sink = __K2L_Class("containers.Sink")
 local Vec = __K2L_Class("containers.Vec", nil, Source, Sink)
-Vec.____readOnly = true
 
 function Vec:____init(initialCapacity)
     if initialCapacity == nil then
@@ -139,13 +128,9 @@ end
 function Vec:mapTo(transform)
     local out = Vec.new(math.max(self.size, 1))
     local ____items, ____n = self:____array()
-    local ____mod = self.____modCount
     for ____i = 1, ____n do
         local x = ____items[____i]
         out:put(transform(x))
-        if self.____modCount ~= ____mod and self:____comodified(____i, ____n) then
-            break
-        end
     end
     return out
 end
@@ -165,28 +150,20 @@ function Vec:of(...)
 end
 
 local function putAll(self, items)
-    local ____items_1, ____n_1 = __K2L_LoopItems(items)
-    local ____mod_1 = items.____modCount
+    local ____items_1, ____n_1 = items:____array()
     for ____i_2 = 1, ____n_1 do
         local it = ____items_1[____i_2]
         self:put(it)
-        if items.____modCount ~= ____mod_1 and items:____comodified(____i_2, ____n_1) then
-            break
-        end
     end
 end
 
 local function maxOrNull(____this_1)
     local best = nil
     local ____items_2, ____n_2 = ____this_1:____array()
-    local ____mod_2 = ____this_1.____modCount
     for ____i_3 = 1, ____n_2 do
         local x = ____items_2[____i_3]
         if best == nil or __K2L_Compare(x, best) > 0 then
             best = x
-        end
-        if ____this_1.____modCount ~= ____mod_2 and ____this_1:____comodified(____i_3, ____n_2) then
-            break
         end
     end
     return best
@@ -194,13 +171,9 @@ end
 
 local function copy(from, to)
     local ____items_3, ____n_3 = from:____array()
-    local ____mod_3 = from.____modCount
     for ____i_4 = 1, ____n_3 do
         local x = ____items_3[____i_4]
         to:put(x)
-        if from.____modCount ~= ____mod_3 and from:____comodified(____i_4, ____n_3) then
-            break
-        end
     end
 end
 
@@ -214,8 +187,8 @@ function Matrix:____init(rows, cols, init)
     self.rows = rows
     self.cols = cols
     self.data = __K2L_ListOfSize(self.rows * self.cols, function(it)
-        return init(__K2L_IDiv(it, self.cols), self.cols ~= 0 and __K2L_Fmod(it, self.cols) + 0 or __K2L_IRem(it, self.cols))
-    end, "[D")
+        return init(it // self.cols, it % self.cols)
+    end, true)
 end
 
 function Matrix:get(r, c)
@@ -245,7 +218,6 @@ function Matrix:invoke(r)
 end
 
 Matrix.Row = __K2L_Class("containers.Matrix$Row", __K2L_IterableBase)
-Matrix.Row.____readOnly = true
 
 function Matrix.Row:____init(____outer, r)
     self.____outer = ____outer
@@ -256,7 +228,7 @@ function Matrix.Row:iterator()
     return __K2L_IteratorOf(__K2L_IntRange.new(0, self.____outer.cols - 1):map(function(it) return self.____outer:get(self.r, it) end))
 end
 
-local ____lambda_2 = function(it) return __K2L_StringFormat("%.1f", it) end
+local ____lambda_2 = function(it) return string.format("%.1f", it) end
 function Matrix.Row:toString()
     return self:joinToString(" ", "(", ")", nil, nil, ____lambda_2)
 end
@@ -315,19 +287,15 @@ end
 
 function Graph:bfs(start)
     local seen = __K2L_SetOf(start)
-    local queue = __K2L_ArrayDeque.new(__K2L_SingletonListOf(start))
+    local queue = __K2L_ArrayDeque.new(__K2L_ListOf(start))
     while queue:isNotEmpty() do
         local n = queue:removeFirst()
-        local ____collection = self.edges:get(n) or __K2L_ReadOnlySetOf()
+        local ____collection = self.edges:get(n) or __K2L_SetOf()
         local ____items_4, ____n_4 = ____collection:____array()
-        local ____mod_4 = ____collection.____modCount
         for ____i_5 = 1, ____n_4 do
             local m = ____items_4[____i_5]
             if seen:add(m) then
                 queue:addLast(m)
-            end
-            if ____collection.____modCount ~= ____mod_4 and ____collection:____comodified(____i_5, ____n_4) then
-                break
             end
         end
     end
@@ -339,13 +307,9 @@ local ____lambda_6 = function(it) return it == 0 end
 function Graph:topo()
     local inDegree = self.edges:getKeys():associateWith(____lambda_5):toMutableMap()
     local ____list = self.edges:getValues():flatten()
-    local ____mod_5 = ____list.____modCount
     for ____i_6 = 1, ____list.size do
         local it = ____list[____i_6]
         inDegree:set(it, inDegree:getValue(it) + 1)
-        if ____list.____modCount ~= ____mod_5 and ____list:____comodified(____i_6) then
-            break
-        end
     end
     local ready = inDegree:filterValues(____lambda_6):getKeys():toMutableList()
     local out = __K2L_ListOf()
@@ -354,15 +318,11 @@ function Graph:topo()
         out:add(n)
         local ____collection_1 = self.edges:getValue(n)
         local ____items_5, ____n_5 = ____collection_1:____array()
-        local ____mod_6 = ____collection_1.____modCount
         for ____i_7 = 1, ____n_5 do
             local m = ____items_5[____i_7]
             inDegree:set(m, inDegree:getValue(m) - 1)
             if inDegree:get(m) == 0 then
                 ready:add(m)
-            end
-            if ____collection_1.____modCount ~= ____mod_6 and ____collection_1:____comodified(____i_7, ____n_5) then
-                break
             end
         end
     end
@@ -417,12 +377,12 @@ local ____lambda_15 = function(____a, ____b)
 end
 local function main()
     local v = Vec.new(1)
-    putAll(v, __K2L_ReadOnlyListOf(5, 3, 8, 1))
+    putAll(v, __K2L_ListOf(5, 3, 8, 1))
     v:plusAssign(9)
     print(__K2L_Str(v) .. " size=" .. v.size .. " growths=" .. v.growths .. " max=" .. __K2L_Str(maxOrNull(v)) .. " has8=" .. tostring(v:contains(8)) .. " has4=" .. tostring(v:contains(4)))
     v:set(1, 30)
     print("removed " .. v:removeAt(0) .. " -> " .. __K2L_Str(v) .. ", doubled " .. __K2L_Str(v:mapTo(____lambda_9)))
-    local ____ok, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok, ____result_1 = pcall(function()
         v:get(10)
     end)
     if not ____ok then
@@ -458,7 +418,7 @@ local function main()
     local id = Matrix.new(3, 3, ____lambda_14)
     id:set(0, 2, 2.0)
     print(__K2L_Str(m:times(id)))
-    print(__K2L_Str(m:invoke(1):sum()))
+    print(m:invoke(1):sum())
     local ____receiver_1 = __K2L_RunCatching(function() return m:times(m) end):exceptionOrNull()
     print(__K2L_Str(____receiver_1 and ____receiver_1.message))
     local loads = 0
@@ -466,19 +426,15 @@ local function main()
         loads = loads + 1
         return "v" .. k
     end)
-    print(__K2L_Str(__K2L_ReadOnlyListOf(1, 2, 1, 3, 2, 1):map(function(it) return cache:get(it) end)))
+    print(__K2L_Str(__K2L_ListOf(1, 2, 1, 3, 2, 1):map(function(it) return cache:get(it) end)))
     print("hits=" .. cache.hits .. " misses=" .. cache.misses .. " loads=" .. loads .. " keys=" .. __K2L_Str(cache:getKeys()))
     local g = Graph.new()
-    local ____list_1 = __K2L_ReadOnlyListOf(__K2L_Pair.new("shirt", "tie"), __K2L_Pair.new("tie", "jacket"), __K2L_Pair.new("pants", "shoes"), __K2L_Pair.new("pants", "belt"), __K2L_Pair.new("belt", "jacket"), __K2L_Pair.new("shirt", "belt"))
-    local ____mod_7 = ____list_1.____modCount
+    local ____list_1 = __K2L_ListOf(__K2L_Pair.new("shirt", "tie"), __K2L_Pair.new("tie", "jacket"), __K2L_Pair.new("pants", "shoes"), __K2L_Pair.new("pants", "belt"), __K2L_Pair.new("belt", "jacket"), __K2L_Pair.new("shirt", "belt"))
     for ____i_8 = 1, ____list_1.size do
         local ____it_3 = ____list_1[____i_8]
         do
             local a, b = ____it_3.first, ____it_3.second
             g:edge(a, b)
-        end
-        if ____list_1.____modCount ~= ____mod_7 and ____list_1:____comodified(____i_8) then
-            break
         end
     end
     print(__K2L_Str(g:bfs("shirt")))
@@ -486,17 +442,13 @@ local function main()
     g:edge("jacket", "shirt")
     local ____receiver_2 = __K2L_RunCatching(function() return g:topo() end):exceptionOrNull()
     print(__K2L_Str(____receiver_2 and ____receiver_2.message))
-    local comparators = __K2L_ReadOnlyListOf(__K2L_NaturalOrder, __K2L_ReverseOrder, ____lambda_15)
-    local versions = __K2L_ReadOnlyListOf(Version.new(2, 0), Version.new(1, 5), Version.new(1, 12))
-    local ____mod_8 = comparators.____modCount
+    local comparators = __K2L_ListOf(__K2L_NaturalOrder, __K2L_ReverseOrder, ____lambda_15)
+    local versions = __K2L_ListOf(Version.new(2, 0), Version.new(1, 5), Version.new(1, 12))
     for ____i_9 = 1, comparators.size do
         local it = comparators[____i_9]
         print(__K2L_Str(versions:sortedWith(it)))
-        if comparators.____modCount ~= ____mod_8 and comparators:____comodified(____i_9) then
-            break
-        end
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Source = Source, Sink = Sink, Vec = Vec, putAll = putAll, maxOrNull = maxOrNull, copy = copy, Matrix = Matrix, Cache = Cache, Graph = Graph, Version = Version}

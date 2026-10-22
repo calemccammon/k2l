@@ -12,11 +12,11 @@ private const val TWO_32 = "4294967296"
  * and on Lua 5.1 a loop over the bits): `x and (2^k - 1)` is `x % 2^k` (a floored modulo keeps the low bits of a
  * two's-complement value), `x shr n` is `floor(x / 2^n)` and an Int's `x ushr n` is `floor(x % 2^32 / 2^n)`. Exact for
  * Ints and for Longs below 2^53 (beyond that a Long held in a double has lost its low bits anyway). Ints keep LuaJIT's
- * native `bit` operations; Longs there are doubles split by `LongBits.lua`, so they use these too. Null when not applicable.
+ * native `bit` operations; Longs there are doubles, so they use these too. Null when not applicable.
  */
 internal object ConstantBits {
     private fun CallSite.applies(isLong: Boolean): Boolean {
-        if (hasIntegers || (isLong && emulatesLong)) return false
+        if (hasIntegers) return false
         return isLong || !target.compilesBitOps
     }
 

@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 
 local ____exports = {}
 ____exports.counter = 0
@@ -17,7 +17,7 @@ end
 
 local ____lambda_1 = function() return ____next() end
 local function main()
-    local items = __K2L_ReadOnlyListOf(1, "a", 2)
+    local items = __K2L_ListOf(1, "a", 2)
     local ____arg = ____next()
     local ____result
     do
@@ -54,5 +54,5 @@ end
 
 ____exports.____next = ____next
 ____exports.twice = twice
-__K2L_Main(main)
+__K2L_RunMain(main)
 return ____exports

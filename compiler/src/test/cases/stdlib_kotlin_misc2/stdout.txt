@@ -2,10 +2,6 @@ Any = [true, false, true, true]
 String() = []
 AutoCloseable = [used, closed]
 assert = 1
-KotlinNullPointerException EXC KotlinNullPointerException: knpe
-NoWhenBranchMatchedException EXC NoWhenBranchMatchedException: no branch
-TypeCastException EXC TypeCastException: bad cast
-hierarchy = [true, true, true]
 enum hashCode = [true, false]
 Result hashCode = [true, 5]
 nullable hashCode = [0, 97]
@@ -15,10 +11,4 @@ Char.toChar = q
 Appendable = items: 1 2 3
 bc!
 789 and more
-unsigned toHexString = [000000ff, ff, ffff, ee6b2800]
-ULong toHexString = [0000000000000000, 00000000000000ff]
-hexToU = [255, 65535, 4294967295, 255]
-unsigned with format = [ff, 255]
 hasSurrogatePairAt = [false, false]
-asClock = 1970-01-01T00:01:40Z
-asClock later = 1970-01-01T00:01:42Z

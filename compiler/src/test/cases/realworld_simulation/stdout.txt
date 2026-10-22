@@ -1,16 +1,16 @@
-first customers: [Customer(id=1, arrival=5, serviceTime=3, vip=true), Customer(id=2, arrival=10, serviceTime=7, vip=false), Customer(id=3, arrival=11, serviceTime=9, vip=true)]
-vips: [1, 3, 6, 8, 17, 20, 24, 29, 31, 34]
-tellers=1 served=40 avgWait=75.13 maxWait=150 p90=136 maxQueue=22 end=270 util=[97%]
-tellers=2 served=40 avgWait=12.60 maxWait=25 p90=20 maxQueue=6 end=143 util=[95%, 89%]
-tellers=3 served=40 avgWait=0.95 maxWait=6 p90=4 maxQueue=3 end=123 util=[87%, 68%, 59%]
-  t=2 teller 0 serves #1 (waited 0)
-  t=4 teller 1 serves #2 (waited 0)
-  t=13 teller 1 serves #3 (waited 6)
-  t=13 teller 0 serves #4 (waited 2)
-  t=19 teller 1 serves #5 (waited 3)
-  t=20 teller 0 serves #6 (waited 2)
-dice: [2, 2, 4, 6, 4, 3, 2, 1, 4, 2] coin: THHHTTHH
-shuffled: [8, 3, 5, 9, 7, 1, 10, 6, 4, 2] sorted back: true
+first customers: [Customer(id=1, arrival=1, serviceTime=8, vip=false), Customer(id=2, arrival=6, serviceTime=11, vip=true), Customer(id=3, arrival=11, serviceTime=4, vip=false)]
+vips: [2, 8, 12, 17, 34, 37]
+tellers=1 served=40 avgWait=78.55 maxWait=166 p90=155 maxQueue=24 end=286 util=[100%]
+tellers=2 served=40 avgWait=10.93 maxWait=29 p90=27 maxQueue=8 end=150 util=[97%, 93%]
+tellers=3 served=40 avgWait=1.07 maxWait=10 p90=5 maxQueue=3 end=128 util=[91%, 78%, 53%]
+  t=3 teller 0 serves #1 (waited 0)
+  t=6 teller 0 serves #2 (waited 0)
+  t=9 teller 1 serves #3 (waited 0)
+  t=14 teller 1 serves #4 (waited 4)
+  t=15 teller 0 serves #5 (waited 0)
+  t=19 teller 1 serves #6 (waited 3)
+dice: [4, 4, 6, 1, 5, 4, 1, 2, 3, 2] coin: HTHTTTTT
+shuffled: [2, 1, 5, 3, 10, 8, 6, 4, 9, 7] sorted back: true
 histogram total=600 min>50=true
 gen 0, population 5
 .#......

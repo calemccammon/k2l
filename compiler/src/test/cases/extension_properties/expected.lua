@@ -2,9 +2,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 
@@ -20,7 +18,7 @@ local function getSquared(____this)
 end
 
 local function getIsEven(____this_1)
-    return (____this_1 >= 0 and ____this_1 % 2 or 0 - -____this_1 % 2) == 0
+    return ____this_1 % 2 == 0
 end
 
 local function getSize2(____this_2)
@@ -75,7 +73,7 @@ local function getDoubled(____this_9)
 end
 
 local function setDoubled(____this_9, v)
-    ____this_9.value = v >= 0 and v // 2 or 0 - -v // 2
+    ____this_9.value = v // 2
 end
 
 local function getLabel(____this_10)
@@ -118,13 +116,13 @@ local function main()
     print(getIsEven(4))
     print(getIsEven(3))
     print(getSize2("abc"))
-    print(getSize2__1(__K2L_ReadOnlyListOf(1, 2, 3)))
+    print(getSize2__1(__K2L_ListOf(1, 2, 3)))
     print(getTwice__1("ab"))
     print(getTwice())
     print(getTwice__2(5))
-    print(getSecond(__K2L_ReadOnlyListOf("x", "y", "z")))
-    print(__K2L_Str(getPenultimate(__K2L_ReadOnlyListOf(1, 2, 3))))
-    print(__K2L_Str(getPenultimate(__K2L_SingletonListOf(1))))
+    print(getSecond(__K2L_ListOf("x", "y", "z")))
+    print(__K2L_Str(getPenultimate(__K2L_ListOf(1, 2, 3))))
+    print(__K2L_Str(getPenultimate(__K2L_ListOf(1))))
     local missing = nil
     print(getOrDash(missing))
     print(getOrDash("here"))
@@ -193,7 +191,7 @@ ____exports.getTracked = getTracked
 ____exports.setTracked = setTracked
 ____exports.describe = describe
 ____exports.makeBox = makeBox
-__K2L_Main(main)
+__K2L_RunMain(main)
 return ____exports
 -- ==== util/ext.lua ====
 local ____lualib = require("lualib_bundle")
@@ -227,7 +225,7 @@ local function getDouble(____this_1)
 end
 
 local function setDouble(____this_1, value)
-    ____this_1.count = value >= 0 and value // 2 or 0 - -value // 2
+    ____this_1.count = value // 2
 end
 
 return {getLastChar = getLastChar, getHead = getHead, setHead = setHead, Counter = Counter, getDouble = getDouble, setDouble = setDouble}

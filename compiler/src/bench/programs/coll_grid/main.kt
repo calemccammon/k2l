@@ -1,7 +1,59 @@
-import java.util.PriorityQueue
-
 // Adapted from realworld_grid: a generated maze; BFS with HashMap/HashSet of data-class positions, flood-filled regions,
 // and a Dijkstra over (position, facing) states keyed by a nested data class.
+
+/** A binary min-heap by [comparator]: the part of java.util.PriorityQueue the program uses (k2l has no PriorityQueue). */
+class MinQueue<T>(private val comparator: Comparator<in T>) {
+    private val heap = ArrayList<T>()
+    val size: Int get() = heap.size
+
+    fun isEmpty() = heap.isEmpty()
+
+    fun isNotEmpty() = heap.isNotEmpty()
+
+    fun peek(): T? = heap.firstOrNull()
+
+    fun add(item: T): Boolean {
+        heap.add(item)
+        var i = heap.size - 1
+        while (i > 0) {
+            val parent = (i - 1) / 2
+            if (comparator.compare(heap[i], heap[parent]) >= 0) break
+            val t = heap[i]
+            heap[i] = heap[parent]
+            heap[parent] = t
+            i = parent
+        }
+        return true
+    }
+
+    fun offer(item: T) = add(item)
+
+    operator fun plusAssign(item: T) {
+        add(item)
+    }
+
+    fun poll(): T {
+        if (heap.isEmpty()) throw NoSuchElementException("queue is empty")
+        val top = heap[0]
+        val last = heap.removeAt(heap.size - 1)
+        if (heap.isNotEmpty()) {
+            heap[0] = last
+            var i = 0
+            while (true) {
+                val l = 2 * i + 1
+                if (l >= heap.size) break
+                val r = l + 1
+                val c = if (r < heap.size && comparator.compare(heap[r], heap[l]) < 0) r else l
+                if (comparator.compare(heap[c], heap[i]) >= 0) break
+                val t = heap[i]
+                heap[i] = heap[c]
+                heap[c] = t
+                i = c
+            }
+        }
+        return top
+    }
+}
 
 const val SIZE = 101 // maze side, odd
 
@@ -87,7 +139,7 @@ data class State(val pos: Pos, val dir: Dir)
 
 fun cheapestRoute(grid: Grid, start: Pos, goal: Pos): Int {
     val best = mutableMapOf<State, Int>()
-    val pq = PriorityQueue<Pair<Int, State>>(compareBy { it.first })
+    val pq = MinQueue<Pair<Int, State>>(compareBy { it.first })
     val first = State(start, Dir.RIGHT)
     best[first] = 0
     pq.add(0 to first)

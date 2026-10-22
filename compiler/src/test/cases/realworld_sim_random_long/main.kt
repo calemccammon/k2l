@@ -1,8 +1,7 @@
 import kotlin.random.Random
 import kotlin.random.nextLong
-import kotlin.random.nextULong
 
-// Procedural world generation driven by 64-bit seeds: Kotlin's XorWow Random seeded with Longs,
+// Procedural world generation driven by 64-bit seeds: a Random seeded with Longs,
 // a SplitMix64 hash for per-chunk seeds, and Long draws that need every one of their 64 bits.
 
 object SplitMix {
@@ -67,8 +66,6 @@ fun longDraws() {
     println(List(3) { r.nextLong(0L..Long.MAX_VALUE) })
     println(List(3) { r.nextLong(Long.MIN_VALUE..Long.MAX_VALUE) })
     println(List(3) { r.nextLong(10L..20L) })
-    println(List(2) { r.nextULong() }.joinToString { it.toString() })
-    println(List(2) { r.nextULong(ULong.MAX_VALUE / 3uL) }.joinToString { it.toString() })
     println(List(2) { (1L..Long.MAX_VALUE).random(r) })
     println(List(6) { r.nextBits(31) }.sumOf { it.toLong() })
     for (seed in listOf(Long.MIN_VALUE, Long.MAX_VALUE, 1L shl 53, (1L shl 53) + 1, -1L shl 40, 0x123456789ABCDEFL)) {
@@ -101,7 +98,7 @@ fun lottery() {
     val winning = (1..49).shuffled(draw).take(6).sorted()
     println("winning: $winning")
     for (t in tickets) println("matches: ${t.count { it in winning }}")
-    val ids = List(4) { draw.nextLong().toULong().toString(16).padStart(16, '0') }
+    val ids = List(4) { (draw.nextLong() ushr 12).toString(16).padStart(16, '0') }
     println(ids)
 }
 

@@ -1,0 +1,27 @@
+Dear Bob, from Alice
+ALICE GREETS EVERYONE
+Person Alice
+Alice Al
+Al Al
+true
+false
+false
+true
+makeStack
+init log
+log push a (1)
+log push b (2)
+0 3 4
+makeStack
+init second
+0
+2 2 1
+Wrapper[Person Alice] 1 Alice greets Carol
+Square(2) 4
+derived impl impl true
+84
+before Shared
+makeTicker
+3
+Point(x=1, y=2)
+true false

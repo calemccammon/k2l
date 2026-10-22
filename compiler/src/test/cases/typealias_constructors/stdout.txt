@@ -1,0 +1,9 @@
+Wrapper(1, 0)
+Wrapper(2, -1)
+Wrapper(s, 3)
+Wrapper(4, 5)
+base
+derived
+Wrapper(6, 7)
+[Wrapper(1, -1), Wrapper(2, -1)]
+8

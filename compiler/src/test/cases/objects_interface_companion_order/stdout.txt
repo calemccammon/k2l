@@ -1,0 +1,8 @@
+start
+9
+true
+4
+true
+Shape companion initialized
+1
+[1, 12]

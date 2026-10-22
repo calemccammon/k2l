@@ -1,9 +1,5 @@
--- requires: Collections, Exceptions, Str, Compare, Numbers, Pair
+-- requires: Collections, Exceptions, Str, Compare, Pair
 -- Kotlin String functions. Strings are Lua byte strings; indices count bytes.
-
-local function __K2L_PatternEscape(s)
-    return (s:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0"))
-end
 
 -- s[i] and s.get(i): Java's charAt.
 local function __K2L_StringCharAt(s, i)
@@ -28,7 +24,7 @@ end
 -- Kotlin's String.indexOf, lastIndexOf, replace, split(String) and lines(), see __K2L_Text below.
 local __K2L_Text = {}
 
--- The length in chars: --strings utf16 (Utf16.lua) replaces it with a count of UTF-16 units
+-- The length in chars, which are bytes
 function __K2L_Text.len(s)
     return #s
 end
@@ -87,15 +83,10 @@ local function __K2L_StringPadEnd(s, length, pad)
     return s .. string.rep(pad, length - #s)
 end
 
--- The sign and the digit values of an integer literal in [radix], or nil when it is not one. ASCII letters and digits only,
--- unless --strings utf16 is on (Utf16Case.lua sets __K2L_Text.unicodeDigits: Character.digit accepts Unicode digits).
+-- The sign and the digit values of an integer literal in [radix], or nil when it is not one: ASCII letters and digits.
 local function digitValues(s, radix)
     local sign, digits = s:match("^([+-]?)(%w+)$")
     if digits == nil then
-        local unicode = __K2L_Text.unicodeDigits
-        if unicode ~= nil and s:find("[\128-\255]") then
-            return unicode(s, radix)
-        end
         return nil
     end
     local values, byte = {}, string.byte
@@ -153,86 +144,16 @@ local function __K2L_StringToInt(s, radix, long)
     return n
 end
 
-local TWO32 = 4294967296
-
--- String.toUInt / toULong / toUByte / toUShort for [bits] 32, 64, 8 and 16: Kotlin's own parser, which accepts a leading "+"
--- but no "-"; nil when the text is malformed or does not fit. A ULong is the Long with the same bits on Lua 5.3+, else a double.
-local function __K2L_StringToUnsignedOrNull(s, radix, bits)
-    radix = radix or 10
-    if radix < 2 or radix > 36 then
-        error(__K2L_IllegalArgumentException.new("radix " .. radix .. " was not in valid range 2..36"))
-    end
-    local sign, values = digitValues(s, radix)
-    if values == nil or sign == "-" then
-        return nil
-    end
-    if bits < 64 then
-        local limit, acc = 2 ^ bits - 1, 0
-        for i = 1, #values do
-            acc = acc * radix + values[i]
-            if acc > limit then
-                return nil
-            end
-        end
-        return acc
-    end
-    -- 32-bit halves keep every step exact in doubles
-    local hi, lo = 0, 0
-    for i = 1, #values do
-        lo = lo * radix + values[i]
-        local carry = math.floor(lo / TWO32)
-        lo = lo - carry * TWO32
-        hi = hi * radix + carry
-        if hi >= TWO32 then
-            return nil
-        end
-    end
-    if math.tointeger then
-        return math.tointeger(hi) * TWO32 + math.tointeger(lo)
-    end
-    return hi * TWO32 + lo
-end
-
-local function __K2L_StringToUnsigned(s, radix, bits)
-    local n = __K2L_StringToUnsignedOrNull(s, radix, bits)
-    if n == nil then
-        error(__K2L_NumberFormatException.new("Invalid number format: '" .. s .. "'"))
-    end
-    return n
-end
-
+-- String.toDouble: Lua's tonumber, as a float (so hexadecimal and surrounding spaces are accepted, "NaN" and "Infinity" not)
 local function __K2L_StringToDoubleOrNull(s)
-    local trimmed = __K2L_StringTrim(s)
-    if trimmed == "NaN" then
-        return 0 / 0
-    elseif trimmed == "Infinity" or trimmed == "+Infinity" then
-        return math.huge
-    elseif trimmed == "-Infinity" then
-        return -math.huge
-    end
-    trimmed = trimmed:gsub("^(.*%d)[fFdD]$", "%1")
-    -- a hexadecimal float has a binary exponent: 0x1.8p3 is 12.0
-    local sign, int, frac, exp = trimmed:match("^([+-]?)0[xX](%x*)%.?(%x*)[pP]([+-]?%d+)$")
-    if sign ~= nil and #int + #frac > 0 then
-        local n = tonumber(int .. frac, 16) * 2 ^ (tonumber(exp) - 4 * #frac)
-        return sign == "-" and -n or n + 0.0
-    end
-    if trimmed == "" or trimmed:match("^[+-]?0[xX]") or trimmed:match("[nN]") then
-        return nil
-    end
-    local n = tonumber(trimmed)
-    if n == 0 and trimmed:sub(1, 1) == "-" then
-        -- "-0" and "-0.0" are -0.0 (n + 0.0 would be 0.0; a -0.0 literal can be folded into the constant 0 on Lua 5.1)
-        return -1 / math.huge
-    end
-    return n and n + 0.0
+    local n = tonumber(s)
+    return n and n * 1.0
 end
 
 local function __K2L_StringToDouble(s)
     local n = __K2L_StringToDoubleOrNull(s)
     if n == nil then
-        local trimmed = __K2L_StringTrim(s)
-        error(__K2L_NumberFormatException.new(trimmed == "" and "empty String" or "For input string: \"" .. s .. "\""))
+        error(__K2L_NumberFormatException.new("For input string: \"" .. s .. "\""))
     end
     return n
 end
@@ -580,7 +501,7 @@ end
 function __K2L_Text.toCharArray(s)
     local out = chars(s)
     out.size = #s
-    return setmetatable(out, __K2L_ArrayClassOf("[C"))
+    return setmetatable(out, __K2L_Array)
 end
 
 function __K2L_Text.toByteArray(s)
@@ -590,7 +511,7 @@ function __K2L_Text.toByteArray(s)
         out[i] = b >= 128 and b - 256 or b
     end
     out.size = #s
-    return setmetatable(out, __K2L_ArrayClassOf("[B"))
+    return setmetatable(out, __K2L_Array)
 end
 
 function __K2L_Text.ifEmpty(s, default)
@@ -904,665 +825,67 @@ function __K2L_Text.regionMatches(s, thisOffset, other, otherOffset, length, ign
 end
 
 ------------------------------------------------------------------ String.format
--- java.util.Formatter: %[index$][flags][width][.precision]conversion
+-- String.format of a format that is not a literal (the compiler translates literal ones, see TextFormat.kt): each Java
+-- specifier %[flags][width][.precision]conversion is formatted by Lua's string.format. %s, %S, %b and %B take the text of
+-- their argument, %c of a Char its string, the "," flag of %d and %f groups the digits by three and %n is a newline; the
+-- argument indexes, the "(" flag and the conversions Lua has no equivalent of (%h, %t) raise an error.
+local LUA_CONVERSIONS = {d = true, o = true, x = true, X = true, e = true, E = true, f = true, g = true, G = true, a = true,
+    A = true, c = true}
 
--- The digits of %.15e one unit higher in the last digit (s is "d.ddd...e+XX", maybe with a sign). The decimals that read
--- back as a power of two reach only half as far below it as above it (the double below is twice as close), so its
--- nearest 16 digits may not read back while the next 16 digits up do, and are its shortest digits: 2^710 is
--- 5.386379163185535E213, not 5.3863791631855345E213.
-local function digitUp(s)
-    local sign, int, frac, exp = string.match(s, "^(-?)(%d)%.(%d+)e([-+]%d+)$")
-    local digits = int .. frac
-    local i = #digits
-    while i > 0 and digits:byte(i) == 57 do
-        i = i - 1
-    end
-    if i == 0 then
-        return sign .. "1." .. string.rep("0", #frac) .. "e" .. (tonumber(exp) + 1)
-    end
-    digits = digits:sub(1, i - 1) .. string.char(digits:byte(i) + 1) .. string.rep("0", #digits - i)
-    return sign .. digits:sub(1, 1) .. "." .. digits:sub(2) .. "e" .. exp
-end
-
--- Shortest round-tripping decimal digits of |x| and the decimal exponent of the first digit.
-local function decimalDigits(x)
-    x = math.abs(x)
-    if x == 0 then
-        return "0", 0
-    end
-    local s
-    if x >= 2.2250738585072014e-308 then
-        -- A normal double that some decimal of at most 15 digits reads back as lies within half an ulp of it, much
-        -- closer than half a unit of the 15th digit: its 15-digit rounding is that decimal padded with zeros. So the
-        -- shortest digits are those of %.14e (zeros dropped) when it reads back, else of %.15e or %.16e.
-        s = string.format("%.14e", x)
-        if tonumber(s) ~= x then
-            s = string.format("%.15e", x)
-            if tonumber(s) ~= x then
-                local up = digitUp(s)
-                s = tonumber(up) == x and up or string.format("%.16e", x)
-            end
-        end
-    else
-        -- at least two digits, as Java writes them: 4.9E-324, not 5E-324
-        for precision = 1, 16 do
-            s = string.format("%." .. precision .. "e", x)
-            if tonumber(s) == x then
-                break
-            end
-        end
-    end
-    -- s is "d.ddd...e+XX" (the precision is at least 1): the digits without the point and trailing zeros, and the exponent
-    local e = s:find("e", 3, true)
-    local last = e - 1
-    while last > 2 and s:byte(last) == 48 do
-        last = last - 1
-    end
-    local digits = last > 2 and s:sub(1, 1) .. s:sub(3, last) or s:sub(1, 1)
-    return digits, tonumber(s:sub(e + 1))
-end
-
--- Adds one to a string of decimal digits: "199" -> "200", "99" -> "100".
-local function incrementDecimal(str)
-    local i = #str
-    while i >= 1 do
-        if str:sub(i, i) == "9" then
-            i = i - 1
-        else
-            return str:sub(1, i - 1) .. string.char(str:byte(i) + 1) .. string.rep("0", #str - i)
-        end
-    end
-    return "1" .. string.rep("0", #str)
-end
-
--- Rounds the digits half up to `keep` digits (0 or more) and returns the kept digits.
-local function roundDigits(digits, keep)
-    if keep >= #digits then
-        return digits .. string.rep("0", keep - #digits)
-    end
-    local kept = digits:sub(1, keep)
-    if digits:byte(keep + 1) >= 53 then
-        return keep == 0 and "1" or incrementDecimal(kept)
-    end
-    return keep == 0 and "0" or kept
-end
-
--- |x| as integer and fractional digit strings, rounded half up on the shortest decimal digits (as Java does).
-local function fixedNotation(x, precision)
-    local digits, exp = decimalDigits(x)
-    local scaled
-    if x == 0 then
-        scaled = "0"
-    else
-        -- x = D * 10^(exp + 1 - #digits); we want round(x * 10^precision)
-        local keep = exp + 1 + precision
-        if keep < 0 then
-            scaled = "0"
-        else
-            scaled = roundDigits(digits, keep)
-            if keep > #digits then
-                scaled = digits .. string.rep("0", keep - #digits)
-            end
-        end
-    end
-    if #scaled <= precision then
-        scaled = string.rep("0", precision - #scaled + 1) .. scaled
-    end
-    return scaled:sub(1, #scaled - precision), scaled:sub(#scaled - precision + 1)
-end
-
-local function scientificNotation(x, precision, upper)
-    local digits, exp = decimalDigits(x)
-    local rounded = roundDigits(digits, precision + 1)
-    if #rounded > precision + 1 then
-        exp = exp + 1
-        rounded = rounded:sub(1, precision + 1)
-    end
-    if x == 0 then
-        exp = 0
-    end
-    local mantissa = rounded:sub(1, 1)
-    if precision > 0 then
-        mantissa = mantissa .. "." .. rounded:sub(2)
-    end
-    return mantissa .. (upper and "E" or "e") .. string.format("%s%02d", exp < 0 and "-" or "+", math.abs(exp))
-end
-
--- The number symbols of the locale being formatted (see LocaleFormat.lua): decimal and group separators, the ten digits
--- and the group size, or nil for Locale.ROOT and en_US. `activeUpper` maps %S, %C and %B for that locale.
-local active, activeUpper
-
--- Groups of the locale's size (3 for ASCII); the "," marks are the group separators until localize replaces them.
-local function groupThousands(int)
-    local size = active and active.size or 3
-    if size == 0 then
-        return int
-    end
-    local out = int:reverse():gsub(string.rep("%d", size), "%0,"):reverse()
-    return (out:gsub("^,", ""))
-end
-
--- The digits, "." and "," of a formatted number written with the locale's symbols.
-local function localize(text)
-    if active == nil then
+-- "%,d" and "%,.2f": the digits of the integer part of a formatted number in groups of three
+function __K2L_Text.grouped(text)
+    local sign, int, rest = string.match(text, "^(%D*)(%d+)(.*)$")
+    if int == nil then
         return text
     end
-    local digits = active.digits
-    return (text:gsub("[0-9.,]", function(c)
-        if c == "." then
-            return active.decimal
-        elseif c == "," then
-            return active.group
-        end
-        return digits[c:byte() - 47]
-    end))
+    return sign .. string.reverse((string.gsub(string.reverse(int), "(%d%d%d)", "%1,"))):gsub("^,", "") .. rest
 end
 
--- The length in characters of a number; the digits of a locale can take several bytes.
-local function numberLength(text)
-    if active == nil then
-        return #text
-    end
-    return #(text:gsub("[\128-\191]", ""))
-end
-
--- Applies sign, grouping, zero padding and width to a formatted magnitude.
-local function finishNumber(body, negative, flags, width)
-    local sign = ""
-    if negative then
-        sign = flags.paren and "(" or "-"
-    elseif flags.plus then
-        sign = "+"
-    elseif flags.space then
-        sign = " "
-    end
-    local suffix = (negative and flags.paren) and ")" or ""
-    local text = sign .. body .. suffix
-    local length = numberLength(text)
-    if width and length < width then
-        if flags.zero then
-            text = sign .. string.rep(active and active.digits[1] or "0", width - length) .. body .. suffix
-        elseif flags.left then
-            text = text .. string.rep(" ", width - length)
-        else
-            text = string.rep(" ", width - length) .. text
-        end
-    end
-    return text
-end
-
-local function pad(text, width, left)
-    local length = width and __K2L_Text.len(text)
-    if width and length < width then
-        if left then
-            return text .. string.rep(" ", width - length)
-        end
-        return string.rep(" ", width - length) .. text
-    end
-    return text
-end
-
-local function formatFloat(conv, value, flags, width, precision)
-    if type(value) == "table" then
-        -- a BigDecimal: %f exactly; %e and %g of its double value
-        if conv ~= "f" then
-            value = value:toDouble()
-        else
-            local int, frac = value:____fixed(precision)
-            if flags.comma then
-                int = groupThousands(int)
-            end
-            local body = precision > 0 and int .. "." .. frac or int
-            if flags.alt and precision == 0 then
-                body = body .. "."
-            end
-            return finishNumber(localize(body), value:signum() < 0, flags, width)
-        end
-    end
-    if value ~= value then
-        return pad("NaN", width, flags.left)
-    elseif value == math.huge or value == -math.huge then
-        local body = "Infinity"
-        local negative = value < 0
-        return pad((negative and (flags.paren and "(" or "-") or (flags.plus and "+" or (flags.space and " " or ""))) ..
-            body .. ((negative and flags.paren) and ")" or ""), width, flags.left)
-    end
-    local negative = value < 0 or (value == 0 and 1 / value < 0)
-    local body
-    if conv == "f" then
-        local int, frac = fixedNotation(value, precision)
-        if flags.comma then
-            int = groupThousands(int)
-        end
-        body = precision > 0 and int .. "." .. frac or int
-        if flags.alt and precision == 0 then
-            body = body .. "."
-        end
-    elseif conv == "e" or conv == "E" then
-        body = scientificNotation(value, precision, conv == "E")
-    else
-        -- %g: scientific for small or large magnitudes, fixed otherwise, `precision` significant digits
-        -- (chosen by the exponent of the value rounded to that many digits: 999.9999 is 1000.00, as in Java)
-        local p = precision == 0 and 1 or precision
-        local exp = 0
-        if value ~= 0 then
-            local digits
-            digits, exp = decimalDigits(value)
-            if #roundDigits(digits, p) > p then
-                exp = exp + 1
-            end
-        end
-        if exp < -4 or exp >= p then
-            body = scientificNotation(value, p - 1, conv == "G")
-        else
-            local int, frac = fixedNotation(value, math.max(p - (exp + 1), 0))
-            body = #frac > 0 and int .. "." .. frac or int
-        end
-    end
-    return finishNumber(localize(body), negative, flags, width)
-end
-
--- The decimal text of a Long that is not a Lua number (--long64 emulate: a {hi, lo} table or an int64_t cdata).
-local function longText(value)
-    if type(value) == "table" then
-        return value:toString()
-    end
-    return (tostring(value):gsub("LL$", ""))
-end
-
--- The digits of a non-negative decimal text in another radix (repeated short division of the digit string).
-local function decimalToRadix(text, radix)
-    local digits = {}
-    for i = 1, #text do
-        digits[i] = text:byte(i) - 48
-    end
-    local out = {}
-    while #digits > 0 do
-        local rest, remainder, started = {}, 0, false
-        for _, d in ipairs(digits) do
-            local cur = remainder * 10 + d
-            local q = math.floor(cur / radix)
-            remainder = cur - q * radix
-            if q > 0 or started then
-                started = true
-                rest[#rest + 1] = q
-            end
-        end
-        out[#out + 1] = ("0123456789abcdef"):sub(remainder + 1, remainder + 1)
-        digits = rest
-    end
-    return #out == 0 and "0" or string.reverse(table.concat(out))
-end
-
--- 2^64 - n for the decimal text of 0 < n <= 2^63
-local function twosComplement(text)
-    local borrow, out = 0, {}
-    local top = "18446744073709551616"
-    for i = 1, #top do
-        local a = top:byte(#top - i + 1) - 48
-        local b = (i <= #text and text:byte(#text - i + 1) or 48) - 48
-        local d = a - b - borrow
-        borrow = d < 0 and 1 or 0
-        out[i] = (d + 10 * borrow)
-    end
-    return (string.reverse(table.concat(out)):gsub("^0+", ""))
-end
-
--- The hexadecimal or octal digits of a negative number as the two's complement of its type (8, 16, 32 or 64 bits;
--- without a static type, 32 bits for an Int's range, else 64).
-local function negativeRadixDigits(value, radix, bits)
-    bits = bits or (value >= -2147483648 and 32 or 64)
-    if bits < 64 then
-        return __K2L_Num.toRadix(value % (bits == 32 and 4294967296 or bits == 16 and 65536 or 256), radix)
-    elseif math.type and math.type(value) == "integer" then
-        return string.format(radix == 8 and "%o" or "%x", value)
-    end
-    return decimalToRadix(twosComplement(string.format("%.0f", -value)), radix)
-end
-
-local function formatInteger(conv, value, flags, width, bits)
-    local digits
-    if type(value) ~= "number" then
-        local text = longText(value)
-        local negative = text:sub(1, 1) == "-"
-        local magnitude = negative and text:sub(2) or text
-        if conv == "d" then
-            return finishNumber(localize(flags.comma and groupThousands(magnitude) or magnitude), negative, flags, width)
-        end
-        digits = decimalToRadix(negative and twosComplement(magnitude) or magnitude, conv == "o" and 8 or 16)
-    end
-    if conv == "d" then
-        local negative = value < 0
-        local body
-        if math.type and math.type(value) == "integer" then
-            body = (tostring(value):gsub("^-", ""))
-        else
-            body = string.format("%.0f", math.abs(value))
-        end
-        if flags.comma then
-            body = groupThousands(body)
-        end
-        return finishNumber(localize(body), negative, flags, width)
-    end
-    local radix = conv == "o" and 8 or 16
-    local body
-    if digits ~= nil then
-        body = digits
-    elseif value >= 0 then
-        body = __K2L_Num.toRadix(value, radix)
-    else
-        body = negativeRadixDigits(value, radix, bits)
-    end
-    if conv == "X" then
-        body = body:upper()
-    end
-    local prefix = ""
-    if flags.alt then
-        prefix = radix == 8 and "0" or (conv == "X" and "0X" or "0x")
-    end
-    body = prefix .. body
-    if width and #body < width then
-        if flags.zero then
-            -- the zeros go after the 0x of %#010x
-            body = prefix .. string.rep("0", width - #body) .. body:sub(#prefix + 1)
-        else
-            return pad(body, width, flags.left)
-        end
-    end
-    return body
-end
-
--- java.util.Formatter's exceptions, all IllegalArgumentExceptions, with the JDK's messages.
-local FormatErrors = {
-    MissingFormatArgument = __K2L_MissingFormatArgumentException,
-    UnknownFormatConversion = __K2L_UnknownFormatConversionException,
-    MissingFormatWidth = __K2L_MissingFormatWidthException,
-    IllegalFormatConversion = __K2L_IllegalFormatConversionException,
-    IllegalFormatPrecision = __K2L_IllegalFormatPrecisionException,
-    FormatFlagsConversionMismatch = __K2L_FormatFlagsConversionMismatchException,
-}
-
-local function formatError(kind, message)
-    error(FormatErrors[kind].new(message))
-end
-
--- The classes each kind of conversion takes: %d, %o and %x integral numbers, %e, %f and %g floating point ones, %c chars
--- and the integers that are code points.
-local ACCEPTED = {
-    integral = {["java.lang.Integer"] = true, ["java.lang.Long"] = true, ["java.lang.Short"] = true, ["java.lang.Byte"] = true,
-        ["java.math.BigInteger"] = true},
-    float = {["java.lang.Double"] = true, ["java.lang.Float"] = true, ["java.math.BigDecimal"] = true},
-    char = {["java.lang.Character"] = true, ["java.lang.Integer"] = true, ["java.lang.Short"] = true, ["java.lang.Byte"] = true},
-}
-
--- The JVM class of a format argument that a conversion of `kind` rejects, or nil when it takes it. `class` is the class of
--- the argument's static type, when the compiler passed it (__K2L_Text.typed); else the value tells what it can.
-local function rejectedClass(value, kind, class)
-    if class ~= nil then
-        return not ACCEPTED[kind][class] and class or nil
-    end
-    local t = type(value)
-    if t == "string" then
-        -- a Char is the UTF-8 of one code point (or unit): a longer string is a String
-        if kind ~= "char" or select(2, value:gsub("[^\128-\191]", "")) ~= 1 then
-            return "java.lang.String"
-        end
-    elseif t == "boolean" then
-        return "java.lang.Boolean"
-    elseif t == "number" then
-        if kind ~= "float" and ((math.type and math.type(value) == "float") or value % 1 ~= 0) then
-            return "java.lang.Double"
-        end
-    elseif t == "table" then
-        local cls = rawget(value, "____name") ~= nil and value or getmetatable(value)
-        local name = cls and (rawget(cls, "____binaryName") or rawget(cls, "____qualifiedName") or rawget(cls, "____name"))
-        name = name or (value.____isNumber and "java.lang.Long") or "java.lang.Object"
-        return not ACCEPTED[kind][name] and name or nil
-    end
-    return nil
-end
-
--- The UTF-8 text of a code point (%c of an Int).
-local function codePointText(cp)
-    if cp < 0x80 then
-        return string.char(cp)
-    elseif cp < 0x800 then
-        return string.char(0xC0 + math.floor(cp / 0x40), 0x80 + cp % 0x40)
-    elseif cp < 0x10000 then
-        return string.char(0xE0 + math.floor(cp / 0x1000), 0x80 + math.floor(cp / 0x40) % 0x40, 0x80 + cp % 0x40)
-    end
-    return string.char(0xF0 + math.floor(cp / 0x40000), 0x80 + math.floor(cp / 0x1000) % 0x40,
-        0x80 + math.floor(cp / 0x40) % 0x40, 0x80 + cp % 0x40)
-end
-
--- An argument of static type Byte, Short or Long, whose %x and %o are the two's complement of its own width.
-local Sized = {}
-
-function __K2L_Text.sized(value, bits)
-    return setmetatable({value = value, bits = bits}, Sized)
-end
-
--- An argument with the JVM class of its static type, which a conversion may reject (`"%f".format(1)`: the value alone is
--- an integral number either way).
-function __K2L_Text.typed(value, bits, class)
-    return setmetatable({value = value, bits = bits, class = class}, Sized)
-end
-
--- the flags only numbers take, in the order the JDK checks them
-local NUMERIC_FLAGS = {{"alt", "#"}, {"plus", "+"}, {"space", " "}, {"zero", "0"}, {"comma", ","}, {"paren", "("}}
-
--- One conversion of an argument (anything but %% and %n), by a specifier parsed by parseFormat.
-local function convert(piece, value, bits, class)
-    local spec, conv, lower, flags, width, precision =
-        piece.spec, piece.conv, piece.lower, piece.flags, piece.width, piece.precision
-    local numeric = piece.numeric
-    if (flags.left or (numeric and flags.zero)) and width == nil then
-        formatError("MissingFormatWidth", spec)
-    end
-    if precision and (piece.integral or lower == "c") then
-        formatError("IllegalFormatPrecision", tostring(precision))
-    end
-    if not numeric and piece.numericFlag then
-        -- flags only numbers take, checked in the JDK's order (# is rejected too: no argument is Formattable here)
-        formatError("FormatFlagsConversionMismatch", "Conversion = " .. conv .. ", Flags = " .. piece.numericFlag)
-    end
-    if numeric then
-        if value == nil then
-            return pad("null", width, flags.left)
-        end
-        local integral = piece.integral
-        local rejected = rejectedClass(value, integral and "integral" or "float", class)
-        if rejected then
-            formatError("IllegalFormatConversion", conv .. " != " .. rejected)
-        end
-        if integral then
-            return formatInteger(conv, value, flags, width, bits)
-        end
-        return formatFloat(conv, value, flags, width, precision or 6)
-    end
-    local text
-    if lower == "s" then
-        text = __K2L_Str(value)
-        if precision then
-            text = __K2L_Text.take(text, precision)
-        end
-    elseif lower == "c" then
-        if value == nil then
-            text = "null"
-        else
-            local rejected = rejectedClass(value, "char", class)
-            if rejected then
-                formatError("IllegalFormatConversion", conv .. " != " .. rejected)
-            end
-            text = type(value) == "number" and codePointText(value) or __K2L_Str(value)
-        end
-    elseif lower == "b" or lower == "h" then
-        if lower == "b" then
-            text = tostring(value ~= nil and value ~= false)
-        else
-            text = __K2L_Text.formatHash(value)
-        end
-        if precision then
-            text = text:sub(1, precision)
-        end
-    else
-        formatError("UnknownFormatConversion", "Conversion = '" .. conv .. "'")
-    end
-    if conv ~= lower then
-        text = (activeUpper or string.upper)(text)
-    end
-    return pad(text, width, flags.left)
-end
-
--- A format string parsed once into its pieces: literal text, and for each specifier a table of its parts (or of the
--- error it raises when the formatting reaches it). Formats are cached by their text; the cache is dropped when full.
-local parsedFormats, parsedCount = {}, 0
-
-local function parseFormat(format)
-    local pieces = {}
-    local pos = 1
-    while pos <= #format do
-        local percent = format:find("%", pos, true)
-        if percent == nil then
-            pieces[#pieces + 1] = format:sub(pos)
-            break
-        end
-        pieces[#pieces + 1] = format:sub(pos, percent - 1)
-        local spec, index, flagText, widthText, precisionText, conv =
-            format:match("^(%%(%d*%$?)([-#+ 0,(<]*)(%d*)%.?(%d*)([a-zA-Z%%]))", percent)
-        if spec == nil or not conv:find("^[bBhHsScCdoxXeEfgGn%%]$") then
-            -- checked before the argument, as the JDK parses the whole specifier first
-            local after = conv or format:match("^%%[-#+ 0,(<%d$.]*(.)", percent)
-            pieces[#pieces + 1] = { error = "Conversion = '" .. (after or "%") .. "'" }
-            break
-        end
-        -- "1$" is an argument index; a bare number belongs to flags/width
-        local argIndex
-        if index:sub(-1) == "$" then
-            argIndex = tonumber(index:sub(1, -2))
-        else
-            widthText = index .. widthText
-            index = ""
-        end
-        local hasPrecision = spec:find("%.%d") ~= nil
-        local flags = {
-            left = flagText:find("-", 1, true) ~= nil,
-            plus = flagText:find("+", 1, true) ~= nil,
-            space = flagText:find(" ", 1, true) ~= nil,
-            zero = flagText:find("0", 1, true) ~= nil,
-            comma = flagText:find(",", 1, true) ~= nil,
-            paren = flagText:find("(", 1, true) ~= nil,
-            alt = flagText:find("#", 1, true) ~= nil,
-        }
-        if widthText:sub(1, 1) == "0" then
-            flags.zero = true
-            widthText = widthText:gsub("^0+", "")
-        end
-        local lower = conv:lower()
-        -- the first of the flags only numbers take that is set, in the order the JDK checks them
-        local numericFlag
-        for _, flag in ipairs(NUMERIC_FLAGS) do
-            if flags[flag[1]] then
-                numericFlag = flag[2]
-                break
-            end
-        end
-        local integral = lower == "d" or lower == "x" or lower == "o"
-        pieces[#pieces + 1] = {
-            spec = spec,
-            conv = conv,
-            lower = lower,
-            integral = integral,
-            numeric = integral or lower == "f" or lower == "e" or lower == "g",
-            numericFlag = numericFlag,
-            argIndex = argIndex,
-            previous = flagText:find("<", 1, true) ~= nil,
-            flags = flags,
-            width = tonumber(widthText),
-            precision = hasPrecision and tonumber(precisionText) or nil,
-        }
-        pos = percent + #spec
-    end
-    return pieces
-end
-
-local function formatText(format, ...)
-    local pieces = parsedFormats[format]
-    if pieces == nil then
-        pieces = parseFormat(format)
-        if parsedCount >= 256 then
-            parsedFormats, parsedCount = {}, 0
-        end
-        parsedFormats[format], parsedCount = pieces, parsedCount + 1
-    end
-    local n = select("#", ...)
-    local args = {...}
-    local out = {}
-    local nextArg, lastArg = 0, nil
-    for i = 1, #pieces do
-        local piece = pieces[i]
-        if type(piece) == "string" then
-            out[i] = piece
-        elseif piece.error then
-            formatError("UnknownFormatConversion", piece.error)
-        else
-            local conv = piece.conv
-            if conv == "%" then
-                out[i] = pad("%", piece.width, piece.flags.left)
-            elseif conv == "n" then
-                out[i] = "\n"
-            else
-                -- "%<s" reuses the previous specifier's argument; explicit indices do not move the ordinary one
-                local argIndex = piece.argIndex
-                if piece.previous then
-                    argIndex = lastArg
-                elseif argIndex == nil then
-                    nextArg = nextArg + 1
-                    argIndex = nextArg
-                end
-                if argIndex == nil or argIndex > n then
-                    formatError("MissingFormatArgument", "Format specifier '" .. piece.spec .. "'")
-                end
-                lastArg = argIndex
-                local value, bits, class = args[argIndex], nil, nil
-                if getmetatable(value) == Sized then
-                    value, bits, class = value.value, value.bits, value.class
-                end
-                out[i] = convert(piece, value, bits, class)
-            end
-        end
-    end
-    return table.concat(out)
+local function unsupportedFormat(spec, conversion)
+    error("String.format: '%" .. spec .. conversion .. "' is not supported", 3)
 end
 
 function __K2L_StringFormat(format, ...)
-    local savedSymbols, savedUpper = active, activeUpper
-    active, activeUpper = nil, nil
-    local text = formatText(format, ...)
-    active, activeUpper = savedSymbols, savedUpper
-    return text
+    local args, index = {...}, 0
+    return (string.gsub(format, "%%([-#+ 0,(<%d$.]*)([%a%%])", function(spec, conversion)
+        if conversion == "%" then
+            return "%"
+        elseif conversion == "n" then
+            return "\n"
+        elseif spec:find("[$<(]") or not (LUA_CONVERSIONS[conversion] or ("sSbBC"):find(conversion, 1, true)) then
+            unsupportedFormat(spec, conversion)
+        end
+        index = index + 1
+        if spec:find(",", 1, true) then
+            local flags, width, precision = string.match(spec, "^([-#+ 0,]*)(%d*)(%.?%d*)$")
+            if flags == nil or flags:find("0", 1, true) or (conversion ~= "d" and conversion ~= "f") then
+                unsupportedFormat(spec, conversion)
+            end
+            local text = string.format("%" .. flags:gsub("[,-]", "") .. precision .. conversion, args[index])
+            return string.format("%" .. (flags:find("-", 1, true) and "-" or "") .. width .. "s", __K2L_Text.grouped(text))
+        end
+        local value, lower = args[index], conversion:lower()
+        local upper = conversion ~= lower and (lower == "s" or lower == "b" or lower == "c")
+        if lower == "s" then
+            value, conversion = __K2L_Str(value), "s"
+        elseif lower == "b" then
+            value, conversion = tostring(not not value), "s"
+        elseif lower == "c" and type(value) == "string" then
+            conversion = "s"
+        end
+        local text = string.format("%" .. spec .. (conversion == "C" and "c" or conversion), value)
+        return upper and string.upper(text) or text
+    end))
 end
-
--- String.format(locale, ...) with the symbols and uppercase function of the locale (see LocaleFormat.lua)
-function __K2L_Text.formatWith(symbols, upper, format, ...)
-    local savedSymbols, savedUpper = active, activeUpper
-    active, activeUpper = symbols, upper
-    local text = formatText(format, ...)
-    active, activeUpper = savedSymbols, savedUpper
-    return text
-end
-
 end
 
 ------------------------------------------------------------------ StringBuilder
 local __K2L_StringBuilder = __K2L_Class("java.lang.StringBuilder")
 
--- The content is a list of pieces, concatenated when it is read. setText makes it one piece (and forgets the UTF-16
--- length that Utf16.lua keeps in ____units).
+-- The content is a list of pieces, concatenated when it is read. setText makes it one piece.
 local function setText(self, s)
-    self.____parts, self.____units = {s}, nil
+    self.____parts = {s}
 end
-__K2L_StringBuilder.____setText = setText
 
 function __K2L_StringBuilder:____init(initial)
     self.____parts = {initial or ""}
@@ -1728,12 +1051,12 @@ function __K2L_Text.charsGet(s, index)
     return s:get(index)
 end
 
--- A string of chars (Utf16.lua joins surrogate halves)
+-- A string of chars
 function __K2L_Text.joinChars(chars)
     return table.concat(chars)
 end
 
--- The chars of a string (Utf16.lua replaces it with the UTF-16 units)
+-- The chars of a string
 function __K2L_Text.eachChar(s)
     return string.gmatch(s, ".")
 end

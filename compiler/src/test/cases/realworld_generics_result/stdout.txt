@@ -17,6 +17,6 @@ either=Left(error={NAME=[required], AGE=[not a number: abc], EMAIL=[invalid: nop
  12.5  -> ok(0.125)
 150 -> err(IllegalArgumentException: percent out of range: 150.0)
 abc -> err(NumberFormatException: For input string: "abc")
-total=0.6000000000000001
+total=0.6
 recovered=1.0 mapped=too high: 0.4 isFailure=true
 first failure: NumberFormatException

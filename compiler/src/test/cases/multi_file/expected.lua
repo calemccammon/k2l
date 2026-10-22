@@ -1,8 +1,8 @@
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____shapes = require("model.shapes")
@@ -24,14 +24,10 @@ local function main()
     ____strings.counted()
     ____strings.counted()
     print(____strings.calls)
-    local shapes = __K2L_ReadOnlyListOf(____shapes.Square.new(2.0), Circle.new(1.0))
-    local ____mod = shapes.____modCount
+    local shapes = __K2L_ListOf(____shapes.Square.new(2.0), Circle.new(1.0))
     for ____i = 1, shapes.size do
         local s = shapes[____i]
-        print(s.name .. ": " .. __K2L_Str(s:area()) .. " " .. s:describe())
-        if shapes.____modCount ~= ____mod and shapes:____comodified(____i) then
-            break
-        end
+        print(s.name .. ": " .. s:area() .. " " .. s:describe())
     end
     ____shapes.Registry:add(____shapes.Square.new(3.0))
     print(____shapes.Registry:count())
@@ -43,7 +39,7 @@ local function main()
     print(____even.isEven(7))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Circle = Circle}
 -- ==== model/shapes.lua ====
 local ____lualib = require("lualib_bundle")

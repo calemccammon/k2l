@@ -1,17 +1,10 @@
--- requires: DoubleToString, IdentityHash
--- floatPrinter is set by FloatToString when the program uses Float: prints numbers that are exactly floats like Float.toString.
-local __K2L_StrHooks = {}
+-- requires: IdentityHash
+-- toString() of any value: "null" for nil, an object's toString(), and Lua's tostring for numbers, booleans and the rest.
 local function __K2L_Str(value)
     if value == nil then
         return "null"
     end
-    local t = type(value)
-    if t == "number" then
-        if math.type(value) == "integer" then
-            return tostring(value)
-        end
-        return (__K2L_StrHooks.floatPrinter or __K2L_DoubleToString)(value)
-    elseif t == "table" then
+    if type(value) == "table" then
         if value.toString then
             return value:toString()
         end

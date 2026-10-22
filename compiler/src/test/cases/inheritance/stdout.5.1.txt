@@ -1,0 +1,14 @@
+rect with area 1
+rect with area 6
+rectangle with 4 sides
+polygon named
+square! rect with area 4
+circle with area 3
+square
+rect 2x3
+circle r=2
+true
+true
+false
+true
+The animal says woof!

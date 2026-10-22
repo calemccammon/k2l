@@ -1,8 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Spread = ____lualib.__K2L_Spread
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local function firstOver(limit, onMiss, ...)
     local values = __K2L_ArrayOf(...)
@@ -93,9 +92,9 @@ local function main()
         ____result_9 = items:filter(____lambda_2):joinToString("+") .. "."
     end
     print(____result_9)
-    print(search(__K2L_TypedArrayOf("[I", 5, 20)))
-    print(search(__K2L_TypedArrayOf("[I", 5, 2)))
+    print(search(__K2L_ArrayOf(5, 20)))
+    print(search(__K2L_ArrayOf(5, 2)))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {firstOver = firstOver, search = search}

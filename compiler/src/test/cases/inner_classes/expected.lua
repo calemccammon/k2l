@@ -3,8 +3,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Counter = __K2L_Class("Counter")
@@ -214,7 +213,7 @@ function Shape.Late.new2(____outer)
 end
 
 function Shape:parts()
-    return __K2L_ReadOnlyListOf(Shape.Part.new(self, 1), Shape.SpecialPart.new(self, 2, "x"), Shape.Marked.new(self), Shape.Late.new1(self, 3), Shape.Late.new2(self))
+    return __K2L_ListOf(Shape.Part.new(self, 1), Shape.SpecialPart.new(self, 2, "x"), Shape.Marked.new(self), Shape.Late.new1(self, 3), Shape.Late.new2(self))
 end
 
 local Square = __K2L_Class("Square", Shape)
@@ -311,13 +310,9 @@ local function main()
     print(leaf2:outers())
     local sq = Square.new()
     local ____list = sq:parts()
-    local ____mod = ____list.____modCount
     for ____i = 1, ____list.size do
         local p = ____list[____i]
         print(p:label())
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-            break
-        end
     end
     print(sq:squarePart():label())
     print(Square.Corner.new(sq, 2):report())
@@ -333,7 +328,7 @@ local function main()
     print(Wrapper.Lazy.new(w):scaled())
     print(Wrapper.Lazy.new(w, 10):scaled())
     print(Wrapper.Lazy.new(w, 2, "z"):scaled())
-    local ____list_1 = __K2L_ReadOnlyListOf(1, 2, 3)
+    local ____list_1 = __K2L_ListOf(1, 2, 3)
     local ____out = {}
     local ____count = 0
     local ____items, ____n = ____list_1:____array()
@@ -362,5 +357,5 @@ local function main()
     print(total)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Counter = Counter, Outer = Outer, Shape = Shape, Square = Square, Wrapper = Wrapper}

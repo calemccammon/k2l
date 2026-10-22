@@ -1,7 +1,5 @@
-import java.util.TreeMap
-
 // Adapted from realworld_library and realworld_warehouse: sorting records with comparator chains, natural-order sorts
-// of strings and numbers, in-place sortWith, binary search, a TreeMap index and top-N queries.
+// of strings and numbers, in-place sortWith, binary search, a sorted-map index and top-N queries.
 
 const val SIZE = 30_000 // books
 
@@ -46,13 +44,13 @@ fun main() {
         }
         checksum += shelf[shelf.size / 2].pages + shelf.first().year
     }
-    val index = TreeMap<String, MutableList<Book>>()
+    val index = sortedMapOf<String, MutableList<Book>>()
     for (b in books) index.getOrPut(b.author) { mutableListOf() }.add(b)
     val prolific = index.entries.sortedWith(compareByDescending<Map.Entry<String, MutableList<Book>>> { it.value.size }.thenBy { it.key })
         .take(5).map { "${it.key}:${it.value.size}" }
     println("prolific: $prolific")
     val newest = index.values.map { list -> list.maxBy { it.year } }.sortedBy { it.year }.distinctBy { it.year }
-    checksum += newest.size + index.firstKey().length + index.lastKey().length
+    checksum += newest.size + index.keys.first().length + index.keys.last().length
     for (decade in 1900..2020 step 10) {
         val inDecade = books.filter { it.year / 10 * 10 == decade }
         val best = inDecade.sortedWith(compareBy<Book>({ -it.rating }, { it.title })).take(3)

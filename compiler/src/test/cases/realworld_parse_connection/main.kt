@@ -1,8 +1,6 @@
 // A TCP-like connection state machine driven by event scripts, plus a vending machine with credit and stock:
 // enum states with per-state behavior, sealed events, guarded `when` branches, transition history, timers and
 // errors for invalid transitions.
-import java.util.EnumMap
-import java.util.EnumSet
 
 enum class State(val canSend: Boolean = false) {
     CLOSED, LISTEN, SYN_SENT, SYN_RECEIVED, ESTABLISHED(canSend = true), FIN_WAIT_1, FIN_WAIT_2, CLOSE_WAIT(canSend = true),
@@ -32,7 +30,7 @@ class Connection(val name: String) {
     var state = State.CLOSED
         private set
     val history = mutableListOf<Step>()
-    private val visits = EnumMap<State, Int>(State::class.java)
+    private val visits = mutableMapOf<State, Int>()
     private var timeWaitMs = 0
     var sent = 0
         private set
@@ -59,9 +57,9 @@ class Connection(val name: String) {
         else -> table[state]?.get(e) ?: throw InvalidTransition(state, e)
     }
 
-    fun visited(): Set<State> = EnumSet.copyOf(visits.keys)
+    fun visited(): Set<State> = visits.keys.sortedBy { it.ordinal }.toSet()
 
-    fun visitCounts(): Map<State, Int> = visits
+    fun visitCounts(): Map<State, Int> = visits.entries.sortedBy { it.key.ordinal }.associate { it.key to it.value }
 
     companion object {
         const val MSL = 30
@@ -178,7 +176,7 @@ fun main() {
     runConnection("tick", "open, tick(soon)")
 
     println(State.valueOf("LISTEN").ordinal to State.entries.count { it.canSend })
-    println(runCatching { State.valueOf("OPEN") }.exceptionOrNull()?.javaClass?.simpleName)
+    println(runCatching { State.valueOf("OPEN") }.exceptionOrNull()?.let { it::class.simpleName })
     val byPrefix = State.entries.groupBy { it.name.substringBefore('_') }.filterValues { it.size > 1 }
     println(byPrefix)
 

@@ -22,14 +22,10 @@ class FileTransformer(
     override val ctx: TransformContext,
     internal val module: ModuleContext = ModuleContext.single(file),
 ) : StatementEmitter() {
-    internal val usesReflection get() = module.usesReflection
-    internal val usesFloat get() = module.usesFloat
     internal val usesListViews get() = module.usesListViews
     internal val implementsCharSequence get() = module.implementsCharSequence
     internal val implementsClosedRange get() = module.implementsClosedRange
     internal val implementsCollections get() = module.implementsCollections
-    internal val uncheckedCasts get() = module.uncheckedCasts
-    internal fun usesFunctionNames(scan: (Set<KtFile>) -> Boolean) = module.usesFunctionNames(scan)
 
     /** Exported top-level `var`s live in `____exports` so other files see updates. */
     internal val tableMode: Boolean by lazy {
@@ -97,9 +93,6 @@ class FileTransformer(
 
     /** Lambda parameters of inlined lambdas, keyed by (function literal, parameter name). */
     internal val lambdaBindings = HashMap<Pair<PsiElement, String>, LuaExpr>()
-
-    /** The temps holding values checked against their static type (see UncheckedCasts.kt), which need no second check. */
-    internal val checkedValues = HashSet<LuaName>()
 
     // ---- statements ----
 
@@ -176,8 +169,13 @@ class FileTransformer(
     internal var statementExpression: KtExpression? = null
 
     fun KaSession.expression(e: KtExpression): LuaExpr = when {
+        // reported once, at the outermost expression of an unsigned type: its operands are not translated
+        unsignedTypeName(e.expressionType) != null -> unsupported(e, "Unsigned type '${unsignedTypeName(e.expressionType)}'")
+
         e !== statementExpression && isUnitValued(e) -> unitValueOf(e)
+
         convertsUnitFunction(e) -> returningUnit(translated(e))
+
         else -> translated(e)
     }
 
@@ -198,16 +196,13 @@ class FileTransformer(
 
         is KtPostfixExpression -> postfix(e)
 
-        is KtCallExpression -> uncheckedResult(e, call(e, e))
+        is KtCallExpression -> call(e, e)
 
-        is KtDotQualifiedExpression -> uncheckedResult(
-            e,
-            when (val selector = e.selectorExpression) {
-                is KtCallExpression -> call(selector, e)
-                is KtNameReferenceExpression -> reference(selector, e)
-                else -> unsupported(e, "This qualified expression")
-            },
-        )
+        is KtDotQualifiedExpression -> when (val selector = e.selectorExpression) {
+            is KtCallExpression -> call(selector, e)
+            is KtNameReferenceExpression -> reference(selector, e)
+            else -> unsupported(e, "This qualified expression")
+        }
 
         is KtIfExpression -> if (canTernary(e)) ternary(e) else branchingValue(e)
 
@@ -226,12 +221,13 @@ class FileTransformer(
         // anonymous function
         is KtCallableReferenceExpression -> callableReference(e)
 
-        is KtArrayAccessExpression -> uncheckedResult(e, arrayAccess(e))
+        is KtArrayAccessExpression -> arrayAccess(e)
 
-        is KtSafeQualifiedExpression -> uncheckedResult(e, safeCall(e))
+        is KtSafeQualifiedExpression -> safeCall(e)
 
-        is KtThrowExpression -> {
-            throwStatement(e)
+        // a jump as an operand (`found || return false`; `x ?: break` is handled by elvis): the statement, then no value
+        is KtThrowExpression, is KtReturnExpression, is KtBreakExpression, is KtContinueExpression -> {
+            statement(e)
             LuaNil
         }
 
@@ -258,11 +254,7 @@ class FileTransformer(
 
     fun lualibRef(feature: String, name: String): LuaExpr {
         ctx.lualib += feature
-        // with Floats among untyped values, every printer of untyped values has to recognize them (see FloatToString.lua)
-        if (usesFloat) ctx.lualib += "FloatToString"
         ctx.lualibNames += name
-        // --strings utf16 patches the text and Regex runtime in place when its feature is loaded
-        if (utf16 && (feature == "Strings" || feature == "Regex")) ctx.lualib += "Utf16"
         return LuaName(name)
     }
 

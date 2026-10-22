@@ -1,9 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Person = __K2L_Class("Person")
@@ -42,7 +41,7 @@ function Pair2.new(first, second)
 end
 
 function Pair2:toString()
-    return "Pair2(first=" .. self.first .. ", second=" .. __K2L_Str(self.second) .. ")"
+    return "Pair2(first=" .. self.first .. ", second=" .. self.second .. ")"
 end
 
 function Pair2:hashCode()
@@ -50,7 +49,7 @@ function Pair2:hashCode()
 end
 
 function Pair2:equals(other)
-    return getmetatable(other) == Pair2 and self.first == other.first and __K2L_DoubleEquals(self.second, other.second)
+    return getmetatable(other) == Pair2 and self.first == other.first and self.second == other.second
 end
 
 local Wrapper = __K2L_Class("Wrapper")
@@ -95,5 +94,5 @@ local function main()
     print(p:equals(q))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Person = Person, Pair2 = Pair2, Wrapper = Wrapper}

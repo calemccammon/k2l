@@ -15,8 +15,7 @@ import game.engine.tick
 import game.engine.world
 
 // A game host that runs hand-written Lua scripts: Kotlin calls Lua (lib/scripting.lua, lib/audio.lua), and the Lua
-// scripts call back into the Kotlin module engine.Api. It can't run on the JVM (see jvm-skip); stdout.txt is what
-// Kotlin semantics give.
+// scripts call back into the Kotlin module engine.Api.
 
 fun main() {
     println("scripts $scriptVersion")

@@ -1,4 +1,3 @@
-import java.util.TreeMap
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -24,27 +23,6 @@ fun main() {
 
     println(listOf('a' to 'A', 'b' to 'b', 'c' to 'D', '1' to '1').map { (x, y) -> "${x.equals(y, true)}/${x.equals(y, false)}/${same(x, y, true)}" })
 
-    val m = TreeMap<Int, String>()
-    m[1] = "a"
-    m[10] = "b"
-    println(m.higherKey(5))
-    val k: Int? = m.higherKey(50)
-    println(k)
-    println("key ${m.higherKey(50)}")
-    try {
-        println(m.higherKey(50))
-    } catch (e: NullPointerException) {
-        println("NPE from println")
-    }
-    try {
-        val x = m.higherKey(50)
-        print(x)
-        println()
-    } catch (e: NullPointerException) {
-        println("NPE from print")
-    }
-    println(m.higherEntry(50))
-    println(m.ceilingKey(10).toString() + "!")
 
     // hexadecimal floats, -0.0 truncated or rounded to integers, two significant digits of Double.MIN_VALUE, Boolean.xor
     println(listOf("0x1p3", "0x1.8P-1", "-0X10p0d", "0x.8p1", "0x1", "0xp1").joinToString { it.toDoubleOrNull().toString() })

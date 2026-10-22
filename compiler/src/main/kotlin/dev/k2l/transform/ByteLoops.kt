@@ -13,7 +13,7 @@ import org.jetbrains.kotlin.psi.*
  */
 internal fun FileTransformer.byteLoop(text: LuaExpr, param: KtParameter, body: KtExpression?, translate: () -> List<LuaStmt>): Boolean =
     with(session) {
-        if (utf16 || body == null) return false
+        if (body == null) return false
         val variable = naming.of(param)
         val uses = HashMap<KtExpression, LuaExpr>()
         var other = false
@@ -74,7 +74,6 @@ private const val ASCII_LIMIT = 128
  * the length test goes); other comparisons are returned as they are.
  */
 internal fun FileTransformer.byteComparison(comparison: LuaExpr): LuaExpr {
-    if (utf16) return comparison
     val c = comparison as? LuaBinary ?: return comparison
     if (c.op != LuaBinOp.Eq && c.op != LuaBinOp.Ne) return comparison
     val literal = c.right as? LuaString ?: c.left as? LuaString ?: return comparison

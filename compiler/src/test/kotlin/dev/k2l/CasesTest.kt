@@ -19,8 +19,11 @@ import java.nio.file.Paths
  * Every directory in `src/test/cases` is a program:
  * - `main.kt`: the Kotlin input
  * - `expected.lua`: the exact transpiler output (regenerate with `-PupdateGolden`)
- * - `stdout.txt`: what the program prints, produced by the Kotlin/JVM oracle (`kotlinOracle` task)
- * - `options.txt` (optional): compiler options for the case, one `name=value` per line (`intOverflow=wrap`, `strings=utf16`, `long64=emulate`)
+ * - `stdout.txt`: what the program prints on Lua 5.4 (regenerated with `-PupdateGolden` too)
+ * - `stdout.<target>.txt` (optional): what it prints on another target where that differs from 5.4 (`stdout.5.1.txt`,
+ *   `stdout.JIT.txt`); `-PupdateGolden` writes it only when the output differs, and deletes it when it no longer does
+ * - `options.txt` (optional): compiler options for the case, one `name=value` per line (`luaLibImport=inline`)
+ * - `targets-skip.txt` (optional): targets the case does not run on (a crash or a hang there), see [skippedTargets]
  * - `errors.txt` (instead of the other two): expected diagnostics, one `line:column: message` per line, each followed by its
  *   `  hint: ...` line if it has one
  */
@@ -57,24 +60,30 @@ class CasesTest {
                         assertEquals(emptyList<String>(), unexportedLualibNames(result.outputs), "names the runtime does not export")
                     },
                     DynamicTest.dynamicTest("runs") {
-                        assumeInterpreter(luaAvailable, "$lua not found")
+                        val lua = lua54
+                        assumeInterpreter(lua != null, "lua5.4 not found")
                         val skip = skippedTargets(dir)["5.4"]
                         assumeTrue(skip == null, "skipped on 5.4: $skip")
                         assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
-                        assertEquals(File(dir, "stdout.txt").readText(), runCase(lua, result.outputs, dir.toPath()))
+                        checkStdout(dir, LuaTarget.Lua54, runCase(lua!!, result.outputs, dir.toPath()))
                     },
                 ).takeIf { golden }.orEmpty() + otherTargets.map { (target, interpreter) ->
-                    // The golden Lua is for 5.4; other targets only have to print the same output.
+                    // The golden Lua is for 5.4; other targets only have to print the same output (or their stdout.<target>.txt).
                     DynamicTest.dynamicTest("runs on ${target.id}") {
                         val skip = skippedTargets(dir)[target.id]
                         assumeTrue(skip == null, "skipped on ${target.id}: $skip")
                         val targetResult = K2lCompiler(options.copy(luaTarget = target)).compile(session, module)
                         assertEquals("", targetResult.diagnostics.joinToString("\n"), "unexpected diagnostics")
-                        assertEquals(File(dir, "stdout.txt").readText(), runCase(interpreter, targetResult.outputs, dir.toPath()))
+                        checkStdout(dir, target, runCase(interpreter, targetResult.outputs, dir.toPath()))
                     }
                 },
             )
         }
+    }
+
+    /** Compares [output] with what the case prints on [target], or records it with `-PupdateGolden`. */
+    private fun checkStdout(dir: File, target: LuaTarget, output: String) {
+        if (update) recordStdout(dir, target, output) else assertEquals(stdoutFile(dir, target).readText(), output)
     }
 
     /** The generated files except the shared lualib bundle; several files are concatenated with headers. */
@@ -93,7 +102,10 @@ class CasesTest {
         throw AssertionFailedError(message, expected, actual)
     }
 
-    /** `targets-skip.txt`: lines of `5.1: reason` (or `5.4: reason`, which skips the run of the golden Lua) for known, documented differences on a target. */
+    /**
+     * `targets-skip.txt`: lines of `5.1: reason` (or `5.4: reason`, which skips the run of the golden Lua) for a target the
+     * case can't run on at all (it crashes or never ends there). Output that only differs goes in `stdout.<target>.txt`.
+     */
     private fun skippedTargets(dir: File): Map<String, String> = File(dir, "targets-skip.txt").takeIf { it.isFile }?.readLines().orEmpty()
         .filter { ':' in it }.associate { it.substringBefore(':').trim() to it.substringAfter(':').trim() }
 
@@ -124,8 +136,9 @@ class CasesTest {
     companion object {
         private val casesDir: Path = Paths.get(System.getProperty("k2l.casesDir") ?: "src/test/cases")
         private val update = System.getProperty("k2l.updateGolden").toBoolean()
-        private val lua = System.getProperty("k2l.lua") ?: "lua5.4"
-        private val luaAvailable by lazy { luaVersionBanner(lua) != null }
+
+        /** The 5.4 interpreter the golden output runs on (`-Plua54` overrides it). */
+        private val lua54: String? by lazy { LuaInterpreters.of(LuaTarget.Lua54) }
 
         /** Whether the tests of the golden 5.4 output run (`-PluaTargets`). */
         private val golden = LuaInterpreters.runsTargetFreeTests()

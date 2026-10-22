@@ -1,0 +1,43 @@
+parsed 10 sales, 3 rejected
+  line 10: units must be positive, was -4
+  line 11: unknown region 'Weast'
+  line 14: missing unit_price
+
+By rep:
++--------------+-------+---------+
+| Rep          | Units | Revenue |
++--------------+-------+---------+
+| Smith, Anna  |    24 | $178.25 |
+| Bob Jones    |    29 | $173.92 |
+| Carla Diaz   |    49 | $161.00 |
+| O"Brien, Pat |    27 | $102.00 |
++--------------+-------+---------+
+
+Monthly revenue by region:
++--------+---------+---------+---------+
+| Region | 2024-01 | 2024-02 | 2024-03 |
++--------+---------+---------+---------+
+| North  |   80.75 |       - |   97.50 |
+| South  |   59.97 |   37.50 |   76.45 |
+| East   |       - |  161.00 |       - |
+| West   |       - |   42.00 |   60.00 |
++--------+---------+---------+---------+
+
+Tax owed:
+  EAST..   $13.28 (8.25%)
+  NORTH.   $12.48 (7.00%)
+  SOUTH.    $8.70 (5.00%)
+  WEST..    $6.12 (6.00%)
+
+Unit price stats: n=10 mean=9.154 median=6.975 sd=7.4634 range=2.4..21
+Revenue stats: mean=61.52 median=59.98 max=98.00
+
+Best sale: #4 on 2024-02-02 by Carla Diaz ($98.00)
+  Gadget    32.4% ########
+  Gizmo     30.9% ########
+  Widget    36.7% #########
+reps by region: {NORTH=[Smith, Anna], SOUTH=[Bob Jones], EAST=[Carla Diaz], WEST=[O"Brien, Pat]}
+last sale id per month: {2024-01=3, 2024-02=7, 2024-03=12}
+running units: [12, 15, 22, 62, 77, 79, 88, 93, 104, 129]
+copy: Sale(id=1, date=2024-01-05, rep=Smith, Anna, region=NORTH, product=Widget, units=100, unitPrice=2) revenue=200
+big orders: [1:12, 4:40, 5:15, 11:11, 12:25]

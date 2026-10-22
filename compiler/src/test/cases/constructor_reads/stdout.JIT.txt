@@ -1,0 +1,11 @@
+Base sees size=0 label=null enabled=false ratio=0 note=null
+report: size=1
+Child sees size=10 label=child enabled=false ratio=2.5 note=c
+after: 10 child false 2.5 c
+Base sees size=0 label=base enabled=true ratio=0.5 note=n
+report: size=1
+after: 20
+shape with 0 sides
+5
+100
+v=2

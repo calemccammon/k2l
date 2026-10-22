@@ -159,6 +159,7 @@ private fun FileTransformer.constructorCall(
     full: KtExpression,
     outer: Operand?,
 ): LuaExpr = with(session) {
+    typeAliasedOriginal(symbol)?.let { return constructorCall(it, it.psi, args, full, outer) }
     val classId = symbol.containingClassId
     (classId?.let(classes::classInFile) ?: localClassOf(psi, classId))?.let { cls ->
         val outers = if (isInner(cls)) {
@@ -168,7 +169,7 @@ private fun FileTransformer.constructorCall(
         }
         return LuaCall(LuaIndex(classRef(cls), LuaString("new" + constructorSuffix(psi))), arguments(outers, args))
     }
-    LIBRARY_CLASSES[classId?.asString()]?.takeIf { classId?.relativeClassName?.asString() !in FORMATTER_EXCEPTIONS }?.let { lua ->
+    LIBRARY_CLASSES[classId?.asString()]?.let { lua ->
         return libNew(EXCEPTIONS_FEATURE, lua, throwableArguments(args, symbol.valueParameters))
     }
     val site =
@@ -294,6 +295,13 @@ internal fun FileTransformer.libraryCall(
         argTypes = argTypes,
         parameterTypes = parameterTypes,
     )
-    StdlibMappings.map(callableId, site)?.let { return it }
-    return unsupported(full, "Library API '${callableId?.replace('/', '.') ?: full.text}'")
+    return StdlibMappings.map(callableId, site) ?: unsupportedLibraryCall(full, callableId, receiverType)
 }
+
+/** A library call no mapping translates; a member of an unsigned type is not reported again (its receiver was). */
+private fun FileTransformer.unsupportedLibraryCall(full: KtExpression, callableId: String?, receiverType: KaType?): LuaExpr =
+    if (with(session) { unsignedTypeName(receiverType) } != null) {
+        LuaNil
+    } else {
+        unsupported(full, "Library API '${callableId?.replace('/', '.') ?: full.text}'")
+    }

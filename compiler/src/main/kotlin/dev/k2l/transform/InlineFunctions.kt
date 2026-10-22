@@ -197,6 +197,8 @@ private fun FileTransformer.inlineUserFunction(site: InlineSite): LuaExpr = with
     val valueArgs = fn.valueParameters.filter { !it.isVarArg }.map { p -> site.provided[p]?.takeIf { p !in site.lambdas } } + site.varargs
     // a spread that is not last makes the rest of the vararg's arguments one `__K2L_Spread(...)`, the last element of the Array
     val collapsed = site.varargs.dropLast(1).any { it in callState.spreads }
+    // the expansion applies the defaults of omitted arguments itself, so a null argument stays nil
+    callState.nullArguments.removeAll(valueArgs.filterNotNull().toSet())
     val values = arguments(receivers, valueArgs).let {
         if (collapsed) {
             it

@@ -36,15 +36,10 @@ internal val EXPANDED_ALWAYS = setOf(
 )
 
 /** The chars of a String as a list. */
-internal fun FileTransformer.charList(text: LuaExpr): LuaExpr = if (utf16) {
-    libCall(TEXT_TABLE, "toList", listOf(text))
-} else {
-    LuaCall(lualibRef("Strings", "__K2L_StringToList"), listOf(text))
-}
+internal fun FileTransformer.charList(text: LuaExpr): LuaExpr = LuaCall(lualibRef("Strings", "__K2L_StringToList"), listOf(text))
 
 /** A list of chars as the String they spell. */
-internal fun FileTransformer.joinChars(chars: LuaExpr): LuaExpr =
-    LuaMethodCall(chars, "joinToString", listOf(LuaString(""))).let { if (utf16) u16Norm(it) else it }
+internal fun joinChars(chars: LuaExpr): LuaExpr = LuaMethodCall(chars, "joinToString", listOf(LuaString("")))
 
 /** `mapTo`, `filterTo`, ...: the same loops as `map`, `filter`, ..., but filling the destination, which is the result. */
 internal fun FileTransformer.filling(name: String, source: Source, args: List<KtExpression?>): LuaExpr = with(session) {
@@ -193,8 +188,4 @@ internal fun FileTransformer.keyedCall(name: String, type: KaType?, args: List<K
     return result
 }
 
-private fun FileTransformer.isBlankText(text: LuaExpr): LuaExpr = if (utf16) {
-    libCall(TEXT_TABLE, "isBlank", listOf(text))
-} else {
-    LuaCall(lualibRef("Strings", "__K2L_StringIsBlank"), listOf(text))
-}
+private fun FileTransformer.isBlankText(text: LuaExpr): LuaExpr = LuaCall(lualibRef("Strings", "__K2L_StringIsBlank"), listOf(text))

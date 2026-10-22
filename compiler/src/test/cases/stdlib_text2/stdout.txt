@@ -105,7 +105,7 @@ hi
 true null       trun|
 +5  5
 For input string: "abc"
-empty String
+For input string: ""
 abc1xyz2.5
 <<abc1xyz2.5
 <abc

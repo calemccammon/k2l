@@ -1,37 +1,36 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
-local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_FdLibm = ____lualib.__K2L_FdLibm
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
+local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
+local __K2L_IsDigit = ____lualib.__K2L_IsDigit
+local __K2L_IsLetter = ____lualib.__K2L_IsLetter
+local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
+local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
+local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_Str = ____lualib.__K2L_Str
-local __K2L_StringFormat = ____lualib.__K2L_StringFormat
+local __K2L_StrByte = ____lualib.__K2L_StrByte
+local __K2L_StringContains = ____lualib.__K2L_StringContains
+local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_StringReplace = ____lualib.__K2L_StringReplace
 local __K2L_StringToDoubleOrNull = ____lualib.__K2L_StringToDoubleOrNull
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_Utf16 = ____lualib.__K2L_Utf16
-local __K2L_Utf16Case = ____lualib.__K2L_Utf16Case
+local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local Kind = __K2L_Class("Kind")
-__K2L_ClassInfo(Kind, "Kind", "Kind", "class")
 
 function Kind:____init(name, ordinal)
     self.name = name
@@ -57,7 +56,6 @@ Kind.COLON = Kind.new("COLON", 7)
 Kind.EOF = Kind.new("EOF", 8)
 Kind.____values = {Kind.NUM, Kind.IDENT, Kind.OP, Kind.LPAREN, Kind.RPAREN, Kind.COMMA, Kind.QUESTION, Kind.COLON, Kind.EOF}
 local Token = __K2L_Class("Token")
-__K2L_ClassInfo(Token, "Token", "Token", "class")
 
 function Token:____init(kind, text, pos)
     self.kind = kind
@@ -82,7 +80,6 @@ function Token:equals(other)
 end
 
 local ParseError = __K2L_Class("ParseError", __K2L_RuntimeException)
-__K2L_ClassInfo(ParseError, "ParseError", "ParseError", "class")
 
 function ParseError:____init(message, pos)
     __K2L_RuntimeException.____init(self, message)
@@ -92,29 +89,29 @@ end
 local function tokenize(src)
     local out = __K2L_List.new()
     local i = 0
-    local twoCharOps = __K2L_ReadOnlySetOf("<=", ">=", "==", "!=", "&&", "||", "**")
-    while i < __K2L_Utf16.len(src) do
-        local c = __K2L_Text.get(src, i)
-        if __K2L_Utf16Case.isWhitespace(c) then
+    local twoCharOps = __K2L_SetOf("<=", ">=", "==", "!=", "&&", "||", "**")
+    while i < #src do
+        local c = i >= 0 and i < #src and src:sub(i + 1, i + 1) or __K2L_IndexError(i, #src, "string")
+        if __K2L_IsWhitespace[c] == true then
             i = i + 1
-        elseif __K2L_Utf16Case.isDigit(c) or c == "." and i + 1 < __K2L_Utf16.len(src) and __K2L_Utf16Case.isDigit(__K2L_Text.get(src, i + 1)) then
+        elseif __K2L_IsDigit[c] == true or c == "." and i + 1 < #src and __K2L_IsDigit[i + 1 >= 0 and i + 1 < #src and src:sub(i + 1 + 1, i + 1 + 1) or __K2L_IndexError(i + 1, #src, "string")] == true then
             local start = i
-            while i < __K2L_Utf16.len(src) and (__K2L_Utf16Case.isDigit(__K2L_Text.get(src, i)) or __K2L_Text.get(src, i) == "." or __K2L_Text.get(src, i) == "_") do
+            while i < #src and (__K2L_IsDigit[i >= 0 and i < #src and src:sub(i + 1, i + 1) or __K2L_IndexError(i, #src, "string")] == true or (i >= 0 and __K2L_StrByte(src, i + 1) or __K2L_IndexError(i, #src, "string")) == 46 or (i >= 0 and __K2L_StrByte(src, i + 1) or __K2L_IndexError(i, #src, "string")) == 95) do
                 i = i + 1
             end
-            if i < __K2L_Utf16.len(src) and (__K2L_Text.get(src, i) == "e" or __K2L_Text.get(src, i) == "E") then
+            if i < #src and ((i >= 0 and __K2L_StrByte(src, i + 1) or __K2L_IndexError(i, #src, "string")) == 101 or (i >= 0 and __K2L_StrByte(src, i + 1) or __K2L_IndexError(i, #src, "string")) == 69) then
                 i = i + 1
-                if i < __K2L_Utf16.len(src) and (__K2L_Text.get(src, i) == "+" or __K2L_Text.get(src, i) == "-") then
+                if i < #src and ((i >= 0 and __K2L_StrByte(src, i + 1) or __K2L_IndexError(i, #src, "string")) == 43 or (i >= 0 and __K2L_StrByte(src, i + 1) or __K2L_IndexError(i, #src, "string")) == 45) then
                     i = i + 1
                 end
-                while i < __K2L_Utf16.len(src) and __K2L_Utf16Case.isDigit(__K2L_Text.get(src, i)) do
+                while i < #src and __K2L_IsDigit[i >= 0 and i < #src and src:sub(i + 1, i + 1) or __K2L_IndexError(i, #src, "string")] == true do
                     i = i + 1
                 end
             end
             out:add(Token.new(Kind.NUM, __K2L_StringReplace(__K2L_Text.substring(src, start, i), "_", ""), start))
-        elseif __K2L_Utf16Case.isLetter(c) or c == "_" then
+        elseif __K2L_IsLetter[c] == true or c == "_" then
             local start = i
-            while i < __K2L_Utf16.len(src) and (__K2L_Utf16Case.isLetterOrDigit(__K2L_Text.get(src, i)) or __K2L_Text.get(src, i) == "_") do
+            while i < #src and (__K2L_IsLetterOrDigit[i >= 0 and i < #src and src:sub(i + 1, i + 1) or __K2L_IndexError(i, #src, "string")] == true or (i >= 0 and __K2L_StrByte(src, i + 1) or __K2L_IndexError(i, #src, "string")) == 95) do
                 i = i + 1
             end
             out:add(Token.new(Kind.IDENT, __K2L_Text.substring(src, start, i), start))
@@ -143,26 +140,24 @@ local function tokenize(src)
             local ____old_1 = i
             i = i + 1
             out:add(Token.new(____arg_1, ":", ____old_1))
-        elseif i + 1 < __K2L_Utf16.len(src) and twoCharOps:contains(__K2L_Text.substring(src, i, i + 2)) then
+        elseif i + 1 < #src and twoCharOps:contains(__K2L_Text.substring(src, i, i + 2)) then
             out:add(Token.new(Kind.OP, __K2L_Text.substring(src, i, i + 2), i))
             i = i + 2
-        elseif __K2L_Text.contains("+-*/%^<>!", c) then
+        elseif __K2L_StringContains("+-*/%^<>!", c) then
             local ____arg = Kind.OP
             local ____old = i
             i = i + 1
             out:add(Token.new(____arg, c, ____old))
         else
-            error(ParseError.new(__K2L_Utf16.norm("unexpected character '" .. c .. "' (U+" .. __K2L_Text.padStart(__K2L_Utf16Case.uppercase(__K2L_Num.toRadix(__K2L_Utf16.code(c), 16)), 4, "0") .. ")"), i))
+            error(ParseError.new("unexpected character '" .. c .. "' (U+" .. __K2L_StringPadStart(__K2L_Num.toRadix(c:byte(), 16):upper(), 4, "0") .. ")", i))
         end
     end
-    out:add(Token.new(Kind.EOF, "", __K2L_Utf16.len(src)))
+    out:add(Token.new(Kind.EOF, "", #src))
     return out
 end
 
 local Expr = __K2L_Class("Expr")
-__K2L_ClassInfo(Expr, "Expr", "Expr", "interface")
 local Num = __K2L_Class("Num", nil, Expr)
-__K2L_ClassInfo(Num, "Num", "Num", "class")
 
 function Num:____init(v)
     self.v = v
@@ -173,7 +168,7 @@ function Num.new(v)
 end
 
 function Num:toString()
-    return "Num(v=" .. __K2L_Str(self.v) .. ")"
+    return "Num(v=" .. self.v .. ")"
 end
 
 function Num:hashCode()
@@ -181,11 +176,10 @@ function Num:hashCode()
 end
 
 function Num:equals(other)
-    return getmetatable(other) == Num and __K2L_DoubleEquals(self.v, other.v)
+    return getmetatable(other) == Num and self.v == other.v
 end
 
 local Var = __K2L_Class("Var", nil, Expr)
-__K2L_ClassInfo(Var, "Var", "Var", "class")
 
 function Var:____init(name)
     self.name = name
@@ -208,7 +202,6 @@ function Var:equals(other)
 end
 
 local Unary = __K2L_Class("Unary", nil, Expr)
-__K2L_ClassInfo(Unary, "Unary", "Unary", "class")
 
 function Unary:____init(op, e)
     self.op = op
@@ -232,7 +225,6 @@ function Unary:equals(other)
 end
 
 local Binary = __K2L_Class("Binary", nil, Expr)
-__K2L_ClassInfo(Binary, "Binary", "Binary", "class")
 
 function Binary:____init(op, l, r)
     self.op = op
@@ -257,7 +249,6 @@ function Binary:equals(other)
 end
 
 local Call = __K2L_Class("Call", nil, Expr)
-__K2L_ClassInfo(Call, "Call", "Call", "class")
 
 function Call:____init(fn, args)
     self.fn = fn
@@ -281,7 +272,6 @@ function Call:equals(other)
 end
 
 local Cond = __K2L_Class("Cond", nil, Expr)
-__K2L_ClassInfo(Cond, "Cond", "Cond", "class")
 
 function Cond:____init(c, t, f)
     self.c = c
@@ -306,7 +296,6 @@ function Cond:equals(other)
 end
 
 local Pratt = __K2L_Class("Pratt")
-__K2L_ClassInfo(Pratt, "Pratt", "Pratt", "class")
 
 function Pratt:____init(tokens)
     self.tokens = tokens
@@ -434,7 +423,7 @@ end
 local function show(e)
     local ____mt = getmetatable(e)
     if ____mt == Num then
-        return math.fmod(e.v, 1.0) == 0.0 and tostring(__K2L_DoubleToLong(e.v)) or __K2L_Str(e.v)
+        return e.v % 1.0 == 0.0 and tostring(__K2L_Truncate(e.v)) or tostring(e.v)
     elseif ____mt == Var then
         return e.name
     elseif ____mt == Unary then
@@ -442,15 +431,13 @@ local function show(e)
     elseif ____mt == Binary then
         return "(" .. show(e.l) .. " " .. e.op .. " " .. show(e.r) .. ")"
     elseif ____mt == Call then
-        return e.fn .. __K2L_Utf16.norm(e.args:joinToString(", ", "(", ")", nil, nil, function(it) return show(it) end))
+        return e.fn .. e.args:joinToString(", ", "(", ")", nil, nil, function(it) return show(it) end)
     elseif ____mt == Cond then
         return "(" .. show(e.c) .. " ? " .. show(e.t) .. " : " .. show(e.f) .. ")"
     end
 end
 
-local functions = __K2L_ReadOnlyMapOf(__K2L_Pair.new("max", function(a) return a:maxOrNull() or 0.0 / 0.0 end), __K2L_Pair.new("min", function(a) return a:minOrNull() or 0.0 / 0.0 end), __K2L_Pair.new("sqrt", function(a) return math.sqrt(a:single()) end), __K2L_Pair.new("abs", function(a) return math.abs(a:single()) end), __K2L_Pair.new("hypot", function(a)
-    return __K2L_FdLibm.hypot(a:get(0), a:get(1))
-end), __K2L_Pair.new("avg", function(a) return a:average() end))
+local functions = __K2L_MapOf(__K2L_Pair.new("max", function(a) return a:maxOrNull() or 0.0 / 0.0 end), __K2L_Pair.new("min", function(a) return a:minOrNull() or 0.0 / 0.0 end), __K2L_Pair.new("sqrt", function(a) return math.sqrt(a:single()) end), __K2L_Pair.new("abs", function(a) return math.abs(a:single()) end), __K2L_Pair.new("hypot", function(a) return __K2L_Num.hypot(a:get(0), a:get(1)) end), __K2L_Pair.new("avg", function(a) return a:average() end))
 
 local function eval(e, env)
     local ____mt_1 = getmetatable(e)
@@ -490,9 +477,9 @@ local function eval(e, env)
             elseif ____subject_2 == "/" then
                 return a / b
             elseif ____subject_2 == "%" then
-                return math.fmod(a, b)
+                return a % b
             elseif ____subject_2 == "**" or ____subject_2 == "^" then
-                return __K2L_Num.pow(a, b)
+                return a ^ b
             elseif ____subject_2 == "<" then
                 return a < b and 1.0 or 0.0
             elseif ____subject_2 == ">" then
@@ -532,48 +519,40 @@ local function caret(src, pos)
 end
 
 local function main()
-    local env = __K2L_ReadOnlyMapOf(__K2L_Pair.new("x", 3.0), __K2L_Pair.new("y", -4.5), __K2L_Pair.new("pi", 3.141592653589793), __K2L_Pair.new("n", 10.0))
-    print(__K2L_Utf16.out(__K2L_Str(tokenize("max(1, 2.5e3) ** -x"))))
-    local programs = __K2L_ReadOnlyListOf("1 + 2 * 3", "(1 + 2) * 3", "2 ** 3 ** 2", "-x ** 2", "10 - 4 - 3", "1_000_000 / 8", "x > 2 && y < 0 ? hypot(x, y) : 0", "n % 3 == 1 || !(x == 3)", "max(x, y, n, 7) - min(1, 2)", "avg(1, 2, 3, 4) * sqrt(16)", "pi * x ^ 2", "1 / 0", "0 / 0 == 0 / 0", ".5 + 1.25e-1", "x ? y ? 1 : 2 : 3")
-    local ____mod = programs.____modCount
+    local env = __K2L_MapOf(__K2L_Pair.new("x", 3.0), __K2L_Pair.new("y", -4.5), __K2L_Pair.new("pi", 3.141592653589793), __K2L_Pair.new("n", 10.0))
+    print(__K2L_Str(tokenize("max(1, 2.5e3) ** -x")))
+    local programs = __K2L_ListOf("1 + 2 * 3", "(1 + 2) * 3", "2 ** 3 ** 2", "-x ** 2", "10 - 4 - 3", "1_000_000 / 8", "x > 2 && y < 0 ? hypot(x, y) : 0", "n % 3 == 1 || !(x == 3)", "max(x, y, n, 7) - min(1, 2)", "avg(1, 2, 3, 4) * sqrt(16)", "pi * x ^ 2", "1 / 0", "0 / 0 == 0 / 0", ".5 + 1.25e-1", "x ? y ? 1 : 2 : 3")
     for ____i_1 = 1, programs.size do
         local src = programs[____i_1]
         local ast = Pratt.new(tokenize(src)):parseAll()
         local v = eval(ast, env)
-        print(__K2L_Utf16.out(__K2L_StringFormat("%-36s => %-40s = %s", src, show(ast), v == __K2L_Num.round(v) and not __K2L_Num.isInfinite(v) and __K2L_StringFormat("%.0f", v) or __K2L_StringFormat("%.6f", v))))
-        if programs.____modCount ~= ____mod and programs:____comodified(____i_1) then
-            break
-        end
+        print(string.format("%-36s => %-40s = %s", src, show(ast), v == __K2L_Num.round(v) and not __K2L_Num.isInfinite(v) and string.format("%.0f", v) or string.format("%.6f", v)))
     end
-    local broken = __K2L_ReadOnlyListOf("1 +", "(1 + 2", "max(1, 2", "3 $ 4", "* 5", "1 2", "a ? b", "1.2.3", "sqrt(1, 2)", "foo(1)", "z + 1", "x é 2")
-    local ____mod_1 = broken.____modCount
+    local broken = __K2L_ListOf("1 +", "(1 + 2", "max(1, 2", "3 $ 4", "* 5", "1 2", "a ? b", "1.2.3", "sqrt(1, 2)", "foo(1)", "z + 1", "x é 2")
     for ____i_2 = 1, broken.size do
         local src = broken[____i_2]
-        local ____ok, ____result = __K2L_DeepPcall(function()
+        local ____ok, ____result = pcall(function()
             local v = eval(Pratt.new(tokenize(src)):parseAll(), env)
-            print(__K2L_Utf16.out(src .. " = " .. __K2L_Str(v)))
+            print(src .. " = " .. v)
         end)
         if not ____ok then
             local ____error = __K2L_ToThrowable(____result)
             if getmetatable(____error) == ParseError then
                 local e = ____error
-                print(__K2L_Utf16.out("parse error: " .. __K2L_Str(e.message) .. " at " .. e.pos))
-                print(__K2L_Utf16.out(__K2L_Text.prependIndent(caret(src, e.pos), "  | ")))
+                print("parse error: " .. __K2L_Str(e.message) .. " at " .. e.pos)
+                print(__K2L_Text.prependIndent(caret(src, e.pos), "  | "))
             elseif __K2L_InstanceOf(____error, __K2L_IllegalArgumentException) then
                 local e = ____error
-                print(__K2L_Utf16.out("eval error: " .. __K2L_Str(e.message)))
+                print("eval error: " .. __K2L_Str(e.message))
             elseif __K2L_InstanceOf(____error, __K2L_NoSuchElementException) then
                 local e = ____error
-                print(__K2L_Utf16.out("eval error (" .. __K2L_Str(__K2L_KClassOfValue(e).simpleName) .. "): " .. __K2L_Str(e.message)))
+                print("eval error (" .. __K2L_Str(__K2L_SimpleName(e)) .. "): " .. __K2L_Str(e.message))
             else
                 error(____error, 0)
             end
         end
-        if broken.____modCount ~= ____mod_1 and broken:____comodified(____i_2) then
-            break
-        end
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Kind = Kind, Token = Token, ParseError = ParseError, tokenize = tokenize, Expr = Expr, Num = Num, Var = Var, Unary = Unary, Binary = Binary, Call = Call, Cond = Cond, Pratt = Pratt, show = show, functions = functions, eval = eval, caret = caret}

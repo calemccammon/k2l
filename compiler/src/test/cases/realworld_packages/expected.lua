@@ -4,28 +4,24 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClosedRange = ____lualib.__K2L_ClosedRange
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_List = ____lualib.__K2L_List
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NoSuchElementException = ____lualib.__K2L_NoSuchElementException
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_ReadOnlySetOf = ____lualib.__K2L_ReadOnlySetOf
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
-local __K2L_SortedMap = ____lualib.__K2L_SortedMap
+local __K2L_SetOf = ____lualib.__K2L_SetOf
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
@@ -34,7 +30,6 @@ local __K2L_StringPadEnd = ____lualib.__K2L_StringPadEnd
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
-local __K2L_StringToIntOrNull = ____lualib.__K2L_StringToIntOrNull
 local __K2L_StringTrim = ____lualib.__K2L_StringTrim
 local __K2L_StringTrimEnd = ____lualib.__K2L_StringTrimEnd
 local __K2L_Text = ____lualib.__K2L_Text
@@ -130,18 +125,35 @@ Version.____companion = true
 
 local ____lambda_4 = function() return nil end
 function Version:parse(s)
-    local ____value_2 = self.PATTERN:matchEntire(__K2L_StringTrim(s))
-    if ____value_2 == nil then
+    local text = __K2L_StringTrim(s)
+    local numbers = __K2L_StringSplit(__K2L_Text.substringBefore(text, "-"), ".")
+    local pre = __K2L_Text.substringAfter(text, "-", "")
+    local ____cond = numbers.size > 3
+    if not ____cond then
+        local ____result = true
+        local ____items, ____n = numbers:____array()
+        for ____i = 1, ____n do
+            local it = ____items[____i]
+            if not self.NUMBER:matches(it) then
+                ____result = false
+                break
+            end
+        end
+        ____cond = not ____result
+    end
+    if ____cond or __K2L_StringContains(text, "-") and not self.PRE:matches(pre) then
         error(__K2L_IllegalArgumentException.new("invalid version '" .. s .. "'"))
     end
-    local m = ____value_2
-    local ____destructured = m.destructured
-    local a, b, c, pre = ____destructured[1], ____destructured[2], ____destructured[3], ____destructured[4]
-    return Version.new(__K2L_StringToInt(a), __K2L_StringToIntOrNull(b) or 0, __K2L_StringToIntOrNull(c) or 0, __K2L_Text.ifEmpty(pre, ____lambda_4))
+    local ____arg_1 = __K2L_StringToInt(numbers:get(0))
+    local ____receiver_1 = numbers:getOrNull(1)
+    local ____arg_2 = ____receiver_1 and __K2L_StringToInt(____receiver_1) or 0
+    local ____receiver_2 = numbers:getOrNull(2)
+    return Version.new(____arg_1, ____arg_2, ____receiver_2 and __K2L_StringToInt(____receiver_2) or 0, __K2L_Text.ifEmpty(pre, ____lambda_4))
 end
 
 function Version:____initCompanion()
-    self.PATTERN = __K2L_Regex.new("(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?(?:-([\\w.]+))?")
+    self.NUMBER = __K2L_Regex.new("\\d+", "%d+")
+    self.PRE = __K2L_Regex.new("[\\w.]+", "[%w_%.]+")
 end
 
 __K2L_LazyObject(Version, "____initCompanion")
@@ -216,16 +228,16 @@ end
 
 function Constraint.AnyOf:allows(v)
     local ____list = self.options
-    local ____result = false
-    local ____items, ____n = ____list:____array()
-    for ____i = 1, ____n do
-        local it = ____items[____i]
+    local ____result_1 = false
+    local ____items_1, ____n_1 = ____list:____array()
+    for ____i_1 = 1, ____n_1 do
+        local it = ____items_1[____i_1]
         if it:allows(v) then
-            ____result = true
+            ____result_1 = true
             break
         end
     end
-    return ____result
+    return ____result_1
 end
 
 function Constraint.AnyOf:toString()
@@ -254,9 +266,9 @@ function Constraint:parse(text)
     local ____list_1 = __K2L_StringSplit(text, "||")
     local ____out = {}
     local ____count = 0
-    local ____items_1, ____n_1 = ____list_1:____array()
-    for ____i_1 = 1, ____n_1 do
-        local it = ____items_1[____i_1]
+    local ____items_2, ____n_2 = ____list_1:____array()
+    for ____i_2 = 1, ____n_2 do
+        local it = ____items_2[____i_2]
         ____count = ____count + 1
         ____out[____count] = __K2L_StringTrim(it)
     end
@@ -268,21 +280,21 @@ function Constraint:parse(text)
     if s == "*" then
         return Constraint.Any
     elseif __K2L_StringStartsWith(s, "^") then
-        local ____value_5 = toVersion(__K2L_Text.drop(s, 1))
-        return Constraint.Range.new(__K2L_ClosedRange.new(____value_5, ____value_5:bump(Version.Part.MAJOR)), true)
-    elseif __K2L_StringStartsWith(s, "~") then
         local ____value_4 = toVersion(__K2L_Text.drop(s, 1))
-        return Constraint.Range.new(__K2L_ClosedRange.new(____value_4, ____value_4:bump(Version.Part.MINOR)), true)
+        return Constraint.Range.new(__K2L_ClosedRange.new(____value_4, ____value_4:bump(Version.Part.MAJOR)), true)
+    elseif __K2L_StringStartsWith(s, "~") then
+        local ____value_3 = toVersion(__K2L_Text.drop(s, 1))
+        return Constraint.Range.new(__K2L_ClosedRange.new(____value_3, ____value_3:bump(Version.Part.MINOR)), true)
     elseif __K2L_StringStartsWith(s, ">=") then
         return Constraint.Range.new(__K2L_ClosedRange.new(toVersion(__K2L_Text.removePrefix(s, ">=")), Version.new(2147483647)), false)
     elseif __K2L_StringContains(s, " - ") then
-        local ____value_3 = __K2L_StringSplit(s, " - ")
-        local ____result_1
+        local ____value_2 = __K2L_StringSplit(s, " - ")
+        local ____result_2
         do
-            local lo, hi = ____value_3[1], ____value_3[2]
-            ____result_1 = Constraint.Range.new(__K2L_ClosedRange.new(toVersion(lo), toVersion(hi)), false)
+            local lo, hi = ____value_2[1], ____value_2[2]
+            ____result_2 = Constraint.Range.new(__K2L_ClosedRange.new(toVersion(lo), toVersion(hi)), false)
         end
-        return ____result_1
+        return ____result_2
     else
         return Constraint.Exact.new(toVersion(__K2L_Text.removePrefix(s, "=")))
     end
@@ -291,10 +303,10 @@ end
 local Registry = __K2L_Class("Registry")
 
 function Registry:____init()
-    self.packages = __K2L_HashMap.new()
+    self.packages = __K2L_Map.new()
 end
 
-local ____lambda_5 = function() return __K2L_SortedMap.new() end
+local ____lambda_5 = function() return __K2L_SortedMapOf(nil) end
 function Registry:publish(name, version, ...)
     local deps = __K2L_ArrayOf(...)
     local versions = self.packages:getOrPut(name, ____lambda_5)
@@ -302,20 +314,21 @@ function Registry:publish(name, version, ...)
     if versions:containsKey(v) then
         error(__K2L_IllegalStateException.new(name .. "@" .. __K2L_Str(v) .. " already published"))
     end
-    versions:set(v, deps:associate(function(____destructured_1)
-        local n, c = ____destructured_1.first, ____destructured_1.second
+    versions:set(v, deps:associate(function(____destructured)
+        local n, c = ____destructured.first, ____destructured.second
         return __K2L_Pair.new(n, Constraint:parse(c))
     end))
 end
 
 function Registry:candidates(name, c)
-    local ____receiver_1 = self.packages:get(name)
-    local ____receiver_2 = ____receiver_1 and ____receiver_1:descendingKeySet()
-    local ____value_6 = ____receiver_2 and ____receiver_2:filter(function(...) return c:allows(...) end)
-    if ____value_6 == nil then
+    local ____receiver_3 = self.packages:get(name)
+    local ____receiver_4 = ____receiver_3 and ____receiver_3:getKeys()
+    local ____receiver_5 = ____receiver_4 and ____receiver_4:reversed()
+    local ____value_5 = ____receiver_5 and ____receiver_5:filter(function(...) return c:allows(...) end)
+    if ____value_5 == nil then
         error(__K2L_NoSuchElementException.new("unknown package '" .. name .. "'"))
     end
-    return ____value_6
+    return ____value_5
 end
 
 function Registry:deps(name, v)
@@ -323,13 +336,15 @@ function Registry:deps(name, v)
 end
 
 function Registry:latest(name)
-    local ____receiver_3 = self.packages:get(name)
-    return ____receiver_3 and ____receiver_3:lastKey()
+    local ____receiver_6 = self.packages:get(name)
+    local ____receiver_7 = ____receiver_6 and ____receiver_6:getKeys()
+    return ____receiver_7 and ____receiver_7:lastOrNull()
 end
 
 function Registry:before(name, v)
-    local ____receiver_4 = self.packages:get(name)
-    return ____receiver_4 and ____receiver_4:lowerKey(v)
+    local ____receiver_8 = self.packages:get(name)
+    local ____receiver_9 = ____receiver_8 and ____receiver_8:getKeys()
+    return ____receiver_9 and ____receiver_9:lastOrNull(function(it) return __K2L_Compare(it, v) < 0 end)
 end
 
 local ResolutionException = __K2L_Class("ResolutionException", __K2L_RuntimeException)
@@ -346,48 +361,44 @@ function Resolver:____init(registry)
 end
 
 function Resolver:resolve(root)
-    local pending = root:map(function(____destructured_2)
-        local n, c = ____destructured_2.key, ____destructured_2.value
+    local pending = root:map(function(____destructured_1)
+        local n, c = ____destructured_1.key, ____destructured_1.value
         return __K2L_Triple.new("<root>", n, Constraint:parse(c))
     end)
-    local ____value_7 = self:solve(__K2L_SortedMapOf(), pending)
-    if ____value_7 == nil then
+    local ____value_6 = self:solve(__K2L_SortedMapOf(nil), pending)
+    if ____value_6 == nil then
         error(ResolutionException.new("no solution for " .. __K2L_Str(root) .. " after " .. self.attempts .. " attempts"))
     end
-    return ____value_7
+    return ____value_6
 end
 
 function Resolver:solve(chosen, pending)
     self.attempts = self.attempts + 1
-    local ____value_8 = pending:firstOrNull()
-    if ____value_8 == nil then
+    local ____value_7 = pending:firstOrNull()
+    if ____value_7 == nil then
         return chosen
     end
-    local from, name, constraint = ____value_8.first, ____value_8.second, ____value_8.third
+    local from, name, constraint = ____value_7.first, ____value_7.second, ____value_7.third
     local rest = pending:drop(1)
-    local ____receiver_5 = chosen:get(name)
-    if ____receiver_5 ~= nil then
-        local ____result_2
-        if constraint:allows(____receiver_5) then
+    local ____receiver_10 = chosen:get(name)
+    if ____receiver_10 ~= nil then
+        local ____result_3
+        if constraint:allows(____receiver_10) then
             return self:solve(chosen, rest)
         else
             return nil
         end
     end
     local ____list_2 = self.registry:candidates(name, constraint)
-    local ____mod = ____list_2.____modCount
-    for ____i_2 = 1, ____list_2.size do
-        local v = ____list_2[____i_2]
-        local newDeps = self.registry:deps(name, v):map(function(____destructured_3)
-            local n, c = ____destructured_3.key, ____destructured_3.value
+    for ____i_3 = 1, ____list_2.size do
+        local v = ____list_2[____i_3]
+        local newDeps = self.registry:deps(name, v):map(function(____destructured_2)
+            local n, c = ____destructured_2.key, ____destructured_2.value
             return __K2L_Triple.new(name .. "@" .. __K2L_Str(v), n, c)
         end)
         local result = self:solve(chosen:plus(__K2L_Pair.new(name, v)), rest:plusAll(newDeps))
         if result ~= nil then
             return result
-        end
-        if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
-            break
         end
     end
     if from == "<root>" then
@@ -400,26 +411,18 @@ local function lockFile(solution, registry)
     local ____builder = __K2L_StringBuilder.new()
     do
         ____builder:appendLine("# generated lock file")
-        local ____keys, ____values, ____n_2 = solution:____arrays()
-        local ____mod_2 = solution.____modCount
-        for ____i_4 = 1, ____n_2 do
-            local name, v = ____keys[____i_4], ____values[____i_4]
+        local ____keys, ____values, ____n_3 = solution:____arrays()
+        for ____i_5 = 1, ____n_3 do
+            local name, v = ____keys[____i_5], ____values[____i_5]
             ____builder:appendLine(name .. " = \"" .. __K2L_Str(v) .. "\"")
             local ____collection = registry:deps(name, v):toSortedMap()
-            local ____items_2, ____n_3 = ____collection:____entryArray()
-            local ____mod_1 = ____collection.____modCount
-            for ____i_3 = 1, ____n_3 do
-                local ____entry = ____items_2[____i_3]
+            local ____items_3, ____n_4 = ____collection:____entryArray()
+            for ____i_4 = 1, ____n_4 do
+                local ____entry = ____items_3[____i_4]
                 do
                     local dep, c = ____entry.key, ____entry.value
                     ____builder:appendLine("  " .. __K2L_Str(dep) .. " " .. __K2L_Str(c) .. " -> " .. __K2L_Str(solution:get(dep)))
                 end
-                if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_3, ____n_3) then
-                    break
-                end
-            end
-            if solution.____modCount ~= ____mod_2 and solution:____comodified(____i_4, ____n_2) then
-                break
             end
         end
     end
@@ -427,38 +430,38 @@ local function lockFile(solution, registry)
 end
 
 local ____lambda_6 = function() return toVersion("1.x") end
-local ____lambda_7 = function() return __K2L_ReadOnlySetOf("-") end
+local ____lambda_7 = function() return __K2L_SetOf("-") end
 local function main()
-    local versions = __K2L_ReadOnlyListOf("1.0.0", "1.0.0-alpha", "1.0.0-beta", "0.9", "1.2", "1.10.0", "1.2.3", "2"):map(toVersion)
+    local versions = __K2L_ListOf("1.0.0", "1.0.0-alpha", "1.0.0-beta", "0.9", "1.2", "1.10.0", "1.2.3", "2"):map(toVersion)
     print("sorted: " .. __K2L_Str(versions:sorted()))
-    local ____arg_1 = __K2L_Str(versions:max())
-    local ____arg_2 = __K2L_Str(versions:min())
+    local ____arg_3 = __K2L_Str(versions:max())
+    local ____arg_4 = __K2L_Str(versions:min())
     local ____out_1 = {}
     local ____count_1 = 0
-    local ____items_3, ____n_4 = versions:____array()
-    for ____i_5 = 1, ____n_4 do
-        local it = ____items_3[____i_5]
+    local ____items_4, ____n_5 = versions:____array()
+    for ____i_6 = 1, ____n_5 do
+        local it = ____items_4[____i_6]
         ____count_1 = ____count_1 + 1
         ____out_1[____count_1] = it.major
     end
-    print("max=" .. ____arg_1 .. " min=" .. ____arg_2 .. " distinct majors=" .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1):toSortedSet()))
+    print("max=" .. ____arg_3 .. " min=" .. ____arg_4 .. " distinct majors=" .. __K2L_Str(__K2L_ListWrap(____out_1, ____count_1):toSortedSet()))
     local ____bound = toVersion("1.0")
     local ____bound_1 = toVersion("2.0")
-    local ____value_9 = toVersion("1.2.3")
-    print("1.2.3 in 1.0..2.0: " .. tostring(__K2L_Compare(____value_9, ____bound) >= 0 and __K2L_Compare(____value_9, ____bound_1) <= 0))
+    local ____value_8 = toVersion("1.2.3")
+    print("1.2.3 in 1.0..2.0: " .. tostring(__K2L_Compare(____value_8, ____bound) >= 0 and __K2L_Compare(____value_8, ____bound_1) <= 0))
     local ____values_1 = Version.Part.____values
     local ____out_2 = {}
     local ____count_2 = 0
-    for ____i_6 = 1, #____values_1 do
-        local it = ____values_1[____i_6]
+    for ____i_7 = 1, #____values_1 do
+        local it = ____values_1[____i_7]
         ____count_2 = ____count_2 + 1
         ____out_2[____count_2] = toVersion("1.4.7"):bump(it)
     end
     print("bumps: " .. __K2L_Str(__K2L_ListWrap(____out_2, ____count_2)))
     print(__K2L_Str(__K2L_RunCatching(____lambda_6):exceptionOrNull()))
-    local ____list_3 = __K2L_ReadOnlyListOf("^1.2.0", "~1.2.0", ">=1.10", "1.0 - 1.2", "=2.0.0", "*", "^0.9 || ^2.0")
-    for ____i_7 = 1, ____list_3.size do
-        local c = ____list_3[____i_7]
+    local ____list_3 = __K2L_ListOf("^1.2.0", "~1.2.0", ">=1.10", "1.0 - 1.2", "=2.0.0", "*", "^0.9 || ^2.0")
+    for ____i_8 = 1, ____list_3.size do
+        local c = ____list_3[____i_8]
         local parsed = Constraint:parse(c)
         print(__K2L_StringPadEnd(c, 12) .. " " .. __K2L_Str(parsed) .. " allows " .. __K2L_Str(versions:filter(function(...) return parsed:allows(...) end):sorted()))
     end
@@ -476,11 +479,11 @@ local function main()
     reg:publish("json", "2.4.0-rc.1")
     reg:publish("http", "0.4.2", __K2L_Pair.new("log", ">=1.3"), __K2L_Pair.new("json", "2.1.0 - 2.9.9"))
     reg:publish("http", "0.5.0", __K2L_Pair.new("log", "^2.0"))
-    local ____ok, ____result_3 = __K2L_DeepPcall(function()
+    local ____ok, ____result_4 = pcall(function()
         reg:publish("log", "1.2")
     end)
     if not ____ok then
-        local ____error = __K2L_ToThrowable(____result_3)
+        local ____error = __K2L_ToThrowable(____result_4)
         if __K2L_InstanceOf(____error, __K2L_IllegalStateException) then
             local e = ____error
             print("publish failed: " .. __K2L_Str(e.message))
@@ -491,51 +494,51 @@ local function main()
     print("latest log=" .. __K2L_Str(reg:latest("log")) .. " before 1.3.0=" .. __K2L_Str(reg:before("log", toVersion("1.3.0"))) .. " latest nope=" .. __K2L_Str(reg:latest("nope")))
     print("json candidates for ^2.0: " .. __K2L_Str(reg:candidates("json", Constraint:parse("^2.0"))))
     local resolver = Resolver.new(reg)
-    local solution = resolver:resolve(__K2L_ReadOnlyMapOf(__K2L_Pair.new("app-core", "^1.0"), __K2L_Pair.new("log", __K2L_Text.substringAfter("<1.3 || ^1.0", "|| "))))
+    local solution = resolver:resolve(__K2L_MapOf(__K2L_Pair.new("app-core", "^1.0"), __K2L_Pair.new("log", __K2L_Text.substringAfter("<1.3 || ^1.0", "|| "))))
     print("solution after " .. resolver.attempts .. " attempts: " .. __K2L_Str(solution))
     print(lockFile(solution, reg))
     local strict = Resolver.new(reg)
     local failure = __K2L_RunCatching(function()
-        return strict:resolve(__K2L_ReadOnlyMapOf(__K2L_Pair.new("app-core", "=1.1.0"), __K2L_Pair.new("fmt", "^4.0")))
+        return strict:resolve(__K2L_MapOf(__K2L_Pair.new("app-core", "=1.1.0"), __K2L_Pair.new("fmt", "^4.0")))
     end)
-    local ____receiver_6 = failure:exceptionOrNull()
-    print("strict: " .. __K2L_Str(____receiver_6 and ____receiver_6.message))
+    local ____receiver_11 = failure:exceptionOrNull()
+    print("strict: " .. __K2L_Str(____receiver_11 and ____receiver_11.message))
     print(__K2L_Str(__K2L_RunCatching(function()
-        return Resolver.new(reg):resolve(__K2L_SingletonMapOf(__K2L_Pair.new("left-pad", "*")))
+        return Resolver.new(reg):resolve(__K2L_MapOf(__K2L_Pair.new("left-pad", "*")))
     end):exceptionOrNull()))
     local ____list_4 = reg:candidates("log", Constraint.Any)
-    local ____result_4 = __K2L_Map.new()
-    local ____items_4, ____n_5 = ____list_4:____array()
-    for ____i_8 = 1, ____n_5 do
-        local v = ____items_4[____i_8]
-        local ____result_5
-        ____result_5 = reg:deps("log", v):getKeys():ifEmpty(____lambda_7)
-        local ____value_10 = ____result_5
-        ____result_4:put(v, ____value_10)
-    end
-    local usage = ____result_4
-    print("log deps by version: " .. __K2L_Str(usage))
-    local ____result_6 = __K2L_Map.new()
-    local ____items_5, ____n_6 = versions:____array()
+    local ____result_5 = __K2L_Map.new()
+    local ____items_5, ____n_6 = ____list_4:____array()
     for ____i_9 = 1, ____n_6 do
-        local it = ____items_5[____i_9]
-        local ____result_7
+        local v = ____items_5[____i_9]
+        local ____result_6
+        ____result_6 = reg:deps("log", v):getKeys():ifEmpty(____lambda_7)
+        local ____value_9 = ____result_6
+        ____result_5:put(v, ____value_9)
+    end
+    local usage = ____result_5
+    print("log deps by version: " .. __K2L_Str(usage))
+    local ____result_7 = __K2L_Map.new()
+    local ____items_6, ____n_7 = versions:____array()
+    for ____i_10 = 1, ____n_7 do
+        local it = ____items_6[____i_10]
+        local ____result_8
         if it.pre ~= nil then
-            ____result_7 = "pre"
+            ____result_8 = "pre"
         else
-            ____result_7 = it.major == 0 and "unstable" or "stable"
+            ____result_8 = it.major == 0 and "unstable" or "stable"
         end
-        local ____value_11 = ____result_7
-        local ____group = ____result_6:get(____value_11)
+        local ____value_10 = ____result_8
+        local ____group = ____result_7:get(____value_10)
         if ____group == nil then
             ____group = __K2L_List.new()
-            ____result_6:put(____value_11, ____group)
+            ____result_7:put(____value_10, ____group)
         end
         ____group:add(it)
     end
-    local grouped = ____result_6
+    local grouped = ____result_7
     print("grouped: " .. __K2L_Str(grouped:toSortedMap()))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Version = Version, toVersion = toVersion, Constraint = Constraint, Registry = Registry, ResolutionException = ResolutionException, Resolver = Resolver, lockFile = lockFile}

@@ -5,8 +5,6 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_LoopItems = ____lualib.__K2L_LoopItems
-local __K2L_NumberTo = ____lualib.__K2L_NumberTo
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____Facts = require("engine.Facts")
@@ -49,19 +47,19 @@ end
 
 function FactRef:gt(n)
     return Condition.new(self.name .. " > " .. __K2L_Str(n), function(it)
-        return __K2L_Compare(it:get(self.name), ____Facts.toValue__1(__K2L_NumberTo(n, "toDouble"))) > 0
+        return __K2L_Compare(it:get(self.name), ____Facts.toValue__1(n + 0.0)) > 0
     end)
 end
 
 function FactRef:lt(n)
     return Condition.new(self.name .. " < " .. __K2L_Str(n), function(it)
-        return __K2L_Compare(it:get(self.name), ____Facts.toValue__1(__K2L_NumberTo(n, "toDouble"))) < 0
+        return __K2L_Compare(it:get(self.name), ____Facts.toValue__1(n + 0.0)) < 0
     end)
 end
 
 function FactRef:atLeast(n)
     return Condition.new(self.name .. " >= " .. __K2L_Str(n), function(it)
-        return __K2L_Compare(it:get(self.name), ____Facts.toValue__1(__K2L_NumberTo(n, "toDouble"))) >= 0
+        return __K2L_Compare(it:get(self.name), ____Facts.toValue__1(n + 0.0)) >= 0
     end)
 end
 
@@ -72,7 +70,7 @@ function FactRef:eq(s)
 end
 
 function FactRef:____in(range)
-    return Condition.new(self.name .. " in " .. __K2L_Str(range.first) .. ".." .. __K2L_Str(range.last), function(it)
+    return Condition.new(self.name .. " in " .. range.first .. ".." .. range.last, function(it)
         local ____cast = it:get(self.name)
         local ____receiver = getmetatable(____cast) == ____Facts.Value.Num and ____cast or nil
         local ____result
@@ -131,7 +129,7 @@ function ActionScope:becomes(____this_1, value)
 end
 
 function ActionScope:becomes__1(____this_2, value)
-    self:becomes(____this_2, ____Facts.toValue__1(__K2L_NumberTo(value, "toDouble")))
+    self:becomes(____this_2, ____Facts.toValue__1(value + 0.0))
 end
 
 function ActionScope:becomes__2(____this_3, value)
@@ -218,14 +216,10 @@ function RuleSetBuilder:rule(name, block)
 end
 
 function RuleSetBuilder:each(items, block)
-    local ____items, ____n = __K2L_LoopItems(items)
-    local ____mod = items.____modCount
+    local ____items, ____n = items:____array()
     for ____i = 1, ____n do
         local item = ____items[____i]
         block(self, item)
-        if items.____modCount ~= ____mod and items:____comodified(____i, ____n) then
-            break
-        end
     end
 end
 
@@ -240,7 +234,6 @@ return {Condition = Condition, FactRef = FactRef, ConditionScope = ConditionScop
 -- ==== engine/Engine.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -283,7 +276,6 @@ function Engine:run(facts, trace)
         end
         local before = facts:snapshot()
         local ____list = self.rules
-        local ____mod = ____list.____modCount
         for ____i = 1, ____list.size do
             local rule = ____list[____i]
             do
@@ -291,7 +283,7 @@ function Engine:run(facts, trace)
                     goto ____continue
                 end
                 local holds
-                local ____ok, ____result = __K2L_DeepPcall(function()
+                local ____ok, ____result = pcall(function()
                     holds = rule.condition.test(facts)
                 end)
                 if not ____ok then
@@ -313,9 +305,6 @@ function Engine:run(facts, trace)
                 firedOnce:add(rule.name)
             end
             ::____continue::
-            if ____list.____modCount ~= ____mod and ____list:____comodified(____i) then
-                break
-            end
         end
         local changed = not __K2L_Equals(facts:snapshot(), before)
     until not changed
@@ -328,16 +317,15 @@ return {RuleCycleException = RuleCycleException, Engine = Engine}
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_DoubleEquals = ____lualib.__K2L_DoubleEquals
-local __K2L_DoubleToLong = ____lualib.__K2L_DoubleToLong
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Num = ____lualib.__K2L_Num
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Text = ____lualib.__K2L_Text
+local __K2L_Truncate = ____lualib.__K2L_Truncate
 local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperationException
 
 local Value = __K2L_Class("rules.engine.Value")
@@ -353,7 +341,7 @@ function Value.Num.new(v)
 end
 
 function Value.Num:toString()
-    return self.v == (self.v == 0 and self.v * 1.0 or math.floor(self.v) + 0.0) and not __K2L_Num.isInfinite(self.v) and tostring(__K2L_DoubleToLong(self.v)) or __K2L_Str(self.v)
+    return self.v == math.floor(self.v) and not __K2L_Num.isInfinite(self.v) and tostring(__K2L_Truncate(self.v)) or tostring(self.v)
 end
 
 function Value.Num:hashCode()
@@ -361,7 +349,7 @@ function Value.Num:hashCode()
 end
 
 function Value.Num:equals(other)
-    return getmetatable(other) == Value.Num and __K2L_DoubleEquals(self.v, other.v)
+    return getmetatable(other) == Value.Num and self.v == other.v
 end
 
 Value.Text = __K2L_Class("rules.engine.Value$Text", Value)
@@ -474,7 +462,7 @@ local Facts = __K2L_Class("rules.engine.Facts")
 
 function Facts:____init(initial)
     if initial == nil then
-        initial = __K2L_ReadOnlyMapOf()
+        initial = __K2L_MapOf()
     end
     self.values = initial:toMutableMap()
     self.changes = __K2L_ListOf()
@@ -528,25 +516,22 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_ClosedRange = ____lualib.__K2L_ClosedRange
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_DoubleToInt = ____lualib.__K2L_DoubleToInt
-local __K2L_DoubleToString = ____lualib.__K2L_DoubleToString
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
+local __K2L_Truncate = ____lualib.__K2L_Truncate
 local __K2L_Unpack = ____lualib.__K2L_Unpack
 
 local ____RuleDsl = require("dsl.RuleDsl")
 local ____Facts = require("engine.Facts")
 local ____Engine = require("engine.Engine")
-local tiers = __K2L_ReadOnlyListOf(__K2L_Pair.new("bronze", 0.0), __K2L_Pair.new("silver", 0.1), __K2L_Pair.new("gold", 0.2))
+local tiers = __K2L_ListOf(__K2L_Pair.new("bronze", 0.0), __K2L_Pair.new("silver", 0.1), __K2L_Pair.new("gold", 0.2))
 
 local ____lambda_1 = function(____this_1)
     return ____this_1:unaryPlus("age"):atLeast(18)
@@ -567,7 +552,7 @@ local ____lambda_6 = function(____this_20)
     return ____this_20:fact("manualReview"):getIsTrue()
 end
 local ____lambda_7 = function(____this_23)
-    return ____this_23:unaryPlus("age"):____in(__K2L_ClosedRange.new(30.0, 50.0, __K2L_DoubleToString))
+    return ____this_23:unaryPlus("age"):____in(__K2L_ClosedRange.new(30.0, 50.0))
 end
 local quoteRules = ____RuleDsl.ruleSet(function(self)
     self:rule("base premium", function(____this)
@@ -618,7 +603,7 @@ local quoteRules = ____RuleDsl.ruleSet(function(self)
                 if discount > 0 then
                     ____this_15:becomes("premium", ____this_15:invoke("premium"):times(1 - discount))
                 end
-                ____this_15:note(tier .. " discount " .. __K2L_DoubleToInt(discount * 100) .. "%")
+                ____this_15:note(tier .. " discount " .. __K2L_Truncate(discount * 100) .. "%")
             end)
         end)
     end)
@@ -649,7 +634,7 @@ end)
 local function quote(name, ...)
     local facts = __K2L_ArrayOf(...)
     print("== " .. name)
-    local memory = ____Facts.Facts.new(__K2L_ReadOnlyMapOf(__K2L_Unpack(facts)))
+    local memory = ____Facts.Facts.new(__K2L_MapOf(__K2L_Unpack(facts)))
     local engine = ____Engine.Engine.new(quoteRules)
     local notes = engine:run(memory, function(it)
         print(it)
@@ -669,13 +654,9 @@ end
 local ____lambda_9 = function(____this_31) return ____this_31:always() end
 local function main()
     local ____list_1 = quoteRules
-    local ____mod = ____list_1.____modCount
     for ____i_1 = 1, ____list_1.size do
         local it = ____list_1[____i_1]
         print(__K2L_Str(it))
-        if ____list_1.____modCount ~= ____mod and ____list_1:____comodified(____i_1) then
-            break
-        end
     end
     quote("ada", __K2L_Pair.new("age", ____Facts.toValue(34)), __K2L_Pair.new("claims", ____Facts.toValue(0)), __K2L_Pair.new("points", ____Facts.toValue(1)), __K2L_Pair.new("tier", ____Facts.toValue__2("gold")))
     quote("tom", __K2L_Pair.new("age", ____Facts.toValue(21)), __K2L_Pair.new("claims", ____Facts.toValue(3)), __K2L_Pair.new("points", ____Facts.toValue(0)), __K2L_Pair.new("tier", ____Facts.toValue__2("silver")))
@@ -687,14 +668,14 @@ local function main()
             ____this_26:____then(function(____this_28)
                 local ____cast = ____this_28:invoke("x")
                 if getmetatable(____cast) ~= ____Facts.Value.Num then
-                    __K2L_CastFail(____cast, "rules.engine.Value$Num", "rules.engine.Value.Num")
+                    __K2L_CastFail(____cast, "rules.engine.Value.Num")
                 end
                 ____this_28:becomes__1("x", ____cast.v + 1)
             end)
         end)
     end)
-    local ____ok, ____result = __K2L_DeepPcall(function()
-        ____Engine.Engine.new(looping, 4):run(____Facts.Facts.new(__K2L_SingletonMapOf(__K2L_Pair.new("x", ____Facts.toValue(0)))))
+    local ____ok, ____result = pcall(function()
+        ____Engine.Engine.new(looping, 4):run(____Facts.Facts.new(__K2L_MapOf(__K2L_Pair.new("x", ____Facts.toValue(0)))))
     end)
     if not ____ok then
         local ____error = __K2L_ToThrowable(____result)
@@ -705,7 +686,7 @@ local function main()
             error(____error, 0)
         end
     end
-    local ____ok_1, ____result_1 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_1 = pcall(function()
         ____RuleDsl.ruleSet(function(____this_29)
             ____this_29:rule("broken", function(____this_30)
                 ____this_30:whenever(____lambda_9)
@@ -721,7 +702,7 @@ local function main()
             error(____error_1, 0)
         end
     end
-    local ____ok_2, ____result_2 = __K2L_DeepPcall(function()
+    local ____ok_2, ____result_2 = pcall(function()
         ____RuleDsl.ruleSet(function(____this_32)
             ____this_32:rule("no condition", function(____this_33)
                 ____this_33:____then(function(____this_34)
@@ -745,10 +726,10 @@ local function main()
     f:set("a", ____Facts.toValue(1))
     f:minusAssign("zzz")
     print(__K2L_Str(f) .. " " .. tostring(f:contains("a")) .. " " .. __K2L_Str(f:get("c")) .. " " .. tostring(__K2L_Compare(f:get("a"), f:get("a"):plus(____Facts.toValue(1))) < 0) .. " " .. __K2L_Str(____Facts.Value.Missing))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(____Facts.toValue(3), ____Facts.toValue__1(1.5), ____Facts.toValue(-2)):sorted()))
-    print(__K2L_Str(__K2L_ReadOnlyListOf(____Facts.toValue__2("pear"), ____Facts.toValue__2("apple")):maxOrNull()))
-    local ____ok_3, ____result_3 = __K2L_DeepPcall(function()
-        __K2L_ReadOnlyListOf(____Facts.toValue(1), ____Facts.toValue__2("x")):sorted()
+    print(__K2L_Str(__K2L_ListOf(____Facts.toValue(3), ____Facts.toValue__1(1.5), ____Facts.toValue(-2)):sorted()))
+    print(__K2L_Str(__K2L_ListOf(____Facts.toValue__2("pear"), ____Facts.toValue__2("apple")):maxOrNull()))
+    local ____ok_3, ____result_3 = pcall(function()
+        __K2L_ListOf(____Facts.toValue(1), ____Facts.toValue__2("x")):sorted()
     end)
     if not ____ok_3 then
         local ____error_3 = __K2L_ToThrowable(____result_3)
@@ -761,5 +742,5 @@ local function main()
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {tiers = tiers, quoteRules = quoteRules, quote = quote}

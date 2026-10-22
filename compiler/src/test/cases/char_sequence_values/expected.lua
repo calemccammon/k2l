@@ -3,10 +3,10 @@ local __K2L_CharSequenceText = ____lualib.__K2L_CharSequenceText
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IntRange = ____lualib.__K2L_IntRange
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_PropertyOverride = ____lualib.__K2L_PropertyOverride
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local __K2L_StringCharAt = ____lualib.__K2L_StringCharAt
@@ -55,7 +55,7 @@ function Fixed.new(length)
 end
 
 function Fixed:get(index)
-    return (index >= 0 and index % 2 or 0 - -index % 2) == 0 and "x" or "y"
+    return index % 2 == 0 and "x" or "y"
 end
 
 function Fixed:subSequence(startIndex, endIndex)
@@ -123,14 +123,10 @@ local ____lambda_1 = function(it) return it == "l" end
 local ____lambda_2 = function(it) return it:upper() end
 local function main()
     local builder = __K2L_StringBuilder.new("hello")
-    local texts = __K2L_ReadOnlyListOf("level", builder, Letters.new(4), Fixed.new(5), Wrapped.new(__K2L_StringBuilder.new("lull")))
-    local ____mod = texts.____modCount
+    local texts = __K2L_ListOf("level", builder, Letters.new(4), Fixed.new(5), Wrapped.new(__K2L_StringBuilder.new("lull")))
     for ____i = 1, texts.size do
         local t = texts[____i]
         print(count(t, "l") .. " " .. describe(t))
-        if texts.____modCount ~= ____mod and texts:____comodified(____i) then
-            break
-        end
     end
     local held = Holder.new(__K2L_StringBuilder.new("xyz"))
     for c in __K2L_Text.chars(held.text) do
@@ -160,7 +156,7 @@ local function main()
     print(tostring(__K2L_StringContains(__K2L_CharSequenceText(cs), "ell")) .. " " .. tostring(__K2L_StringStartsWith(__K2L_CharSequenceText(cs), "he")) .. " " .. __K2L_StringIndexOf(__K2L_CharSequenceText(cs), "l") .. " " .. __K2L_Text.first(__K2L_CharSequenceText(cs)) .. " " .. __K2L_Text.last(__K2L_CharSequenceText(cs)) .. " " .. __K2L_StringToList(__K2L_CharSequenceText(cs)):count(____lambda_1))
     print(tostring(__K2L_StringContains("say hello", __K2L_CharSequenceText(builder))) .. " " .. tostring(__K2L_StringStartsWith("hello world", __K2L_CharSequenceText(builder))) .. " " .. __K2L_Str(cs):upper() .. " " .. __K2L_Text.substring(__K2L_CharSequenceText(cs), 1, 3))
     print(tostring(__K2L_StringContains(__K2L_CharSequenceText(Letters.new(5)), "cd")) .. " " .. __K2L_Str(__K2L_StringToList(__K2L_CharSequenceText(Letters.new(3))):map(____lambda_2)) .. " " .. __K2L_Text.charsLength(Letters.new(6)) - 1 .. " " .. __K2L_Str(__K2L_IntRange.new(0, __K2L_Text.charsLength(Letters.new(2)) - 1)))
-    local letters = __K2L_ReadOnlyListOf(Letters.new(3), Letters.new(1))
+    local letters = __K2L_ListOf(Letters.new(3), Letters.new(1))
     local ____out = {}
     local ____count = 0
     local ____items_1, ____n_1 = letters:____array()
@@ -188,7 +184,7 @@ local function main()
     local any = builder
     local ____arg = tostring(__K2L_Equals(any, builder))
     local ____arg_1 = tostring(__K2L_Equals(any, "hello"))
-    local ____list = __K2L_ReadOnlyListOf("a", __K2L_StringBuilder.new("bc"))
+    local ____list = __K2L_ListOf("a", __K2L_StringBuilder.new("bc"))
     local ____sum = 0
     local ____items_2, ____n_2 = ____list:____array()
     for ____i_3 = 1, ____n_2 do
@@ -198,5 +194,5 @@ local function main()
     print(____arg .. " " .. ____arg_1 .. " " .. ____sum)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Letters = Letters, Fixed = Fixed, Wrapped = Wrapped, Holder = Holder, count = count, describe = describe, maybeText = maybeText}

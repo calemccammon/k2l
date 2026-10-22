@@ -1,9 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
+local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
 local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
@@ -13,12 +11,10 @@ local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Regex = ____lualib.__K2L_Regex
 local __K2L_RunCatching = ____lualib.__K2L_RunCatching
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_RuntimeException = ____lualib.__K2L_RuntimeException
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StrByte = ____lualib.__K2L_StrByte
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
@@ -36,7 +32,6 @@ local __K2L_StringTrimEnd = ____lualib.__K2L_StringTrimEnd
 local __K2L_StringTrimStart = ____lualib.__K2L_StringTrimStart
 local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
-local __K2L_TypedArrayOf = ____lualib.__K2L_TypedArrayOf
 
 local unquote
 local ConfigError = __K2L_Class("ConfigError", __K2L_RuntimeException)
@@ -64,7 +59,7 @@ local function parseIni(text)
     local cfg = RawConfig.new()
     local section = "general"
     local lastKey = nil
-    local header = __K2L_Regex.new("^\\[\\s*([\\w.-]+)\\s*]$")
+    local header = __K2L_Regex.new("^\\[\\s*([\\w.-]+)\\s*]$", "^%[%s*([%w_%.%-]+)%s*%]$")
     local ____list = __K2L_StringLines(text)
     for idx = 0, ____list.size - 1 do
         local rawLine = ____list[idx + 1]
@@ -94,7 +89,7 @@ local function parseIni(text)
             cfg.sections:getOrPut(section, ____lambda_1)
             lastKey = nil
         else
-            local eq = __K2L_Text.indexOfAny(trimmed, __K2L_TypedArrayOf("[C", "=", ":"))
+            local eq = __K2L_Text.indexOfAny(trimmed, __K2L_ArrayOf("=", ":"))
             if eq <= 0 then
                 error(ConfigError.new("expected key = value, got '" .. trimmed .. "'", n))
             end
@@ -164,9 +159,9 @@ local Resolver = __K2L_Class("Resolver")
 function Resolver:____init(raw, env)
     self.raw = raw
     self.env = env
-    self.cache = __K2L_HashMap.new()
+    self.cache = __K2L_Map.new()
     self.stack = __K2L_ArrayDeque.new()
-    self.ref = __K2L_Regex.new("\\$\\{([^}]*)}")
+    self.ref = __K2L_Regex.new("\\$\\{([^}]*)}", "%${([^%}]*)}")
 end
 
 function Resolver:get(section, key)
@@ -186,7 +181,7 @@ function Resolver:get(section, key)
     end
     local value, line = ____value_1.first, ____value_1.second
     self.stack:addLast(full)
-    local ____ok, ____result_1, ____returned = __K2L_DeepPcall(function()
+    local ____ok, ____result_1, ____returned = pcall(function()
         local out = self.ref:replace(value, function(m)
             return self:lookup(section, __K2L_StringTrim(m.groupValues:get(1)), line)
         end)
@@ -241,7 +236,7 @@ function Resolver:resolved(section)
         end
         ____result_3 = ____result_2
     end
-    return ____result_3 or __K2L_ReadOnlyMapOf()
+    return ____result_3 or __K2L_MapOf()
 end
 
 local ServerSettings = __K2L_Class("ServerSettings")
@@ -319,50 +314,42 @@ local overlay = __K2L_Text.trimIndent("\n[server]\nport = 9090\ndebug = YES\n")
 
 local ____lambda_3 = function() return __K2L_MapOf() end
 local ____lambda_4 = function()
-    return Resolver.new(parseIni("x = ${env:NOPE}"), __K2L_ReadOnlyMapOf()):get("general", "x")
+    return Resolver.new(parseIni("x = ${env:NOPE}"), __K2L_MapOf()):get("general", "x")
 end
 local ____lambda_5 = function()
-    return ServerSettings.new(__K2L_SingletonMapOf(__K2L_Pair.new("port", "70000"))):getPort()
+    return ServerSettings.new(__K2L_MapOf(__K2L_Pair.new("port", "70000"))):getPort()
 end
 local ____lambda_6 = function()
-    return ServerSettings.new(__K2L_SingletonMapOf(__K2L_Pair.new("debug", "maybe"))):getDebug()
+    return ServerSettings.new(__K2L_MapOf(__K2L_Pair.new("debug", "maybe"))):getDebug()
 end
 local function main()
     local raw = parseIni(base)
     local over = parseIni(overlay)
     local ____map = over.sections
     local ____keys, ____values, ____n_3 = ____map:____arrays()
-    local ____mod = ____map.____modCount
     for ____i_3 = 1, ____n_3 do
         local name, values = ____keys[____i_3], ____values[____i_3]
         raw.sections:getOrPut(name, ____lambda_3):putAll(values)
-        if ____map.____modCount ~= ____mod and ____map:____comodified(____i_3, ____n_3) then
-            break
-        end
     end
     print("sections: " .. __K2L_Str(raw.order))
-    local r = Resolver.new(raw, __K2L_SingletonMapOf(__K2L_Pair.new("HOME", "/root")))
-    local ____list_3 = __K2L_ReadOnlyListOf("general", "database", "server")
+    local r = Resolver.new(raw, __K2L_MapOf(__K2L_Pair.new("HOME", "/root")))
+    local ____list_3 = __K2L_ListOf("general", "database", "server")
     for ____i_5 = 1, ____list_3.size do
         local s = ____list_3[____i_5]
         print("[" .. s .. "]")
         local ____collection = r:resolved(s)
         local ____items_3, ____n_4 = ____collection:____entryArray()
-        local ____mod_1 = ____collection.____modCount
         for ____i_4 = 1, ____n_4 do
             local ____entry = ____items_3[____i_4]
             do
                 local k, v = ____entry.key, ____entry.value
                 print("  " .. k .. " = " .. __K2L_StringReplace(v, "\n", "\\n"))
             end
-            if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_4, ____n_4) then
-                break
-            end
         end
     end
     local server = ServerSettings.new(r:resolved("server"))
     print(__K2L_Str(server))
-    print("timeout total = " .. __K2L_Str(server:getTimeouts():sum(0.0)))
+    print("timeout total = " .. server:getTimeouts():sum(0.0))
     local ____receiver_10 = __K2L_RunCatching(function() return r:get("paths", "a") end):exceptionOrNull()
     print(__K2L_Str(____receiver_10 and ____receiver_10.message))
     local ____receiver_11 = __K2L_RunCatching(function() return r:get("database", "nope") end):exceptionOrNull()
@@ -373,14 +360,13 @@ local function main()
     print(__K2L_Str(____receiver_13 and ____receiver_13.message))
     local ____receiver_14 = __K2L_RunCatching(____lambda_6):exceptionOrNull()
     print(__K2L_Str(____receiver_14 and ____receiver_14.message))
-    local broken = __K2L_ReadOnlyListOf("[bad header", "novalue", "k ey = 1", "s = \"bad \\q\"", "[ok]\n\n = 3", "r = ${}")
-    local ____mod_2 = broken.____modCount
+    local broken = __K2L_ListOf("[bad header", "novalue", "k ey = 1", "s = \"bad \\q\"", "[ok]\n\n = 3", "r = ${}")
     for ____i_7 = 1, broken.size do
         local text = broken[____i_7]
         local msg
-        local ____ok_1, ____result_4 = __K2L_DeepPcall(function()
+        local ____ok_1, ____result_4 = pcall(function()
             local cfg = parseIni(text)
-            local res = Resolver.new(cfg, __K2L_ReadOnlyMapOf())
+            local res = Resolver.new(cfg, __K2L_MapOf())
             msg = __K2L_Str(cfg.sections:flatMap(function(____destructured_1)
                 local s, m = ____destructured_1.key, ____destructured_1.value
                 local ____list_4 = m:getKeys()
@@ -405,11 +391,8 @@ local function main()
             end
         end
         print(__K2L_StringReplace(text, "\n", "|") .. " => " .. msg)
-        if broken.____modCount ~= ____mod_2 and broken:____comodified(____i_7) then
-            break
-        end
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {ConfigError = ConfigError, RawConfig = RawConfig, parseIni = parseIni, unquote = unquote, Resolver = Resolver, ServerSettings = ServerSettings, base = base, overlay = overlay}

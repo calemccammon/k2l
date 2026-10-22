@@ -2,12 +2,10 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassCastException = ____lualib.__K2L_ClassCastException
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_ListOf = ____lualib.__K2L_ListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
@@ -69,7 +67,7 @@ local function main()
     print(____arg .. " " .. ____arg_1 .. " " .. ____arg_2 .. " " .. ____arg_3 .. " " .. tostring(____result_4))
     local ____result_5
     do
-        local ____this_1 = __K2L_ReadOnlyListOf(1, "x", Person.new("p"))
+        local ____this_1 = __K2L_ListOf(1, "x", Person.new("p"))
         local ____result_6
         local ____items, ____n = ____this_1:____array()
         for ____i = 1, ____n do
@@ -80,14 +78,14 @@ local function main()
             end
         end
         if not (____result_6 == nil or getmetatable(____result_6) == Person) then
-            __K2L_CastFail(____result_6, "Person", "Person")
+            __K2L_CastFail(____result_6, "Person")
         end
         ____result_5 = ____result_6
     end
     local ____arg_4 = __K2L_Str(____result_5)
     local ____result_7
     do
-        local ____this_2 = __K2L_SingletonListOf(1)
+        local ____this_2 = __K2L_ListOf(1)
         local ____result_8
         local ____items_1, ____n_1 = ____this_2:____array()
         for ____i_1 = 1, ____n_1 do
@@ -98,14 +96,14 @@ local function main()
             end
         end
         if not (____result_8 == nil or getmetatable(____result_8) == Person) then
-            __K2L_CastFail(____result_8, "Person", "Person")
+            __K2L_CastFail(____result_8, "Person")
         end
         ____result_7 = ____result_8
     end
     local ____arg_5 = __K2L_Str(____result_7)
     local ____result_9
     do
-        local ____this_3 = __K2L_ReadOnlyListOf(nil, 2)
+        local ____this_3 = __K2L_ListOf(nil, 2)
         local ____result_10
         local ____items_2, ____n_2 = ____this_3:____array()
         for ____i_2 = 1, ____n_2 do
@@ -116,14 +114,14 @@ local function main()
             end
         end
         if not (____result_10 == nil or math.type(____result_10) == "integer") then
-            __K2L_CastFail(____result_10, "java.lang.Integer", "kotlin.Int")
+            __K2L_CastFail(____result_10, "kotlin.Int")
         end
         ____result_9 = ____result_10
     end
     print(____arg_4 .. " " .. ____arg_5 .. " " .. __K2L_Str(____result_9))
     local ____result_11
     do
-        local ____this_4 = __K2L_ReadOnlyListOf(nil, "a", 1, nil)
+        local ____this_4 = __K2L_ListOf(nil, "a", 1, nil)
         local ____result_12 = 0
         local ____items_3, ____n_3 = ____this_4:____array()
         for ____i_3 = 1, ____n_3 do
@@ -137,7 +135,7 @@ local function main()
     local ____arg_6 = ____result_11
     local ____result_13
     do
-        local ____this_5 = __K2L_ReadOnlyListOf(1, 2)
+        local ____this_5 = __K2L_ListOf(1, 2)
         local ____result_14 = 0
         local ____items_4, ____n_4 = ____this_5:____array()
         for ____i_4 = 1, ____n_4 do
@@ -150,14 +148,14 @@ local function main()
     end
     print(____arg_6 .. " " .. ____result_13)
     if not (none == nil or type(none) == "string") then
-        __K2L_CastFail(none, "java.lang.String", "kotlin.String")
+        __K2L_CastFail(none, "kotlin.String")
     end
     local s = none
     local p = (text == nil or math.type(text) == "integer") and text or nil
     print(__K2L_Str(s) .. " " .. __K2L_Str(p) .. " " .. __K2L_Str((num == nil or math.type(num) == "integer") and num or nil))
-    local ____ok, ____result_15 = __K2L_DeepPcall(function()
+    local ____ok, ____result_15 = pcall(function()
         if not (num == nil or type(num) == "string") then
-            __K2L_CastFail(num, "java.lang.String", "kotlin.String")
+            __K2L_CastFail(num, "kotlin.String")
         end
         print(__K2L_Str(num))
     end)
@@ -172,5 +170,5 @@ local function main()
     end
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Person = Person, kind = kind}

@@ -3,7 +3,7 @@
 [any: Dog(fido), any: Dog(rex), any: Cat(tom)]
 == projections
 [keeper, Dog(rex), Dog(fido), Cat(kit)]
-animal a, comparable 3, comparable s, null, comparable 2.5, other SingletonList
+animal a, comparable 3, comparable s, null, comparable 2.5, other ArrayList
 {dogs=2, mixed=3, none=0}
 first=z sound=meow sorted=[Dog(y), Cat(z)]
 == recursive bounds

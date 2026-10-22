@@ -43,7 +43,7 @@ fun main() {
     println(tasks.maxBy { it.shape }.name + " " + tasks.minOf { it.level })
     val c: Comparable<Level> = Level.MEDIUM
     println("${c > Level.LOW} ${c.compareTo(Level.CRITICAL)}")
-    println(java.util.TreeSet(listOf(Shape.SQUARE, Shape.TRIANGLE, Shape.CIRCLE)))
+    println(listOf(Shape.SQUARE, Shape.TRIANGLE, Shape.CIRCLE).toSortedSet())
     println(sortedMapOf(Level.HIGH to 1, Level.LOW to 2))
 
     for (level in Level.entries) {

@@ -1,5 +1,3 @@
-import java.math.BigDecimal
-import java.math.RoundingMode
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -9,7 +7,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 // Numerical methods with their results printed in full (Double.toString's shortest repr):
-// root finding, quadrature, ODE integration, linear algebra and series, plus BigDecimal views.
+// root finding, quadrature, ODE integration, linear algebra and series.
 
 fun newton(f: (Double) -> Double, df: (Double) -> Double, x0: Double, tol: Double = 1e-15): Pair<Double, Int> {
     var x = x0
@@ -161,14 +159,4 @@ fun main() {
     for (k in 1..1000) harmonic += 1.0 / k
     println("H(1000) = $harmonic, minus ln = ${harmonic - ln(1000.0)}")
     println("doubles: ${listOf(0.1 * 3, 1.0 / 3, 2.0 / 3, 100.0 / 7, 1e-7, 123456789012.0, 1.0e21, 5e-324, 4.35, 0.3 - 0.1)}")
-
-    println("-- big decimal")
-    println(0.1.toBigDecimal())
-    println(BigDecimal(0.1))
-    println(sqrt2.toBigDecimal().setScale(20, RoundingMode.HALF_EVEN))
-    println(BigDecimal.valueOf(dottie).setScale(8, RoundingMode.HALF_UP))
-    println(leibniz.toBigDecimal().multiply(BigDecimal(4)).setScale(10, RoundingMode.DOWN))
-    val total = listOf("0.1", "0.2", "0.3").map(::BigDecimal).fold(BigDecimal.ZERO, BigDecimal::add)
-    println("$total ${total.toDouble()} ${0.1 + 0.2 + 0.3}")
-    println(BigDecimal(1).divide(BigDecimal(7), 30, RoundingMode.HALF_EVEN))
 }

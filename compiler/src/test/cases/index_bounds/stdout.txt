@@ -63,28 +63,28 @@ list.windowed IAE: Both size 0 and step 1 must be greater than zero.
 list.max NSEE: null
 list.reduce OTHER: Empty collection can't be reduced.
 list.random NSEE: Collection is empty.
-ints.avg = NaN
-div AE: / by zero
-rem AE: / by zero
-rem fn AE: / by zero
-mod AE: / by zero
-floorDiv AE: / by zero
-ldiv AE: / by zero
-lrem AE: / by zero
-lmod AE: / by zero
-fdiv = Infinity
-frem = NaN
-frem2 = NaN
-frem3 = 1.5
-frem4 = -1.5
+ints.avg = -nan
+div OTHER: main.lua:65: attempt to divide by zero
+rem OTHER: main.lua:66: attempt to perform 'n%0'
+rem fn OTHER: main.lua:67: attempt to perform 'n%0'
+mod OTHER: main.lua:68: attempt to perform 'n%0'
+floorDiv OTHER: main.lua:69: attempt to divide by zero
+ldiv OTHER: main.lua:70: attempt to divide by zero
+lrem OTHER: main.lua:71: attempt to perform 'n%0'
+lmod OTHER: main.lua:72: attempt to perform 'n%0'
+fdiv = inf
+frem = -nan
+frem2 = -nan
+frem3 = -0.5
+frem4 = 0.5
 fmod = 0.5
-fmod0 = NaN
-zero div = NaN
+fmod0 = -nan
+zero div = -nan
 imod = 2
 imod2 = -2
 ifloor = -4
-irem = -1
-irem2 = 1
+irem = 2
+irem2 = -2
 618
 [10, 12, 14]
 loop+1 IOOBE: Index 3 out of bounds for length 3

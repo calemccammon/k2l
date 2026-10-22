@@ -1,14 +1,13 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_HashMap = ____lualib.__K2L_HashMap
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 
@@ -18,7 +17,7 @@ local Matrix = __K2L_Class("Matrix")
 function Matrix:____init(rows, cols)
     self.rows = rows
     self.cols = cols
-    self.data = __K2L_ListOfSize(self.rows * self.cols, 0, "[I")
+    self.data = __K2L_ListOfSize(self.rows * self.cols, 0, true)
 end
 
 function Matrix:get(i, j)
@@ -69,7 +68,7 @@ local MapGrid = __K2L_Class("MapGrid", nil, Grid)
 
 function MapGrid:____init(default)
     self.default = default
-    self.cells = __K2L_HashMap.new()
+    self.cells = __K2L_Map.new()
 end
 
 function MapGrid:get(x, y)
@@ -161,18 +160,18 @@ local function main()
     c:set(1, 2, 3, 1.5)
     c:set(1, 2, 3, c:get(1, 2, 3) + 2.0)
     c:set(0, 0, 0, c:get(0, 0, 0) - 1.0)
-    print(__K2L_Str(c:get(1, 2, 3)) .. " " .. __K2L_Str(c:get(0, 0, 0)) .. " " .. __K2L_Str(c:get(9, 9, 9)))
+    print(c:get(1, 2, 3) .. " " .. c:get(0, 0, 0) .. " " .. c:get(9, 9, 9))
     local g = TextGrid.new()
     g:set(0, 0, "a")
     g:set(0, 0, g:get(0, 0) .. "b")
     print(g:get(0, 0) .. g:get(5, 5))
     local counts = MapGrid.new(0)
     for i = 0, 2 do
-        local ____key_7 = i >= 0 and i % 2 or 0 - -i % 2
+        local ____key_7 = i % 2
         counts:set(____key_7, 0, counts:get(____key_7, 0) + 1)
     end
     print(counts:get(0, 0) .. " " .. counts:get(1, 0))
-    local ____table = __K2L_ReadOnlyListOf(__K2L_ListOf(1, 2), __K2L_ListOf(3, 4))
+    local ____table = __K2L_ListOf(__K2L_ListOf(1, 2), __K2L_ListOf(3, 4))
     set(____table, 1, 0, 30)
     set(____table, 0, 1, get(____table, 0, 1) * 10)
     set(____table, 1, 1, get(____table, 1, 1) + 1)
@@ -194,5 +193,5 @@ ____exports.Row = Row
 ____exports.get__1 = get__1
 ____exports.set__1 = set__1
 ____exports.index = index
-__K2L_Main(main)
+__K2L_RunMain(main)
 return ____exports

@@ -23,12 +23,6 @@ fun main() {
     val s = "" + c + c.bump() + c
     println(s)
     println("${c}" + c.bump() + "$c")
-    val jd = java.util.ArrayDeque(listOf(1, 2, 3))
-    println("${jd.poll()} $jd ${jd.poll()} $jd")
-    val q: java.util.Queue<Int> = java.util.LinkedList(listOf(4, 5))
-    println("$q ${q.poll()} $q")
-    val pq = java.util.PriorityQueue(listOf(3, 1, 2))
-    println("${pq.poll()} $pq")
-    val m = java.util.TreeMap(mapOf(1 to "a", 2 to "b"))
-    println("$m ${m.pollFirstEntry()} $m")
+    val m = mutableMapOf(1 to "a", 2 to "b")
+    println("$m ${m.remove(1)} $m")
 }

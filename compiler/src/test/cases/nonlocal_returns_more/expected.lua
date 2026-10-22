@@ -1,20 +1,15 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CloseAfter = ____lualib.__K2L_CloseAfter
-local __K2L_DeepMain = ____lualib.__K2L_DeepMain
-local __K2L_DeepPcall = ____lualib.__K2L_DeepPcall
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
 local __K2L_Result = ____lualib.__K2L_Result
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_SetOf = ____lualib.__K2L_SetOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
-local __K2L_SingletonMapOf = ____lualib.__K2L_SingletonMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
 local __K2L_StringToList = ____lualib.__K2L_StringToList
@@ -59,7 +54,7 @@ local function toVariants(xs, which)
         if which == 1 and it == 3 then
             return "filterTo stopped, kept " .. __K2L_Str(kept)
         else
-            ____result_1 = (it >= 0 and it % 2 or 0 - -it % 2) == 0
+            ____result_1 = it % 2 == 0
         end
         if ____result_1 then
             kept:add(it)
@@ -71,7 +66,7 @@ local function toVariants(xs, which)
         if which == 2 and it == 3 then
             return "filterNotTo stopped, kept " .. __K2L_Str(dropped)
         else
-            ____result_2 = (it >= 0 and it % 2 or 0 - -it % 2) == 0
+            ____result_2 = it % 2 == 0
         end
         if not ____result_2 then
             dropped:add(it)
@@ -83,7 +78,7 @@ local function toVariants(xs, which)
         if which == 3 and it == 3 then
             return "mapNotNullTo stopped, kept " .. __K2L_Str(nn)
         else
-            ____result_3 = (it >= 0 and it % 2 or 0 - -it % 2) == 0 and "e" .. it or nil
+            ____result_3 = it % 2 == 0 and "e" .. it or nil
         end
         local ____value = ____result_3
         if ____value ~= nil then
@@ -96,7 +91,7 @@ local function toVariants(xs, which)
         if which == 4 and it == 3 then
             return "flatMapTo stopped, kept " .. __K2L_Str(flat)
         else
-            ____result_4 = __K2L_ReadOnlyListOf(it, it)
+            ____result_4 = __K2L_ListOf(it, it)
         end
         flat:addAll(____result_4)
     end
@@ -139,7 +134,7 @@ local function toVariants(xs, which)
         if which == 8 and it == 3 then
             return "groupByTo stopped, kept " .. __K2L_Str(groups)
         else
-            ____result_8 = it >= 0 and it % 3 or 0 - -it % 3
+            ____result_8 = it % 3
         end
         local ____value_4 = ____result_8
         local ____group = groups:get(____value_4)
@@ -157,7 +152,7 @@ local function toVariants(xs, which)
         if which == 9 and x == 3 then
             return "filterIndexedTo stopped, kept " .. __K2L_Str(idx)
         else
-            ____result_9 = (i >= 0 and i % 2 or 0 - -i % 2) == 0
+            ____result_9 = i % 2 == 0
         end
         if ____result_9 then
             idx:add(x)
@@ -187,7 +182,7 @@ local function indexedAndRunning(xs, which)
         if which == 0 and x == 3 then
             return "mapIndexedNotNull stopped at " .. i
         else
-            ____result_12 = (i >= 0 and i % 2 or 0 - -i % 2) == 0 and x or nil
+            ____result_12 = i % 2 == 0 and x or nil
         end
         local ____value_5 = ____result_12
         if ____value_5 ~= nil then
@@ -203,7 +198,7 @@ local function indexedAndRunning(xs, which)
         if which == 1 and x == 3 then
             return "flatMapIndexed stopped at " .. i
         else
-            ____result_14 = __K2L_ReadOnlyListOf(i, x)
+            ____result_14 = __K2L_ListOf(i, x)
         end
         ____result_13:addAll(____result_14)
     end
@@ -321,7 +316,7 @@ local function indexedAndRunning(xs, which)
 end
 
 local ____lambda_1 = function()
-    return __K2L_SingletonMapOf(__K2L_Pair.new("fallback", 1))
+    return __K2L_MapOf(__K2L_Pair.new("fallback", 1))
 end
 local function lookups(m, xs, key, i)
     local ____value_6
@@ -372,7 +367,7 @@ local function lookups(m, xs, key, i)
         ____value_9 = xs
     end
     local d = ____value_9
-    local e = __K2L_ReadOnlyMapOf():ifEmpty(____lambda_1)
+    local e = __K2L_MapOf():ifEmpty(____lambda_1)
     return "a=" .. a .. " b=" .. b .. " c=" .. c .. " d=" .. __K2L_Str(d) .. " e=" .. __K2L_Str(e) .. " m=" .. __K2L_Str(m)
 end
 
@@ -533,7 +528,7 @@ end
 local function resources(fail, early)
     local ____resource = Res.new("a")
     local ____result_45
-    local ____ok, ____result_46, ____returned = __K2L_DeepPcall(function()
+    local ____ok, ____result_46, ____returned = pcall(function()
         local ____result_47
         if early then
             return true, "early from " .. ____resource.name
@@ -562,11 +557,11 @@ end
 local function nested(early)
     local ____resource_1 = Res.new("outer")
     local ____result_48
-    local ____ok_1, ____result_49, ____returned_1 = __K2L_DeepPcall(function()
+    local ____ok_1, ____result_49, ____returned_1 = pcall(function()
         do
             local ____resource_2 = Res.new("inner")
             local ____result_50
-            local ____ok_2, ____result_51, ____returned_2 = __K2L_DeepPcall(function()
+            local ____ok_2, ____result_51, ____returned_2 = pcall(function()
                 if early then
                     return true, "early from " .. ____resource_2.name .. " in " .. ____resource_1.name
                 end
@@ -599,10 +594,10 @@ local function nested(early)
 end
 
 local function fussy()
-    local ____ok_3, ____result_52 = __K2L_DeepPcall(function()
+    local ____ok_3, ____result_52 = pcall(function()
         local ____resource_3 = Fussy.new()
         local ____result_53
-        local ____ok_4, ____result_54 = __K2L_DeepPcall(function()
+        local ____ok_4, ____result_54 = pcall(function()
             local ____result_55
             error(__K2L_IllegalArgumentException.new("body failed"))
             ____result_53 = ____result_55
@@ -641,7 +636,7 @@ end
 
 local function caught(early)
     local ____outcome
-    local ____ok_5, ____result_57, ____returned_5 = __K2L_DeepPcall(function()
+    local ____ok_5, ____result_57, ____returned_5 = pcall(function()
         local ____result_58
         if early == 0 then
             return true, "returned from runCatching"
@@ -676,24 +671,24 @@ local function timed(early)
 end
 
 local function main()
-    local xs = __K2L_ReadOnlyListOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+    local xs = __K2L_ListOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
     print(toVariants(xs, 99))
     for which = 0, 10 do
         print(toVariants(xs, which))
     end
-    print(toVariants(__K2L_ReadOnlyListOf(), 0))
+    print(toVariants(__K2L_ListOf(), 0))
     print(indexedAndRunning(xs, 99))
     for which = 0, 7 do
         print(indexedAndRunning(xs, which))
     end
     local m = __K2L_MapOf(__K2L_Pair.new("x", 1))
-    print(lookups(m, __K2L_ReadOnlyListOf(5, 6), "abc", 1))
-    print(lookups(m, __K2L_ReadOnlyListOf(5, 6), "abc", 7))
-    print(lookups(m, __K2L_ReadOnlyListOf(500, 600), "abc", -1))
-    print(lookups(m, __K2L_ReadOnlyListOf(500, 600), "abc", 5))
-    print(lookups(m, __K2L_ReadOnlyListOf(), "abc", 0))
-    print(lookups(m, __K2L_SingletonListOf(1), "boom", 0))
-    print(lookups(m, __K2L_SingletonListOf(1), "bang", 0))
+    print(lookups(m, __K2L_ListOf(5, 6), "abc", 1))
+    print(lookups(m, __K2L_ListOf(5, 6), "abc", 7))
+    print(lookups(m, __K2L_ListOf(500, 600), "abc", -1))
+    print(lookups(m, __K2L_ListOf(500, 600), "abc", 5))
+    print(lookups(m, __K2L_ListOf(), "abc", 0))
+    print(lookups(m, __K2L_ListOf(1), "boom", 0))
+    print(lookups(m, __K2L_ListOf(1), "bang", 0))
     print(__K2L_Str(m))
     print(texts("bcad", 99))
     for which = 0, 9 do
@@ -701,7 +696,7 @@ local function main()
     end
     print(resources(false, false))
     print(resources(false, true))
-    local ____ok_6, ____result_59 = __K2L_DeepPcall(function()
+    local ____ok_6, ____result_59 = pcall(function()
         resources(true, false)
     end)
     if not ____ok_6 then
@@ -725,5 +720,5 @@ local function main()
     print(timed(false))
 end
 
-__K2L_DeepMain(main)
+__K2L_RunMain(main)
 return {Res = Res, Fussy = Fussy, toVariants = toVariants, indexedAndRunning = indexedAndRunning, lookups = lookups, texts = texts, resources = resources, nested = nested, fussy = fussy, locked = locked, caught = caught, timed = timed}

@@ -1,4 +1,3 @@
-import java.util.TreeSet
 
 // Enums are Comparable by ordinal: operators, compareTo, sorting, max/min and sorted collections.
 
@@ -28,7 +27,7 @@ fun main() {
     println(c.compareTo(E.A))
     println(maxOf(E.A, E.C))
     println(E.B.coerceIn(E.C, E.C))
-    println(TreeSet(listOf(E.B, E.C, E.A, E.B)))
+    println(listOf(E.B, E.C, E.A, E.B).toSortedSet())
     println(listOf(Level.HIGH, Level.LOW).sorted().map { it.label() })
     println(Level.HIGH > Level.LOW)
     val tasks = listOf(Task("x", Level.HIGH), Task("y", Level.LOW), Task("z", Level.HIGH))

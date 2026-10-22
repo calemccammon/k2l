@@ -29,7 +29,7 @@ class Host(private val name: String) {
                 } catch (e: IllegalArgumentException) {
                     val wrapped = PluginException(p.id, e)
                     failures += wrapped.message!!
-                    this@Host.failures += "cause: ${wrapped.cause?.javaClass?.simpleName}"
+                    this@Host.failures += "cause: ${wrapped.cause?.let { it::class.simpleName }}"
                     return "rejected by $p"
                 }
                 if (out != null) {

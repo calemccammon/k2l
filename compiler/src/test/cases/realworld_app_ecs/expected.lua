@@ -3,20 +3,17 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_KClassOfValue = ____lualib.__K2L_KClassOfValue
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_LoopItems = ____lualib.__K2L_LoopItems
 local __K2L_MapOf = ____lualib.__K2L_MapOf
+local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_SetOf = ____lualib.__K2L_SetOf
+local __K2L_SimpleName = ____lualib.__K2L_SimpleName
 local __K2L_SortedMapOf = ____lualib.__K2L_SortedMapOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local World
 local Component = __K2L_Class("sim.ecs.Component")
-__K2L_ClassInfo(Component, "sim.ecs.Component", "sim.ecs.Component", "interface")
 local Entity = __K2L_Class("sim.ecs.Entity")
-__K2L_ClassInfo(Entity, "sim.ecs.Entity", "sim.ecs.Entity", "class")
 
 function Entity:____init(id)
     self.id = id
@@ -39,11 +36,10 @@ function Entity:equals(other)
 end
 
 local Store = __K2L_Class("sim.ecs.Store")
-__K2L_ClassInfo(Store, "sim.ecs.Store", "sim.ecs.Store", "class")
 
 function Store:____init(____type)
     self.type = ____type
-    self.items = __K2L_SortedMapOf()
+    self.items = __K2L_SortedMapOf(nil)
 end
 
 function Store:getSize()
@@ -69,11 +65,10 @@ function Store:ids()
 end
 
 function Store:toString()
-    return __K2L_Str(self.type.simpleName) .. "x" .. self:getSize()
+    return self.type .. "x" .. self:getSize()
 end
 
 local System = __K2L_Class("sim.ecs.System")
-__K2L_ClassInfo(System, "sim.ecs.System", "sim.ecs.System", "class")
 
 function System:____init(name)
     self.name = name
@@ -90,7 +85,6 @@ function System:toString()
 end
 
 World = __K2L_Class("sim.ecs.World")
-__K2L_ClassInfo(World, "sim.ecs.World", "sim.ecs.World", "class")
 
 function World:____init()
     self.nextId = 1
@@ -116,9 +110,11 @@ function World:spawn(...)
 end
 
 function World:add(e, c)
-    local ____cast = self.stores:getOrPut(__K2L_KClassOfValue(c), function() return Store.new(__K2L_KClassOfValue(c)) end)
+    local ____cast = self.stores:getOrPut(__K2L_NotNull(__K2L_SimpleName(c)), function()
+        return Store.new(__K2L_NotNull(__K2L_SimpleName(c)))
+    end)
     if getmetatable(____cast) ~= Store then
-        __K2L_CastFail(____cast, "sim.ecs.Store", "sim.ecs.Store")
+        __K2L_CastFail(____cast, "sim.ecs.Store")
     end
     local store = ____cast
     store:set(e, c)
@@ -127,7 +123,7 @@ end
 function World:store(____type)
     local ____cast_1 = self.stores:getOrPut(____type, function() return Store.new(____type) end)
     if getmetatable(____cast_1) ~= Store then
-        __K2L_CastFail(____cast_1, "sim.ecs.Store", "sim.ecs.Store")
+        __K2L_CastFail(____cast_1, "sim.ecs.Store")
     end
     return ____cast_1
 end
@@ -151,33 +147,21 @@ function World:step(dt)
     end
     self.tick = self.tick + 1
     local ____list = self.systems
-    local ____mod = ____list.____modCount
     for ____i_1 = 1, ____list.size do
         local s = ____list[____i_1]
         s:tick(self, dt)
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i_1) then
-            break
-        end
     end
     local ____list_1 = self.pendingRemoval
-    local ____mod_2 = ____list_1.____modCount
     for ____i_3 = 1, ____list_1.size do
         local e = ____list_1[____i_3]
         if self.alive:remove(e.id) then
             local ____collection = self.stores:getValues()
-            local ____items, ____n = __K2L_LoopItems(____collection)
-            local ____mod_1 = ____collection.____modCount
+            local ____items, ____n = ____collection:____array()
             for ____i_2 = 1, ____n do
                 local it = ____items[____i_2]
                 it:remove(e)
-                if ____collection.____modCount ~= ____mod_1 and ____collection:____comodified(____i_2, ____n) then
-                    break
-                end
             end
             self.log:add("t" .. self.tick .. ": " .. __K2L_Str(e) .. " destroyed")
-        end
-        if ____list_1.____modCount ~= ____mod_2 and ____list_1:____comodified(____i_3) then
-            break
         end
     end
     self.pendingRemoval:clear()
@@ -199,12 +183,8 @@ return {Component = Component, Entity = Entity, Store = Store, System = System, 
 -- ==== game/Systems.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_Fmod = ____lualib.__K2L_Fmod
 local __K2L_Hash = ____lualib.__K2L_Hash
-local __K2L_IRem = ____lualib.__K2L_IRem
 local __K2L_IndexError = ____lualib.__K2L_IndexError
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NotNull = ____lualib.__K2L_NotNull
@@ -216,7 +196,6 @@ local __K2L_Triple = ____lualib.__K2L_Triple
 local ____World = require("ecs.World")
 local distance, nameOf
 local Position = __K2L_Class("sim.game.Position", nil, ____World.Component)
-__K2L_ClassInfo(Position, "sim.game.Position", "sim.game.Position", "class")
 
 function Position:____init(x, y)
     self.x = x
@@ -240,7 +219,6 @@ function Position:equals(other)
 end
 
 local Velocity = __K2L_Class("sim.game.Velocity", nil, ____World.Component)
-__K2L_ClassInfo(Velocity, "sim.game.Velocity", "sim.game.Velocity", "class")
 
 function Velocity:____init(dx, dy)
     self.dx = dx
@@ -264,7 +242,6 @@ function Velocity:equals(other)
 end
 
 local Health = __K2L_Class("sim.game.Health", nil, ____World.Component)
-__K2L_ClassInfo(Health, "sim.game.Health", "sim.game.Health", "class")
 
 function Health:____init(hp, max)
     self.hp = hp
@@ -292,7 +269,6 @@ function Health:equals(other)
 end
 
 local Name = __K2L_Class("sim.game.Name", nil, ____World.Component)
-__K2L_ClassInfo(Name, "sim.game.Name", "sim.game.Name", "class")
 
 function Name:____init(value)
     self.value = value
@@ -315,7 +291,6 @@ function Name:equals(other)
 end
 
 local Damage = __K2L_Class("sim.game.Damage", nil, ____World.Component)
-__K2L_ClassInfo(Damage, "sim.game.Damage", "sim.game.Damage", "class")
 
 function Damage:____init(amount, range)
     self.amount = amount
@@ -339,14 +314,12 @@ function Damage:equals(other)
 end
 
 local Player = __K2L_Class("sim.game.Player", nil, ____World.Component)
-__K2L_ClassInfo(Player, "sim.game.Player", "sim.game.Player", "class")
 
 function Player:toString()
     return "Player"
 end
 
 local Movement = __K2L_Class("sim.game.Movement", ____World.System)
-__K2L_ClassInfo(Movement, "sim.game.Movement", "sim.game.Movement", "class")
 
 function Movement:____init(width, height)
     ____World.System.____init(self, "movement")
@@ -357,8 +330,8 @@ end
 function Movement:update(world, dt)
     local ____result
     do
-        local a = world:store(__K2L_KClassOf(Position))
-        local b = world:store(__K2L_KClassOf(Velocity))
+        local a = world:store(__K2L_NotNull("Position"))
+        local b = world:store(__K2L_NotNull("Velocity"))
         local ____list = a:ids()
         local ____out = {}
         local ____count = 0
@@ -387,20 +360,15 @@ function Movement:update(world, dt)
         ____result = __K2L_ListWrap(____out_1, ____count_1)
     end
     local ____list_2 = ____result
-    local ____mod = ____list_2.____modCount
     for ____i_2 = 1, ____list_2.size do
         local ____item = ____list_2[____i_2]
         local pos, vel = ____item.second, ____item.third
-        pos.x = __K2L_Num.mod(pos.x + vel.dx * dt, self.width)
+        pos.x = (pos.x + vel.dx * dt) % self.width
         pos.y = __K2L_Num.coerceIn(pos.y + vel.dy * dt, 0, self.height - 1)
-        if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
-            break
-        end
     end
 end
 
 local Combat = __K2L_Class("sim.game.Combat", ____World.System)
-__K2L_ClassInfo(Combat, "sim.game.Combat", "sim.game.Combat", "class")
 
 function Combat:____init()
     ____World.System.____init(self, "combat")
@@ -409,8 +377,8 @@ end
 function Combat:update(world, dt)
     local ____result_2
     do
-        local a = world:store(__K2L_KClassOf(Position))
-        local b = world:store(__K2L_KClassOf(Damage))
+        local a = world:store(__K2L_NotNull("Position"))
+        local b = world:store(__K2L_NotNull("Damage"))
         local ____list_3 = a:ids()
         local ____out_2 = {}
         local ____count_2 = 0
@@ -441,8 +409,8 @@ function Combat:update(world, dt)
     local attackers = ____result_2
     local ____result_4
     do
-        local a = world:store(__K2L_KClassOf(Position))
-        local b = world:store(__K2L_KClassOf(Health))
+        local a = world:store(__K2L_NotNull("Position"))
+        local b = world:store(__K2L_NotNull("Health"))
         local ____list_5 = a:ids()
         local ____out_4 = {}
         local ____count_4 = 0
@@ -471,11 +439,9 @@ function Combat:update(world, dt)
         ____result_4 = __K2L_ListWrap(____out_5, ____count_5)
     end
     local targets = ____result_4
-    local ____mod_2 = attackers.____modCount
     for ____i_8 = 1, attackers.size do
         local ____item_1 = attackers[____i_8]
         local a, apos, dmg = ____item_1.first, ____item_1.second, ____item_1.third
-        local ____mod_1 = targets.____modCount
         for ____i_7 = 1, targets.size do
             local ____item_2 = targets[____i_7]
             local t, tpos, health = ____item_2.first, ____item_2.second, ____item_2.third
@@ -490,18 +456,11 @@ function Combat:update(world, dt)
                 end
             end
             ::____continue::
-            if targets.____modCount ~= ____mod_1 and targets:____comodified(____i_7) then
-                break
-            end
-        end
-        if attackers.____modCount ~= ____mod_2 and attackers:____comodified(____i_8) then
-            break
         end
     end
 end
 
 local Reaper = __K2L_Class("sim.game.Reaper", ____World.System)
-__K2L_ClassInfo(Reaper, "sim.game.Reaper", "sim.game.Reaper", "class")
 
 function Reaper:____init()
     ____World.System.____init(self, "reaper")
@@ -510,7 +469,7 @@ end
 function Reaper:update(world, dt)
     local ____result_6
     do
-        local s = world:store(__K2L_KClassOf(Health))
+        local s = world:store(__K2L_NotNull("Health"))
         local ____list_7 = s:ids()
         local ____out_6 = {}
         local ____count_6 = 0
@@ -550,7 +509,6 @@ function Reaper:update(world, dt)
         end
     end
     local ____list_10 = __K2L_ListWrap(____out_8, ____count_8)
-    local ____mod_3 = ____list_10.____modCount
     for ____i_12 = 1, ____list_10.size do
         local ____it_1 = ____list_10[____i_12]
         do
@@ -558,7 +516,7 @@ function Reaper:update(world, dt)
             local ____result_8
             do
                 local ____result_9
-                ____result_9 = world:store(__K2L_KClassOf(Player)):get(e)
+                ____result_9 = world:store(__K2L_NotNull("Player")):get(e)
                 ____result_8 = ____result_9 ~= nil
             end
             if ____result_8 then
@@ -566,14 +524,10 @@ function Reaper:update(world, dt)
             end
             world:destroy(e)
         end
-        if ____list_10.____modCount ~= ____mod_3 and ____list_10:____comodified(____i_12) then
-            break
-        end
     end
 end
 
 local Regeneration = __K2L_Class("sim.game.Regeneration", ____World.System)
-__K2L_ClassInfo(Regeneration, "sim.game.Regeneration", "sim.game.Regeneration", "class")
 
 function Regeneration:____init(every)
     ____World.System.____init(self, "regen")
@@ -581,12 +535,12 @@ function Regeneration:____init(every)
 end
 
 function Regeneration:update(world, dt)
-    if (self.every ~= 0 and __K2L_Fmod(world.tick, self.every) + 0 or __K2L_IRem(world.tick, self.every)) ~= 0 then
+    if world.tick % self.every ~= 0 then
         return
     end
     local ____result_10
     do
-        local s = world:store(__K2L_KClassOf(Health))
+        local s = world:store(__K2L_NotNull("Health"))
         local ____list_11 = s:ids()
         local ____out_9 = {}
         local ____count_9 = 0
@@ -610,7 +564,6 @@ function Regeneration:update(world, dt)
         ____result_10 = __K2L_ListWrap(____out_10, ____count_10)
     end
     local ____list_13 = ____result_10
-    local ____mod_4 = ____list_13.____modCount
     for ____i_15 = 1, ____list_13.size do
         local ____it_2 = ____list_13[____i_15]
         do
@@ -618,9 +571,6 @@ function Regeneration:update(world, dt)
             if not h:getDead() and h.hp < h.max then
                 h.hp = h.hp + 1
             end
-        end
-        if ____list_13.____modCount ~= ____mod_4 and ____list_13:____comodified(____i_15) then
-            break
         end
     end
 end
@@ -631,7 +581,7 @@ end
 
 function nameOf(self, e)
     local ____result_11
-    ____result_11 = self:store(__K2L_KClassOf(Name)):get(e)
+    ____result_11 = self:store(__K2L_NotNull("Name")):get(e)
     local ____receiver = ____result_11
     return ____receiver and ____receiver.value or e:toString()
 end
@@ -642,13 +592,13 @@ local function render(____this, width, height)
     for ____i_16 = 1, height do
         local it = ____i_16 - 1
         local ____result_12
-        ____result_12 = __K2L_ListOfSize(width, ____lambda_1, "[C")
+        ____result_12 = __K2L_ListOfSize(width, ____lambda_1, true)
         ____out_11[____i_16] = ____result_12
     end
     local grid = __K2L_ListWrap(____out_11, height)
     local ____result_13
     do
-        local s = ____this:store(__K2L_KClassOf(Position))
+        local s = ____this:store(__K2L_NotNull("Position"))
         local ____list_14 = s:ids()
         local ____out_12 = {}
         local ____count_11 = 0
@@ -672,7 +622,6 @@ local function render(____this, width, height)
         ____result_13 = __K2L_ListWrap(____out_13, ____count_12)
     end
     local ____list_16 = ____result_13
-    local ____mod_5 = ____list_16.____modCount
     for ____i_19 = 1, ____list_16.size do
         local ____item_3 = ____list_16[____i_19]
         local e, pos = ____item_3.first, ____item_3.second
@@ -680,7 +629,7 @@ local function render(____this, width, height)
         local ____result_16
         do
             local ____result_17
-            ____result_17 = ____this:store(__K2L_KClassOf(Player)):get(e)
+            ____result_17 = ____this:store(__K2L_NotNull("Player")):get(e)
             ____result_16 = ____result_17 ~= nil
         end
         if ____result_16 then
@@ -689,7 +638,7 @@ local function render(____this, width, height)
             local ____result_14
             do
                 local ____result_15
-                ____result_15 = ____this:store(__K2L_KClassOf(Damage)):get(e)
+                ____result_15 = ____this:store(__K2L_NotNull("Damage")):get(e)
                 ____result_14 = ____result_15 ~= nil
             end
             if ____result_14 then
@@ -704,9 +653,6 @@ local function render(____this, width, height)
             __K2L_IndexError(____key, ____object.size, "array")
         end
         ____object[____key + 1] = c
-        if ____list_16.____modCount ~= ____mod_5 and ____list_16:____comodified(____i_19) then
-            break
-        end
     end
     local ____out_14 = {}
     local ____count_13 = 0
@@ -723,21 +669,17 @@ return {Position = Position, Velocity = Velocity, Health = Health, Name = Name, 
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_ClassInfo = ____lualib.__K2L_ClassInfo
-local __K2L_FunctionRef = ____lualib.__K2L_FunctionRef
-local __K2L_KClassOf = ____lualib.__K2L_KClassOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
 local __K2L_Pair = ____lualib.__K2L_Pair
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Triple = ____lualib.__K2L_Triple
 
 local ____World = require("ecs.World")
 local ____Systems = require("game.Systems")
 local Counter = __K2L_Class("sim.Counter", ____World.System)
-__K2L_ClassInfo(Counter, "sim.Counter", "sim.Counter", "class")
 
 function Counter:____init()
     ____World.System.____init(self, "counter")
@@ -748,7 +690,7 @@ local ____lambda_1 = function(____p1, ____p2) return ____p1 + ____p2 end
 function Counter:update(world, dt)
     local ____result
     do
-        local s = world:store(__K2L_KClassOf(____Systems.Health))
+        local s = world:store(__K2L_NotNull("Health"))
         local ____list = s:ids()
         local ____out = {}
         local ____count = 0
@@ -772,14 +714,10 @@ function Counter:update(world, dt)
         ____result = __K2L_ListWrap(____out_1, ____count_1)
     end
     local ____list_2 = ____result
-    local ____mod = ____list_2.____modCount
     for ____i_2 = 1, ____list_2.size do
         local ____item = ____list_2[____i_2]
         local e = ____item.first
-        self.seen:merge(____Systems.nameOf(world, e), 1, __K2L_FunctionRef.new("plus", "kotlin/Int.plus(kotlin.Int)", ____lambda_1))
-        if ____list_2.____modCount ~= ____mod and ____list_2:____comodified(____i_2) then
-            break
-        end
+        self.seen:merge(____Systems.nameOf(world, e), 1, ____lambda_1)
     end
 end
 
@@ -798,7 +736,7 @@ local function main()
     do
         local ____result_2
         do
-            local s = world:store(__K2L_KClassOf(____Systems.Position))
+            local s = world:store(__K2L_NotNull("Position"))
             local ____list_3 = s:ids()
             local ____out_2 = {}
             local ____count_2 = 0
@@ -822,7 +760,7 @@ local function main()
             ____result_2 = __K2L_ListWrap(____out_3, ____count_3)
         end
         local items = ____result_2
-        ____result_1 = __K2L_Str(__K2L_KClassOf(____Systems.Position).simpleName) .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured)
+        ____result_1 = __K2L_Str("Position") .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured)
             local e, c = ____destructured.first, ____destructured.second
             return __K2L_Str(e) .. "=" .. __K2L_Str(c)
         end)
@@ -832,7 +770,7 @@ local function main()
     do
         local ____result_4
         do
-            local s = world:store(__K2L_KClassOf(____Systems.Health))
+            local s = world:store(__K2L_NotNull("Health"))
             local ____list_5 = s:ids()
             local ____out_4 = {}
             local ____count_4 = 0
@@ -856,7 +794,7 @@ local function main()
             ____result_4 = __K2L_ListWrap(____out_5, ____count_5)
         end
         local items = ____result_4
-        ____result_3 = __K2L_Str(__K2L_KClassOf(____Systems.Health).simpleName) .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured_1)
+        ____result_3 = __K2L_Str("Health") .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured_1)
             local e, c = ____destructured_1.first, ____destructured_1.second
             return __K2L_Str(e) .. "=" .. __K2L_Str(c)
         end)
@@ -865,19 +803,19 @@ local function main()
     local ____result_5
     do
         local ____result_6
-        ____result_6 = world:store(__K2L_KClassOf(____Systems.Player)):get(hero)
+        ____result_6 = world:store(__K2L_NotNull("Player")):get(hero)
         ____result_5 = ____result_6 ~= nil
     end
     local ____arg = tostring(____result_5)
     local ____result_7
     do
         local ____result_8
-        ____result_8 = world:store(__K2L_KClassOf(____Systems.Player)):get(orc)
+        ____result_8 = world:store(__K2L_NotNull("Player")):get(orc)
         ____result_7 = ____result_8 ~= nil
     end
     local ____arg_1 = tostring(____result_7)
     local ____result_9
-    ____result_9 = world:store(__K2L_KClassOf(____Systems.Position)):get(ghost)
+    ____result_9 = world:store(__K2L_NotNull("Position")):get(ghost)
     print("hero has player: " .. ____arg .. ", orc: " .. ____arg_1 .. ", ghost pos: " .. __K2L_Str(____result_9))
     for t = 1, 8 do
         world:step()
@@ -897,7 +835,7 @@ local function main()
     do
         local ____result_11
         do
-            local s = world:store(__K2L_KClassOf(____Systems.Health))
+            local s = world:store(__K2L_NotNull("Health"))
             local ____list_9 = s:ids()
             local ____out_6 = {}
             local ____count_6 = 0
@@ -921,7 +859,7 @@ local function main()
             ____result_11 = __K2L_ListWrap(____out_7, ____count_7)
         end
         local items = ____result_11
-        ____result_10 = __K2L_Str(__K2L_KClassOf(____Systems.Health).simpleName) .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured_2)
+        ____result_10 = __K2L_Str("Health") .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured_2)
             local e, c = ____destructured_2.first, ____destructured_2.second
             return __K2L_Str(e) .. "=" .. __K2L_Str(c)
         end)
@@ -930,7 +868,7 @@ local function main()
     local ____arg_2 = tostring(world:isAlive(bat.id))
     local ____arg_3 = tostring(world:isAlive(orc.id))
     local ____result_12
-    ____result_12 = world:store(__K2L_KClassOf(____Systems.Health)):get(orc)
+    ____result_12 = world:store(__K2L_NotNull("Health")):get(orc)
     print("bat alive: " .. ____arg_2 .. ", orc alive: " .. ____arg_3 .. ", orc health: " .. __K2L_Str(____result_12))
     print("systems: " .. __K2L_Str(world:systems__1()))
     print("counter: " .. __K2L_Str(counter.seen:toSortedMap()))
@@ -941,7 +879,7 @@ local function main()
     do
         local ____result_14
         do
-            local s = world:store(__K2L_KClassOf(____Systems.Position))
+            local s = world:store(__K2L_NotNull("Position"))
             local ____list_11 = s:ids()
             local ____out_8 = {}
             local ____count_8 = 0
@@ -965,7 +903,7 @@ local function main()
             ____result_14 = __K2L_ListWrap(____out_9, ____count_9)
         end
         local items = ____result_14
-        ____result_13 = __K2L_Str(__K2L_KClassOf(____Systems.Position).simpleName) .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured_3)
+        ____result_13 = __K2L_Str("Position") .. ": " .. items:joinToString(nil, nil, nil, nil, nil, function(____destructured_3)
             local e, c = ____destructured_3.first, ____destructured_3.second
             return __K2L_Str(e) .. "=" .. __K2L_Str(c)
         end)
@@ -973,8 +911,8 @@ local function main()
     print(____result_13)
     local ____result_15
     do
-        local a = world:store(__K2L_KClassOf(____Systems.Name))
-        local b = world:store(__K2L_KClassOf(____Systems.Velocity))
+        local a = world:store(__K2L_NotNull("Name"))
+        local b = world:store(__K2L_NotNull("Velocity"))
         local ____list_13 = a:ids()
         local ____out_10 = {}
         local ____count_10 = 0
@@ -1020,5 +958,5 @@ local function main()
     print(__K2L_Str(world))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Counter = Counter}

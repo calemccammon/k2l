@@ -2,12 +2,16 @@ package dev.k2l.transform
 
 import com.intellij.psi.PsiElement
 import dev.k2l.codegen.*
+import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
+import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
+import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.psi.*
 
 // Statements other than assignments: expressions as statements, local properties, return and if.
 
 internal fun FileTransformer.expressionStatement(e: KtExpression): Unit = with(session) {
     if (isUnitObject(e)) return // `else -> Unit`
+    if (isContract(e)) return
     val value = asStatement(e) { expression(e) }
     when {
         value is LuaCall || value is LuaMethodCall -> emit(LuaCallStmt(value))
@@ -17,6 +21,12 @@ internal fun FileTransformer.expressionStatement(e: KtExpression): Unit = with(s
         // a bare value has no effect
         else -> emit(LuaLocal(listOf("_"), listOf(value)))
     }
+}
+
+/** `contract { callsInPlace(block) }`: a declaration for the compiler, with no effect at run time. */
+private fun FileTransformer.isContract(e: KtExpression): Boolean = with(session) {
+    e is KtCallExpression && e.calleeExpression?.text == "contract" &&
+        e.resolveToCall()?.successfulCallOrNull<KaCallableMemberCall<*, *>>()?.symbol?.callableId?.toString() == "kotlin/contracts/contract"
 }
 
 internal fun FileTransformer.property(p: KtProperty, isLocal: Boolean): Unit = with(session) {
@@ -98,5 +108,7 @@ internal fun FileTransformer.ifStatement(e: KtIfExpression): Unit = with(session
 }
 
 internal fun FileTransformer.block(e: KtExpression): Unit = with(session) {
-    if (e is KtBlockExpression) e.statements.forEach { statement(it) } else statement(e)
+    // a branch can be an annotated block: `if (c) @Suppress("UNCHECKED_CAST") { ... }`
+    val body = (e as? KtAnnotatedExpression)?.let { KtPsiUtil.safeDeparenthesize(it) } ?: e
+    if (body is KtBlockExpression) body.statements.forEach { statement(it) } else statement(body)
 }

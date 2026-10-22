@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Counter = __K2L_Class("Counter")
@@ -39,7 +39,7 @@ function Temperature:getCelsius()
 end
 
 function Temperature:setCelsius(value)
-    print("setting " .. __K2L_Str(value))
+    print("setting " .. value)
     self.celsius = value < -273.15 and -273.15 or value
 end
 
@@ -82,9 +82,9 @@ local function main()
     c:reset()
     print(c.count)
     local t = Temperature.new(20.0)
-    print(__K2L_Str(t:getFahrenheit()))
+    print(t:getFahrenheit())
     t:setCelsius(-300.0)
-    print(__K2L_Str(t:getCelsius()))
+    print(t:getCelsius())
     local a = Account.new1("Ada", 100)
     a:deposit(50)
     a.balance = a.balance - 30
@@ -97,5 +97,5 @@ local function main()
     print(a == a)
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Counter = Counter, Temperature = Temperature, Account = Account}

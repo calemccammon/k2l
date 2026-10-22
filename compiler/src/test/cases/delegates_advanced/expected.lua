@@ -2,8 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_KProperty = ____lualib.__K2L_KProperty
 local __K2L_Lazy = ____lualib.__K2L_Lazy
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 
 local Cell
 local Logged = __K2L_Class("Logged")
@@ -296,5 +296,5 @@ local function main()
     print(named:getName())
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Logged = Logged, Cell = Cell, Bare = Bare, getValue = getValue, setValue = setValue, Counter = Counter, getValue__1 = getValue__1, Named = Named, Fixed = Fixed, provideDelegate = provideDelegate, Base = Base, Derived = Derived, Plain = Plain, Delegating = Delegating, HasName = HasName, Lazily = Lazily, Members = Members, ____top_delegate = ____top_delegate, ____topBare_delegate = ____topBare_delegate}

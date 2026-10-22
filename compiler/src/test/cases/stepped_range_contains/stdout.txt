@@ -21,7 +21,6 @@ true false false true
 even letter odd letter other
 true false
 true true false
-true true true false
 [2, 7, 12]
 true
 Step must be positive, was: 0.

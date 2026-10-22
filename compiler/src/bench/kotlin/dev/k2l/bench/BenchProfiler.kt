@@ -74,9 +74,8 @@ class BenchProfiler(private val config: BenchConfig, private val session: Source
                     val repeat = config.profileRepeat ?: if (t.target == LuaTarget.LuaJIT) JIT_REPEAT else 1
                     val args = arrayOf("k2l_profiler.lua", "main.lua", "samples.tsv", config.interval.toString(), repeat.toString())
                     val (ms, output) = runLua(t.interpreter, dir, *args)
-                    program.verify(output, repeat)
-                    val emulate = program.options.copy(luaTarget = t.target).emulatesLong64
-                    val names = Attribution(outputs, File(program.dir, "main.kt"), config.lualibDir, t.target, emulate)
+                    program.verify(t.target, output, update = false, repeat)
+                    val names = Attribution(outputs, File(program.dir, "main.kt"), config.lualibDir, t.target)
                     val profile = ProgramProfile(program.name, Samples(File(dir, "samples.tsv")), names)
                     val text = ProfileText(config.top).program(profile, t.target, ms, repeat)
                     File(config.outDir, "profile/${t.target.id}/${program.name}.txt").writeText(text)

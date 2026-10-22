@@ -1,5 +1,5 @@
 local ____lualib = require("lualib_bundle")
-local __K2L_Main = ____lualib.__K2L_Main
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local function main()
@@ -9,7 +9,7 @@ local function main()
     local ok = true
     local missing = nil
     print("Hello, " .. name .. " " .. version .. "!")
-    print("ratio=" .. __K2L_Str(ratio) .. " ok=" .. tostring(ok) .. " missing=" .. __K2L_Str(missing))
+    print("ratio=" .. ratio .. " ok=" .. tostring(ok) .. " missing=" .. __K2L_Str(missing))
     print("expr: " .. version * 10 + 1 .. " " .. #name)
     print(tostring(version))
     print(name:upper() .. " " .. name:lower())
@@ -19,14 +19,14 @@ local function main()
     print("unicode: héllo ✓")
     print(#"" == 0)
     print(name .. version)
-    print(name .. __K2L_Str(ratio))
+    print(name .. ratio)
     local c = "x"
     print("char " .. c)
     local s = "a"
     s = s .. "b"
     s = s .. 1
     print(s)
-    print(tostring(version) .. __K2L_Str(ratio))
+    print(tostring(version) .. tostring(ratio))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)

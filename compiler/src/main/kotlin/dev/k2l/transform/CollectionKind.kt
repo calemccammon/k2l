@@ -1,7 +1,9 @@
 package dev.k2l.transform
 
 import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.types.KaIntersectionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
 import org.jetbrains.kotlin.psi.KtClassOrObject
 
 /** Runtime representation of a Kotlin library type, see `Collections.lua`. */
@@ -40,14 +42,8 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "java/util/List",
         "kotlin/collections/ArrayList",
         "java/util/AbstractList",
-        "java/util/LinkedList",
-        "java/util/Stack",
-        "java/util/Vector",
         "kotlin/enums/EnumEntries",
         "kotlin/collections/ArrayDeque",
-        "java/util/ArrayDeque",
-        "java/util/Queue",
-        "java/util/Deque",
         "kotlin/text/MatchResult.Destructured",
         "kotlin/text/MatchGroupCollection",
         "kotlin/collections/AbstractList",
@@ -56,7 +52,6 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
     val arrayTypes =
         listOf(
             "Array", "IntArray", "LongArray", "DoubleArray", "FloatArray", "BooleanArray", "CharArray", "ShortArray", "ByteArray",
-            "UIntArray", "ULongArray", "UByteArray", "UShortArray",
         )
     for (t in arrayTypes) {
         put("kotlin/$t", CollectionKind.Array)
@@ -70,10 +65,9 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "java/util/Set",
         "kotlin/collections/HashSet",
         "kotlin/collections/LinkedHashSet",
-        "java/util/TreeSet",
+        // what toSortedSet() and sortedSetOf() return: their Set operations (a TreeSet's navigation is not there)
         "java/util/SortedSet",
-        "java/util/NavigableSet",
-        "java/util/EnumSet",
+        "java/util/TreeSet",
         "kotlin/collections/AbstractSet",
         "kotlin/collections/AbstractMutableSet",
         "java/util/AbstractSet",
@@ -87,10 +81,8 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "java/util/Map",
         "kotlin/collections/HashMap",
         "kotlin/collections/LinkedHashMap",
-        "java/util/TreeMap",
+        // what toSortedMap() and sortedMapOf() return: their Map operations (a TreeMap's navigation is not there)
         "java/util/SortedMap",
-        "java/util/NavigableMap",
-        "java/util/EnumMap",
         "kotlin/collections/AbstractMap",
         "kotlin/collections/AbstractMutableMap",
         "java/util/AbstractMap",
@@ -103,7 +95,6 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "kotlin/collections/MutableCollection",
         "java/util/Collection",
         "java/lang/Iterable",
-        "java/util/PriorityQueue",
         "kotlin/collections/AbstractCollection",
         "kotlin/collections/AbstractMutableCollection",
         "java/util/AbstractCollection",
@@ -116,9 +107,6 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
         "kotlin/ranges/LongProgression",
         "kotlin/ranges/CharRange",
         "kotlin/ranges/CharProgression",
-        // UInt, UShort and UByte ranges: their bounds are plain numbers, as in an IntRange
-        "kotlin/ranges/UIntRange",
-        "kotlin/ranges/UIntProgression",
     )
     kind(
         CollectionKind.ClosedRange,
@@ -165,6 +153,14 @@ private val KIND_BY_CLASS: Map<String, CollectionKind> = buildMap {
 
 context(s: KaSession)
 fun KaType.collectionKind(): CollectionKind? = with(s) {
+    val unwrapped = withoutFlexibility
+    // a type parameter (`C : MutableCollection<in V>`, `E : Map.Entry<K, V>`) is represented like its bound
+    if (unwrapped is KaTypeParameterType) return unwrapped.symbol.upperBounds.firstNotNullOfOrNull { it.collectionKind() }
+    // a smart cast (`this is Collection<*>` of an Iterable): the most specific kind of its parts
+    if (unwrapped is KaIntersectionType) {
+        val kinds = unwrapped.conjuncts.mapNotNull { it.collectionKind() }
+        return INHERITED_KINDS.firstOrNull { it in kinds } ?: kinds.firstOrNull()
+    }
     val direct = withoutFlexibility.expandedSymbol?.classId?.asString()?.let(KIND_BY_CLASS::get)
     if (direct != null) return direct
     // A class of the program implementing Sequence has all the Sequence operations; one extending or implementing a library
@@ -219,9 +215,7 @@ fun featureOf(luaName: String) = when {
 
     luaName == "__K2L_Regex" -> "Regex"
 
-    luaName in DEQUE_CLASSES || luaName in DEQUE_INTERFACES -> DEQUES_FEATURE
-
-    luaName.startsWith("__K2L_Enum") -> ENUM_COLLECTIONS_FEATURE
+    luaName == ARRAY_DEQUE -> DEQUES_FEATURE
 
     luaName.startsWith("__K2L_Compare") || luaName.startsWith("__K2L_Then") || luaName.startsWith("__K2L_Nulls") ||
         luaName == "__K2L_ReverseComparator" ||
@@ -230,29 +224,8 @@ fun featureOf(luaName: String) = when {
     else -> "Collections"
 }
 
-/** The lualib classes of `kotlin.collections.ArrayDeque`, `java.util.ArrayDeque` and `java.util.LinkedList`. */
-internal val DEQUE_CLASSES = setOf("__K2L_ArrayDeque", "__K2L_Deque", "__K2L_LinkedList")
+/** The lualib class of `kotlin.collections.ArrayDeque`, see `Deques.lua`. */
+internal const val ARRAY_DEQUE = "__K2L_ArrayDeque"
 
-/** The lualib markers of `java.util.Queue` and `Deque`, which java.util.ArrayDeque, LinkedList and PriorityQueue implement. */
-private val DEQUE_INTERFACES = setOf("__K2L_QueueInterface", "__K2L_DequeInterface")
-
-/**
- * Lua classes for `is`/`as` against library collection classes and interfaces that share their kind's representation
- * with others (`is java.util.ArrayDeque` must not accept an ArrayList, `is Queue` a list): see `Deques.lua`.
- */
-val SPECIFIC_COLLECTION_CLASSES = mapOf(
-    "java/util/ArrayDeque" to "__K2L_Deque",
-    "java/util/LinkedList" to "__K2L_LinkedList",
-    "kotlin/collections/ArrayDeque" to "__K2L_ArrayDeque",
-    "java/util/Queue" to "__K2L_QueueInterface",
-    "java/util/Deque" to "__K2L_DequeInterface",
-    "java/util/PriorityQueue" to "__K2L_PriorityQueue",
-    "java/util/TreeSet" to "__K2L_SortedSet",
-    "java/util/SortedSet" to "__K2L_SortedSet",
-    "java/util/NavigableSet" to "__K2L_SortedSet",
-    "java/util/TreeMap" to "__K2L_SortedMap",
-    "java/util/SortedMap" to "__K2L_SortedMap",
-    "java/util/NavigableMap" to "__K2L_SortedMap",
-    "java/util/EnumSet" to "__K2L_EnumSet",
-    "java/util/EnumMap" to "__K2L_EnumMap",
-)
+/** Lua classes for `is`/`as` against library collection classes that share their kind's representation with others. */
+val SPECIFIC_COLLECTION_CLASSES = mapOf("kotlin/collections/ArrayDeque" to ARRAY_DEQUE)

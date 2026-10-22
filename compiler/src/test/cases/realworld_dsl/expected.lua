@@ -6,12 +6,10 @@ local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
-local __K2L_Main = ____lualib.__K2L_Main
 local __K2L_Map = ____lualib.__K2L_Map
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_ReadOnlyMapOf = ____lualib.__K2L_ReadOnlyMapOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 
@@ -72,13 +70,9 @@ function Tag:render(builder, indent)
     end
     builder:append(">\n")
     local ____list = self.children
-    local ____mod = ____list.____modCount
     for ____i_1 = 1, ____list.size do
         local c = ____list[____i_1]
         c:render(builder, indent .. "  ")
-        if ____list.____modCount ~= ____mod and ____list:____comodified(____i_1) then
-            break
-        end
     end
     builder:append(indent .. "</" .. self.name .. ">\n")
 end
@@ -370,7 +364,6 @@ end
 function Json.JArray:write(sb)
     sb:append("[")
     local ____list_1 = self.items
-    local ____mod_1 = ____list_1.____modCount
     for ____i_3 = 1, ____list_1.size do
         local item = ____list_1[____i_3]
         local i = ____i_3 - 1
@@ -378,9 +371,6 @@ function Json.JArray:write(sb)
             sb:append(",")
         end
         item:write(sb)
-        if ____list_1.____modCount ~= ____mod_1 and ____list_1:____comodified(____i_3) then
-            break
-        end
     end
     sb:append("]")
 end
@@ -400,7 +390,6 @@ function Json.JObject:write(sb)
     local first = true
     local ____map = self.fields
     local ____keys, ____values, ____n = ____map:____arrays()
-    local ____mod_2 = ____map.____modCount
     for ____i_4 = 1, ____n do
         local k, v = ____keys[____i_4], ____values[____i_4]
         if not first then
@@ -410,9 +399,6 @@ function Json.JObject:write(sb)
         Json.JString.new(k):write(sb)
         sb:append(":")
         v:write(sb)
-        if ____map.____modCount ~= ____mod_2 and ____map:____comodified(____i_4, ____n) then
-            break
-        end
     end
     sb:append("}")
 end
@@ -523,11 +509,11 @@ local function main()
                 ____this_9:set("data-id", "p1")
             end)
             ____this_7:ul(function(____this_11)
-                local ____list_2 = __K2L_ReadOnlyListOf("apples", "pears", "plums")
+                local ____list_2 = __K2L_ListOf("apples", "pears", "plums")
                 for i = 0, ____list_2.size - 1 do
                     local item = ____list_2[i + 1]
                     ____this_11:li(function(____this_12)
-                        if (i >= 0 and i % 2 or 0 - -i % 2) == 0 then
+                        if i % 2 == 0 then
                             setCssClass(____this_12, "even")
                         end
                         ____this_12:unaryPlus(i + 1 .. ". " .. item)
@@ -542,14 +528,14 @@ local function main()
     io.write(__K2L_Str(page))
     local ____cast = page.children:last()
     if getmetatable(____cast) ~= Body then
-        __K2L_CastFail(____cast, "dsl.Body", "dsl.Body")
+        __K2L_CastFail(____cast, "dsl.Body")
     end
     local body = ____cast
     local ____arg_1 = __K2L_Str(getCssClass(body))
     local ____arg_2 = getDepth(page)
     local ____cast_1 = body.children:get(1)
     if not __K2L_InstanceOf(____cast_1, Tag) then
-        __K2L_CastFail(____cast_1, "dsl.Tag", "dsl.Tag")
+        __K2L_CastFail(____cast_1, "dsl.Tag")
     end
     print("body class=" .. ____arg_1 .. " depth=" .. ____arg_2 .. " p=" .. __K2L_Str(____cast_1:get("data-id")))
     setCssClass(body, nil)
@@ -565,7 +551,7 @@ local function main()
         ____this_14:to("quote", "say \"hi\"\n")
         ____this_14:obj("owner", function(____this_15)
             ____this_15:to("login", "cale")
-            ____this_15:to("tags", __K2L_ReadOnlyListOf("lua", "kotlin"))
+            ____this_15:to("tags", __K2L_ListOf("lua", "kotlin"))
         end)
         ____this_14:array("targets", function(____this_16)
             ____this_16:unaryPlus("5.1")
@@ -574,19 +560,19 @@ local function main()
                 ____this_17:to("jit", true)
             end)
         end)
-        ____this_14:to("extra", __K2L_ReadOnlyMapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", __K2L_ReadOnlyListOf(1, 2))))
+        ____this_14:to("extra", __K2L_MapOf(__K2L_Pair.new("a", 1), __K2L_Pair.new("b", __K2L_ListOf(1, 2))))
     end)
     print(__K2L_Str(doc))
     print(__K2L_Str(doc:get("owner")))
     local ____cast_2 = doc:get("targets")
     if getmetatable(____cast_2) ~= Json.JArray then
-        __K2L_CastFail(____cast_2, "dsl.Json$JArray", "dsl.Json.JArray")
+        __K2L_CastFail(____cast_2, "dsl.Json.JArray")
     end
     print(____cast_2.items.size)
     print(__K2L_Str(doc:get("missing") or "absent"))
     print(Json.JString.new("x"):equals(Json.JString.new("x")))
-    print(__K2L_ReadOnlyListOf(Json.JNull, Json.JBool.new(true), Json.JNumber.new(3)):joinToString(" "))
+    print(__K2L_ListOf(Json.JNull, Json.JBool.new(true), Json.JNumber.new(3)):joinToString(" "))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Element = Element, TextElement = TextElement, escape = escape, Tag = Tag, TagWithText = TagWithText, HTML = HTML, Head = Head, Title = Title, BodyTag = BodyTag, Body = Body, B = B, P = P, H1 = H1, UL = UL, LI = LI, A = A, getCssClass = getCssClass, setCssClass = setCssClass, getDepth = getDepth, html = html, Json = Json, ObjectBuilder = ObjectBuilder, ArrayBuilder = ArrayBuilder, toJson = toJson, json = json}

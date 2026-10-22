@@ -1,9 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
-local __K2L_Main = ____lualib.__K2L_Main
-local __K2L_ReadOnlyListOf = ____lualib.__K2L_ReadOnlyListOf
-local __K2L_SingletonListOf = ____lualib.__K2L_SingletonListOf
+local __K2L_RunMain = ____lualib.__K2L_RunMain
 
 local Report = __K2L_Class("Report")
 local Base = __K2L_Class("Base", nil, Report)
@@ -66,7 +65,7 @@ function Branch:render(prefix, max)
     if max == nil then
         max = #prefix + 10
     end
-    local ____arg = __K2L_SingletonListOf(prefix .. self.name .. "/" .. max)
+    local ____arg = __K2L_ListOf(prefix .. self.name .. "/" .. max)
     local ____list = self.kids
     local ____out = {}
     local ____count = 0
@@ -90,7 +89,7 @@ function Branch:greet(hi, who)
 end
 
 local function main()
-    local tree = Branch.new("root", __K2L_ReadOnlyListOf(Leaf.new("a"), Branch.new("b", __K2L_SingletonListOf(Leaf.new("c")))))
+    local tree = Branch.new("root", __K2L_ListOf(Leaf.new("a"), Branch.new("b", __K2L_ListOf(Leaf.new("c")))))
     print(tree:render())
     print(tree:render(">"))
     local r = Leaf.new("x")
@@ -98,5 +97,5 @@ local function main()
     print(Leaf.new("y"):greet() .. " | " .. Leaf.new("y"):greet("hi") .. " | " .. tree:greet() .. " | " .. tree:greet(nil, "you"))
 end
 
-__K2L_Main(main)
+__K2L_RunMain(main)
 return {Report = Report, Base = Base, Leaf = Leaf, Branch = Branch}

@@ -61,7 +61,7 @@ open class SortedRepository<T : Entity<ID>, ID : Comparable<ID>>(kind: String) :
 
     override val size: Int get() = items.size
 
-    fun range(from: ID, to: ID): List<T> = items.subMap(from, to).values.toList()
+    fun range(from: ID, to: ID): List<T> = items.filterKeys { it >= from && it < to }.values.toList()
 }
 
 /** Remembers insertion order, and limits capacity by evicting the oldest. */
