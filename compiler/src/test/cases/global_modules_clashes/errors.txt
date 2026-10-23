@@ -1,0 +1,8 @@
+9:5: 'app.____lualib' is the Lua global '____lualib', which holds the k2l runtime
+  hint: rename it
+5:5: 'other.clamp' and 'app.clamp' (main.kt) are both the Lua global 'clamp'
+  hint: packages do not separate globals: rename one, or give a function or property another Lua name with @LuaName("...")
+7:7: 'other.Panel' and 'app.Panel' (main.kt) are both the Lua global 'Panel'
+  hint: packages do not separate globals: rename one, or give a function or property another Lua name with @LuaName("...")
+10:5: 'other.draw' and 'app.render' (main.kt) are both the Lua global 'render'
+  hint: packages do not separate globals: rename one, or give a function or property another Lua name with @LuaName("...")

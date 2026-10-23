@@ -53,9 +53,19 @@ enum class LuaLibImport {
     Inline,
 }
 
+/** How generated files reach each other's declarations. */
+enum class ModuleMode {
+    /** Each file is a module that returns a table of its declarations; files load each other with `require`. */
+    Require,
+
+    /** Each file sets its declarations as Lua globals and returns nothing; the host loads the files in order. */
+    Global,
+}
+
 data class CompilerOptions(
     val luaTarget: LuaTarget = LuaTarget.Lua54,
     val luaLibImport: LuaLibImport = LuaLibImport.Require,
+    val moduleMode: ModuleMode = ModuleMode.Require,
     /** Emit Source Map v3 files and make Lua errors and tracebacks report Kotlin positions. */
     val sourceMap: Boolean = false,
 )

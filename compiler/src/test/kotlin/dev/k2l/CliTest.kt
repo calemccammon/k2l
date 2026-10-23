@@ -148,6 +148,33 @@ class CliTest {
     }
 
     @Test
+    fun moduleModeFromTheCommandLineAndTheProjectFile() {
+        assertEquals(ModuleMode.Require, parseArgs(arrayOf(src)).compilerOptions().moduleMode)
+        assertEquals(ModuleMode.Global, parseArgs(arrayOf("--modules", "global", src)).compilerOptions().moduleMode)
+        val project = write("k2l.json", "{\"srcDirs\": [\"src\"], \"moduleMode\": \"global\"}")
+        assertEquals(ModuleMode.Global, parseArgs(arrayOf("-p", project.toString())).modules)
+        assertEquals(ModuleMode.Require, parseArgs(arrayOf("-p", project.toString(), "--modules", "require")).modules)
+        val bad = k2l("--modules", "script", src)
+        assertEquals(USAGE_ERROR, bad.status)
+        assertTrue(bad.err.contains("--modules must be require or global, not 'script'"), bad.err)
+        val badProject = write("bad/k2l.json", "{\"srcDirs\": [\"src\"], \"moduleMode\": \"globals\"}")
+        assertTrue(k2l("-p", badProject.toString()).err.contains("--modules must be require or global, not 'globals'"))
+    }
+
+    @Test
+    fun globalModulesSetGlobalsAndTheBundleSetsItsTable() {
+        write("src/core/std.kt", "package core\n\nfun clamp(x: Int, lo: Int, hi: Int) = if (x < lo) lo else if (x > hi) hi else x\n")
+        write("src/main.kt", "import core.clamp\n\nfun main() {\n    println(listOf(clamp(5, 10, 400)))\n}\n")
+        val run = k2l("--modules", "global", "-o", out.toString(), src)
+        assertEquals(0, run.status, run.err)
+        val main = Files.readString(out.resolve("main.lua"))
+        assertFalse(main.contains("require"), main)
+        assertTrue(main.contains("clamp(5, 10, 400)"), main)
+        assertTrue(Files.readString(out.resolve("core/std.lua")).startsWith("function clamp(x, lo, hi)"))
+        assertTrue(Files.readString(out.resolve("lualib_bundle.lua")).endsWith("\n_G.____lualib = ____lualib\n"))
+    }
+
+    @Test
     fun watchModeDefaultsToSourceMapsUnlessSetExplicitly() {
         assertFalse(parseArgs(arrayOf(src)).sourceMapEnabled)
         assertTrue(parseArgs(arrayOf("--watch", src)).sourceMapEnabled)

@@ -90,6 +90,17 @@ class PluginFunctionalTest {
     }
 
     @Test
+    fun moduleModeOptionReachesTheCompiler() {
+        sampleProject("k2l { moduleMode = 'global' }")
+        write("src/main/kotlin/main.kt", "fun main() {\n    println(listOf(1, 2).map { it * 2 })\n}\n")
+        val result = runner("compileKotlinToLua").build()
+        assertEquals(TaskOutcome.SUCCESS, result.task(":compileKotlinToLua")?.outcome, result.output)
+        val out = project.resolve("build/lua")
+        assertFalse(Files.readString(out.resolve("main.lua")).contains("require"), Files.readString(out.resolve("main.lua")))
+        assertTrue(Files.readString(out.resolve("lualib_bundle.lua")).contains("_G.____lualib = ____lualib"))
+    }
+
+    @Test
     fun checkReportsWithoutWritingLuaAndFailsOnUnsupportedConstructs() {
         sampleProject()
         write("src/main/kotlin/main.kt", "fun main() {\n    println(\"hi\")\n}\n")

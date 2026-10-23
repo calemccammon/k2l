@@ -1,0 +1,25 @@
+computing in core
+HP 7
+0
+9
+hello from core
+0
+10
+400
+5
+HP 10
+2
+11
+hello from core
+10
+42
+[10, 20]
+14
+private to Hotbar
+2
+Announcer ready
+** hi **
+1
+Point(x=1, y=2)
+1
+circle 2

@@ -12,7 +12,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 private val PROJECT_KEYS =
-    listOf("srcDirs", "outDir", "luaTarget", "luaLibImport", "classpath", "sourceMap")
+    listOf("srcDirs", "outDir", "luaTarget", "luaLibImport", "moduleMode", "classpath", "sourceMap")
 
 /** Comments and trailing commas are accepted: k2l.json is written by hand. */
 @OptIn(ExperimentalSerializationApi::class)
@@ -23,8 +23,8 @@ private val LENIENT_JSON = Json {
 
 /**
  * k2l.json, with paths relative to its directory:
- * `{"srcDirs": ["src"], "outDir": "out", "luaTarget": "5.4", "luaLibImport": "require", "classpath": [],
- * "sourceMap": false}`
+ * `{"srcDirs": ["src"], "outDir": "out", "luaTarget": "5.4", "luaLibImport": "require", "moduleMode": "require",
+ * "classpath": [], "sourceMap": false}`
  */
 internal fun readProject(file: Path): Settings {
     require(Files.isRegularFile(file)) { "project file $file not found" }
@@ -43,6 +43,7 @@ internal fun readProject(file: Path): Settings {
         out = project.string("outDir")?.let(dir::resolve) ?: dir.resolve("out"),
         target = project.string("luaTarget")?.let(LuaTarget::parse) ?: LuaTarget.Lua54,
         lualib = project.string("luaLibImport")?.let(::parseLualib) ?: LuaLibImport.Require,
+        modules = project.string("moduleMode")?.let(::parseModuleMode) ?: ModuleMode.Require,
         classpath = project.paths("classpath").map(dir::resolve),
         sourceMap = project.boolean("sourceMap"),
     )

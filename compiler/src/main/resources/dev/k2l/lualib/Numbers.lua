@@ -175,10 +175,13 @@ function __K2L_Num.toRadix(n, radix)
     return (negative and "-" or "") .. string.reverse(table.concat(out))
 end
 
-local POW2 = {[0] = 1}
-for i = 1, 16 do
-    POW2[i] = POW2[i - 1] * 2
-end
+local POW2 = (function()
+    local pow2 = {[0] = 1}
+    for i = 1, 16 do
+        pow2[i] = pow2[i - 1] * 2
+    end
+    return pow2
+end)()
 
 -- Byte and Short .rotateLeft(n) within [bits] (8 or 16) bits; a negative n rotates right.
 function __K2L_Num.rotateSmall(x, n, bits)
@@ -196,10 +199,13 @@ function __K2L_Num.rotateSmall(x, n, bits)
 end
 
 -- POP8[b + 1]: the number of one bits of the byte b
-local POP8 = {}
-for b = 0, 255 do
-    POP8[b + 1] = b % 2 + (POP8[(b - b % 2) / 2 + 1] or 0)
-end
+local POP8 = (function()
+    local pop8 = {}
+    for b = 0, 255 do
+        pop8[b + 1] = b % 2 + (pop8[(b - b % 2) / 2 + 1] or 0)
+    end
+    return pop8
+end)()
 
 function __K2L_Num.countOneBits(n)
     n = n % 4294967296

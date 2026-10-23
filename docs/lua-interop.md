@@ -63,7 +63,8 @@ Notes:
 ## Calling Kotlin from Lua
 
 Every Kotlin file is a Lua module. Its table holds the file's public top-level declarations. Hand-written Lua can
-`require` it by its path under the source directory.
+`require` it by its path under the source directory. With `--modules global` the declarations are globals instead, see
+[below](#global-modules).
 
 ```kotlin
 // src/mods/Greeter.kt
@@ -92,7 +93,24 @@ print(tostring(e2))               -- tostring() is the object's toString()
 
 - `@LuaName` on a top-level function or property gives it a Lua-style name in the module table.
 - A plain Lua array is not a Kotlin `List`.
+- The runtime has only what the Kotlin code uses. Lua can call a method of a Kotlin object, such as a list's
+  `joinToString`, only if the Kotlin code calls a method of that name somewhere.
 - Kotlin exceptions reach Lua's `pcall` as objects with a `message` field.
 - Lua errors reach Kotlin as `RuntimeException`.
 - To drive Kotlin coroutines from Lua, export a Kotlin function that starts them (with `startCoroutine`) and one that
   resumes your scheduler.
+
+### Global modules
+
+With `--modules global` ([Usage](usage.md#global-modules)), the same file sets globals. Lua code that runs after the
+host has loaded it uses them directly:
+
+```lua
+print(on_load("x"))
+local e = Registry:make(3)
+local e2 = Enemy.new(0)
+```
+
+- A top-level `val` or `var` is a global that Lua can read and write.
+- A top-level property `x` with a custom getter or setter is a pair of global functions, `getX()` and `setX(value)`.
+- Private declarations are not globals.

@@ -31,7 +31,8 @@ Each directory in `compiler/src/test/cases` is one program.
 | `stdout.<target>.txt` | what it prints on another target where that differs (`stdout.5.1.txt`, `stdout.JIT.txt`) |
 | `errors.txt` | expected diagnostics instead of output: `line:column: message`, then an optional `  hint: ...` line |
 | `targets-skip.txt` | targets the case cannot run on, one `target: reason` per line |
-| `options.txt` | compiler options, one `name=value` per line; only `luaLibImport=inline` |
+| `options.txt` | compiler options, one `name=value` per line: `luaLibImport=inline`, `moduleMode=global` |
+| `load-order.txt` | with `moduleMode=global`: the Lua files to load, one per line. The test sets `require` and `package` to nil, then runs `lualib_bundle.lua` and these files with `dofile`. |
 | `lib/` | hand-written Lua the program calls into, copied next to the output (`lib/greeter.lua` is `require("lib.greeter")`) |
 
 The test runs each case on every installed target and compares its output with `stdout.txt` or `stdout.<target>.txt`.
@@ -65,6 +66,10 @@ Other options:
 | `lua-api` | the interop declarations (`dev.k2l.lua`) |
 | `gradle-plugin` | the Gradle plugin and its TestKit tests |
 | `examples/hello` | a small project with a `k2l.json` |
+
+The compiler copies only the statements of the runtime that a program uses (`codegen/LualibPruning.kt`). A statement
+at the top level of a runtime file that is not a definition, such as a loop filling a table, is always copied. Build such
+a table in a function instead: `local T = (function() ... end)()`.
 
 The Analysis API artifacts come from JetBrains' `intellij-dependencies` repository and must match the Kotlin version
 exactly. See the comments in `gradle/libs.versions.toml` before upgrading Kotlin.

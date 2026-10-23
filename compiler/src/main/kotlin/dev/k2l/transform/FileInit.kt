@@ -11,7 +11,8 @@ import org.jetbrains.kotlin.psi.KtProperty
  * when the file loads unless somebody could notice: a file without `main` whose plain properties (see [isField]) have an
  * initializer that calls code or reads mutable state is *deferred*. Its plain properties are fields of the exports table,
  * and their initializers run on the first read or write of one of them (`LazyFile.lua`), so an import cycle or state that
- * `main` sets beforehand is seen as in Kotlin.
+ * `main` sets beforehand is seen as in Kotlin. With globals (`ModuleMode.Global`) there is no exports table to watch: the
+ * initializers run at the end of the file instead, after its functions and classes are defined.
  */
 internal class FileInit(private val session: KaSession, private val lazyInit: LazyInit) {
     private val cache = HashMap<KtFile, Boolean>()

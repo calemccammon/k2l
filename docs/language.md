@@ -31,13 +31,14 @@ Almost all of the Kotlin language compiles to the Lua you would write by hand.
 | value classes | a table holding the value (not unboxed) |
 | `throw`, `try`/`catch`/`finally` | `error(exception)` and `pcall` |
 | `suspend` functions, `sequence { }`, `iterator { }` | Lua coroutines (see [Standard library](library.md#coroutines-and-sequences)) |
-| several files and packages | one Lua module per file, linked with `require`; import cycles work |
+| several files and packages | one Lua module per file, linked with `require`; import cycles work. Or [globals](usage.md#global-modules). |
 
 Initialization:
 
 - Objects, companion objects and enum classes are created on first use when their initializer could have visible
   effects, and where they are declared otherwise.
-- A file's top-level properties with such initializers are initialized on their first read or write.
+- A file's top-level properties with such initializers are initialized on their first read or write. With
+  `--modules global`, at the end of the file.
 
 ## Lua targets
 

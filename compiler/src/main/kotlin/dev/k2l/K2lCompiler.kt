@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtNamedDeclaration
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import java.nio.file.Path
@@ -33,6 +34,9 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
     private companion object {
         const val REGISTER_NAME = "__K2L_SourceMapRegister"
         const val REGISTER_LINES = 1
+
+        /** The runtime's table: a local of each file, and with [ModuleMode.Global] also the global the bundle sets. */
+        const val LUALIB_GLOBAL = "____lualib"
     }
 
     /**
@@ -43,17 +47,58 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val files = session.files(module.name)
         val moduleContext = moduleContext(module, files)
         val results = files.map { file -> compileFile(file, module, moduleContext, emit) }
-        val outputs = results.mapNotNullTo(mutableListOf()) { it.output }
+        val printed = results.mapNotNull { it.printed }
+        val moduleCode = printed.map { it.code }
+        val outputs = printed.mapTo(mutableListOf()) { assemble(it, moduleCode) }
         // A construct reached more than once (an inline function expanded at several call sites, say) is reported once.
-        val diagnostics = results.flatMap { it.diagnostics }.distinctBy { listOf(it.file, it.line, it.column, it.message) }
+        val diagnostics = results.flatMap { it.diagnostics }.distinctBy { listOf(it.file, it.line, it.column, it.message) } +
+            globalClashes(results.flatMap { it.globals })
         val usedFeatures = results.flatMapTo(sortedSetOf()) { it.features }
         if (emit && options.luaLibImport == LuaLibImport.Require && usedFeatures.isNotEmpty()) {
-            outputs += LuaOutput("${Lualib.BUNDLE_MODULE}.lua", Lualib.bundle(usedFeatures, options.luaTarget))
+            val global = options.moduleMode == ModuleMode.Global
+            val bundle = Lualib.bundle(usedFeatures, options.luaTarget, outputs.map { it.code }, global)
+            outputs += LuaOutput("${Lualib.BUNDLE_MODULE}.lua", bundle)
         }
         return CompileResult(outputs, diagnostics)
     }
 
-    private class FileResult(val diagnostics: List<Diagnostic>, val output: LuaOutput?, val features: Set<String>)
+    private class FileResult(
+        val diagnostics: List<Diagnostic>,
+        val printed: PrintedFile?,
+        val features: Set<String>,
+        val globals: List<Pair<String, KtNamedDeclaration>> = emptyList(),
+    )
+
+    /**
+     * With [ModuleMode.Global] all files share one namespace: a Lua global defined by two declarations, or named like the
+     * global runtime table, is an error at the later declaration.
+     */
+    private fun globalClashes(globals: List<Pair<String, KtNamedDeclaration>>): List<Diagnostic> {
+        val first = HashMap<String, KtNamedDeclaration>()
+        return globals.mapNotNull { (name, decl) ->
+            val earlier = first.putIfAbsent(name, decl)
+            val message = when {
+                name == LUALIB_GLOBAL -> "'${qualified(decl)}' is the Lua global '$name', which holds the k2l runtime"
+
+                earlier != null -> "'${qualified(decl)}' and '${qualified(earlier)}' (${earlier.containingKtFile.name}) are both " +
+                    "the Lua global '$name'"
+
+                else -> return@mapNotNull null
+            }
+            Diagnostic.at(decl.nameIdentifier ?: decl, Severity.Error, message)
+        }
+    }
+
+    private fun qualified(decl: KtNamedDeclaration) = decl.fqName?.asString() ?: decl.name.orEmpty()
+
+    /** A file's Lua without the runtime header, which waits for the other files (the runtime keeps what they all use). */
+    private class PrintedFile(
+        val luaPath: String,
+        val sourcePath: Path,
+        val ctx: TransformContext,
+        val code: String,
+        val mappings: List<LineMapping>?,
+    )
 
     private fun compileFile(file: KtFile, module: SourceModule, moduleContext: ModuleContext, emit: Boolean): FileResult = analyze(file) {
         val kotlinErrors = file.collectDiagnostics(KaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS)
@@ -68,24 +113,40 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val chunk = FileTransformer(this, file, ctx, moduleContext).transformFile()
         // A file of only external declarations (Lua bindings) produces no Lua.
         val produces = emit && chunk.body.isNotEmpty()
-        val output = if (produces) render(chunk, ctx, outputPath(module, file), Paths.get(file.virtualFile.path)) else null
-        FileResult(ctx.diagnostics.toList(), output, ctx.lualib.toSet())
+        val printed = if (produces) print(chunk, ctx, outputPath(module, file), Paths.get(file.virtualFile.path)) else null
+        FileResult(ctx.diagnostics.toList(), printed, ctx.lualib.toSet(), ctx.globals.toList())
     }
 
-    private fun render(chunk: LuaChunk, ctx: TransformContext, luaPath: String, sourcePath: Path): LuaOutput {
-        if (!options.sourceMap) return LuaOutput(luaPath, renderPlain(chunk, ctx))
-        val (code, mappings) = printer(chunk, ctx, ctx.origins).printMapped(chunk)
-        if (mappings.isEmpty()) return LuaOutput(luaPath, renderPlain(chunk, ctx))
-        ctx.lualib += SOURCE_MAP_FEATURE
-        ctx.lualibNames += REGISTER_NAME
-        // The runtime table is one line, so the code starts after the lines of the header plus that line.
+    private fun print(chunk: LuaChunk, ctx: TransformContext, luaPath: String, sourcePath: Path): PrintedFile {
+        if (options.sourceMap) {
+            val (code, mappings) = printer(chunk, ctx, ctx.origins).printMapped(chunk)
+            if (mappings.isNotEmpty()) {
+                ctx.lualib += SOURCE_MAP_FEATURE
+                ctx.lualibNames += REGISTER_NAME
+                return PrintedFile(luaPath, sourcePath, ctx, code, mappings)
+            }
+        }
+        return PrintedFile(luaPath, sourcePath, ctx, printer(chunk, ctx, null).print(chunk), null)
+    }
+
+    /**
+     * [file] with its runtime header. An inlined runtime keeps what [moduleCode], the code of every file of the module, uses:
+     * an object made by one file's runtime can reach the code of another.
+     */
+    private fun assemble(file: PrintedFile, moduleCode: List<String>): LuaOutput {
+        val luaPath = file.luaPath
+        val code = file.code
+        val ctx = file.ctx
+        if (ctx.lualib.isEmpty()) return LuaOutput(luaPath, code)
         val top = when (options.luaLibImport) {
-            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget)
+            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, moduleCode, options.luaTarget)
             LuaLibImport.Require -> requireHeader(ctx)
         }
+        val mappings = file.mappings ?: return LuaOutput(luaPath, top + "\n" + code)
+        // The runtime table is one line, so the code starts after the lines of the header plus that line.
         val offset = top.count { it == '\n' } + REGISTER_LINES + 1
-        val map = SourceMap(luaPath, sourcePath, mappings.map { it.copy(luaLine = it.luaLine + offset) })
-        val kotlinPath = luaPath.removeSuffix(".lua") + "." + sourcePath.fileName.toString().substringAfterLast('.')
+        val map = SourceMap(luaPath, file.sourcePath, mappings.map { it.copy(luaLine = it.luaLine + offset) })
+        val kotlinPath = luaPath.removeSuffix(".lua") + "." + file.sourcePath.fileName.toString().substringAfterLast('.')
         val register = "$REGISTER_NAME(\"$luaPath\", \"$kotlinPath\", \"${map.runtimeTable()}\")\n"
         return LuaOutput(luaPath, top + register + "\n" + code + "--# sourceMappingURL=${luaPath.substringAfterLast('/')}.map\n", map)
     }
@@ -98,19 +159,13 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         return LuaPrinter(origins = origins, prologues = prologues, hoisting = hoisting)
     }
 
-    private fun renderPlain(chunk: LuaChunk, ctx: TransformContext): String {
-        val code = printer(chunk, ctx, null).print(chunk)
-        if (ctx.lualib.isEmpty()) return code
-        return when (options.luaLibImport) {
-            LuaLibImport.Inline -> Lualib.inline(ctx.lualib, ctx.lualibNames, options.luaTarget) + "\n" + code
-            LuaLibImport.Require -> requireHeader(ctx) + "\n" + code
-        }
-    }
-
-    /** `local ____lualib = require("lualib_bundle")`, then a local for each runtime name the file refers to. */
+    /**
+     * `local ____lualib = require("lualib_bundle")`, then a local for each runtime name the file refers to. With
+     * [ModuleMode.Global] the bundle has set the global `____lualib` instead.
+     */
     private fun requireHeader(ctx: TransformContext): String = buildString {
-        append("local ____lualib = require(\"${Lualib.BUNDLE_MODULE}\")\n")
-        ctx.lualibNames.forEach { append("local $it = ____lualib.$it\n") }
+        if (options.moduleMode == ModuleMode.Require) append("local $LUALIB_GLOBAL = require(\"${Lualib.BUNDLE_MODULE}\")\n")
+        ctx.lualibNames.forEach { append("local $it = $LUALIB_GLOBAL.$it\n") }
     }
 
     /** Which files reference which: needed to break import cycles and to find entry points. */
@@ -132,7 +187,8 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         return ModuleContext(
             files = fileSet,
             modulePath = { outputPath(module, it).removeSuffix(".lua").replace('/', '.') },
-            cyclic = cyclicFiles(edges),
+            // globals need no exports table registered before the files that read them run
+            cyclic = if (options.moduleMode == ModuleMode.Global) emptySet() else cyclicFiles(edges),
             imported = edges.values.flatten().toSet(),
         )
     }

@@ -8,15 +8,16 @@ import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.isPrivate
 
-// The file as a Lua chunk: its top-level declarations in order, the exports table and the call of main.
+// The file as a Lua chunk: its top-level declarations in order, the exports table (or globals) and the call of main.
 
 internal fun FileTransformer.transformChunk(): LuaChunk {
     renameHidingLocals()
     renameFunctionShadows()
     val topLevel = file.declarations.filter { isTransformedTopLevel(it) }
-    val forward = forwardReferenced(topLevel.filterNot { tableMode && isFileField(it) }.toSet())
     val main = topLevel.filterIsInstance<KtNamedFunction>().firstOrNull(::isMain)
     val exported = topLevel.filter { !it.isPrivate() && it != main }
+    val globals = globals(exported)
+    val forward = forwardDeclared(topLevel, globals)
     val body = exportsTableSetup().toMutableList()
     // Requires go after the exports table is registered, so an import cycle finds it in package.loaded.
     val requiresAt = body.size
@@ -26,20 +27,14 @@ internal fun FileTransformer.transformChunk(): LuaChunk {
     val initializers = mutableListOf<LuaStmt>()
     for (decl in file.declarations) {
         val target = if (deferredInit && isFileField(decl)) initializers else body
-        emitDeclaration(decl, emitted, target, forward, exported)
+        emitDeclaration(decl, emitted, target, forward + globals, exported)
     }
     if (tableMode && file !in module.cyclic) {
         exported.filterNot { isFileField(it) }.forEach { body += exportStatements(it) }
     }
-    if (deferredInit) body += lazyFileSetup(topLevel.filter(::isFileField), initializers)
+    if (deferredInit) body += if (globalMode) initializers else listOf(lazyFileSetup(topLevel.filter(::isFileField), initializers))
 
-    if (main != null) {
-        // Another file requires this one (an import cycle through the entry file): `require` passes the chunk its
-        // module name, a script its command-line arguments, so `main` runs only when the file is the script.
-        val run = mainInvocation(main)
-        val asScript = LuaBinary(LuaBinOp.Ne, LuaName("..."), LuaString(module.modulePath(file)))
-        body += if (file !in module.imported) run else LuaIf(asScript, listOf(run))
-    }
+    if (main != null) body += mainCall(main)
 
     val requires = ctx.imports.map { (path, name) -> LuaLocal(listOf(name), listOf(luaCall(LuaName("require"), LuaString(path)))) }
     body.addAll(requiresAt, requires)
@@ -47,20 +42,23 @@ internal fun FileTransformer.transformChunk(): LuaChunk {
     return LuaChunk(body)
 }
 
-/** A class must be created after the classes and interfaces it extends, wherever they are declared. */
+/**
+ * A class must be created after the classes and interfaces it extends, wherever they are declared. The [declared]
+ * declarations (forward `local`s and globals) are assigned without `local`.
+ */
 private fun FileTransformer.emitDeclaration(
     decl: KtDeclaration,
     emitted: MutableSet<KtDeclaration>,
     body: MutableList<LuaStmt>,
-    forward: Set<KtDeclaration>,
+    declared: Set<KtDeclaration>,
     exported: List<KtDeclaration>,
 ): Unit = with(session) {
     if (!emitted.add(decl)) return
     if (decl is KtClassOrObject) {
         classes.superInfo(decl).let { listOfNotNull(it.base) + it.interfaces }
-            .filter { it.isTopLevel() && it.containingFile == file }.forEach { emitDeclaration(it, emitted, body, forward, exported) }
+            .filter { it.isTopLevel() && it.containingFile == file }.forEach { emitDeclaration(it, emitted, body, declared, exported) }
     }
-    body += collect { withOrigin(decl) { topLevelDeclaration(decl, decl in forward) } }
+    body += collect { withOrigin(decl) { topLevelDeclaration(decl, decl in declared) } }
     // In an import cycle, other files may run before this one finishes, so export as we go.
     if (file in module.cyclic && decl in exported && !isFileField(decl)) body += exportStatements(decl)
 }
@@ -75,6 +73,33 @@ private fun FileTransformer.exportsTableSetup(): List<LuaStmt> {
     if (file !in module.cyclic) return listOf(table)
     // Files that require each other see this table, filled in as declarations run.
     return listOf(table, assign(LuaIndex(luaPath("package", "loaded"), LuaString(module.modulePath(file))), LuaName(EXPORTS)))
+}
+
+/** With globals, the [exported] declarations, each of whose Lua names is recorded in [TransformContext.globals]. */
+private fun FileTransformer.globals(exported: List<KtDeclaration>): Set<KtDeclaration> {
+    if (!globalMode) return emptySet()
+    exported.forEach { decl -> naming.topLevel(decl).forEach { ctx.globals += it to decl as KtNamedDeclaration } }
+    return exported.toSet()
+}
+
+/**
+ * The top-level declarations that get a `local` at the start of the file: those used before they are declared, and with
+ * globals, the private properties of a deferred file, whose initializers run at its end.
+ */
+private fun FileTransformer.forwardDeclared(topLevel: List<KtDeclaration>, globals: Set<KtDeclaration>): Set<KtDeclaration> {
+    val late = if (globalMode && deferredInit) topLevel.filter { isFileField(it) && it !in globals }.toSet() else emptySet()
+    val referenced = forwardReferenced(topLevel.filterNot { (tableMode && isFileField(it)) || it in globals || it in late }.toSet())
+    return topLevel.filterTo(LinkedHashSet()) { it in referenced || it in late }
+}
+
+/**
+ * Another file requires this one (an import cycle through the entry file): `require` passes the chunk its module name, a
+ * script its command-line arguments, so `main` runs only when the file is the script. With globals it always runs.
+ */
+private fun FileTransformer.mainCall(main: KtNamedFunction): LuaStmt {
+    val run = mainInvocation(main)
+    val asScript = LuaBinary(LuaBinOp.Ne, LuaName("..."), LuaString(module.modulePath(file)))
+    return if (globalMode || file !in module.imported) run else LuaIf(asScript, listOf(run))
 }
 
 /** Runs `main`, passing the command-line arguments as an `Array<String>` when it takes them. */
@@ -94,8 +119,10 @@ private fun FileTransformer.mainInvocation(main: KtNamedFunction): LuaStmt {
     return LuaCallStmt(LuaCall(lualibRef("RunMain", "__K2L_RunMain"), call))
 }
 
-/** The chunk's `return`: the exports table, or a table of the [exported] declarations when not in table mode. */
+/** The chunk's `return`: the exports table, or a table of the [exported] declarations when not in table mode; none for globals. */
 private fun FileTransformer.exportsReturn(exported: List<KtDeclaration>): LuaStmt? = when {
+    globalMode -> null
+
     tableMode -> LuaReturn(listOf(LuaName(EXPORTS)))
 
     exported.isNotEmpty() ->
@@ -172,9 +199,9 @@ private fun FileTransformer.isFileField(decl: PsiElement?) =
 internal fun FileTransformer.isExportedVar(decl: PsiElement?) = decl is KtProperty && decl.isTopLevel && decl.isVar && !decl.isPrivate() &&
     !decl.hasAccessorFunctions() && decl.delegate == null
 
-/** A top-level declaration as a Lua value: a local of this file or a field of another file's module. */
+/** A top-level declaration as a Lua value: a local of this file, a field of another file's module, or a global. */
 internal fun FileTransformer.topLevelRef(decl: KtNamedDeclaration, name: String = naming.of(decl)): LuaExpr = when {
-    decl.containingFile != file -> LuaIndex(moduleRef(decl.containingKtFile), LuaString(name))
+    decl.containingFile != file -> if (globalMode) LuaName(name) else LuaIndex(moduleRef(decl.containingKtFile), LuaString(name))
     tableMode && isFileField(decl) -> LuaIndex(LuaName(EXPORTS), LuaString(name))
     else -> LuaName(name)
 }

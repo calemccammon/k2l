@@ -27,9 +27,13 @@ internal fun FileTransformer.renameHidingLocals(): Unit = with(session) {
     })
 }
 
-/** A local or parameter named like a top-level function of the file would hide the function in its scope: it gets a fresh Lua name. */
+/**
+ * A local or parameter named like a top-level function of the file (or, with globals, of the module) would hide the
+ * function in its scope: it gets a fresh Lua name.
+ */
 internal fun FileTransformer.renameFunctionShadows() {
-    val functions = file.declarations.filterIsInstance<KtNamedFunction>().mapTo(HashSet()) { naming.function(it) }
+    val files = if (globalMode) module.files else setOf(file)
+    val functions = files.flatMap { it.declarations }.filterIsInstance<KtNamedFunction>().mapTo(HashSet()) { naming.function(it) }
     if (functions.isEmpty()) return
     val locals = PsiTreeUtil.collectElements(file) { it is KtProperty || it is KtParameter || it is KtDestructuringDeclarationEntry }
     for (d in locals.filterIsInstance<KtNamedDeclaration>()) {
@@ -38,8 +42,10 @@ internal fun FileTransformer.renameFunctionShadows() {
     }
 }
 
+/** An inline function of the file; with globals, of the module, whose top-level declarations are globals the caller can hide. */
 private fun FileTransformer.isLocalInline(fn: KtNamedFunction) =
-    fn.hasModifier(KtTokens.INLINE_KEYWORD) && fn.containingFile == file && classes.isSource(fn) && fn.bodyExpression != null
+    fn.hasModifier(KtTokens.INLINE_KEYWORD) && (globalMode || fn.containingFile == file) && classes.isSource(fn) &&
+        fn.bodyExpression != null
 
 /** Whether the call has to be expanded: a `reified` type parameter, or a lambda that returns from the caller or is itself inlined. */
 private fun FileTransformer.expands(fn: KtNamedFunction, call: KtCallExpression): Boolean = with(session) {
@@ -67,7 +73,7 @@ private fun FileTransformer.usedGlobals(
         override fun visitReferenceExpression(expression: KtReferenceExpression) {
             super.visitReferenceExpression(expression)
             val target = (expression as? KtNameReferenceExpression)?.mainReference?.resolve() as? KtNamedDeclaration ?: return
-            if (target.isTopLevel() && target.containingFile == file) {
+            if (target.isTopLevel() && (globalMode || target.containingFile == file)) {
                 val name: String? = target.name
                 if (name != null) found += name
             }
