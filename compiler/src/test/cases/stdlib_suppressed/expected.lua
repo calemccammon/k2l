@@ -18,12 +18,6 @@ local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperatio
 
 local Resource = __K2L_Class("Resource")
 
-function Resource:____init(name, failClose, log)
-    self.name = name
-    self.failClose = failClose
-    self.log = log
-end
-
 function Resource.new(name, failClose, log)
     return setmetatable({name = name, failClose = failClose, log = log}, Resource)
 end

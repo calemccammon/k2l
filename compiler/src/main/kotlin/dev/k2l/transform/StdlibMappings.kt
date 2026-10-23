@@ -73,6 +73,14 @@ object StdlibMappings {
     private val INTEGRAL = listOf("Int", "Long", "Short", "Byte")
     private val FLOATING = listOf("Double", "Float")
 
+    /** Functions whose result is already truncated, see [truncated]. */
+    private val TRUNCATING = setOf(
+        luaPath("math", "floor"),
+        luaPath("math", "ceil"),
+        luaField(LuaName(NUM_TABLE.name), "round"),
+        LuaName(Lualib.functionName("Truncate")),
+    )
+
     init {
         io()
         conversions()
@@ -112,12 +120,18 @@ object StdlibMappings {
         }
         for (t in FLOATING) {
             def("kotlin/$t.toDouble", "kotlin/$t.toFloat") { self }
-            def("kotlin/$t.toInt", "kotlin/$t.toLong", "kotlin/$t.toShort", "kotlin/$t.toByte") { lualib("Truncate", self) }
+            def("kotlin/$t.toInt", "kotlin/$t.toLong", "kotlin/$t.toShort", "kotlin/$t.toByte") { truncated(self) }
         }
         // a value typed `Number` is a Lua number
         def("kotlin/Number.toDouble", "kotlin/Number.toFloat") { LuaBinary(LuaBinOp.Add, self, LuaNumber("0.0")) }
-        def("kotlin/Number.toLong", "kotlin/Number.toInt", "kotlin/Number.toShort", "kotlin/Number.toByte") { lualib("Truncate", self) }
+        def("kotlin/Number.toLong", "kotlin/Number.toInt", "kotlin/Number.toShort", "kotlin/Number.toByte") { truncated(self) }
     }
+
+    /**
+     * [x] truncated toward zero. `floor`, `ceil`, `round` and `truncate` have done that already: like `__K2L_Truncate`, they
+     * give an integer on Lua 5.3+ where it fits and the same value otherwise (NaN, infinities, floats beyond the integers).
+     */
+    private fun CallSite.truncated(x: LuaExpr): LuaExpr = if (x is LuaCall && x.fn in TRUNCATING) x else lualib("Truncate", x)
 
     private fun anyAndEnum() {
         def("kotlin/Any.equals") { lualib("Equals", self, arg(0)) }

@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
 local __K2L_IsUpperCase = ____lualib.__K2L_IsUpperCase
@@ -16,50 +16,18 @@ local ____exports = {}
 local Event = __K2L_Class("Event")
 Event.Click = __K2L_Class("Event$Click", nil, Event)
 
-function Event.Click:____init(x, y)
-    self.x = x
-    self.y = y
-end
-
 function Event.Click.new(x, y)
     return setmetatable({x = x, y = y}, Event.Click)
 end
 
-function Event.Click:toString()
-    return "Click(x=" .. self.x .. ", y=" .. self.y .. ")"
-end
-
-function Event.Click:hashCode()
-    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.Click:equals(other)
-    return getmetatable(other) == Event.Click and self.x == other.x and self.y == other.y
-end
-
+__K2L_DataClass(Event.Click, {"x", "y"})
 Event.Key = __K2L_Class("Event$Key", nil, Event)
-
-function Event.Key:____init(code, shift)
-    self.code = code
-    self.shift = shift
-end
 
 function Event.Key.new(code, shift)
     return setmetatable({code = code, shift = shift}, Event.Key)
 end
 
-function Event.Key:toString()
-    return "Key(code=" .. self.code .. ", shift=" .. tostring(self.shift) .. ")"
-end
-
-function Event.Key:hashCode()
-    return (31 * __K2L_Hash(self.code) + (self.shift and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.Key:equals(other)
-    return getmetatable(other) == Event.Key and self.code == other.code and self.shift == other.shift
-end
-
+__K2L_DataClass(Event.Key, {"code", "shift"})
 Event.Tick = __K2L_Class("Event$Tick", nil, Event)
 
 function Event.Tick:toString()

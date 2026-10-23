@@ -4,6 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsComparable = ____lualib.__K2L_IsComparable
@@ -193,12 +194,6 @@ end
 local Version = __K2L_Class("generics.variance.Version")
 Version.____comparable = true
 
-function Version:____init(major, minor, patch)
-    self.major = major
-    self.minor = minor
-    self.patch = patch
-end
-
 function Version.new(major, minor, patch)
     return setmetatable({major = major, minor = minor, patch = patch}, Version)
 end
@@ -214,14 +209,7 @@ function Version:toString()
     return self.major .. "." .. self.minor .. "." .. self.patch
 end
 
-function Version:hashCode()
-    return (31 * (31 * self.major + self.minor) + self.patch + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Version:equals(other)
-    return getmetatable(other) == Version and self.major == other.major and self.minor == other.minor and self.patch == other.patch
-end
-
+__K2L_DataClass(Version, {"major", "minor", "patch"})
 Version.____companion = true
 
 local ____lambda_6 = function(____p1) return __K2L_StringToInt(____p1) end
@@ -275,10 +263,6 @@ function Shape:compareTo(other)
 end
 
 local Square = __K2L_Class("generics.variance.Square", Shape)
-
-function Square:____init(side)
-    self.side = side
-end
 
 function Square.new(side)
     return setmetatable({side = side}, Square)

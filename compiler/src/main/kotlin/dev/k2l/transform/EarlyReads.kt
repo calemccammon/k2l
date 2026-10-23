@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.psi.*
 internal fun FileTransformer.earlyFieldDefaults(c: KtClassOrObject): Unit = with(session) {
     for (p in earlyReadProperties(c)) {
         val zero = fieldDefault(p.symbol.returnType) ?: continue
-        emit(assign(LuaIndex(selfRef(), LuaString(fieldKey(p))), zero))
+        emit(assign(memberSlot(selfRef(), p), zero))
     }
 }
 

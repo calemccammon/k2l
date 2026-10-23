@@ -276,9 +276,8 @@ return {SimClock = SimClock, Rule = Rule, rules = rules, announce = announce}
 -- ==== model/Catalog.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_SimpleName = ____lualib.__K2L_SimpleName
@@ -412,25 +411,8 @@ function Member:getCanBorrow()
     return self.loans.size < MAX_LOANS and self.fines < 500
 end
 
-function Member:toString()
-    return "Member(name=" .. self.name .. ", id=" .. self.id .. ")"
-end
-
-function Member:hashCode()
-    return (31 * __K2L_Hash(self.name) + self.id + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Member:equals(other)
-    return getmetatable(other) == Member and self.name == other.name and self.id == other.id
-end
-
+__K2L_DataClass(Member, {"name", "id"})
 Loan = __K2L_Class("lib.model.Loan")
-
-function Loan:____init(media, member, day)
-    self.media = media
-    self.member = member
-    self.day = day
-end
 
 function Loan.new(media, member, day)
     return setmetatable({media = media, member = member, day = day}, Loan)
@@ -440,17 +422,7 @@ function Loan:getDue()
     return self.day + self.media:getLoanDays()
 end
 
-function Loan:toString()
-    return "Loan(media=" .. __K2L_Str(self.media) .. ", member=" .. __K2L_Str(self.member) .. ", day=" .. self.day .. ")"
-end
-
-function Loan:hashCode()
-    return (31 * (31 * __K2L_Hash(self.media) + self.member:hashCode()) + self.day + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Loan:equals(other)
-    return getmetatable(other) == Loan and __K2L_Equals(self.media, other.media) and self.member:equals(other.member) and self.day == other.day
-end
+__K2L_DataClass(Loan, {"media", "member", "day"})
 
 local ____lambda_1 = function(____p1) return __K2L_StringTrim(____p1) end
 local function parse(self, line)

@@ -1,9 +1,9 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_IsWhitespace = ____lualib.__K2L_IsWhitespace
@@ -33,114 +33,39 @@ local Json = __K2L_Class("Json")
 Json.Null = __K2L_Class("Json$Null", Json)
 Json.Bool = __K2L_Class("Json$Bool", Json)
 
-function Json.Bool:____init(value)
-    self.value = value
-end
-
 function Json.Bool.new(value)
     return setmetatable({value = value}, Json.Bool)
 end
 
-function Json.Bool:toString()
-    return "Bool(value=" .. tostring(self.value) .. ")"
-end
-
-function Json.Bool:hashCode()
-    return self.value and 1231 or 1237
-end
-
-function Json.Bool:equals(other)
-    return getmetatable(other) == Json.Bool and self.value == other.value
-end
-
+__K2L_DataClass(Json.Bool, {"value"})
 Json.Num = __K2L_Class("Json$Num", Json)
-
-function Json.Num:____init(value)
-    self.value = value
-end
 
 function Json.Num.new(value)
     return setmetatable({value = value}, Json.Num)
 end
 
-function Json.Num:toString()
-    return "Num(value=" .. self.value .. ")"
-end
-
-function Json.Num:hashCode()
-    return __K2L_Hash(self.value)
-end
-
-function Json.Num:equals(other)
-    return getmetatable(other) == Json.Num and self.value == other.value
-end
-
+__K2L_DataClass(Json.Num, {"value"})
 Json.Str = __K2L_Class("Json$Str", Json)
-
-function Json.Str:____init(value)
-    self.value = value
-end
 
 function Json.Str.new(value)
     return setmetatable({value = value}, Json.Str)
 end
 
-function Json.Str:toString()
-    return "Str(value=" .. self.value .. ")"
-end
-
-function Json.Str:hashCode()
-    return __K2L_Hash(self.value)
-end
-
-function Json.Str:equals(other)
-    return getmetatable(other) == Json.Str and self.value == other.value
-end
-
+__K2L_DataClass(Json.Str, {"value"})
 Json.Arr = __K2L_Class("Json$Arr", Json)
-
-function Json.Arr:____init(items)
-    self.items = items
-end
 
 function Json.Arr.new(items)
     return setmetatable({items = items}, Json.Arr)
 end
 
-function Json.Arr:toString()
-    return "Arr(items=" .. __K2L_Str(self.items) .. ")"
-end
-
-function Json.Arr:hashCode()
-    return __K2L_Hash(self.items)
-end
-
-function Json.Arr:equals(other)
-    return getmetatable(other) == Json.Arr and __K2L_Equals(self.items, other.items)
-end
-
+__K2L_DataClass(Json.Arr, {"items"})
 Json.Obj = __K2L_Class("Json$Obj", Json)
-
-function Json.Obj:____init(fields)
-    self.fields = fields
-end
 
 function Json.Obj.new(fields)
     return setmetatable({fields = fields}, Json.Obj)
 end
 
-function Json.Obj:toString()
-    return "Obj(fields=" .. __K2L_Str(self.fields) .. ")"
-end
-
-function Json.Obj:hashCode()
-    return __K2L_Hash(self.fields)
-end
-
-function Json.Obj:equals(other)
-    return getmetatable(other) == Json.Obj and __K2L_Equals(self.fields, other.fields)
-end
-
+__K2L_DataClass(Json.Obj, {"fields"})
 local JsonError = __K2L_Class("JsonError", __K2L_Exception)
 
 function JsonError:____init(message, offset)
@@ -149,23 +74,10 @@ function JsonError:____init(message, offset)
 end
 
 local Parser = __K2L_Class("Parser")
-
-function Parser:____init(src)
-    self.src = src
-    self.pos = 0
-end
-
-function Parser:parse()
-    local v = self:value()
-    self:skipWs()
-    if self.pos < #self.src then
-        self:fail("unexpected trailing '" .. (self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")) .. "'")
-    end
-    return v
-end
+local literal, number, ____string, arr, obj
 
 local ____lambda_1 = function(it) return it == "\n" end
-function Parser:fail(msg)
+local function fail(self, msg)
     local line = __K2L_StringToList(__K2L_Text.substring(self.src, 0, math.min(self.pos, #self.src))):count(____lambda_1) + 1
     local ____arg = self.pos
     local ____value = __K2L_Text.lastIndexOf(self.src, "\n", self.pos - 1)
@@ -175,43 +87,43 @@ function Parser:fail(msg)
     error(JsonError.new(msg .. " at line " .. line .. ", column " .. col, self.pos))
 end
 
-function Parser:skipWs()
+local function skipWs(self)
     while self.pos < #self.src and __K2L_IsWhitespace[self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")] == true do
         self.pos = self.pos + 1
     end
 end
 
-function Parser:peek()
+local function peek(self)
     return self.pos < #self.src and (self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")) or "\000"
 end
 
-function Parser:expect(c)
-    self:skipWs()
-    if self:peek() ~= c then
-        self:fail("expected '" .. c .. "' but found " .. (self.pos < #self.src and "'" .. (self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")) .. "'" or "end of input"))
+local function expect(self, c)
+    skipWs(self)
+    if peek(self) ~= c then
+        fail(self, "expected '" .. c .. "' but found " .. (self.pos < #self.src and "'" .. (self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")) .. "'" or "end of input"))
     end
     self.pos = self.pos + 1
 end
 
-function Parser:value()
-    self:skipWs()
-    local c = self:peek()
+local function value__1(self)
+    skipWs(self)
+    local c = peek(self)
     if c == "{" then
-        return self:obj()
+        return obj(self)
     elseif c == "[" then
-        return self:arr()
+        return arr(self)
     elseif c == "\"" then
-        return Json.Str.new(self:string())
+        return Json.Str.new(____string(self))
     elseif c == "t" or c == "f" or c == "n" then
-        return self:literal()
+        return literal(self)
     elseif c == "-" or __K2L_IsDigit[c] == true then
-        return self:number()
+        return number(self)
     else
-        self:fail("unexpected character '" .. c .. "'")
+        fail(self, "unexpected character '" .. c .. "'")
     end
 end
 
-function Parser:literal()
+function literal(self)
     local ____list = __K2L_ListOf(__K2L_Pair.new("true", Json.Bool.new(true)), __K2L_Pair.new("false", Json.Bool.new(false)), __K2L_Pair.new("null", Json.Null))
     for ____i = 1, ____list.size do
         local ____item = ____list[____i]
@@ -221,49 +133,49 @@ function Parser:literal()
             return v
         end
     end
-    self:fail("bad literal")
+    fail(self, "bad literal")
 end
 
-function Parser:number()
+function number(self)
     local start = self.pos
-    if self:peek() == "-" then
+    if peek(self) == "-" then
         self.pos = self.pos + 1
     end
-    while __K2L_IsDigit[self:peek()] == true do
+    while __K2L_IsDigit[peek(self)] == true do
         self.pos = self.pos + 1
     end
-    if self:peek() == "." then
+    if peek(self) == "." then
         self.pos = self.pos + 1
-        if __K2L_IsDigit[self:peek()] ~= true then
-            self:fail("digit expected after '.'")
+        if __K2L_IsDigit[peek(self)] ~= true then
+            fail(self, "digit expected after '.'")
         end
-        while __K2L_IsDigit[self:peek()] == true do
+        while __K2L_IsDigit[peek(self)] == true do
             self.pos = self.pos + 1
         end
     end
-    if self:peek() == "e" or self:peek() == "E" then
+    if peek(self) == "e" or peek(self) == "E" then
         self.pos = self.pos + 1
-        if self:peek() == "+" or self:peek() == "-" then
+        if peek(self) == "+" or peek(self) == "-" then
             self.pos = self.pos + 1
         end
-        while __K2L_IsDigit[self:peek()] == true do
+        while __K2L_IsDigit[peek(self)] == true do
             self.pos = self.pos + 1
         end
     end
     local text = __K2L_Text.substring(self.src, start, self.pos)
     local ____value_1 = __K2L_StringToDoubleOrNull(text)
     if ____value_1 == nil then
-        self:fail("bad number '" .. text .. "'")
+        fail(self, "bad number '" .. text .. "'")
     end
     return Json.Num.new(____value_1)
 end
 
-function Parser:string()
-    self:expect("\"")
+function ____string(self)
+    expect(self, "\"")
     local sb = __K2L_StringBuilder.new()
     while true do
         if self.pos >= #self.src then
-            self:fail("unterminated string")
+            fail(self, "unterminated string")
         end
         local ____arg_1 = self.src
         local ____old = self.pos
@@ -295,7 +207,7 @@ function Parser:string()
                 self.pos = self.pos + 4
                 sb:append(string.char(__K2L_StringToInt(hex, 16)))
             else
-                self:fail("bad escape '\\" .. e .. "'")
+                fail(self, "bad escape '\\" .. e .. "'")
             end
         else
             sb:append(c)
@@ -303,53 +215,67 @@ function Parser:string()
     end
 end
 
-function Parser:arr()
-    self:expect("[")
+function arr(self)
+    expect(self, "[")
     local items = __K2L_ListOf()
-    self:skipWs()
-    if self:peek() == "]" then
+    skipWs(self)
+    if peek(self) == "]" then
         self.pos = self.pos + 1
         return Json.Arr.new(items)
     end
     while true do
-        items:add(self:value())
-        self:skipWs()
-        local ____subject = self:peek()
+        items:add(value__1(self))
+        skipWs(self)
+        local ____subject = peek(self)
         if ____subject == "," then
             self.pos = self.pos + 1
         elseif ____subject == "]" then
             self.pos = self.pos + 1
             return Json.Arr.new(items)
         else
-            self:fail("expected ',' or ']'")
+            fail(self, "expected ',' or ']'")
         end
     end
 end
 
-function Parser:obj()
-    self:expect("{")
+function obj(self)
+    expect(self, "{")
     local fields = __K2L_Map.new()
-    self:skipWs()
-    if self:peek() == "}" then
+    skipWs(self)
+    if peek(self) == "}" then
         self.pos = self.pos + 1
         return Json.Obj.new(fields)
     end
     while true do
-        self:skipWs()
-        local key = self:string()
-        self:expect(":")
-        fields:set(key, self:value())
-        self:skipWs()
-        local ____subject_1 = self:peek()
+        skipWs(self)
+        local key = ____string(self)
+        expect(self, ":")
+        fields:set(key, value__1(self))
+        skipWs(self)
+        local ____subject_1 = peek(self)
         if ____subject_1 == "," then
             self.pos = self.pos + 1
         elseif ____subject_1 == "}" then
             self.pos = self.pos + 1
             return Json.Obj.new(fields)
         else
-            self:fail("expected ',' or '}'")
+            fail(self, "expected ',' or '}'")
         end
     end
+end
+
+function Parser:____init(src)
+    self.src = src
+    self.pos = 0
+end
+
+function Parser:parse()
+    local v = value__1(self)
+    skipWs(self)
+    if self.pos < #self.src then
+        fail(self, "unexpected trailing '" .. (self.pos >= 0 and self.pos < #self.src and self.src:sub(self.pos + 1, self.pos + 1) or __K2L_IndexError(self.pos, #self.src, "string")) .. "'")
+    end
+    return v
 end
 
 local function quote(s)

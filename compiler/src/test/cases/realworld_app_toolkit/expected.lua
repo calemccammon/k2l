@@ -2,9 +2,9 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -286,15 +286,7 @@ local function main()
         self.age = age
         self.email = email
     end
-    function User:toString()
-        return "User(name=" .. self.name .. ", age=" .. self.age .. ", email=" .. self.email .. ")"
-    end
-    function User:hashCode()
-        return (31 * (31 * __K2L_Hash(self.name) + self.age) + __K2L_Hash(self.email) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-    end
-    function User:equals(other)
-        return getmetatable(other) == User and self.name == other.name and self.age == other.age and self.email == other.email
-    end
+    __K2L_DataClass(User, {"name", "age", "email"})
     local users = __K2L_ListOf(User.new("ada", 36, "ada@example.com"), User.new("", -1, "nope"), User.new("bob", 17, "bob@example"))
     for ____i_4 = 1, users.size do
         local u = users[____i_4]

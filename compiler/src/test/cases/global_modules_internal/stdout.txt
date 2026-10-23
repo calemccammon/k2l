@@ -1,0 +1,30 @@
+trace before
+only main.kt uses this
+trace after
+ticks=10
+[a, b]
+listener count=2 log=[hi, +1]
+ticks=11
+Screen	true	false
+hostVersion	true	false
+State	false	true
+Effect	false	true
+Listener	false	true
+ticks	false	true
+defaults	false	true
+START	false	true
+getSummary	false	true
+describe	false	true
+traced	false	true
+trace	false	true
+clampCount	false	false
+Cache	false	false
+initial	false	true
+notify	false	true
+reduce	false	true
+effects	false	true
+local	false	false
+main	false	false
+listener count=3 log=[hi, +1, hi, +1]
+ticks=12
+v1

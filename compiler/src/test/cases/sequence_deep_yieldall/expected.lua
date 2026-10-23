@@ -14,11 +14,6 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Node = __K2L_Class("Node")
 
-function Node:____init(id, children)
-    self.id = id
-    self.children = children
-end
-
 function Node.new(id, children)
     return setmetatable({id = id, children = children}, Node)
 end

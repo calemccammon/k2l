@@ -146,10 +146,6 @@ end
 Registry:____init()
 local Outer = __K2L_Class("Outer")
 
-function Outer:____init(tag)
-    self.tag = tag
-end
-
 function Outer.new(tag)
     return setmetatable({tag = tag}, Outer)
 end
@@ -211,10 +207,6 @@ end
 
 local Maybe = __K2L_Class("Maybe")
 
-function Maybe:____init(value)
-    self.value = value
-end
-
 function Maybe.new(value)
     return setmetatable({value = value}, Maybe)
 end
@@ -230,10 +222,6 @@ function Maybe:show()
 end
 
 local Vec = __K2L_Class("Vec")
-
-function Vec:____init(x)
-    self.x = x
-end
 
 function Vec.new(x)
     return setmetatable({x = x}, Vec)

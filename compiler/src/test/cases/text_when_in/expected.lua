@@ -26,10 +26,6 @@ end
 
 local Bag = __K2L_Class("Bag")
 
-function Bag:____init(items)
-    self.items = items
-end
-
 function Bag.new(items)
     return setmetatable({items = items}, Bag)
 end

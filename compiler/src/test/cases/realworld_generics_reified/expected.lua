@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_FunctionMixin = ____lualib.__K2L_FunctionMixin
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -68,34 +69,12 @@ end
 
 local Point = __K2L_Class("generics.reified.Point")
 
-function Point:____init(x, y)
-    self.x = x
-    self.y = y
-end
-
 function Point.new(x, y)
     return setmetatable({x = x, y = y}, Point)
 end
 
-function Point:toString()
-    return "Point(x=" .. self.x .. ", y=" .. self.y .. ")"
-end
-
-function Point:hashCode()
-    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Point:equals(other)
-    return getmetatable(other) == Point and self.x == other.x and self.y == other.y
-end
-
+__K2L_DataClass(Point, {"x", "y"})
 local Color = __K2L_Class("generics.reified.Color")
-
-function Color:____init(r, g, b)
-    self.r = r
-    self.g = g
-    self.b = b
-end
 
 function Color.new(r, g, b)
     return setmetatable({r = r, g = g, b = b}, Color)
@@ -105,14 +84,7 @@ function Color:toString()
     return string.format("#%02x%02x%02x", self.r, self.g, self.b)
 end
 
-function Color:hashCode()
-    return (31 * (31 * self.r + self.g) + self.b + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Color:equals(other)
-    return getmetatable(other) == Color and self.r == other.r and self.g == other.g and self.b == other.b
-end
-
+__K2L_DataClass(Color, {"r", "g", "b"})
 local Level = __K2L_Class("generics.reified.Level")
 
 function Level:____init(name, ordinal)

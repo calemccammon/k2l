@@ -4,15 +4,16 @@ local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Registry = __K2L_Class("Registry")
+local nextId
 
 function Registry:____init()
-    self.nextId = 1
+    nextId = 1
     self.prefix = "id-"
 end
 
 function Registry:register(name)
-    local id = self.prefix .. self.nextId
-    self.nextId = self.nextId + 1
+    local id = self.prefix .. nextId
+    nextId = nextId + 1
     print("registered " .. name .. " as " .. id)
     return id
 end
@@ -75,11 +76,6 @@ Planet.MERCURY = Planet.new("MERCURY", 0, 3.303E23, 2439700.0)
 Planet.EARTH = Planet.new("EARTH", 1, 5.976E24, 6378140.0)
 Planet.____values = {Planet.MERCURY, Planet.EARTH}
 local Point = __K2L_Class("Point")
-
-function Point:____init(x, y)
-    self.x = x
-    self.y = y
-end
 
 function Point.new(x, y)
     return setmetatable({x = x, y = y}, Point)

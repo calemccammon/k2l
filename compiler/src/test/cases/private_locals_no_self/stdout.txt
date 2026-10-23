@@ -1,0 +1,6 @@
+2: [hp], [mana]
+true
+win:bag (open)
+Slot(id=1, item=empty, note=none)
+Slot(id=2, item=empty, note=null)
+true

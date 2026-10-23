@@ -50,7 +50,8 @@ internal fun FileTransformer.defaultArguments(params: List<KtParameter>, fn: KtN
     val inherited = fn?.let { inheritedDefaults(it) }.orEmpty()
     for (p in params) {
         val base = inherited[p]
-        val default = p.defaultValue ?: base?.defaultValue ?: continue
+        // a null default needs nothing: an omitted argument is nil already
+        val default = (p.defaultValue ?: base?.defaultValue)?.takeUnless { isNullDefault(it) } ?: continue
         val name = LuaName(naming.of(p))
         val assignment = if (base == null) {
             valueInto(default) { listOf(assign(name, it)) }
@@ -58,7 +59,7 @@ internal fun FileTransformer.defaultArguments(params: List<KtParameter>, fn: KtN
             withParametersOf(fn!!, base) { valueInto(default) { listOf(assign(name, it)) } }
         }
         val type = p.returnType
-        val nullable = (type.isMarkedNullable || type is KaTypeParameterType) && !isNullDefault(default)
+        val nullable = type.isMarkedNullable || type is KaTypeParameterType
         val marker = if (nullable) {
             listOf(
                 LuaIf(LuaBinary(LuaBinOp.Eq, name, lualibRef(NULL_ARGUMENT_FEATURE, "__K2L_NULL_ARGUMENT")), listOf(assign(name, LuaNil))),

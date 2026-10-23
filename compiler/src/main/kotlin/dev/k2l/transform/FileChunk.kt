@@ -39,6 +39,7 @@ internal fun FileTransformer.transformChunk(): LuaChunk {
     val requires = ctx.imports.map { (path, name) -> LuaLocal(listOf(name), listOf(luaCall(LuaName("require"), LuaString(path)))) }
     body.addAll(requiresAt, requires)
     exportsReturn(exported)?.let { body += it }
+    body.addAll(0, moduleTableSetup())
     return LuaChunk(body)
 }
 
@@ -59,6 +60,7 @@ private fun FileTransformer.emitDeclaration(
             .filter { it.isTopLevel() && it.containingFile == file }.forEach { emitDeclaration(it, emitted, body, declared, exported) }
     }
     body += collect { withOrigin(decl) { topLevelDeclaration(decl, decl in declared) } }
+    if (isShared(decl) && !isSharedField(decl)) body += naming.topLevel(decl).map { assign(sharedRef(it), LuaName(it)) }
     // In an import cycle, other files may run before this one finishes, so export as we go.
     if (file in module.cyclic && decl in exported && !isFileField(decl)) body += exportStatements(decl)
 }
@@ -75,11 +77,52 @@ private fun FileTransformer.exportsTableSetup(): List<LuaStmt> {
     return listOf(table, assign(LuaIndex(luaPath("package", "loaded"), LuaString(module.modulePath(file))), LuaName(EXPORTS)))
 }
 
-/** With globals, the [exported] declarations, each of whose Lua names is recorded in [TransformContext.globals]. */
+/**
+ * With globals, the public [exported] declarations, each of whose Lua names is recorded in [TransformContext.globals]. The
+ * names of the internal ones in the module table go in [TransformContext.shared].
+ */
 private fun FileTransformer.globals(exported: List<KtDeclaration>): Set<KtDeclaration> {
     if (!globalMode) return emptySet()
-    exported.forEach { decl -> naming.topLevel(decl).forEach { ctx.globals += it to decl as KtNamedDeclaration } }
-    return exported.toSet()
+    val (internal, public) = exported.partition { it.hasModifier(KtTokens.INTERNAL_KEYWORD) }
+    public.forEach { decl -> naming.topLevel(decl).forEach { ctx.globals += it to decl as KtNamedDeclaration } }
+    internal.filter(::isShared).forEach { decl -> naming.topLevel(decl).forEach { ctx.shared += it to decl as KtNamedDeclaration } }
+    return public.toSet()
+}
+
+/**
+ * With globals, an internal top-level declaration that other files use ([ModuleContext.moduleTable]). Its file defines it
+ * as a local and copies it into [MODULE_TABLE], or, for a plain property, keeps it there.
+ */
+private fun FileTransformer.isShared(decl: KtDeclaration) = globalMode && decl in module.moduleTable && isTransformedTopLevel(decl)
+
+private fun FileTransformer.isSharedField(decl: PsiElement?) =
+    decl is KtProperty && !decl.hasAccessorFunctions() && decl.delegate == null && isShared(decl)
+
+/** With globals, the top-level declarations of the file that are Lua locals, by name. */
+internal fun FileTransformer.localTopLevelDeclarations(): Map<String, KtNamedDeclaration> = file.declarations
+    .filter {
+        isTransformedTopLevel(it) && !isSharedField(it) &&
+            (it.isPrivate() || it.hasModifier(KtTokens.INTERNAL_KEYWORD) || (it is KtNamedFunction && isMain(it)))
+    }
+    .flatMap { decl -> naming.topLevel(decl).map { it to decl as KtNamedDeclaration } }
+    .toMap()
+
+/** `____internal.name`, a field of the module table. */
+private fun FileTransformer.sharedRef(name: String): LuaExpr {
+    usesModuleTable = true
+    return LuaIndex(LuaName(MODULE_TABLE), LuaString(name))
+}
+
+/**
+ * When the file uses the module table: `____internal = ____internal or {}`, then a local of it. Whichever file the host
+ * loads first creates the table.
+ */
+private fun FileTransformer.moduleTableSetup(): List<LuaStmt> {
+    if (!usesModuleTable) return emptyList()
+    return listOf(
+        assign(MODULE_TABLE, LuaBinary(LuaBinOp.Or, LuaName(MODULE_TABLE), LuaTable(emptyList()))),
+        LuaLocal(listOf(MODULE_TABLE), listOf(LuaName(MODULE_TABLE))),
+    )
 }
 
 /**
@@ -87,8 +130,10 @@ private fun FileTransformer.globals(exported: List<KtDeclaration>): Set<KtDeclar
  * globals, the private properties of a deferred file, whose initializers run at its end.
  */
 private fun FileTransformer.forwardDeclared(topLevel: List<KtDeclaration>, globals: Set<KtDeclaration>): Set<KtDeclaration> {
-    val late = if (globalMode && deferredInit) topLevel.filter { isFileField(it) && it !in globals }.toSet() else emptySet()
-    val referenced = forwardReferenced(topLevel.filterNot { (tableMode && isFileField(it)) || it in globals || it in late }.toSet())
+    val late = topLevel.filter { globalMode && deferredInit && isFileField(it) && it !in globals && !isSharedField(it) }.toSet()
+    val referenced = forwardReferenced(
+        topLevel.filterNot { (tableMode && isFileField(it)) || isSharedField(it) || it in globals || it in late }.toSet(),
+    )
     return topLevel.filterTo(LinkedHashSet()) { it in referenced || it in late }
 }
 
@@ -173,7 +218,7 @@ private fun FileTransformer.topLevelDeclaration(decl: KtDeclaration, forwardDecl
             extensionPropertyDeclaration(decl, forwardDeclared)
         } else if (decl.hasAccessorFunctions()) {
             accessorPropertyDeclaration(decl, forwardDeclared)
-        } else if (tableMode && isFileField(decl)) {
+        } else if ((tableMode && isFileField(decl)) || isSharedField(decl)) {
             val field = topLevelRef(decl)
             decl.initializer?.let { init -> emitAll(valueInto(init) { listOf(assign(field, it)) }) }
         } else {
@@ -199,9 +244,23 @@ private fun FileTransformer.isFileField(decl: PsiElement?) =
 internal fun FileTransformer.isExportedVar(decl: PsiElement?) = decl is KtProperty && decl.isTopLevel && decl.isVar && !decl.isPrivate() &&
     !decl.hasAccessorFunctions() && decl.delegate == null
 
-/** A top-level declaration as a Lua value: a local of this file, a field of another file's module, or a global. */
+/**
+ * A top-level declaration as a Lua value: a local of this file, a field of another file's module, or with globals, a global
+ * or a field of the module table.
+ */
 internal fun FileTransformer.topLevelRef(decl: KtNamedDeclaration, name: String = naming.of(decl)): LuaExpr = when {
-    decl.containingFile != file -> if (globalMode) LuaName(name) else LuaIndex(moduleRef(decl.containingKtFile), LuaString(name))
+    decl.containingFile != file && !globalMode -> LuaIndex(moduleRef(decl.containingKtFile), LuaString(name))
+    decl.containingFile != file -> if (isShared(decl)) sharedRef(name) else globalRef(decl, name)
+    isSharedField(decl) -> sharedRef(name)
     tableMode && isFileField(decl) -> LuaIndex(LuaName(EXPORTS), LuaString(name))
     else -> LuaName(name)
+}
+
+/** The global of another file's public [decl]. A top-level local of this file with its name would hide it. */
+private fun FileTransformer.globalRef(decl: KtNamedDeclaration, name: String): LuaExpr {
+    check(!decl.hasModifier(KtTokens.INTERNAL_KEYWORD) || !isTransformedTopLevel(decl)) { "${decl.fqName} is not in $MODULE_TABLE" }
+    localTopLevel[name]?.let { local ->
+        ctx.error(local.nameIdentifier ?: local, "'${local.fqName}' is the Lua local '$name', which hides the global '${decl.fqName}'")
+    }
+    return LuaName(name)
 }

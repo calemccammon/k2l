@@ -2,15 +2,13 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_LazyFile = ____lualib.__K2L_LazyFile
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
-local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringReplace = ____lualib.__K2L_StringReplace
 
 local ____exports = {}
@@ -20,48 +18,18 @@ local ____main = require("main")
 local Value = __K2L_Class("calc.eval.Value")
 Value.I = __K2L_Class("calc.eval.Value$I", nil, Value)
 
-function Value.I:____init(n)
-    self.n = n
-end
-
 function Value.I.new(n)
     return setmetatable({n = n}, Value.I)
 end
 
-function Value.I:toString()
-    return "I(n=" .. self.n .. ")"
-end
-
-function Value.I:hashCode()
-    return self.n
-end
-
-function Value.I:equals(other)
-    return getmetatable(other) == Value.I and self.n == other.n
-end
-
+__K2L_DataClass(Value.I, {"n"})
 Value.Q = __K2L_Class("calc.eval.Value$Q", nil, Value)
-
-function Value.Q:____init(node)
-    self.node = node
-end
 
 function Value.Q.new(node)
     return setmetatable({node = node}, Value.Q)
 end
 
-function Value.Q:toString()
-    return "Q(node=" .. __K2L_Str(self.node) .. ")"
-end
-
-function Value.Q:hashCode()
-    return __K2L_Hash(self.node)
-end
-
-function Value.Q:equals(other)
-    return getmetatable(other) == Value.Q and __K2L_Equals(self.node, other.node)
-end
-
+__K2L_DataClass(Value.Q, {"node"})
 ____exports.Value = Value
 
 local function isBuiltin(name)
@@ -171,14 +139,12 @@ return ____exports
 -- ==== lang/Parser.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_LazyFile = ____lualib.__K2L_LazyFile
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_SetOf = ____lualib.__K2L_SetOf
-local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringIsBlank = ____lualib.__K2L_StringIsBlank
 local __K2L_StringReplace = ____lualib.__K2L_StringReplace
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
@@ -192,71 +158,25 @@ local parseNode, countNodes
 local Node = __K2L_Class("calc.lang.Node")
 Node.Num = __K2L_Class("calc.lang.Node$Num", Node)
 
-function Node.Num:____init(value)
-    self.value = value
-end
-
 function Node.Num.new(value)
     return setmetatable({value = value}, Node.Num)
 end
 
-function Node.Num:toString()
-    return "Num(value=" .. self.value .. ")"
-end
-
-function Node.Num:hashCode()
-    return self.value
-end
-
-function Node.Num:equals(other)
-    return getmetatable(other) == Node.Num and self.value == other.value
-end
-
+__K2L_DataClass(Node.Num, {"value"})
 Node.Sym = __K2L_Class("calc.lang.Node$Sym", Node)
-
-function Node.Sym:____init(name, builtin)
-    self.name = name
-    self.builtin = builtin
-end
 
 function Node.Sym.new(name, builtin)
     return setmetatable({name = name, builtin = builtin}, Node.Sym)
 end
 
-function Node.Sym:toString()
-    return "Sym(name=" .. self.name .. ", builtin=" .. tostring(self.builtin) .. ")"
-end
-
-function Node.Sym:hashCode()
-    return (31 * __K2L_Hash(self.name) + (self.builtin and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Node.Sym:equals(other)
-    return getmetatable(other) == Node.Sym and self.name == other.name and self.builtin == other.builtin
-end
-
+__K2L_DataClass(Node.Sym, {"name", "builtin"})
 Node.Call = __K2L_Class("calc.lang.Node$Call", Node)
-
-function Node.Call:____init(items)
-    self.items = items
-end
 
 function Node.Call.new(items)
     return setmetatable({items = items}, Node.Call)
 end
 
-function Node.Call:toString()
-    return "Call(items=" .. __K2L_Str(self.items) .. ")"
-end
-
-function Node.Call:hashCode()
-    return __K2L_Hash(self.items)
-end
-
-function Node.Call:equals(other)
-    return getmetatable(other) == Node.Call and __K2L_Equals(self.items, other.items)
-end
-
+__K2L_DataClass(Node.Call, {"items"})
 ____exports.Node = Node
 local Cursor = __K2L_Class("calc.lang.Cursor")
 

@@ -31,10 +31,6 @@ end
 
 local Foo = __K2L_Class("app.Foo")
 
-function Foo:____init(n)
-    self.n = n
-end
-
 function Foo.new(n)
     return setmetatable({n = n}, Foo)
 end
@@ -170,10 +166,6 @@ Tagged.Companion:____init()
 local Outer = __K2L_Class("app.Outer")
 Outer.Inner = __K2L_Class("app.Outer$Inner")
 
-function Outer.Inner:____init(tag)
-    self.tag = tag
-end
-
 function Outer.Inner.new(tag)
     return setmetatable({tag = tag}, Outer.Inner)
 end
@@ -189,10 +181,6 @@ function Outer.Inner.Companion:create()
 end
 
 local Box = __K2L_Class("app.Box")
-
-function Box:____init(value)
-    self.value = value
-end
 
 function Box.new(value)
     return setmetatable({value = value}, Box)
@@ -307,10 +295,6 @@ local __K2L_Class = ____lualib.__K2L_Class
 
 local ____factory = require("model.factory")
 local Token = __K2L_Class("app.model.Token")
-
-function Token:____init(text)
-    self.text = text
-end
 
 function Token.new(text)
     return setmetatable({text = text}, Token)

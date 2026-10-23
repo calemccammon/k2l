@@ -1,8 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
@@ -34,138 +34,55 @@ local appendUtf8
 local TValue = __K2L_Class("TValue")
 local TStr = __K2L_Class("TStr", nil, TValue)
 
-function TStr:____init(s)
-    self.s = s
-end
-
 function TStr.new(s)
     return setmetatable({s = s}, TStr)
 end
 
-function TStr:toString()
-    return "TStr(s=" .. self.s .. ")"
-end
-
-function TStr:hashCode()
-    return __K2L_Hash(self.s)
-end
-
-function TStr:equals(other)
-    return getmetatable(other) == TStr and self.s == other.s
-end
-
+__K2L_DataClass(TStr, {"s"})
 local TInt = __K2L_Class("TInt", nil, TValue)
-
-function TInt:____init(v)
-    self.v = v
-end
 
 function TInt.new(v)
     return setmetatable({v = v}, TInt)
 end
 
-function TInt:toString()
-    return "TInt(v=" .. self.v .. ")"
-end
-
-function TInt:hashCode()
-    return __K2L_Hash(self.v)
-end
-
-function TInt:equals(other)
-    return getmetatable(other) == TInt and self.v == other.v
-end
-
+__K2L_DataClass(TInt, {"v"})
 local TFloat = __K2L_Class("TFloat", nil, TValue)
-
-function TFloat:____init(v)
-    self.v = v
-end
 
 function TFloat.new(v)
     return setmetatable({v = v}, TFloat)
 end
 
-function TFloat:toString()
-    return "TFloat(v=" .. self.v .. ")"
-end
-
-function TFloat:hashCode()
-    return __K2L_Hash(self.v)
-end
-
-function TFloat:equals(other)
-    return getmetatable(other) == TFloat and self.v == other.v
-end
-
+__K2L_DataClass(TFloat, {"v"})
 local TBool = __K2L_Class("TBool", nil, TValue)
-
-function TBool:____init(v)
-    self.v = v
-end
 
 function TBool.new(v)
     return setmetatable({v = v}, TBool)
 end
 
-function TBool:toString()
-    return "TBool(v=" .. tostring(self.v) .. ")"
-end
-
-function TBool:hashCode()
-    return self.v and 1231 or 1237
-end
-
-function TBool:equals(other)
-    return getmetatable(other) == TBool and self.v == other.v
-end
-
+__K2L_DataClass(TBool, {"v"})
 local TArr = __K2L_Class("TArr", nil, TValue)
 
-function TArr:____init(items)
+function TArr.new(items)
     if items == nil then
         items = __K2L_ListOf()
     end
-    self.items = items
+    return setmetatable({items = items}, TArr)
 end
 
-function TArr:toString()
-    return "TArr(items=" .. __K2L_Str(self.items) .. ")"
-end
-
-function TArr:hashCode()
-    return __K2L_Hash(self.items)
-end
-
-function TArr:equals(other)
-    return getmetatable(other) == TArr and __K2L_Equals(self.items, other.items)
-end
-
+__K2L_DataClass(TArr, {"items"})
 local TTable = __K2L_Class("TTable", nil, TValue)
 
-function TTable:____init(map, inline)
+function TTable.new(map, inline)
     if map == nil then
         map = __K2L_Map.new()
     end
     if inline == nil then
         inline = false
     end
-    self.map = map
-    self.inline = inline
+    return setmetatable({map = map, inline = inline}, TTable)
 end
 
-function TTable:toString()
-    return "TTable(map=" .. __K2L_Str(self.map) .. ", inline=" .. tostring(self.inline) .. ")"
-end
-
-function TTable:hashCode()
-    return (31 * __K2L_Hash(self.map) + (self.inline and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function TTable:equals(other)
-    return getmetatable(other) == TTable and __K2L_Equals(self.map, other.map) and self.inline == other.inline
-end
-
+__K2L_DataClass(TTable, {"map", "inline"})
 local TomlError = __K2L_Class("TomlError", __K2L_IllegalArgumentException)
 
 function TomlError:____init(line, msg)
@@ -174,37 +91,30 @@ function TomlError:____init(line, msg)
 end
 
 local TomlParser = __K2L_Class("TomlParser")
+local descend, key, value__1, word, number, array__1, skipWsAndComments, inlineTable, literalString, basicString, escape
 
-function TomlParser:____init(text)
-    self.src = text
-    self.i = 0
-    self.line = 1
-    self.root = TTable.new()
-    self.current = self.root
-end
-
-function TomlParser:fail(msg)
+local function fail(self, msg)
     error(TomlError.new(self.line, msg))
 end
 
-function TomlParser:peek()
+local function peek(self)
     return __K2L_Text.getOrNull(self.src, self.i)
 end
 
-function TomlParser:skipSpaces()
-    while self:peek() == " " or self:peek() == "\t" do
+local function skipSpaces(self)
+    while peek(self) == " " or peek(self) == "\t" do
         self.i = self.i + 1
     end
 end
 
-function TomlParser:skipToEol()
-    self:skipSpaces()
-    if self:peek() == "#" then
-        while self:peek() ~= nil and self:peek() ~= "\n" do
+local function skipToEol(self)
+    skipSpaces(self)
+    if peek(self) == "#" then
+        while peek(self) ~= nil and peek(self) ~= "\n" do
             self.i = self.i + 1
         end
     end
-    local ____subject = self:peek()
+    local ____subject = peek(self)
     if ____subject == nil then
     elseif ____subject == "\n" then
         self.i = self.i + 1
@@ -214,68 +124,51 @@ function TomlParser:skipToEol()
             self.i = self.i + 2
             self.line = self.line + 1
         else
-            self:fail("stray carriage return")
+            fail(self, "stray carriage return")
         end
     else
-        self:fail("expected end of line, found '" .. __K2L_Str(self:peek()) .. "'")
+        fail(self, "expected end of line, found '" .. __K2L_Str(peek(self)) .. "'")
     end
-end
-
-function TomlParser:parse()
-    while self.i < #self.src do
-        self:skipSpaces()
-        local ____subject_1 = self:peek()
-        if ____subject_1 == "#" or ____subject_1 == "\n" or ____subject_1 == "\r" then
-            self:skipToEol()
-        elseif ____subject_1 == "[" then
-            self:header()
-        elseif ____subject_1 == nil then
-        else
-            self:keyValue(self.current)
-            self:skipToEol()
-        end
-    end
-    return self.root
 end
 
 local ____lambda_1 = function() return TArr.new() end
-function TomlParser:header()
+local function header(self)
     local array = self.src:sub(self.i + 1, self.i + #"[[") == "[["
     self.i = self.i + (array and 2 or 1)
-    local path = self:key()
+    local path = key(self)
     if array then
         if self.src:sub(self.i + 1, self.i + #"]]") ~= "]]" then
-            self:fail("expected ']]'")
+            fail(self, "expected ']]'")
         end
         self.i = self.i + 2
-        local parent = self:descend(self.root, path:dropLast(1))
+        local parent = descend(self, self.root, path:dropLast(1))
         local ____cast = parent.map:getOrPut(path:last(), ____lambda_1)
         local ____value = getmetatable(____cast) == TArr and ____cast or nil
         if ____value == nil then
-            self:fail("'" .. path:last() .. "' is not an array of tables")
+            fail(self, "'" .. path:last() .. "' is not an array of tables")
         end
         local arr = ____value
         local ____value_1 = TTable.new()
         arr.items:add(____value_1)
         self.current = ____value_1
     else
-        if self:peek() ~= "]" then
-            self:fail("expected ']'")
+        if peek(self) ~= "]" then
+            fail(self, "expected ']'")
         end
         self.i = self.i + 1
-        self.current = self:descend(self.root, path)
+        self.current = descend(self, self.root, path)
     end
-    self:skipToEol()
+    skipToEol(self)
 end
 
 local ____lambda_2 = function() return TTable.new() end
-function TomlParser:descend(start, path)
+function descend(self, start, path)
     return path:fold(start, function(t, k)
         local v = t.map:getOrPut(k, ____lambda_2)
         local ____mt = getmetatable(v)
         if ____mt == TTable then
             if v.inline then
-                self:fail("cannot extend inline table '" .. k .. "'")
+                fail(self, "cannot extend inline table '" .. k .. "'")
             else
                 return v
             end
@@ -283,42 +176,42 @@ function TomlParser:descend(start, path)
             local ____cast_1 = v.items:lastOrNull()
             local ____value_2 = getmetatable(____cast_1) == TTable and ____cast_1 or nil
             if ____value_2 == nil then
-                self:fail("'" .. k .. "' is not a table")
+                fail(self, "'" .. k .. "' is not a table")
             end
             return ____value_2
         else
-            self:fail("key '" .. k .. "' already holds a " .. __K2L_Str(__K2L_SimpleName(v)))
+            fail(self, "key '" .. k .. "' already holds a " .. __K2L_Str(__K2L_SimpleName(v)))
         end
     end)
 end
 
-function TomlParser:key()
+function key(self)
     local parts = __K2L_ListOf()
     repeat
-        self:skipSpaces()
+        skipSpaces(self)
         local ____temp
-        local ____subject_2 = self:peek()
-        if ____subject_2 == "\"" then
-            ____temp = self:basicString()
-        elseif ____subject_2 == "'" then
-            ____temp = self:literalString()
+        local ____subject_1 = peek(self)
+        if ____subject_1 == "\"" then
+            ____temp = basicString(self)
+        elseif ____subject_1 == "'" then
+            ____temp = literalString(self)
         else
             local start = self.i
             while true do
-                local ____receiver = self:peek()
+                local ____receiver = peek(self)
                 if (____receiver and (__K2L_IsLetterOrDigit[____receiver] == true or ____receiver == "_" or ____receiver == "-")) ~= true then
                     break
                 end
                 self.i = self.i + 1
             end
             if start == self.i then
-                self:fail("expected a key")
+                fail(self, "expected a key")
             end
             ____temp = __K2L_Text.substring(self.src, start, self.i)
         end
         parts:add(____temp)
-        self:skipSpaces()
-        local ____cond = self:peek() == "."
+        skipSpaces(self)
+        local ____cond = peek(self) == "."
         if ____cond then
             local ____old = self.i
             self.i = self.i + 1
@@ -328,44 +221,44 @@ function TomlParser:key()
     return parts
 end
 
-function TomlParser:keyValue(into)
-    local path = self:key()
-    if self:peek() ~= "=" then
-        self:fail("expected '=' after key '" .. path:joinToString(".") .. "'")
+local function keyValue(self, into)
+    local path = key(self)
+    if peek(self) ~= "=" then
+        fail(self, "expected '=' after key '" .. path:joinToString(".") .. "'")
     end
     self.i = self.i + 1
-    self:skipSpaces()
-    local target = self:descend(into, path:dropLast(1))
+    skipSpaces(self)
+    local target = descend(self, into, path:dropLast(1))
     if target.map:containsKey(path:last()) then
-        self:fail("duplicate key '" .. path:joinToString(".") .. "'")
+        fail(self, "duplicate key '" .. path:joinToString(".") .. "'")
     end
     local ____object = target.map
     local ____key = path:last()
-    ____object:set(____key, self:value())
+    ____object:set(____key, value__1(self))
 end
 
-function TomlParser:value()
-    local c = self:peek()
+function value__1(self)
+    local c = peek(self)
     if c == "\"" then
-        return TStr.new(self:basicString())
+        return TStr.new(basicString(self))
     elseif c == "'" then
-        return TStr.new(self:literalString())
+        return TStr.new(literalString(self))
     elseif c == "[" then
-        return self:array()
+        return array__1(self)
     elseif c == "{" then
-        return self:inlineTable()
+        return inlineTable(self)
     elseif c == "t" or c == "f" then
-        return self:word()
+        return word(self)
     elseif c == nil then
-        self:fail("expected a value")
+        fail(self, "expected a value")
     elseif __K2L_IsDigit[c] == true or __K2L_StringContains("+-i", c) then
-        return self:number()
+        return number(self)
     else
-        self:fail("unexpected '" .. c .. "'")
+        fail(self, "unexpected '" .. c .. "'")
     end
 end
 
-function TomlParser:word()
+function word(self)
     local ____list = __K2L_ListOf(__K2L_Pair.new("true", true), __K2L_Pair.new("false", false))
     for ____i = 1, ____list.size do
         local ____item = ____list[____i]
@@ -375,14 +268,14 @@ function TomlParser:word()
             return TBool.new(v)
         end
     end
-    self:fail("bad literal")
+    fail(self, "bad literal")
 end
 
 local ____lambda_3 = function(it) return __K2L_StringContains(".eE", it) end
-function TomlParser:number()
+function number(self)
     local start = self.i
     while true do
-        local ____receiver_1 = self:peek()
+        local ____receiver_1 = peek(self)
         if (____receiver_1 and (__K2L_IsLetterOrDigit[____receiver_1] == true or __K2L_StringContains("+-._", ____receiver_1))) ~= true then
             break
         end
@@ -390,7 +283,7 @@ function TomlParser:number()
     end
     local raw = __K2L_Text.substring(self.src, start, self.i)
     if __K2L_StringStartsWith(raw, "_") or __K2L_StringEndsWith(raw, "_") or __K2L_StringContains(raw, "__") then
-        self:fail("misplaced underscore in '" .. raw .. "'")
+        fail(self, "misplaced underscore in '" .. raw .. "'")
     end
     local t = __K2L_StringReplace(raw, "_", "")
     local radix
@@ -406,7 +299,7 @@ function TomlParser:number()
     if radix ~= 10 then
         local ____value_3 = __K2L_StringToIntOrNull(__K2L_Text.substring(t, 2), radix, true)
         if ____value_3 == nil then
-            self:fail("bad integer '" .. raw .. "'")
+            fail(self, "bad integer '" .. raw .. "'")
         end
         return TInt.new(____value_3)
     end
@@ -418,50 +311,50 @@ function TomlParser:number()
     if __K2L_StringToList(t):any(____lambda_3) then
         local ____value_4 = __K2L_StringToDoubleOrNull(t)
         if ____value_4 == nil then
-            self:fail("bad float '" .. raw .. "'")
+            fail(self, "bad float '" .. raw .. "'")
         end
         return TFloat.new(____value_4)
     end
     local ____value_5 = __K2L_StringToIntOrNull(t, nil, true)
     if ____value_5 == nil then
-        self:fail("bad integer '" .. raw .. "'")
+        fail(self, "bad integer '" .. raw .. "'")
     end
     return TInt.new(____value_5)
 end
 
-function TomlParser:array()
+function array__1(self)
     self.i = self.i + 1
     local arr = TArr.new()
     while true do
-        self:skipWsAndComments()
-        if self:peek() == "]" then
+        skipWsAndComments(self)
+        if peek(self) == "]" then
             self.i = self.i + 1
             return arr
         end
-        arr.items:add(self:value())
-        self:skipWsAndComments()
-        local ____subject_3 = self:peek()
-        if ____subject_3 == "," then
+        arr.items:add(value__1(self))
+        skipWsAndComments(self)
+        local ____subject_2 = peek(self)
+        if ____subject_2 == "," then
             self.i = self.i + 1
-        elseif ____subject_3 == "]" then
+        elseif ____subject_2 == "]" then
             self.i = self.i + 1
             return arr
         else
-            self:fail("expected ',' or ']' in array")
+            fail(self, "expected ',' or ']' in array")
         end
     end
 end
 
-function TomlParser:skipWsAndComments()
+function skipWsAndComments(self)
     while true do
-        local ____subject_4 = self:peek()
-        if ____subject_4 == " " or ____subject_4 == "\t" or ____subject_4 == "\r" then
+        local ____subject_3 = peek(self)
+        if ____subject_3 == " " or ____subject_3 == "\t" or ____subject_3 == "\r" then
             self.i = self.i + 1
-        elseif ____subject_4 == "\n" then
+        elseif ____subject_3 == "\n" then
             self.i = self.i + 1
             self.line = self.line + 1
-        elseif ____subject_4 == "#" then
-            while self:peek() ~= nil and self:peek() ~= "\n" do
+        elseif ____subject_3 == "#" then
+            while peek(self) ~= nil and peek(self) ~= "\n" do
                 self.i = self.i + 1
             end
         else
@@ -470,67 +363,67 @@ function TomlParser:skipWsAndComments()
     end
 end
 
-function TomlParser:inlineTable()
+function inlineTable(self)
     self.i = self.i + 1
     local t = TTable.new()
-    self:skipSpaces()
-    if self:peek() == "}" then
+    skipSpaces(self)
+    if peek(self) == "}" then
         self.i = self.i + 1
         t.inline = true
         return t
     end
     while true do
-        self:keyValue(t)
-        self:skipSpaces()
-        local ____subject_5 = self:peek()
-        if ____subject_5 == "," then
+        keyValue(self, t)
+        skipSpaces(self)
+        local ____subject_4 = peek(self)
+        if ____subject_4 == "," then
             self.i = self.i + 1
-        elseif ____subject_5 == "}" then
+        elseif ____subject_4 == "}" then
             self.i = self.i + 1
             t.inline = true
             return t
         else
-            self:fail("expected ',' or '}' in inline table")
+            fail(self, "expected ',' or '}' in inline table")
         end
     end
 end
 
-function TomlParser:literalString()
+function literalString(self)
     local ____end = __K2L_StringIndexOf(self.src, "'", self.i + 1)
     if ____end < 0 or __K2L_StringContains(__K2L_Text.substring(self.src, self.i, ____end), "\n") then
-        self:fail("unterminated literal string")
+        fail(self, "unterminated literal string")
     end
     local ____value_6 = __K2L_Text.substring(self.src, self.i + 1, ____end)
     self.i = ____end + 1
     return ____value_6
 end
 
-function TomlParser:basicString()
+function basicString(self)
     self.i = self.i + 1
     local sb = __K2L_StringBuilder.new()
     while true do
-        local ____value_7 = self:peek()
+        local ____value_7 = peek(self)
         if ____value_7 == nil then
-            self:fail("unterminated string")
+            fail(self, "unterminated string")
         end
         local c = ____value_7
         self.i = self.i + 1
         if c == "\"" then
             return sb:toString()
         elseif c == "\n" then
-            self:fail("newline in string")
+            fail(self, "newline in string")
         elseif c == "\\" then
-            self:escape(sb)
+            escape(self, sb)
         else
             sb:append(c)
         end
     end
 end
 
-function TomlParser:escape(sb)
-    local ____value_8 = self:peek()
+function escape(self, sb)
+    local ____value_8 = peek(self)
     if ____value_8 == nil then
-        self:fail("unterminated escape")
+        fail(self, "unterminated escape")
     end
     local e = ____value_8
     self.i = self.i + 1
@@ -552,17 +445,42 @@ function TomlParser:escape(sb)
         local ____receiver_2 = #hex == n and hex or nil
         local ____value_9 = ____receiver_2 and __K2L_StringToIntOrNull(____receiver_2, 16)
         if ____value_9 == nil then
-            self:fail("bad unicode escape '\\" .. e .. hex .. "'")
+            fail(self, "bad unicode escape '\\" .. e .. hex .. "'")
         end
         local cp = ____value_9
         if cp >= 55296 and cp <= 57343 or cp > 1114111 then
-            self:fail("invalid code point U+" .. hex:upper())
+            fail(self, "invalid code point U+" .. hex:upper())
         end
         appendUtf8(sb, cp)
         self.i = self.i + n
     else
-        self:fail("unknown escape '\\" .. e .. "'")
+        fail(self, "unknown escape '\\" .. e .. "'")
     end
+end
+
+function TomlParser:____init(text)
+    self.src = text
+    self.i = 0
+    self.line = 1
+    self.root = TTable.new()
+    self.current = self.root
+end
+
+function TomlParser:parse()
+    while self.i < #self.src do
+        skipSpaces(self)
+        local ____subject_5 = peek(self)
+        if ____subject_5 == "#" or ____subject_5 == "\n" or ____subject_5 == "\r" then
+            skipToEol(self)
+        elseif ____subject_5 == "[" then
+            header(self)
+        elseif ____subject_5 == nil then
+        else
+            keyValue(self, self.current)
+            skipToEol(self)
+        end
+    end
+    return self.root
 end
 
 function appendUtf8(sb, cp)

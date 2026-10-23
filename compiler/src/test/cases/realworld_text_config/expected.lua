@@ -2,9 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Bits = ____lualib.__K2L_Bits
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
@@ -45,181 +44,52 @@ end
 local TValue = __K2L_Class("TValue")
 local TStr = __K2L_Class("TStr", nil, TValue)
 
-function TStr:____init(v)
-    self.v = v
-end
-
 function TStr.new(v)
     return setmetatable({v = v}, TStr)
 end
 
-function TStr:toString()
-    return "TStr(v=" .. self.v .. ")"
-end
-
-function TStr:hashCode()
-    return __K2L_Hash(self.v)
-end
-
-function TStr:equals(other)
-    return getmetatable(other) == TStr and self.v == other.v
-end
-
+__K2L_DataClass(TStr, {"v"})
 local TInt = __K2L_Class("TInt", nil, TValue)
-
-function TInt:____init(v)
-    self.v = v
-end
 
 function TInt.new(v)
     return setmetatable({v = v}, TInt)
 end
 
-function TInt:toString()
-    return "TInt(v=" .. self.v .. ")"
-end
-
-function TInt:hashCode()
-    return __K2L_Hash(self.v)
-end
-
-function TInt:equals(other)
-    return getmetatable(other) == TInt and self.v == other.v
-end
-
+__K2L_DataClass(TInt, {"v"})
 local TFloat = __K2L_Class("TFloat", nil, TValue)
-
-function TFloat:____init(v)
-    self.v = v
-end
 
 function TFloat.new(v)
     return setmetatable({v = v}, TFloat)
 end
 
-function TFloat:toString()
-    return "TFloat(v=" .. self.v .. ")"
-end
-
-function TFloat:hashCode()
-    return __K2L_Hash(self.v)
-end
-
-function TFloat:equals(other)
-    return getmetatable(other) == TFloat and self.v == other.v
-end
-
+__K2L_DataClass(TFloat, {"v"})
 local TBool = __K2L_Class("TBool", nil, TValue)
-
-function TBool:____init(v)
-    self.v = v
-end
 
 function TBool.new(v)
     return setmetatable({v = v}, TBool)
 end
 
-function TBool:toString()
-    return "TBool(v=" .. tostring(self.v) .. ")"
-end
-
-function TBool:hashCode()
-    return self.v and 1231 or 1237
-end
-
-function TBool:equals(other)
-    return getmetatable(other) == TBool and self.v == other.v
-end
-
+__K2L_DataClass(TBool, {"v"})
 local TArr = __K2L_Class("TArr", nil, TValue)
-
-function TArr:____init(v)
-    self.v = v
-end
 
 function TArr.new(v)
     return setmetatable({v = v}, TArr)
 end
 
-function TArr:toString()
-    return "TArr(v=" .. __K2L_Str(self.v) .. ")"
-end
-
-function TArr:hashCode()
-    return __K2L_Hash(self.v)
-end
-
-function TArr:equals(other)
-    return getmetatable(other) == TArr and __K2L_Equals(self.v, other.v)
-end
-
+__K2L_DataClass(TArr, {"v"})
 local TTable = __K2L_Class("TTable", nil, TValue)
 
-function TTable:____init(v)
+function TTable.new(v)
     if v == nil then
         v = __K2L_Map.new()
     end
-    self.v = v
+    return setmetatable({v = v}, TTable)
 end
 
-function TTable:toString()
-    return "TTable(v=" .. __K2L_Str(self.v) .. ")"
-end
-
-function TTable:hashCode()
-    return __K2L_Hash(self.v)
-end
-
-function TTable:equals(other)
-    return getmetatable(other) == TTable and __K2L_Equals(self.v, other.v)
-end
-
+__K2L_DataClass(TTable, {"v"})
 local ValueReader = __K2L_Class("ValueReader")
 
-function ValueReader:____init(s, line)
-    self.s = s
-    self.line = line
-    self.i = 0
-end
-
-function ValueReader:fail(msg)
-    error(ConfigError.new(self.line, msg .. " (column " .. self.i + 1 .. ")"))
-end
-
-function ValueReader:ws()
-    while self.i < #self.s and ((self.i >= 0 and __K2L_StrByte(self.s, self.i + 1) or __K2L_IndexError(self.i, #self.s, "string")) == 32 or (self.i >= 0 and __K2L_StrByte(self.s, self.i + 1) or __K2L_IndexError(self.i, #self.s, "string")) == 9) do
-        self.i = self.i + 1
-    end
-end
-
-function ValueReader:read()
-    self:ws()
-    if self.i >= #self.s then
-        self:fail("missing value")
-    end
-    local c = self.i >= 0 and self.i < #self.s and self.s:sub(self.i + 1, self.i + 1) or __K2L_IndexError(self.i, #self.s, "string")
-    if c == "\"" then
-        return TStr.new(self:basicString())
-    elseif c == "'" then
-        local ____value = __K2L_StringIndexOf(self.s, "'", self.i + 1)
-        local ____value_1 = ____value > 0 and ____value or nil
-        if ____value_1 == nil then
-            self:fail("unterminated literal string")
-        end
-        local ____end = ____value_1
-        local ____value_2 = TStr.new(__K2L_Text.substring(self.s, self.i + 1, ____end))
-        self.i = ____end + 1
-        return ____value_2
-    elseif c == "[" then
-        return self:array()
-    elseif c == "{" then
-        return self:inline()
-    else
-        return __K2L_IsLetter[c] == true and self:keyword() or self:number()
-    end
-end
-
-function ValueReader:basicString()
+local function basicString(self)
     self.i = self.i + 1
     local sb = __K2L_StringBuilder.new()
     while true do
@@ -241,11 +111,11 @@ function ValueReader:basicString()
             local ____arg_1 = self.s
             local ____old_1 = self.i
             self.i = self.i + 1
-            local ____value_3 = __K2L_Text.getOrNull(____arg_1, ____old_1)
-            if ____value_3 == nil then
+            local ____value = __K2L_Text.getOrNull(____arg_1, ____old_1)
+            if ____value == nil then
                 self:fail("dangling escape")
             end
-            local e = ____value_3
+            local e = ____value
             if e == "n" then
                 sb:append("\n")
             elseif e == "t" then
@@ -259,8 +129,8 @@ function ValueReader:basicString()
                 if #hex < 4 or not __K2L_StringToList(hex):all(function(it)
                     local ____cond = __K2L_IsDigit[it] == true
                     if not ____cond then
-                        local ____value_4 = it:lower()
-                        ____cond = ____value_4 >= "a" and ____value_4 <= "f"
+                        local ____value_1 = it:lower()
+                        ____cond = ____value_1 >= "a" and ____value_1 <= "f"
                     end
                     return ____cond
                 end) then
@@ -277,7 +147,7 @@ function ValueReader:basicString()
 end
 
 local ____lambda_1 = function(it) return __K2L_IsLetter[it] == true end
-function ValueReader:keyword()
+local function keyword(self)
     local word = __K2L_Text.takeWhile(__K2L_Text.substring(self.s, self.i), ____lambda_1)
     self.i = self.i + #word
     if word == "true" then
@@ -294,52 +164,52 @@ function ValueReader:keyword()
 end
 
 local ____lambda_2 = function(it) return it == "." or it == "e" or it == "E" end
-function ValueReader:number()
+local function number(self)
     local ____receiver = __K2L_Regex.new("[-+0-9a-zA-Z_.]+", "[%-%+0-9a-zA-Z_%.]+"):matchAt(self.s, self.i)
-    local ____value_5 = ____receiver and ____receiver.value
-    if ____value_5 == nil then
+    local ____value_2 = ____receiver and ____receiver.value
+    if ____value_2 == nil then
         self:fail("unexpected '" .. (self.i >= 0 and self.i < #self.s and self.s:sub(self.i + 1, self.i + 1) or __K2L_IndexError(self.i, #self.s, "string")) .. "'")
     end
-    local token = ____value_5
+    local token = ____value_2
     self.i = self.i + #token
     local clean = __K2L_StringReplace(token, "_", "")
     if __K2L_StringContains(token, "__") or __K2L_StringStartsWith(token, "_") or __K2L_StringEndsWith(token, "_") then
         self:fail("misplaced underscore in '" .. token .. "'")
     end
     if __K2L_StringStartsWith(clean, "0x") then
-        local ____value_10 = __K2L_StringToIntOrNull(__K2L_Text.drop(clean, 2), 16, true)
-        if ____value_10 == nil then
+        local ____value_7 = __K2L_StringToIntOrNull(__K2L_Text.drop(clean, 2), 16, true)
+        if ____value_7 == nil then
             self:fail("bad hex '" .. token .. "'")
         end
-        return TInt.new(____value_10)
+        return TInt.new(____value_7)
     elseif __K2L_StringStartsWith(clean, "0o") then
-        local ____value_9 = __K2L_StringToIntOrNull(__K2L_Text.drop(clean, 2), 8, true)
-        if ____value_9 == nil then
+        local ____value_6 = __K2L_StringToIntOrNull(__K2L_Text.drop(clean, 2), 8, true)
+        if ____value_6 == nil then
             self:fail("bad octal '" .. token .. "'")
         end
-        return TInt.new(____value_9)
+        return TInt.new(____value_6)
     elseif __K2L_StringStartsWith(clean, "0b") then
-        local ____value_8 = __K2L_StringToIntOrNull(__K2L_Text.drop(clean, 2), 2, true)
-        if ____value_8 == nil then
+        local ____value_5 = __K2L_StringToIntOrNull(__K2L_Text.drop(clean, 2), 2, true)
+        if ____value_5 == nil then
             self:fail("bad binary '" .. token .. "'")
         end
-        return TInt.new(____value_8)
+        return TInt.new(____value_5)
     elseif __K2L_StringToList(clean):any(____lambda_2) then
-        local ____value_7 = __K2L_StringToDoubleOrNull(clean)
-        if ____value_7 == nil then
+        local ____value_4 = __K2L_StringToDoubleOrNull(clean)
+        if ____value_4 == nil then
             self:fail("bad float '" .. token .. "'")
         end
-        return TFloat.new(____value_7)
+        return TFloat.new(____value_4)
     else
-        local ____value_6 = __K2L_StringToIntOrNull(clean, nil, true)
-        if ____value_6 == nil then
+        local ____value_3 = __K2L_StringToIntOrNull(clean, nil, true)
+        if ____value_3 == nil then
             self:fail("bad integer '" .. token .. "'")
         end
-        return TInt.new(____value_6)
+        return TInt.new(____value_3)
     end
 end
 
-function ValueReader:array()
+local function array(self)
     self.i = self.i + 1
     local items = __K2L_ListOf()
     while true do
@@ -365,7 +235,7 @@ end
 local ____lambda_3 = function(it)
     return __K2L_IsLetterOrDigit[it] == true or it == "_" or it == "-"
 end
-function ValueReader:inline()
+local function inline(self)
     self.i = self.i + 1
     local t = TTable.new()
     while true do
@@ -398,6 +268,49 @@ function ValueReader:inline()
         else
             self:fail("expected ',' or '}'")
         end
+    end
+end
+
+function ValueReader:____init(s, line)
+    self.s = s
+    self.line = line
+    self.i = 0
+end
+
+function ValueReader:fail(msg)
+    error(ConfigError.new(self.line, msg .. " (column " .. self.i + 1 .. ")"))
+end
+
+function ValueReader:ws()
+    while self.i < #self.s and ((self.i >= 0 and __K2L_StrByte(self.s, self.i + 1) or __K2L_IndexError(self.i, #self.s, "string")) == 32 or (self.i >= 0 and __K2L_StrByte(self.s, self.i + 1) or __K2L_IndexError(self.i, #self.s, "string")) == 9) do
+        self.i = self.i + 1
+    end
+end
+
+function ValueReader:read()
+    self:ws()
+    if self.i >= #self.s then
+        self:fail("missing value")
+    end
+    local c = self.i >= 0 and self.i < #self.s and self.s:sub(self.i + 1, self.i + 1) or __K2L_IndexError(self.i, #self.s, "string")
+    if c == "\"" then
+        return TStr.new(basicString(self))
+    elseif c == "'" then
+        local ____value_8 = __K2L_StringIndexOf(self.s, "'", self.i + 1)
+        local ____value_9 = ____value_8 > 0 and ____value_8 or nil
+        if ____value_9 == nil then
+            self:fail("unterminated literal string")
+        end
+        local ____end = ____value_9
+        local ____value_10 = TStr.new(__K2L_Text.substring(self.s, self.i + 1, ____end))
+        self.i = ____end + 1
+        return ____value_10
+    elseif c == "[" then
+        return array(self)
+    elseif c == "{" then
+        return inline(self)
+    else
+        return __K2L_IsLetter[c] == true and keyword(self) or number(self)
     end
 end
 

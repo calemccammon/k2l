@@ -20,6 +20,18 @@ local __K2L_Text = ____lualib.__K2L_Text
 
 local Life = __K2L_Class("Life")
 
+local function neighbours(self, x, y)
+    local n = 0
+    for dy = -1, 1 do
+        for dx = -1, 1 do
+            if (dx ~= 0 or dy ~= 0) and self:get(x + dx, y + dy) then
+                n = n + 1
+            end
+        end
+    end
+    return n
+end
+
 function Life:____init(width, height)
     self.width = width
     self.height = height
@@ -57,22 +69,10 @@ function Life:place(pattern, ox, oy)
     end
 end
 
-function Life:neighbours(x, y)
-    local n = 0
-    for dy = -1, 1 do
-        for dx = -1, 1 do
-            if (dx ~= 0 or dy ~= 0) and self:get(x + dx, y + dy) then
-                n = n + 1
-            end
-        end
-    end
-    return n
-end
-
 function Life:step()
     for y = 0, self.height - 1 do
         for x = 0, self.width - 1 do
-            local n = self:neighbours(x, y)
+            local n = neighbours(self, x, y)
             local ____object_1 = self.next
             local ____key_3 = y * self.width + x
             ____object_1:set(____key_3, n == 3 or n == 2 and self.cells:get(y * self.width + x))
@@ -109,9 +109,6 @@ end
 
 local ____lambda_1 = function(it) return it == 1 and "#" or " " end
 local function elementary(rule, width, steps, seedCells)
-    if seedCells == nil then
-        seedCells = nil
-    end
     local row = __K2L_ListOfSize(width, 0, true)
     if seedCells == nil then
         local ____object_2 = row

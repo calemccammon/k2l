@@ -3,9 +3,9 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_GenerateSequenceLazy = ____lualib.__K2L_GenerateSequenceLazy
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IndexOutOfBoundsException = ____lualib.__K2L_IndexOutOfBoundsException
@@ -31,26 +31,11 @@ local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperatio
 local Countdown
 local Item = __K2L_Class("Item")
 
-function Item:____init(name, price)
-    self.name = name
-    self.price = price
-end
-
 function Item.new(name, price)
     return setmetatable({name = name, price = price}, Item)
 end
 
-function Item:toString()
-    return "Item(name=" .. self.name .. ", price=" .. self.price .. ")"
-end
-
-function Item:hashCode()
-    return (31 * __K2L_Hash(self.name) + self.price + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Item:equals(other)
-    return getmetatable(other) == Item and self.name == other.name and self.price == other.price
-end
+__K2L_DataClass(Item, {"name", "price"})
 
 local ____lambda_1 = function(it) return it + 1 end
 local function naturals()
@@ -356,10 +341,6 @@ local function sources()
 end
 
 Countdown = __K2L_Class("Countdown")
-
-function Countdown:____init(n)
-    self.n = n
-end
 
 function Countdown.new(n)
     return setmetatable({n = n}, Countdown)

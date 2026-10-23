@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IsCharSequence = ____lualib.__K2L_IsCharSequence
 local __K2L_IsComparable = ____lualib.__K2L_IsComparable
@@ -16,10 +17,6 @@ local __K2L_Text = ____lualib.__K2L_Text
 local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local Name = __K2L_Class("Name")
-
-function Name:____init(s)
-    self.s = s
-end
 
 function Name.new(s)
     return setmetatable({s = s}, Name)
@@ -45,10 +42,6 @@ __K2L_PropertyOverride(Name, "length", "getLength")
 local Score = __K2L_Class("Score")
 Score.____comparable = true
 
-function Score:____init(n)
-    self.n = n
-end
-
 function Score.new(n)
     return setmetatable({n = n}, Score)
 end
@@ -57,18 +50,7 @@ function Score:compareTo(other)
     return self.n - other.n
 end
 
-function Score:toString()
-    return "Score(n=" .. self.n .. ")"
-end
-
-function Score:hashCode()
-    return self.n
-end
-
-function Score:equals(other)
-    return getmetatable(other) == Score and self.n == other.n
-end
-
+__K2L_DataClass(Score, {"n"})
 local Dir = __K2L_Class("Dir")
 
 function Dir:____init(name, ordinal)

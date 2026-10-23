@@ -1,0 +1,18 @@
+fresh 1
+Options(size=10, label=x10, id=1)
+fresh 2
+Options(size=3, label=x3, id=2)
+Options(size=10, label=given, id=0)
+2
+Maybe(name=anon, alias=null, tags=[])
+Maybe(name=null, alias=null, tags=[])
+Maybe(name=null, alias=a, tags=[])
+Maybe(name=null, alias=null, tags=[])
+Maybe(name=null, alias=a, tags=[t])
+Maybe(name=n, alias=null, tags=[t])
+4 8
+1
+1 null
+5 base
+4
+1

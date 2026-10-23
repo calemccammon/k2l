@@ -11,7 +11,8 @@ Almost all of the Kotlin language compiles to the Lua you would write by hand.
 | `for` over ranges, `downTo`, `step`, `until`; `while`, `do`/`while` | numeric `for`, `while`, `repeat` |
 | `break`, `continue`, labels | `break` and `goto` (on Lua 5.1: flags) |
 | classes, interfaces, `object`, companion objects, `enum class`, `data class`, `sealed` | metatable classes: `Point.new(1, 2)`, `p:distance(q)` |
-| data classes | generated `toString`, `equals`, `hashCode`, `copy`, `componentN` |
+| data classes | `toString`, `equals` and `hashCode` from one runtime function, `__K2L_DataClass(Point, {"x", "y"})`; `copy` and destructuring read the fields where they are used |
+| private members of classes and objects | locals of the file: `local function f(self, a)`, called `f(p, a)`; an object's private properties are locals too |
 | inheritance, abstract and open members, `super` calls, interface default methods | the superclass table in the `__index` chain |
 | inner, nested, local and anonymous classes (`object : Greeter { }`) | classes; captured locals are upvalues |
 | `x?.y`, `x ?: y`, `x!!`, smart casts | `x and x.y`, `x or y` where safe; `!!` throws `NullPointerException` |

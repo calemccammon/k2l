@@ -1,8 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
@@ -51,11 +51,6 @@ T.EOF = T.new("EOF", 5)
 T.____values = {T.NUM, T.STR, T.ID, T.KW, T.PUNCT, T.EOF}
 local Pos = __K2L_Class("Pos")
 
-function Pos:____init(line, col)
-    self.line = line
-    self.col = col
-end
-
 function Pos.new(line, col)
     return setmetatable({line = line, col = col}, Pos)
 end
@@ -64,38 +59,14 @@ function Pos:toString()
     return self.line .. ":" .. self.col
 end
 
-function Pos:hashCode()
-    return (31 * self.line + self.col + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Pos:equals(other)
-    return getmetatable(other) == Pos and self.line == other.line and self.col == other.col
-end
-
+__K2L_DataClass(Pos, {"line", "col"})
 local Tok = __K2L_Class("Tok")
-
-function Tok:____init(____type, text, pos)
-    self.type = ____type
-    self.text = text
-    self.pos = pos
-end
 
 function Tok.new(____type, text, pos)
     return setmetatable({type = ____type, text = text, pos = pos}, Tok)
 end
 
-function Tok:toString()
-    return "Tok(type=" .. __K2L_Str(self.type) .. ", text=" .. self.text .. ", pos=" .. __K2L_Str(self.pos) .. ")"
-end
-
-function Tok:hashCode()
-    return (31 * (31 * __K2L_Hash(self.type) + __K2L_Hash(self.text)) + self.pos:hashCode() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Tok:equals(other)
-    return getmetatable(other) == Tok and self.type == other.type and self.text == other.text and self.pos:equals(other.pos)
-end
-
+__K2L_DataClass(Tok, {"type", "text", "pos"})
 local ScriptError = __K2L_Class("ScriptError", __K2L_Exception)
 
 function ScriptError:____init(msg, pos)
@@ -124,21 +95,14 @@ end
 local keywords = __K2L_SetOf("let", "fn", "if", "else", "while", "return", "true", "false", "and", "or", "not", "nil")
 local Lexer = __K2L_Class("Lexer")
 
-function Lexer:____init(src)
-    self.src = src
-    self.i = 0
-    self.line = 1
-    self.col = 1
-end
-
-function Lexer:peek(off)
+local function peek(self, off)
     if off == nil then
         off = 0
     end
     return self.i + off < #self.src and (self.i + off >= 0 and self.i + off < #self.src and self.src:sub(self.i + off + 1, self.i + off + 1) or __K2L_IndexError(self.i + off, #self.src, "string")) or "\000"
 end
 
-function Lexer:advance()
+local function advance(self)
     local ____arg = self.src
     local ____old = self.i
     self.i = self.i + 1
@@ -152,61 +116,18 @@ function Lexer:advance()
     return c
 end
 
-function Lexer:lex()
-    local out = __K2L_ListOf()
-    while self.i < #self.src do
-        local c = self:peek()
-        local start = Pos.new(self.line, self.col)
-        if c == "#" then
-            while self.i < #self.src and self:peek() ~= "\n" do
-                self:advance()
-            end
-        elseif __K2L_IsWhitespace[c] == true then
-            self:advance()
-        elseif __K2L_IsDigit[c] == true then
-            local sb = __K2L_StringBuilder.new()
-            while __K2L_IsDigit[self:peek()] == true or self:peek() == "." and __K2L_IsDigit[self:peek(1)] == true do
-                sb:append(self:advance())
-            end
-            out:add(Tok.new(T.NUM, sb:toString(), start))
-        elseif c == "\"" then
-            out:add(Tok.new(T.STR, self:string(start), start))
-        elseif __K2L_IsLetter[c] == true or c == "_" then
-            local sb = __K2L_StringBuilder.new()
-            while __K2L_IsLetterOrDigit[self:peek()] == true or self:peek() == "_" do
-                sb:append(self:advance())
-            end
-            local w = sb:toString()
-            out:add(Tok.new(keywords:contains(w) and T.KW or T.ID, w, start))
-        else
-            local two = c .. self:peek(1)
-            if __K2L_SetOf("==", "!=", "<=", ">=", "->"):contains(two) then
-                self:advance()
-                self:advance()
-                out:add(Tok.new(T.PUNCT, two, start))
-            elseif __K2L_StringContains("+-*/%<>=(){},;", c) then
-                out:add(Tok.new(T.PUNCT, self:advance(), start))
-            else
-                error(LexError.new("unexpected '" .. c .. "'", start))
-            end
-        end
-    end
-    out:add(Tok.new(T.EOF, "<eof>", Pos.new(self.line, self.col)))
-    return out
-end
-
-function Lexer:string(start)
-    self:advance()
+local function ____string(self, start)
+    advance(self)
     local sb = __K2L_StringBuilder.new()
     while true do
-        if self.i >= #self.src or self:peek() == "\n" then
+        if self.i >= #self.src or peek(self) == "\n" then
             error(LexError.new("unterminated string", start))
         end
-        local c = self:advance()
+        local c = advance(self)
         if c == "\"" then
             return sb:toString()
         elseif c == "\\" then
-            local e = self:advance()
+            local e = advance(self)
             if e == "n" then
                 sb:append("\n")
             elseif e == "t" then
@@ -220,6 +141,56 @@ function Lexer:string(start)
             sb:append(c)
         end
     end
+end
+
+function Lexer:____init(src)
+    self.src = src
+    self.i = 0
+    self.line = 1
+    self.col = 1
+end
+
+function Lexer:lex()
+    local out = __K2L_ListOf()
+    while self.i < #self.src do
+        local c = peek(self)
+        local start = Pos.new(self.line, self.col)
+        if c == "#" then
+            while self.i < #self.src and peek(self) ~= "\n" do
+                advance(self)
+            end
+        elseif __K2L_IsWhitespace[c] == true then
+            advance(self)
+        elseif __K2L_IsDigit[c] == true then
+            local sb = __K2L_StringBuilder.new()
+            while __K2L_IsDigit[peek(self)] == true or peek(self) == "." and __K2L_IsDigit[peek(self, 1)] == true do
+                sb:append(advance(self))
+            end
+            out:add(Tok.new(T.NUM, sb:toString(), start))
+        elseif c == "\"" then
+            out:add(Tok.new(T.STR, ____string(self, start), start))
+        elseif __K2L_IsLetter[c] == true or c == "_" then
+            local sb = __K2L_StringBuilder.new()
+            while __K2L_IsLetterOrDigit[peek(self)] == true or peek(self) == "_" do
+                sb:append(advance(self))
+            end
+            local w = sb:toString()
+            out:add(Tok.new(keywords:contains(w) and T.KW or T.ID, w, start))
+        else
+            local two = c .. peek(self, 1)
+            if __K2L_SetOf("==", "!=", "<=", ">=", "->"):contains(two) then
+                advance(self)
+                advance(self)
+                out:add(Tok.new(T.PUNCT, two, start))
+            elseif __K2L_StringContains("+-*/%<>=(){},;", c) then
+                out:add(Tok.new(T.PUNCT, advance(self), start))
+            else
+                error(LexError.new("unexpected '" .. c .. "'", start))
+            end
+        end
+    end
+    out:add(Tok.new(T.EOF, "<eof>", Pos.new(self.line, self.col)))
+    return out
 end
 
 local Node = __K2L_Class("Node")
@@ -340,23 +311,14 @@ function ReturnS:____init(e, p)
 end
 
 local Parser = __K2L_Class("Parser")
+local statement, ifTail, ident, primary, fnTail
 
-function Parser:____init(toks)
-    self.toks = toks
-    self.k = 0
-    self.levels = __K2L_ListOf(__K2L_ListOf("or"), __K2L_ListOf("and"), __K2L_ListOf("==", "!="), __K2L_ListOf("<", "<=", ">", ">="), __K2L_ListOf("+", "-"), __K2L_ListOf("*", "/", "%"))
-end
-
-function Parser:getCur()
-    return self.toks:get(self.k)
-end
-
-function Parser:at(text)
+local function at(self, text)
     return (self:getCur().type == T.PUNCT or self:getCur().type == T.KW) and self:getCur().text == text
 end
 
-function Parser:eat(text)
-    if not self:at(text) then
+local function eat(self, text)
+    if not at(self, text) then
         error(SyntaxError.new("expected '" .. text .. "' but found '" .. self:getCur().text .. "'", self:getCur().pos))
     end
     local ____arg_1 = self.toks
@@ -365,77 +327,69 @@ function Parser:eat(text)
     return ____arg_1:get(____old_1)
 end
 
-function Parser:program()
+local function block(self)
+    eat(self, "{")
     local out = __K2L_List.new()
-    while self:getCur().type ~= T.EOF do
-        out:add(self:statement())
-    end
-    return out
-end
-
-function Parser:block()
-    self:eat("{")
-    local out = __K2L_List.new()
-    while not self:at("}") do
+    while not at(self, "}") do
         if self:getCur().type == T.EOF then
             error(SyntaxError.new("unclosed block", self:getCur().pos))
         end
-        out:add(self:statement())
+        out:add(statement(self))
     end
-    self:eat("}")
+    eat(self, "}")
     return out
 end
 
-function Parser:statement()
+function statement(self)
     local p = self:getCur().pos
-    if self:at("let") then
+    if at(self, "let") then
         self.k = self.k + 1
-        local id = self:ident()
-        self:eat("=")
+        local id = ident(self)
+        eat(self, "=")
         local ____value_2 = LetS.new(id, self:expr(), p)
-        self:eat(";")
+        eat(self, ";")
         return ____value_2
-    elseif self:at("if") then
+    elseif at(self, "if") then
         self.k = self.k + 1
-        return self:ifTail(p)
-    elseif self:at("while") then
+        return ifTail(self, p)
+    elseif at(self, "while") then
         self.k = self.k + 1
-        return WhileS.new(self:expr(), self:block(), p)
-    elseif self:at("return") then
+        return WhileS.new(self:expr(), block(self), p)
+    elseif at(self, "return") then
         self.k = self.k + 1
         local e
-        if self:at(";") then
+        if at(self, ";") then
             e = nil
         else
             e = self:expr()
         end
-        self:eat(";")
+        eat(self, ";")
         return ReturnS.new(e, p)
     elseif self:getCur().type == T.ID and self.toks:get(self.k + 1).text == "=" then
-        local id = self:ident()
+        local id = ident(self)
         self.k = self.k + 1
         local ____value_1 = AssignS.new(id, self:expr(), p)
-        self:eat(";")
+        eat(self, ";")
         return ____value_1
     else
         local ____value = self:expr()
-        self:eat(";")
+        eat(self, ";")
         return ____value
     end
 end
 
-function Parser:ifTail(p)
+function ifTail(self, p)
     local c = self:expr()
-    local t = self:block()
+    local t = block(self)
     local f
-    if self:at("else") then
+    if at(self, "else") then
         self.k = self.k + 1
-        if self:at("if") then
+        if at(self, "if") then
             local q = self:getCur().pos
             self.k = self.k + 1
-            f = __K2L_ListOf(self:ifTail(q))
+            f = __K2L_ListOf(ifTail(self, q))
         else
-            f = self:block()
+            f = block(self)
         end
     else
         f = nil
@@ -443,7 +397,7 @@ function Parser:ifTail(p)
     return IfS.new(c, t, f, p)
 end
 
-function Parser:ident()
+function ident(self)
     if self:getCur().type ~= T.ID then
         error(SyntaxError.new("expected identifier but found '" .. self:getCur().text .. "'", self:getCur().pos))
     end
@@ -453,67 +407,36 @@ function Parser:ident()
     return ____arg_2:get(____old_2).text
 end
 
-function Parser:expr(level)
-    if level == nil then
-        level = 0
-    end
-    if level == self.levels.size then
-        return self:unary()
-    end
-    local left = self:expr(level + 1)
-    while true do
-        local ____list = self.levels:get(level)
-        local ____result = false
-        local ____items, ____n = ____list:____array()
-        for ____i = 1, ____n do
-            local it = ____items[____i]
-            if self:at(it) then
-                ____result = true
-                break
-            end
-        end
-        if not ____result then
-            break
-        end
+local function unary(self)
+    local p = self:getCur().pos
+    if at(self, "-") or at(self, "not") then
         local ____arg_3 = self.toks
         local ____old_3 = self.k
         self.k = self.k + 1
-        local op = ____arg_3:get(____old_3)
-        left = Bin.new(op.text, left, self:expr(level + 1), op.pos)
+        local op = ____arg_3:get(____old_3).text
+        return Un.new(op, unary(self), p)
     end
-    return left
-end
-
-function Parser:unary()
-    local p = self:getCur().pos
-    if self:at("-") or self:at("not") then
-        local ____arg_4 = self.toks
-        local ____old_4 = self.k
-        self.k = self.k + 1
-        local op = ____arg_4:get(____old_4).text
-        return Un.new(op, self:unary(), p)
-    end
-    local e = self:primary()
-    while self:at("(") do
+    local e = primary(self)
+    while at(self, "(") do
         local cp = self:getCur().pos
         self.k = self.k + 1
         local args = __K2L_List.new()
-        if not self:at(")") then
+        if not at(self, ")") then
             repeat
                 args:add(self:expr())
-                local ____value_3 = self:at(",")
+                local ____value_3 = at(self, ",")
                 if ____value_3 then
                     self.k = self.k + 1
                 end
             until not ____value_3
         end
-        self:eat(")")
+        eat(self, ")")
         e = CallN.new(e, args, cp)
     end
     return e
 end
 
-function Parser:primary()
+function primary(self)
     local t = self:getCur()
     self.k = self.k + 1
     local ____subject = t.type
@@ -530,14 +453,14 @@ function Parser:primary()
         elseif ____subject_1 == "nil" then
             return NilLit.new(t.pos)
         elseif ____subject_1 == "fn" then
-            return self:fnTail(t.pos)
+            return fnTail(self, t.pos)
         else
             error(SyntaxError.new("unexpected keyword '" .. t.text .. "'", t.pos))
         end
     elseif ____subject == T.PUNCT then
         if t.text == "(" then
             local ____value_4 = self:expr()
-            self:eat(")")
+            eat(self, ")")
             return ____value_4
         else
             error(SyntaxError.new("unexpected '" .. t.text .. "'", t.pos))
@@ -547,25 +470,74 @@ function Parser:primary()
     end
 end
 
-function Parser:fnTail(p)
-    self:eat("(")
+function fnTail(self, p)
+    eat(self, "(")
     local ps = __K2L_List.new()
-    if not self:at(")") then
+    if not at(self, ")") then
         repeat
-            ps:add(self:ident())
-            local ____value_5 = self:at(",")
+            ps:add(ident(self))
+            local ____value_5 = at(self, ",")
             if ____value_5 then
                 self.k = self.k + 1
             end
         until not ____value_5
     end
-    self:eat(")")
-    if not self:at("->") then
-        return FnLit.new(ps, self:block(), p)
+    eat(self, ")")
+    if not at(self, "->") then
+        return FnLit.new(ps, block(self), p)
     end
     self.k = self.k + 1
     local e = self:expr()
     return FnLit.new(ps, __K2L_ListOf(ReturnS.new(e, e.pos)), p)
+end
+
+function Parser:____init(toks)
+    self.toks = toks
+    self.k = 0
+    self.levels = __K2L_ListOf(__K2L_ListOf("or"), __K2L_ListOf("and"), __K2L_ListOf("==", "!="), __K2L_ListOf("<", "<=", ">", ">="), __K2L_ListOf("+", "-"), __K2L_ListOf("*", "/", "%"))
+end
+
+function Parser:getCur()
+    return self.toks:get(self.k)
+end
+
+function Parser:program()
+    local out = __K2L_List.new()
+    while self:getCur().type ~= T.EOF do
+        out:add(statement(self))
+    end
+    return out
+end
+
+function Parser:expr(level)
+    if level == nil then
+        level = 0
+    end
+    if level == self.levels.size then
+        return unary(self)
+    end
+    local left = self:expr(level + 1)
+    while true do
+        local ____list = self.levels:get(level)
+        local ____result = false
+        local ____items, ____n = ____list:____array()
+        for ____i = 1, ____n do
+            local it = ____items[____i]
+            if at(self, it) then
+                ____result = true
+                break
+            end
+        end
+        if not ____result then
+            break
+        end
+        local ____arg_4 = self.toks
+        local ____old_4 = self.k
+        self.k = self.k + 1
+        local op = ____arg_4:get(____old_4)
+        left = Bin.new(op.text, left, self:expr(level + 1), op.pos)
+    end
+    return left
 end
 
 local Env = __K2L_Class("Env")
@@ -603,11 +575,6 @@ end
 
 local Closure = __K2L_Class("Closure")
 
-function Closure:____init(fn, env)
-    self.fn = fn
-    self.env = env
-end
-
 function Closure.new(fn, env)
     return setmetatable({fn = fn, env = env}, Closure)
 end
@@ -617,12 +584,6 @@ function Closure:toString()
 end
 
 local Native = __K2L_Class("Native")
-
-function Native:____init(name, arity, f)
-    self.name = name
-    self.arity = arity
-    self.f = f
-end
 
 function Native.new(name, arity, f)
     return setmetatable({name = name, arity = arity, f = f}, Native)
@@ -648,44 +609,9 @@ local function show(v)
 end
 
 local Interp = __K2L_Class("Interp")
+local truthy
 
-local ____lambda_1 = function(it) return show(it) end
-local ____lambda_2 = function(args) return show(args:get(0)) end
-function Interp:____init(out)
-    self.out = out
-    local ____value_6 = Env.new(nil)
-    ____value_6:define("print", Native.new("print", -1, function(args)
-        self.out:append(args:joinToString(" ", nil, nil, nil, nil, ____lambda_1)):append("\n")
-        return nil
-    end))
-    ____value_6:define("len", Native.new("len", 1, function(args)
-        local ____cast = args:get(0)
-        local ____receiver = type(____cast) == "string" and ____cast or nil
-        local ____result_1
-        if ____receiver ~= nil then
-            local ____cast_1 = args:get(0)
-            ____result_1 = #(type(____cast_1) == "string" and ____cast_1 or nil)
-        end
-        local ____receiver_1 = ____result_1
-        return ____receiver_1 and ____receiver_1 + 0.0
-    end))
-    ____value_6:define("str", Native.new("str", 1, ____lambda_2))
-    self.globals = ____value_6
-    self.steps = 0
-end
-
-function Interp:run(prog)
-    self:exec(prog, self.globals)
-end
-
-function Interp:exec(body, env)
-    for ____i_1 = 1, body.size do
-        local s = body[____i_1]
-        self:stmt(s, env)
-    end
-end
-
-function Interp:stmt(s, env)
+local function stmt(self, s, env)
     self.steps = self.steps + 1
     if self.steps > 10000 then
         error(RuntimeErr.new("step limit exceeded", s.pos))
@@ -696,97 +622,58 @@ function Interp:stmt(s, env)
     elseif ____mt == AssignS then
         env:assign(s.id, self:eval(s.e, env), s.pos)
     elseif ____mt == IfS then
-        if self:truthy(self:eval(s.c, env)) then
+        if truthy(self, self:eval(s.c, env)) then
             self:exec(s.t, Env.new(env))
         else
-            local ____receiver_3 = s.f
-            if ____receiver_3 ~= nil then
-                self:exec(____receiver_3, Env.new(env))
+            local ____receiver_1 = s.f
+            if ____receiver_1 ~= nil then
+                self:exec(____receiver_1, Env.new(env))
             end
         end
     elseif ____mt == WhileS then
-        while self:truthy(self:eval(s.c, env)) do
+        while truthy(self, self:eval(s.c, env)) do
             self:exec(s.body, Env.new(env))
         end
     elseif ____mt == ReturnS then
-        local ____receiver_2 = s.e
-        error(ReturnSignal.new(____receiver_2 and self:eval(____receiver_2, env)))
+        local ____receiver = s.e
+        error(ReturnSignal.new(____receiver and self:eval(____receiver, env)))
     else
         self:eval(s, env)
     end
 end
 
-function Interp:truthy(v)
+function truthy(self, v)
     return v ~= nil and not __K2L_Equals(v, false)
 end
 
-function Interp:eval(e, env)
-    local ____mt_1 = getmetatable(e)
-    if ____mt_1 == NumLit then
-        return e.v
-    elseif ____mt_1 == StrLit then
-        return e.v
-    elseif ____mt_1 == BoolLit then
-        return e.v
-    elseif ____mt_1 == NilLit then
-        return nil
-    elseif ____mt_1 == Name then
-        return env:lookup(e.id, e.pos)
-    elseif ____mt_1 == FnLit then
-        return Closure.new(e, env)
-    elseif ____mt_1 == Un then
-        if e.op == "not" then
-            return not self:truthy(self:eval(e.e, env))
-        else
-            return -self:num(self:eval(e.e, env), e.pos)
-        end
-    elseif ____mt_1 == Bin then
-        return self:binary(e, env)
-    elseif ____mt_1 == CallN then
-        local ____arg_5 = self:eval(e.callee, env)
-        local ____list_1 = e.args
-        local ____out = {}
-        local ____count = 0
-        local ____items_1, ____n_1 = ____list_1:____array()
-        for ____i_2 = 1, ____n_1 do
-            local it = ____items_1[____i_2]
-            ____count = ____count + 1
-            ____out[____count] = self:eval(it, env)
-        end
-        return self:call(____arg_5, __K2L_ListWrap(____out, ____count), e.pos)
-    else
-        error(RuntimeErr.new("not an expression", e.pos))
-    end
-end
-
-function Interp:num(v, p)
-    local ____value_7 = math.type(v) == "float" and v or nil
-    if ____value_7 == nil then
+local function num(self, v, p)
+    local ____value_6 = math.type(v) == "float" and v or nil
+    if ____value_6 == nil then
         error(RuntimeErr.new("expected number, got " .. show(v), p))
     end
-    return ____value_7
+    return ____value_6
 end
 
-function Interp:binary(e, env)
+local function binary(self, e, env)
     if e.op == "and" then
-        local ____value_8 = self:eval(e.l, env)
-        local ____result_2
-        if self:truthy(____value_8) then
-            ____result_2 = self:eval(e.r, env)
+        local ____value_7 = self:eval(e.l, env)
+        local ____result_1
+        if truthy(self, ____value_7) then
+            ____result_1 = self:eval(e.r, env)
         else
-            ____result_2 = ____value_8
+            ____result_1 = ____value_7
         end
-        return ____result_2
+        return ____result_1
     end
     if e.op == "or" then
-        local ____value_9 = self:eval(e.l, env)
-        local ____result_3
-        if self:truthy(____value_9) then
-            ____result_3 = ____value_9
+        local ____value_8 = self:eval(e.l, env)
+        local ____result_2
+        if truthy(self, ____value_8) then
+            ____result_2 = ____value_8
         else
-            ____result_3 = self:eval(e.r, env)
+            ____result_2 = self:eval(e.r, env)
         end
-        return ____result_3
+        return ____result_2
     end
     local l = self:eval(e.l, env)
     local r = self:eval(e.r, env)
@@ -796,63 +683,63 @@ function Interp:binary(e, env)
     elseif ____subject_2 == "!=" then
         return not __K2L_Equals(l, r)
     elseif ____subject_2 == "+" then
-        return (type(l) == "string" or type(r) == "string") and show(l) .. show(r) or self:num(l, e.pos) + self:num(r, e.pos)
+        return (type(l) == "string" or type(r) == "string") and show(l) .. show(r) or num(self, l, e.pos) + num(self, r, e.pos)
     elseif ____subject_2 == "-" then
-        return self:num(l, e.pos) - self:num(r, e.pos)
+        return num(self, l, e.pos) - num(self, r, e.pos)
     elseif ____subject_2 == "*" then
-        return self:num(l, e.pos) * self:num(r, e.pos)
+        return num(self, l, e.pos) * num(self, r, e.pos)
     elseif ____subject_2 == "/" then
-        local ____value_10 = self:num(r, e.pos)
-        local ____result_4
-        if ____value_10 == 0.0 then
+        local ____value_9 = num(self, r, e.pos)
+        local ____result_3
+        if ____value_9 == 0.0 then
             error(RuntimeErr.new("division by zero", e.pos))
         else
-            ____result_4 = self:num(l, e.pos) / ____value_10
+            ____result_3 = num(self, l, e.pos) / ____value_9
         end
-        return ____result_4
+        return ____result_3
     elseif ____subject_2 == "%" then
-        return self:num(l, e.pos) % self:num(r, e.pos)
+        return num(self, l, e.pos) % num(self, r, e.pos)
     elseif ____subject_2 == "<" then
-        return self:num(l, e.pos) < self:num(r, e.pos)
+        return num(self, l, e.pos) < num(self, r, e.pos)
     elseif ____subject_2 == "<=" then
-        return self:num(l, e.pos) <= self:num(r, e.pos)
+        return num(self, l, e.pos) <= num(self, r, e.pos)
     elseif ____subject_2 == ">" then
-        return self:num(l, e.pos) > self:num(r, e.pos)
+        return num(self, l, e.pos) > num(self, r, e.pos)
     else
-        return self:num(l, e.pos) >= self:num(r, e.pos)
+        return num(self, l, e.pos) >= num(self, r, e.pos)
     end
 end
 
-function Interp:call(f, args, p)
-    local ____mt_2 = getmetatable(f)
-    if ____mt_2 == Native then
+local function call(self, f, args, p)
+    local ____mt_1 = getmetatable(f)
+    if ____mt_1 == Native then
         if f.arity >= 0 and f.arity ~= args.size then
             error(RuntimeErr.new(f.name .. " expects " .. f.arity .. " args, got " .. args.size, p))
         end
         return f.f(args)
-    elseif ____mt_2 == Closure then
+    elseif ____mt_1 == Closure then
         if f.fn.params.size ~= args.size then
             error(RuntimeErr.new("arity mismatch: expected " .. f.fn.params.size .. ", got " .. args.size, p))
         end
         local ____local = Env.new(f.env)
-        local ____list_2 = f.fn.params:zip(args)
-        for ____i_3 = 1, ____list_2.size do
-            local ____it = ____list_2[____i_3]
+        local ____list_1 = f.fn.params:zip(args)
+        for ____i_1 = 1, ____list_1.size do
+            local ____it = ____list_1[____i_1]
             do
                 local n, v = ____it.first, ____it.second
                 ____local:define(n, v)
             end
         end
-        local ____ok, ____result_5, ____returned = pcall(function()
+        local ____ok, ____result_4, ____returned = pcall(function()
             self:exec(f.fn.body, ____local)
             return true, nil
         end)
         if ____ok then
-            if ____result_5 then
+            if ____result_4 then
                 return ____returned
             end
         else
-            local ____error = __K2L_ToThrowable(____result_5)
+            local ____error = __K2L_ToThrowable(____result_4)
             if getmetatable(____error) == ReturnSignal then
                 local r = ____error
                 return r.value
@@ -862,6 +749,81 @@ function Interp:call(f, args, p)
         end
     else
         error(RuntimeErr.new("cannot call " .. show(f), p))
+    end
+end
+
+local ____lambda_1 = function(it) return show(it) end
+local ____lambda_2 = function(args) return show(args:get(0)) end
+function Interp:____init(out)
+    self.out = out
+    local ____value_10 = Env.new(nil)
+    ____value_10:define("print", Native.new("print", -1, function(args)
+        self.out:append(args:joinToString(" ", nil, nil, nil, nil, ____lambda_1)):append("\n")
+        return nil
+    end))
+    ____value_10:define("len", Native.new("len", 1, function(args)
+        local ____cast = args:get(0)
+        local ____receiver_2 = type(____cast) == "string" and ____cast or nil
+        local ____result_5
+        if ____receiver_2 ~= nil then
+            local ____cast_1 = args:get(0)
+            ____result_5 = #(type(____cast_1) == "string" and ____cast_1 or nil)
+        end
+        local ____receiver_3 = ____result_5
+        return ____receiver_3 and ____receiver_3 + 0.0
+    end))
+    ____value_10:define("str", Native.new("str", 1, ____lambda_2))
+    self.globals = ____value_10
+    self.steps = 0
+end
+
+function Interp:run(prog)
+    self:exec(prog, self.globals)
+end
+
+function Interp:exec(body, env)
+    for ____i_2 = 1, body.size do
+        local s = body[____i_2]
+        stmt(self, s, env)
+    end
+end
+
+function Interp:eval(e, env)
+    local ____mt_2 = getmetatable(e)
+    if ____mt_2 == NumLit then
+        return e.v
+    elseif ____mt_2 == StrLit then
+        return e.v
+    elseif ____mt_2 == BoolLit then
+        return e.v
+    elseif ____mt_2 == NilLit then
+        return nil
+    elseif ____mt_2 == Name then
+        return env:lookup(e.id, e.pos)
+    elseif ____mt_2 == FnLit then
+        return Closure.new(e, env)
+    elseif ____mt_2 == Un then
+        if e.op == "not" then
+            return not truthy(self, self:eval(e.e, env))
+        else
+            return -num(self, self:eval(e.e, env), e.pos)
+        end
+    elseif ____mt_2 == Bin then
+        return binary(self, e, env)
+    elseif ____mt_2 == CallN then
+        local ____arg_5 = self:eval(e.callee, env)
+        local ____list_2 = e.args
+        local ____out = {}
+        local ____count = 0
+        local ____items_1, ____n_1 = ____list_2:____array()
+        for ____i_3 = 1, ____n_1 do
+            local it = ____items_1[____i_3]
+            ____count = ____count + 1
+            ____out[____count] = self:eval(it, env)
+        end
+        return call(self, ____arg_5, __K2L_ListWrap(____out, ____count), e.pos)
+    else
+        error(RuntimeErr.new("not an expression", e.pos))
     end
 end
 

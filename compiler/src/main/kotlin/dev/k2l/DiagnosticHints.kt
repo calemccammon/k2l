@@ -35,7 +35,9 @@ internal object DiagnosticHints {
         Rule(Regex("are both the Lua global '")) {
             "packages do not separate globals: rename one, or give a function or property another Lua name with @LuaName(\"...\")"
         },
-        Rule(Regex("which holds the k2l runtime$")) { "rename it" },
+        Rule(Regex("which hides the global '")) { "rename one, or give a function or property another Lua name with @LuaName(\"...\")" },
+        Rule(Regex("are both the Lua field '")) { "packages do not separate internal declarations that several files use: rename one" },
+        Rule(Regex("is the Lua global '\\w+', which holds ")) { "rename it" },
         Rule(Regex("^Unsigned type '")) { "use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones" },
         Rule(Regex("^Overriding members with and without self")) {
             "make the overridden members agree: @NoSelf on all of their declarations (or their files), or on none"

@@ -2,6 +2,7 @@ package dev.k2l.transform
 
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 
@@ -14,6 +15,8 @@ class ModuleContext(
     val cyclic: Set<KtFile> = emptySet(),
     /** Files required by another file; `main()` is only called in files nobody requires. */
     val imported: Set<KtFile> = emptySet(),
+    /** With globals: the internal top-level declarations that other files use, which live in [MODULE_TABLE]. */
+    val moduleTable: Set<KtDeclaration> = emptySet(),
 ) {
     private val classesByFile = HashMap<KtFile, Map<ClassId, KtClassOrObject>>()
 

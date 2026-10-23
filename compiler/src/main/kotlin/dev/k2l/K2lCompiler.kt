@@ -10,12 +10,14 @@ import dev.k2l.frontend.SourceModule
 import dev.k2l.frontend.SourceSession
 import dev.k2l.transform.FileTransformer
 import dev.k2l.transform.ModuleContext
+import dev.k2l.transform.ModuleTable
 import dev.k2l.transform.SOURCE_MAP_FEATURE
 import dev.k2l.transform.TransformContext
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity
 import org.jetbrains.kotlin.idea.references.mainReference
+import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedDeclaration
 import org.jetbrains.kotlin.psi.KtReferenceExpression
@@ -52,7 +54,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val outputs = printed.mapTo(mutableListOf()) { assemble(it, moduleCode) }
         // A construct reached more than once (an inline function expanded at several call sites, say) is reported once.
         val diagnostics = results.flatMap { it.diagnostics }.distinctBy { listOf(it.file, it.line, it.column, it.message) } +
-            globalClashes(results.flatMap { it.globals })
+            GlobalClashes.of(results.flatMap { it.globals }, results.flatMap { it.shared }, LUALIB_GLOBAL)
         val usedFeatures = results.flatMapTo(sortedSetOf()) { it.features }
         if (emit && options.luaLibImport == LuaLibImport.Require && usedFeatures.isNotEmpty()) {
             val global = options.moduleMode == ModuleMode.Global
@@ -67,29 +69,8 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         val printed: PrintedFile?,
         val features: Set<String>,
         val globals: List<Pair<String, KtNamedDeclaration>> = emptyList(),
+        val shared: List<Pair<String, KtNamedDeclaration>> = emptyList(),
     )
-
-    /**
-     * With [ModuleMode.Global] all files share one namespace: a Lua global defined by two declarations, or named like the
-     * global runtime table, is an error at the later declaration.
-     */
-    private fun globalClashes(globals: List<Pair<String, KtNamedDeclaration>>): List<Diagnostic> {
-        val first = HashMap<String, KtNamedDeclaration>()
-        return globals.mapNotNull { (name, decl) ->
-            val earlier = first.putIfAbsent(name, decl)
-            val message = when {
-                name == LUALIB_GLOBAL -> "'${qualified(decl)}' is the Lua global '$name', which holds the k2l runtime"
-
-                earlier != null -> "'${qualified(decl)}' and '${qualified(earlier)}' (${earlier.containingKtFile.name}) are both " +
-                    "the Lua global '$name'"
-
-                else -> return@mapNotNull null
-            }
-            Diagnostic.at(decl.nameIdentifier ?: decl, Severity.Error, message)
-        }
-    }
-
-    private fun qualified(decl: KtNamedDeclaration) = decl.fqName?.asString() ?: decl.name.orEmpty()
 
     /** A file's Lua without the runtime header, which waits for the other files (the runtime keeps what they all use). */
     private class PrintedFile(
@@ -114,7 +95,7 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         // A file of only external declarations (Lua bindings) produces no Lua.
         val produces = emit && chunk.body.isNotEmpty()
         val printed = if (produces) print(chunk, ctx, outputPath(module, file), Paths.get(file.virtualFile.path)) else null
-        FileResult(ctx.diagnostics.toList(), printed, ctx.lualib.toSet(), ctx.globals.toList())
+        FileResult(ctx.diagnostics.toList(), printed, ctx.lualib.toSet(), ctx.globals.toList(), ctx.shared.toList())
     }
 
     private fun print(chunk: LuaChunk, ctx: TransformContext, luaPath: String, sourcePath: Path): PrintedFile {
@@ -168,28 +149,38 @@ class K2lCompiler(private val options: CompilerOptions = CompilerOptions()) {
         ctx.lualibNames.forEach { append("local $it = $LUALIB_GLOBAL.$it\n") }
     }
 
-    /** Which files reference which: needed to break import cycles and to find entry points. */
+    /**
+     * Which files reference which: needed to break import cycles and to find entry points. With globals, also which internal
+     * declarations other files use ([ModuleTable]).
+     */
     private fun moduleContext(module: SourceModule, files: List<KtFile>): ModuleContext {
+        val global = options.moduleMode == ModuleMode.Global
         val fileSet = files.toSet()
+        val shared = HashSet<KtDeclaration>()
         val edges = files.associateWith { file ->
             val targets = LinkedHashSet<KtFile>()
             analyze(file) {
                 file.accept(object : KtTreeVisitorVoid() {
                     override fun visitReferenceExpression(expression: KtReferenceExpression) {
                         super.visitReferenceExpression(expression)
-                        val target = expression.mainReference.resolve()?.containingFile as? KtFile ?: return
-                        if (target != file && target in fileSet) targets += target
+                        val resolved = expression.mainReference.resolve() ?: return
+                        val target = resolved.containingFile as? KtFile ?: return
+                        if (target !in fileSet) return
+                        if (target != file) targets += target
+                        if (global) ModuleTable.sharedBy(expression, resolved, file)?.let { shared += it }
                     }
                 })
             }
+            if (global) shared += ModuleTable.usedUnnamed(file)
             targets
         }
         return ModuleContext(
             files = fileSet,
             modulePath = { outputPath(module, it).removeSuffix(".lua").replace('/', '.') },
             // globals need no exports table registered before the files that read them run
-            cyclic = if (options.moduleMode == ModuleMode.Global) emptySet() else cyclicFiles(edges),
+            cyclic = if (global) emptySet() else cyclicFiles(edges),
             imported = edges.values.flatten().toSet(),
+            moduleTable = shared,
         )
     }
 

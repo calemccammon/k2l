@@ -19,10 +19,6 @@ local __K2L_Text = ____lualib.__K2L_Text
 
 local Letters = __K2L_Class("Letters")
 
-function Letters:____init(n)
-    self.n = n
-end
-
 function Letters.new(n)
     return setmetatable({n = n}, Letters)
 end
@@ -45,10 +41,6 @@ end
 
 __K2L_PropertyOverride(Letters, "length", "getLength")
 local Fixed = __K2L_Class("Fixed")
-
-function Fixed:____init(length)
-    self.length = length
-end
 
 function Fixed.new(length)
     return setmetatable({length = length}, Fixed)
@@ -87,10 +79,6 @@ function Wrapped:____text()
 end
 
 local Holder = __K2L_Class("Holder")
-
-function Holder:____init(text)
-    self.text = text
-end
 
 function Holder.new(text)
     return setmetatable({text = text}, Holder)

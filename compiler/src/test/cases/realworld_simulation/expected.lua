@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_GenerateSequenceLazy = ____lualib.__K2L_GenerateSequenceLazy
@@ -143,29 +144,11 @@ end
 
 Customer = __K2L_Class("Customer")
 
-function Customer:____init(id, arrival, serviceTime, vip)
-    self.id = id
-    self.arrival = arrival
-    self.serviceTime = serviceTime
-    self.vip = vip
-end
-
 function Customer.new(id, arrival, serviceTime, vip)
     return setmetatable({id = id, arrival = arrival, serviceTime = serviceTime, vip = vip}, Customer)
 end
 
-function Customer:toString()
-    return "Customer(id=" .. self.id .. ", arrival=" .. self.arrival .. ", serviceTime=" .. self.serviceTime .. ", vip=" .. tostring(self.vip) .. ")"
-end
-
-function Customer:hashCode()
-    return (31 * (31 * (31 * self.id + self.arrival) + self.serviceTime) + (self.vip and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Customer:equals(other)
-    return getmetatable(other) == Customer and self.id == other.id and self.arrival == other.arrival and self.serviceTime == other.serviceTime and self.vip == other.vip
-end
-
+__K2L_DataClass(Customer, {"id", "arrival", "serviceTime", "vip"})
 local BankStats = __K2L_Class("BankStats")
 
 function BankStats:____init()
@@ -189,6 +172,18 @@ end
 
 local Bank = __K2L_Class("Bank")
 
+local function startService(self, teller, c)
+    local ____object_5 = self.busy
+    ____object_5:set(teller, true)
+    local ____object_6 = self.busyTime
+    ____object_6[teller + 1] = (____object_6[teller + 1] or __K2L_IndexError(teller, ____object_6.size, "array")) + c.serviceTime
+    self.stats:record(self.clock - c.arrival)
+    self:schedule(SimEvent.Departure.new(self.clock + c.serviceTime, teller, c))
+    if self.log then
+        print("  t=" .. self.clock .. " teller " .. teller .. " serves #" .. c.id .. " (waited " .. self.clock - c.arrival .. ")")
+    end
+end
+
 function Bank:____init(tellers, log)
     if log == nil then
         log = false
@@ -207,18 +202,6 @@ function Bank:schedule(e)
     self.events:add(e)
 end
 
-function Bank:startService(teller, c)
-    local ____object_5 = self.busy
-    ____object_5:set(teller, true)
-    local ____object_6 = self.busyTime
-    ____object_6[teller + 1] = (____object_6[teller + 1] or __K2L_IndexError(teller, ____object_6.size, "array")) + c.serviceTime
-    self.stats:record(self.clock - c.arrival)
-    self:schedule(SimEvent.Departure.new(self.clock + c.serviceTime, teller, c))
-    if self.log then
-        print("  t=" .. self.clock .. " teller " .. teller .. " serves #" .. c.id .. " (waited " .. self.clock - c.arrival .. ")")
-    end
-end
-
 local ____lambda_3 = function(it) return not it end
 function Bank:run()
     while self.events:isNotEmpty() do
@@ -228,7 +211,7 @@ function Bank:run()
         if ____mt == SimEvent.Arrival then
             local free = self.busy:indexOfFirst(____lambda_3)
             if free >= 0 then
-                self:startService(free, e.customer)
+                startService(self, free, e.customer)
             else
                 if e.customer.vip then
                     self.queue:addFirst(e.customer)
@@ -244,7 +227,7 @@ function Bank:run()
             ____object_7:set(____key_2, false)
             local ____receiver = self.queue:removeFirstOrNull()
             if ____receiver ~= nil then
-                self:startService(e.teller, ____receiver)
+                startService(self, e.teller, ____receiver)
             end
         end
     end
@@ -280,6 +263,14 @@ end
 
 local Life = __K2L_Class("Life")
 
+local function neighbours(self, x, y)
+    return __K2L_IntRange.new(-1, 1):sumOf(function(dy)
+        return __K2L_IntRange.new(-1, 1):count(function(dx)
+            return (dx ~= 0 or dy ~= 0) and self.cells:get((y + dy) % self.h):get((x + dx) % self.w)
+        end)
+    end)
+end
+
 function Life:____init(w, h, alive)
     self.w = w
     self.h = h
@@ -312,18 +303,10 @@ function Life:getPopulation()
     return ____sum
 end
 
-function Life:neighbours(x, y)
-    return __K2L_IntRange.new(-1, 1):sumOf(function(dy)
-        return __K2L_IntRange.new(-1, 1):count(function(dx)
-            return (dx ~= 0 or dy ~= 0) and self.cells:get((y + dy) % self.h):get((x + dx) % self.w)
-        end)
-    end)
-end
-
 function Life:step()
     self.cells = __K2L_ListOfSize(self.h, function(y)
         return __K2L_ListOfSize(self.w, function(x)
-            local n = self:neighbours(x, y)
+            local n = neighbours(self, x, y)
             return n == 3 or n == 2 and self.cells:get(y):get(x)
         end, true)
     end, true)

@@ -8,10 +8,6 @@ local __K2L_RunMain = ____lualib.__K2L_RunMain
 local Cell
 local Logged = __K2L_Class("Logged")
 
-function Logged:____init(tag)
-    self.tag = tag
-end
-
 function Logged.new(tag)
     return setmetatable({tag = tag}, Logged)
 end
@@ -40,10 +36,6 @@ end
 
 local Bare = __K2L_Class("Bare")
 
-function Bare:____init(raw)
-    self.raw = raw
-end
-
 function Bare.new(raw)
     return setmetatable({raw = raw}, Bare)
 end
@@ -58,10 +50,6 @@ end
 
 local Counter = __K2L_Class("Counter")
 
-function Counter:____init(n)
-    self.n = n
-end
-
 function Counter.new(n)
     return setmetatable({n = n}, Counter)
 end
@@ -74,19 +62,11 @@ end
 
 local Named = __K2L_Class("Named")
 
-function Named:____init(prefix)
-    self.prefix = prefix
-end
-
 function Named.new(prefix)
     return setmetatable({prefix = prefix}, Named)
 end
 
 local Fixed = __K2L_Class("Fixed")
-
-function Fixed:____init(text)
-    self.text = text
-end
 
 function Fixed.new(text)
     return setmetatable({text = text}, Fixed)

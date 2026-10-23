@@ -2,7 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -19,27 +19,11 @@ local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperatio
 
 local Item = __K2L_Class("Item")
 
-function Item:____init(name, price)
-    self.name = name
-    self.price = price
-end
-
 function Item.new(name, price)
     return setmetatable({name = name, price = price}, Item)
 end
 
-function Item:toString()
-    return "Item(name=" .. self.name .. ", price=" .. self.price .. ")"
-end
-
-function Item:hashCode()
-    return (31 * __K2L_Hash(self.name) + self.price + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Item:equals(other)
-    return getmetatable(other) == Item and self.name == other.name and self.price == other.price
-end
-
+__K2L_DataClass(Item, {"name", "price"})
 local items = __K2L_ListOf(Item.new("pen", 3), Item.new("book", 12), Item.new("cup", 7), Item.new("lamp", 12))
 
 local function partitions(xs, stopAt)

@@ -80,10 +80,6 @@ Chord.REST = Chord.new("REST", 2)
 Chord.____values = {Chord.C, Chord.D7, Chord.REST}
 local Outer = __K2L_Class("Outer")
 
-function Outer:____init(tag)
-    self.tag = tag
-end
-
 function Outer.new(tag)
     return setmetatable({tag = tag}, Outer)
 end

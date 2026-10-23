@@ -72,16 +72,16 @@ end
 
 local Settings = __K2L_Class("Settings")
 
+local function summarize()
+    return "retries=" .. Settings.retries .. " verbose=" .. tostring(Settings.verbose)
+end
+
 function Settings:____init()
     self.retries = 0
     self.verbose = false
-    self.summary = self:summarize()
+    self.summary = summarize()
     self.retries = 3
     self.verbose = true
-end
-
-function Settings:summarize()
-    return "retries=" .. self.retries .. " verbose=" .. tostring(self.verbose)
 end
 
 __K2L_LazyObject(Settings, "____init")

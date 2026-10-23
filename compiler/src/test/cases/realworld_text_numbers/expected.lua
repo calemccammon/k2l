@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -181,10 +181,6 @@ end
 
 local Money = __K2L_Class("Money")
 
-function Money:____init(cents)
-    self.cents = cents
-end
-
 function Money.new(cents)
     return setmetatable({cents = cents}, Money)
 end
@@ -206,13 +202,7 @@ function Money:toString()
     return sign .. "$" .. group(math.abs(self.cents) // 100) .. "." .. __K2L_StringPadStart(tostring(math.abs(self.cents) % 100), 2, "0")
 end
 
-function Money:hashCode()
-    return __K2L_Hash(self.cents)
-end
-
-function Money:equals(other)
-    return getmetatable(other) == Money and self.cents == other.cents
-end
+__K2L_DataClass(Money, {"cents"})
 
 function Money:parse(s)
     local clean = __K2L_StringReplace(__K2L_Text.removePrefix(__K2L_StringTrim(s), "$"), ",", "")

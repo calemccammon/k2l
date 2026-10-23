@@ -2,8 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_List = ____lualib.__K2L_List
@@ -107,11 +107,6 @@ end
 
 local Pos = __K2L_Class("Pos")
 
-function Pos:____init(row, col)
-    self.row = row
-    self.col = col
-end
-
 function Pos.new(row, col)
     return setmetatable({row = row, col = col}, Pos)
 end
@@ -128,14 +123,7 @@ function Pos:toString()
     return "(" .. self.row .. "," .. self.col .. ")"
 end
 
-function Pos:hashCode()
-    return (31 * self.row + self.col + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Pos:equals(other)
-    return getmetatable(other) == Pos and self.row == other.row and self.col == other.col
-end
-
+__K2L_DataClass(Pos, {"row", "col"})
 Dir = __K2L_Class("Dir")
 
 function Dir:____init(name, ordinal, dr, dc, symbol)
@@ -187,10 +175,6 @@ function Dir:of(c)
 end
 
 local Grid = __K2L_Class("Grid")
-
-function Grid:____init(cells)
-    self.cells = cells
-end
 
 function Grid.new(cells)
     return setmetatable({cells = cells}, Grid)
@@ -334,26 +318,11 @@ end
 
 local State = __K2L_Class("State")
 
-function State:____init(pos, dir)
-    self.pos = pos
-    self.dir = dir
-end
-
 function State.new(pos, dir)
     return setmetatable({pos = pos, dir = dir}, State)
 end
 
-function State:toString()
-    return "State(pos=" .. __K2L_Str(self.pos) .. ", dir=" .. __K2L_Str(self.dir) .. ")"
-end
-
-function State:hashCode()
-    return (31 * self.pos:hashCode() + __K2L_Hash(self.dir) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function State:equals(other)
-    return getmetatable(other) == State and self.pos:equals(other.pos) and self.dir == other.dir
-end
+__K2L_DataClass(State, {"pos", "dir"})
 
 local ____lambda_2 = function(____a, ____b)
     local ____x, ____y = ____a.first, ____b.first
@@ -403,12 +372,6 @@ end
 local GARDEN = "\n    AAAABBC\n    AABBBCC\n    DDBEECC\n    DDDEEEF\n    GGDDFFF\n"
 local Region = __K2L_Class("Region")
 
-function Region:____init(plant, area, perimeter)
-    self.plant = plant
-    self.area = area
-    self.perimeter = perimeter
-end
-
 function Region.new(plant, area, perimeter)
     return setmetatable({plant = plant, area = area, perimeter = perimeter}, Region)
 end
@@ -417,17 +380,7 @@ function Region:getPrice()
     return self.area * self.perimeter
 end
 
-function Region:toString()
-    return "Region(plant=" .. self.plant .. ", area=" .. self.area .. ", perimeter=" .. self.perimeter .. ")"
-end
-
-function Region:hashCode()
-    return (31 * (31 * __K2L_Hash(self.plant) + self.area) + self.perimeter + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Region:equals(other)
-    return getmetatable(other) == Region and self.plant == other.plant and self.area == other.area and self.perimeter == other.perimeter
-end
+__K2L_DataClass(Region, {"plant", "area", "perimeter"})
 
 local function regions(grid)
     local visited = __K2L_Set.new()

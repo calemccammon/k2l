@@ -1,9 +1,8 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsNumber = ____lualib.__K2L_IsNumber
 local __K2L_Iterable = ____lualib.__K2L_Iterable
@@ -47,37 +46,15 @@ Genre.POETRY = Genre.new("POETRY", 4)
 Genre.____values = {Genre.FICTION, Genre.SCIENCE, Genre.HISTORY, Genre.KIDS, Genre.POETRY}
 local Book = __K2L_Class("Book")
 
-function Book:____init(isbn, title, author, year, genres, copies)
+function Book.new(isbn, title, author, year, genres, copies)
     if copies == nil then
         copies = 1
     end
-    self.isbn = isbn
-    self.title = title
-    self.author = author
-    self.year = year
-    self.genres = genres
-    self.copies = copies
+    return setmetatable({isbn = isbn, title = title, author = author, year = year, genres = genres, copies = copies}, Book)
 end
 
-function Book:toString()
-    return "Book(isbn=" .. self.isbn .. ", title=" .. self.title .. ", author=" .. self.author .. ", year=" .. self.year .. ", genres=" .. __K2L_Str(self.genres) .. ", copies=" .. self.copies .. ")"
-end
-
-function Book:hashCode()
-    return (31 * (31 * (31 * (31 * (31 * __K2L_Hash(self.isbn) + __K2L_Hash(self.title)) + __K2L_Hash(self.author)) + self.year) + __K2L_Hash(self.genres)) + self.copies + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Book:equals(other)
-    return getmetatable(other) == Book and self.isbn == other.isbn and self.title == other.title and self.author == other.author and self.year == other.year and __K2L_Equals(self.genres, other.genres) and self.copies == other.copies
-end
-
+__K2L_DataClass(Book, {"isbn", "title", "author", "year", "genres", "copies"})
 local Member = __K2L_Class("Member")
-
-function Member:____init(id, name, tier)
-    self.id = id
-    self.name = name
-    self.tier = tier
-end
 
 function Member.new(id, name, tier)
     return setmetatable({id = id, name = name, tier = tier}, Member)
@@ -105,48 +82,18 @@ Member.Tier.BASIC = Member.Tier.new("BASIC", 0, 2, 14, 25)
 Member.Tier.PLUS = Member.Tier.new("PLUS", 1, 5, 28, 10)
 Member.Tier.STAFF = Member.Tier.new("STAFF", 2, 10, 60, 0)
 Member.Tier.____values = {Member.Tier.BASIC, Member.Tier.PLUS, Member.Tier.STAFF}
-
-function Member:toString()
-    return "Member(id=" .. self.id .. ", name=" .. self.name .. ", tier=" .. __K2L_Str(self.tier) .. ")"
-end
-
-function Member:hashCode()
-    return (31 * (31 * self.id + __K2L_Hash(self.name)) + __K2L_Hash(self.tier) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Member:equals(other)
-    return getmetatable(other) == Member and self.id == other.id and self.name == other.name and self.tier == other.tier
-end
-
+__K2L_DataClass(Member, {"id", "name", "tier"})
 local Loan = __K2L_Class("Loan")
 
-function Loan:____init(isbn, member, out, due, returned)
-    if returned == nil then
-        returned = nil
-    end
-    self.isbn = isbn
-    self.member = member
-    self.out = out
-    self.due = due
-    self.returned = returned
+function Loan.new(isbn, member, out, due, returned)
+    return setmetatable({isbn = isbn, member = member, out = out, due = due, returned = returned}, Loan)
 end
 
 function Loan:daysLate(today)
     return math.max(0, (self.returned or today) - self.due)
 end
 
-function Loan:toString()
-    return "Loan(isbn=" .. self.isbn .. ", member=" .. self.member .. ", out=" .. self.out .. ", due=" .. self.due .. ", returned=" .. __K2L_Str(self.returned) .. ")"
-end
-
-function Loan:hashCode()
-    return (31 * (31 * (31 * (31 * __K2L_Hash(self.isbn) + self.member) + self.out) + self.due) + __K2L_Hash(self.returned) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Loan:equals(other)
-    return getmetatable(other) == Loan and self.isbn == other.isbn and self.member == other.member and self.out == other.out and self.due == other.due and self.returned == other.returned
-end
-
+__K2L_DataClass(Loan, {"isbn", "member", "out", "due", "returned"})
 local LibraryException = __K2L_Class("LibraryException", __K2L_Exception)
 
 function LibraryException:____init(message)

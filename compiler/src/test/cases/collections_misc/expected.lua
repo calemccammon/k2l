@@ -3,6 +3,7 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -17,11 +18,6 @@ local windowedSumPairs
 local Version = __K2L_Class("Version")
 Version.____comparable = true
 
-function Version:____init(major, minor)
-    self.major = major
-    self.minor = minor
-end
-
 function Version.new(major, minor)
     return setmetatable({major = major, minor = minor}, Version)
 end
@@ -30,17 +26,7 @@ function Version:compareTo(other)
     return self.major ~= other.major and self.major - other.major or self.minor - other.minor
 end
 
-function Version:toString()
-    return "Version(major=" .. self.major .. ", minor=" .. self.minor .. ")"
-end
-
-function Version:hashCode()
-    return (31 * self.major + self.minor + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Version:equals(other)
-    return getmetatable(other) == Version and self.major == other.major and self.minor == other.minor
-end
+__K2L_DataClass(Version, {"major", "minor"})
 
 local function sumAll(...)
     local numbers = __K2L_ArrayOf(...)

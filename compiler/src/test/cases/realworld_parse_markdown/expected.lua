@@ -2,8 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
@@ -36,118 +36,39 @@ local __K2L_Triple = ____lualib.__K2L_Triple
 local Block = __K2L_Class("Block")
 Block.Heading = __K2L_Class("Block$Heading", Block)
 
-function Block.Heading:____init(level, text)
-    self.level = level
-    self.text = text
-end
-
 function Block.Heading.new(level, text)
     return setmetatable({level = level, text = text}, Block.Heading)
 end
 
-function Block.Heading:toString()
-    return "Heading(level=" .. self.level .. ", text=" .. self.text .. ")"
-end
-
-function Block.Heading:hashCode()
-    return (31 * self.level + __K2L_Hash(self.text) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Block.Heading:equals(other)
-    return getmetatable(other) == Block.Heading and self.level == other.level and self.text == other.text
-end
-
+__K2L_DataClass(Block.Heading, {"level", "text"})
 Block.Para = __K2L_Class("Block$Para", Block)
-
-function Block.Para:____init(lines)
-    self.lines = lines
-end
 
 function Block.Para.new(lines)
     return setmetatable({lines = lines}, Block.Para)
 end
 
-function Block.Para:toString()
-    return "Para(lines=" .. __K2L_Str(self.lines) .. ")"
-end
-
-function Block.Para:hashCode()
-    return __K2L_Hash(self.lines)
-end
-
-function Block.Para:equals(other)
-    return getmetatable(other) == Block.Para and __K2L_Equals(self.lines, other.lines)
-end
-
+__K2L_DataClass(Block.Para, {"lines"})
 Block.Code = __K2L_Class("Block$Code", Block)
-
-function Block.Code:____init(lang, body)
-    self.lang = lang
-    self.body = body
-end
 
 function Block.Code.new(lang, body)
     return setmetatable({lang = lang, body = body}, Block.Code)
 end
 
-function Block.Code:toString()
-    return "Code(lang=" .. __K2L_Str(self.lang) .. ", body=" .. self.body .. ")"
-end
-
-function Block.Code:hashCode()
-    return (31 * __K2L_Hash(self.lang) + __K2L_Hash(self.body) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Block.Code:equals(other)
-    return getmetatable(other) == Block.Code and self.lang == other.lang and self.body == other.body
-end
-
+__K2L_DataClass(Block.Code, {"lang", "body"})
 Block.Quote = __K2L_Class("Block$Quote", Block)
-
-function Block.Quote:____init(children)
-    self.children = children
-end
 
 function Block.Quote.new(children)
     return setmetatable({children = children}, Block.Quote)
 end
 
-function Block.Quote:toString()
-    return "Quote(children=" .. __K2L_Str(self.children) .. ")"
-end
-
-function Block.Quote:hashCode()
-    return __K2L_Hash(self.children)
-end
-
-function Block.Quote:equals(other)
-    return getmetatable(other) == Block.Quote and __K2L_Equals(self.children, other.children)
-end
-
+__K2L_DataClass(Block.Quote, {"children"})
 Block.ListBlock = __K2L_Class("Block$ListBlock", Block)
-
-function Block.ListBlock:____init(ordered, start, items)
-    self.ordered = ordered
-    self.start = start
-    self.items = items
-end
 
 function Block.ListBlock.new(ordered, start, items)
     return setmetatable({ordered = ordered, start = start, items = items}, Block.ListBlock)
 end
 
-function Block.ListBlock:toString()
-    return "ListBlock(ordered=" .. tostring(self.ordered) .. ", start=" .. self.start .. ", items=" .. __K2L_Str(self.items) .. ")"
-end
-
-function Block.ListBlock:hashCode()
-    return (31 * (31 * (self.ordered and 1231 or 1237) + self.start) + __K2L_Hash(self.items) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Block.ListBlock:equals(other)
-    return getmetatable(other) == Block.ListBlock and self.ordered == other.ordered and self.start == other.start and __K2L_Equals(self.items, other.items)
-end
-
+__K2L_DataClass(Block.ListBlock, {"ordered", "start", "items"})
 Block.Rule = __K2L_Class("Block$Rule", Block)
 
 function Block.Rule:toString()
@@ -379,17 +300,17 @@ end
 
 local Renderer = __K2L_Class("Renderer")
 
-function Renderer:____init()
-    self.slugs = __K2L_MapOf()
-    self.toc = __K2L_ListOf()
-end
-
 local ____lambda_2 = function() return "section" end
 local ____lambda_3 = function(____p1, ____p2) return ____p1 + ____p2 end
-function Renderer:slug(text)
+local function slug(self, text)
     local base = __K2L_Text.ifEmpty(__K2L_Regex.new("\\s+", "%s+"):replace(__K2L_StringTrim(__K2L_Regex.new("[^a-z0-9\\s-]", "[^%sa-z0-9%-]"):replace(text:lower(), "")), "-"), ____lambda_2)
     local n = __K2L_NotNull(self.slugs:merge(base, 1, ____lambda_3))
     return n == 1 and base or base .. "-" .. n - 1
+end
+
+function Renderer:____init()
+    self.slugs = __K2L_MapOf()
+    self.toc = __K2L_ListOf()
 end
 
 local ____lambda_4 = function(it) return inline(it) end
@@ -402,7 +323,7 @@ function Renderer:render(blocks, tight)
         local b = blocks[____i_3]
         local ____mt = getmetatable(b)
         if ____mt == Block.Heading then
-            local id = self:slug(b.text)
+            local id = slug(self, b.text)
             self.toc:add(__K2L_Triple.new(b.level, b.text, id))
             ____builder_1:append("<h" .. b.level .. " id=\"" .. id .. "\">" .. inline(b.text) .. "</h" .. b.level .. ">\n")
         elseif ____mt == Block.Para then

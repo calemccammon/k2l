@@ -2,7 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -32,6 +32,7 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local __K2L_Triple = ____lualib.__K2L_Triple
 
 local Region = __K2L_Class("Region")
+local byLabel
 
 function Region:____init(name, ordinal, label, taxRate)
     self.name = name
@@ -56,7 +57,7 @@ Region.____values = {Region.NORTH, Region.SOUTH, Region.EAST, Region.WEST}
 Region.____companion = true
 
 function Region:parse(s)
-    local ____value = self.byLabel:get(__K2L_StringTrim(s):lower())
+    local ____value = byLabel:get(__K2L_StringTrim(s):lower())
     if ____value == nil then
         error(__K2L_IllegalArgumentException.new("unknown region '" .. s .. "'"))
     end
@@ -71,21 +72,11 @@ function Region:____initCompanion()
         local ____value_1 = it.label:lower()
         ____result:put(____value_1, it)
     end
-    self.byLabel = ____result
+    byLabel = ____result
 end
 
 __K2L_LazyObject(Region, "____initCompanion")
 local Sale = __K2L_Class("Sale")
-
-function Sale:____init(id, date, rep, region, product, units, unitPrice)
-    self.id = id
-    self.date = date
-    self.rep = rep
-    self.region = region
-    self.product = product
-    self.units = units
-    self.unitPrice = unitPrice
-end
 
 function Sale.new(id, date, rep, region, product, units, unitPrice)
     return setmetatable({id = id, date = date, rep = rep, region = region, product = product, units = units, unitPrice = unitPrice}, Sale)
@@ -99,18 +90,7 @@ function Sale:getMonth()
     return __K2L_Text.substring(self.date, 0, 7)
 end
 
-function Sale:toString()
-    return "Sale(id=" .. self.id .. ", date=" .. self.date .. ", rep=" .. self.rep .. ", region=" .. __K2L_Str(self.region) .. ", product=" .. self.product .. ", units=" .. self.units .. ", unitPrice=" .. self.unitPrice .. ")"
-end
-
-function Sale:hashCode()
-    return (31 * (31 * (31 * (31 * (31 * (31 * self.id + __K2L_Hash(self.date)) + __K2L_Hash(self.rep)) + __K2L_Hash(self.region)) + __K2L_Hash(self.product)) + self.units) + __K2L_Hash(self.unitPrice) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Sale:equals(other)
-    return getmetatable(other) == Sale and self.id == other.id and self.date == other.date and self.rep == other.rep and self.region == other.region and self.product == other.product and self.units == other.units and self.unitPrice == other.unitPrice
-end
-
+__K2L_DataClass(Sale, {"id", "date", "rep", "region", "product", "units", "unitPrice"})
 local RAW = "id,date,rep,region,product,units,unit_price\n1,2024-01-05,\"Smith, Anna\",North,Widget,12,2.50\n2,2024-01-09,Bob Jones,South,Gadget,3,19.99\n3,2024-01-17,\"Smith, Anna\",North,Gizmo,7,7.25\n4,2024-02-02,Carla Diaz,East,Widget,40,2.45\n5,2024-02-11,Bob Jones,South,Widget,15,2.50\n6,2024-02-14,\"O\"\"Brien, Pat\",West,Gadget,2,21.00\n7,2024-02-28,Carla Diaz,East,Gizmo,9,7.00\n8,2024-03-03,\"Smith, Anna\",North,Gadget,5,19.50\n9,2024-03-15,Dev Patel,West,Widget,-4,2.50\n10,2024-03-19,Dev Patel,Weast,Gizmo,4,7.10\n11,2024-03-21,Bob Jones,South,Gizmo,11,6.95\n12,2024-03-30,\"O\"\"Brien, Pat\",West,Widget,25,2.40\n13,2024-03-31,Carla Diaz,East,Gadget,6,\n"
 
 local function parseCsvLine(line)
@@ -140,48 +120,18 @@ end
 local RowResult = __K2L_Class("RowResult")
 RowResult.Ok = __K2L_Class("RowResult$Ok", RowResult)
 
-function RowResult.Ok:____init(sale)
-    self.sale = sale
-end
-
 function RowResult.Ok.new(sale)
     return setmetatable({sale = sale}, RowResult.Ok)
 end
 
-function RowResult.Ok:toString()
-    return "Ok(sale=" .. __K2L_Str(self.sale) .. ")"
-end
-
-function RowResult.Ok:hashCode()
-    return self.sale:hashCode()
-end
-
-function RowResult.Ok:equals(other)
-    return getmetatable(other) == RowResult.Ok and self.sale:equals(other.sale)
-end
-
+__K2L_DataClass(RowResult.Ok, {"sale"})
 RowResult.Bad = __K2L_Class("RowResult$Bad", RowResult)
-
-function RowResult.Bad:____init(line, reason)
-    self.line = line
-    self.reason = reason
-end
 
 function RowResult.Bad.new(line, reason)
     return setmetatable({line = line, reason = reason}, RowResult.Bad)
 end
 
-function RowResult.Bad:toString()
-    return "Bad(line=" .. self.line .. ", reason=" .. self.reason .. ")"
-end
-
-function RowResult.Bad:hashCode()
-    return (31 * self.line + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function RowResult.Bad:equals(other)
-    return getmetatable(other) == RowResult.Bad and self.line == other.line and self.reason == other.reason
-end
+__K2L_DataClass(RowResult.Bad, {"line", "reason"})
 
 local function parseRow(lineNo, header, line)
     local ____ok, ____result_1, ____returned = pcall(function()
@@ -217,30 +167,11 @@ end
 
 local Stats = __K2L_Class("Stats")
 
-function Stats:____init(count, mean, median, stdDev, min, max)
-    self.count = count
-    self.mean = mean
-    self.median = median
-    self.stdDev = stdDev
-    self.min = min
-    self.max = max
-end
-
 function Stats.new(count, mean, median, stdDev, min, max)
     return setmetatable({count = count, mean = mean, median = median, stdDev = stdDev, min = min, max = max}, Stats)
 end
 
-function Stats:toString()
-    return "Stats(count=" .. self.count .. ", mean=" .. self.mean .. ", median=" .. self.median .. ", stdDev=" .. self.stdDev .. ", min=" .. self.min .. ", max=" .. self.max .. ")"
-end
-
-function Stats:hashCode()
-    return (31 * (31 * (31 * (31 * (31 * self.count + __K2L_Hash(self.mean)) + __K2L_Hash(self.median)) + __K2L_Hash(self.stdDev)) + __K2L_Hash(self.min)) + __K2L_Hash(self.max) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Stats:equals(other)
-    return getmetatable(other) == Stats and self.count == other.count and self.mean == other.mean and self.median == other.median and self.stdDev == other.stdDev and self.min == other.min and self.max == other.max
-end
+__K2L_DataClass(Stats, {"count", "mean", "median", "stdDev", "min", "max"})
 
 local function stats(self)
     if not self:isNotEmpty() then

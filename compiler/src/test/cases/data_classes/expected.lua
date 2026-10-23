@@ -1,78 +1,31 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Person = __K2L_Class("Person")
 
-function Person:____init(name, age, email)
-    self.name = name
-    self.age = age
-    self.email = email
-end
-
 function Person.new(name, age, email)
     return setmetatable({name = name, age = age, email = email}, Person)
 end
 
-function Person:toString()
-    return "Person(name=" .. self.name .. ", age=" .. self.age .. ", email=" .. __K2L_Str(self.email) .. ")"
-end
-
-function Person:hashCode()
-    return (31 * (31 * __K2L_Hash(self.name) + self.age) + __K2L_Hash(self.email) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Person:equals(other)
-    return getmetatable(other) == Person and self.name == other.name and self.age == other.age and self.email == other.email
-end
-
+__K2L_DataClass(Person, {"name", "age", "email"})
 local Pair2 = __K2L_Class("Pair2")
-
-function Pair2:____init(first, second)
-    self.first = first
-    self.second = second
-end
 
 function Pair2.new(first, second)
     return setmetatable({first = first, second = second}, Pair2)
 end
 
-function Pair2:toString()
-    return "Pair2(first=" .. self.first .. ", second=" .. self.second .. ")"
-end
-
-function Pair2:hashCode()
-    return (31 * self.first + __K2L_Hash(self.second) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Pair2:equals(other)
-    return getmetatable(other) == Pair2 and self.first == other.first and self.second == other.second
-end
-
+__K2L_DataClass(Pair2, {"first", "second"})
 local Wrapper = __K2L_Class("Wrapper")
-
-function Wrapper:____init(inner)
-    self.inner = inner
-end
 
 function Wrapper.new(inner)
     return setmetatable({inner = inner}, Wrapper)
 end
 
-function Wrapper:toString()
-    return "Wrapper(inner=" .. __K2L_Str(self.inner) .. ")"
-end
-
-function Wrapper:hashCode()
-    return self.inner:hashCode()
-end
-
-function Wrapper:equals(other)
-    return getmetatable(other) == Wrapper and self.inner:equals(other.inner)
-end
+__K2L_DataClass(Wrapper, {"inner"})
 
 local function main()
     local p = Person.new("Ada", 36, nil)

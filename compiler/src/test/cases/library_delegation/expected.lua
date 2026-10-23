@@ -6,6 +6,7 @@ local __K2L_CollectionBase = ____lualib.__K2L_CollectionBase
 local __K2L_ComparatorMixin = ____lualib.__K2L_ComparatorMixin
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Entry = ____lualib.__K2L_Entry
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunctionMixin = ____lualib.__K2L_FunctionMixin
@@ -672,10 +673,6 @@ end
 local Version = __K2L_Class("Version")
 Version.____comparable = true
 
-function Version:____init(n)
-    self.n = n
-end
-
 function Version.new(n)
     return setmetatable({n = n}, Version)
 end
@@ -684,18 +681,7 @@ function Version:compareTo(other)
     return __K2L_Compare(self.n, other.n)
 end
 
-function Version:toString()
-    return "Version(n=" .. self.n .. ")"
-end
-
-function Version:hashCode()
-    return self.n
-end
-
-function Version:equals(other)
-    return getmetatable(other) == Version and self.n == other.n
-end
-
+__K2L_DataClass(Version, {"n"})
 local Release = __K2L_Class("Release")
 Release.____comparable = true
 

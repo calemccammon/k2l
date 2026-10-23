@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_NULL_ARGUMENT = ____lualib.__K2L_NULL_ARGUMENT
@@ -10,7 +10,7 @@ local __K2L_Str = ____lualib.__K2L_Str
 
 local Tag = __K2L_Class("Tag")
 
-function Tag:____init(name, weight)
+function Tag.new(name, weight)
     if name == nil then
         name = "untitled"
     elseif name == __K2L_NULL_ARGUMENT then
@@ -19,22 +19,10 @@ function Tag:____init(name, weight)
     if weight == nil then
         weight = 1
     end
-    self.name = name
-    self.weight = weight
+    return setmetatable({name = name, weight = weight}, Tag)
 end
 
-function Tag:toString()
-    return "Tag(name=" .. __K2L_Str(self.name) .. ", weight=" .. self.weight .. ")"
-end
-
-function Tag:hashCode()
-    return (31 * __K2L_Hash(self.name) + self.weight + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Tag:equals(other)
-    return getmetatable(other) == Tag and self.name == other.name and self.weight == other.weight
-end
-
+__K2L_DataClass(Tag, {"name", "weight"})
 local Box = __K2L_Class("Box")
 
 function Box:____init(value)
@@ -44,6 +32,15 @@ function Box:____init(value)
         value = nil
     end
     self.value = value
+end
+
+function Box.new(value)
+    if value == nil then
+        value = 5
+    elseif value == __K2L_NULL_ARGUMENT then
+        value = nil
+    end
+    return setmetatable({value = value}, Box)
 end
 
 function Box:____init1(text, extra)

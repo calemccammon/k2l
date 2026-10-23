@@ -27,35 +27,13 @@ local __K2L_Ushr = ____lualib.__K2L_Ushr
 
 local Sudoku = __K2L_Class("Sudoku")
 
-local ____lambda_1 = function(it)
-    return __K2L_IsDigit[it] == true or it == "."
-end
-function Sudoku:____init(puzzle)
-    self.grid = __K2L_ListOfSize(81, 0, true)
-    self.rows = __K2L_ListOfSize(9, 0, true)
-    self.cols = __K2L_ListOfSize(9, 0, true)
-    self.boxes = __K2L_ListOfSize(9, 0, true)
-    self.guesses = 0
-    local digits = __K2L_Text.filter(puzzle, ____lambda_1)
-    if #digits ~= 81 then
-        error(__K2L_IllegalArgumentException.new("expected 81 cells, got " .. #digits))
-    end
-    local ____chars = __K2L_StringToList(digits)
-    for i = 0, ____chars.size - 1 do
-        local c = ____chars[i + 1]
-        if c ~= "." and c ~= "0" then
-            self:place(i, __K2L_Num.digitToInt(c))
-        end
-    end
-end
-
-function Sudoku:box(i)
+local function box(self, i)
     return i // 27 * 3 + i % 9 // 3
 end
 
-function Sudoku:place(i, d)
+local function place(self, i, d)
     local ____bit = __K2L_Shl(1, d)
-    if not (self.rows:get(i // 9) & ____bit == 0 and self.cols:get(i % 9) & ____bit == 0 and self.boxes:get(self:box(i)) & ____bit == 0) then
+    if not (self.rows:get(i // 9) & ____bit == 0 and self.cols:get(i % 9) & ____bit == 0 and self.boxes:get(box(self, i)) & ____bit == 0) then
         error(__K2L_IllegalStateException.new("conflict at " .. i))
     end
     local ____object = self.grid
@@ -78,15 +56,15 @@ function Sudoku:place(i, d)
     end
     ____object_2[____key_1 + 1] = ____value_1
     local ____object_3 = self.boxes
-    local ____key_2 = self:box(i)
-    local ____value_2 = self.boxes:get(self:box(i)) | ____bit
+    local ____key_2 = box(self, i)
+    local ____value_2 = self.boxes:get(box(self, i)) | ____bit
     if ____key_2 < 0 or ____key_2 >= ____object_3.size then
         __K2L_IndexError(____key_2, ____object_3.size, "array")
     end
     ____object_3[____key_2 + 1] = ____value_2
 end
 
-function Sudoku:remove(i)
+local function remove(self, i)
     local mask = ~__K2L_Shl(1, self.grid[i + 1] or __K2L_IndexError(i, self.grid.size, "array"))
     local ____object_4 = self.rows
     local ____key_3 = i // 9
@@ -103,8 +81,8 @@ function Sudoku:remove(i)
     end
     ____object_5[____key_4 + 1] = ____value_4
     local ____object_6 = self.boxes
-    local ____key_5 = self:box(i)
-    local ____value_5 = self.boxes:get(self:box(i)) & mask
+    local ____key_5 = box(self, i)
+    local ____value_5 = self.boxes:get(box(self, i)) & mask
     if ____key_5 < 0 or ____key_5 >= ____object_6.size then
         __K2L_IndexError(____key_5, ____object_6.size, "array")
     end
@@ -116,8 +94,30 @@ function Sudoku:remove(i)
     ____object_7[i + 1] = 0
 end
 
-function Sudoku:candidates(i)
-    return 1022 & ~(self.rows:get(i // 9) | self.cols:get(i % 9) | self.boxes:get(self:box(i)))
+local function candidates(self, i)
+    return 1022 & ~(self.rows:get(i // 9) | self.cols:get(i % 9) | self.boxes:get(box(self, i)))
+end
+
+local ____lambda_1 = function(it)
+    return __K2L_IsDigit[it] == true or it == "."
+end
+function Sudoku:____init(puzzle)
+    self.grid = __K2L_ListOfSize(81, 0, true)
+    self.rows = __K2L_ListOfSize(9, 0, true)
+    self.cols = __K2L_ListOfSize(9, 0, true)
+    self.boxes = __K2L_ListOfSize(9, 0, true)
+    self.guesses = 0
+    local digits = __K2L_Text.filter(puzzle, ____lambda_1)
+    if #digits ~= 81 then
+        error(__K2L_IllegalArgumentException.new("expected 81 cells, got " .. #digits))
+    end
+    local ____chars = __K2L_StringToList(digits)
+    for i = 0, ____chars.size - 1 do
+        local c = ____chars[i + 1]
+        if c ~= "." and c ~= "0" then
+            place(self, i, __K2L_Num.digitToInt(c))
+        end
+    end
 end
 
 function Sudoku:solve()
@@ -128,7 +128,7 @@ function Sudoku:solve()
             if (self.grid[i + 1] or __K2L_IndexError(i, self.grid.size, "array")) ~= 0 then
                 goto ____continue
             end
-            local n = __K2L_Num.countOneBits(self:candidates(i))
+            local n = __K2L_Num.countOneBits(candidates(self, i))
             if n < bestCount then
                 best = i
                 bestCount = n
@@ -142,16 +142,16 @@ function Sudoku:solve()
     if best < 0 then
         return true
     end
-    local cands = self:candidates(best)
+    local cands = candidates(self, best)
     while cands ~= 0 do
         local ____bit = cands & -cands
         cands = cands ~ ____bit
         self.guesses = self.guesses + 1
-        self:place(best, __K2L_Num.countTrailingZeroBits(____bit))
+        place(self, best, __K2L_Num.countTrailingZeroBits(____bit))
         if self:solve() then
             return true
         end
-        self:remove(best)
+        remove(self, best)
     end
     return false
 end
@@ -281,16 +281,26 @@ end
 
 local BitSieve = __K2L_Class("BitSieve")
 
+local function set(self, i)
+    local ____object_11 = self.bits
+    local ____key_6 = (i & 0xFFFFFFFF) >> 5
+    local ____value_6 = (self.bits[((i & 0xFFFFFFFF) >> 5) + 1] or __K2L_IndexError((i & 0xFFFFFFFF) >> 5, self.bits.size, "array")) | __K2L_Shl(1, i & 31)
+    if ____key_6 < 0 or ____key_6 >= ____object_11.size then
+        __K2L_IndexError(____key_6, ____object_11.size, "array")
+    end
+    ____object_11[____key_6 + 1] = ____value_6
+end
+
 function BitSieve:____init(limit)
     self.limit = limit
     self.bits = __K2L_ListOfSize(self.limit // 32 + 1, 0, true)
-    self:set(0)
-    self:set(1)
+    set(self, 0)
+    set(self, 1)
     local p = 2
     while p * p <= self.limit do
         if not self:get(p) then
             for m = p * p, self.limit, __K2L_CheckStep(p) do
-                self:set(m)
+                set(self, m)
             end
         end
         p = p + 1
@@ -299,16 +309,6 @@ end
 
 function BitSieve:get(i)
     return (self.bits[((i & 0xFFFFFFFF) >> 5) + 1] or __K2L_IndexError((i & 0xFFFFFFFF) >> 5, self.bits.size, "array")) & __K2L_Shl(1, i & 31) ~= 0
-end
-
-function BitSieve:set(i)
-    local ____object_11 = self.bits
-    local ____key_6 = (i & 0xFFFFFFFF) >> 5
-    local ____value_6 = (self.bits[((i & 0xFFFFFFFF) >> 5) + 1] or __K2L_IndexError((i & 0xFFFFFFFF) >> 5, self.bits.size, "array")) | __K2L_Shl(1, i & 31)
-    if ____key_6 < 0 or ____key_6 >= ____object_11.size then
-        __K2L_IndexError(____key_6, ____object_11.size, "array")
-    end
-    ____object_11[____key_6 + 1] = ____value_6
 end
 
 function BitSieve:primes()

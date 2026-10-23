@@ -3,6 +3,7 @@ local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -41,10 +42,6 @@ local Customer
 local Money = __K2L_Class("bank.Money")
 Money.____comparable = true
 
-function Money:____init(cents)
-    self.cents = cents
-end
-
 function Money.new(cents)
     return setmetatable({cents = cents}, Money)
 end
@@ -79,14 +76,7 @@ function Money:toString()
     return sign .. "$" .. abs // 100 .. "." .. __K2L_StringPadStart(tostring(abs % 100), 2, "0")
 end
 
-function Money:hashCode()
-    return __K2L_Hash(self.cents)
-end
-
-function Money:equals(other)
-    return getmetatable(other) == Money and self.cents == other.cents
-end
-
+__K2L_DataClass(Money, {"cents"})
 Money.____companion = true
 
 local ____lambda_1 = function(it) return "0" end

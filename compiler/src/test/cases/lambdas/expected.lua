@@ -37,10 +37,6 @@ end
 
 local Greeter = __K2L_Class("Greeter")
 
-function Greeter:____init(greeting)
-    self.greeting = greeting
-end
-
 function Greeter.new(greeting)
     return setmetatable({greeting = greeting}, Greeter)
 end

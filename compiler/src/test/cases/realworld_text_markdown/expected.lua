@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_IsLetterOrDigit = ____lualib.__K2L_IsLetterOrDigit
@@ -140,40 +140,23 @@ end
 
 local Heading = __K2L_Class("Heading")
 
-function Heading:____init(level, text, id)
-    self.level = level
-    self.text = text
-    self.id = id
-end
-
 function Heading.new(level, text, id)
     return setmetatable({level = level, text = text, id = id}, Heading)
 end
 
-function Heading:toString()
-    return "Heading(level=" .. self.level .. ", text=" .. self.text .. ", id=" .. self.id .. ")"
-end
-
-function Heading:hashCode()
-    return (31 * (31 * self.level + __K2L_Hash(self.text)) + __K2L_Hash(self.id) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Heading:equals(other)
-    return getmetatable(other) == Heading and self.level == other.level and self.text == other.text and self.id == other.id
-end
-
+__K2L_DataClass(Heading, {"level", "text", "id"})
 local Converter = __K2L_Class("Converter")
+
+local ____lambda_2 = function(____p1, ____p2) return ____p1 + ____p2 end
+local function uniqueId(self, base)
+    local n = __K2L_NotNull(self.usedIds:merge(base, 1, ____lambda_2))
+    return n == 1 and base or base .. "-" .. n - 1
+end
 
 function Converter:____init()
     self.headings = __K2L_ListOf()
     self.out = __K2L_StringBuilder.new()
     self.usedIds = __K2L_Map.new()
-end
-
-local ____lambda_2 = function(____p1, ____p2) return ____p1 + ____p2 end
-function Converter:uniqueId(base)
-    local n = __K2L_NotNull(self.usedIds:merge(base, 1, ____lambda_2))
-    return n == 1 and base or base .. "-" .. n - 1
 end
 
 local ____lambda_3 = function(it) return it == "#" end
@@ -202,7 +185,7 @@ function Converter:convert(md)
         elseif __K2L_Regex.new("^#{1,6} ", "^##?#?#?#?#? "):containsMatchIn(line) then
             local level = #__K2L_Text.takeWhile(line, ____lambda_3)
             local text = __K2L_StringTrim(__K2L_Text.trimChars(__K2L_StringTrim(__K2L_Text.drop(line, level)), 2, "#"))
-            local id = self:uniqueId(slug(text))
+            local id = uniqueId(self, slug(text))
             self.headings:add(Heading.new(level, text, id))
             self.out:append("<h" .. level .. " id=\"" .. id .. "\">" .. inline(text) .. "</h" .. level .. ">\n")
             i = i + 1

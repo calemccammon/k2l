@@ -10,10 +10,6 @@ local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 
 local CountdownIterator = __K2L_Class("CountdownIterator")
 
-function CountdownIterator:____init(current)
-    self.current = current
-end
-
 function CountdownIterator.new(current)
     return setmetatable({current = current}, CountdownIterator)
 end

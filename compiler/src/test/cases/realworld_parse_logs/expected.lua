@@ -1,7 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -24,34 +23,14 @@ local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local Entry = __K2L_Class("Entry")
-
-function Entry:____init(time, level, source, message, fields)
-    self.time = time
-    self.level = level
-    self.source = source
-    self.message = message
-    self.fields = fields
-end
 
 function Entry.new(time, level, source, message, fields)
     return setmetatable({time = time, level = level, source = source, message = message, fields = fields}, Entry)
 end
 
-function Entry:toString()
-    return "Entry(time=" .. self.time .. ", level=" .. self.level .. ", source=" .. self.source .. ", message=" .. self.message .. ", fields=" .. __K2L_Str(self.fields) .. ")"
-end
-
-function Entry:hashCode()
-    return (31 * (31 * (31 * (31 * __K2L_Hash(self.time) + __K2L_Hash(self.level)) + __K2L_Hash(self.source)) + __K2L_Hash(self.message)) + __K2L_Hash(self.fields) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Entry:equals(other)
-    return getmetatable(other) == Entry and self.time == other.time and self.level == other.level and self.source == other.source and self.message == other.message and __K2L_Equals(self.fields, other.fields)
-end
-
+__K2L_DataClass(Entry, {"time", "level", "source", "message", "fields"})
 local accessLine = __K2L_Regex.new("^(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}) - (\\S+) \\[([^\\]]+)] \"([A-Z]+) (\\S+) HTTP/[\\d.]+\" (\\d{3}) ([\\d-]+)(.*)$", "^(%d%d?%d?%.%d%d?%d?%.%d%d?%d?%.%d%d?%d?) %- (%S+) %[([^%]]+)%] \"([A-Z]+) (%S+) HTTP/[%d%.]+\" (%d%d%d) ([%d%-]+)([^\n\r]*)$")
 local accessMs = __K2L_Regex.new(" (\\d+)ms", " (%d+)ms")
 local appLine = __K2L_Regex.new("^(\\d{2}:\\d{2}:\\d{2}\\.?\\d*)\\s+\\[([a-z]+)]\\s+([\\w.$]+):\\s*(.*)$", "^(%d%d:%d%d:%d%d%.?%d*)%s+%[([a-zA-Z]+)%]%s+([%w_%.%$]+):%s*([^\n\r]*)$")
@@ -183,7 +162,7 @@ end
 
 local function percentile(xs, p)
     local sorted = xs:sorted()
-    local rank = __K2L_Num.coerceIn(__K2L_Truncate(math.ceil(p / 100.0 * sorted.size)), 1, sorted.size)
+    local rank = __K2L_Num.coerceIn(math.ceil(p / 100.0 * sorted.size), 1, sorted.size)
     return sorted:get(rank - 1)
 end
 

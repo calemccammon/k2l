@@ -120,6 +120,7 @@ return ____exports
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
@@ -152,11 +153,6 @@ end
 
 local Vec = __K2L_Class("game.engine.Vec")
 
-function Vec:____init(x, y)
-    self.x = x
-    self.y = y
-end
-
 function Vec.new(x, y)
     return setmetatable({x = x, y = y}, Vec)
 end
@@ -165,18 +161,7 @@ function Vec:plus(o)
     return Vec.new(self.x + o.x, self.y + o.y)
 end
 
-function Vec:toString()
-    return "Vec(x=" .. self.x .. ", y=" .. self.y .. ")"
-end
-
-function Vec:hashCode()
-    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Vec:equals(other)
-    return getmetatable(other) == Vec and self.x == other.x and self.y == other.y
-end
-
+__K2L_DataClass(Vec, {"x", "y"})
 return {Entity = Entity, Vec = Vec}
 -- ==== main.lua ====
 local ____lualib = require("lualib_bundle")

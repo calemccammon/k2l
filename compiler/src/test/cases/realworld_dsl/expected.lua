@@ -1,8 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -16,10 +15,6 @@ local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local escape, Head, Title, Body, B, P, H1, UL, LI, A, ArrayBuilder, toJson
 local Element = __K2L_Class("dsl.Element")
 local TextElement = __K2L_Class("dsl.TextElement", nil, Element)
-
-function TextElement:____init(text)
-    self.text = text
-end
 
 function TextElement.new(text)
     return setmetatable({text = text}, TextElement)
@@ -50,6 +45,13 @@ end
 
 local Tag = __K2L_Class("dsl.Tag", nil, Element)
 
+local function renderAttributes(self)
+    return self.attributes:getEntries():joinToString("", nil, nil, nil, nil, function(____destructured)
+        local k, v = ____destructured.key, ____destructured.value
+        return " " .. k .. "=\"" .. escape(v) .. "\""
+    end)
+end
+
 function Tag:____init(name)
     self.name = name
     self.children = __K2L_ListOf()
@@ -63,7 +65,7 @@ function Tag:initTag(tag, init)
 end
 
 function Tag:render(builder, indent)
-    builder:append(indent .. "<" .. self.name .. self:renderAttributes())
+    builder:append(indent .. "<" .. self.name .. renderAttributes(self))
     if self.children:isEmpty() then
         builder:append("/>\n")
         return
@@ -75,13 +77,6 @@ function Tag:render(builder, indent)
         c:render(builder, indent .. "  ")
     end
     builder:append(indent .. "</" .. self.name .. ">\n")
-end
-
-function Tag:renderAttributes()
-    return self.attributes:getEntries():joinToString("", nil, nil, nil, nil, function(____destructured)
-        local k, v = ____destructured.key, ____destructured.value
-        return " " .. k .. "=\"" .. escape(v) .. "\""
-    end)
 end
 
 function Tag:toString()
@@ -255,10 +250,6 @@ end
 
 Json.JString = __K2L_Class("dsl.Json$JString", Json)
 
-function Json.JString:____init(value)
-    self.value = value
-end
-
 function Json.JString.new(value)
     return setmetatable({value = value}, Json.JString)
 end
@@ -281,23 +272,8 @@ function Json.JString:write(sb)
     sb:append("\"")
 end
 
-function Json.JString:toString()
-    return "JString(value=" .. self.value .. ")"
-end
-
-function Json.JString:hashCode()
-    return __K2L_Hash(self.value)
-end
-
-function Json.JString:equals(other)
-    return getmetatable(other) == Json.JString and self.value == other.value
-end
-
+__K2L_DataClass(Json.JString, {"value"})
 Json.JNumber = __K2L_Class("dsl.Json$JNumber", Json)
-
-function Json.JNumber:____init(value)
-    self.value = value
-end
 
 function Json.JNumber.new(value)
     return setmetatable({value = value}, Json.JNumber)
@@ -307,23 +283,8 @@ function Json.JNumber:write(sb)
     sb:append(__K2L_Str(self.value))
 end
 
-function Json.JNumber:toString()
-    return "JNumber(value=" .. __K2L_Str(self.value) .. ")"
-end
-
-function Json.JNumber:hashCode()
-    return __K2L_Hash(self.value)
-end
-
-function Json.JNumber:equals(other)
-    return getmetatable(other) == Json.JNumber and __K2L_Equals(self.value, other.value)
-end
-
+__K2L_DataClass(Json.JNumber, {"value"})
 Json.JBool = __K2L_Class("dsl.Json$JBool", Json)
-
-function Json.JBool:____init(value)
-    self.value = value
-end
 
 function Json.JBool.new(value)
     return setmetatable({value = value}, Json.JBool)
@@ -333,18 +294,7 @@ function Json.JBool:write(sb)
     sb:append(tostring(self.value))
 end
 
-function Json.JBool:toString()
-    return "JBool(value=" .. tostring(self.value) .. ")"
-end
-
-function Json.JBool:hashCode()
-    return self.value and 1231 or 1237
-end
-
-function Json.JBool:equals(other)
-    return getmetatable(other) == Json.JBool and self.value == other.value
-end
-
+__K2L_DataClass(Json.JBool, {"value"})
 Json.JNull = __K2L_Class("dsl.Json$JNull", Json)
 
 function Json.JNull:write(sb)
@@ -352,10 +302,6 @@ function Json.JNull:write(sb)
 end
 
 Json.JArray = __K2L_Class("dsl.Json$JArray", Json)
-
-function Json.JArray:____init(items)
-    self.items = items
-end
 
 function Json.JArray.new(items)
     return setmetatable({items = items}, Json.JArray)
@@ -376,10 +322,6 @@ function Json.JArray:write(sb)
 end
 
 Json.JObject = __K2L_Class("dsl.Json$JObject", Json)
-
-function Json.JObject:____init(fields)
-    self.fields = fields
-end
 
 function Json.JObject.new(fields)
     return setmetatable({fields = fields}, Json.JObject)

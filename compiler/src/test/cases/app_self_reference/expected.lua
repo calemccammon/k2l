@@ -9,11 +9,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 local tree, countdown, greetingName
 local Node = __K2L_Class("Node")
 
-function Node:____init(name, children)
-    self.name = name
-    self.children = children
-end
-
 function Node.new(name, children)
     return setmetatable({name = name, children = children}, Node)
 end

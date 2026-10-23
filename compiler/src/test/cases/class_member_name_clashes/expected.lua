@@ -7,11 +7,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 
 local Wrapper = __K2L_Class("Wrapper")
 
-function Wrapper:____init(obj, hashCode)
-    self.obj = obj
-    self.____hashCode = hashCode
-end
-
 function Wrapper.new(obj, hashCode)
     return setmetatable({obj = obj, ____hashCode = hashCode}, Wrapper)
 end

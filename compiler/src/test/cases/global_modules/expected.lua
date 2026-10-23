@@ -1,6 +1,8 @@
 -- ==== core/std.lua ====
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 
+____internal = ____internal or {}
+local ____internal = ____internal
 local secret, compute
 
 function clamp(x, lo, hi)
@@ -17,10 +19,12 @@ end
 
 LIMIT = 400
 
-function bump()
+local function bump()
     counter = counter + 1
     return counter
 end
+
+____internal.bump = bump
 
 function getGreeting()
     return "hello from " .. secret
@@ -50,6 +54,8 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
+____internal = ____internal or {}
+local ____internal = ____internal
 Circle = __K2L_Class("app.Circle", Shape, Named)
 
 function Circle:____init(r)
@@ -70,11 +76,11 @@ local function main()
     print(width(1000))
     print(shrink(9))
     print(format_hp(10))
-    bump()
-    bump()
+    ____internal.bump()
+    ____internal.bump()
     print(counter)
     counter = 10
-    print(bump())
+    print(____internal.bump())
     print(getGreeting())
     setVolume(50)
     print(getVolume())
@@ -96,6 +102,7 @@ end
 __K2L_RunMain(main)
 -- ==== model/shapes.lua ====
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 
@@ -126,17 +133,18 @@ function Square:area()
 end
 
 Registry = __K2L_Class("model.Registry")
+local items
 
 function Registry:____init()
-    self.items = __K2L_ListOf()
+    items = __K2L_ListOf()
 end
 
 function Registry:add(s)
-    self.items:add(s)
+    items:add(s)
 end
 
 function Registry:count()
-    return self.items.size
+    return items.size
 end
 
 Registry:____init()
@@ -171,27 +179,11 @@ Color.GREEN = Color.new("GREEN", 1)
 Color.____values = {Color.RED, Color.GREEN}
 Point = __K2L_Class("model.Point")
 
-function Point:____init(x, y)
-    self.x = x
-    self.y = y
-end
-
 function Point.new(x, y)
     return setmetatable({x = x, y = y}, Point)
 end
 
-function Point:toString()
-    return "Point(x=" .. self.x .. ", y=" .. self.y .. ")"
-end
-
-function Point:hashCode()
-    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Point:equals(other)
-    return getmetatable(other) == Point and self.x == other.x and self.y == other.y
-end
-
+__K2L_DataClass(Point, {"x", "y"})
 Counter = __K2L_Class("model.Counter")
 
 function Counter:make()

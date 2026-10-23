@@ -58,10 +58,6 @@ end
 
 local Table = __K2L_Class("Table")
 
-function Table:____init(name)
-    self.name = name
-end
-
 function Table.new(name)
     return setmetatable({name = name}, Table)
 end

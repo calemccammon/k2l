@@ -21,6 +21,20 @@ internal fun FileTransformer.ordered(exprs: List<KtExpression>, unlessReads: Boo
     }
 }
 
+/**
+ * The arguments [exprs] of a call, transformed in the order they are written (named arguments can be in any order), after
+ * the first [receivers], and returned in the order of [exprs]. Where that would run some of them in another order, the values
+ * are stored in locals first.
+ */
+internal fun FileTransformer.orderedAsWritten(exprs: List<KtExpression>, receivers: Int = 0): List<LuaExpr> {
+    val written = exprs.take(receivers) + exprs.drop(receivers).sortedBy { it.textRange.startOffset }
+    if (written == exprs) return ordered(exprs)
+    val values = ordered(written).toMutableList()
+    val runs = written.indices.filter { !isStable(values[it]) && values[it] !is LuaFunction }
+    if (exprs.map(written::indexOf).filter { it in runs } != runs) runs.forEach { values[it] = cache(values[it], "arg") }
+    return exprs.map { values[written.indexOf(it)] }
+}
+
 internal fun FileTransformer.isLocalRead(stmt: LuaStmt): Boolean = stmt is LuaLocal && stmt.values.all(::isRead)
 
 /** Reads and operators, no calls: a local holding one can be computed before or after the expressions around it. */

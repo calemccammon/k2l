@@ -2,6 +2,7 @@ package dev.k2l.transform
 
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.base.KaConstantValue
+import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 
 // Compile-time constants as Lua literals.
@@ -42,4 +43,10 @@ internal fun FileTransformer.constantValue(c: KaConstantValue?, e: KtElement): L
 
 internal fun FileTransformer.constant(e: KtExpression): LuaExpr = with(session) {
     constantValue(e.evaluate(), e)
+}
+
+/** The initializer of a `const val`, which is written as its value: `const val B = A / 2` is `B = 10`. */
+internal fun isConstInitializer(e: KtExpression): Boolean {
+    val p = generateSequence(e.parent) { it.parent }.firstOrNull { it !is KtParenthesizedExpression } as? KtProperty ?: return false
+    return p.hasModifier(KtTokens.CONST_KEYWORD) && p.initializer?.let { KtPsiUtil.safeDeparenthesize(it) } === e
 }

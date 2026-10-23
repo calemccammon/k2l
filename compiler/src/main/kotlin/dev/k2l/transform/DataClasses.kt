@@ -13,65 +13,29 @@ import org.jetbrains.kotlin.psi.*
  */
 internal fun KtClass.hasDataMembers(): Boolean = isData() || hasModifier(KtTokens.VALUE_KEYWORD) || hasModifier(KtTokens.INLINE_KEYWORD)
 
-/** `field.hashCode()`: an `Int` (`Short`, `Byte`) is its own hash and a `Boolean` 1231 or 1237, as `__K2L_Hash` gives them. */
-private fun FileTransformer.fieldHash(p: KtParameter, value: LuaExpr): LuaExpr = with(session) {
-    val type = p.returnType.withoutFlexibility
-    when {
-        type.isMarkedNullable -> lualibCall("Hash", value)
-
-        type.isIntType || type.isShortType || type.isByteType -> value
-
-        type.isBooleanType -> LuaBinary(LuaBinOp.Or, LuaBinary(LuaBinOp.And, value, LuaNumber("1231")), LuaNumber("1237"))
-
-        // a data class of the program (final) has its own hashCode
-        (type.expandedSymbol?.psi as? KtClass)?.let { it.isData() && classes.isSource(it) } == true ->
-            LuaMethodCall(value, "hashCode", emptyList())
-
-        else -> lualibCall("Hash", value)
-    }
-}
-
 /**
- * `result = 31 * result + h` over the field hashes, wrapped to 32 bits: once at the end where integers wrap modulo 2^64
- * (5.3/5.4), else at each step (doubles are exact only below 2^53).
+ * `__K2L_DataClass(P, {"x", "y"})`: the runtime gives the class the `toString`, `equals` and `hashCode` of a data class over
+ * its primary-constructor properties, where the class does not declare them (see `DataClass.lua`). Calls of `copy` and
+ * `componentN` read the fields where they are made; a `componentN` that overrides one of a supertype is also a method.
  */
-private fun FileTransformer.combinedHash(hashes: List<LuaExpr>): LuaExpr {
-    if (hashes.isEmpty()) return LuaNumber("0")
-    val step = { acc: LuaExpr, h: LuaExpr -> LuaBinary(LuaBinOp.Add, LuaBinary(LuaBinOp.Mul, LuaNumber("31"), acc), h) }
-    if (target.hasIntegers) return if (hashes.size == 1) hashes[0] else wrapInt32(hashes.reduce(step))
-    return hashes.reduce { acc, h -> lualibCall("ToInt32", step(acc, h)) }
-}
-
-internal fun FileTransformer.dataClassMembers(c: KtClass, ref: LuaExpr): Unit = with(session) {
+internal fun FileTransformer.dataClassMembers(c: KtClass, ref: LuaExpr) {
     val props = c.primaryConstructorParameters.filter { it.hasValOrVar() }
-    if (c.declaredFunction("toString") == null) {
-        val parts = mutableListOf<LuaExpr>()
-        props.forEachIndexed { i, p ->
-            parts += LuaString((if (i == 0) "${c.name}(" else ", ") + "${p.name}=")
-            parts += str(LuaIndex(selfRef(), LuaString(p.name!!)), p.returnType, forConcat = true)
-        }
-        parts += LuaString(if (props.isEmpty()) "${c.name}()" else ")")
-        val merged = parts.fold(mutableListOf<LuaExpr>()) { acc, part ->
-            val last = acc.lastOrNull()
-            if (last is LuaString && part is LuaString) acc[acc.lastIndex] = LuaString(last.value + part.value) else acc += part
-            acc
-        }
-        emitMethod(ref, "toString", emptyList(), listOf(LuaReturn(listOf(merged.reduceRight { a, b -> LuaBinary(LuaBinOp.Concat, a, b) }))))
-    }
-    if (c.declaredFunction("hashCode") == null) {
-        // result = 31 * result + field.hashCode(), as the Kotlin compiler generates.
-        val hash = combinedHash(props.map { p -> fieldHash(p, LuaIndex(selfRef(), LuaString(p.name!!))) })
-        emitMethod(ref, "hashCode", emptyList(), listOf(LuaReturn(listOf(hash))))
-    }
-    if (c.declaredFunction("equals") == null) {
-        val other = LuaName("other")
-        val checks = listOf<LuaExpr>(LuaBinary(LuaBinOp.Eq, luaCall(LuaName("getmetatable"), other), ref)) +
-            props.map { p ->
-                val key = LuaString(p.name!!)
-                val (mine, theirs) = LuaIndex(selfRef(), key) to LuaIndex(other, key)
-                equality(mine, p.returnType, theirs, p.returnType, negated = false)
-            }
-        emitMethod(ref, "equals", listOf("other"), listOf(LuaReturn(listOf(checks.reduce { a, b -> LuaBinary(LuaBinOp.And, a, b) }))))
+    // a property whose value is kept under another key (an override of an interface property, say) is `{name, key}`
+    val fields = LuaTable(
+        props.map { p ->
+            val key = fieldKey(p)
+            val field = if (key == p.name) LuaString(key) else LuaTable(listOf(p.name!!, key).map { LuaField.Positional(LuaString(it)) })
+            LuaField.Positional(field)
+        },
+    )
+    // toString() prints the simple name, the end of the class's Lua name unless the name itself has a `.` or `$`
+    val name = c.name.orEmpty()
+    val printed = LuaString(name).takeIf { className(c).substringAfterLast('.').substringAfterLast('$') != name }
+    emit(LuaCallStmt(lualibCall("DataClass", *listOfNotNull(ref, fields, printed).toTypedArray())))
+    props.forEachIndexed { i, p ->
+        val component = "component${i + 1}"
+        val overrides = classes.hierarchy(c).any { k -> k != c && k.declarations.any { it is KtNamedFunction && it.name == component } }
+        if (c.isData() && overrides) emitMethod(ref, component, emptyList(), listOf(LuaReturn(listOf(propertyRead(selfRef(), p)))))
     }
 }
 
@@ -126,12 +90,23 @@ private fun isGeneratedDataMember(name: String) = name in DATA_MEMBER_NAMES || n
 private val DATA_MEMBER_NAMES = setOf("copy", "toString", "equals", "hashCode")
 private val COMPONENT_N = Regex("component[0-9]+")
 
+/**
+ * `p.copy(y = 2)` is `P.new(p.x, 2)`. The arguments run as written, and before the omitted properties are read when a
+ * `var` among those could change.
+ */
 private fun FileTransformer.dataClassCopy(call: KaCallableMemberCall<*, *>, cls: KtClass, receiver: LuaExpr): LuaExpr = with(session) {
     val source = cache(receiver, "source")
-    val mapping = (call as KaFunctionCall<*>).valueArgumentMapping.entries.toList()
-    val provided = mapping.map { it.value.symbol.name.asString() }.zip(ordered(mapping.map { it.key })).toMap()
-    val nullable = mapping.filter { it.key.expressionType?.isMarkedNullable == true }.map { it.value.symbol.name.asString() }.toSet()
-    val args = cls.primaryConstructorParameters.map { p ->
+    val params = cls.primaryConstructorParameters
+    val mapping = (call as KaFunctionCall<*>).valueArgumentMapping.entries
+        .map { it.value.symbol.name.asString() to it.key }.sortedBy { (name, _) -> params.indexOfFirst { it.name == name } }
+    val names = mapping.map { it.first }
+    val readsVar = params.any { it.name !in names && it.isMutable }
+    val values = orderedAsWritten(mapping.map { it.second }).map {
+        if (readsVar && !isStable(it) && it !is LuaFunction) cache(it, "arg") else it
+    }
+    val provided = names.zip(values).toMap()
+    val nullable = mapping.filter { it.second.expressionType?.isMarkedNullable == true }.map { it.first }.toSet()
+    val args = params.map { p ->
         val value = provided[p.name] ?: return@map propertyRead(source, p)
         // a null for a constructor parameter whose default is not null (see nullArgument)
         if (p.name in nullable && p.hasDefaultValue() && !isNullDefault(p.defaultValue)) nullArgument(value) else value

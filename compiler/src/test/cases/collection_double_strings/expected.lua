@@ -1,7 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_Pair = ____lualib.__K2L_Pair
@@ -11,26 +10,11 @@ local __K2L_Str = ____lualib.__K2L_Str
 
 local P = __K2L_Class("P")
 
-function P:____init(n, xs)
-    self.n = n
-    self.xs = xs
-end
-
 function P.new(n, xs)
     return setmetatable({n = n, xs = xs}, P)
 end
 
-function P:toString()
-    return "P(n=" .. self.n .. ", xs=" .. __K2L_Str(self.xs) .. ")"
-end
-
-function P:hashCode()
-    return (31 * self.n + __K2L_Hash(self.xs) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function P:equals(other)
-    return getmetatable(other) == P and self.n == other.n and __K2L_Equals(self.xs, other.xs)
-end
+__K2L_DataClass(P, {"n", "xs"})
 
 local function main()
     local a = __K2L_ListOf(1.5, 3.0)

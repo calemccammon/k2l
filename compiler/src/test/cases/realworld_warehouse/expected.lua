@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
@@ -123,11 +124,6 @@ end
 
 local Slot = __K2L_Class("warehouse.Slot")
 
-function Slot:____init(row, col)
-    self.row = row
-    self.col = col
-end
-
 function Slot.new(row, col)
     return setmetatable({row = row, col = col}, Slot)
 end
@@ -136,18 +132,7 @@ function Slot:minus(o)
     return math.abs(self.row - o.row) + math.abs(self.col - o.col)
 end
 
-function Slot:toString()
-    return "Slot(row=" .. self.row .. ", col=" .. self.col .. ")"
-end
-
-function Slot:hashCode()
-    return (31 * self.row + self.col + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Slot:equals(other)
-    return getmetatable(other) == Slot and self.row == other.row and self.col == other.col
-end
-
+__K2L_DataClass(Slot, {"row", "col"})
 local Grid = __K2L_Class("warehouse.Grid")
 
 function Grid:____init(rows, cols)
@@ -250,6 +235,7 @@ function Grid:getTotalUnits()
 end
 
 local Order = __K2L_Class("warehouse.Order")
+local ____next
 
 function Order:____init(id, ...)
     local lines = __K2L_ArrayOf(...)
@@ -259,13 +245,13 @@ end
 
 function Order:invoke(...)
     local lines = __K2L_ArrayOf(...)
-    local ____old = self.next
-    self.next = self.next + 1
+    local ____old = ____next
+    ____next = ____next + 1
     return Order.new(____old, __K2L_Unpack(lines))
 end
 
 function Order:____initCompanion()
-    self.next = 1
+    ____next = 1
 end
 
 Order:____initCompanion()

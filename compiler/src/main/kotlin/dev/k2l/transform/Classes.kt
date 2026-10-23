@@ -64,6 +64,7 @@ internal fun FileTransformer.declareClass(c: KtClassOrObject, isLocal: Boolean):
     if (isLocal) captureOuters(c)
     val ref = classRef(c)
     emitClassTable(c, ref, info, isLocal)
+    if (c.isTopLevel()) privateLocalDeclarations(c)
     classBody(c, ref, info)
     val lazy = initialization(c, ref)
     if (lazy.isNotEmpty()) emit(LuaCallStmt(lualibCall("LazyObject", ref, *lazy.map { LuaString(it) }.toTypedArray())))
@@ -167,7 +168,7 @@ internal fun FileTransformer.members(c: KtClassOrObject, ref: LuaExpr): Unit = w
     (c as? KtClass)?.primaryConstructorParameters?.filter { it.hasValOrVar() && hasAccessors(it) }?.forEach { accessorMethods(it, ref) }
     for (decl in c.declarations) {
         when (decl) {
-            is KtNamedFunction -> if (decl.hasBody() && !decl.isReifiedInline()) {
+            is KtNamedFunction -> if (decl.hasBody() && !decl.isReifiedInline() && privateLocal(decl) == null) {
                 withObjectSelf(objectSelfOf(c, ref, decl)) {
                     val name = LuaIndex(ref, LuaString(naming.function(decl)))
                     emit(LuaFunctionDecl(name, function(decl), isLocal = false, isMethod = objectSelf == null))
@@ -199,11 +200,13 @@ internal fun FileTransformer.constructors(c: KtClassOrObject, ref: LuaExpr, info
     if (hasPrimary(c) && classes.initNeeded(c)) {
         val params = (c as? KtClass)?.primaryConstructorParameters.orEmpty()
         val vararg = varargParameter(params)
+        var defaults = emptyList<LuaStmt>()
         val body = collect {
             bindMembers(selfRef(), boundMembers(c))
             packVararg(vararg)
             storeOuter(c)
-            defaultArguments(params)
+            defaults = collect { defaultArguments(params) }
+            emitAll(defaults)
             if (isEnum) enumParams.forEach { emit(assign(LuaIndex(selfRef(), LuaString(it)), LuaName(it))) }
             earlyFieldDefaults(c)
             superInit(info.baseCall, info)
@@ -213,8 +216,17 @@ internal fun FileTransformer.constructors(c: KtClassOrObject, ref: LuaExpr, info
             delegateFields(c)
             initializers(c)
         }
-        emitMethod(ref, INIT, enumParams + params.filter { !it.isVarArg }.map { naming.of(it) }, body, isVararg = vararg != null)
-        if (vararg == null && enumParams.isEmpty()) plainConstructor(c, ref, params.map { naming.of(it) }, body)
+        val plain = if (vararg == null &&
+            enumParams.isEmpty()
+        ) {
+            plainConstructor(c, ref, params.map { naming.of(it) }, defaults, body)
+        } else {
+            null
+        }
+        if (plain == null || !isFinalClass(c)) {
+            emitMethod(ref, INIT, enumParams + params.filter { !it.isVarArg }.map { naming.of(it) }, body, isVararg = vararg != null)
+        }
+        plain?.let(::emit)
     }
     (c as? KtClass)?.secondaryConstructors?.forEachIndexed { i, ctor -> secondaryConstructor(c, ctor, (i + 1).toString(), ref, info) }
 }
@@ -306,13 +318,13 @@ internal fun FileTransformer.accessorName(prefix: String, p: KtNamedDeclaration)
 internal fun FileTransformer.propertyRead(receiver: LuaExpr, p: KtNamedDeclaration): LuaExpr = if (hasAccessors(p)) {
     methodCall(receiver, accessorName("get", p), emptyList(), noSelf.isNoSelf(p))
 } else {
-    lateinitRead(p, LuaIndex(receiver, LuaString(fieldKey(p))))
+    lateinitRead(p, memberSlot(receiver, p))
 }
 
 internal fun FileTransformer.propertyWrite(receiver: LuaExpr, p: KtNamedDeclaration, value: LuaExpr): LuaStmt = if (hasAccessors(p)) {
     LuaCallStmt(methodCall(receiver, accessorName("set", p), listOf(value), noSelf.isNoSelf(p)))
 } else {
-    assign(LuaIndex(receiver, LuaString(fieldKey(p))), value)
+    assign(memberSlot(receiver, p), value)
 }
 
 /** `field` inside an accessor: the property's storage on `self`. */

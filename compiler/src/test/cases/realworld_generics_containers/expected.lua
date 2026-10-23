@@ -2,8 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_GenerateSequenceLazy = ____lualib.__K2L_GenerateSequenceLazy
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
@@ -27,12 +27,8 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Key = __K2L_Class("generics.containers.Key")
 
-function Key:____init(name, default)
-    if default == nil then
-        default = nil
-    end
-    self.name = name
-    self.default = default
+function Key.new(name, default)
+    return setmetatable({name = name, default = default}, Key)
 end
 
 function Key:toString()
@@ -247,6 +243,19 @@ end
 
 local Trie = __K2L_Class("generics.containers.Trie")
 
+local function find(self, prefix)
+    local node = self.root
+    for ____i = 1, #prefix do
+        local c = prefix:sub(____i, ____i)
+        local ____value_7 = node.children:get(c)
+        if ____value_7 == nil then
+            return nil
+        end
+        node = ____value_7
+    end
+    return node
+end
+
 function Trie:____init()
     self.root = Trie.Node.new()
     self.size = 0
@@ -263,8 +272,8 @@ end
 local ____lambda_2 = function() return Trie.Node.new() end
 function Trie:set(word, value)
     local node = self.root
-    for ____i = 1, #word do
-        local c = word:sub(____i, ____i)
+    for ____i_1 = 1, #word do
+        local c = word:sub(____i_1, ____i_1)
         node = node.children:getOrPut(c, ____lambda_2)
     end
     if not node.terminal then
@@ -277,22 +286,9 @@ function Trie:set(word, value)
 end
 
 function Trie:get(word)
-    local ____receiver = self:find(word)
+    local ____receiver = find(self, word)
     local ____receiver_1 = ____receiver and (____receiver.terminal and ____receiver or nil)
     return ____receiver_1 and ____receiver_1.value
-end
-
-function Trie:find(prefix)
-    local node = self.root
-    for ____i_1 = 1, #prefix do
-        local c = prefix:sub(____i_1, ____i_1)
-        local ____value_7 = node.children:get(c)
-        if ____value_7 == nil then
-            return nil
-        end
-        node = ____value_7
-    end
-    return node
 end
 
 function Trie:withPrefix(prefix)
@@ -310,7 +306,7 @@ function Trie:withPrefix(prefix)
             path:setLength(path:getLength() - 1)
         end
     end
-    local ____receiver_2 = self:find(prefix)
+    local ____receiver_2 = find(self, prefix)
     if ____receiver_2 ~= nil then
         walk(____receiver_2, __K2L_StringBuilder.new(prefix))
     end
@@ -339,28 +335,11 @@ end
 
 local Task = __K2L_Class("generics.containers.Task")
 
-function Task:____init(name, priority, cost)
-    self.name = name
-    self.priority = priority
-    self.cost = cost
-end
-
 function Task.new(name, priority, cost)
     return setmetatable({name = name, priority = priority, cost = cost}, Task)
 end
 
-function Task:toString()
-    return "Task(name=" .. self.name .. ", priority=" .. self.priority .. ", cost=" .. self.cost .. ")"
-end
-
-function Task:hashCode()
-    return (31 * (31 * __K2L_Hash(self.name) + self.priority) + __K2L_Hash(self.cost) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Task:equals(other)
-    return getmetatable(other) == Task and self.name == other.name and self.priority == other.priority and self.cost == other.cost
-end
-
+__K2L_DataClass(Task, {"name", "priority", "cost"})
 local PORT = Key.new("port", 8080)
 local HOST = Key.new("host")
 local TAGS = Key.new("tags")

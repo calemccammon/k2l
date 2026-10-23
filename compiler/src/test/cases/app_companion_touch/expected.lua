@@ -9,10 +9,6 @@ local __K2L_TouchObject = ____lualib.__K2L_TouchObject
 local log = __K2L_ListOf()
 local Widget = __K2L_Class("Widget")
 
-function Widget:____init(name)
-    self.name = name
-end
-
 function Widget.new(name)
     return setmetatable({name = name}, Widget)
 end
@@ -27,18 +23,19 @@ end
 
 __K2L_LazyObject(Widget, "____initCompanion")
 local Registry = __K2L_Class("Registry")
+local names
 
 function Registry:____init()
-    self.names = __K2L_ListOf()
+    names = __K2L_ListOf()
     log:add("Registry init")
 end
 
 function Registry:add(name, factory)
-    self.names:add(factory(name).name)
+    names:add(factory(name).name)
 end
 
 function Registry:toString()
-    return __K2L_Str(self.names)
+    return __K2L_Str(names)
 end
 
 __K2L_LazyObject(Registry, "____init")

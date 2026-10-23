@@ -26,10 +26,6 @@ end
 
 local Temperature = __K2L_Class("Temperature")
 
-function Temperature:____init(celsius)
-    self.celsius = celsius
-end
-
 function Temperature.new(celsius)
     return setmetatable({celsius = celsius}, Temperature)
 end

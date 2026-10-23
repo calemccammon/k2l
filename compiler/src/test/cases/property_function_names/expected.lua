@@ -29,10 +29,6 @@ end
 
 local Inbox = __K2L_Class("Inbox", nil, Source)
 
-function Inbox:____init(items)
-    self.items = items
-end
-
 function Inbox.new(items)
     return setmetatable({items = items}, Inbox)
 end

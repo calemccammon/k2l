@@ -44,6 +44,7 @@ return {Circle = Circle}
 -- ==== model/shapes.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 
 local Shape = __K2L_Class("app.model.Shape")
@@ -76,17 +77,18 @@ function Square:area()
 end
 
 local Registry = __K2L_Class("app.model.Registry")
+local shapes
 
 function Registry:____init()
-    self.shapes = __K2L_ListOf()
+    shapes = __K2L_ListOf()
 end
 
 function Registry:add(s)
-    self.shapes:add(s)
+    shapes:add(s)
 end
 
 function Registry:count()
-    return self.shapes.size
+    return shapes.size
 end
 
 Registry:____init()
@@ -110,27 +112,11 @@ Color.GREEN = Color.new("GREEN", 1)
 Color.____values = {Color.RED, Color.GREEN}
 local Point = __K2L_Class("app.model.Point")
 
-function Point:____init(x, y)
-    self.x = x
-    self.y = y
-end
-
 function Point.new(x, y)
     return setmetatable({x = x, y = y}, Point)
 end
 
-function Point:toString()
-    return "Point(x=" .. self.x .. ", y=" .. self.y .. ")"
-end
-
-function Point:hashCode()
-    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Point:equals(other)
-    return getmetatable(other) == Point and self.x == other.x and self.y == other.y
-end
-
+__K2L_DataClass(Point, {"x", "y"})
 return {Shape = Shape, Square = Square, Registry = Registry, Color = Color, Point = Point}
 -- ==== parity/even.lua ====
 local ____exports = {}

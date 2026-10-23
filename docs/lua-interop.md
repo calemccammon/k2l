@@ -93,6 +93,7 @@ print(tostring(e2))               -- tostring() is the object's toString()
 ```
 
 - `@LuaName` on a top-level function or property gives it a Lua-style name in the module table.
+- Private members of classes and objects are, where possible, locals of their file instead of fields.
 - A plain Lua array is not a Kotlin `List`.
 - The runtime has only what the Kotlin code uses. Lua can call a method of a Kotlin object, such as a list's
   `joinToString`, only if the Kotlin code calls a method of that name somewhere.
@@ -114,7 +115,7 @@ local e2 = Enemy.new(0)
 
 - A top-level `val` or `var` is a global that Lua can read and write.
 - A top-level property `x` with a custom getter or setter is a pair of global functions, `getX()` and `setX(value)`.
-- Private declarations are not globals.
+- Internal and private declarations are not globals.
 
 ## Self
 
@@ -153,7 +154,8 @@ Dispatch.OnMouseWheel(1, 2, 3)
   `ticker.start()` works.
 - A class keeps its methods with `self` in the class table. Each instance gets a field for each member without `self`: a
   closure that calls the method with the instance. The constructor sets these fields. This costs one closure per such member
-  per instance. Overrides, `super` calls and calls from inside the class work as usual.
+  per instance. Overrides, `super` calls and calls from inside the class work as usual. Private functions need no field:
+  they are locals of the file.
 - Function references (`Book::Initialize`, `obj::f`, `Class::f`) work with members without `self`.
 
 Some members always take `self`:

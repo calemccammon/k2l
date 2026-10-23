@@ -18,10 +18,6 @@ local __K2L_UnsupportedOperationException = ____lualib.__K2L_UnsupportedOperatio
 
 local Res = __K2L_Class("Res")
 
-function Res:____init(name)
-    self.name = name
-end
-
 function Res.new(name)
     return setmetatable({name = name}, Res)
 end

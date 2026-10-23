@@ -2,8 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -57,33 +56,11 @@ local LEVELS = __K2L_SetOf("TRACE", "DEBUG", "INFO", "WARN", "ERROR")
 local LOG = __K2L_Text.trimIndent("\n192.168.1.10 - alice [12/Mar/2024:09:15:02 +0000] \"GET /api/users?id=42&token=abc123 HTTP/1.1\" 200 512 12ms\n10.0.0.7 - - [12/Mar/2024:09:15:09 +0000] \"POST /api/login HTTP/1.1\" 401 87 140ms\n10.0.0.7 - - [12/Mar/2024:09:16:11 +0000] \"POST /api/login HTTP/1.1\" 401 87 133ms\n10.0.0.7 - - [12/Mar/2024:09:16:40 +0000] \"POST /api/login HTTP/1.1\" 200 1024 98ms\n2024-03-12T09:16:41.123Z INFO  [http-nio-8080-exec-3] com.example.auth.LoginService - user bob logged in from 10.0.0.7 password=hunter2\n172.16.0.3 - carol [12/Mar/2024:10:01:00 +0000] \"GET /static/app.js HTTP/2.0\" 304 - 3ms\n172.16.0.3 - carol [12/Mar/2024:10:01:01 +0000] \"GET /static/app.css HTTP/2.0\" 304 -\ngarbage line that matches nothing\n2024-03-12T10:02:00Z WARN  [scheduler-1] com.example.jobs.Cleanup" .. "$" .. "Worker - slow query took 2350ms: SELECT * FROM t WHERE email='dave@example.com'\n192.168.1.10 - alice [12/Mar/2024:10:30:59 +0000] \"DELETE /api/users/42 HTTP/1.1\" 500 0 2012ms\n2024-03-12T10:31:00Z ERROR [http-nio-8080-exec-1] com.example.api.UserController - failed to delete user 42: java.sql.SQLException: lock timeout (card 4111-1111-1111-1111)\n192.168.1.11 - alice [12/Mar/2024:11:05:00 +0000] \"GET /api/users?id=7&api_key=XYZ987&page=2 HTTP/1.1\" 200 2048 25ms\n2024-03-12T11:05:01.5Z DEBUG [main] com.example.Cache - hit ratio 0.875 for key users:7\n")
 local Access = __K2L_Class("Access")
 
-function Access:____init(ip, user, hour, method, path, query, status, bytes, ms)
-    self.ip = ip
-    self.user = user
-    self.hour = hour
-    self.method = method
-    self.path = path
-    self.query = query
-    self.status = status
-    self.bytes = bytes
-    self.ms = ms
-end
-
 function Access.new(ip, user, hour, method, path, query, status, bytes, ms)
     return setmetatable({ip = ip, user = user, hour = hour, method = method, path = path, query = query, status = status, bytes = bytes, ms = ms}, Access)
 end
 
-function Access:toString()
-    return "Access(ip=" .. self.ip .. ", user=" .. __K2L_Str(self.user) .. ", hour=" .. self.hour .. ", method=" .. self.method .. ", path=" .. self.path .. ", query=" .. __K2L_Str(self.query) .. ", status=" .. self.status .. ", bytes=" .. self.bytes .. ", ms=" .. __K2L_Str(self.ms) .. ")"
-end
-
-function Access:hashCode()
-    return (31 * (31 * (31 * (31 * (31 * (31 * (31 * (31 * __K2L_Hash(self.ip) + __K2L_Hash(self.user)) + self.hour) + __K2L_Hash(self.method)) + __K2L_Hash(self.path)) + __K2L_Hash(self.query)) + self.status) + __K2L_Hash(self.bytes)) + __K2L_Hash(self.ms) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Access:equals(other)
-    return getmetatable(other) == Access and self.ip == other.ip and self.user == other.user and self.hour == other.hour and self.method == other.method and self.path == other.path and __K2L_Equals(self.query, other.query) and self.status == other.status and self.bytes == other.bytes and self.ms == other.ms
-end
+__K2L_DataClass(Access, {"ip", "user", "hour", "method", "path", "query", "status", "bytes", "ms"})
 
 local ____lambda_1 = function(kv)
     return __K2L_Pair.new(__K2L_Text.substringBefore(kv, "="), __K2L_Text.substringAfter(kv, "=", ""))

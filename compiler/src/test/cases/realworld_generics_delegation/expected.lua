@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
 local __K2L_ListBase = ____lualib.__K2L_ListBase
@@ -299,51 +299,18 @@ end
 
 local User = __K2L_Class("generics.delegation.User", nil, Identified)
 
-function User:____init(id, name, role)
-    self.id = id
-    self.name = name
-    self.role = role
-end
-
 function User.new(id, name, role)
     return setmetatable({id = id, name = name, role = role}, User)
 end
 
-function User:toString()
-    return "User(id=" .. self.id .. ", name=" .. self.name .. ", role=" .. self.role .. ")"
-end
-
-function User:hashCode()
-    return (31 * (31 * self.id + __K2L_Hash(self.name)) + __K2L_Hash(self.role) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function User:equals(other)
-    return getmetatable(other) == User and self.id == other.id and self.name == other.name and self.role == other.role
-end
-
+__K2L_DataClass(User, {"id", "name", "role"})
 local Product = __K2L_Class("generics.delegation.Product", nil, Identified)
-
-function Product:____init(id, price, stock)
-    self.id = id
-    self.price = price
-    self.stock = stock
-end
 
 function Product.new(id, price, stock)
     return setmetatable({id = id, price = price, stock = stock}, Product)
 end
 
-function Product:toString()
-    return "Product(id=" .. self.id .. ", price=" .. self.price .. ", stock=" .. self.stock .. ")"
-end
-
-function Product:hashCode()
-    return (31 * (31 * __K2L_Hash(self.id) + __K2L_Hash(self.price)) + self.stock + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Product:equals(other)
-    return getmetatable(other) == Product and self.id == other.id and self.price == other.price and self.stock == other.stock
-end
+__K2L_DataClass(Product, {"id", "price", "stock"})
 
 local ____lambda_1 = function(it) return it.id end
 local function getIds(____this)

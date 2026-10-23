@@ -3,9 +3,9 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
@@ -87,35 +87,13 @@ end
 
 local Task = __K2L_Class("Task")
 
-function Task:____init(name, level, shape)
-    self.name = name
-    self.level = level
-    self.shape = shape
-end
-
 function Task.new(name, level, shape)
     return setmetatable({name = name, level = level, shape = shape}, Task)
 end
 
-function Task:toString()
-    return "Task(name=" .. self.name .. ", level=" .. __K2L_Str(self.level) .. ", shape=" .. __K2L_Str(self.shape) .. ")"
-end
-
-function Task:hashCode()
-    return (31 * (31 * __K2L_Hash(self.name) + __K2L_Hash(self.level)) + __K2L_Hash(self.shape) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Task:equals(other)
-    return getmetatable(other) == Task and self.name == other.name and self.level == other.level and self.shape == other.shape
-end
-
+__K2L_DataClass(Task, {"name", "level", "shape"})
 local Version = __K2L_Class("Version")
 Version.____comparable = true
-
-function Version:____init(major, minor)
-    self.major = major
-    self.minor = minor
-end
 
 function Version.new(major, minor)
     return setmetatable({major = major, minor = minor}, Version)
@@ -127,17 +105,7 @@ function Version:compareTo(other)
     return __K2L_CompareBy(____lambda_1, ____lambda_2)(self, other)
 end
 
-function Version:toString()
-    return "Version(major=" .. self.major .. ", minor=" .. self.minor .. ")"
-end
-
-function Version:hashCode()
-    return (31 * self.major + self.minor + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Version:equals(other)
-    return getmetatable(other) == Version and self.major == other.major and self.minor == other.minor
-end
+__K2L_DataClass(Version, {"major", "minor"})
 
 local ____lambda_3 = function(a, b)
     return __K2L_Compare(a, b) >= 0 and a or b

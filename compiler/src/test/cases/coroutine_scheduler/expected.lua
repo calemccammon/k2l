@@ -24,11 +24,6 @@ end
 
 Scheduler.Waiting = __K2L_Class("Scheduler$Waiting")
 
-function Scheduler.Waiting:____init(wakeAt, cont)
-    self.wakeAt = wakeAt
-    self.cont = cont
-end
-
 function Scheduler.Waiting.new(wakeAt, cont)
     return setmetatable({wakeAt = wakeAt, cont = cont}, Scheduler.Waiting)
 end

@@ -2,9 +2,9 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -26,118 +26,39 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local Event = __K2L_Class("machine.Event")
 Event.Placed = __K2L_Class("machine.Event$Placed", nil, Event)
 
-function Event.Placed:____init(orderId, amount)
-    self.orderId = orderId
-    self.amount = amount
-end
-
 function Event.Placed.new(orderId, amount)
     return setmetatable({orderId = orderId, amount = amount}, Event.Placed)
 end
 
-function Event.Placed:toString()
-    return "Placed(orderId=" .. self.orderId .. ", amount=" .. self.amount .. ")"
-end
-
-function Event.Placed:hashCode()
-    return (31 * self.orderId + __K2L_Hash(self.amount) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.Placed:equals(other)
-    return getmetatable(other) == Event.Placed and self.orderId == other.orderId and self.amount == other.amount
-end
-
+__K2L_DataClass(Event.Placed, {"orderId", "amount"})
 Event.Paid = __K2L_Class("machine.Event$Paid", nil, Event)
-
-function Event.Paid:____init(orderId, amount)
-    self.orderId = orderId
-    self.amount = amount
-end
 
 function Event.Paid.new(orderId, amount)
     return setmetatable({orderId = orderId, amount = amount}, Event.Paid)
 end
 
-function Event.Paid:toString()
-    return "Paid(orderId=" .. self.orderId .. ", amount=" .. self.amount .. ")"
-end
-
-function Event.Paid:hashCode()
-    return (31 * self.orderId + __K2L_Hash(self.amount) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.Paid:equals(other)
-    return getmetatable(other) == Event.Paid and self.orderId == other.orderId and self.amount == other.amount
-end
-
+__K2L_DataClass(Event.Paid, {"orderId", "amount"})
 Event.Shipped = __K2L_Class("machine.Event$Shipped", nil, Event)
-
-function Event.Shipped:____init(orderId, carrier)
-    self.orderId = orderId
-    self.carrier = carrier
-end
 
 function Event.Shipped.new(orderId, carrier)
     return setmetatable({orderId = orderId, carrier = carrier}, Event.Shipped)
 end
 
-function Event.Shipped:toString()
-    return "Shipped(orderId=" .. self.orderId .. ", carrier=" .. self.carrier .. ")"
-end
-
-function Event.Shipped:hashCode()
-    return (31 * self.orderId + __K2L_Hash(self.carrier) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.Shipped:equals(other)
-    return getmetatable(other) == Event.Shipped and self.orderId == other.orderId and self.carrier == other.carrier
-end
-
+__K2L_DataClass(Event.Shipped, {"orderId", "carrier"})
 Event.Cancelled = __K2L_Class("machine.Event$Cancelled", nil, Event)
-
-function Event.Cancelled:____init(orderId, reason)
-    self.orderId = orderId
-    self.reason = reason
-end
 
 function Event.Cancelled.new(orderId, reason)
     return setmetatable({orderId = orderId, reason = reason}, Event.Cancelled)
 end
 
-function Event.Cancelled:toString()
-    return "Cancelled(orderId=" .. self.orderId .. ", reason=" .. self.reason .. ")"
-end
-
-function Event.Cancelled:hashCode()
-    return (31 * self.orderId + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.Cancelled:equals(other)
-    return getmetatable(other) == Event.Cancelled and self.orderId == other.orderId and self.reason == other.reason
-end
-
+__K2L_DataClass(Event.Cancelled, {"orderId", "reason"})
 Event.Delivered = __K2L_Class("machine.Event$Delivered", nil, Event)
-
-function Event.Delivered:____init(orderId)
-    self.orderId = orderId
-end
 
 function Event.Delivered.new(orderId)
     return setmetatable({orderId = orderId}, Event.Delivered)
 end
 
-function Event.Delivered:toString()
-    return "Delivered(orderId=" .. self.orderId .. ")"
-end
-
-function Event.Delivered:hashCode()
-    return self.orderId
-end
-
-function Event.Delivered:equals(other)
-    return getmetatable(other) == Event.Delivered and self.orderId == other.orderId
-end
-
+__K2L_DataClass(Event.Delivered, {"orderId"})
 local OrderState = __K2L_Class("machine.OrderState")
 
 function OrderState:____init(name, ordinal, terminal)
@@ -269,6 +190,7 @@ function EventBus:recent()
 end
 
 local Order = __K2L_Class("machine.Order")
+local nextId
 
 function Order:____init(id, amount)
     self.id = id
@@ -305,32 +227,33 @@ function Order:toString()
 end
 
 function Order:create(amount)
-    local ____old = self.nextId
-    self.nextId = self.nextId + 1
+    local ____old = nextId
+    nextId = nextId + 1
     return Order.new(____old, amount)
 end
 
 function Order:getIssued()
-    return self.nextId - 100
+    return nextId - 100
 end
 
 function Order:____initCompanion()
-    self.nextId = 100
+    nextId = 100
 end
 
 Order:____initCompanion()
 local OrderRegistry = __K2L_Class("machine.OrderRegistry")
+local orders
 
 function OrderRegistry:____init()
-    self.orders = __K2L_MapOf()
+    orders = __K2L_MapOf()
 end
 
 function OrderRegistry:getSize()
-    return self.orders.size
+    return orders.size
 end
 
 function OrderRegistry:get(id)
-    local ____value_1 = self.orders:get(id)
+    local ____value_1 = orders:get(id)
     if ____value_1 == nil then
         error(__K2L_NoSuchElementException.new("no order " .. id))
     end
@@ -338,13 +261,13 @@ function OrderRegistry:get(id)
 end
 
 function OrderRegistry:plusAssign(order)
-    local ____object = self.orders
+    local ____object = orders
     local ____key = order.id
     ____object:set(____key, order)
 end
 
 function OrderRegistry:byState()
-    local ____list_1 = self.orders:getValues()
+    local ____list_1 = orders:getValues()
     local ____result = __K2L_Map.new()
     local ____items, ____n = ____list_1:____array()
     for ____i_1 = 1, ____n do

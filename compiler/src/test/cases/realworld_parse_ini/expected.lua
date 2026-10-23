@@ -156,6 +156,30 @@ end
 
 local Resolver = __K2L_Class("Resolver")
 
+local function lookup(self, section, expr, line)
+    if #expr == 0 then
+        error(ConfigError.new("empty reference", line))
+    elseif __K2L_StringStartsWith(expr, "env:") then
+        local spec = __K2L_Text.removePrefix(expr, "env:")
+        local name = __K2L_Text.substringBefore(spec, ":-")
+        local ____value_1 = self.env:get(name)
+        if ____value_1 == nil then
+            local ____temp
+            if __K2L_StringContains(spec, ":-") then
+                ____temp = __K2L_Text.substringAfter(spec, ":-")
+            else
+                error(ConfigError.new("environment variable " .. name .. " is not set", line))
+            end
+            ____value_1 = ____temp
+        end
+        return ____value_1
+    elseif __K2L_StringContains(expr, ".") then
+        return self:get(__K2L_Text.substringBeforeLast(expr, "."):lower(), __K2L_Text.substringAfterLast(expr, "."):lower())
+    else
+        return self:get(section, expr:lower())
+    end
+end
+
 function Resolver:____init(raw, env)
     self.raw = raw
     self.env = env
@@ -175,15 +199,15 @@ function Resolver:get(section, key)
         error(ConfigError.new("interpolation cycle: " .. self.stack:dropWhile(function(it) return it ~= full end):plus(full):joinToString(" -> ")))
     end
     local ____receiver_4 = self.raw.sections:get(section)
-    local ____value_1 = ____receiver_4 and ____receiver_4:get(key)
-    if ____value_1 == nil then
+    local ____value_2 = ____receiver_4 and ____receiver_4:get(key)
+    if ____value_2 == nil then
         error(ConfigError.new("missing key '" .. full .. "'"))
     end
-    local value, line = ____value_1.first, ____value_1.second
+    local value, line = ____value_2.first, ____value_2.second
     self.stack:addLast(full)
     local ____ok, ____result_1, ____returned = pcall(function()
         local out = self.ref:replace(value, function(m)
-            return self:lookup(section, __K2L_StringTrim(m.groupValues:get(1)), line)
+            return lookup(self, section, __K2L_StringTrim(m.groupValues:get(1)), line)
         end)
         local ____object_2 = self.cache
         ____object_2:set(full, out)
@@ -195,30 +219,6 @@ function Resolver:get(section, key)
     end
     if ____result_1 then
         return ____returned
-    end
-end
-
-function Resolver:lookup(section, expr, line)
-    if #expr == 0 then
-        error(ConfigError.new("empty reference", line))
-    elseif __K2L_StringStartsWith(expr, "env:") then
-        local spec = __K2L_Text.removePrefix(expr, "env:")
-        local name = __K2L_Text.substringBefore(spec, ":-")
-        local ____value_2 = self.env:get(name)
-        if ____value_2 == nil then
-            local ____temp
-            if __K2L_StringContains(spec, ":-") then
-                ____temp = __K2L_Text.substringAfter(spec, ":-")
-            else
-                error(ConfigError.new("environment variable " .. name .. " is not set", line))
-            end
-            ____value_2 = ____temp
-        end
-        return ____value_2
-    elseif __K2L_StringContains(expr, ".") then
-        return self:get(__K2L_Text.substringBeforeLast(expr, "."):lower(), __K2L_Text.substringAfterLast(expr, "."):lower())
-    else
-        return self:get(section, expr:lower())
     end
 end
 

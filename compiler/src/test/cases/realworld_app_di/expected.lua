@@ -3,7 +3,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
@@ -64,11 +64,6 @@ end
 
 local Key = __K2L_Class("app.di.core.Key")
 
-function Key:____init(____type, qualifier)
-    self.type = ____type
-    self.qualifier = qualifier
-end
-
 function Key.new(____type, qualifier)
     return setmetatable({type = ____type, qualifier = qualifier}, Key)
 end
@@ -79,15 +74,36 @@ function Key:toString()
     return ____arg .. (____receiver_1 and "#" .. ____receiver_1 or "")
 end
 
-function Key:hashCode()
-    return (31 * __K2L_Hash(self.type) + __K2L_Hash(self.qualifier) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Key:equals(other)
-    return getmetatable(other) == Key and self.type == other.type and self.qualifier == other.qualifier
-end
-
+__K2L_DataClass(Key, {"type", "qualifier"})
 Container = __K2L_Class("app.di.core.Container")
+
+local function lookup(self, key, requester)
+    local ____cast = self.bindings:get(key)
+    if not (____cast == nil or getmetatable(____cast) == Binding) then
+        __K2L_CastFail(____cast, "app.di.core.Binding")
+    end
+    local binding = ____cast
+    if binding == nil then
+        local ____receiver_2 = self.parent
+        return ____receiver_2 and lookup(____receiver_2, key, requester)
+    end
+    local value
+    local ____subject = binding.scope
+    if ____subject == Scope.SINGLETON then
+        local ____value_1 = binding.cached
+        if ____value_1 == nil then
+            local ____value = binding:create(self)
+            binding.cached = ____value
+            ____value_1 = ____value
+        end
+        value = ____value_1
+    elseif ____subject == Scope.PROTOTYPE then
+        value = binding:create(requester)
+    elseif ____subject == Scope.SCOPED then
+        value = requester.scopedCache:getOrPut(key, function() return binding:create(requester) end)
+    end
+    return value
+end
 
 function Container:____init(parent, name)
     self.parent = parent
@@ -112,9 +128,6 @@ function Container.new1(name)
 end
 
 function Container:register(____type, scope, qualifier, factory)
-    if qualifier == nil then
-        qualifier = nil
-    end
     local key = Key.new(____type, qualifier)
     if self.bindings:containsKey(key) then
         error(__K2L_IllegalArgumentException.new("duplicate binding for " .. __K2L_Str(key) .. " in " .. self.name))
@@ -129,9 +142,6 @@ function Container:onRegister(key)
 end
 
 function Container:resolve(____type, qualifier)
-    if qualifier == nil then
-        qualifier = nil
-    end
     local key = Key.new(____type, qualifier)
     if self.resolving:contains(key) then
         local ____list = self.resolving
@@ -148,8 +158,8 @@ function Container:resolve(____type, qualifier)
     end
     self.resolving:addLast(key)
     local ____ok, ____result, ____returned = pcall(function()
-        local ____value = self:lookup(key, self)
-        if ____value == nil then
+        local ____value_2 = lookup(self, key, self)
+        if ____value_2 == nil then
             local ____arg_1 = "no binding for " .. __K2L_Str(key) .. " in " .. self.name
             local ____list_1 = self.resolving
             local ____out_1 = {}
@@ -162,7 +172,7 @@ function Container:resolve(____type, qualifier)
             end
             error(ResolutionException.new(____arg_1, __K2L_ListWrap(____out_1, ____count_1)))
         end
-        return true, ____value
+        return true, ____value_2
     end)
     self.resolving:removeLast()
     if not ____ok then
@@ -171,34 +181,6 @@ function Container:resolve(____type, qualifier)
     if ____result then
         return ____returned
     end
-end
-
-function Container:lookup(key, requester)
-    local ____cast = self.bindings:get(key)
-    if not (____cast == nil or getmetatable(____cast) == Binding) then
-        __K2L_CastFail(____cast, "app.di.core.Binding")
-    end
-    local binding = ____cast
-    if binding == nil then
-        local ____receiver_2 = self.parent
-        return ____receiver_2 and ____receiver_2:lookup(key, requester)
-    end
-    local value
-    local ____subject = binding.scope
-    if ____subject == Scope.SINGLETON then
-        local ____value_2 = binding.cached
-        if ____value_2 == nil then
-            local ____value_1 = binding:create(self)
-            binding.cached = ____value_1
-            ____value_2 = ____value_1
-        end
-        value = ____value_2
-    elseif ____subject == Scope.PROTOTYPE then
-        value = binding:create(requester)
-    elseif ____subject == Scope.SCOPED then
-        value = requester.scopedCache:getOrPut(key, function() return binding:create(requester) end)
-    end
-    return value
 end
 
 function Container:child(name)
@@ -259,9 +241,8 @@ return {Provider = Provider, Scope = Scope, ResolutionException = ResolutionExce
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_FunctionMixin = ____lualib.__K2L_FunctionMixin
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -275,11 +256,6 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local Event = __K2L_Class("app.di.events.Event")
 local UserCreated = __K2L_Class("app.di.events.UserCreated", nil, Event)
 
-function UserCreated:____init(source, user)
-    self.source = source
-    self.user = user
-end
-
 function UserCreated.new(source, user)
     return setmetatable({source = source, user = user}, UserCreated)
 end
@@ -288,52 +264,22 @@ function UserCreated:getSource()
     return self.source
 end
 
-function UserCreated:toString()
-    return "UserCreated(source=" .. self.source .. ", user=" .. self.user .. ")"
-end
-
-function UserCreated:hashCode()
-    return (31 * __K2L_Hash(self.source) + __K2L_Hash(self.user) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function UserCreated:equals(other)
-    return getmetatable(other) == UserCreated and self.source == other.source and self.user == other.user
-end
-
+__K2L_DataClass(UserCreated, {"source", "user"})
 local UserDeleted = __K2L_Class("app.di.events.UserDeleted", nil, Event)
 
-function UserDeleted:____init(source, user, reason)
+function UserDeleted.new(source, user, reason)
     if reason == nil then
         reason = "unspecified"
     end
-    self.source__UserDeleted = source
-    self.user = user
-    self.reason = reason
+    return setmetatable({source__UserDeleted = source, user = user, reason = reason}, UserDeleted)
 end
 
 function UserDeleted:getSource()
     return self.source__UserDeleted or "null"
 end
 
-function UserDeleted:toString()
-    return "UserDeleted(source=" .. self.source .. ", user=" .. self.user .. ", reason=" .. self.reason .. ")"
-end
-
-function UserDeleted:hashCode()
-    return (31 * (31 * __K2L_Hash(self.source) + __K2L_Hash(self.user)) + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function UserDeleted:equals(other)
-    return getmetatable(other) == UserDeleted and self.source == other.source and self.user == other.user and self.reason == other.reason
-end
-
+__K2L_DataClass(UserDeleted, {{"source", "source__UserDeleted"}, "user", "reason"})
 local OrderPlaced = __K2L_Class("app.di.events.OrderPlaced", nil, Event)
-
-function OrderPlaced:____init(source, orderId, total)
-    self.source__OrderPlaced = source
-    self.orderId = orderId
-    self.total = total
-end
 
 function OrderPlaced.new(source, orderId, total)
     return setmetatable({source__OrderPlaced = source, orderId = orderId, total = total}, OrderPlaced)
@@ -343,18 +289,7 @@ function OrderPlaced:getSource()
     return self.source__OrderPlaced or "null"
 end
 
-function OrderPlaced:toString()
-    return "OrderPlaced(source=" .. self.source .. ", orderId=" .. self.orderId .. ", total=" .. self.total .. ")"
-end
-
-function OrderPlaced:hashCode()
-    return (31 * (31 * __K2L_Hash(self.source) + self.orderId) + __K2L_Hash(self.total) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function OrderPlaced:equals(other)
-    return getmetatable(other) == OrderPlaced and self.source == other.source and self.orderId == other.orderId and self.total == other.total
-end
-
+__K2L_DataClass(OrderPlaced, {{"source", "source__OrderPlaced"}, "orderId", "total"})
 local Shutdown = __K2L_Class("app.di.events.Shutdown", nil, Event)
 
 function Shutdown:____init()
@@ -373,48 +308,18 @@ Shutdown:____init()
 local Delivery = __K2L_Class("app.di.events.Delivery")
 Delivery.Delivered = __K2L_Class("app.di.events.Delivery$Delivered", Delivery)
 
-function Delivery.Delivered:____init(handlers)
-    self.handlers = handlers
-end
-
 function Delivery.Delivered.new(handlers)
     return setmetatable({handlers = handlers}, Delivery.Delivered)
 end
 
-function Delivery.Delivered:toString()
-    return "Delivered(handlers=" .. self.handlers .. ")"
-end
-
-function Delivery.Delivered:hashCode()
-    return self.handlers
-end
-
-function Delivery.Delivered:equals(other)
-    return getmetatable(other) == Delivery.Delivered and self.handlers == other.handlers
-end
-
+__K2L_DataClass(Delivery.Delivered, {"handlers"})
 Delivery.Failed = __K2L_Class("app.di.events.Delivery$Failed", Delivery)
-
-function Delivery.Failed:____init(errors)
-    self.errors = errors
-end
 
 function Delivery.Failed.new(errors)
     return setmetatable({errors = errors}, Delivery.Failed)
 end
 
-function Delivery.Failed:toString()
-    return "Failed(errors=" .. __K2L_Str(self.errors) .. ")"
-end
-
-function Delivery.Failed:hashCode()
-    return __K2L_Hash(self.errors)
-end
-
-function Delivery.Failed:equals(other)
-    return getmetatable(other) == Delivery.Failed and __K2L_Equals(self.errors, other.errors)
-end
-
+__K2L_DataClass(Delivery.Failed, {"errors"})
 Delivery.Dropped = __K2L_Class("app.di.events.Delivery$Dropped", Delivery)
 
 function Delivery.Dropped:toString()
@@ -514,10 +419,6 @@ local ____Container = require("core.Container")
 local ____Services = require("services.Services")
 local B
 local A = __K2L_Class("app.di.A")
-
-function A:____init(b)
-    self.b = b
-end
 
 function A.new(b)
     return setmetatable({b = b}, A)
@@ -975,11 +876,11 @@ local RequestId
 local Clock = __K2L_Class("app.di.services.Clock")
 local FakeClock = __K2L_Class("app.di.services.FakeClock", nil, Clock)
 
-function FakeClock:____init(time)
+function FakeClock.new(time)
     if time == nil then
         time = 1000
     end
-    self.time = time
+    return setmetatable({time = time}, FakeClock)
 end
 
 function FakeClock:now()
@@ -1051,12 +952,6 @@ end
 
 local UserService = __K2L_Class("app.di.services.UserService")
 
-function UserService:____init(repo, bus, ids)
-    self.repo = repo
-    self.bus = bus
-    self.ids = ids
-end
-
 function UserService.new(repo, bus, ids)
     return setmetatable({repo = repo, bus = bus, ids = ids}, UserService)
 end
@@ -1068,9 +963,6 @@ function UserService:create(name)
 end
 
 function UserService:delete(name, reason)
-    if reason == nil then
-        reason = nil
-    end
     if self.repo:remove(name) then
         self.bus:publish(reason == nil and ____EventBus.UserDeleted.new("users/" .. __K2L_Str(self.ids:get()), name) or ____EventBus.UserDeleted.new("users/" .. __K2L_Str(self.ids:get()), name, reason))
     end
@@ -1099,10 +991,7 @@ function OrderService:place(...)
 end
 
 RequestId = __K2L_Class("app.di.services.RequestId")
-
-function RequestId:____init(value)
-    self.value = value
-end
+local counter
 
 function RequestId.new(value)
     return setmetatable({value = value}, RequestId)
@@ -1113,16 +1002,16 @@ function RequestId:toString()
 end
 
 function RequestId:next()
-    self.counter = self.counter + 1
-    return RequestId.new(self.counter)
+    counter = counter + 1
+    return RequestId.new(counter)
 end
 
 function RequestId:getIssued()
-    return self.counter
+    return counter
 end
 
 function RequestId:____initCompanion()
-    self.counter = 0
+    counter = 0
 end
 
 RequestId:____initCompanion()

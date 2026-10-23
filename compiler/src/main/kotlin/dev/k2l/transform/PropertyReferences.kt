@@ -67,6 +67,13 @@ private fun FileTransformer.memberAccessors(
     receiver: KtExpression?,
     property: KtNamedDeclaration,
 ): Accessors? = with(session) {
+    privateLocal(property)?.let { local ->
+        val slot = LuaName(local)
+        return Accessors(
+            LuaFunction(emptyList(), listOf(LuaReturn(listOf(lateinitRead(property, slot))))),
+            LuaFunction(listOf("value"), listOf(assign(slot, LuaName("value")))),
+        )
+    }
     // `::count` inside the class is bound to the implicit `this`
     val implicit = if (receiver == null) implicitReferenceReceiver(e) ?: return null else null
     val ownerName = receiver as? KtNameReferenceExpression

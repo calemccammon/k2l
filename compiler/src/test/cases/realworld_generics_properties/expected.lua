@@ -3,9 +3,9 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CharSequenceText = ____lualib.__K2L_CharSequenceText
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
@@ -38,12 +38,6 @@ local function ____then(____this, ____next)
 end
 
 local Validated = __K2L_Class("generics.properties.Validated")
-
-function Validated:____init(value, validator, errors)
-    self.value = value
-    self.validator = validator
-    self.errors = errors
-end
 
 function Validated.new(value, validator, errors)
     return setmetatable({value = value, validator = validator, errors = errors}, Validated)
@@ -196,10 +190,6 @@ end
 local Id = __K2L_Class("generics.properties.Id")
 Id.____comparable = true
 
-function Id:____init(raw)
-    self.raw = raw
-end
-
 function Id.new(raw)
     return setmetatable({raw = raw}, Id)
 end
@@ -212,61 +202,21 @@ function Id:toString()
     return "#" .. self.raw
 end
 
-function Id:hashCode()
-    return self.raw
-end
-
-function Id:equals(other)
-    return getmetatable(other) == Id and self.raw == other.raw
-end
-
+__K2L_DataClass(Id, {"raw"})
 local Author = __K2L_Class("generics.properties.Author")
-
-function Author:____init(id, name)
-    self.id = id
-    self.name = name
-end
 
 function Author.new(id, name)
     return setmetatable({id = id, name = name}, Author)
 end
 
-function Author:toString()
-    return "Author(id=" .. __K2L_Str(self.id) .. ", name=" .. self.name .. ")"
-end
-
-function Author:hashCode()
-    return (31 * __K2L_Hash(self.id) + __K2L_Hash(self.name) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Author:equals(other)
-    return getmetatable(other) == Author and self.id:equals(other.id) and self.name == other.name
-end
-
+__K2L_DataClass(Author, {"id", "name"})
 local Book = __K2L_Class("generics.properties.Book")
-
-function Book:____init(id, title, author)
-    self.id = id
-    self.title = title
-    self.author = author
-end
 
 function Book.new(id, title, author)
     return setmetatable({id = id, title = title, author = author}, Book)
 end
 
-function Book:toString()
-    return "Book(id=" .. __K2L_Str(self.id) .. ", title=" .. self.title .. ", author=" .. __K2L_Str(self.author) .. ")"
-end
-
-function Book:hashCode()
-    return (31 * (31 * __K2L_Hash(self.id) + __K2L_Hash(self.title)) + __K2L_Hash(self.author) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Book:equals(other)
-    return getmetatable(other) == Book and self.id:equals(other.id) and self.title == other.title and self.author:equals(other.author)
-end
-
+__K2L_DataClass(Book, {"id", "title", "author"})
 local Store = __K2L_Class("generics.properties.Store")
 
 function Store:____init(key)

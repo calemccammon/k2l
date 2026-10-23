@@ -421,13 +421,8 @@ local __K2L_Str = ____lualib.__K2L_Str
 
 local Pending = __K2L_Class("Pending")
 
-function Pending:____init(fn, remaining, name)
-    if name == nil then
-        name = nil
-    end
-    self.fn = fn
-    self.remaining = remaining
-    self.name = name
+function Pending.new(fn, remaining, name)
+    return setmetatable({fn = fn, remaining = remaining, name = name}, Pending)
 end
 
 local deferred = __K2L_ListOf()

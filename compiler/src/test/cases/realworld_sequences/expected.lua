@@ -4,8 +4,8 @@ local __K2L_CharRange = ____lualib.__K2L_CharRange
 local __K2L_CheckStep = ____lualib.__K2L_CheckStep
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -107,27 +107,11 @@ end
 
 local Reading = __K2L_Class("Reading")
 
-function Reading:____init(minute, celsius)
-    self.minute = minute
-    self.celsius = celsius
-end
-
 function Reading.new(minute, celsius)
     return setmetatable({minute = minute, celsius = celsius}, Reading)
 end
 
-function Reading:toString()
-    return "Reading(minute=" .. self.minute .. ", celsius=" .. self.celsius .. ")"
-end
-
-function Reading:hashCode()
-    return (31 * self.minute + __K2L_Hash(self.celsius) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Reading:equals(other)
-    return getmetatable(other) == Reading and self.minute == other.minute and self.celsius == other.celsius
-end
-
+__K2L_DataClass(Reading, {"minute", "celsius"})
 local SENSOR = __K2L_Text.trimIndent("\n    0 21.5\n    1 21.7\n    2 22.4\n    3 23.9\n    4 24.1\n    5 99.9\n    6 24.6\n    7 24.2\n    8 23.0\n    9 22.1\n    10 21.4\n    11 20.9\n    12 -40.0\n    13 20.5\n    14 20.8\n    15 21.6\n")
 
 local ____lambda_5 = function(it) return __K2L_StringSplit(it, " ") end

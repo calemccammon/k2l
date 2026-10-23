@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Map = ____lualib.__K2L_Map
@@ -13,32 +14,12 @@ local __K2L_Text = ____lualib.__K2L_Text
 
 local Pt = __K2L_Class("Pt")
 
-function Pt:____init(x, y)
-    self.x = x
-    self.y = y
-end
-
 function Pt.new(x, y)
     return setmetatable({x = x, y = y}, Pt)
 end
 
-function Pt:toString()
-    return "Pt(x=" .. self.x .. ", y=" .. self.y .. ")"
-end
-
-function Pt:hashCode()
-    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Pt:equals(other)
-    return getmetatable(other) == Pt and self.x == other.x and self.y == other.y
-end
-
+__K2L_DataClass(Pt, {"x", "y"})
 local Mutable = __K2L_Class("Mutable")
-
-function Mutable:____init(v)
-    self.v = v
-end
 
 function Mutable.new(v)
     return setmetatable({v = v}, Mutable)

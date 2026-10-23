@@ -39,10 +39,6 @@ end
 
 Circle = __K2L_Class("Circle", nil, Shape)
 
-function Circle:____init(radius)
-    self.radius = radius
-end
-
 function Circle.new(radius)
     return setmetatable({radius = radius}, Circle)
 end

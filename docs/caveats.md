@@ -20,8 +20,8 @@ JVM. These are the differences a program can see.
 - An integral `Double` prints `2.0` on 5.3 and 5.4, and `2` before. A large `Long` prints `9.2233720368548e+18` before
   5.3.
 - `String.toDouble()` is `tonumber`. `"1.5f"` never parses. `"NaN"` and `"Infinity"` parse only on LuaJIT.
-- `==` of numbers is Lua's `==`, also through `Any` and `equals`: `-0.0` equals `0.0`, and NaN equals nothing, so it
-  cannot be a map key.
+- `==` of numbers is Lua's `==`, also through `Any`, `equals` and data classes: `-0.0` equals `0.0`, and NaN equals
+  nothing, so it cannot be a map key.
 - `kotlin.math` is Lua's `math` plus short formulas. Results can differ from the JVM's in the last digits.
 
 ## Strings

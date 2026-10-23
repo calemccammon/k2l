@@ -27,7 +27,8 @@ internal fun FileTransformer.receiverOperand(implicit: LuaExpr?, explicit: KtExp
  */
 internal fun FileTransformer.arguments(receivers: List<Operand>, args: List<KtExpression?>): List<LuaExpr> = with(session) {
     val operands = receivers + args.map { it?.asOperand() }
-    val transformed = ordered(operands.filterIsInstance<Operand.Source>().map { it.expr }).iterator()
+    val sources = operands.filterIsInstance<Operand.Source>().map { it.expr }
+    val transformed = orderedAsWritten(sources, receivers.count { it is Operand.Source }).iterator()
     val firstSpread = operands.indexOfFirst { it is Operand.Source && it.expr in callState.spreads }
     if (firstSpread >= 0 && firstSpread < operands.lastIndex) return spreadArguments(operands, transformed, firstSpread)
     val values = operands.map { item ->

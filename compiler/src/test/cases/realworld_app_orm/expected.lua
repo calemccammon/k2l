@@ -152,8 +152,8 @@ __K2L_RunMain(main)
 -- ==== model/Model.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_KProperty = ____lualib.__K2L_KProperty
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_MapOf = ____lualib.__K2L_MapOf
@@ -190,9 +190,6 @@ function Author:____init(id, name, role, bio)
     if role == nil then
         role = Role.VIEWER
     end
-    if bio == nil then
-        bio = nil
-    end
     self.id = id
     self.bio = bio
     self.changes = __K2L_SetOf()
@@ -227,32 +224,17 @@ end
 
 local Post = __K2L_Class("db.model.Post")
 
-function Post:____init(id, authorId, title, published, likes)
+function Post.new(id, authorId, title, published, likes)
     if published == nil then
         published = false
     end
     if likes == nil then
         likes = 0
     end
-    self.id = id
-    self.authorId = authorId
-    self.title = title
-    self.published = published
-    self.likes = likes
+    return setmetatable({id = id, authorId = authorId, title = title, published = published, likes = likes}, Post)
 end
 
-function Post:toString()
-    return "Post(id=" .. self.id .. ", authorId=" .. self.authorId .. ", title=" .. self.title .. ", published=" .. tostring(self.published) .. ", likes=" .. self.likes .. ")"
-end
-
-function Post:hashCode()
-    return (31 * (31 * (31 * (31 * self.id + self.authorId) + __K2L_Hash(self.title)) + (self.published and 1231 or 1237)) + self.likes + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Post:equals(other)
-    return getmetatable(other) == Post and self.id == other.id and self.authorId == other.authorId and self.title == other.title and self.published == other.published and self.likes == other.likes
-end
-
+__K2L_DataClass(Post, {"id", "authorId", "title", "published", "likes"})
 local Authors = __K2L_Class("db.model.Authors", ____Table.Table)
 
 function Authors:____init()
@@ -407,13 +389,31 @@ local ____Table = require("orm.Table")
 local DatabaseException = __K2L_Class("db.orm.DatabaseException", __K2L_RuntimeException)
 
 function DatabaseException:____init(message, cause)
-    if cause == nil then
-        cause = nil
-    end
     __K2L_RuntimeException.____init(self, message, cause)
 end
 
 local Database = __K2L_Class("db.orm.Database")
+
+local function rows__1(self, ____table)
+    local ____value = self.data:get(____table.tableName)
+    if ____value == nil then
+        error(DatabaseException.new("no such table: " .. ____table.tableName))
+    end
+    return ____value
+end
+
+local function render(self, c, v)
+    local ____result_1
+    if v ~= nil then
+        local ____result
+        if getmetatable(c) ~= ____Table.Column then
+            __K2L_CastFail(c, "db.orm.Column")
+        end
+        ____result = c.type:render(v)
+        ____result_1 = ____result
+    end
+    return ____result_1
+end
 
 function Database:____init()
     self.data = __K2L_MapOf()
@@ -426,27 +426,6 @@ function Database:create(____table)
     local ____object = self.data
     local ____key = ____table.tableName
     ____object:set(____key, __K2L_ListOf())
-end
-
-function Database:rows(____table)
-    local ____value = self.data:get(____table.tableName)
-    if ____value == nil then
-        error(DatabaseException.new("no such table: " .. ____table.tableName))
-    end
-    return ____value
-end
-
-function Database:render(c, v)
-    local ____result_1
-    if v ~= nil then
-        local ____result
-        if getmetatable(c) ~= ____Table.Column then
-            __K2L_CastFail(c, "db.orm.Column")
-        end
-        ____result = c.type:render(v)
-        ____result_1 = ____result
-    end
-    return ____result_1
 end
 
 function Database:insert(____table, entity)
@@ -466,7 +445,7 @@ function Database:insert(____table, entity)
     if pk ~= nil then
         local ____result_3
         do
-            local ____receiver = self:render(pk, values:get(pk))
+            local ____receiver = render(self, pk, values:get(pk))
             ____result_3 = ____receiver and __K2L_Text.trimChars(____receiver, 3, "'")
         end
         ____result_4 = ____result_3
@@ -474,7 +453,7 @@ function Database:insert(____table, entity)
     local key = ____result_4
     local ____cond = key ~= nil
     if ____cond then
-        local ____list_1 = self:rows(____table)
+        local ____list_1 = rows__1(self, ____table)
         local ____result_5 = false
         local ____items_1, ____n_1 = ____list_1:____array()
         for ____i_1 = 1, ____n_1 do
@@ -497,21 +476,18 @@ function Database:insert(____table, entity)
         end
     end
     self.statements:add("INSERT INTO " .. ____table.tableName .. " VALUES (" .. ____table:getAllColumns():joinToString(nil, nil, nil, nil, nil, function(it)
-        return self:render(it, values:get(it)) or "NULL"
+        return render(self, it, values:get(it)) or "NULL"
     end) .. ")")
-    self:rows(____table):add(____table:getAllColumns():associate(function(it)
+    rows__1(self, ____table):add(____table:getAllColumns():associate(function(it)
         local ____arg = it.name
-        local ____receiver_1 = self:render(it, values:get(it)) or self:render(it, it.default)
-        return __K2L_Pair.new(____arg, ____receiver_1 and __K2L_Text.trimChars(self:render(it, values:get(it)) or self:render(it, it.default), 3, "'"))
+        local ____receiver_1 = render(self, it, values:get(it)) or render(self, it, it.default)
+        return __K2L_Pair.new(____arg, ____receiver_1 and __K2L_Text.trimChars(render(self, it, values:get(it)) or render(self, it, it.default), 3, "'"))
     end):toMutableMap())
 end
 
 function Database:select(____table, where)
-    if where == nil then
-        where = nil
-    end
     self.statements:add("SELECT * FROM " .. ____table.tableName .. (where and " WHERE " .. where.sql or ""))
-    local ____list_3 = self:rows(____table)
+    local ____list_3 = rows__1(self, ____table)
     local ____out = {}
     local ____count = 0
     local ____items_2, ____n_2 = ____list_3:____array()
@@ -546,10 +522,10 @@ end
 function Database:update(____table, where, changes)
     self.statements:add("UPDATE " .. ____table.tableName .. " SET " .. changes:getEntries():joinToString(nil, nil, nil, nil, nil, function(____destructured)
         local c, v = ____destructured.key, ____destructured.value
-        return c.name .. " = " .. __K2L_Str(self:render(c, v))
+        return c.name .. " = " .. __K2L_Str(render(self, c, v))
     end) .. " WHERE " .. where.sql)
     local n = 0
-    local ____list_5 = self:rows(____table)
+    local ____list_5 = rows__1(self, ____table)
     for ____i_6 = 1, ____list_5.size do
         local row = ____list_5[____i_6]
         do
@@ -562,7 +538,7 @@ function Database:update(____table, where, changes)
                 do
                     local c, v = ____entry.key, ____entry.value
                     local ____key_1 = c.name
-                    local ____receiver_3 = self:render(c, v)
+                    local ____receiver_3 = render(self, c, v)
                     row:set(____key_1, ____receiver_3 and __K2L_Text.trimChars(____receiver_3, 3, "'"))
                 end
             end
@@ -635,7 +611,7 @@ function Database:transaction(block)
 end
 
 function Database:count(____table)
-    return self:rows(____table).size
+    return rows__1(self, ____table).size
 end
 
 local Dao = __K2L_Class("db.orm.Dao")
@@ -825,11 +801,6 @@ end
 
 Predicate = __K2L_Class("db.orm.Predicate")
 
-function Predicate:____init(sql, test)
-    self.sql = sql
-    self.test = test
-end
-
 function Predicate.new(sql, test)
     return setmetatable({sql = sql, test = test}, Predicate)
 end
@@ -889,10 +860,6 @@ end
 
 Table.ColumnDelegate = __K2L_Class("db.orm.Table$ColumnDelegate")
 
-function Table.ColumnDelegate:____init(column)
-    self.column = column
-end
-
 function Table.ColumnDelegate.new(column)
     return setmetatable({column = column}, Table.ColumnDelegate)
 end
@@ -907,10 +874,6 @@ function Table:ddl()
 end
 
 Row = __K2L_Class("db.orm.Row")
-
-function Row:____init(values)
-    self.values = values
-end
 
 function Row.new(values)
     return setmetatable({values = values}, Row)

@@ -2,9 +2,9 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -24,71 +24,25 @@ local TaskContext, Scheduler
 local Effect = __K2L_Class("sim.Effect")
 Effect.Sleep = __K2L_Class("sim.Effect$Sleep", Effect)
 
-function Effect.Sleep:____init(ticks)
-    self.ticks = ticks
-end
-
 function Effect.Sleep.new(ticks)
     return setmetatable({ticks = ticks}, Effect.Sleep)
 end
 
-function Effect.Sleep:toString()
-    return "Sleep(ticks=" .. self.ticks .. ")"
-end
-
-function Effect.Sleep:hashCode()
-    return self.ticks
-end
-
-function Effect.Sleep:equals(other)
-    return getmetatable(other) == Effect.Sleep and self.ticks == other.ticks
-end
-
+__K2L_DataClass(Effect.Sleep, {"ticks"})
 Effect.Send = __K2L_Class("sim.Effect$Send", Effect)
-
-function Effect.Send:____init(channel, value)
-    self.channel = channel
-    self.value = value
-end
 
 function Effect.Send.new(channel, value)
     return setmetatable({channel = channel, value = value}, Effect.Send)
 end
 
-function Effect.Send:toString()
-    return "Send(channel=" .. self.channel .. ", value=" .. self.value .. ")"
-end
-
-function Effect.Send:hashCode()
-    return (31 * __K2L_Hash(self.channel) + self.value + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Effect.Send:equals(other)
-    return getmetatable(other) == Effect.Send and self.channel == other.channel and self.value == other.value
-end
-
+__K2L_DataClass(Effect.Send, {"channel", "value"})
 Effect.Receive = __K2L_Class("sim.Effect$Receive", Effect)
-
-function Effect.Receive:____init(channel)
-    self.channel = channel
-end
 
 function Effect.Receive.new(channel)
     return setmetatable({channel = channel}, Effect.Receive)
 end
 
-function Effect.Receive:toString()
-    return "Receive(channel=" .. self.channel .. ")"
-end
-
-function Effect.Receive:hashCode()
-    return __K2L_Hash(self.channel)
-end
-
-function Effect.Receive:equals(other)
-    return getmetatable(other) == Effect.Receive and self.channel == other.channel
-end
-
+__K2L_DataClass(Effect.Receive, {"channel"})
 Effect.Yield = __K2L_Class("sim.Effect$Yield", Effect)
 
 function Effect.Yield:toString()
@@ -141,11 +95,6 @@ end
 
 TaskContext = __K2L_Class("sim.TaskContext")
 
-function TaskContext:____init(scheduler, task)
-    self.scheduler = scheduler
-    self.task = task
-end
-
 function TaskContext.new(scheduler, task)
     return setmetatable({scheduler = scheduler, task = task}, TaskContext)
 end
@@ -167,6 +116,48 @@ function TaskContext:lastReceived()
 end
 
 Scheduler = __K2L_Class("sim.Scheduler")
+
+local function runnable(self, t)
+    if t.finished then
+        return false
+    elseif t.wakeAt > self.clock then
+        return false
+    elseif t.waitingOn ~= nil then
+        local value = self.mailbox:poll(__K2L_NotNull(t.waitingOn))
+        if value ~= nil then
+            t.received = value
+            t.waitingOn = nil
+            return true
+        else
+            return false
+        end
+    else
+        return true
+    end
+end
+
+local function step(self, t)
+    if not (t.iterator or __K2L_Uninitialized("iterator")):hasNext() then
+        t.finished = true
+        local ____list = self.listeners
+        for ____i = 1, ____list.size do
+            local it = ____list[____i]
+            it(t)
+        end
+        return
+    end
+    t.steps = t.steps + 1
+    local effect = (t.iterator or __K2L_Uninitialized("iterator")):next()
+    local ____mt = getmetatable(effect)
+    if ____mt == Effect.Sleep then
+        t.wakeAt = self.clock + effect.ticks
+    elseif ____mt == Effect.Send then
+        self.mailbox:offer(effect.channel, effect.value)
+    elseif ____mt == Effect.Receive then
+        t.waitingOn = effect.channel
+    elseif __K2L_Equals(effect, Effect.Yield) then
+    end
+end
 
 function Scheduler:____init(maxTicks)
     if maxTicks == nil then
@@ -195,48 +186,6 @@ function Scheduler:spawn(name, body)
     return ____value_1
 end
 
-function Scheduler:runnable(t)
-    if t.finished then
-        return false
-    elseif t.wakeAt > self.clock then
-        return false
-    elseif t.waitingOn ~= nil then
-        local value = self.mailbox:poll(__K2L_NotNull(t.waitingOn))
-        if value ~= nil then
-            t.received = value
-            t.waitingOn = nil
-            return true
-        else
-            return false
-        end
-    else
-        return true
-    end
-end
-
-function Scheduler:step(t)
-    if not (t.iterator or __K2L_Uninitialized("iterator")):hasNext() then
-        t.finished = true
-        local ____list = self.listeners
-        for ____i = 1, ____list.size do
-            local it = ____list[____i]
-            it(t)
-        end
-        return
-    end
-    t.steps = t.steps + 1
-    local effect = (t.iterator or __K2L_Uninitialized("iterator")):next()
-    local ____mt = getmetatable(effect)
-    if ____mt == Effect.Sleep then
-        t.wakeAt = self.clock + effect.ticks
-    elseif ____mt == Effect.Send then
-        self.mailbox:offer(effect.channel, effect.value)
-    elseif ____mt == Effect.Receive then
-        t.waitingOn = effect.channel
-    elseif __K2L_Equals(effect, Effect.Yield) then
-    end
-end
-
 local ____lambda_4 = function(it) return it.wakeAt end
 function Scheduler:run()
     while true do
@@ -257,10 +206,10 @@ function Scheduler:run()
         if not ____cond then
             break
         end
-        local ready = self.tasks:filter(function(...) return self:runnable(...) end)
+        local ready = self.tasks:filter(function(...) return runnable(self, ...) end)
         for ____i_2 = 1, ready.size do
             local it = ready[____i_2];
-            (function(...) return self:step(...) end)(it)
+            (function(...) return step(self, ...) end)(it)
         end
         if ready:isEmpty() then
             local ____list_2 = self.tasks

@@ -81,16 +81,8 @@ end
 
 local Tree = __K2L_Class("Tree")
 
-function Tree:____init(value, left, right)
-    if left == nil then
-        left = nil
-    end
-    if right == nil then
-        right = nil
-    end
-    self.value = value
-    self.left = left
-    self.right = right
+function Tree.new(value, left, right)
+    return setmetatable({value = value, left = left, right = right}, Tree)
 end
 
 function Tree:inOrder()
@@ -166,11 +158,6 @@ local function guarded()
 end
 
 local Repeater = __K2L_Class("Repeater")
-
-function Repeater:____init(word, times)
-    self.word = word
-    self.times = times
-end
 
 function Repeater.new(word, times)
     return setmetatable({word = word, times = times}, Repeater)
