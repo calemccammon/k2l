@@ -211,7 +211,7 @@ internal fun FileTransformer.sourceFunctionCall(
         )
     }
     val values = arguments(listOf(receiverOperand(implicit, receiverExpr)!!), args)
-    return LuaMethodCall(values[0], method, values.drop(1))
+    return methodCall(values[0], method, values.drop(1), noSelf.isNoSelf(psi))
 }
 
 private fun FileTransformer.memberPropertyRead(

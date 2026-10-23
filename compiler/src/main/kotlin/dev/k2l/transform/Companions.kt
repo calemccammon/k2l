@@ -44,19 +44,21 @@ internal fun FileTransformer.companion(companion: KtObjectDeclaration, ref: LuaE
     if (hasOwnTable(companion)) {
         declareClass(companion, isLocal = false)
         if (!classes.initNeeded(companion) || !lazyInit.isObservable(companion)) return false
-        emitMethod(ref, INIT_COMPANION, emptyList(), listOf(LuaCallStmt(lualibCall("TouchObject", classRef(companion)))))
+        val touch = listOf(LuaCallStmt(lualibCall("TouchObject", classRef(companion))))
+        withObjectSelf(ref.takeIf { initWithoutSelf(companion) }) { emitMethod(ref, INIT_COMPANION, emptyList(), touch) }
         return true
     }
     withClass(companion) {
         checkMembers(companion)
         sharedCompanionFlag(companion.containingClassOrObject!!, ref)
         members(companion, ref)
-        val init = collect { initializers(companion) }
-        if (init.isNotEmpty()) {
+        withObjectSelf(ref.takeIf { initWithoutSelf(companion) }) {
+            val init = collect { initializers(companion) }
+            if (init.isEmpty()) return@withClass false
             emitMethod(ref, INIT_COMPANION, emptyList(), init)
-            if (lazyInit.isObservable(companion)) return@withClass true
-            emit(LuaCallStmt(LuaMethodCall(ref, INIT_COMPANION, emptyList())))
         }
+        if (lazyInit.isObservable(companion)) return@withClass true
+        emit(LuaCallStmt(methodCall(ref, INIT_COMPANION, emptyList(), initWithoutSelf(companion))))
         false
     }
 }

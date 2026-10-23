@@ -54,10 +54,12 @@ class FileTransformer(
     private val fileInit = FileInit(session, lazyInit)
     internal val naming = DeclarationNames(session, classes)
     internal val props = PropertyFamilies(session, module, classes) { interop.isExternalDeclaration(it) }
+    internal val noSelf = NoSelfMembers(session, classes, interop, ctx.options.noImplicitSelf)
 
     init {
         naming.plainAccessors = { props.usesAccessors(it) || it.delegate != null }
         lazyInit.deferredFile = fileInit::isDeferred
+        classes.bindsMembers = { boundMembers(it).isNotEmpty() }
     }
 
     internal val target get() = ctx.options.luaTarget
@@ -269,6 +271,9 @@ class FileTransformer(
 
     /** The class or object whose members are being transformed; its instance is `self`. */
     internal var currentClass: KtClassOrObject? = null
+
+    /** The table of the object whose member without `self` is being transformed, which is its `this` (see NoSelfMembers.kt). */
+    internal var objectSelf: LuaExpr? = null
 
     /** The instances a local class or object expression sees from where it is declared (`this@Outer`), see [captureOuters]. */
     internal val lexicalOuters = HashMap<KtClassOrObject, List<Pair<KtClassOrObject, LuaExpr>>>()

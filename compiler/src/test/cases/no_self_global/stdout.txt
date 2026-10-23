@@ -1,0 +1,21 @@
+windows created
+elapsed 0.5
+elapsed 0.75
+wheel 1 2 3
+wheel 4 5 2
+book Atlas at 7 of 5
+false	stopped
+true	running
+alarm wake:1	running
+1	running
+
+
+alarm wake:2
+2
+wheel 0 0 12
+running
+running
+stopped
+elapsed 1.75
+alarm ref:0
+5

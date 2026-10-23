@@ -12,18 +12,21 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 
-internal fun FileTransformer.selfRef(): LuaExpr = LuaName("self").also { stable += it }
+internal fun FileTransformer.selfRef(): LuaExpr = (objectSelf ?: LuaName("self")).also { stable += it }
 
 internal inline fun <T> FileTransformer.withClass(c: KtClassOrObject, block: () -> T): T {
     val savedClass = currentClass
     val savedLoops = jumps.loops
+    val savedSelf = objectSelf
     currentClass = c
     jumps.loops = ArrayDeque()
+    objectSelf = null
     try {
         return block()
     } finally {
         currentClass = savedClass
         jumps.loops = savedLoops
+        objectSelf = savedSelf
     }
 }
 
@@ -94,9 +97,10 @@ private fun isSkipped(c: KtClassOrObject): Boolean =
 
 private fun FileTransformer.classBody(c: KtClassOrObject, ref: LuaExpr, info: SuperInfo) = withClass(c) {
     checkMembers(c)
-    constructors(c, ref, info)
+    withObjectSelf(ref.takeIf { initWithoutSelf(c) }) { constructors(c, ref, info) }
     members(c, ref)
     delegatedMembers(c, ref)
+    if (c is KtObjectDeclaration) inheritedMembers(c, ref)
     libraryDelegatedMembers(c, ref)
     libraryPropertyOverrides(c, ref)
     overloadDispatch(c, ref)
@@ -123,12 +127,15 @@ internal fun FileTransformer.propertyOverride(c: KtClassOrObject, ref: LuaExpr, 
     emit(LuaCallStmt(LuaCall(lualibRef("Class", "__K2L_PropertyOverride"), args)))
 }
 
+/** A method of the class table [ref]; while a member of an object is defined without `self` ([objectSelf]), a plain function. */
 internal fun FileTransformer.emitMethod(ref: LuaExpr, name: String, params: List<String>, body: List<LuaStmt>, isVararg: Boolean = false) {
-    emit(LuaFunctionDecl(LuaIndex(ref, LuaString(name)), LuaFunction(params, body, isVararg = isVararg), isLocal = false, isMethod = true))
+    val fn = LuaFunction(params, body, isVararg = isVararg)
+    emit(LuaFunctionDecl(LuaIndex(ref, LuaString(name)), fn, isLocal = false, isMethod = objectSelf == null))
 }
 
 /** Lua tables hold methods and fields in one namespace. */
 internal fun FileTransformer.checkMembers(c: KtClassOrObject) {
+    checkNoSelf(c)
     val fields = declaredFieldNames(c).toMutableSet()
     val stored = c.declarations.filterIsInstance<KtProperty>() + (c as? KtClass)?.primaryConstructorParameters.orEmpty()
     fields.removeAll { name -> stored.any { it.name == name && isShadowedByMethod(it) } }
@@ -161,10 +168,15 @@ internal fun FileTransformer.members(c: KtClassOrObject, ref: LuaExpr): Unit = w
     for (decl in c.declarations) {
         when (decl) {
             is KtNamedFunction -> if (decl.hasBody() && !decl.isReifiedInline()) {
-                emit(LuaFunctionDecl(LuaIndex(ref, LuaString(naming.function(decl))), function(decl), isLocal = false, isMethod = true))
+                withObjectSelf(objectSelfOf(c, ref, decl)) {
+                    val name = LuaIndex(ref, LuaString(naming.function(decl)))
+                    emit(LuaFunctionDecl(name, function(decl), isLocal = false, isMethod = objectSelf == null))
+                }
             }
 
-            is KtProperty -> if (hasAccessors(decl) || props.problem(decl) != null) accessorMethods(decl, ref)
+            is KtProperty -> if (hasAccessors(decl) || props.problem(decl) != null) {
+                withObjectSelf(objectSelfOf(c, ref, decl)) { accessorMethods(decl, ref) }
+            }
 
             is KtEnumEntry -> Unit
 
@@ -188,6 +200,7 @@ internal fun FileTransformer.constructors(c: KtClassOrObject, ref: LuaExpr, info
         val params = (c as? KtClass)?.primaryConstructorParameters.orEmpty()
         val vararg = varargParameter(params)
         val body = collect {
+            bindMembers(selfRef(), boundMembers(c))
             packVararg(vararg)
             storeOuter(c)
             defaultArguments(params)
@@ -219,6 +232,7 @@ private fun FileTransformer.secondaryConstructor(c: KtClass, ctor: KtSecondaryCo
             if (delegation != null && delegation.isCallToThis) {
                 delegatingInit(delegation, c, enumParams)
             } else {
+                bindMembers(selfRef(), boundMembers(c))
                 if (c.isEnum()) enumParams.forEach { emit(assign(LuaIndex(selfRef(), LuaString(it)), LuaName(it))) }
                 if (!hasPrimary(c)) earlyFieldDefaults(c)
                 superInit(delegation?.takeIf { it.valueArgumentList != null }, info)
@@ -239,7 +253,14 @@ private fun FileTransformer.secondaryConstructor(c: KtClass, ctor: KtSecondaryCo
                     params,
                     listOf(
                         LuaLocal(listOf("self"), listOf(luaCall(LuaName("setmetatable"), LuaTable(emptyList()), ref))),
-                        LuaCallStmt(LuaMethodCall(self, "$INIT$suffix", forwarded)),
+                        // a class without self calls its initializer as a function of the class table
+                        LuaCallStmt(
+                            if (noSelf.inScope(c)) {
+                                LuaCall(LuaIndex(ref, LuaString("$INIT$suffix")), listOf(self) + forwarded)
+                            } else {
+                                LuaMethodCall(self, "$INIT$suffix", forwarded)
+                            },
+                        ),
                         LuaReturn(listOf(self)),
                     ),
                     isVararg = vararg != null,
@@ -283,13 +304,13 @@ internal fun FileTransformer.accessorName(prefix: String, p: KtNamedDeclaration)
 }
 
 internal fun FileTransformer.propertyRead(receiver: LuaExpr, p: KtNamedDeclaration): LuaExpr = if (hasAccessors(p)) {
-    LuaMethodCall(receiver, accessorName("get", p), emptyList())
+    methodCall(receiver, accessorName("get", p), emptyList(), noSelf.isNoSelf(p))
 } else {
     lateinitRead(p, LuaIndex(receiver, LuaString(fieldKey(p))))
 }
 
 internal fun FileTransformer.propertyWrite(receiver: LuaExpr, p: KtNamedDeclaration, value: LuaExpr): LuaStmt = if (hasAccessors(p)) {
-    LuaCallStmt(LuaMethodCall(receiver, accessorName("set", p), listOf(value)))
+    LuaCallStmt(methodCall(receiver, accessorName("set", p), listOf(value), noSelf.isNoSelf(p)))
 } else {
     assign(LuaIndex(receiver, LuaString(fieldKey(p))), value)
 }

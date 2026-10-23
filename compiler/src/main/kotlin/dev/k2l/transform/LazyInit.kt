@@ -187,7 +187,7 @@ internal fun FileTransformer.initialization(c: KtClassOrObject, ref: LuaExpr): L
     val lazy = mutableListOf<String>()
     if (c is KtClass && c.isEnum()) {
         if (lazyInit.isObservable(c)) {
-            emitMethod(ref, INIT_ENUM, emptyList(), collect { enumEntries(c, ref) })
+            withObjectSelf(ref.takeIf { noSelf.inScope(c) }) { emitMethod(ref, INIT_ENUM, emptyList(), collect { enumEntries(c, ref) }) }
             lazy += INIT_ENUM
         } else {
             enumEntries(c, ref)
@@ -196,7 +196,11 @@ internal fun FileTransformer.initialization(c: KtClassOrObject, ref: LuaExpr): L
     c.companionObjects.forEach { if (companion(it, ref)) lazy += INIT_COMPANION }
     if (c is KtObjectDeclaration && classes.initNeeded(c)) {
         // an object expression is created where it is evaluated
-        if (lazyInit.isObservable(c) && !c.isObjectLiteral()) lazy += INIT else emit(LuaCallStmt(LuaMethodCall(ref, INIT, emptyList())))
+        if (lazyInit.isObservable(c) && !c.isObjectLiteral()) {
+            lazy += INIT
+        } else {
+            emit(LuaCallStmt(methodCall(ref, INIT, emptyList(), initWithoutSelf(c))))
+        }
     }
     return lazy
 }

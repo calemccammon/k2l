@@ -65,6 +65,7 @@ k2l -t JIT -o build src      # compile for LuaJIT
 k2l --check                  # report errors without writing any Lua
 k2l --watch                  # rebuild on every change
 k2l --modules global         # files set Lua globals instead of using require
+k2l --no-implicit-self       # members take no self: Book.Initialize(a) instead of Book:Initialize(a)
 ```
 
 Run the output from its directory, because the files load each other with `require`:

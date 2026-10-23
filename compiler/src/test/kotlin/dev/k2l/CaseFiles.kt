@@ -3,11 +3,11 @@ package dev.k2l
 import java.io.File
 
 /** The options of `options.txt`; the Lua target is chosen by the caller, not by the case. */
-private val CASE_OPTIONS = setOf("luaLibImport", "moduleMode")
+private val CASE_OPTIONS = setOf("luaLibImport", "moduleMode", "noImplicitSelf")
 
 /**
  * The compiler options of a test case: its `options.txt`, one `name=value` per line
- * (`luaLibImport=inline`, `moduleMode=global`), else the defaults.
+ * (`luaLibImport=inline`, `moduleMode=global`, `noImplicitSelf=true`), else the defaults.
  */
 internal fun caseOptions(dir: File): CompilerOptions {
     val values = File(dir, "options.txt").takeIf { it.isFile }?.readLines().orEmpty().filter { '=' in it }
@@ -16,6 +16,7 @@ internal fun caseOptions(dir: File): CompilerOptions {
     return CompilerOptions(
         luaLibImport = values["luaLibImport"]?.let(::parseLualib) ?: LuaLibImport.Require,
         moduleMode = values["moduleMode"]?.let(::parseModuleMode) ?: ModuleMode.Require,
+        noImplicitSelf = values["noImplicitSelf"].toBoolean(),
     )
 }
 

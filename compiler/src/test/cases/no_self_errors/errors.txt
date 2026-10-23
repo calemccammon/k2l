@@ -1,0 +1,10 @@
+15:5: Overriding members with and without self at once ('run') is not supported
+  hint: make the overridden members agree: @NoSelf on all of their declarations (or their files), or on none
+17:5: @NoSelf on an override of a member with self ('stop') is not supported
+  hint: an override takes self when the member it overrides does: remove @NoSelf here, or put it on the overridden member
+20:5: @NoSelf on an override of a member with self ('toString') is not supported
+  hint: an override takes self when the member it overrides does: remove @NoSelf here, or put it on the overridden member
+25:5: @NoSelf on an operator function or member extension is not supported
+  hint: remove @NoSelf: operators and member extensions are always called with self
+28:5: @NoSelf on an operator function or member extension is not supported
+  hint: remove @NoSelf: operators and member extensions are always called with self

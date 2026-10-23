@@ -15,6 +15,7 @@ internal val USAGE = """
     |  -t, --target VERSION    Lua version: 5.1, 5.2, 5.3, 5.4 (default) or JIT
     |      --lualib MODE       require (default: one shared lualib_bundle.lua) or inline
     |      --modules MODE      require (default: files are modules) or global (files set globals, no require)
+    |      --no-implicit-self  define and call members without self, as with @file:NoSelfInFile in every file
     |      --classpath PATHS   extra jars or class directories, e.g. Lua bindings ('${java.io.File.pathSeparator}'-separated)
     |      --source-map        write main.lua.map files and make Lua errors and tracebacks show Kotlin positions
     |                          (on by default with --watch)
@@ -37,6 +38,7 @@ internal data class Settings(
     val target: LuaTarget = CompilerOptions().luaTarget,
     val lualib: LuaLibImport = CompilerOptions().luaLibImport,
     val modules: ModuleMode = CompilerOptions().moduleMode,
+    val noImplicitSelf: Boolean = false,
     val classpath: List<Path> = emptyList(),
     /** Null when neither k2l.json nor the command line says: then source maps are on exactly in watch mode. */
     val sourceMap: Boolean? = null,
@@ -52,6 +54,7 @@ internal data class Settings(
         luaTarget = target,
         luaLibImport = lualib,
         moduleMode = modules,
+        noImplicitSelf = noImplicitSelf,
         sourceMap = sourceMapEnabled,
     )
 }
@@ -65,7 +68,7 @@ private fun exitWith(output: String): Nothing = throw CliExit(output)
 private const val CHARS_PER_TYPO = 3
 
 private val OPTIONS = listOf(
-    "--project", "--out", "--target", "--lualib", "--modules", "--classpath", "--source-map",
+    "--project", "--out", "--target", "--lualib", "--modules", "--no-implicit-self", "--classpath", "--source-map",
     "--no-source-map", "--check", "--watch", "--help", "--version",
 )
 
@@ -86,6 +89,8 @@ internal fun parseArgs(args: Array<String>): Settings {
             "--lualib" -> parseLualib(value(arg)).let { lualib -> overrides += { s -> s.copy(lualib = lualib) } }
 
             "--modules" -> parseModuleMode(value(arg)).let { modules -> overrides += { s -> s.copy(modules = modules) } }
+
+            "--no-implicit-self" -> overrides += { s -> s.copy(noImplicitSelf = true) }
 
             "--classpath" -> value(arg).split(java.io.File.pathSeparatorChar).filter { p -> p.isNotEmpty() }.map { p -> Paths.get(p) }
                 .let { cp -> overrides += { s -> s.copy(classpath = s.classpath + cp) } }

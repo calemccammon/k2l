@@ -22,6 +22,7 @@ k2l [options] [SOURCE_DIR...]
 | `-t`, `--target VERSION` | `5.1`, `5.2`, `5.3`, `5.4` (default) or `JIT` |
 | `--lualib MODE` | `require` (default) or `inline`, see below |
 | `--modules MODE` | `require` (default) or `global`, see [Global modules](#global-modules) |
+| `--no-implicit-self` | members take no `self`, see [Self](lua-interop.md#self) |
 | `--classpath PATHS` | extra jars or class directories, such as Lua bindings (`:`-separated) |
 | `--source-map` | write source maps (on by default with `--watch`) |
 | `--no-source-map` | no source maps, also with `--watch` |
@@ -52,6 +53,7 @@ directory, or add `out/?.lua` to `package.path`. With `--modules global` they us
   "luaTarget": "5.4",
   "luaLibImport": "require",
   "moduleMode": "require",
+  "noImplicitSelf": false,
   "classpath": [],
   "sourceMap": false
 }
@@ -64,6 +66,7 @@ directory, or add `out/?.lua` to `package.path`. With `--modules global` they us
 | `luaTarget` | `5.1`, `5.2`, `5.3`, `5.4` or `JIT` | `-t` |
 | `luaLibImport` | `require` or `inline` | `--lualib` |
 | `moduleMode` | `require` or `global` | `--modules` |
+| `noImplicitSelf` | `true` or `false` (default) | `--no-implicit-self` |
 | `classpath` | extra jars or class directories | `--classpath` |
 | `sourceMap` | `true` or `false` (default: on with `--watch`) | `--source-map`, `--no-source-map` |
 
@@ -116,6 +119,7 @@ k2l {
     luaTarget.set("5.4")               // 5.1, 5.2, 5.3, 5.4 or JIT
     luaLibImport.set("require")        // or "inline"
     moduleMode.set("require")          // or "global"
+    noImplicitSelf.set(false)          // true: members take no self
     sourceMap.set(false)
     classpath.from(files())            // extra jars or class directories, e.g. Lua bindings
 }

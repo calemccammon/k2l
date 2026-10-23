@@ -162,6 +162,25 @@ class CliTest {
     }
 
     @Test
+    fun noImplicitSelfFromTheCommandLineAndTheProjectFile() {
+        assertFalse(parseArgs(arrayOf(src)).compilerOptions().noImplicitSelf)
+        assertTrue(parseArgs(arrayOf("--no-implicit-self", src)).compilerOptions().noImplicitSelf)
+        val project = write("k2l.json", "{\"srcDirs\": [\"src\"], \"noImplicitSelf\": true}")
+        assertTrue(parseArgs(arrayOf("-p", project.toString())).compilerOptions().noImplicitSelf)
+        val badProject = write("bad/k2l.json", "{\"srcDirs\": [\"src\"], \"noImplicitSelf\": \"yes\"}")
+        assertTrue(k2l("-p", badProject.toString()).err.contains("'noImplicitSelf' in $badProject must be true or false, not \"yes\""))
+    }
+
+    @Test
+    fun noImplicitSelfDefinesAndCallsObjectMembersWithADot() {
+        write("src/main.kt", "object Book {\n    fun open(page: Int) = page + 1\n}\n\nfun main() {\n    println(Book.open(2))\n}\n")
+        val run = k2l("--no-implicit-self", "-o", out.toString(), src)
+        assertEquals(0, run.status, run.err)
+        val main = Files.readString(out.resolve("main.lua"))
+        assertTrue(main.contains("function Book.open(page)") && main.contains("Book.open(2)"), main)
+    }
+
+    @Test
     fun globalModulesSetGlobalsAndTheBundleSetsItsTable() {
         write("src/core/std.kt", "package core\n\nfun clamp(x: Int, lo: Int, hi: Int) = if (x < lo) lo else if (x > hi) hi else x\n")
         write("src/main.kt", "import core.clamp\n\nfun main() {\n    println(listOf(clamp(5, 10, 400)))\n}\n")

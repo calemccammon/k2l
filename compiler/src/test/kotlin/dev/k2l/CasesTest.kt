@@ -23,7 +23,7 @@ import java.nio.file.Paths
  * - `stdout.<target>.txt` (optional): what it prints on another target where that differs from 5.4 (`stdout.5.1.txt`,
  *   `stdout.JIT.txt`); `-PupdateGolden` writes it only when the output differs, and deletes it when it no longer does
  * - `options.txt` (optional): compiler options for the case, one `name=value` per line (`luaLibImport=inline`,
- *   `moduleMode=global`)
+ *   `moduleMode=global`, `noImplicitSelf=true`)
  * - `load-order.txt` (with `moduleMode=global`): the generated files in the order they are loaded, see [globalLoader]
  * - `targets-skip.txt` (optional): targets the case does not run on (a crash or a hang there), see [skippedTargets]
  * - `errors.txt` (instead of the other two): expected diagnostics, one `line:column: message` per line, each followed by its

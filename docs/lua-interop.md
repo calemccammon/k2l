@@ -4,6 +4,7 @@ The package `dev.k2l.lua` (the `lua-api` module) declares Lua APIs for Kotlin co
 
 - [Calling Lua from Kotlin](#calling-lua-from-kotlin)
 - [Calling Kotlin from Lua](#calling-kotlin-from-lua)
+- [Self](#self)
 
 ## Calling Lua from Kotlin
 
@@ -44,7 +45,7 @@ Lua.print("raw", 1, true)         // print("raw", 1, true)
 | `@LuaExternal` | implemented in Lua; on a class, interface or object, every member is too. `external fun` works as well. |
 | `@LuaName("name")` | the Lua name, when it differs from the Kotlin name. A Lua keyword works (`M["end"](...)`). An object named `_G` maps its members to globals. |
 | `@LuaRequire("module")` | on a file: its external declarations are fields of `require("module")`. On a class or object: the module itself is that class or object. |
-| `@NoSelf` | call with `.` instead of `:`. Members of external objects already are. |
+| `@NoSelf` | call with `.` instead of `:`. Members of external objects already are. Also works on Kotlin code, see [Self](#self). |
 | `definedExternally` | the body of an external property: `val VERSION: String get() = definedExternally` |
 | `LuaTable<K, V>` | a plain table: `t[k]`, `t[k] = v`, `length` (`#t`), `has`, `remove`, `forEach` (`pairs`) |
 | `LuaMultiReturn2`, `LuaMultiReturn3` | several return values; destructure them |
@@ -85,7 +86,7 @@ fun onLoad(name: String) = "loaded $name"
 ```lua
 local mod = require("mods.Greeter")
 print(mod.on_load("x"))           -- a top-level function: `.`
-local e = mod.Registry:make(3)    -- object and companion members: `:`
+local e = mod.Registry:make(3)    -- object and companion members: `:` (`.` without self, see below)
 print(e.hp, e:getAlive())         -- a plain property is a field; a custom getter is a method
 local e2 = mod.Enemy.new(0)       -- constructors are Class.new(...)
 print(tostring(e2))               -- tostring() is the object's toString()
@@ -114,3 +115,55 @@ local e2 = Enemy.new(0)
 - A top-level `val` or `var` is a global that Lua can read and write.
 - A top-level property `x` with a custom getter or setter is a pair of global functions, `getX()` and `setX(value)`.
 - Private declarations are not globals.
+
+## Self
+
+By default a member function takes `self`. k2l defines it as `function Book:Initialize(a, b)` and calls it as
+`book:Initialize(a, b)`. Lua code that calls `Book.Initialize(a, b)` passes `a` as `self`.
+
+Like TypeScriptToLua's `@noSelf`, you can define members without `self`:
+
+| Declaration | Effect |
+|---|---|
+| `@NoSelf` on a class, object, companion object or interface | its functions and properties take no `self`. A class's companion follows the class. |
+| `@NoSelf` on a member function or property | that member takes no `self` |
+| `@file:NoSelfInFile` | every class, object and interface in the file is `@NoSelf` |
+| `noImplicitSelf` option | every file is `@file:NoSelfInFile` (`--no-implicit-self`, `"noImplicitSelf": true`) |
+
+Such a member is called with `.`, from Kotlin and from Lua:
+
+```kotlin
+@NoSelf
+object Dispatch {
+    var wheel = 0
+    fun OnMouseWheel(x: Int, y: Int, delta: Int) { wheel += delta }
+}
+```
+
+```lua
+function Dispatch.OnMouseWheel(x, y, delta)
+    Dispatch.wheel = Dispatch.wheel + delta
+end
+
+Dispatch.OnMouseWheel(1, 2, 3)
+```
+
+- In an object, `this` is the object's table. This includes companion objects and object expressions.
+- An object or object expression that implements an interface has the interface's functions as functions of its table, so
+  `ticker.start()` works.
+- A class keeps its methods with `self` in the class table. Each instance gets a field for each member without `self`: a
+  closure that calls the method with the instance. The constructor sets these fields. This costs one closure per such member
+  per instance. Overrides, `super` calls and calls from inside the class work as usual.
+- Function references (`Book::Initialize`, `obj::f`, `Class::f`) work with members without `self`.
+
+Some members always take `self`:
+
+- Members that override a member with `self`. Supertypes decide: an override takes `self` when the member it overrides
+  does. This includes library members such as `toString`, `equals`, `hashCode` and `compareTo`, which the runtime calls
+  with `:`.
+- Operator functions and member extensions.
+- The members k2l generates for data classes and enums.
+- Calls into k2l's runtime, such as `list:add(x)`.
+
+`@NoSelf` on a member that must take `self` is an error. So is a member that overrides one member with `self` and one
+without.

@@ -1,0 +1,18 @@
+open Atlas at 3, 1 opened
+open again at 1, 2 opened
+square of area 9
+wide rect of area 10
+unit of area 1
+18 21
+inline 1,inline 2
+8,10
+12
+15!,21!
+21
+[a][b]
+config main 1
+$2.5 true false
+open Ref at 9, 3 opened
+42
+9 unit of area 1
+[a][b][c]

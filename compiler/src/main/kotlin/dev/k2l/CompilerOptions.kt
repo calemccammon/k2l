@@ -66,6 +66,8 @@ data class CompilerOptions(
     val luaTarget: LuaTarget = LuaTarget.Lua54,
     val luaLibImport: LuaLibImport = LuaLibImport.Require,
     val moduleMode: ModuleMode = ModuleMode.Require,
+    /** Every file is `@file:NoSelfInFile`: members are defined and called without `self` where they can be. */
+    val noImplicitSelf: Boolean = false,
     /** Emit Source Map v3 files and make Lua errors and tracebacks report Kotlin positions. */
     val sourceMap: Boolean = false,
 )

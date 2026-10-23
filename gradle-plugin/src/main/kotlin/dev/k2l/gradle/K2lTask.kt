@@ -45,6 +45,9 @@ abstract class K2lTask(private val exec: ExecOperations) : DefaultTask() {
     @get:Input
     abstract val moduleMode: Property<String>
 
+    @get:Input
+    abstract val noImplicitSelf: Property<Boolean>
+
     /** A JDK 21 to run the compiler with; unset means the JVM running Gradle (which then must be 21 or newer). */
     @get:Internal
     abstract val javaLauncher: Property<JavaLauncher>
@@ -55,6 +58,7 @@ abstract class K2lTask(private val exec: ExecOperations) : DefaultTask() {
     /** The options every run passes, then [extra], then the sources. */
     protected fun compilerArgs(sources: List<File>, extra: List<String>): List<String> {
         val args = mutableListOf("-t", luaTarget.get(), "--lualib", luaLibImport.get(), "--modules", moduleMode.get())
+        if (noImplicitSelf.get()) args += "--no-implicit-self"
         args += extra
         val libraries = classpath.files.filter { it.exists() }
         if (libraries.isNotEmpty()) args += listOf("--classpath", libraries.joinToString(File.pathSeparator))
