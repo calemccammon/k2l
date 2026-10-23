@@ -32,6 +32,10 @@ internal object DiagnosticHints {
             "rename one of them"
         },
         Rule(Regex("^A member named '.*' clashes with the generated Lua class table")) { "rename the member" },
+        Rule(Regex("are both the Lua global '")) {
+            "packages do not separate globals: rename one, or give a function or property another Lua name with @LuaName(\"...\")"
+        },
+        Rule(Regex("which holds the k2l runtime$")) { "rename it" },
         Rule(Regex("^Unsigned type '")) { "use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones" },
         Rule(Regex("^Overriding 'Random\\.")) {
             "override only nextBits(bitCount): Random's other members draw from it, as Kotlin's defaults do"

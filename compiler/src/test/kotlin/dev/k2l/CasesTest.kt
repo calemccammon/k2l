@@ -22,7 +22,9 @@ import java.nio.file.Paths
  * - `stdout.txt`: what the program prints on Lua 5.4 (regenerated with `-PupdateGolden` too)
  * - `stdout.<target>.txt` (optional): what it prints on another target where that differs from 5.4 (`stdout.5.1.txt`,
  *   `stdout.JIT.txt`); `-PupdateGolden` writes it only when the output differs, and deletes it when it no longer does
- * - `options.txt` (optional): compiler options for the case, one `name=value` per line (`luaLibImport=inline`)
+ * - `options.txt` (optional): compiler options for the case, one `name=value` per line (`luaLibImport=inline`,
+ *   `moduleMode=global`)
+ * - `load-order.txt` (with `moduleMode=global`): the generated files in the order they are loaded, see [globalLoader]
  * - `targets-skip.txt` (optional): targets the case does not run on (a crash or a hang there), see [skippedTargets]
  * - `errors.txt` (instead of the other two): expected diagnostics, one `line:column: message` per line, each followed by its
  *   `  hint: ...` line if it has one
@@ -32,6 +34,7 @@ class CasesTest {
     fun cases(): List<DynamicNode> = modules.map { module ->
         val dir = module.roots.single().toFile()
         val options = caseOptions(dir)
+        val global = options.moduleMode == ModuleMode.Global
         val result by lazy { K2lCompiler(options).compile(session, module) }
         val errors = File(dir, "errors.txt")
         if (errors.isFile) {
@@ -62,7 +65,7 @@ class CasesTest {
                         val skip = skippedTargets(dir)["5.4"]
                         assumeTrue(skip == null, "skipped on 5.4: $skip")
                         assertEquals("", result.diagnostics.joinToString("\n"), "unexpected diagnostics")
-                        checkStdout(dir, LuaTarget.Lua54, runCase(lua!!, result.outputs, dir.toPath()))
+                        checkStdout(dir, LuaTarget.Lua54, runCase(lua!!, result.outputs, dir.toPath(), global))
                     },
                 ) + otherTargets.map { (target, interpreter) ->
                     // The golden Lua is for 5.4; other targets only have to print the same output (or their stdout.<target>.txt).
@@ -71,7 +74,7 @@ class CasesTest {
                         assumeTrue(skip == null, "skipped on ${target.id}: $skip")
                         val targetResult = K2lCompiler(options.copy(luaTarget = target)).compile(session, module)
                         assertEquals("", targetResult.diagnostics.joinToString("\n"), "unexpected diagnostics")
-                        checkStdout(dir, target, runCase(interpreter, targetResult.outputs, dir.toPath()))
+                        checkStdout(dir, target, runCase(interpreter, targetResult.outputs, dir.toPath(), global))
                     }
                 },
             )
@@ -106,8 +109,19 @@ class CasesTest {
     private fun skippedTargets(dir: File): Map<String, String> = File(dir, "targets-skip.txt").takeIf { it.isFile }?.readLines().orEmpty()
         .filter { ':' in it }.associate { it.substringBefore(':').trim() to it.substringAfter(':').trim() }
 
+    /**
+     * A script that loads a global-mode case as its host would: without `require` or `package`, the runtime bundle first,
+     * then the files in `load-order.txt`, each with `dofile`. Returns its path in [dir].
+     */
+    private fun globalLoader(dir: Path, outputs: List<LuaOutput>, caseDir: File): String {
+        val files = listOfNotNull(BUNDLE_FILE.takeIf { b -> outputs.any { it.path == b } }) + loadOrder(caseDir)
+        val script = "require = nil\npackage = nil\n" + files.joinToString("") { "dofile(\"$it\")\n" }
+        Files.writeString(dir.resolve(LOADER_FILE), script)
+        return LOADER_FILE
+    }
+
     /** Runs the generated files plus any hand-written Lua the case calls into (the `lib` directory). */
-    private fun runCase(lua: String, outputs: List<LuaOutput>, caseDir: Path): String {
+    private fun runCase(lua: String, outputs: List<LuaOutput>, caseDir: Path, global: Boolean): String {
         val dir = Files.createTempDirectory("k2l-case")
         try {
             writeOutputs(dir, outputs)
@@ -121,7 +135,11 @@ class CasesTest {
                     }
                 }
             }
-            val entry = outputs.firstOrNull { it.path == "main.lua" }?.path ?: outputs.first { it.path != BUNDLE_FILE }.path
+            val entry = if (global) {
+                globalLoader(dir, outputs, caseDir.toFile())
+            } else {
+                outputs.firstOrNull { it.path == "main.lua" }?.path ?: outputs.first { it.path != BUNDLE_FILE }.path
+            }
             val (status, output) = runLua(lua, dir, entry)
             check(status == 0) { "lua exited with $status:\n$output" }
             return output
@@ -133,6 +151,9 @@ class CasesTest {
     companion object {
         private val casesDir: Path = Paths.get(System.getProperty("k2l.casesDir") ?: "src/test/cases")
         private val update = System.getProperty("k2l.updateGolden").toBoolean()
+
+        /** The script [globalLoader] writes next to a global-mode case's output. */
+        private const val LOADER_FILE = "____load.lua"
 
         /** The 5.4 interpreter the golden output runs on (`-Plua54` overrides it). */
         private val lua54: String? by lazy { luaInterpreter(LuaTarget.Lua54) }

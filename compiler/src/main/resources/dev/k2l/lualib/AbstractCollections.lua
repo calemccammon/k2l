@@ -424,11 +424,15 @@ function __K2L_AbstractList:removeLastOrNull()
 end
 
 -- in place through set(): sort, reverse, fill, replaceAll, shuffle
-for _, name in ipairs({
-    "sort", "sortDescending", "sortBy", "sortByDescending", "sortWith", "reverse", "fill", "replaceAll", "shuffle",
-}) do
-    __K2L_AbstractList[name] = __K2L_List[name]
-end
+__K2L_AbstractList.sort = __K2L_List.sort
+__K2L_AbstractList.sortDescending = __K2L_List.sortDescending
+__K2L_AbstractList.sortBy = __K2L_List.sortBy
+__K2L_AbstractList.sortByDescending = __K2L_List.sortByDescending
+__K2L_AbstractList.sortWith = __K2L_List.sortWith
+__K2L_AbstractList.reverse = __K2L_List.reverse
+__K2L_AbstractList.fill = __K2L_List.fill
+__K2L_AbstractList.replaceAll = __K2L_List.replaceAll
+__K2L_AbstractList.shuffle = __K2L_List.shuffle
 
 ------------------------------------------------------------------ AbstractSet
 -- Equal to any set with the same elements.
@@ -767,11 +771,16 @@ setmetatable(__K2L_AbstractMap, {__index = function(_, key)
 end})
 
 ------------------------------------------------------------------ interfaces
-for _, base in ipairs({__K2L_CollectionBase, __K2L_ListBase, __K2L_SetBase, __K2L_MapBase}) do
+local function anyMembers(base)
     base.toString = __K2L_IterableBase.toString
     base.equals = __K2L_IterableBase.equals
     base.hashCode = __K2L_IterableBase.hashCode
 end
+
+anyMembers(__K2L_CollectionBase)
+anyMembers(__K2L_ListBase)
+anyMembers(__K2L_SetBase)
+anyMembers(__K2L_MapBase)
 -- A class implementing List has its own iterator(), which the stdlib functions use (an AbstractList's reads get()).
 __K2L_ListBase.____array = __K2L_IterableBase.____array
 

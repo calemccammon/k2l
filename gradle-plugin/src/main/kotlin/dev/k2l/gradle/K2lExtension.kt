@@ -6,7 +6,7 @@ import org.gradle.api.provider.Property
 
 /**
  * The `k2l { }` block. Defaults: sources in `src/main/kotlin`, output in `build/lua`, Lua 5.4,
- * the shared `lualib_bundle.lua`, no source maps.
+ * the shared `lualib_bundle.lua`, files as modules, no source maps.
  */
 abstract class K2lExtension {
     /** Directories with the Kotlin sources to transpile. Use `setFrom(...)` to replace the default. */
@@ -20,6 +20,9 @@ abstract class K2lExtension {
 
     /** `require` (one shared `lualib_bundle.lua`) or `inline`. */
     abstract val luaLibImport: Property<String>
+
+    /** `require` (each file is a module) or `global` (each file sets globals). */
+    abstract val moduleMode: Property<String>
 
     /** Write Source Map v3 files and make Lua errors show Kotlin positions. */
     abstract val sourceMap: Property<Boolean>

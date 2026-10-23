@@ -40,13 +40,12 @@ local function isComparator(value)
 end
 
 -- LuaJIT's table.new(narray, nhash): a table sized up front for the lists whose size is known (no rehash while it fills)
-local tableNew
-if jit then
+local tableNew = jit and (function()
     local ok, new = pcall(require, "table.new")
     if ok then
-        tableNew = new
+        return new
     end
-end
+end)()
 
 local function newList(arr, n)
     arr.size = n
@@ -901,11 +900,14 @@ function __K2L_Iterable:toTypedArray()
     return setmetatable(out, __K2L_Array)
 end
 
-for _, name in ipairs({
-    "toIntArray", "toLongArray", "toDoubleArray", "toBooleanArray", "toFloatArray", "toCharArray", "toShortArray", "toByteArray",
-}) do
-    __K2L_Iterable[name] = __K2L_Iterable.toTypedArray
-end
+__K2L_Iterable.toIntArray = __K2L_Iterable.toTypedArray
+__K2L_Iterable.toLongArray = __K2L_Iterable.toTypedArray
+__K2L_Iterable.toDoubleArray = __K2L_Iterable.toTypedArray
+__K2L_Iterable.toBooleanArray = __K2L_Iterable.toTypedArray
+__K2L_Iterable.toFloatArray = __K2L_Iterable.toTypedArray
+__K2L_Iterable.toCharArray = __K2L_Iterable.toTypedArray
+__K2L_Iterable.toShortArray = __K2L_Iterable.toTypedArray
+__K2L_Iterable.toByteArray = __K2L_Iterable.toTypedArray
 
 function __K2L_Iterable:hashCode()
     local arr, n = self:____array()
@@ -2597,7 +2599,9 @@ local function unmapEntry(map, entry)
     map:remove(entry.key, entry.value)
 end
 
-KeySnapshot.____unmap, ValueSnapshot.____unmap, EntrySnapshot.____unmap = unmapKey, unmapValue, unmapEntry
+KeySnapshot.____unmap = unmapKey
+ValueSnapshot.____unmap = unmapValue
+EntrySnapshot.____unmap = unmapEntry
 
 -- Removes the elements that match `predicate` (that do not, with `keep`) from the snapshot and the map; whether any was.
 local function removeThrough(self, predicate, keep)
@@ -2624,7 +2628,7 @@ local function predicateOf(elements)
     return function(it) return elements:contains(it) end
 end
 
-for _, view in ipairs({KeySnapshot, ValueSnapshot, EntrySnapshot}) do
+local function removingFromMap(view)
     function view:remove(element)
         if not getmetatable(self).____super.remove(self, element) then
             return false
@@ -2644,6 +2648,10 @@ for _, view in ipairs({KeySnapshot, ValueSnapshot, EntrySnapshot}) do
         self.____map:clear()
     end
 end
+
+removingFromMap(KeySnapshot)
+removingFromMap(ValueSnapshot)
+removingFromMap(EntrySnapshot)
 
 function __K2L_Map:getKeys()
     local view = __K2L_Set.new()

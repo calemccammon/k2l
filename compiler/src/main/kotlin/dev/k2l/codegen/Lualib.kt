@@ -13,6 +13,8 @@ object Lualib {
         /** Top-level `__K2L_*` locals the feature defines. */
         val exports: List<String> = Regex("""^local (?:function )?(__K2L_\w+)""", RegexOption.MULTILINE)
             .findAll(code).map { it.groupValues[1] }.distinct().toList()
+
+        internal val statements: List<LualibPruning.Statement> by lazy { LualibPruning.statements(code) }
     }
 
     const val BUNDLE_MODULE = "lualib_bundle"
@@ -23,13 +25,36 @@ object Lualib {
 
     private val REFERENCE = Regex("""\b__K2L_\w+""")
 
-    /** The shared runtime: every used feature, returning a table of their exports. */
-    fun bundle(features: Collection<String>, target: LuaTarget = LuaTarget.Lua54): String =
-        scoped(resolve(features, target)) + "\nreturn $EXPORTS\n"
+    /**
+     * The shared runtime: the used features, returning a table of their exports; with [global], setting the global
+     * `____lualib` to it instead, for files that are loaded without `require`. Only the part of them the generated files
+     * [code] use is kept; all of it without [code].
+     */
+    fun bundle(
+        features: Collection<String>,
+        target: LuaTarget = LuaTarget.Lua54,
+        code: Collection<String>? = null,
+        global: Boolean = false,
+    ): String = scoped(used(resolve(features, target), code, emptyList())) +
+        if (global) "\n_G.$EXPORTS = $EXPORTS\n" else "\nreturn $EXPORTS\n"
 
-    /** The runtime copied into one file: the used features, then a local for each runtime name the file refers to. */
-    fun inline(features: Collection<String>, names: Collection<String>, target: LuaTarget = LuaTarget.Lua54): String =
-        scoped(resolve(features, target)) + names.joinToString("") { "local $it = $EXPORTS.$it\n" }
+    /**
+     * The runtime copied into one file: the part of the used features that the generated files [code] use, then a local for
+     * each runtime name the file refers to.
+     */
+    fun inline(
+        features: Collection<String>,
+        names: Collection<String>,
+        code: Collection<String>,
+        target: LuaTarget = LuaTarget.Lua54,
+    ): String = scoped(used(resolve(features, target), code, names)) + names.joinToString("") { "local $it = $EXPORTS.$it\n" }
+
+    /** [features] cut down to what [code] and the runtime names [roots] need (see [LualibPruning]). */
+    private fun used(features: List<Feature>, code: Collection<String>?, roots: Collection<String>): List<Feature> {
+        if (code == null) return features
+        val kept = LualibPruning.prune(features.map { it.statements }, LualibPruning.uses(code), roots)
+        return features.zip(kept).filter { (_, text) -> text.isNotBlank() }.map { (f, text) -> Feature(f.name, text, f.requires, f.file) }
+    }
 
     /**
      * The features, each in its own `do` block: Lua allows a function (the chunk included) 200 locals, which all features'

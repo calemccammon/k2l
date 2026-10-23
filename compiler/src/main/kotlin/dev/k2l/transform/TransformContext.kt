@@ -7,6 +7,7 @@ import dev.k2l.Origin
 import dev.k2l.Severity
 import dev.k2l.codegen.LuaPrinter
 import dev.k2l.codegen.LuaStmt
+import org.jetbrains.kotlin.psi.KtNamedDeclaration
 import java.util.IdentityHashMap
 
 /** Per-file state shared by the transformer: diagnostics, lualib usage and generated names. */
@@ -19,6 +20,9 @@ class TransformContext(val options: CompilerOptions) {
 
     /** Other files of the module this file requires: Lua module name -> local name. */
     val imports = LinkedHashMap<String, String>()
+
+    /** With `ModuleMode.Global`: the Lua globals this file defines, with the declaration defining each. */
+    val globals = mutableListOf<Pair<String, KtNamedDeclaration>>()
 
     private val generated = mutableMapOf<String, Int>()
 

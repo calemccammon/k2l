@@ -157,11 +157,20 @@ function __K2L_SequenceIterable:first(predicate)
         or "Collection is empty."))
 end
 
-for _, name in ipairs({"firstOrNull", "find", "any", "all", "none", "contains", "indexOf", "elementAtOrNull"}) do
-    __K2L_SequenceIterable[name] = function(self, ...)
+local function delegate(name)
+    return function(self, ...)
         return self.____sequence[name](self.____sequence, ...)
     end
 end
+
+__K2L_SequenceIterable.firstOrNull = delegate("firstOrNull")
+__K2L_SequenceIterable.find = delegate("find")
+__K2L_SequenceIterable.any = delegate("any")
+__K2L_SequenceIterable.all = delegate("all")
+__K2L_SequenceIterable.none = delegate("none")
+__K2L_SequenceIterable.contains = delegate("contains")
+__K2L_SequenceIterable.indexOf = delegate("indexOf")
+__K2L_SequenceIterable.elementAtOrNull = delegate("elementAtOrNull")
 
 function __K2L_Sequence:asIterable()
     return __K2L_SequenceIterable.new(self)

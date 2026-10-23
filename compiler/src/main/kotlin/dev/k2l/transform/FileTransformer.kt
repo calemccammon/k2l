@@ -2,6 +2,7 @@ package dev.k2l.transform
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
+import dev.k2l.ModuleMode
 import dev.k2l.codegen.*
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.types.KaType
@@ -27,12 +28,18 @@ class FileTransformer(
     internal val implementsClosedRange get() = module.implementsClosedRange
     internal val implementsCollections get() = module.implementsCollections
 
+    /** The file's public and internal top-level declarations are Lua globals, and other files' are read as globals. */
+    internal val globalMode get() = ctx.options.moduleMode == ModuleMode.Global
+
     /** Exported top-level `var`s live in `____exports` so other files see updates. */
     internal val tableMode: Boolean by lazy {
-        file in module.cyclic || file.declarations.any { isExportedVar(it) } || deferredInit
+        !globalMode && (file in module.cyclic || file.declarations.any { isExportedVar(it) } || deferredInit)
     }
 
-    /** The file's plain properties are initialized on first use, see [FileInit]. */
+    /**
+     * The file's plain properties are initialized on first use, see [FileInit]; with globals, at the end of the file, after
+     * its functions and classes are defined.
+     */
     internal val deferredInit: Boolean by lazy { fileInit.isDeferred(file) }
 
     /** Delegated properties' delegate kinds (null when unsupported, already reported). */

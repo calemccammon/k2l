@@ -5,9 +5,8 @@
 local floor = math.floor
 
 -- AND8[x * 256 + y + 1] is the and of the bytes x and y, built from the and of two 4-bit values
-local AND8 = {}
-do
-    local AND4 = {}
+local AND8 = (function()
+    local AND4, AND8 = {}, {}
     for x = 0, 15 do
         for y = 0, 15 do
             local r, bit, a, b = 0, 1, x, y
@@ -28,7 +27,8 @@ do
             AND8[x * 256 + y + 1] = AND4[xl + yl] + AND4[xh + (y - yl) / 16] * 16
         end
     end
-end
+    return AND8
+end)()
 
 -- the and of two unsigned 32-bit patterns, stopping when either operand has no bits left
 local function uand(a, b)
