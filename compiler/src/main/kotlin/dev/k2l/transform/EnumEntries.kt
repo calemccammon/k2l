@@ -54,7 +54,10 @@ private fun FileTransformer.entryWithBody(entry: KtEnumEntry, enumRef: LuaExpr, 
         withClass(entry) {
             checkMembers(entry)
             members(entry, local)
-            val init = collect { initializers(entry) }
+            val init = collect {
+                bindMembers(selfRef(), boundMembers(entry))
+                initializers(entry)
+            }
             if (init.isNotEmpty() || suffix.isNotEmpty()) {
                 val parentInit = LuaIndex(enumRef, LuaString("$INIT$suffix"))
                 val body = listOf(LuaCallStmt(LuaCall(parentInit, listOf(selfRef(), LuaName("..."))))) + init

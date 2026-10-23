@@ -1,0 +1,2 @@
+moduleMode=global
+noImplicitSelf=true

@@ -101,6 +101,19 @@ class PluginFunctionalTest {
     }
 
     @Test
+    fun noImplicitSelfOptionReachesTheCompiler() {
+        sampleProject("k2l { noImplicitSelf = true }")
+        write(
+            "src/main/kotlin/main.kt",
+            "object Book {\n    fun open(page: Int) = page + 1\n}\n\nfun main() {\n    println(Book.open(2))\n}\n",
+        )
+        val result = runner("compileKotlinToLua").build()
+        assertEquals(TaskOutcome.SUCCESS, result.task(":compileKotlinToLua")?.outcome, result.output)
+        val main = Files.readString(project.resolve("build/lua/main.lua"))
+        assertTrue(main.contains("function Book.open(page)") && main.contains("Book.open(2)"), main)
+    }
+
+    @Test
     fun checkReportsWithoutWritingLuaAndFailsOnUnsupportedConstructs() {
         sampleProject()
         write("src/main/kotlin/main.kt", "fun main() {\n    println(\"hi\")\n}\n")

@@ -26,11 +26,17 @@ annotation class LuaRequire(val module: String)
 
 /**
  * Call without `self`: `obj.f(x)` instead of `obj:f(x)`. Members of external objects are already called
- * this way; use it on functions of external classes and interfaces.
+ * this way; use it on functions of external classes and interfaces. On a class, object, interface, function or
+ * property of the program: its members (or it) are also defined without `self`, see the Lua interop documentation.
  */
-@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.BINARY)
 annotation class NoSelf
+
+/** On a file: every class, object, interface and function in it is `@NoSelf`. */
+@Target(AnnotationTarget.FILE)
+@Retention(AnnotationRetention.BINARY)
+annotation class NoSelfInFile
 
 /** Body for external properties: `val version: String get() = definedExternally`. */
 val definedExternally: Nothing

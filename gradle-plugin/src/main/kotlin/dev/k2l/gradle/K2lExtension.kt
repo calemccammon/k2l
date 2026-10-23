@@ -6,7 +6,7 @@ import org.gradle.api.provider.Property
 
 /**
  * The `k2l { }` block. Defaults: sources in `src/main/kotlin`, output in `build/lua`, Lua 5.4,
- * the shared `lualib_bundle.lua`, files as modules, no source maps.
+ * the shared `lualib_bundle.lua`, files as modules, members taking `self`, no source maps.
  */
 abstract class K2lExtension {
     /** Directories with the Kotlin sources to transpile. Use `setFrom(...)` to replace the default. */
@@ -23,6 +23,9 @@ abstract class K2lExtension {
 
     /** `require` (each file is a module) or `global` (each file sets globals). */
     abstract val moduleMode: Property<String>
+
+    /** Define and call members without `self`, as if every file were `@file:NoSelfInFile`. */
+    abstract val noImplicitSelf: Property<Boolean>
 
     /** Write Source Map v3 files and make Lua errors show Kotlin positions. */
     abstract val sourceMap: Property<Boolean>

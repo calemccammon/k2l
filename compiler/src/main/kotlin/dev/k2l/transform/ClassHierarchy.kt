@@ -77,6 +77,9 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
 
     private val initCache = HashMap<KtClassOrObject, Boolean>()
 
+    /** Whether the constructor of a class binds members without `self` to the instance (see NoSelfMembers.kt). */
+    var bindsMembers: (KtClassOrObject) -> Boolean = { false }
+
     /** Whether the primary constructor does anything, i.e. whether `____init` is generated for it. */
     fun initNeeded(c: KtClassOrObject): Boolean = initCache.getOrPut(c) {
         if ((c is KtClass && c.isInterface()) || !hasPrimary(c)) return@getOrPut false
@@ -88,7 +91,7 @@ internal class ClassHierarchy(private val session: KaSession, private val file: 
     }
 
     private fun KtClassOrObject.hasConstructorState() =
-        this is KtClass && (isEnum() || isInner() || primaryConstructorParameters.isNotEmpty())
+        (this is KtClass && (isEnum() || isInner() || primaryConstructorParameters.isNotEmpty())) || bindsMembers(this)
 
     private fun KtClassOrObject.hasInitializers() =
         declarations.any { (it is KtProperty && (it.initializer != null || it.delegate != null)) || it is KtAnonymousInitializer }

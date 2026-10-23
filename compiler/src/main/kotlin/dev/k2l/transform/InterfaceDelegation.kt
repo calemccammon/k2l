@@ -29,7 +29,13 @@ internal fun FileTransformer.delegatedMembers(c: KtClassOrObject, ref: LuaExpr) 
     val defined = ownMethodNames(c)
     for (d in delegations) {
         for (iface in classes.hierarchy(d.iface)) {
-            iface.declarations.flatMap(::forwardedNames).filter { defined.add(it) }.forEach { forward(ref, d.field, it) }
+            for (decl in iface.declarations) {
+                val withoutSelf = decl is KtNamedDeclaration && noSelf.isNoSelf(decl)
+                // in an object, a member without self is a function of its table
+                withObjectSelf(ref.takeIf { withoutSelf && c is KtObjectDeclaration }) {
+                    forwardedNames(decl).filter { defined.add(it) }.forEach { forward(ref, d.field, it, withoutSelf) }
+                }
+            }
         }
     }
 }
@@ -53,9 +59,9 @@ private fun FileTransformer.ownMethodNames(c: KtClassOrObject): MutableSet<Strin
     return names
 }
 
-/** `function C:name(...) return self.____delegate_I:name(...) end` */
-private fun FileTransformer.forward(ref: LuaExpr, field: String, name: String) {
-    val call = LuaMethodCall(LuaIndex(selfRef(), LuaString(field)), name, listOf(LuaName("...")))
+/** `function C:name(...) return self.____delegate_I:name(...) end`; `.name(...)` for a member without self. */
+private fun FileTransformer.forward(ref: LuaExpr, field: String, name: String, noSelf: Boolean) {
+    val call = methodCall(LuaIndex(selfRef(), LuaString(field)), name, listOf(LuaName("...")), noSelf)
     val fn = LuaFunction(emptyList(), listOf(LuaReturn(listOf(call))), isVararg = true)
-    emit(LuaFunctionDecl(LuaIndex(ref, LuaString(name)), fn, isLocal = false, isMethod = true))
+    emit(LuaFunctionDecl(LuaIndex(ref, LuaString(name)), fn, isLocal = false, isMethod = objectSelf == null))
 }

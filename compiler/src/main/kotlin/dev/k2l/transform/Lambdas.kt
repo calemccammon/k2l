@@ -309,19 +309,21 @@ private fun FileTransformer.functionReference(e: KtCallableReferenceExpression, 
         )
     }
     val method = naming.function(psi)
+    val withoutSelf = noSelf.isNoSelf(psi)
     // `::method` inside the class (or object, companion, `with` block) is bound to the implicit `this`
     val implicit = if (receiverExpr == null) implicitReferenceReceiver(e) else null
     if (boundReceiver != null || implicit != null) {
         // obj::method
         val target = cache(implicit ?: expression(boundReceiver!!), "receiver")
         return ReferenceValue(
-            LuaFunction(emptyList(), listOf(LuaReturn(listOf(LuaMethodCall(target, method, rest)))), isVararg = true),
+            LuaFunction(emptyList(), listOf(LuaReturn(listOf(methodCall(target, method, rest, withoutSelf)))), isVararg = true),
             target,
         )
     }
     // Class::method takes the instance first.
+    val instance = LuaName(if (withoutSelf) "receiver" else "self")
     ReferenceValue(
-        LuaFunction(listOf("self"), listOf(LuaReturn(listOf(LuaMethodCall(LuaName("self"), method, rest)))), isVararg = true),
+        LuaFunction(listOf(instance.name), listOf(LuaReturn(listOf(methodCall(instance, method, rest, withoutSelf)))), isVararg = true),
         null,
         1,
     )

@@ -22,9 +22,17 @@ internal fun FileTransformer.registerSamConversion(parameterType: KaType, arg: K
 
 /**
  * `Check { x -> ... }` and SAM conversions to a `fun interface Check` of the program: an object of the interface whose
- * abstract method calls the function [f].
+ * abstract method calls the function [f]. Without `self`, the method is [f] itself, and the object gets the interface's
+ * other members without `self` bound to it.
  */
 internal fun FileTransformer.funInterfaceObject(cls: KtClass, f: LuaExpr): LuaExpr {
     val method = cls.declarations.filterIsInstance<KtNamedFunction>().first { !it.hasBody() }
-    return LuaCall(lualibRef(SAM_FEATURE, "__K2L_FunInterface"), listOf(classRef(cls), LuaString(naming.function(method)), f))
+    val name = naming.function(method)
+    if (!noSelf.isNoSelf(method)) return LuaCall(lualibRef(SAM_FEATURE, "__K2L_FunInterface"), listOf(classRef(cls), LuaString(name), f))
+    val made = luaCall(LuaName("setmetatable"), LuaTable(listOf(LuaField.Named(name, f))), classRef(cls))
+    val others = boundMembers(cls) - name
+    if (others.isEmpty()) return made
+    val target = cache(made, "object")
+    bindMembers(target, others)
+    return target
 }

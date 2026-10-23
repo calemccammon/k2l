@@ -37,6 +37,13 @@ internal object DiagnosticHints {
         },
         Rule(Regex("which holds the k2l runtime$")) { "rename it" },
         Rule(Regex("^Unsigned type '")) { "use Int or Long: numbers are Lua numbers, and Lua has no unsigned ones" },
+        Rule(Regex("^Overriding members with and without self")) {
+            "make the overridden members agree: @NoSelf on all of their declarations (or their files), or on none"
+        },
+        Rule(Regex("^@NoSelf on an override")) {
+            "an override takes self when the member it overrides does: remove @NoSelf here, or put it on the overridden member"
+        },
+        Rule(Regex("^@NoSelf on an operator")) { "remove @NoSelf: operators and member extensions are always called with self" },
         Rule(Regex("^Overriding 'Random\\.")) {
             "override only nextBits(bitCount): Random's other members draw from it, as Kotlin's defaults do"
         },

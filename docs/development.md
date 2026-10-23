@@ -31,7 +31,7 @@ Each directory in `compiler/src/test/cases` is one program.
 | `stdout.<target>.txt` | what it prints on another target where that differs (`stdout.5.1.txt`, `stdout.JIT.txt`) |
 | `errors.txt` | expected diagnostics instead of output: `line:column: message`, then an optional `  hint: ...` line |
 | `targets-skip.txt` | targets the case cannot run on, one `target: reason` per line |
-| `options.txt` | compiler options, one `name=value` per line: `luaLibImport=inline`, `moduleMode=global` |
+| `options.txt` | compiler options, one `name=value` per line: `luaLibImport=inline`, `moduleMode=global`, `noImplicitSelf=true` |
 | `load-order.txt` | with `moduleMode=global`: the Lua files to load, one per line. The test sets `require` and `package` to nil, then runs `lualib_bundle.lua` and these files with `dofile`. |
 | `lib/` | hand-written Lua the program calls into, copied next to the output (`lib/greeter.lua` is `require("lib.greeter")`) |
 
