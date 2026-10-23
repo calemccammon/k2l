@@ -2,9 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -149,11 +148,6 @@ end
 
 local Table = __K2L_Class("Table")
 
-function Table:____init(header, rows)
-    self.header = header
-    self.rows = rows
-end
-
 function Table.new(header, rows)
     return setmetatable({header = header, rows = rows}, Table)
 end
@@ -190,127 +184,43 @@ end
 local Cond = __K2L_Class("Cond")
 Cond.Cmp = __K2L_Class("Cond$Cmp", nil, Cond)
 
-function Cond.Cmp:____init(col, op, value)
-    self.col = col
-    self.op = op
-    self.value = value
-end
-
 function Cond.Cmp.new(col, op, value)
     return setmetatable({col = col, op = op, value = value}, Cond.Cmp)
 end
 
-function Cond.Cmp:toString()
-    return "Cmp(col=" .. self.col .. ", op=" .. self.op .. ", value=" .. self.value .. ")"
-end
-
-function Cond.Cmp:hashCode()
-    return (31 * (31 * __K2L_Hash(self.col) + __K2L_Hash(self.op)) + __K2L_Hash(self.value) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Cond.Cmp:equals(other)
-    return getmetatable(other) == Cond.Cmp and self.col == other.col and self.op == other.op and self.value == other.value
-end
-
+__K2L_DataClass(Cond.Cmp, {"col", "op", "value"})
 Cond.And = __K2L_Class("Cond$And", nil, Cond)
-
-function Cond.And:____init(l, r)
-    self.l = l
-    self.r = r
-end
 
 function Cond.And.new(l, r)
     return setmetatable({l = l, r = r}, Cond.And)
 end
 
-function Cond.And:toString()
-    return "And(l=" .. __K2L_Str(self.l) .. ", r=" .. __K2L_Str(self.r) .. ")"
-end
-
-function Cond.And:hashCode()
-    return (31 * __K2L_Hash(self.l) + __K2L_Hash(self.r) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Cond.And:equals(other)
-    return getmetatable(other) == Cond.And and __K2L_Equals(self.l, other.l) and __K2L_Equals(self.r, other.r)
-end
-
+__K2L_DataClass(Cond.And, {"l", "r"})
 Cond.Or = __K2L_Class("Cond$Or", nil, Cond)
-
-function Cond.Or:____init(l, r)
-    self.l = l
-    self.r = r
-end
 
 function Cond.Or.new(l, r)
     return setmetatable({l = l, r = r}, Cond.Or)
 end
 
-function Cond.Or:toString()
-    return "Or(l=" .. __K2L_Str(self.l) .. ", r=" .. __K2L_Str(self.r) .. ")"
-end
-
-function Cond.Or:hashCode()
-    return (31 * __K2L_Hash(self.l) + __K2L_Hash(self.r) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Cond.Or:equals(other)
-    return getmetatable(other) == Cond.Or and __K2L_Equals(self.l, other.l) and __K2L_Equals(self.r, other.r)
-end
-
+__K2L_DataClass(Cond.Or, {"l", "r"})
 local Select = __K2L_Class("Select")
 
-function Select:____init(col, agg)
-    if agg == nil then
-        agg = nil
-    end
-    self.col = col
-    self.agg = agg
+function Select.new(col, agg)
+    return setmetatable({col = col, agg = agg}, Select)
 end
 
 function Select:getLabel()
     return self.agg == nil and self.col or self.agg .. "(" .. self.col .. ")"
 end
 
-function Select:toString()
-    return "Select(col=" .. self.col .. ", agg=" .. __K2L_Str(self.agg) .. ")"
-end
-
-function Select:hashCode()
-    return (31 * __K2L_Hash(self.col) + __K2L_Hash(self.agg) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Select:equals(other)
-    return getmetatable(other) == Select and self.col == other.col and self.agg == other.agg
-end
-
+__K2L_DataClass(Select, {"col", "agg"})
 local Query = __K2L_Class("Query")
-
-function Query:____init(____select, where, groupBy, orderBy, desc, limit)
-    self.select = ____select
-    self.where = where
-    self.groupBy = groupBy
-    self.orderBy = orderBy
-    self.desc = desc
-    self.limit = limit
-end
 
 function Query.new(____select, where, groupBy, orderBy, desc, limit)
     return setmetatable({select = ____select, where = where, groupBy = groupBy, orderBy = orderBy, desc = desc, limit = limit}, Query)
 end
 
-function Query:toString()
-    return "Query(select=" .. __K2L_Str(self.select) .. ", where=" .. __K2L_Str(self.where) .. ", groupBy=" .. __K2L_Str(self.groupBy) .. ", orderBy=" .. __K2L_Str(self.orderBy) .. ", desc=" .. tostring(self.desc) .. ", limit=" .. __K2L_Str(self.limit) .. ")"
-end
-
-function Query:hashCode()
-    return (31 * (31 * (31 * (31 * (31 * __K2L_Hash(self.select) + __K2L_Hash(self.where)) + __K2L_Hash(self.groupBy)) + __K2L_Hash(self.orderBy)) + (self.desc and 1231 or 1237)) + __K2L_Hash(self.limit) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Query:equals(other)
-    return getmetatable(other) == Query and __K2L_Equals(self.select, other.select) and __K2L_Equals(self.where, other.where) and self.groupBy == other.groupBy and self.orderBy == other.orderBy and self.desc == other.desc and self.limit == other.limit
-end
-
+__K2L_DataClass(Query, {"select", "where", "groupBy", "orderBy", "desc", "limit"})
 local QUOTED = __K2L_Regex.new("'[^']*'", "'[^%']*'")
 local TOKENS = __K2L_ListOf(QUOTED, __K2L_Regex.new("[A-Za-z_]\\w*", "[A-Za-z_][%w_]*"), __K2L_Regex.new("\\d+\\.?\\d*", "%d+%.?%d*"), __K2L_Regex.new("[<>!]=", "[%<%>%!]="), __K2L_Regex.new("[(),*=<>]", "[%(%)%,%*%=%<%>]"))
 
@@ -344,22 +254,18 @@ local function tokenize(src)
 end
 
 local QueryParser = __K2L_Class("QueryParser")
+local ____and, atom
 
-function QueryParser:____init(src)
-    self.toks = tokenize(src)
-    self.p = 0
-end
-
-function QueryParser:peek()
+local function peek(self)
     return self.toks:getOrNull(self.p)
 end
 
-function QueryParser:kw(w)
-    local ____receiver_3 = self:peek()
+local function kw(self, w)
+    local ____receiver_3 = peek(self)
     return (____receiver_3 and __K2L_StringEqualsIgnoreCase(____receiver_3, w)) == true
 end
 
-function QueryParser:next()
+local function ____next(self)
     local ____arg = self.toks
     local ____old = self.p
     self.p = self.p + 1
@@ -370,109 +276,114 @@ function QueryParser:next()
     return ____value_3
 end
 
-function QueryParser:expect(w)
-    if not __K2L_StringEqualsIgnoreCase(self:next(), w) then
+local function expect(self, w)
+    if not __K2L_StringEqualsIgnoreCase(____next(self), w) then
         error(__K2L_IllegalArgumentException.new("expected " .. w .. " near token " .. self.p - 1))
     end
 end
 
+local function ____or(self)
+    local l = ____and(self)
+    while kw(self, "or") do
+        self.p = self.p + 1
+        l = Cond.Or.new(l, ____and(self))
+    end
+    return l
+end
+
+function ____and(self)
+    local l = atom(self)
+    while kw(self, "and") do
+        self.p = self.p + 1
+        l = Cond.And.new(l, atom(self))
+    end
+    return l
+end
+
+function atom(self)
+    if kw(self, "(") then
+        self.p = self.p + 1
+        local ____value_4 = ____or(self)
+        expect(self, ")")
+        return ____value_4
+    end
+    local col = ____next(self):lower()
+    local op = ____next(self)
+    if not __K2L_SetOf("=", "!=", "<", "<=", ">", ">="):contains(op) then
+        error(__K2L_IllegalArgumentException.new("bad operator '" .. op .. "'"))
+    end
+    local ____value_5 = ____next(self)
+    local ____result
+    ____result = __K2L_StringStartsWith(____value_5, "'") and __K2L_StringReplace(__K2L_Text.substring(____value_5, 1, #____value_5 - 1), "''", "'") or ____value_5
+    local v = ____result
+    return Cond.Cmp.new(col, op, v)
+end
+
+function QueryParser:____init(src)
+    self.toks = tokenize(src)
+    self.p = 0
+end
+
 function QueryParser:parse()
-    self:expect("select")
+    expect(self, "select")
     local sel = __K2L_ListOf()
     repeat
         if sel:isNotEmpty() then
             self.p = self.p + 1
         end
-        local name = self:next():lower()
+        local name = ____next(self):lower()
         local ____temp
-        if self:kw("(") then
+        if kw(self, "(") then
             self.p = self.p + 1
-            local c = self:next():lower()
-            self:expect(")")
+            local c = ____next(self):lower()
+            expect(self, ")")
             ____temp = Select.new(c, name)
         else
             ____temp = Select.new(name)
         end
         sel:add(____temp)
-    until not self:kw(",")
+    until not kw(self, ",")
     local where
-    if self:kw("where") then
+    if kw(self, "where") then
         self.p = self.p + 1
-        where = self:____or()
+        where = ____or(self)
     else
         where = nil
     end
     local group
-    if self:kw("group") then
+    if kw(self, "group") then
         self.p = self.p + 1
-        self:expect("by")
-        group = self:next():lower()
+        expect(self, "by")
+        group = ____next(self):lower()
     else
         group = nil
     end
     local order = nil
     local desc = false
-    if self:kw("order") then
+    if kw(self, "order") then
         self.p = self.p + 1
-        self:expect("by")
-        order = self:next():lower()
-        if self:kw("(") then
+        expect(self, "by")
+        order = ____next(self):lower()
+        if kw(self, "(") then
             self.p = self.p + 1
-            order = order .. "(" .. self:next():lower() .. ")"
-            self:expect(")")
+            order = order .. "(" .. ____next(self):lower() .. ")"
+            expect(self, ")")
         end
-        if self:kw("desc") or self:kw("asc") then
-            desc = self:next():lower() == "desc"
+        if kw(self, "desc") or kw(self, "asc") then
+            desc = ____next(self):lower() == "desc"
         end
     end
     local limit
-    if self:kw("limit") then
+    if kw(self, "limit") then
         self.p = self.p + 1
-        limit = __K2L_StringToInt(self:next())
+        limit = __K2L_StringToInt(____next(self))
     else
         limit = nil
     end
-    if self:peek() ~= nil then
-        error(__K2L_IllegalArgumentException.new("trailing input '" .. __K2L_Str(self:peek()) .. "'"))
+    if peek(self) ~= nil then
+        error(__K2L_IllegalArgumentException.new("trailing input '" .. __K2L_Str(peek(self)) .. "'"))
     end
     return Query.new(sel, where, group, order, desc, limit)
-end
-
-function QueryParser:____or()
-    local l = self:____and()
-    while self:kw("or") do
-        self.p = self.p + 1
-        l = Cond.Or.new(l, self:____and())
-    end
-    return l
-end
-
-function QueryParser:____and()
-    local l = self:atom()
-    while self:kw("and") do
-        self.p = self.p + 1
-        l = Cond.And.new(l, self:atom())
-    end
-    return l
-end
-
-function QueryParser:atom()
-    if self:kw("(") then
-        self.p = self.p + 1
-        local ____value_4 = self:____or()
-        self:expect(")")
-        return ____value_4
-    end
-    local col = self:next():lower()
-    local op = self:next()
-    if not __K2L_SetOf("=", "!=", "<", "<=", ">", ">="):contains(op) then
-        error(__K2L_IllegalArgumentException.new("bad operator '" .. op .. "'"))
-    end
-    local ____value_5 = self:next()
-    local ____result
-    ____result = __K2L_StringStartsWith(____value_5, "'") and __K2L_StringReplace(__K2L_Text.substring(____value_5, 1, #____value_5 - 1), "''", "'") or ____value_5
-    local v = ____result
-    return Cond.Cmp.new(col, op, v)
 end
 
 local function compare(a, b)

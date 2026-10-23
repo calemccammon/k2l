@@ -58,29 +58,30 @@ function PluginException:____init(pluginId, cause)
 end
 
 local PluginRegistry = __K2L_Class("arena.core.PluginRegistry")
+local factories
 
 function PluginRegistry:____init()
-    self.factories = __K2L_MapOf()
+    factories = __K2L_MapOf()
     self.lookups = 0
     print("registry ready")
 end
 
 function PluginRegistry:register(factory)
-    if self.factories:containsKey(factory:getPluginId()) then
+    if factories:containsKey(factory:getPluginId()) then
         error(__K2L_IllegalStateException.new("duplicate plugin " .. factory:getPluginId()))
     end
-    local ____object = self.factories
+    local ____object = factories
     local ____key = factory:getPluginId()
     ____object:set(____key, factory)
     return self
 end
 
 function PluginRegistry:getIds()
-    return self.factories:getKeys()
+    return factories:getKeys()
 end
 
 function PluginRegistry:discover()
-    local created = self.factories:mapValues(function(____destructured)
+    local created = factories:mapValues(function(____destructured)
         local f = ____destructured.value
         return f:create()
     end)
@@ -116,7 +117,7 @@ function PluginRegistry:discover()
 end
 
 function PluginRegistry:clear()
-    self.factories:clear()
+    factories:clear()
 end
 
 __K2L_LazyObject(PluginRegistry, "____init")
@@ -125,106 +126,40 @@ return {Plugin = Plugin, PluginFactory = PluginFactory, BasePlugin = BasePlugin,
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
 
 local Unit = __K2L_Class("arena.core.Unit")
 
-function Unit:____init(name, hp, x, team)
-    self.name = name
-    self.hp = hp
-    self.x = x
-    self.team = team
-end
-
 function Unit.new(name, hp, x, team)
     return setmetatable({name = name, hp = hp, x = x, team = team}, Unit)
 end
 
-function Unit:toString()
-    return "Unit(name=" .. self.name .. ", hp=" .. self.hp .. ", x=" .. self.x .. ", team=" .. self.team .. ")"
-end
-
-function Unit:hashCode()
-    return (31 * (31 * (31 * __K2L_Hash(self.name) + self.hp) + self.x) + __K2L_Hash(self.team) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Unit:equals(other)
-    return getmetatable(other) == Unit and self.name == other.name and self.hp == other.hp and self.x == other.x and self.team == other.team
-end
-
+__K2L_DataClass(Unit, {"name", "hp", "x", "team"})
 local Event = __K2L_Class("arena.core.Event")
 Event.Moved = __K2L_Class("arena.core.Event$Moved", nil, Event)
-
-function Event.Moved:____init(unit, to)
-    self.unit = unit
-    self.to = to
-end
 
 function Event.Moved.new(unit, to)
     return setmetatable({unit = unit, to = to}, Event.Moved)
 end
 
-function Event.Moved:toString()
-    return "Moved(unit=" .. self.unit .. ", to=" .. self.to .. ")"
-end
-
-function Event.Moved:hashCode()
-    return (31 * __K2L_Hash(self.unit) + self.to + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.Moved:equals(other)
-    return getmetatable(other) == Event.Moved and self.unit == other.unit and self.to == other.to
-end
-
+__K2L_DataClass(Event.Moved, {"unit", "to"})
 Event.Attack = __K2L_Class("arena.core.Event$Attack", nil, Event)
-
-function Event.Attack:____init(attacker, target, power)
-    self.attacker = attacker
-    self.target = target
-    self.power = power
-end
 
 function Event.Attack.new(attacker, target, power)
     return setmetatable({attacker = attacker, target = target, power = power}, Event.Attack)
 end
 
-function Event.Attack:toString()
-    return "Attack(attacker=" .. self.attacker .. ", target=" .. self.target .. ", power=" .. self.power .. ")"
-end
-
-function Event.Attack:hashCode()
-    return (31 * (31 * __K2L_Hash(self.attacker) + __K2L_Hash(self.target)) + self.power + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.Attack:equals(other)
-    return getmetatable(other) == Event.Attack and self.attacker == other.attacker and self.target == other.target and self.power == other.power
-end
-
+__K2L_DataClass(Event.Attack, {"attacker", "target", "power"})
 Event.Died = __K2L_Class("arena.core.Event$Died", nil, Event)
-
-function Event.Died:____init(unit)
-    self.unit = unit
-end
 
 function Event.Died.new(unit)
     return setmetatable({unit = unit}, Event.Died)
 end
 
-function Event.Died:toString()
-    return "Died(unit=" .. self.unit .. ")"
-end
-
-function Event.Died:hashCode()
-    return __K2L_Hash(self.unit)
-end
-
-function Event.Died:equals(other)
-    return getmetatable(other) == Event.Died and self.unit == other.unit
-end
-
+__K2L_DataClass(Event.Died, {"unit"})
 Event.RoundOver = __K2L_Class("arena.core.Event$RoundOver", nil, Event)
 
 function Event.RoundOver:toString()
@@ -263,9 +198,6 @@ function World:get(name)
 end
 
 local function alive(self, team)
-    if team == nil then
-        team = nil
-    end
     local ____list_1 = self.units
     local ____out = {}
     local ____count = 0
@@ -330,6 +262,26 @@ local ____World = require("core.World")
 local ____Plugin = require("core.Plugin")
 local Host = __K2L_Class("arena.host.Host")
 
+local function drain(self)
+    while self.world.queue:isNotEmpty() do
+        local e = self.world.queue:removeFirst()
+        local ____list = self.plugins or __K2L_Uninitialized("plugins")
+        local ____result
+        local ____items, ____n = ____list:____array()
+        for ____i = 1, ____n do
+            local it = ____items[____i]
+            if it:onEvent(e, self.world) then
+                ____result = it
+                break
+            end
+        end
+        local consumer = ____result
+        if getmetatable(e) == ____World.Event.Died or e == ____World.Event.RoundOver then
+            self.log:add(__K2L_Str(e) .. " -> " .. (consumer and consumer.id or "nobody"))
+        end
+    end
+end
+
 function Host:____init(world, maxTicks)
     self.world = world
     self.maxTicks = maxTicks
@@ -341,12 +293,12 @@ end
 
 function Host:getInstalled()
     if self.plugins ~= nil then
-        local ____list = self.plugins or __K2L_Uninitialized("plugins")
+        local ____list_1 = self.plugins or __K2L_Uninitialized("plugins")
         local ____out = {}
         local ____count = 0
-        local ____items, ____n = ____list:____array()
-        for ____i = 1, ____n do
-            local it = ____items[____i]
+        local ____items_1, ____n_1 = ____list_1:____array()
+        for ____i_1 = 1, ____n_1 do
+            local it = ____items_1[____i_1]
             ____count = ____count + 1
             ____out[____count] = it.id
         end
@@ -362,9 +314,9 @@ end
 
 function Host:boot(registry)
     self.plugins = registry:discover()
-    local ____list_1 = self.plugins or __K2L_Uninitialized("plugins")
-    for ____i_1 = 1, ____list_1.size do
-        local it = ____list_1[____i_1]
+    local ____list_2 = self.plugins or __K2L_Uninitialized("plugins")
+    for ____i_2 = 1, ____list_2.size do
+        local it = ____list_2[____i_2]
         it:install(self.context)
     end
 end
@@ -373,14 +325,14 @@ function Host:run()
     local tick = 0
     while tick < self.maxTicks and ____World.getTeams(self.world).size > 1 do
         tick = tick + 1
-        local ____list_2 = self.plugins or __K2L_Uninitialized("plugins")
-        for ____i_2 = 1, ____list_2.size do
-            local p = ____list_2[____i_2]
-            local ____ok, ____result = pcall(function()
+        local ____list_3 = self.plugins or __K2L_Uninitialized("plugins")
+        for ____i_3 = 1, ____list_3.size do
+            local p = ____list_3[____i_3]
+            local ____ok, ____result_1 = pcall(function()
                 p:onTick(tick, self.world)
             end)
             if not ____ok then
-                local ____error = __K2L_ToThrowable(____result)
+                local ____error = __K2L_ToThrowable(____result_1)
                 if __K2L_InstanceOf(____error, __K2L_IllegalStateException) then
                     local e = ____error
                     error(____Plugin.PluginException.new(p.id, e))
@@ -389,31 +341,11 @@ function Host:run()
                 end
             end
         end
-        self:drain()
+        drain(self)
     end
     self.world:post(____World.Event.RoundOver)
-    self:drain()
+    drain(self)
     return tick
-end
-
-function Host:drain()
-    while self.world.queue:isNotEmpty() do
-        local e = self.world.queue:removeFirst()
-        local ____list_3 = self.plugins or __K2L_Uninitialized("plugins")
-        local ____result_1
-        local ____items_1, ____n_1 = ____list_3:____array()
-        for ____i_3 = 1, ____n_1 do
-            local it = ____items_1[____i_3]
-            if it:onEvent(e, self.world) then
-                ____result_1 = it
-                break
-            end
-        end
-        local consumer = ____result_1
-        if getmetatable(e) == ____World.Event.Died or e == ____World.Event.RoundOver then
-            self.log:add(__K2L_Str(e) .. " -> " .. (consumer and consumer.id or "nobody"))
-        end
-    end
 end
 
 local ____lambda_1 = function(it)
@@ -598,10 +530,6 @@ local ____Plugin = require("core.Plugin")
 local ____World = require("core.World")
 local Grid = __K2L_Class("arena.plugins.movement.Grid")
 
-function Grid:____init(width)
-    self.width = width
-end
-
 function Grid.new(width)
     return setmetatable({width = width}, Grid)
 end
@@ -713,10 +641,11 @@ function Scoreboard:credit(unit)
 end
 
 local ScoringPlugin = __K2L_Class("arena.plugins.scoring.ScoringPlugin", ____Plugin.BasePlugin, ____Plugin.PluginFactory)
+local lastAttacker
 
 function ScoringPlugin:____init()
     ____Plugin.BasePlugin.____init(self, "scoring", "combat")
-    self.lastAttacker = __K2L_MapOf()
+    lastAttacker = __K2L_MapOf()
 end
 
 function ScoringPlugin:getPluginId()
@@ -734,12 +663,12 @@ end
 function ScoringPlugin:onEvent(event, world)
     local ____mt = getmetatable(event)
     if ____mt == ____World.Event.Attack then
-        local ____object_1 = self.lastAttacker
+        local ____object_1 = lastAttacker
         local ____key = event.target
         ____object_1:set(____key, event.attacker)
         return false
     elseif ____mt == ____World.Event.Died then
-        local killer = self.lastAttacker:get(event.unit) or "?"
+        local killer = lastAttacker:get(event.unit) or "?"
         local ____result
         do
             local ____this = self.ctx or __K2L_Uninitialized("ctx")

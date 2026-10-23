@@ -28,8 +28,17 @@ class FileTransformer(
     internal val implementsClosedRange get() = module.implementsClosedRange
     internal val implementsCollections get() = module.implementsCollections
 
-    /** The file's public and internal top-level declarations are Lua globals, and other files' are read as globals. */
+    /**
+     * The file's public top-level declarations are Lua globals, and other files' are read as globals. Internal ones that
+     * other files use are fields of the module table (see [ModuleTable]).
+     */
     internal val globalMode get() = ctx.options.moduleMode == ModuleMode.Global
+
+    /** With globals, whether the file defines or reads fields of the module table. */
+    internal var usesModuleTable = false
+
+    /** With globals, the file's top-level declarations that are Lua locals, by name: they hide globals of that name. */
+    internal val localTopLevel: Map<String, KtNamedDeclaration> by lazy { localTopLevelDeclarations() }
 
     /** Exported top-level `var`s live in `____exports` so other files see updates. */
     internal val tableMode: Boolean by lazy {
@@ -55,6 +64,9 @@ class FileTransformer(
     internal val naming = DeclarationNames(session, classes)
     internal val props = PropertyFamilies(session, module, classes) { interop.isExternalDeclaration(it) }
     internal val noSelf = NoSelfMembers(session, classes, interop, ctx.options.noImplicitSelf)
+
+    /** The private members that are locals of the file, see [planPrivateLocals]. */
+    internal val privateLocals: Map<KtNamedDeclaration, String> by lazy { planPrivateLocals() }
 
     init {
         naming.plainAccessors = { props.usesAccessors(it) || it.delegate != null }
@@ -184,6 +196,8 @@ class FileTransformer(
         e !== statementExpression && isUnitValued(e) -> unitValueOf(e)
 
         convertsUnitFunction(e) -> returningUnit(translated(e))
+
+        isConstInitializer(e) -> constant(e)
 
         else -> translated(e)
     }

@@ -31,26 +31,27 @@ local function bumpVerbosity(by)
 end
 
 local Settings = __K2L_Class("shop.config.Settings")
+local values
 
 function Settings:____init()
-    self.values = __K2L_MapOf()
+    values = __K2L_MapOf()
     ____Log.log("Settings object init")
-    local ____object = self.values
+    local ____object = values
     ____object:set("region", "north")
 end
 
 function Settings:get(key)
-    return self.values:get(key)
+    return values:get(key)
 end
 
 function Settings:set(key, value)
     ____Log.log("Settings[" .. key .. "] = " .. value)
-    local ____object_1 = self.values
+    local ____object_1 = values
     ____object_1:set(key, value)
 end
 
 function Settings:getKeys()
-    return self.values:getKeys():toList()
+    return values:getKeys():toList()
 end
 
 __K2L_LazyObject(Settings, "____init")
@@ -193,7 +194,7 @@ __K2L_RunMain(main)
 -- ==== model/Item.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_StringSplit = ____lualib.__K2L_StringSplit
@@ -216,17 +217,7 @@ function Item:____init(sku, name, cents, qty)
     Item.created = Item.created + 1
 end
 
-function Item:toString()
-    return "Item(sku=" .. self.sku .. ", name=" .. self.name .. ", cents=" .. self.cents .. ", qty=" .. self.qty .. ")"
-end
-
-function Item:hashCode()
-    return (31 * (31 * (31 * __K2L_Hash(self.sku) + __K2L_Hash(self.name)) + self.cents) + self.qty + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Item:equals(other)
-    return getmetatable(other) == Item and self.sku == other.sku and self.name == other.name and self.cents == other.cents and self.qty == other.qty
-end
+__K2L_DataClass(Item, {"sku", "name", "cents", "qty"})
 
 function Item:parse(line)
     local ____list = __K2L_StringSplit(line, ",")

@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -153,13 +153,6 @@ end
 
 local Column = __K2L_Class("generics.builders.Column")
 
-function Column:____init(title, align, get, show)
-    self.title = title
-    self.align = align
-    self.get = get
-    self.show = show
-end
-
 function Column.new(title, align, get, show)
     return setmetatable({title = title, align = align, get = get, show = show}, Column)
 end
@@ -286,12 +279,6 @@ end
 
 local Setting = __K2L_Class("generics.builders.Setting")
 
-function Setting:____init(name, default, parse)
-    self.name = name
-    self.default = default
-    self.parse = parse
-end
-
 function Setting.new(name, default, parse)
     return setmetatable({name = name, default = default, parse = parse}, Setting)
 end
@@ -330,11 +317,6 @@ end
 
 Config = __K2L_Class("generics.builders.Config")
 
-function Config:____init(values, errors)
-    self.values = values
-    self.errors = errors
-end
-
 function Config.new(values, errors)
     return setmetatable({values = values, errors = errors}, Config)
 end
@@ -365,28 +347,11 @@ local RATIO = Setting.new("ratio", 0.5, function(s)
 end)
 local Planet = __K2L_Class("generics.builders.Planet")
 
-function Planet:____init(name, moons, radiusKm, rings)
-    self.name = name
-    self.moons = moons
-    self.radiusKm = radiusKm
-    self.rings = rings
-end
-
 function Planet.new(name, moons, radiusKm, rings)
     return setmetatable({name = name, moons = moons, radiusKm = radiusKm, rings = rings}, Planet)
 end
 
-function Planet:toString()
-    return "Planet(name=" .. self.name .. ", moons=" .. self.moons .. ", radiusKm=" .. self.radiusKm .. ", rings=" .. tostring(self.rings) .. ")"
-end
-
-function Planet:hashCode()
-    return (31 * (31 * (31 * __K2L_Hash(self.name) + self.moons) + __K2L_Hash(self.radiusKm)) + (self.rings and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Planet:equals(other)
-    return getmetatable(other) == Planet and self.name == other.name and self.moons == other.moons and self.radiusKm == other.radiusKm and self.rings == other.rings
-end
+__K2L_DataClass(Planet, {"name", "moons", "radiusKm", "rings"})
 
 local ____lambda_4 = function(it) return "<" .. it .. ">" end
 local ____lambda_5 = function(it) return it.name end

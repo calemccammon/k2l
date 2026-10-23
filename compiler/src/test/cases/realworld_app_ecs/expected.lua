@@ -3,6 +3,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
 local __K2L_NotNull = ____lualib.__K2L_NotNull
@@ -15,10 +16,6 @@ local World
 local Component = __K2L_Class("sim.ecs.Component")
 local Entity = __K2L_Class("sim.ecs.Entity")
 
-function Entity:____init(id)
-    self.id = id
-end
-
 function Entity.new(id)
     return setmetatable({id = id}, Entity)
 end
@@ -27,14 +24,7 @@ function Entity:toString()
     return "e" .. self.id
 end
 
-function Entity:hashCode()
-    return self.id
-end
-
-function Entity:equals(other)
-    return getmetatable(other) == Entity and self.id == other.id
-end
-
+__K2L_DataClass(Entity, {"id"})
 local Store = __K2L_Class("sim.ecs.Store")
 
 function Store:____init(____type)
@@ -183,7 +173,7 @@ return {Component = Component, Entity = Entity, Store = Store, System = System, 
 -- ==== game/Systems.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_ListOfSize = ____lualib.__K2L_ListOfSize
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
@@ -197,56 +187,19 @@ local ____World = require("ecs.World")
 local distance, nameOf
 local Position = __K2L_Class("sim.game.Position", nil, ____World.Component)
 
-function Position:____init(x, y)
-    self.x = x
-    self.y = y
-end
-
 function Position.new(x, y)
     return setmetatable({x = x, y = y}, Position)
 end
 
-function Position:toString()
-    return "Position(x=" .. self.x .. ", y=" .. self.y .. ")"
-end
-
-function Position:hashCode()
-    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Position:equals(other)
-    return getmetatable(other) == Position and self.x == other.x and self.y == other.y
-end
-
+__K2L_DataClass(Position, {"x", "y"})
 local Velocity = __K2L_Class("sim.game.Velocity", nil, ____World.Component)
-
-function Velocity:____init(dx, dy)
-    self.dx = dx
-    self.dy = dy
-end
 
 function Velocity.new(dx, dy)
     return setmetatable({dx = dx, dy = dy}, Velocity)
 end
 
-function Velocity:toString()
-    return "Velocity(dx=" .. self.dx .. ", dy=" .. self.dy .. ")"
-end
-
-function Velocity:hashCode()
-    return (31 * self.dx + self.dy + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Velocity:equals(other)
-    return getmetatable(other) == Velocity and self.dx == other.dx and self.dy == other.dy
-end
-
+__K2L_DataClass(Velocity, {"dx", "dy"})
 local Health = __K2L_Class("sim.game.Health", nil, ____World.Component)
-
-function Health:____init(hp, max)
-    self.hp = hp
-    self.max = max
-end
 
 function Health.new(hp, max)
     return setmetatable({hp = hp, max = max}, Health)
@@ -256,63 +209,21 @@ function Health:getDead()
     return self.hp <= 0
 end
 
-function Health:toString()
-    return "Health(hp=" .. self.hp .. ", max=" .. self.max .. ")"
-end
-
-function Health:hashCode()
-    return (31 * self.hp + self.max + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Health:equals(other)
-    return getmetatable(other) == Health and self.hp == other.hp and self.max == other.max
-end
-
+__K2L_DataClass(Health, {"hp", "max"})
 local Name = __K2L_Class("sim.game.Name", nil, ____World.Component)
-
-function Name:____init(value)
-    self.value = value
-end
 
 function Name.new(value)
     return setmetatable({value = value}, Name)
 end
 
-function Name:toString()
-    return "Name(value=" .. self.value .. ")"
-end
-
-function Name:hashCode()
-    return __K2L_Hash(self.value)
-end
-
-function Name:equals(other)
-    return getmetatable(other) == Name and self.value == other.value
-end
-
+__K2L_DataClass(Name, {"value"})
 local Damage = __K2L_Class("sim.game.Damage", nil, ____World.Component)
-
-function Damage:____init(amount, range)
-    self.amount = amount
-    self.range = range
-end
 
 function Damage.new(amount, range)
     return setmetatable({amount = amount, range = range}, Damage)
 end
 
-function Damage:toString()
-    return "Damage(amount=" .. self.amount .. ", range=" .. self.range .. ")"
-end
-
-function Damage:hashCode()
-    return (31 * self.amount + self.range + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Damage:equals(other)
-    return getmetatable(other) == Damage and self.amount == other.amount and self.range == other.range
-end
-
+__K2L_DataClass(Damage, {"amount", "range"})
 local Player = __K2L_Class("sim.game.Player", nil, ____World.Component)
 
 function Player:toString()

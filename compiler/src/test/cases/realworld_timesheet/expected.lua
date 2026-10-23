@@ -2,7 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClosedRangeMixin = ____lualib.__K2L_ClosedRangeMixin
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -81,14 +81,7 @@ function Date:toString()
     return string.format("%04d-%02d-%02d", self.year, self.month, self.day)
 end
 
-function Date:hashCode()
-    return (31 * (31 * self.year + self.month) + self.day + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Date:equals(other)
-    return getmetatable(other) == Date and self.year == other.year and self.month == other.month and self.day == other.day
-end
-
+__K2L_DataClass(Date, {"year", "month", "day"})
 Date.____companion = true
 
 function Date:isLeap(y)
@@ -189,10 +182,6 @@ Weekday.____values = {Weekday.MONDAY, Weekday.TUESDAY, Weekday.WEDNESDAY, Weekda
 local Minutes = __K2L_Class("Minutes")
 Minutes.____comparable = true
 
-function Minutes:____init(total)
-    self.total = total
-end
-
 function Minutes.new(total)
     return setmetatable({total = total}, Minutes)
 end
@@ -217,14 +206,7 @@ function Minutes:toString()
     return __K2L_StringFormat(self.total // 60 .. "h%02d", self.total % 60)
 end
 
-function Minutes:hashCode()
-    return self.total
-end
-
-function Minutes:equals(other)
-    return getmetatable(other) == Minutes and self.total == other.total
-end
-
+__K2L_DataClass(Minutes, {"total"})
 Minutes.____companion = true
 
 local ____lambda_2 = function(it) return __K2L_StringToInt(it) end
@@ -244,31 +226,18 @@ end
 Minutes:____initCompanion()
 local Shift = __K2L_Class("Shift")
 
-function Shift:____init(date, start, ____end, breakMinutes)
+function Shift.new(date, start, ____end, breakMinutes)
     if breakMinutes == nil then
         breakMinutes = 0
     end
-    self.date = date
-    self.start = start
-    self["end"] = ____end
-    self.breakMinutes = breakMinutes
+    return setmetatable({date = date, start = start, ["end"] = ____end, breakMinutes = breakMinutes}, Shift)
 end
 
 function Shift:getWorked()
     return self["end"]:minus(self.start):minus(Minutes.new(self.breakMinutes))
 end
 
-function Shift:toString()
-    return "Shift(date=" .. __K2L_Str(self.date) .. ", start=" .. __K2L_Str(self.start) .. ", end=" .. __K2L_Str(self["end"]) .. ", breakMinutes=" .. self.breakMinutes .. ")"
-end
-
-function Shift:hashCode()
-    return (31 * (31 * (31 * self.date:hashCode() + __K2L_Hash(self.start)) + __K2L_Hash(self["end"])) + self.breakMinutes + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Shift:equals(other)
-    return getmetatable(other) == Shift and self.date:equals(other.date) and self.start:equals(other.start) and self["end"]:equals(other["end"]) and self.breakMinutes == other.breakMinutes
-end
+__K2L_DataClass(Shift, {"date", "start", "end", "breakMinutes"})
 
 local ____lambda_3 = function(it)
     return __K2L_StringIsBlank(it) or __K2L_StringStartsWith(it, "#")
@@ -288,10 +257,11 @@ local function parseShifts(text)
 end
 
 local Payroll = __K2L_Class("Payroll")
+local brackets
 
 function Payroll:____init()
     self.HOURLY_CENTS = 2850
-    self.brackets = __K2L_MapOf(__K2L_Pair.new(0, 0.1), __K2L_Pair.new(100000, 0.15), __K2L_Pair.new(250000, 0.25), __K2L_Pair.new(600000, 0.32)):toSortedMap()
+    brackets = __K2L_MapOf(__K2L_Pair.new(0, 0.1), __K2L_Pair.new(100000, 0.15), __K2L_Pair.new(250000, 0.25), __K2L_Pair.new(600000, 0.32)):toSortedMap()
 end
 
 local ____lambda_4 = function(it) return (it.date:getEpochDay() + 3) // 7 end
@@ -331,7 +301,7 @@ function Payroll:tax(____cents)
     local remaining = ____cents
     local tax = 0.0
     while remaining > 0 do
-        local ____destructured_2 = self.brackets:getEntries():last(function(it) return it.key <= remaining end)
+        local ____destructured_2 = brackets:getEntries():last(function(it) return it.key <= remaining end)
         local floor, rate = ____destructured_2.key, ____destructured_2.value
         tax = tax + (remaining - floor) * rate
         remaining = floor - 1

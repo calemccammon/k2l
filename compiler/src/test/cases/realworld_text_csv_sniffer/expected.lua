@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -30,12 +30,6 @@ local __K2L_Text = ____lualib.__K2L_Text
 local printable
 local Dialect = __K2L_Class("Dialect")
 
-function Dialect:____init(delimiter, quote, hasHeader)
-    self.delimiter = delimiter
-    self.quote = quote
-    self.hasHeader = hasHeader
-end
-
 function Dialect.new(delimiter, quote, hasHeader)
     return setmetatable({delimiter = delimiter, quote = quote, hasHeader = hasHeader}, Dialect)
 end
@@ -44,13 +38,7 @@ function Dialect:toString()
     return "Dialect(delimiter=" .. printable(self.delimiter) .. ", quote=" .. printable(self.quote) .. ", header=" .. tostring(self.hasHeader) .. ")"
 end
 
-function Dialect:hashCode()
-    return (31 * (31 * __K2L_Hash(self.delimiter) + __K2L_Hash(self.quote)) + (self.hasHeader and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Dialect:equals(other)
-    return getmetatable(other) == Dialect and self.delimiter == other.delimiter and self.quote == other.quote and self.hasHeader == other.hasHeader
-end
+__K2L_DataClass(Dialect, {"delimiter", "quote", "hasHeader"})
 
 function printable(c)
     if c == "\t" then

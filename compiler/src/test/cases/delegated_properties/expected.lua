@@ -6,10 +6,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 
 local Logged = __K2L_Class("app.lib.Logged")
 
-function Logged:____init(value)
-    self.value = value
-end
-
 function Logged.new(value)
     return setmetatable({value = value}, Logged)
 end
@@ -50,10 +46,6 @@ local __K2L_VetoableProperty = ____lualib.__K2L_VetoableProperty
 
 local ____delegates = require("lib.delegates")
 local Tracking = __K2L_Class("app.Tracking")
-
-function Tracking:____init(value)
-    self.value = value
-end
 
 function Tracking.new(value)
     return setmetatable({value = value}, Tracking)

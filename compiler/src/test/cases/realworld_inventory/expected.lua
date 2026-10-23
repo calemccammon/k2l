@@ -2,9 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -33,10 +32,6 @@ local __K2L_Unit = ____lualib.__K2L_Unit
 local Order
 local Money = __K2L_Class("Money")
 Money.____comparable = true
-
-function Money:____init(cents)
-    self.cents = cents
-end
 
 function Money.new(cents)
     return setmetatable({cents = cents}, Money)
@@ -68,14 +63,7 @@ function Money:toString()
     return sign .. "$" .. abs // 100 .. "." .. __K2L_StringPadStart(tostring(abs % 100), 2, "0")
 end
 
-function Money:hashCode()
-    return __K2L_Hash(self.cents)
-end
-
-function Money:equals(other)
-    return getmetatable(other) == Money and self.cents == other.cents
-end
-
+__K2L_DataClass(Money, {"cents"})
 Money.____companion = true
 
 local ____lambda_1 = function(it) return "0" end
@@ -130,29 +118,11 @@ Category.BOOKS = Category.new("BOOKS", 3, "BKS")
 Category.____values = {Category.PRODUCE, Category.DAIRY, Category.HARDWARE, Category.BOOKS}
 local Product = __K2L_Class("Product")
 
-function Product:____init(sku, name, category, price)
-    self.sku = sku
-    self.name = name
-    self.category = category
-    self.price = price
-end
-
 function Product.new(sku, name, category, price)
     return setmetatable({sku = sku, name = name, category = category, price = price}, Product)
 end
 
-function Product:toString()
-    return "Product(sku=" .. self.sku .. ", name=" .. self.name .. ", category=" .. __K2L_Str(self.category) .. ", price=" .. __K2L_Str(self.price) .. ")"
-end
-
-function Product:hashCode()
-    return (31 * (31 * (31 * __K2L_Hash(self.sku) + __K2L_Hash(self.name)) + __K2L_Hash(self.category)) + self.price:hashCode() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Product:equals(other)
-    return getmetatable(other) == Product and self.sku == other.sku and self.name == other.name and self.category == other.category and self.price:equals(other.price)
-end
-
+__K2L_DataClass(Product, {"sku", "name", "category", "price"})
 local OutOfStockException = __K2L_Class("OutOfStockException", __K2L_RuntimeException)
 
 function OutOfStockException:____init(sku, requested, available)
@@ -165,98 +135,32 @@ end
 local Event = __K2L_Class("Event")
 Event.Received = __K2L_Class("Event$Received", nil, Event)
 
-function Event.Received:____init(sku, qty)
-    self.sku = sku
-    self.qty = qty
-end
-
 function Event.Received.new(sku, qty)
     return setmetatable({sku = sku, qty = qty}, Event.Received)
 end
 
-function Event.Received:toString()
-    return "Received(sku=" .. self.sku .. ", qty=" .. self.qty .. ")"
-end
-
-function Event.Received:hashCode()
-    return (31 * __K2L_Hash(self.sku) + self.qty + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.Received:equals(other)
-    return getmetatable(other) == Event.Received and self.sku == other.sku and self.qty == other.qty
-end
-
+__K2L_DataClass(Event.Received, {"sku", "qty"})
 Event.Shipped = __K2L_Class("Event$Shipped", nil, Event)
-
-function Event.Shipped:____init(sku, qty, order)
-    self.sku = sku
-    self.qty = qty
-    self.order = order
-end
 
 function Event.Shipped.new(sku, qty, order)
     return setmetatable({sku = sku, qty = qty, order = order}, Event.Shipped)
 end
 
-function Event.Shipped:toString()
-    return "Shipped(sku=" .. self.sku .. ", qty=" .. self.qty .. ", order=" .. self.order .. ")"
-end
-
-function Event.Shipped:hashCode()
-    return (31 * (31 * __K2L_Hash(self.sku) + self.qty) + __K2L_Hash(self.order) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.Shipped:equals(other)
-    return getmetatable(other) == Event.Shipped and self.sku == other.sku and self.qty == other.qty and self.order == other.order
-end
-
+__K2L_DataClass(Event.Shipped, {"sku", "qty", "order"})
 Event.Adjusted = __K2L_Class("Event$Adjusted", nil, Event)
-
-function Event.Adjusted:____init(sku, delta, reason)
-    self.sku = sku
-    self.delta = delta
-    self.reason = reason
-end
 
 function Event.Adjusted.new(sku, delta, reason)
     return setmetatable({sku = sku, delta = delta, reason = reason}, Event.Adjusted)
 end
 
-function Event.Adjusted:toString()
-    return "Adjusted(sku=" .. self.sku .. ", delta=" .. self.delta .. ", reason=" .. self.reason .. ")"
-end
-
-function Event.Adjusted:hashCode()
-    return (31 * (31 * __K2L_Hash(self.sku) + self.delta) + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.Adjusted:equals(other)
-    return getmetatable(other) == Event.Adjusted and self.sku == other.sku and self.delta == other.delta and self.reason == other.reason
-end
-
+__K2L_DataClass(Event.Adjusted, {"sku", "delta", "reason"})
 Event.PriceChanged = __K2L_Class("Event$PriceChanged", nil, Event)
-
-function Event.PriceChanged:____init(sku, newPrice)
-    self.sku = sku
-    self.newPrice = newPrice
-end
 
 function Event.PriceChanged.new(sku, newPrice)
     return setmetatable({sku = sku, newPrice = newPrice}, Event.PriceChanged)
 end
 
-function Event.PriceChanged:toString()
-    return "PriceChanged(sku=" .. self.sku .. ", newPrice=" .. __K2L_Str(self.newPrice) .. ")"
-end
-
-function Event.PriceChanged:hashCode()
-    return (31 * __K2L_Hash(self.sku) + self.newPrice:hashCode() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Event.PriceChanged:equals(other)
-    return getmetatable(other) == Event.PriceChanged and self.sku == other.sku and self.newPrice:equals(other.newPrice)
-end
-
+__K2L_DataClass(Event.PriceChanged, {"sku", "newPrice"})
 local Inventory = __K2L_Class("Inventory")
 
 function Inventory:____init()
@@ -378,11 +282,6 @@ end
 
 local OrderLine = __K2L_Class("OrderLine")
 
-function OrderLine:____init(sku, qty)
-    self.sku = sku
-    self.qty = qty
-end
-
 function OrderLine.new(sku, qty)
     return setmetatable({sku = sku, qty = qty}, OrderLine)
 end
@@ -434,28 +333,11 @@ end
 
 Order = __K2L_Class("Order")
 
-function Order:____init(id, customer, express, lines)
-    self.id = id
-    self.customer = customer
-    self.express = express
-    self.lines = lines
-end
-
 function Order.new(id, customer, express, lines)
     return setmetatable({id = id, customer = customer, express = express, lines = lines}, Order)
 end
 
-function Order:toString()
-    return "Order(id=" .. self.id .. ", customer=" .. self.customer .. ", express=" .. tostring(self.express) .. ", lines=" .. __K2L_Str(self.lines) .. ")"
-end
-
-function Order:hashCode()
-    return (31 * (31 * (31 * __K2L_Hash(self.id) + __K2L_Hash(self.customer)) + (self.express and 1231 or 1237)) + __K2L_Hash(self.lines) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Order:equals(other)
-    return getmetatable(other) == Order and self.id == other.id and self.customer == other.customer and self.express == other.express and __K2L_Equals(self.lines, other.lines)
-end
+__K2L_DataClass(Order, {"id", "customer", "express", "lines"})
 
 local function order(id, block)
     local ____value_3 = OrderBuilder.new(id)

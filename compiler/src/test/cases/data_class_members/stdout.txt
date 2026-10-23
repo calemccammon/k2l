@@ -1,0 +1,52 @@
+Point(x=1, y=2)
+template: Point(x=1, y=2)
+true
+true
+false
+Point(x=1, y=2)
+true
+true
+false
+true
+true
+Entry(name=null, note=null)
+true
+true
+Grid(cells=[1, 2], name=g)
+true
+false
+Line(from=Point(x=0, y=0), to=Point(x=3, y=4))
+true
+true
+Empty(id=7)
+true
+Ada Lovelace
+true
+true
+Loose(id=1, tag=x)
+5
+source
+arg y
+Point(x=1, y=1)
+arg first y
+arg then x
+Point(x=3, y=2)
+Counter(n=2, tag=b)
+5
+Point(x=3, y=4)
+9
+9
+3
+{Point(x=1, y=1)=2}
+2
+true
+[Point(x=1, y=1), Point(x=3, y=3)]
+Inner(v=5)
+Meters(amount=2.5)
+true
+Local(n=1)
+true
+Deleted(source=web, user=ann)
+true
+false
+true

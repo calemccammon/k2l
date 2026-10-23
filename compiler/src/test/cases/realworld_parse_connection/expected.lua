@@ -1,9 +1,9 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_EnumValueOf = ____lualib.__K2L_EnumValueOf
 local __K2L_EnumValues = ____lualib.__K2L_EnumValues
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -135,48 +135,18 @@ end
 
 Event.Send = __K2L_Class("Event$Send", nil, Event)
 
-function Event.Send:____init(bytes)
-    self.bytes = bytes
-end
-
 function Event.Send.new(bytes)
     return setmetatable({bytes = bytes}, Event.Send)
 end
 
-function Event.Send:toString()
-    return "Send(bytes=" .. self.bytes .. ")"
-end
-
-function Event.Send:hashCode()
-    return self.bytes
-end
-
-function Event.Send:equals(other)
-    return getmetatable(other) == Event.Send and self.bytes == other.bytes
-end
-
+__K2L_DataClass(Event.Send, {"bytes"})
 Event.Tick = __K2L_Class("Event$Tick", nil, Event)
-
-function Event.Tick:____init(ms)
-    self.ms = ms
-end
 
 function Event.Tick.new(ms)
     return setmetatable({ms = ms}, Event.Tick)
 end
 
-function Event.Tick:toString()
-    return "Tick(ms=" .. self.ms .. ")"
-end
-
-function Event.Tick:hashCode()
-    return self.ms
-end
-
-function Event.Tick:equals(other)
-    return getmetatable(other) == Event.Tick and self.ms == other.ms
-end
-
+__K2L_DataClass(Event.Tick, {"ms"})
 Event.Reset = __K2L_Class("Event$Reset", nil, Event)
 
 function Event.Reset:toString()
@@ -197,56 +167,15 @@ end
 
 local Step = __K2L_Class("Step")
 
-function Step:____init(from, event, to)
-    self.from = from
-    self.event = event
-    self.to = to
-end
-
 function Step.new(from, event, to)
     return setmetatable({from = from, event = event, to = to}, Step)
 end
 
-function Step:toString()
-    return "Step(from=" .. __K2L_Str(self.from) .. ", event=" .. __K2L_Str(self.event) .. ", to=" .. __K2L_Str(self.to) .. ")"
-end
-
-function Step:hashCode()
-    return (31 * (31 * __K2L_Hash(self.from) + __K2L_Hash(self.event)) + __K2L_Hash(self.to) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Step:equals(other)
-    return getmetatable(other) == Step and self.from == other.from and __K2L_Equals(self.event, other.event) and self.to == other.to
-end
-
+__K2L_DataClass(Step, {"from", "event", "to"})
 local Connection = __K2L_Class("Connection")
+local ____table
 
-function Connection:____init(name)
-    self.name = name
-    self.state = State.CLOSED
-    self.history = __K2L_ListOf()
-    self.visits = __K2L_MapOf()
-    self.timeWaitMs = 0
-    self.sent = 0
-    local ____object = self.visits
-    local ____key = State.CLOSED
-    ____object:set(____key, 1)
-end
-
-local ____lambda_1 = function(____p1, ____p2) return ____p1 + ____p2 end
-function Connection:fire(event)
-    local ____next = self:next(event)
-    self.history:add(Step.new(self.state, event, ____next))
-    if ____next ~= self.state then
-        self.visits:merge(____next, 1, ____lambda_1)
-    end
-    if ____next == State.TIME_WAIT and self.state ~= State.TIME_WAIT then
-        self.timeWaitMs = 0
-    end
-    self.state = ____next
-end
-
-function Connection:next(e)
+local function ____next__1(self, e)
     local ____mt = getmetatable(e)
     if __K2L_Equals(e, Event.Reset) then
         return State.CLOSED
@@ -262,13 +191,38 @@ function Connection:next(e)
     elseif ____mt == Event.Tick then
         return self.state
     else
-        local ____receiver = Connection.table:get(self.state)
+        local ____receiver = ____table:get(self.state)
         local ____value = ____receiver and ____receiver:get(e)
         if ____value == nil then
             error(InvalidTransition.new(self.state, e))
         end
         return ____value
     end
+end
+
+function Connection:____init(name)
+    self.name = name
+    self.state = State.CLOSED
+    self.history = __K2L_ListOf()
+    self.visits = __K2L_MapOf()
+    self.timeWaitMs = 0
+    self.sent = 0
+    local ____object = self.visits
+    local ____key = State.CLOSED
+    ____object:set(____key, 1)
+end
+
+local ____lambda_1 = function(____p1, ____p2) return ____p1 + ____p2 end
+function Connection:fire(event)
+    local ____next = ____next__1(self, event)
+    self.history:add(Step.new(self.state, event, ____next))
+    if ____next ~= self.state then
+        self.visits:merge(____next, 1, ____lambda_1)
+    end
+    if ____next == State.TIME_WAIT and self.state ~= State.TIME_WAIT then
+        self.timeWaitMs = 0
+    end
+    self.state = ____next
 end
 
 local ____lambda_2 = function(it) return it.ordinal end
@@ -284,7 +238,7 @@ end
 
 function Connection:____initCompanion()
     self.MSL = 30
-    self.table = __K2L_MapOf(__K2L_Pair.new(State.CLOSED, __K2L_MapOf(__K2L_Pair.new(Event.PassiveOpen, State.LISTEN), __K2L_Pair.new(Event.ActiveOpen, State.SYN_SENT))), __K2L_Pair.new(State.LISTEN, __K2L_MapOf(__K2L_Pair.new(Event.Syn, State.SYN_RECEIVED), __K2L_Pair.new(Event.Close, State.CLOSED))), __K2L_Pair.new(State.SYN_SENT, __K2L_MapOf(__K2L_Pair.new(Event.SynAck, State.ESTABLISHED), __K2L_Pair.new(Event.Close, State.CLOSED))), __K2L_Pair.new(State.SYN_RECEIVED, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.ESTABLISHED), __K2L_Pair.new(Event.Close, State.FIN_WAIT_1))), __K2L_Pair.new(State.ESTABLISHED, __K2L_MapOf(__K2L_Pair.new(Event.Close, State.FIN_WAIT_1), __K2L_Pair.new(Event.Fin, State.CLOSE_WAIT))), __K2L_Pair.new(State.FIN_WAIT_1, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.FIN_WAIT_2), __K2L_Pair.new(Event.Fin, State.CLOSING))), __K2L_Pair.new(State.FIN_WAIT_2, __K2L_MapOf(__K2L_Pair.new(Event.Fin, State.TIME_WAIT))), __K2L_Pair.new(State.CLOSING, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.TIME_WAIT))), __K2L_Pair.new(State.CLOSE_WAIT, __K2L_MapOf(__K2L_Pair.new(Event.Close, State.LAST_ACK))), __K2L_Pair.new(State.LAST_ACK, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.CLOSED))))
+    ____table = __K2L_MapOf(__K2L_Pair.new(State.CLOSED, __K2L_MapOf(__K2L_Pair.new(Event.PassiveOpen, State.LISTEN), __K2L_Pair.new(Event.ActiveOpen, State.SYN_SENT))), __K2L_Pair.new(State.LISTEN, __K2L_MapOf(__K2L_Pair.new(Event.Syn, State.SYN_RECEIVED), __K2L_Pair.new(Event.Close, State.CLOSED))), __K2L_Pair.new(State.SYN_SENT, __K2L_MapOf(__K2L_Pair.new(Event.SynAck, State.ESTABLISHED), __K2L_Pair.new(Event.Close, State.CLOSED))), __K2L_Pair.new(State.SYN_RECEIVED, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.ESTABLISHED), __K2L_Pair.new(Event.Close, State.FIN_WAIT_1))), __K2L_Pair.new(State.ESTABLISHED, __K2L_MapOf(__K2L_Pair.new(Event.Close, State.FIN_WAIT_1), __K2L_Pair.new(Event.Fin, State.CLOSE_WAIT))), __K2L_Pair.new(State.FIN_WAIT_1, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.FIN_WAIT_2), __K2L_Pair.new(Event.Fin, State.CLOSING))), __K2L_Pair.new(State.FIN_WAIT_2, __K2L_MapOf(__K2L_Pair.new(Event.Fin, State.TIME_WAIT))), __K2L_Pair.new(State.CLOSING, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.TIME_WAIT))), __K2L_Pair.new(State.CLOSE_WAIT, __K2L_MapOf(__K2L_Pair.new(Event.Close, State.LAST_ACK))), __K2L_Pair.new(State.LAST_ACK, __K2L_MapOf(__K2L_Pair.new(Event.Ack, State.CLOSED))))
 end
 
 __K2L_LazyObject(Connection, "____initCompanion")
@@ -429,104 +383,7 @@ Coin.DOLLAR = Coin.new("DOLLAR", 3, 100)
 Coin.____values = {Coin.NICKEL, Coin.DIME, Coin.QUARTER, Coin.DOLLAR}
 local VendingMachine = __K2L_Class("VendingMachine")
 
-local ____lambda_6 = function(it) return it.value.first end
-local ____lambda_7 = function(it) return it.value.second end
-function VendingMachine:____init(stock)
-    self.prices = stock:mapValues(____lambda_6)
-    self.counts = stock:mapValues(____lambda_7):toMutableMap()
-    self.credit = 0
-    self.log = __K2L_StringBuilder.new()
-    self.mode = VendingMachine.Mode.Idle
-end
-
-VendingMachine.Mode = __K2L_Class("VendingMachine$Mode")
-VendingMachine.Mode.Idle = __K2L_Class("VendingMachine$Mode$Idle", VendingMachine.Mode)
-
-function VendingMachine.Mode.Idle:toString()
-    return "Idle"
-end
-
-VendingMachine.Mode.HasCredit = __K2L_Class("VendingMachine$Mode$HasCredit", VendingMachine.Mode)
-
-function VendingMachine.Mode.HasCredit:____init(cents)
-    self.cents = cents
-end
-
-function VendingMachine.Mode.HasCredit.new(cents)
-    return setmetatable({cents = cents}, VendingMachine.Mode.HasCredit)
-end
-
-function VendingMachine.Mode.HasCredit:toString()
-    return "HasCredit(cents=" .. self.cents .. ")"
-end
-
-function VendingMachine.Mode.HasCredit:hashCode()
-    return self.cents
-end
-
-function VendingMachine.Mode.HasCredit:equals(other)
-    return getmetatable(other) == VendingMachine.Mode.HasCredit and self.cents == other.cents
-end
-
-VendingMachine.Mode.SoldOut = __K2L_Class("VendingMachine$Mode$SoldOut", VendingMachine.Mode)
-
-function VendingMachine.Mode.SoldOut:____init(item)
-    self.item = item
-end
-
-function VendingMachine.Mode.SoldOut.new(item)
-    return setmetatable({item = item}, VendingMachine.Mode.SoldOut)
-end
-
-function VendingMachine.Mode.SoldOut:toString()
-    return "SoldOut(item=" .. self.item .. ")"
-end
-
-function VendingMachine.Mode.SoldOut:hashCode()
-    return __K2L_Hash(self.item)
-end
-
-function VendingMachine.Mode.SoldOut:equals(other)
-    return getmetatable(other) == VendingMachine.Mode.SoldOut and self.item == other.item
-end
-
-function VendingMachine:insert(c)
-    self.credit = self.credit + c.cents
-    self.mode = VendingMachine.Mode.HasCredit.new(self.credit)
-    self.log:append("+" .. c.name:lower() .. " ")
-end
-
-local ____lambda_8 = function(it) return it.value .. "x" .. __K2L_Str(it.key) end
-function VendingMachine:select(item)
-    local ____value_3 = self.prices:get(item)
-    if ____value_3 == nil then
-        return "unknown item '" .. item .. "'"
-    end
-    local price = ____value_3
-    local left = self.counts:getValue(item)
-    if left == 0 then
-        self.mode = VendingMachine.Mode.SoldOut.new(item)
-        return item .. " sold out"
-    elseif self.credit < price then
-        return "insert " .. price - self.credit .. "c more for " .. item
-    else
-        local ____object_1 = self.counts
-        ____object_1:set(item, left - 1)
-        local change = self:makeChange(self.credit - price)
-        self.credit = 0
-        self.mode = VendingMachine.Mode.Idle
-        self.log:append("[" .. item .. "] ")
-        local ____temp
-        if change:isEmpty() then
-            ____temp = "none"
-        else
-            ____temp = change:getEntries():joinToString(nil, nil, nil, nil, nil, ____lambda_8)
-        end
-        return "vend " .. item .. ", change " .. ____temp
-    end
-end
-
-function VendingMachine:makeChange(amount)
+local function makeChange(self, amount)
     local rest = amount
     local out = __K2L_MapOf()
     local ____list_6 = __K2L_EnumValues(Coin):reversed()
@@ -553,6 +410,74 @@ function VendingMachine:makeChange(amount)
         error(__K2L_IllegalStateException.new("cannot make change for " .. amount))
     end
     return out
+end
+
+local ____lambda_6 = function(it) return it.value.first end
+local ____lambda_7 = function(it) return it.value.second end
+function VendingMachine:____init(stock)
+    self.prices = stock:mapValues(____lambda_6)
+    self.counts = stock:mapValues(____lambda_7):toMutableMap()
+    self.credit = 0
+    self.log = __K2L_StringBuilder.new()
+    self.mode = VendingMachine.Mode.Idle
+end
+
+VendingMachine.Mode = __K2L_Class("VendingMachine$Mode")
+VendingMachine.Mode.Idle = __K2L_Class("VendingMachine$Mode$Idle", VendingMachine.Mode)
+
+function VendingMachine.Mode.Idle:toString()
+    return "Idle"
+end
+
+VendingMachine.Mode.HasCredit = __K2L_Class("VendingMachine$Mode$HasCredit", VendingMachine.Mode)
+
+function VendingMachine.Mode.HasCredit.new(cents)
+    return setmetatable({cents = cents}, VendingMachine.Mode.HasCredit)
+end
+
+__K2L_DataClass(VendingMachine.Mode.HasCredit, {"cents"})
+VendingMachine.Mode.SoldOut = __K2L_Class("VendingMachine$Mode$SoldOut", VendingMachine.Mode)
+
+function VendingMachine.Mode.SoldOut.new(item)
+    return setmetatable({item = item}, VendingMachine.Mode.SoldOut)
+end
+
+__K2L_DataClass(VendingMachine.Mode.SoldOut, {"item"})
+
+function VendingMachine:insert(c)
+    self.credit = self.credit + c.cents
+    self.mode = VendingMachine.Mode.HasCredit.new(self.credit)
+    self.log:append("+" .. c.name:lower() .. " ")
+end
+
+local ____lambda_8 = function(it) return it.value .. "x" .. __K2L_Str(it.key) end
+function VendingMachine:select(item)
+    local ____value_3 = self.prices:get(item)
+    if ____value_3 == nil then
+        return "unknown item '" .. item .. "'"
+    end
+    local price = ____value_3
+    local left = self.counts:getValue(item)
+    if left == 0 then
+        self.mode = VendingMachine.Mode.SoldOut.new(item)
+        return item .. " sold out"
+    elseif self.credit < price then
+        return "insert " .. price - self.credit .. "c more for " .. item
+    else
+        local ____object_1 = self.counts
+        ____object_1:set(item, left - 1)
+        local change = makeChange(self, self.credit - price)
+        self.credit = 0
+        self.mode = VendingMachine.Mode.Idle
+        self.log:append("[" .. item .. "] ")
+        local ____temp
+        if change:isEmpty() then
+            ____temp = "none"
+        else
+            ____temp = change:getEntries():joinToString(nil, nil, nil, nil, nil, ____lambda_8)
+        end
+        return "vend " .. item .. ", change " .. ____temp
+    end
 end
 
 function VendingMachine:refund()

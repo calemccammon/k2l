@@ -8,13 +8,13 @@ local __K2L_Str = ____lualib.__K2L_Str
 
 local Filter = __K2L_Class("Filter")
 
+local function small(self, x)
+    return x < self.limit
+end
+
 function Filter:____init(limit)
     self.limit = limit
     self.count = 3
-end
-
-function Filter:small(x)
-    return x < self.limit
 end
 
 function Filter:label(x)
@@ -22,12 +22,12 @@ function Filter:label(x)
 end
 
 function Filter:apply(xs)
-    return xs:filter(function(...) return self:small(...) end):map(function(...) return self:label(...) end)
+    return xs:filter(function(...) return small(self, ...) end):map(function(...) return self:label(...) end)
 end
 
 function Filter:deferred()
     return function()
-        return __K2L_ListOf(1, 5, 9):filter(function(...) return self:small(...) end)
+        return __K2L_ListOf(1, 5, 9):filter(function(...) return small(self, ...) end)
     end
 end
 
@@ -60,21 +60,22 @@ function Loud:shout(xs)
 end
 
 local Registry = __K2L_Class("Registry")
+local names
 
-function Registry:____init()
-    self.names = __K2L_ListOf()
+local function register(name)
+    names:add(name)
 end
 
-function Registry:register(name)
-    self.names:add(name)
+function Registry:____init()
+    names = __K2L_ListOf()
 end
 
 function Registry:registerAll(xs)
     for ____i = 1, xs.size do
-        local it = xs[____i];
-        (function(...) return self:register(...) end)(it)
+        local it = xs[____i]
+        register(it)
     end
-    return self.names
+    return names
 end
 
 Registry:____init()

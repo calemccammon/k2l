@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_List = ____lualib.__K2L_List
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -14,26 +15,11 @@ local __K2L_Text = ____lualib.__K2L_Text
 
 local Key = __K2L_Class("Key")
 
-function Key:____init(x, y)
-    self.x = x
-    self.y = y
-end
-
 function Key.new(x, y)
     return setmetatable({x = x, y = y}, Key)
 end
 
-function Key:toString()
-    return "Key(x=" .. self.x .. ", y=" .. self.y .. ")"
-end
-
-function Key:hashCode()
-    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Key:equals(other)
-    return getmetatable(other) == Key and self.x == other.x and self.y == other.y
-end
+__K2L_DataClass(Key, {"x", "y"})
 
 local ____lambda_1 = function(it) return it.value > 30 end
 local ____lambda_2 = function(it) return it.value + 1 end

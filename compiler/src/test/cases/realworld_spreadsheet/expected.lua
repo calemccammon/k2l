@@ -2,7 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IntRange = ____lualib.__K2L_IntRange
@@ -33,10 +33,6 @@ local __K2L_Uninitialized = ____lualib.__K2L_Uninitialized
 local Area
 local Col = __K2L_Class("sheet.Col")
 
-function Col:____init(index)
-    self.index = index
-end
-
 function Col.new(index)
     return setmetatable({index = index}, Col)
 end
@@ -45,17 +41,7 @@ function Col:getLetters()
     return Col:toLetters(self.index)
 end
 
-function Col:toString()
-    return "Col(index=" .. self.index .. ")"
-end
-
-function Col:hashCode()
-    return self.index
-end
-
-function Col:equals(other)
-    return getmetatable(other) == Col and self.index == other.index
-end
+__K2L_DataClass(Col, {"index"})
 
 function Col:toLetters(i, acc)
     if acc == nil then
@@ -73,11 +59,7 @@ end
 
 local Ref = __K2L_Class("sheet.Ref")
 Ref.____comparable = true
-
-function Ref:____init(col, row)
-    self.col = col
-    self.row = row
-end
+local PATTERN
 
 function Ref.new(col, row)
     return setmetatable({col = col, row = row}, Ref)
@@ -97,18 +79,11 @@ function Ref:rangeTo(other)
     return Area.new(self, other)
 end
 
-function Ref:hashCode()
-    return (31 * __K2L_Hash(self.col) + self.row + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Ref:equals(other)
-    return getmetatable(other) == Ref and self.col:equals(other.col) and self.row == other.row
-end
-
+__K2L_DataClass(Ref, {"col", "row"})
 Ref.____companion = true
 
 function Ref:parse(s)
-    local ____value = self.PATTERN:matchEntire(__K2L_StringTrim(s):upper())
+    local ____value = PATTERN:matchEntire(__K2L_StringTrim(s):upper())
     if ____value == nil then
         error(__K2L_IllegalArgumentException.new("bad reference '" .. s .. "'"))
     end
@@ -119,7 +94,7 @@ function Ref:parse(s)
 end
 
 function Ref:____initCompanion()
-    self.PATTERN = __K2L_Regex.new("([A-Z]+)([0-9]+)", "([A-Z]+)([0-9]+)")
+    PATTERN = __K2L_Regex.new("([A-Z]+)([0-9]+)", "([A-Z]+)([0-9]+)")
 end
 
 __K2L_LazyObject(Ref, "____initCompanion")
@@ -155,10 +130,6 @@ end
 local Formula = __K2L_Class("sheet.Formula")
 Formula.Const = __K2L_Class("sheet.Formula$Const", Formula)
 
-function Formula.Const:____init(value)
-    self.value = value
-end
-
 function Formula.Const.new(value)
     return setmetatable({value = value}, Formula.Const)
 end
@@ -172,10 +143,6 @@ function Formula.Const:toString()
 end
 
 Formula.Cell = __K2L_Class("sheet.Formula$Cell", Formula)
-
-function Formula.Cell:____init(ref)
-    self.ref = ref
-end
 
 function Formula.Cell.new(ref)
     return setmetatable({ref = ref}, Formula.Cell)
@@ -191,12 +158,6 @@ end
 
 Formula.Op = __K2L_Class("sheet.Formula$Op", Formula)
 
-function Formula.Op:____init(op, left, right)
-    self.op = op
-    self.left = left
-    self.right = right
-end
-
 function Formula.Op.new(op, left, right)
     return setmetatable({op = op, left = left, right = right}, Formula.Op)
 end
@@ -210,11 +171,6 @@ function Formula.Op:toString()
 end
 
 Formula.Fn = __K2L_Class("sheet.Formula$Fn", Formula)
-
-function Formula.Fn:____init(name, area)
-    self.name = name
-    self.area = area
-end
 
 function Formula.Fn.new(name, area)
     return setmetatable({name = name, area = area}, Formula.Fn)
@@ -273,27 +229,7 @@ end
 
 local Sheet = __K2L_Class("sheet.Sheet")
 
-function Sheet:____init()
-    self.formulas = __K2L_SortedMapOf(nil)
-    self.values = __K2L_MapOf()
-    self.evaluations = 0
-end
-
-function Sheet:set(ref, formula)
-    local ____object = self.formulas
-    local ____key = Ref:parse(ref)
-    ____object:set(____key, parseFormula(formula))
-end
-
-function Sheet:get(ref)
-    return self.values:get(Ref:parse(ref)) or 0.0
-end
-
-function Sheet:get__1(area)
-    return area:map(function(it) return self.values:get(it) or 0.0 end)
-end
-
-function Sheet:order()
+local function order(self)
     local done = __K2L_SetOf()
     local visiting = __K2L_ListOf()
     local function visit(r)
@@ -325,18 +261,7 @@ function Sheet:order()
     return done:filter(function(it) return self.formulas:containsKey(it) end)
 end
 
-function Sheet:recalc()
-    self.lastOrder = self:order()
-    self.values:clear()
-    local ____list_1 = self.lastOrder or __K2L_Uninitialized("lastOrder")
-    for ____i_3 = 1, ____list_1.size do
-        local ref = ____list_1[____i_3]
-        local ____object_1 = self.values
-        ____object_1:set(ref, self:eval(self.formulas:getValue(ref)))
-    end
-end
-
-function Sheet:eval(f)
+local function eval(self, f)
     self.evaluations = self.evaluations + 1
     local ____mt = getmetatable(f)
     if ____mt == Formula.Const then
@@ -344,7 +269,7 @@ function Sheet:eval(f)
     elseif ____mt == Formula.Cell then
         return self.values:get(f.ref) or 0.0
     elseif ____mt == Formula.Op then
-        local ____destructured_2 = __K2L_Pair.new(self:eval(f.left), self:eval(f.right))
+        local ____destructured_2 = __K2L_Pair.new(eval(self, f.left), eval(self, f.right))
         local l, r = ____destructured_2.first, ____destructured_2.second
         local ____subject_1 = f.op
         if ____subject_1 == "+" then
@@ -370,6 +295,37 @@ function Sheet:eval(f)
         else
             error(__K2L_IllegalStateException.new("unknown function " .. f.name))
         end
+    end
+end
+
+function Sheet:____init()
+    self.formulas = __K2L_SortedMapOf(nil)
+    self.values = __K2L_MapOf()
+    self.evaluations = 0
+end
+
+function Sheet:set(ref, formula)
+    local ____object = self.formulas
+    local ____key = Ref:parse(ref)
+    ____object:set(____key, parseFormula(formula))
+end
+
+function Sheet:get(ref)
+    return self.values:get(Ref:parse(ref)) or 0.0
+end
+
+function Sheet:get__1(area)
+    return area:map(function(it) return self.values:get(it) or 0.0 end)
+end
+
+function Sheet:recalc()
+    self.lastOrder = order(self)
+    self.values:clear()
+    local ____list_1 = self.lastOrder or __K2L_Uninitialized("lastOrder")
+    for ____i_3 = 1, ____list_1.size do
+        local ref = ____list_1[____i_3]
+        local ____object_1 = self.values
+        ____object_1:set(ref, eval(self, self.formulas:getValue(ref)))
     end
 end
 

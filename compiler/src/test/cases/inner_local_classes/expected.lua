@@ -7,10 +7,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 
 local Host = __K2L_Class("Host")
 
-function Host:____init(name)
-    self.name = name
-end
-
 function Host.new(name)
     return setmetatable({name = name}, Host)
 end
@@ -44,10 +40,6 @@ function Host:bound()
 end
 
 local Pair2 = __K2L_Class("Pair2")
-
-function Pair2:____init(a)
-    self.a = a
-end
 
 function Pair2.new(a)
     return setmetatable({a = a}, Pair2)

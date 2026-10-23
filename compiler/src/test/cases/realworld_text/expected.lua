@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -223,29 +223,11 @@ end
 
 local LogEntry = __K2L_Class("LogEntry")
 
-function LogEntry:____init(time, level, component, message)
-    self.time = time
-    self.level = level
-    self.component = component
-    self.message = message
-end
-
 function LogEntry.new(time, level, component, message)
     return setmetatable({time = time, level = level, component = component, message = message}, LogEntry)
 end
 
-function LogEntry:toString()
-    return "LogEntry(time=" .. self.time .. ", level=" .. self.level .. ", component=" .. self.component .. ", message=" .. self.message .. ")"
-end
-
-function LogEntry:hashCode()
-    return (31 * (31 * (31 * __K2L_Hash(self.time) + __K2L_Hash(self.level)) + __K2L_Hash(self.component)) + __K2L_Hash(self.message) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function LogEntry:equals(other)
-    return getmetatable(other) == LogEntry and self.time == other.time and self.level == other.level and self.component == other.component and self.message == other.message
-end
-
+__K2L_DataClass(LogEntry, {"time", "level", "component", "message"})
 local LOG = "\n    2024-05-01T10:00:01 INFO  [db] connection pool started (size=10)\n    2024-05-01T10:00:02 WARN  [http] slow request: GET /api/items took 1532ms\n    2024-05-01T10:00:05 ERROR [db] query failed: timeout after 3000ms\n    garbage line without structure\n    2024-05-01T10:00:07 INFO  [http] GET /api/items 200 in 87ms\n    2024-05-01T10:00:09 ERROR [auth] invalid token for user=alice\n    2024-05-01T10:00:12 INFO  [http] POST /api/orders 201 in 143ms\n"
 
 local ____lambda_5 = function(____p1) return not __K2L_StringIsBlank(____p1) end

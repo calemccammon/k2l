@@ -3,11 +3,9 @@ local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_PropertyRef = ____lualib.__K2L_PropertyRef
-local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_Text = ____lualib.__K2L_Text
 
@@ -38,21 +36,9 @@ function Sku:toString()
     return "SKU:" .. self.code
 end
 
-function Sku:hashCode()
-    return __K2L_Hash(self.code)
-end
-
-function Sku:equals(other)
-    return getmetatable(other) == Sku and self.code == other.code
-end
-
+__K2L_DataClass(Sku, {"code"})
 local CustomerId = __K2L_Class("shop.domain.CustomerId")
 CustomerId.____comparable = true
-
-function CustomerId:____init(region, number)
-    self.region = region
-    self.number = number
-end
 
 function CustomerId.new(region, number)
     return setmetatable({region = region, number = number}, CustomerId)
@@ -68,72 +54,32 @@ function CustomerId:toString()
     return self.region .. "-" .. self.number
 end
 
-function CustomerId:hashCode()
-    return (31 * __K2L_Hash(self.region) + self.number + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function CustomerId:equals(other)
-    return getmetatable(other) == CustomerId and self.region == other.region and self.number == other.number
-end
-
+__K2L_DataClass(CustomerId, {"region", "number"})
 local Product = __K2L_Class("shop.domain.Product", nil, Entity, Named, Versioned)
 
-function Product:____init(id, name, priceCents, version)
+function Product.new(id, name, priceCents, version)
     if version == nil then
         version = 1
     end
-    self.id = id
-    self.name = name
-    self.priceCents = priceCents
-    self.version = version
+    return setmetatable({id = id, name = name, priceCents = priceCents, version = version}, Product)
 end
 
-function Product:toString()
-    return "Product(id=" .. __K2L_Str(self.id) .. ", name=" .. self.name .. ", priceCents=" .. self.priceCents .. ", version=" .. self.version .. ")"
-end
-
-function Product:hashCode()
-    return (31 * (31 * (31 * __K2L_Hash(self.id) + __K2L_Hash(self.name)) + __K2L_Hash(self.priceCents)) + self.version + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Product:equals(other)
-    return getmetatable(other) == Product and self.id:equals(other.id) and self.name == other.name and self.priceCents == other.priceCents and self.version == other.version
-end
-
+__K2L_DataClass(Product, {"id", "name", "priceCents", "version"})
 local Customer = __K2L_Class("shop.domain.Customer", nil, Entity, Named)
 
-function Customer:____init(id, name, vip)
+function Customer.new(id, name, vip)
     if vip == nil then
         vip = false
     end
-    self.id = id
-    self.name = name
-    self.vip = vip
+    return setmetatable({id = id, name = name, vip = vip}, Customer)
 end
 
 function Customer:label()
     return self.vip and "*" .. Named.label(self) .. "*" or Named.label(self)
 end
 
-function Customer:toString()
-    return "Customer(id=" .. __K2L_Str(self.id) .. ", name=" .. self.name .. ", vip=" .. tostring(self.vip) .. ")"
-end
-
-function Customer:hashCode()
-    return (31 * (31 * self.id:hashCode() + __K2L_Hash(self.name)) + (self.vip and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Customer:equals(other)
-    return getmetatable(other) == Customer and self.id:equals(other.id) and self.name == other.name and self.vip == other.vip
-end
-
+__K2L_DataClass(Customer, {"id", "name", "vip"})
 local Order = __K2L_Class("shop.domain.Order", nil, Entity)
-
-function Order:____init(id, customer, lines)
-    self.id = id
-    self.customer = customer
-    self.lines = lines
-end
 
 function Order.new(id, customer, lines)
     return setmetatable({id = id, customer = customer, lines = lines}, Order)
@@ -150,24 +96,9 @@ function Order:quantity()
     return ____sum
 end
 
-function Order:toString()
-    return "Order(id=" .. self.id .. ", customer=" .. __K2L_Str(self.customer) .. ", lines=" .. __K2L_Str(self.lines) .. ")"
-end
-
-function Order:hashCode()
-    return (31 * (31 * self.id + self.customer:hashCode()) + __K2L_Hash(self.lines) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Order:equals(other)
-    return getmetatable(other) == Order and self.id == other.id and self.customer:equals(other.customer) and __K2L_Equals(self.lines, other.lines)
-end
-
+__K2L_DataClass(Order, {"id", "customer", "lines"})
 local Money = __K2L_Class("shop.domain.Money")
 Money.____comparable = true
-
-function Money:____init(cents)
-    self.cents = cents
-end
 
 function Money.new(cents)
     return setmetatable({cents = cents}, Money)
@@ -191,14 +122,7 @@ function Money:toString()
     return sign .. "$" .. abs // 100 .. "." .. __K2L_StringPadStart(tostring(abs % 100), 2, "0")
 end
 
-function Money:hashCode()
-    return __K2L_Hash(self.cents)
-end
-
-function Money:equals(other)
-    return getmetatable(other) == Money and self.cents == other.cents
-end
-
+__K2L_DataClass(Money, {"cents"})
 Money.____companion = true
 
 function Money:____initCompanion()
@@ -264,10 +188,6 @@ function AuditLog:save(entity)
 end
 
 local Pricing = __K2L_Class("shop.Pricing")
-
-function Pricing:____init(products)
-    self.products = products
-end
 
 function Pricing.new(products)
     return setmetatable({products = products}, Pricing)

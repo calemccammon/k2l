@@ -1,7 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -57,12 +56,6 @@ Kind.EOF = Kind.new("EOF", 8)
 Kind.____values = {Kind.NUM, Kind.IDENT, Kind.OP, Kind.LPAREN, Kind.RPAREN, Kind.COMMA, Kind.QUESTION, Kind.COLON, Kind.EOF}
 local Token = __K2L_Class("Token")
 
-function Token:____init(kind, text, pos)
-    self.kind = kind
-    self.text = text
-    self.pos = pos
-end
-
 function Token.new(kind, text, pos)
     return setmetatable({kind = kind, text = text, pos = pos}, Token)
 end
@@ -71,14 +64,7 @@ function Token:toString()
     return self.kind == Kind.EOF and "EOF@" .. self.pos or __K2L_Str(self.kind) .. "('" .. self.text .. "')@" .. self.pos
 end
 
-function Token:hashCode()
-    return (31 * (31 * __K2L_Hash(self.kind) + __K2L_Hash(self.text)) + self.pos + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Token:equals(other)
-    return getmetatable(other) == Token and self.kind == other.kind and self.text == other.text and self.pos == other.pos
-end
-
+__K2L_DataClass(Token, {"kind", "text", "pos"})
 local ParseError = __K2L_Class("ParseError", __K2L_RuntimeException)
 
 function ParseError:____init(message, pos)
@@ -159,161 +145,61 @@ end
 local Expr = __K2L_Class("Expr")
 local Num = __K2L_Class("Num", nil, Expr)
 
-function Num:____init(v)
-    self.v = v
-end
-
 function Num.new(v)
     return setmetatable({v = v}, Num)
 end
 
-function Num:toString()
-    return "Num(v=" .. self.v .. ")"
-end
-
-function Num:hashCode()
-    return __K2L_Hash(self.v)
-end
-
-function Num:equals(other)
-    return getmetatable(other) == Num and self.v == other.v
-end
-
+__K2L_DataClass(Num, {"v"})
 local Var = __K2L_Class("Var", nil, Expr)
-
-function Var:____init(name)
-    self.name = name
-end
 
 function Var.new(name)
     return setmetatable({name = name}, Var)
 end
 
-function Var:toString()
-    return "Var(name=" .. self.name .. ")"
-end
-
-function Var:hashCode()
-    return __K2L_Hash(self.name)
-end
-
-function Var:equals(other)
-    return getmetatable(other) == Var and self.name == other.name
-end
-
+__K2L_DataClass(Var, {"name"})
 local Unary = __K2L_Class("Unary", nil, Expr)
-
-function Unary:____init(op, e)
-    self.op = op
-    self.e = e
-end
 
 function Unary.new(op, e)
     return setmetatable({op = op, e = e}, Unary)
 end
 
-function Unary:toString()
-    return "Unary(op=" .. self.op .. ", e=" .. __K2L_Str(self.e) .. ")"
-end
-
-function Unary:hashCode()
-    return (31 * __K2L_Hash(self.op) + __K2L_Hash(self.e) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Unary:equals(other)
-    return getmetatable(other) == Unary and self.op == other.op and __K2L_Equals(self.e, other.e)
-end
-
+__K2L_DataClass(Unary, {"op", "e"})
 local Binary = __K2L_Class("Binary", nil, Expr)
-
-function Binary:____init(op, l, r)
-    self.op = op
-    self.l = l
-    self.r = r
-end
 
 function Binary.new(op, l, r)
     return setmetatable({op = op, l = l, r = r}, Binary)
 end
 
-function Binary:toString()
-    return "Binary(op=" .. self.op .. ", l=" .. __K2L_Str(self.l) .. ", r=" .. __K2L_Str(self.r) .. ")"
-end
-
-function Binary:hashCode()
-    return (31 * (31 * __K2L_Hash(self.op) + __K2L_Hash(self.l)) + __K2L_Hash(self.r) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Binary:equals(other)
-    return getmetatable(other) == Binary and self.op == other.op and __K2L_Equals(self.l, other.l) and __K2L_Equals(self.r, other.r)
-end
-
+__K2L_DataClass(Binary, {"op", "l", "r"})
 local Call = __K2L_Class("Call", nil, Expr)
-
-function Call:____init(fn, args)
-    self.fn = fn
-    self.args = args
-end
 
 function Call.new(fn, args)
     return setmetatable({fn = fn, args = args}, Call)
 end
 
-function Call:toString()
-    return "Call(fn=" .. self.fn .. ", args=" .. __K2L_Str(self.args) .. ")"
-end
-
-function Call:hashCode()
-    return (31 * __K2L_Hash(self.fn) + __K2L_Hash(self.args) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Call:equals(other)
-    return getmetatable(other) == Call and self.fn == other.fn and __K2L_Equals(self.args, other.args)
-end
-
+__K2L_DataClass(Call, {"fn", "args"})
 local Cond = __K2L_Class("Cond", nil, Expr)
-
-function Cond:____init(c, t, f)
-    self.c = c
-    self.t = t
-    self.f = f
-end
 
 function Cond.new(c, t, f)
     return setmetatable({c = c, t = t, f = f}, Cond)
 end
 
-function Cond:toString()
-    return "Cond(c=" .. __K2L_Str(self.c) .. ", t=" .. __K2L_Str(self.t) .. ", f=" .. __K2L_Str(self.f) .. ")"
-end
-
-function Cond:hashCode()
-    return (31 * (31 * __K2L_Hash(self.c) + __K2L_Hash(self.t)) + __K2L_Hash(self.f) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Cond:equals(other)
-    return getmetatable(other) == Cond and __K2L_Equals(self.c, other.c) and __K2L_Equals(self.t, other.t) and __K2L_Equals(self.f, other.f)
-end
-
+__K2L_DataClass(Cond, {"c", "t", "f"})
 local Pratt = __K2L_Class("Pratt")
+local expect
 
-function Pratt:____init(tokens)
-    self.tokens = tokens
-    self.p = 0
-end
-
-function Pratt:peek()
+local function peek(self)
     return self.tokens:get(self.p)
 end
 
-function Pratt:next()
+local function ____next(self)
     local ____arg_6 = self.tokens
     local ____old_6 = self.p
     self.p = self.p + 1
     return ____arg_6:get(____old_6)
 end
 
-function Pratt:infixPower(op)
+local function infixPower(self, op)
     if op == "||" then
         return __K2L_Pair.new(1, 2)
     elseif op == "&&" then
@@ -333,16 +219,40 @@ function Pratt:infixPower(op)
     end
 end
 
+local function call(self, name)
+    expect(self, Kind.LPAREN, "'('")
+    local args = __K2L_ListOf()
+    if peek(self).kind ~= Kind.RPAREN then
+        repeat
+            args:add(self:expr(0))
+        until not (peek(self).kind == Kind.COMMA and ____next(self).kind == Kind.COMMA)
+    end
+    expect(self, Kind.RPAREN, "')' after arguments of " .. name.text)
+    return Call.new(name.text, args)
+end
+
+function expect(self, kind, what)
+    local t = ____next(self)
+    if t.kind ~= kind then
+        error(ParseError.new("expected " .. what .. " but got " .. (t.kind == Kind.EOF and "end of input" or "'" .. t.text .. "'"), t.pos))
+    end
+end
+
+function Pratt:____init(tokens)
+    self.tokens = tokens
+    self.p = 0
+end
+
 function Pratt:parseAll()
     local e = self:expr(0)
-    if self:peek().kind ~= Kind.EOF then
-        error(ParseError.new("unexpected " .. __K2L_Text.ifEmpty(self:peek().text, function() return self:peek().kind.name end), self:peek().pos))
+    if peek(self).kind ~= Kind.EOF then
+        error(ParseError.new("unexpected " .. __K2L_Text.ifEmpty(peek(self).text, function() return peek(self).kind.name end), peek(self).pos))
     end
     return e
 end
 
 function Pratt:expr(minBp)
-    local t = self:next()
+    local t = ____next(self)
     local lhs
     local ____subject = t.kind
     if ____subject == Kind.NUM then
@@ -352,10 +262,10 @@ function Pratt:expr(minBp)
         end
         lhs = Num.new(____value_1)
     elseif ____subject == Kind.IDENT then
-        lhs = self:peek().kind == Kind.LPAREN and self:call(t) or Var.new(t.text)
+        lhs = peek(self).kind == Kind.LPAREN and call(self, t) or Var.new(t.text)
     elseif ____subject == Kind.LPAREN then
         local ____value = self:expr(0)
-        self:expect(Kind.RPAREN, "')'")
+        expect(self, Kind.RPAREN, "')'")
         lhs = ____value
     elseif ____subject == Kind.OP then
         if t.text == "-" or t.text == "!" or t.text == "+" then
@@ -370,14 +280,14 @@ function Pratt:expr(minBp)
     end
     while true do
         do
-            local op = self:peek()
+            local op = peek(self)
             if op.kind == Kind.QUESTION then
                 if minBp > 0 then
                     break
                 end
-                self:next()
+                ____next(self)
                 local a = self:expr(0)
-                self:expect(Kind.COLON, "':'")
+                expect(self, Kind.COLON, "':'")
                 local b = self:expr(0)
                 lhs = Cond.new(lhs, a, b)
                 goto ____continue
@@ -385,7 +295,7 @@ function Pratt:expr(minBp)
             if op.kind ~= Kind.OP then
                 break
             end
-            local ____value_2 = self:infixPower(op.text)
+            local ____value_2 = infixPower(self, op.text)
             if ____value_2 == nil then
                 error(ParseError.new("unknown operator '" .. op.text .. "'", op.pos))
             end
@@ -393,31 +303,12 @@ function Pratt:expr(minBp)
             if l < minBp then
                 break
             end
-            self:next()
+            ____next(self)
             lhs = Binary.new(op.text, lhs, self:expr(r))
         end
         ::____continue::
     end
     return lhs
-end
-
-function Pratt:call(name)
-    self:expect(Kind.LPAREN, "'('")
-    local args = __K2L_ListOf()
-    if self:peek().kind ~= Kind.RPAREN then
-        repeat
-            args:add(self:expr(0))
-        until not (self:peek().kind == Kind.COMMA and self:next().kind == Kind.COMMA)
-    end
-    self:expect(Kind.RPAREN, "')' after arguments of " .. name.text)
-    return Call.new(name.text, args)
-end
-
-function Pratt:expect(kind, what)
-    local t = self:next()
-    if t.kind ~= kind then
-        error(ParseError.new("expected " .. what .. " but got " .. (t.kind == Kind.EOF and "end of input" or "'" .. t.text .. "'"), t.pos))
-    end
 end
 
 local function show(e)

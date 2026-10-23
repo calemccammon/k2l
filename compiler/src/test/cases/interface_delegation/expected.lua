@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -51,10 +51,6 @@ function Person:toString()
 end
 
 local Polite = __K2L_Class("Polite", nil, Named)
-
-function Polite:____init(impl)
-    self.____delegate_Named = impl
-end
 
 function Polite.new(impl)
     return setmetatable({____delegate_Named = impl}, Polite)
@@ -192,10 +188,6 @@ end
 local Shape = __K2L_Class("Shape")
 local Square = __K2L_Class("Square", nil, Shape)
 
-function Square:____init(side)
-    self.side = side
-end
-
 function Square.new(side)
     return setmetatable({side = side}, Square)
 end
@@ -209,10 +201,6 @@ function Square:toString()
 end
 
 local Framed = __K2L_Class("Framed", nil, Shape)
-
-function Framed:____init(s)
-    self.____delegate_Shape = s
-end
 
 function Framed.new(s)
     return setmetatable({____delegate_Shape = s}, Framed)
@@ -240,10 +228,6 @@ function Impl:id()
 end
 
 local Via = __K2L_Class("Via", nil, Derived)
-
-function Via:____init(d)
-    self.____delegate_Derived = d
-end
 
 function Via.new(d)
     return setmetatable({____delegate_Derived = d}, Via)
@@ -303,27 +287,11 @@ end
 __K2L_LazyObject(Shared, "____init")
 local Point = __K2L_Class("Point")
 
-function Point:____init(x, y)
-    self.x = x
-    self.y = y
-end
-
 function Point.new(x, y)
     return setmetatable({x = x, y = y}, Point)
 end
 
-function Point:toString()
-    return "Point(x=" .. self.x .. ", y=" .. self.y .. ")"
-end
-
-function Point:hashCode()
-    return (31 * self.x + self.y + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Point:equals(other)
-    return getmetatable(other) == Point and self.x == other.x and self.y == other.y
-end
-
+__K2L_DataClass(Point, {"x", "y"})
 local Located = __K2L_Class("Located")
 local Here = __K2L_Class("Here", nil, Located)
 
@@ -347,18 +315,7 @@ function Pin:getPoint(...)
     return self.____delegate_Located:getPoint(...)
 end
 
-function Pin:toString()
-    return "Pin(tag=" .. self.tag .. ", at=" .. __K2L_Str(self.at) .. ")"
-end
-
-function Pin:hashCode()
-    return (31 * __K2L_Hash(self.tag) + __K2L_Hash(self.at) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Pin:equals(other)
-    return getmetatable(other) == Pin and self.tag == other.tag and __K2L_Equals(self.at, other.at)
-end
-
+__K2L_DataClass(Pin, {"tag", "at"})
 local Holder = __K2L_Class("Holder")
 Holder.Companion = __K2L_Class("Holder$Companion", nil, Counter)
 

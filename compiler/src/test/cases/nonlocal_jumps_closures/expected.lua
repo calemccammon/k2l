@@ -603,11 +603,6 @@ end
 
 local Resource = __K2L_Class("Resource")
 
-function Resource:____init(name, log)
-    self.name = name
-    self.log = log
-end
-
 function Resource.new(name, log)
     return setmetatable({name = name, log = log}, Resource)
 end

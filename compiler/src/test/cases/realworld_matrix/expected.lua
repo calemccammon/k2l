@@ -3,8 +3,8 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -27,6 +27,21 @@ local __K2L_Truncate = ____lualib.__K2L_Truncate
 local fmt
 local Matrix = __K2L_Class("Matrix")
 
+local function swapRows(self, a, b)
+    local t = self.data[a + 1] or __K2L_IndexError(a, self.data.size, "array")
+    local ____object = self.data
+    local ____value = self.data[b + 1] or __K2L_IndexError(b, self.data.size, "array")
+    if a < 0 or a >= ____object.size then
+        __K2L_IndexError(a, ____object.size, "array")
+    end
+    ____object[a + 1] = ____value
+    local ____object_1 = self.data
+    if b < 0 or b >= ____object_1.size then
+        __K2L_IndexError(b, ____object_1.size, "array")
+    end
+    ____object_1[b + 1] = t
+end
+
 local ____lambda_1 = function(_, _) return 0.0 end
 function Matrix:____init(rows, cols, init)
     if init == nil then
@@ -44,11 +59,11 @@ function Matrix:get(r, c)
 end
 
 function Matrix:set(r, c, v)
-    local ____object = self.data[r + 1] or __K2L_IndexError(r, self.data.size, "array")
-    if c < 0 or c >= ____object.size then
-        __K2L_IndexError(c, ____object.size, "array")
+    local ____object_2 = self.data[r + 1] or __K2L_IndexError(r, self.data.size, "array")
+    if c < 0 or c >= ____object_2.size then
+        __K2L_IndexError(c, ____object_2.size, "array")
     end
-    ____object[c + 1] = v
+    ____object_2[c + 1] = v
 end
 
 function Matrix:times(o)
@@ -88,7 +103,7 @@ function Matrix:determinant()
             return 0.0
         end
         if pivot ~= col then
-            m:swapRows(pivot, col)
+            swapRows(m, pivot, col)
             det = -det
         end
         det = det * m:get(col, col)
@@ -112,7 +127,7 @@ function Matrix:solve(b)
         if not (math.abs(aug:get(pivot, col)) > 1.0E-12) then
             error(__K2L_IllegalStateException.new("singular matrix"))
         end
-        aug:swapRows(pivot, col)
+        swapRows(aug, pivot, col)
         for r = 0, n - 1 do
             do
                 if r == col then
@@ -127,21 +142,6 @@ function Matrix:solve(b)
         end
     end
     return __K2L_ListOfSize(n, function(it) return aug:get(it, n) / aug:get(it, it) end, true)
-end
-
-function Matrix:swapRows(a, b)
-    local t = self.data[a + 1] or __K2L_IndexError(a, self.data.size, "array")
-    local ____object_1 = self.data
-    local ____value = self.data[b + 1] or __K2L_IndexError(b, self.data.size, "array")
-    if a < 0 or a >= ____object_1.size then
-        __K2L_IndexError(a, ____object_1.size, "array")
-    end
-    ____object_1[a + 1] = ____value
-    local ____object_2 = self.data
-    if b < 0 or b >= ____object_2.size then
-        __K2L_IndexError(b, ____object_2.size, "array")
-    end
-    ____object_2[b + 1] = t
 end
 
 function Matrix:copy()
@@ -182,10 +182,6 @@ end
 local Meters = __K2L_Class("Meters")
 Meters.____comparable = true
 
-function Meters:____init(value)
-    self.value = value
-end
-
 function Meters.new(value)
     return setmetatable({value = value}, Meters)
 end
@@ -206,35 +202,14 @@ function Meters:toString()
     return string.format("%.2fm", self.value)
 end
 
-function Meters:hashCode()
-    return __K2L_Hash(self.value)
-end
-
-function Meters:equals(other)
-    return getmetatable(other) == Meters and self.value == other.value
-end
-
+__K2L_DataClass(Meters, {"value"})
 local Seconds = __K2L_Class("Seconds")
-
-function Seconds:____init(value)
-    self.value = value
-end
 
 function Seconds.new(value)
     return setmetatable({value = value}, Seconds)
 end
 
-function Seconds:toString()
-    return "Seconds(value=" .. self.value .. ")"
-end
-
-function Seconds:hashCode()
-    return __K2L_Hash(self.value)
-end
-
-function Seconds:equals(other)
-    return getmetatable(other) == Seconds and self.value == other.value
-end
+__K2L_DataClass(Seconds, {"value"})
 
 local function div(self, t)
     return self.value / t.value
@@ -249,11 +224,6 @@ local function getKm(____this_1)
 end
 
 local Vec = __K2L_Class("Vec")
-
-function Vec:____init(x, y)
-    self.x = x
-    self.y = y
-end
 
 function Vec.new(x, y)
     return setmetatable({x = x, y = y}, Vec)
@@ -287,13 +257,7 @@ function Vec:toString()
     return "(" .. fmt(self.x) .. ", " .. fmt(self.y) .. ")"
 end
 
-function Vec:hashCode()
-    return (31 * __K2L_Hash(self.x) + __K2L_Hash(self.y) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Vec:equals(other)
-    return getmetatable(other) == Vec and self.x == other.x and self.y == other.y
-end
+__K2L_DataClass(Vec, {"x", "y"})
 
 function fmt(____this_2)
     return ____this_2 == math.floor(____this_2) and math.abs(____this_2) < 1.0E9 and tostring(__K2L_Truncate(____this_2)) or string.format("%.3f", ____this_2)

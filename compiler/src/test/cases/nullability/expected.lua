@@ -6,11 +6,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 
 local Node = __K2L_Class("Node")
 
-function Node:____init(value, ____next)
-    self.value = value
-    self.next = ____next
-end
-
 function Node.new(value, ____next)
     return setmetatable({value = value, next = ____next}, Node)
 end

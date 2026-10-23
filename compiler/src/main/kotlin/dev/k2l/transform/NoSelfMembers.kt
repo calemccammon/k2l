@@ -97,7 +97,7 @@ internal fun FileTransformer.checkNoSelf(c: KtClassOrObject) {
 
 /** The Lua names a member without `self` takes in its class table: the function, or the accessors of a property. */
 private fun FileTransformer.noSelfNames(d: KtNamedDeclaration): List<String> = when {
-    !noSelf.isNoSelf(d) -> emptyList()
+    !noSelf.isNoSelf(d) || privateLocal(d) != null -> emptyList()
 
     d is KtNamedFunction -> listOf(naming.function(d))
 

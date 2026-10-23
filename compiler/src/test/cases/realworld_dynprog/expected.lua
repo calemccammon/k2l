@@ -1,7 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
@@ -86,27 +86,11 @@ end
 
 local Item = __K2L_Class("Item")
 
-function Item:____init(name, weight, value)
-    self.name = name
-    self.weight = weight
-    self.value = value
-end
-
 function Item.new(name, weight, value)
     return setmetatable({name = name, weight = weight, value = value}, Item)
 end
 
-function Item:toString()
-    return "Item(name=" .. self.name .. ", weight=" .. self.weight .. ", value=" .. self.value .. ")"
-end
-
-function Item:hashCode()
-    return (31 * (31 * __K2L_Hash(self.name) + self.weight) + self.value + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Item:equals(other)
-    return getmetatable(other) == Item and self.name == other.name and self.weight == other.weight and self.value == other.value
-end
+__K2L_DataClass(Item, {"name", "weight", "value"})
 
 local function knapsack(items, capacity)
     local n = items.size
@@ -220,18 +204,7 @@ end
 
 local Arrangements = __K2L_Class("Arrangements")
 
-function Arrangements:____init(pattern, groups)
-    self.pattern = pattern
-    self.groups = groups
-    self.memo = __K2L_Map.new()
-    self.hits = 0
-end
-
-function Arrangements:count()
-    return self:count__1(0, 0)
-end
-
-function Arrangements:count__1(pos, group)
+local function count__1(self, pos, group)
     local key = __K2L_Pair.new(pos, group)
     local ____receiver = self.memo:get(key)
     if ____receiver ~= nil then
@@ -246,7 +219,7 @@ function Arrangements:count__1(pos, group)
         local total = 0
         local c = pos >= 0 and pos < #self.pattern and self.pattern:sub(pos + 1, pos + 1) or __K2L_IndexError(pos, #self.pattern, "string")
         if c == "." or c == "?" then
-            total = total + self:count__1(pos + 1, group)
+            total = total + count__1(self, pos + 1, group)
         end
         if (c == "#" or c == "?") and group < self.groups.size then
             local len = self.groups:get(group)
@@ -255,7 +228,7 @@ function Arrangements:count__1(pos, group)
                 return (it >= 0 and __K2L_StrByte(self.pattern, it + 1) or __K2L_IndexError(it, #self.pattern, "string")) == 46
             end) and (____end == #self.pattern or (____end >= 0 and __K2L_StrByte(self.pattern, ____end + 1) or __K2L_IndexError(____end, #self.pattern, "string")) ~= 35)
             if fits then
-                total = total + self:count__1(math.min(____end + 1, #self.pattern), group + 1)
+                total = total + count__1(self, math.min(____end + 1, #self.pattern), group + 1)
             end
         end
         result = total
@@ -263,6 +236,17 @@ function Arrangements:count__1(pos, group)
     local ____object_6 = self.memo
     ____object_6:set(key, result)
     return result
+end
+
+function Arrangements:____init(pattern, groups)
+    self.pattern = pattern
+    self.groups = groups
+    self.memo = __K2L_Map.new()
+    self.hits = 0
+end
+
+function Arrangements:count()
+    return count__1(self, 0, 0)
 end
 
 local ____lambda_2 = function(____p1) return __K2L_StringToInt(____p1) end

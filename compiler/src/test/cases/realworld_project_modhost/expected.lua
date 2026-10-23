@@ -135,15 +135,16 @@ local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 
 local Events = __K2L_Class("mods.shared.Events")
+local listeners
 
 function Events:____init()
-    self.listeners = __K2L_MapOf()
+    listeners = __K2L_MapOf()
     self.fired = __K2L_ListOf()
 end
 
 local ____lambda_1 = function() return __K2L_ListOf() end
 function Events:on(name, listener)
-    self.listeners:getOrPut(name, ____lambda_1):add(listener)
+    listeners:getOrPut(name, ____lambda_1):add(listener)
 end
 
 function Events:fire(name, detail)
@@ -151,7 +152,7 @@ function Events:fire(name, detail)
         detail = "-"
     end
     self.fired:add(name)
-    local ls = self.listeners:get(name) or __K2L_ListOf()
+    local ls = listeners:get(name) or __K2L_ListOf()
     for ____i = 1, ls.size do
         local it = ls[____i]
         it(detail)
@@ -162,11 +163,6 @@ end
 Events:____init()
 local Version = __K2L_Class("mods.shared.Version")
 Version.____comparable = true
-
-function Version:____init(major, minor)
-    self.major = major
-    self.minor = minor
-end
 
 function Version.new(major, minor)
     return setmetatable({major = major, minor = minor}, Version)

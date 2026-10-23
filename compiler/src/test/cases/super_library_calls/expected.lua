@@ -43,10 +43,6 @@ end
 
 local Identity = __K2L_Class("Identity")
 
-function Identity:____init(id)
-    self.id = id
-end
-
 function Identity.new(id)
     return setmetatable({id = id}, Identity)
 end
@@ -61,10 +57,6 @@ end
 
 local Mixed = __K2L_Class("Mixed")
 
-function Mixed:____init(id)
-    self.id = id
-end
-
 function Mixed.new(id)
     return setmetatable({id = id}, Mixed)
 end
@@ -78,10 +70,6 @@ function Mixed:hashCode()
 end
 
 local Hashed = __K2L_Class("Hashed")
-
-function Hashed:____init(id)
-    self.id = id
-end
 
 function Hashed.new(id)
     return setmetatable({id = id}, Hashed)

@@ -8,6 +8,7 @@ local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareByWith = ____lualib.__K2L_CompareByWith
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
 local __K2L_FunctionMixin = ____lualib.__K2L_FunctionMixin
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -42,11 +43,6 @@ end
 local Version = __K2L_Class("Version")
 Version.____comparable = true
 
-function Version:____init(major, minor)
-    self.major = major
-    self.minor = minor
-end
-
 function Version.new(major, minor)
     return setmetatable({major = major, minor = minor}, Version)
 end
@@ -57,18 +53,7 @@ function Version:compareTo(other)
     return __K2L_CompareBy(____lambda_1, ____lambda_2)(self, other)
 end
 
-function Version:toString()
-    return "Version(major=" .. self.major .. ", minor=" .. self.minor .. ")"
-end
-
-function Version:hashCode()
-    return (31 * self.major + self.minor + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Version:equals(other)
-    return getmetatable(other) == Version and self.major == other.major and self.minor == other.minor
-end
-
+__K2L_DataClass(Version, {"major", "minor"})
 local Count = __K2L_Class("Count")
 
 function Count:____init(n)
@@ -97,10 +82,6 @@ function Upto:iterator()
 end
 
 local Letters = __K2L_Class("Letters")
-
-function Letters:____init(text)
-    self.text = text
-end
 
 function Letters.new(text)
     return setmetatable({text = text}, Letters)

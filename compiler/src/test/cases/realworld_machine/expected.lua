@@ -2,8 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Bits = ____lualib.__K2L_Bits
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
@@ -41,141 +41,46 @@ local Operand
 local Instr = __K2L_Class("Instr")
 Instr.Set = __K2L_Class("Instr$Set", Instr)
 
-function Instr.Set:____init(reg, value)
-    self.reg = reg
-    self.value = value
-end
-
 function Instr.Set.new(reg, value)
     return setmetatable({reg = reg, value = value}, Instr.Set)
 end
 
-function Instr.Set:toString()
-    return "Set(reg=" .. self.reg .. ", value=" .. __K2L_Str(self.value) .. ")"
-end
-
-function Instr.Set:hashCode()
-    return (31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Instr.Set:equals(other)
-    return getmetatable(other) == Instr.Set and self.reg == other.reg and __K2L_Equals(self.value, other.value)
-end
-
+__K2L_DataClass(Instr.Set, {"reg", "value"})
 Instr.Add = __K2L_Class("Instr$Add", Instr)
-
-function Instr.Add:____init(reg, value)
-    self.reg = reg
-    self.value = value
-end
 
 function Instr.Add.new(reg, value)
     return setmetatable({reg = reg, value = value}, Instr.Add)
 end
 
-function Instr.Add:toString()
-    return "Add(reg=" .. self.reg .. ", value=" .. __K2L_Str(self.value) .. ")"
-end
-
-function Instr.Add:hashCode()
-    return (31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Instr.Add:equals(other)
-    return getmetatable(other) == Instr.Add and self.reg == other.reg and __K2L_Equals(self.value, other.value)
-end
-
+__K2L_DataClass(Instr.Add, {"reg", "value"})
 Instr.Mul = __K2L_Class("Instr$Mul", Instr)
-
-function Instr.Mul:____init(reg, value)
-    self.reg = reg
-    self.value = value
-end
 
 function Instr.Mul.new(reg, value)
     return setmetatable({reg = reg, value = value}, Instr.Mul)
 end
 
-function Instr.Mul:toString()
-    return "Mul(reg=" .. self.reg .. ", value=" .. __K2L_Str(self.value) .. ")"
-end
-
-function Instr.Mul:hashCode()
-    return (31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Instr.Mul:equals(other)
-    return getmetatable(other) == Instr.Mul and self.reg == other.reg and __K2L_Equals(self.value, other.value)
-end
-
+__K2L_DataClass(Instr.Mul, {"reg", "value"})
 Instr.Mod = __K2L_Class("Instr$Mod", Instr)
-
-function Instr.Mod:____init(reg, value)
-    self.reg = reg
-    self.value = value
-end
 
 function Instr.Mod.new(reg, value)
     return setmetatable({reg = reg, value = value}, Instr.Mod)
 end
 
-function Instr.Mod:toString()
-    return "Mod(reg=" .. self.reg .. ", value=" .. __K2L_Str(self.value) .. ")"
-end
-
-function Instr.Mod:hashCode()
-    return (31 * __K2L_Hash(self.reg) + __K2L_Hash(self.value) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Instr.Mod:equals(other)
-    return getmetatable(other) == Instr.Mod and self.reg == other.reg and __K2L_Equals(self.value, other.value)
-end
-
+__K2L_DataClass(Instr.Mod, {"reg", "value"})
 Instr.Jnz = __K2L_Class("Instr$Jnz", Instr)
-
-function Instr.Jnz:____init(test, offset)
-    self.test = test
-    self.offset = offset
-end
 
 function Instr.Jnz.new(test, offset)
     return setmetatable({test = test, offset = offset}, Instr.Jnz)
 end
 
-function Instr.Jnz:toString()
-    return "Jnz(test=" .. __K2L_Str(self.test) .. ", offset=" .. __K2L_Str(self.offset) .. ")"
-end
-
-function Instr.Jnz:hashCode()
-    return (31 * __K2L_Hash(self.test) + __K2L_Hash(self.offset) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Instr.Jnz:equals(other)
-    return getmetatable(other) == Instr.Jnz and __K2L_Equals(self.test, other.test) and __K2L_Equals(self.offset, other.offset)
-end
-
+__K2L_DataClass(Instr.Jnz, {"test", "offset"})
 Instr.Out = __K2L_Class("Instr$Out", Instr)
-
-function Instr.Out:____init(value)
-    self.value = value
-end
 
 function Instr.Out.new(value)
     return setmetatable({value = value}, Instr.Out)
 end
 
-function Instr.Out:toString()
-    return "Out(value=" .. __K2L_Str(self.value) .. ")"
-end
-
-function Instr.Out:hashCode()
-    return __K2L_Hash(self.value)
-end
-
-function Instr.Out:equals(other)
-    return getmetatable(other) == Instr.Out and __K2L_Equals(self.value, other.value)
-end
-
+__K2L_DataClass(Instr.Out, {"value"})
 Instr.Halt = __K2L_Class("Instr$Halt", Instr)
 
 function Instr.Halt:toString()
@@ -185,47 +90,18 @@ end
 Operand = __K2L_Class("Operand")
 Operand.Lit = __K2L_Class("Operand$Lit", nil, Operand)
 
-function Operand.Lit:____init(v)
-    self.v = v
-end
-
 function Operand.Lit.new(v)
     return setmetatable({v = v}, Operand.Lit)
 end
 
-function Operand.Lit:toString()
-    return "Lit(v=" .. self.v .. ")"
-end
-
-function Operand.Lit:hashCode()
-    return __K2L_Hash(self.v)
-end
-
-function Operand.Lit:equals(other)
-    return getmetatable(other) == Operand.Lit and self.v == other.v
-end
-
+__K2L_DataClass(Operand.Lit, {"v"})
 Operand.Reg = __K2L_Class("Operand$Reg", nil, Operand)
-
-function Operand.Reg:____init(r)
-    self.r = r
-end
 
 function Operand.Reg.new(r)
     return setmetatable({r = r}, Operand.Reg)
 end
 
-function Operand.Reg:toString()
-    return "Reg(r=" .. self.r .. ")"
-end
-
-function Operand.Reg:hashCode()
-    return __K2L_Hash(self.r)
-end
-
-function Operand.Reg:equals(other)
-    return getmetatable(other) == Operand.Reg and self.r == other.r
-end
+__K2L_DataClass(Operand.Reg, {"r"})
 
 local function parseOperand(s)
     local ____receiver = __K2L_StringToIntOrNull(s, nil, true)

@@ -1,18 +1,13 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_RunMain = ____lualib.__K2L_RunMain
 local __K2L_Str = ____lualib.__K2L_Str
 
 local Response = __K2L_Class("Response")
 
-function Response:____init(status, body, note)
-    if note == nil then
-        note = nil
-    end
-    self.status = status
-    self.body = body
-    self.note = note
+function Response.new(status, body, note)
+    return setmetatable({status = status, body = body, note = note}, Response)
 end
 
 function Response:getOk()
@@ -20,18 +15,7 @@ function Response:getOk()
     return ____value >= 200 and ____value <= 299
 end
 
-function Response:toString()
-    return "Response(status=" .. self.status .. ", body=" .. self.body .. ", note=" .. __K2L_Str(self.note) .. ")"
-end
-
-function Response:hashCode()
-    return (31 * (31 * self.status + __K2L_Hash(self.body)) + __K2L_Hash(self.note) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Response:equals(other)
-    return getmetatable(other) == Response and self.status == other.status and self.body == other.body and self.note == other.note
-end
-
+__K2L_DataClass(Response, {"status", "body", "note"})
 Response.Companion = __K2L_Class("Response$Companion")
 
 function Response.Companion:____init()
@@ -52,10 +36,6 @@ end
 
 Response.Companion:____init()
 local Counter = __K2L_Class("Counter")
-
-function Counter:____init(count)
-    self.count = count
-end
 
 function Counter.new(count)
     return setmetatable({count = count}, Counter)

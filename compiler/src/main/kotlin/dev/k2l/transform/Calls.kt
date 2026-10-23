@@ -202,6 +202,17 @@ internal fun FileTransformer.sourceFunctionCall(
         val fn = if (psi.isTopLevel) topLevelRef(psi) else LuaName(naming.function(psi))
         return LuaCall(fn, arguments(receivers, args))
     }
+    privateLocal(psi)?.let { local ->
+        // a function of an object needs no receiver: its object is `this`
+        val receivers = if (psi.containingClassOrObject is KtObjectDeclaration) {
+            emptyList()
+        } else {
+            listOf(
+                receiverOperand(implicit, receiverExpr)!!,
+            )
+        }
+        return LuaCall(LuaName(local), arguments(receivers, args))
+    }
     val method = naming.function(psi)
     if (receiverExpr is KtSuperExpression) {
         // The resolved declaration is the implementation `super` reaches, in a class or interface.
@@ -220,6 +231,7 @@ private fun FileTransformer.memberPropertyRead(
     implicit: LuaExpr?,
     full: KtExpression,
 ): LuaExpr = with(session) {
+    privateLocal(property)?.let { return lateinitRead(property, LuaName(it)) }
     val receiver = when (receiverExpr) {
         null -> implicit ?: return unsupported(full, "Property without receiver")
 

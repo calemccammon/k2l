@@ -1,10 +1,10 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_FunInterface = ____lualib.__K2L_FunInterface
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsDigit = ____lualib.__K2L_IsDigit
 local __K2L_IsLetter = ____lualib.__K2L_IsLetter
@@ -29,12 +29,11 @@ local __K2L_Unit = ____lualib.__K2L_Unit
 local term, factor, json
 local Input = __K2L_Class("parsing.Input")
 
-function Input:____init(text, pos)
+function Input.new(text, pos)
     if pos == nil then
         pos = 0
     end
-    self.text = text
-    self.pos = pos
+    return setmetatable({text = text, pos = pos}, Input)
 end
 
 function Input:getAtEnd()
@@ -56,60 +55,22 @@ function Input:toString()
     return self:getAtEnd() and "<end>" or "'" .. __K2L_Text.take(__K2L_Text.substring(self.text, self.pos), 8) .. "'@" .. self.pos
 end
 
-function Input:hashCode()
-    return (31 * __K2L_Hash(self.text) + self.pos + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Input:equals(other)
-    return getmetatable(other) == Input and self.text == other.text and self.pos == other.pos
-end
-
+__K2L_DataClass(Input, {"text", "pos"})
 local ParseResult = __K2L_Class("parsing.ParseResult")
 ParseResult.Success = __K2L_Class("parsing.ParseResult$Success", ParseResult)
-
-function ParseResult.Success:____init(value, rest)
-    self.value = value
-    self.rest = rest
-end
 
 function ParseResult.Success.new(value, rest)
     return setmetatable({value = value, rest = rest}, ParseResult.Success)
 end
 
-function ParseResult.Success:toString()
-    return "Success(value=" .. __K2L_Str(self.value) .. ", rest=" .. __K2L_Str(self.rest) .. ")"
-end
-
-function ParseResult.Success:hashCode()
-    return (31 * __K2L_Hash(self.value) + self.rest:hashCode() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function ParseResult.Success:equals(other)
-    return getmetatable(other) == ParseResult.Success and __K2L_Equals(self.value, other.value) and self.rest:equals(other.rest)
-end
-
+__K2L_DataClass(ParseResult.Success, {"value", "rest"})
 ParseResult.Failure = __K2L_Class("parsing.ParseResult$Failure", ParseResult)
-
-function ParseResult.Failure:____init(expected, at)
-    self.expected = expected
-    self.at = at
-end
 
 function ParseResult.Failure.new(expected, at)
     return setmetatable({expected = expected, at = at}, ParseResult.Failure)
 end
 
-function ParseResult.Failure:toString()
-    return "Failure(expected=" .. self.expected .. ", at=" .. __K2L_Str(self.at) .. ")"
-end
-
-function ParseResult.Failure:hashCode()
-    return (31 * __K2L_Hash(self.expected) + self.at:hashCode() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function ParseResult.Failure:equals(other)
-    return getmetatable(other) == ParseResult.Failure and self.expected == other.expected and self.at:equals(other.at)
-end
+__K2L_DataClass(ParseResult.Failure, {"expected", "at"})
 
 function ParseResult:fold(onSuccess, onFailure)
     local ____mt = getmetatable(self)
@@ -279,116 +240,39 @@ end)), "identifier")
 local Expr = __K2L_Class("parsing.Expr")
 Expr.Num = __K2L_Class("parsing.Expr$Num", nil, Expr)
 
-function Expr.Num:____init(v)
-    self.v = v
-end
-
 function Expr.Num.new(v)
     return setmetatable({v = v}, Expr.Num)
 end
 
-function Expr.Num:toString()
-    return "Num(v=" .. self.v .. ")"
-end
-
-function Expr.Num:hashCode()
-    return __K2L_Hash(self.v)
-end
-
-function Expr.Num:equals(other)
-    return getmetatable(other) == Expr.Num and self.v == other.v
-end
-
+__K2L_DataClass(Expr.Num, {"v"})
 Expr.Var = __K2L_Class("parsing.Expr$Var", nil, Expr)
-
-function Expr.Var:____init(name)
-    self.name = name
-end
 
 function Expr.Var.new(name)
     return setmetatable({name = name}, Expr.Var)
 end
 
-function Expr.Var:toString()
-    return "Var(name=" .. self.name .. ")"
-end
-
-function Expr.Var:hashCode()
-    return __K2L_Hash(self.name)
-end
-
-function Expr.Var:equals(other)
-    return getmetatable(other) == Expr.Var and self.name == other.name
-end
-
+__K2L_DataClass(Expr.Var, {"name"})
 Expr.Bin = __K2L_Class("parsing.Expr$Bin", nil, Expr)
-
-function Expr.Bin:____init(op, l, r)
-    self.op = op
-    self.l = l
-    self.r = r
-end
 
 function Expr.Bin.new(op, l, r)
     return setmetatable({op = op, l = l, r = r}, Expr.Bin)
 end
 
-function Expr.Bin:toString()
-    return "Bin(op=" .. self.op .. ", l=" .. __K2L_Str(self.l) .. ", r=" .. __K2L_Str(self.r) .. ")"
-end
-
-function Expr.Bin:hashCode()
-    return (31 * (31 * __K2L_Hash(self.op) + __K2L_Hash(self.l)) + __K2L_Hash(self.r) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Expr.Bin:equals(other)
-    return getmetatable(other) == Expr.Bin and self.op == other.op and __K2L_Equals(self.l, other.l) and __K2L_Equals(self.r, other.r)
-end
-
+__K2L_DataClass(Expr.Bin, {"op", "l", "r"})
 Expr.Neg = __K2L_Class("parsing.Expr$Neg", nil, Expr)
-
-function Expr.Neg:____init(e)
-    self.e = e
-end
 
 function Expr.Neg.new(e)
     return setmetatable({e = e}, Expr.Neg)
 end
 
-function Expr.Neg:toString()
-    return "Neg(e=" .. __K2L_Str(self.e) .. ")"
-end
-
-function Expr.Neg:hashCode()
-    return __K2L_Hash(self.e)
-end
-
-function Expr.Neg:equals(other)
-    return getmetatable(other) == Expr.Neg and __K2L_Equals(self.e, other.e)
-end
-
+__K2L_DataClass(Expr.Neg, {"e"})
 Expr.Call = __K2L_Class("parsing.Expr$Call", nil, Expr)
-
-function Expr.Call:____init(fn, args)
-    self.fn = fn
-    self.args = args
-end
 
 function Expr.Call.new(fn, args)
     return setmetatable({fn = fn, args = args}, Expr.Call)
 end
 
-function Expr.Call:toString()
-    return "Call(fn=" .. self.fn .. ", args=" .. __K2L_Str(self.args) .. ")"
-end
-
-function Expr.Call:hashCode()
-    return (31 * __K2L_Hash(self.fn) + __K2L_Hash(self.args) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Expr.Call:equals(other)
-    return getmetatable(other) == Expr.Call and self.fn == other.fn and __K2L_Equals(self.args, other.args)
-end
+__K2L_DataClass(Expr.Call, {"fn", "args"})
 
 local function chainLeft(operand, ops)
     return map(____then(operand, many(____then(token(satisfy("operator", function(it) return __K2L_StringContains(ops, it) end)), operand))), function(____destructured_4)
@@ -505,92 +389,32 @@ end
 local Json = __K2L_Class("parsing.Json")
 Json.Str = __K2L_Class("parsing.Json$Str", Json)
 
-function Json.Str:____init(s)
-    self.s = s
-end
-
 function Json.Str.new(s)
     return setmetatable({s = s}, Json.Str)
 end
 
-function Json.Str:toString()
-    return "Str(s=" .. self.s .. ")"
-end
-
-function Json.Str:hashCode()
-    return __K2L_Hash(self.s)
-end
-
-function Json.Str:equals(other)
-    return getmetatable(other) == Json.Str and self.s == other.s
-end
-
+__K2L_DataClass(Json.Str, {"s"})
 Json.Num = __K2L_Class("parsing.Json$Num", Json)
-
-function Json.Num:____init(n)
-    self.n = n
-end
 
 function Json.Num.new(n)
     return setmetatable({n = n}, Json.Num)
 end
 
-function Json.Num:toString()
-    return "Num(n=" .. self.n .. ")"
-end
-
-function Json.Num:hashCode()
-    return __K2L_Hash(self.n)
-end
-
-function Json.Num:equals(other)
-    return getmetatable(other) == Json.Num and self.n == other.n
-end
-
+__K2L_DataClass(Json.Num, {"n"})
 Json.Arr = __K2L_Class("parsing.Json$Arr", Json)
-
-function Json.Arr:____init(items)
-    self.items = items
-end
 
 function Json.Arr.new(items)
     return setmetatable({items = items}, Json.Arr)
 end
 
-function Json.Arr:toString()
-    return "Arr(items=" .. __K2L_Str(self.items) .. ")"
-end
-
-function Json.Arr:hashCode()
-    return __K2L_Hash(self.items)
-end
-
-function Json.Arr:equals(other)
-    return getmetatable(other) == Json.Arr and __K2L_Equals(self.items, other.items)
-end
-
+__K2L_DataClass(Json.Arr, {"items"})
 Json.Obj = __K2L_Class("parsing.Json$Obj", Json)
-
-function Json.Obj:____init(fields)
-    self.fields = fields
-end
 
 function Json.Obj.new(fields)
     return setmetatable({fields = fields}, Json.Obj)
 end
 
-function Json.Obj:toString()
-    return "Obj(fields=" .. __K2L_Str(self.fields) .. ")"
-end
-
-function Json.Obj:hashCode()
-    return __K2L_Hash(self.fields)
-end
-
-function Json.Obj:equals(other)
-    return getmetatable(other) == Json.Obj and __K2L_Equals(self.fields, other.fields)
-end
-
+__K2L_DataClass(Json.Obj, {"fields"})
 Json.Null = __K2L_Class("parsing.Json$Null", Json)
 
 local ____lambda_5 = function(it) return it:render() end

@@ -1,0 +1,28 @@
+2
+4
+2
+2
+true
+false
+true
+[ADA, BOB, ADA, BOB]
+true
+42
+true
+6
+2
+part of machine 1
+before reader
+loading Lazy
+Lazy ready
+42
+41
+Hello, Bob
+3
+0
+kept
+false
+true
+on
+7
+true

@@ -2,7 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_List = ____lualib.__K2L_List
@@ -220,48 +220,18 @@ end
 local Token = __K2L_Class("Token")
 Token.Literal = __K2L_Class("Token$Literal", nil, Token)
 
-function Token.Literal:____init(c)
-    self.c = c
-end
-
 function Token.Literal.new(c)
     return setmetatable({c = c}, Token.Literal)
 end
 
-function Token.Literal:toString()
-    return "Literal(c=" .. self.c .. ")"
-end
-
-function Token.Literal:hashCode()
-    return __K2L_Hash(self.c)
-end
-
-function Token.Literal:equals(other)
-    return getmetatable(other) == Token.Literal and self.c == other.c
-end
-
+__K2L_DataClass(Token.Literal, {"c"})
 Token.Ref = __K2L_Class("Token$Ref", nil, Token)
-
-function Token.Ref:____init(distance, length)
-    self.distance = distance
-    self.length = length
-end
 
 function Token.Ref.new(distance, length)
     return setmetatable({distance = distance, length = length}, Token.Ref)
 end
 
-function Token.Ref:toString()
-    return "Ref(distance=" .. self.distance .. ", length=" .. self.length .. ")"
-end
-
-function Token.Ref:hashCode()
-    return (31 * self.distance + self.length + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Token.Ref:equals(other)
-    return getmetatable(other) == Token.Ref and self.distance == other.distance and self.length == other.length
-end
+__K2L_DataClass(Token.Ref, {"distance", "length"})
 
 local function lz77(input, window)
     if window == nil then

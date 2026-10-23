@@ -2,6 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -14,11 +15,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local Vec = __K2L_Class("Vec")
-
-function Vec:____init(x, y)
-    self.x = x
-    self.y = y
-end
 
 function Vec.new(x, y)
     return setmetatable({x = x, y = y}, Vec)
@@ -36,17 +32,7 @@ function Vec:scaled(k)
     return Vec.new(self.x * k, self.y * k)
 end
 
-function Vec:toString()
-    return "Vec(x=" .. self.x .. ", y=" .. self.y .. ")"
-end
-
-function Vec:hashCode()
-    return (31 * __K2L_Hash(self.x) + __K2L_Hash(self.y) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Vec:equals(other)
-    return getmetatable(other) == Vec and self.x == other.x and self.y == other.y
-end
+__K2L_DataClass(Vec, {"x", "y"})
 
 local function average(xs)
     local s = 0.0

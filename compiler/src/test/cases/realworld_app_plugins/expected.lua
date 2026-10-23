@@ -133,15 +133,16 @@ function PluginException:____init(plugin, cause)
 end
 
 local Registry = __K2L_Class("host.api.Registry")
+local factories
 
 function Registry:____init()
-    self.factories = __K2L_MapOf()
+    factories = __K2L_MapOf()
     self.lookups = 0
     trace("Registry.init")
 end
 
 function Registry:register(name, factory)
-    if self.factories:put(name, factory) ~= nil then
+    if factories:put(name, factory) ~= nil then
         error(__K2L_IllegalStateException.new("plugin " .. name .. " registered twice"))
     end
 end
@@ -151,16 +152,16 @@ function Registry:create(name, settings)
         settings = __K2L_MapOf()
     end
     self.lookups = self.lookups + 1
-    local ____value_1 = self.factories:get(name)
+    local ____value_1 = factories:get(name)
     if ____value_1 == nil then
-        error(__K2L_NoSuchElementException.new("unknown plugin '" .. name .. "'; known: " .. self.factories:getKeys():joinToString()))
+        error(__K2L_NoSuchElementException.new("unknown plugin '" .. name .. "'; known: " .. factories:getKeys():joinToString()))
     end
     local f = ____value_1
     return f(settings)
 end
 
 function Registry:getNames()
-    return self.factories:getKeys()
+    return factories:getKeys()
 end
 
 __K2L_LazyObject(Registry, "____init")
@@ -372,10 +373,6 @@ function Host.Run:execute()
 end
 
 Host.Report = __K2L_Class("host.Host$Report")
-
-function Host.Report:____init(lines)
-    self.lines = lines
-end
 
 function Host.Report.new(lines)
     return setmetatable({lines = lines}, Host.Report)

@@ -10,11 +10,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 local ____Facts = require("engine.Facts")
 local Condition = __K2L_Class("rules.dsl.Condition")
 
-function Condition:____init(text, test)
-    self.text = text
-    self.test = test
-end
-
 function Condition.new(text, test)
     return setmetatable({text = text, test = test}, Condition)
 end
@@ -36,10 +31,6 @@ function Condition:toString()
 end
 
 local FactRef = __K2L_Class("rules.dsl.FactRef")
-
-function FactRef:____init(name)
-    self.name = name
-end
 
 function FactRef.new(name)
     return setmetatable({name = name}, FactRef)
@@ -114,11 +105,6 @@ end
 
 local ActionScope = __K2L_Class("rules.dsl.ActionScope")
 
-function ActionScope:____init(facts, fired)
-    self.facts = facts
-    self.fired = fired
-end
-
 function ActionScope.new(facts, fired)
     return setmetatable({facts = facts, fired = fired}, ActionScope)
 end
@@ -153,14 +139,6 @@ function ActionScope:drop(name)
 end
 
 local Rule = __K2L_Class("rules.dsl.Rule")
-
-function Rule:____init(name, priority, condition, action, once)
-    self.name = name
-    self.priority = priority
-    self.condition = condition
-    self.action = action
-    self.once = once
-end
 
 function Rule.new(name, priority, condition, action, once)
     return setmetatable({name = name, priority = priority, condition = condition, action = action, once = once}, Rule)
@@ -317,8 +295,8 @@ return {RuleCycleException = RuleCycleException, Engine = Engine}
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_MapOf = ____lualib.__K2L_MapOf
@@ -332,10 +310,6 @@ local Value = __K2L_Class("rules.engine.Value")
 Value.____comparable = true
 Value.Num = __K2L_Class("rules.engine.Value$Num", Value)
 
-function Value.Num:____init(v)
-    self.v = v
-end
-
 function Value.Num.new(v)
     return setmetatable({v = v}, Value.Num)
 end
@@ -344,19 +318,8 @@ function Value.Num:toString()
     return self.v == math.floor(self.v) and not __K2L_Num.isInfinite(self.v) and tostring(__K2L_Truncate(self.v)) or tostring(self.v)
 end
 
-function Value.Num:hashCode()
-    return __K2L_Hash(self.v)
-end
-
-function Value.Num:equals(other)
-    return getmetatable(other) == Value.Num and self.v == other.v
-end
-
+__K2L_DataClass(Value.Num, {"v"})
 Value.Text = __K2L_Class("rules.engine.Value$Text", Value)
-
-function Value.Text:____init(s)
-    self.s = s
-end
 
 function Value.Text.new(s)
     return setmetatable({s = s}, Value.Text)
@@ -366,19 +329,8 @@ function Value.Text:toString()
     return "\"" .. self.s .. "\""
 end
 
-function Value.Text:hashCode()
-    return __K2L_Hash(self.s)
-end
-
-function Value.Text:equals(other)
-    return getmetatable(other) == Value.Text and self.s == other.s
-end
-
+__K2L_DataClass(Value.Text, {"s"})
 Value.Flag = __K2L_Class("rules.engine.Value$Flag", Value)
-
-function Value.Flag:____init(b)
-    self.b = b
-end
 
 function Value.Flag.new(b)
     return setmetatable({b = b}, Value.Flag)
@@ -388,14 +340,7 @@ function Value.Flag:toString()
     return tostring(self.b)
 end
 
-function Value.Flag:hashCode()
-    return self.b and 1231 or 1237
-end
-
-function Value.Flag:equals(other)
-    return getmetatable(other) == Value.Flag and self.b == other.b
-end
-
+__K2L_DataClass(Value.Flag, {"b"})
 Value.Missing = __K2L_Class("rules.engine.Value$Missing", Value)
 
 function Value.Missing:toString()

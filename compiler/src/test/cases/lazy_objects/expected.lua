@@ -32,14 +32,14 @@ end
 __K2L_LazyObject(Config, "____init")
 local Loud = __K2L_Class("Loud")
 
-function Loud:____init()
-    self.value = self:compute("Loud")
-    self.other = self.value .. "!"
-end
-
-function Loud:compute(s)
+local function compute(s)
     print("computing " .. s)
     return s:upper()
+end
+
+function Loud:____init()
+    self.value = compute("Loud")
+    self.other = self.value .. "!"
 end
 
 __K2L_LazyObject(Loud, "____init")

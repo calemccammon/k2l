@@ -38,16 +38,14 @@ end
 
 local Config = __K2L_Class("Config")
 
-function Config:____init(name, retries, verbose)
+function Config.new(name, retries, verbose)
     if retries == nil then
         retries = 3
     end
     if verbose == nil then
         verbose = false
     end
-    self.name = name
-    self.retries = retries
-    self.verbose = verbose
+    return setmetatable({name = name, retries = retries, verbose = verbose}, Config)
 end
 
 function Config:toString()

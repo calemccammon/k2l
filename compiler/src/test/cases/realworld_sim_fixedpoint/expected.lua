@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Num = ____lualib.__K2L_Num
@@ -12,14 +13,9 @@ local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 local __K2L_StringStartsWith = ____lualib.__K2L_StringStartsWith
 local __K2L_StringToInt = ____lualib.__K2L_StringToInt
 local __K2L_Text = ____lualib.__K2L_Text
-local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local Fx = __K2L_Class("Fx")
 Fx.____comparable = true
-
-function Fx:____init(raw)
-    self.raw = raw
-end
 
 function Fx.new(raw)
     return setmetatable({raw = raw}, Fx)
@@ -80,14 +76,7 @@ function Fx:toString()
     return frac >= 10000 and sign .. whole + 1 .. ".0000" or sign .. whole .. "." .. __K2L_StringPadStart(tostring(frac), 4, "0")
 end
 
-function Fx:hashCode()
-    return self.raw
-end
-
-function Fx:equals(other)
-    return getmetatable(other) == Fx and self.raw == other.raw
-end
-
+__K2L_DataClass(Fx, {"raw"})
 Fx.____companion = true
 
 function Fx:of(i)
@@ -95,13 +84,13 @@ function Fx:of(i)
 end
 
 function Fx:of__1(d)
-    return Fx.new(__K2L_Truncate(__K2L_Num.round(d * 65536.0)))
+    return Fx.new(__K2L_Num.round(d * 65536.0))
 end
 
 function Fx:____initCompanion()
     self.FRAC = 16
-    self.ONE = ((1 << 16) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-    self.HALF = 65536 // 2
+    self.ONE = 65536
+    self.HALF = 32768
     self.ONE_D = 65536.0
 end
 

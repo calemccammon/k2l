@@ -3,6 +3,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClosedRange = ____lualib.__K2L_ClosedRange
 local __K2L_ClosedRangeMixin = ____lualib.__K2L_ClosedRangeMixin
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
@@ -16,10 +17,6 @@ local Week
 local Day = __K2L_Class("Day")
 Day.____comparable = true
 
-function Day:____init(n)
-    self.n = n
-end
-
 function Day.new(n)
     return setmetatable({n = n}, Day)
 end
@@ -32,18 +29,7 @@ function Day:rangeTo(other)
     return Week.new(self, other)
 end
 
-function Day:toString()
-    return "Day(n=" .. self.n .. ")"
-end
-
-function Day:hashCode()
-    return self.n
-end
-
-function Day:equals(other)
-    return getmetatable(other) == Day and self.n == other.n
-end
-
+__K2L_DataClass(Day, {"n"})
 local Span = __K2L_Class("Span", nil, __K2L_ClosedRangeMixin)
 
 function Span:____init(start, endInclusive)

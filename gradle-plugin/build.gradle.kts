@@ -31,12 +31,12 @@ tasks.processResources {
 
 // ---- Functional tests: real Gradle builds through TestKit ----
 
-val functionalTest by sourceSets.creating
+val functionalTest = sourceSets.create("functionalTest")
 
 gradlePlugin.testSourceSets(functionalTest)
 
 // The compiler's runtime-libs zip, injected into the sample projects so the tests don't depend on a published compiler.
-val compilerLibs by configurations.creating {
+val compilerLibs = configurations.create("compilerLibs") {
     isCanBeConsumed = false
     attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named("k2l-compiler-runtime"))
 }

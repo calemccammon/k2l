@@ -99,10 +99,6 @@ end
 
 local Row = __K2L_Class("Row")
 
-function Row:____init(values)
-    self.values = values
-end
-
 function Row.new(values)
     return setmetatable({values = values}, Row)
 end

@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -36,23 +37,8 @@ function UserId:describe()
     return "user#" .. self.raw
 end
 
-function UserId:toString()
-    return "UserId(raw=" .. self.raw .. ")"
-end
-
-function UserId:hashCode()
-    return self.raw
-end
-
-function UserId:equals(other)
-    return getmetatable(other) == UserId and self.raw == other.raw
-end
-
+__K2L_DataClass(UserId, {"raw"})
 local Email = __K2L_Class("Email")
-
-function Email:____init(address)
-    self.address = address
-end
 
 function Email.new(address)
     return setmetatable({address = address}, Email)
@@ -62,41 +48,14 @@ function Email:getDomain()
     return __K2L_Text.substringAfter(self.address, "@")
 end
 
-function Email:toString()
-    return "Email(address=" .. self.address .. ")"
-end
-
-function Email:hashCode()
-    return __K2L_Hash(self.address)
-end
-
-function Email:equals(other)
-    return getmetatable(other) == Email and self.address == other.address
-end
-
+__K2L_DataClass(Email, {"address"})
 local Account = __K2L_Class("Account")
-
-function Account:____init(id, email)
-    self.id = id
-    self.email = email
-end
 
 function Account.new(id, email)
     return setmetatable({id = id, email = email}, Account)
 end
 
-function Account:toString()
-    return "Account(id=" .. __K2L_Str(self.id) .. ", email=" .. __K2L_Str(self.email) .. ")"
-end
-
-function Account:hashCode()
-    return (31 * __K2L_Hash(self.id) + __K2L_Hash(self.email) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Account:equals(other)
-    return getmetatable(other) == Account and self.id:equals(other.id) and self.email:equals(other.email)
-end
-
+__K2L_DataClass(Account, {"id", "email"})
 local Session = __K2L_Class("Session")
 
 function Session:login(account)

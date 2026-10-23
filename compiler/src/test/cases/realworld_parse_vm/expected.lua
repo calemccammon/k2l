@@ -2,9 +2,9 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_LazyObject = ____lualib.__K2L_LazyObject
 local __K2L_List = ____lualib.__K2L_List
@@ -33,180 +33,60 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local Insn = __K2L_Class("Insn")
 Insn.Push = __K2L_Class("Insn$Push", Insn)
 
-function Insn.Push:____init(v)
-    self.v = v
-end
-
 function Insn.Push.new(v)
     return setmetatable({v = v}, Insn.Push)
 end
 
-function Insn.Push:toString()
-    return "Push(v=" .. self.v .. ")"
-end
-
-function Insn.Push:hashCode()
-    return self.v
-end
-
-function Insn.Push:equals(other)
-    return getmetatable(other) == Insn.Push and self.v == other.v
-end
-
+__K2L_DataClass(Insn.Push, {"v"})
 Insn.Load = __K2L_Class("Insn$Load", Insn)
-
-function Insn.Load:____init(slot)
-    self.slot = slot
-end
 
 function Insn.Load.new(slot)
     return setmetatable({slot = slot}, Insn.Load)
 end
 
-function Insn.Load:toString()
-    return "Load(slot=" .. self.slot .. ")"
-end
-
-function Insn.Load:hashCode()
-    return self.slot
-end
-
-function Insn.Load:equals(other)
-    return getmetatable(other) == Insn.Load and self.slot == other.slot
-end
-
+__K2L_DataClass(Insn.Load, {"slot"})
 Insn.Store = __K2L_Class("Insn$Store", Insn)
-
-function Insn.Store:____init(slot)
-    self.slot = slot
-end
 
 function Insn.Store.new(slot)
     return setmetatable({slot = slot}, Insn.Store)
 end
 
-function Insn.Store:toString()
-    return "Store(slot=" .. self.slot .. ")"
-end
-
-function Insn.Store:hashCode()
-    return self.slot
-end
-
-function Insn.Store:equals(other)
-    return getmetatable(other) == Insn.Store and self.slot == other.slot
-end
-
+__K2L_DataClass(Insn.Store, {"slot"})
 Insn.Jump = __K2L_Class("Insn$Jump", Insn)
-
-function Insn.Jump:____init(target)
-    self.target = target
-end
 
 function Insn.Jump.new(target)
     return setmetatable({target = target}, Insn.Jump)
 end
 
-function Insn.Jump:toString()
-    return "Jump(target=" .. self.target .. ")"
-end
-
-function Insn.Jump:hashCode()
-    return self.target
-end
-
-function Insn.Jump:equals(other)
-    return getmetatable(other) == Insn.Jump and self.target == other.target
-end
-
+__K2L_DataClass(Insn.Jump, {"target"})
 Insn.JumpIfZero = __K2L_Class("Insn$JumpIfZero", Insn)
-
-function Insn.JumpIfZero:____init(target)
-    self.target = target
-end
 
 function Insn.JumpIfZero.new(target)
     return setmetatable({target = target}, Insn.JumpIfZero)
 end
 
-function Insn.JumpIfZero:toString()
-    return "JumpIfZero(target=" .. self.target .. ")"
-end
-
-function Insn.JumpIfZero:hashCode()
-    return self.target
-end
-
-function Insn.JumpIfZero:equals(other)
-    return getmetatable(other) == Insn.JumpIfZero and self.target == other.target
-end
-
+__K2L_DataClass(Insn.JumpIfZero, {"target"})
 Insn.Call = __K2L_Class("Insn$Call", Insn)
-
-function Insn.Call:____init(target)
-    self.target = target
-end
 
 function Insn.Call.new(target)
     return setmetatable({target = target}, Insn.Call)
 end
 
-function Insn.Call:toString()
-    return "Call(target=" .. self.target .. ")"
-end
-
-function Insn.Call:hashCode()
-    return self.target
-end
-
-function Insn.Call:equals(other)
-    return getmetatable(other) == Insn.Call and self.target == other.target
-end
-
+__K2L_DataClass(Insn.Call, {"target"})
 Insn.Arith = __K2L_Class("Insn$Arith", Insn)
-
-function Insn.Arith:____init(op)
-    self.op = op
-end
 
 function Insn.Arith.new(op)
     return setmetatable({op = op}, Insn.Arith)
 end
 
-function Insn.Arith:toString()
-    return "Arith(op=" .. self.op .. ")"
-end
-
-function Insn.Arith:hashCode()
-    return __K2L_Hash(self.op)
-end
-
-function Insn.Arith:equals(other)
-    return getmetatable(other) == Insn.Arith and self.op == other.op
-end
-
+__K2L_DataClass(Insn.Arith, {"op"})
 Insn.Cmp = __K2L_Class("Insn$Cmp", Insn)
-
-function Insn.Cmp:____init(op)
-    self.op = op
-end
 
 function Insn.Cmp.new(op)
     return setmetatable({op = op}, Insn.Cmp)
 end
 
-function Insn.Cmp:toString()
-    return "Cmp(op=" .. self.op .. ")"
-end
-
-function Insn.Cmp:hashCode()
-    return __K2L_Hash(self.op)
-end
-
-function Insn.Cmp:equals(other)
-    return getmetatable(other) == Insn.Cmp and self.op == other.op
-end
-
+__K2L_DataClass(Insn.Cmp, {"op"})
 Insn.Ret = __K2L_Class("Insn$Ret", Insn)
 
 function Insn.Ret:toString()
@@ -292,14 +172,9 @@ function VmFault:____init(pc, msg)
 end
 
 local Assembler = __K2L_Class("Assembler")
+local labelDef, arithOps, cmpOps
 
-function Assembler:____init()
-    self.labelDef = __K2L_Regex.new("^([A-Za-z_][\\w.]*):$", "^([A-Za-z_][%w_%.]*):$")
-    self.arithOps = __K2L_MapOf(__K2L_Pair.new("add", "+"), __K2L_Pair.new("sub", "-"), __K2L_Pair.new("mul", "*"), __K2L_Pair.new("div", "/"), __K2L_Pair.new("mod", "%"), __K2L_Pair.new("and", "&"), __K2L_Pair.new("or", "|"), __K2L_Pair.new("xor", "^"), __K2L_Pair.new("shl", "<"))
-    self.cmpOps = __K2L_MapOf(__K2L_Pair.new("eq", "=="), __K2L_Pair.new("ne", "!="), __K2L_Pair.new("lt", "<"), __K2L_Pair.new("le", "<="), __K2L_Pair.new("gt", ">"), __K2L_Pair.new("ge", ">="))
-end
-
-function Assembler:cleaned(src)
+local function cleaned(src)
     local ____list = __K2L_StringLines(src)
     local ____out = {}
     local ____count = 0
@@ -324,14 +199,20 @@ function Assembler:cleaned(src)
     return __K2L_ListWrap(____out_1, ____count_1)
 end
 
+function Assembler:____init()
+    labelDef = __K2L_Regex.new("^([A-Za-z_][\\w.]*):$", "^([A-Za-z_][%w_%.]*):$")
+    arithOps = __K2L_MapOf(__K2L_Pair.new("add", "+"), __K2L_Pair.new("sub", "-"), __K2L_Pair.new("mul", "*"), __K2L_Pair.new("div", "/"), __K2L_Pair.new("mod", "%"), __K2L_Pair.new("and", "&"), __K2L_Pair.new("or", "|"), __K2L_Pair.new("xor", "^"), __K2L_Pair.new("shl", "<"))
+    cmpOps = __K2L_MapOf(__K2L_Pair.new("eq", "=="), __K2L_Pair.new("ne", "!="), __K2L_Pair.new("lt", "<"), __K2L_Pair.new("le", "<="), __K2L_Pair.new("gt", ">"), __K2L_Pair.new("ge", ">="))
+end
+
 function Assembler:assemble(src)
     local labels = __K2L_Map.new()
     local addr = 0
-    local ____list_2 = self:cleaned(src)
+    local ____list_2 = cleaned(src)
     for ____i_2 = 1, ____list_2.size do
         local ____item = ____list_2[____i_2]
         local n, l = ____item.first, ____item.second
-        local m = self.labelDef:matchEntire(l)
+        local m = labelDef:matchEntire(l)
         if m ~= nil then
             local name = m.groupValues:get(1)
             if labels:put(name, addr) ~= nil then
@@ -342,12 +223,12 @@ function Assembler:assemble(src)
         end
     end
     local out = __K2L_List.new()
-    local ____list_3 = self:cleaned(src)
+    local ____list_3 = cleaned(src)
     for ____i_3 = 1, ____list_3.size do
         local ____item_1 = ____list_3[____i_3]
         local n, l = ____item_1.first, ____item_1.second
         do
-            if self.labelDef:matches(l) then
+            if labelDef:matches(l) then
                 goto ____continue
             end
             local parts = __K2L_Regex.new("\\s+", "%s+"):split(l, 2)
@@ -399,10 +280,10 @@ function Assembler:assemble(src)
                 ____temp_1 = Insn.JumpIfZero.new(label())
             elseif op == "call" then
                 ____temp_1 = Insn.Call.new(label())
-            elseif self.arithOps:containsKey(op) then
-                ____temp_1 = Insn.Arith.new(self.arithOps:getValue(op))
-            elseif self.cmpOps:containsKey(op) then
-                ____temp_1 = Insn.Cmp.new(self.cmpOps:getValue(op))
+            elseif arithOps:containsKey(op) then
+                ____temp_1 = Insn.Arith.new(arithOps:getValue(op))
+            elseif cmpOps:containsKey(op) then
+                ____temp_1 = Insn.Cmp.new(cmpOps:getValue(op))
             elseif op == "ret" then
                 ____temp_1 = Insn.Ret
             elseif op == "dup" then
@@ -489,21 +370,7 @@ end
 
 local Vm = __K2L_Class("Vm")
 
-function Vm:____init(code, maxSteps)
-    if maxSteps == nil then
-        maxSteps = 100000
-    end
-    self.code = code
-    self.maxSteps = maxSteps
-    self.stack = __K2L_ListOfSize(64, 0, true)
-    self.sp = 0
-    self.regs = __K2L_ListOfSize(8, 0, true)
-    self.calls = __K2L_ArrayDeque.new()
-    self.output = __K2L_StringBuilder.new()
-    self.steps = 0
-end
-
-function Vm:push(pc, v)
+local function push(self, pc, v)
     if self.sp == self.stack.size then
         error(VmFault.new(pc, "stack overflow"))
     end
@@ -517,7 +384,7 @@ function Vm:push(pc, v)
     ____arg[____key + 1] = v
 end
 
-function Vm:pop(pc)
+local function pop(self, pc)
     if self.sp == 0 then
         error(VmFault.new(pc, "stack underflow"))
     else
@@ -527,7 +394,7 @@ function Vm:pop(pc)
     end
 end
 
-function Vm:slot(pc, s)
+local function slot__1(self, pc, s)
     if self.regs:getIndices():contains(s) then
         return s
     else
@@ -535,95 +402,7 @@ function Vm:slot(pc, s)
     end
 end
 
-function Vm:run()
-    local pc = 0
-    while true do
-        if not self.code:getIndices():contains(pc) then
-            error(VmFault.new(pc, "pc out of range"))
-        end
-        self.steps = self.steps + 1
-        if self.steps > self.maxSteps then
-            error(VmFault.new(pc, "step budget of " .. self.maxSteps .. " exhausted"))
-        end
-        local insn = self.code:get(pc)
-        local ____next = pc + 1
-        local ____mt_2 = getmetatable(insn)
-        if ____mt_2 == Insn.Push then
-            self:push(pc, insn.v)
-        elseif ____mt_2 == Insn.Load then
-            self:push(pc, self.regs:get(self:slot(pc, insn.slot)))
-        elseif ____mt_2 == Insn.Store then
-            local ____object = self.regs
-            local ____key_1 = self:slot(pc, insn.slot)
-            local ____value_6 = self:pop(pc)
-            if ____key_1 < 0 or ____key_1 >= ____object.size then
-                __K2L_IndexError(____key_1, ____object.size, "array")
-            end
-            ____object[____key_1 + 1] = ____value_6
-        elseif ____mt_2 == Insn.Jump then
-            ____next = insn.target
-        elseif ____mt_2 == Insn.JumpIfZero then
-            if self:pop(pc) == 0 then
-                ____next = insn.target
-            end
-        elseif ____mt_2 == Insn.Call then
-            if self.calls.size >= 32 then
-                error(VmFault.new(pc, "call depth exceeded"))
-            end
-            self.calls:addLast(____next)
-            ____next = insn.target
-        elseif __K2L_Equals(insn, Insn.Ret) then
-            local ____value_5 = self.calls:removeLastOrNull()
-            if ____value_5 == nil then
-                error(VmFault.new(pc, "return with empty call stack"))
-            end
-            ____next = ____value_5
-        elseif ____mt_2 == Insn.Arith then
-            local b = self:pop(pc)
-            local a = self:pop(pc)
-            self:push(pc, self:arith(pc, insn.op, a, b))
-        elseif ____mt_2 == Insn.Cmp then
-            local b = self:pop(pc)
-            local a = self:pop(pc)
-            local r
-            local ____subject = insn.op
-            if ____subject == "==" then
-                r = a == b
-            elseif ____subject == "!=" then
-                r = a ~= b
-            elseif ____subject == "<" then
-                r = a < b
-            elseif ____subject == "<=" then
-                r = a <= b
-            elseif ____subject == ">" then
-                r = a > b
-            else
-                r = a >= b
-            end
-            self:push(pc, r and 1 or 0)
-        elseif __K2L_Equals(insn, Insn.Dup) then
-            local ____value_4 = self:pop(pc)
-            self:push(pc, ____value_4)
-            self:push(pc, ____value_4)
-        elseif __K2L_Equals(insn, Insn.Swap) then
-            local b = self:pop(pc)
-            local a = self:pop(pc)
-            self:push(pc, b)
-            self:push(pc, a)
-        elseif __K2L_Equals(insn, Insn.Pop) then
-            self:pop(pc)
-        elseif __K2L_Equals(insn, Insn.Print) then
-            self.output:append(tostring(self:pop(pc))):append(" ")
-        elseif __K2L_Equals(insn, Insn.Emit) then
-            self.output:append(string.char(self:pop(pc)))
-        elseif __K2L_Equals(insn, Insn.Halt) then
-            return self.sp > 0 and (self.stack[self.sp] or __K2L_IndexError(self.sp - 1, self.stack.size, "array")) or 0
-        end
-        pc = ____next
-    end
-end
-
-function Vm:arith(pc, op, a, b)
+local function arith(self, pc, op, a, b)
     if op == "+" then
         return a + b
     elseif op == "-" then
@@ -644,6 +423,108 @@ function Vm:arith(pc, op, a, b)
         return a ~ b
     else
         return __K2L_Shl(a, b)
+    end
+end
+
+function Vm:____init(code, maxSteps)
+    if maxSteps == nil then
+        maxSteps = 100000
+    end
+    self.code = code
+    self.maxSteps = maxSteps
+    self.stack = __K2L_ListOfSize(64, 0, true)
+    self.sp = 0
+    self.regs = __K2L_ListOfSize(8, 0, true)
+    self.calls = __K2L_ArrayDeque.new()
+    self.output = __K2L_StringBuilder.new()
+    self.steps = 0
+end
+
+function Vm:run()
+    local pc = 0
+    while true do
+        if not self.code:getIndices():contains(pc) then
+            error(VmFault.new(pc, "pc out of range"))
+        end
+        self.steps = self.steps + 1
+        if self.steps > self.maxSteps then
+            error(VmFault.new(pc, "step budget of " .. self.maxSteps .. " exhausted"))
+        end
+        local insn = self.code:get(pc)
+        local ____next = pc + 1
+        local ____mt_2 = getmetatable(insn)
+        if ____mt_2 == Insn.Push then
+            push(self, pc, insn.v)
+        elseif ____mt_2 == Insn.Load then
+            push(self, pc, self.regs:get(slot__1(self, pc, insn.slot)))
+        elseif ____mt_2 == Insn.Store then
+            local ____object = self.regs
+            local ____key_1 = slot__1(self, pc, insn.slot)
+            local ____value_6 = pop(self, pc)
+            if ____key_1 < 0 or ____key_1 >= ____object.size then
+                __K2L_IndexError(____key_1, ____object.size, "array")
+            end
+            ____object[____key_1 + 1] = ____value_6
+        elseif ____mt_2 == Insn.Jump then
+            ____next = insn.target
+        elseif ____mt_2 == Insn.JumpIfZero then
+            if pop(self, pc) == 0 then
+                ____next = insn.target
+            end
+        elseif ____mt_2 == Insn.Call then
+            if self.calls.size >= 32 then
+                error(VmFault.new(pc, "call depth exceeded"))
+            end
+            self.calls:addLast(____next)
+            ____next = insn.target
+        elseif __K2L_Equals(insn, Insn.Ret) then
+            local ____value_5 = self.calls:removeLastOrNull()
+            if ____value_5 == nil then
+                error(VmFault.new(pc, "return with empty call stack"))
+            end
+            ____next = ____value_5
+        elseif ____mt_2 == Insn.Arith then
+            local b = pop(self, pc)
+            local a = pop(self, pc)
+            push(self, pc, arith(self, pc, insn.op, a, b))
+        elseif ____mt_2 == Insn.Cmp then
+            local b = pop(self, pc)
+            local a = pop(self, pc)
+            local r
+            local ____subject = insn.op
+            if ____subject == "==" then
+                r = a == b
+            elseif ____subject == "!=" then
+                r = a ~= b
+            elseif ____subject == "<" then
+                r = a < b
+            elseif ____subject == "<=" then
+                r = a <= b
+            elseif ____subject == ">" then
+                r = a > b
+            else
+                r = a >= b
+            end
+            push(self, pc, r and 1 or 0)
+        elseif __K2L_Equals(insn, Insn.Dup) then
+            local ____value_4 = pop(self, pc)
+            push(self, pc, ____value_4)
+            push(self, pc, ____value_4)
+        elseif __K2L_Equals(insn, Insn.Swap) then
+            local b = pop(self, pc)
+            local a = pop(self, pc)
+            push(self, pc, b)
+            push(self, pc, a)
+        elseif __K2L_Equals(insn, Insn.Pop) then
+            pop(self, pc)
+        elseif __K2L_Equals(insn, Insn.Print) then
+            self.output:append(tostring(pop(self, pc))):append(" ")
+        elseif __K2L_Equals(insn, Insn.Emit) then
+            self.output:append(string.char(pop(self, pc)))
+        elseif __K2L_Equals(insn, Insn.Halt) then
+            return self.sp > 0 and (self.stack[self.sp] or __K2L_IndexError(self.sp - 1, self.stack.size, "array")) or 0
+        end
+        pc = ____next
     end
 end
 

@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -31,26 +32,11 @@ end
 
 Cmd.Say = __K2L_Class("app.cmds.Cmd$Say", nil, Cmd)
 
-function Cmd.Say:____init(text)
-    self.text = text
-end
-
 function Cmd.Say.new(text)
     return setmetatable({text = text}, Cmd.Say)
 end
 
-function Cmd.Say:toString()
-    return "Say(text=" .. self.text .. ")"
-end
-
-function Cmd.Say:hashCode()
-    return __K2L_Hash(self.text)
-end
-
-function Cmd.Say:equals(other)
-    return getmetatable(other) == Cmd.Say and self.text == other.text
-end
-
+__K2L_DataClass(Cmd.Say, {"text"})
 local Settings = __K2L_Class("app.cmds.Settings")
 
 function Settings:____init()

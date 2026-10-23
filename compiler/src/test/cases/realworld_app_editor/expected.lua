@@ -2,7 +2,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IterableBase = ____lualib.__K2L_IterableBase
 local __K2L_IteratorOf = ____lualib.__K2L_IteratorOf
@@ -19,11 +19,6 @@ function Command:mergeWith(____next)
 end
 
 local Insert = __K2L_Class("editor.history.Insert", nil, Command)
-
-function Insert:____init(at, text)
-    self.at = at
-    self.text = text
-end
 
 function Insert.new(at, text)
     return setmetatable({at = at, text = text}, Insert)
@@ -50,18 +45,7 @@ function Insert:mergeWith(____next)
     end
 end
 
-function Insert:toString()
-    return "Insert(at=" .. __K2L_Str(self.at) .. ", text=" .. self.text .. ")"
-end
-
-function Insert:hashCode()
-    return (31 * self.at:hashCode() + __K2L_Hash(self.text) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Insert:equals(other)
-    return getmetatable(other) == Insert and self.at:equals(other.at) and self.text == other.text
-end
-
+__K2L_DataClass(Insert, {"at", "text"})
 local Delete = __K2L_Class("editor.history.Delete", nil, Command)
 
 function Delete:____init(selection)
@@ -90,11 +74,6 @@ function Delete:revert(doc)
 end
 
 local Batch = __K2L_Class("editor.history.Batch", nil, Command)
-
-function Batch:____init(label, parts)
-    self.label = label
-    self.parts = parts
-end
 
 function Batch.new(label, parts)
     return setmetatable({label = label, parts = parts}, Batch)
@@ -171,6 +150,14 @@ end
 
 local History = __K2L_Class("editor.history.History")
 
+local function notify(self, event)
+    local ____list = self.listeners
+    for ____i = 1, ____list.size do
+        local it = ____list[____i]
+        it(event)
+    end
+end
+
 function History:____init(doc, limit)
     if limit == nil then
         limit = 50
@@ -184,14 +171,6 @@ end
 
 function History:onChange(listener)
     self.listeners:add(listener)
-end
-
-function History:notify(event)
-    local ____list = self.listeners
-    for ____i = 1, ____list.size do
-        local it = ____list[____i]
-        it(event)
-    end
 end
 
 function History:execute(command, merge)
@@ -211,11 +190,11 @@ function History:execute(command, merge)
     else
         local ____receiver_1 = self.undo:push(command)
         if ____receiver_1 ~= nil then
-            self:notify("forgot " .. ____receiver_1:getLabel())
+            notify(self, "forgot " .. ____receiver_1:getLabel())
         end
     end
     self.redo:clear()
-    self:notify("did " .. command:getLabel())
+    notify(self, "did " .. command:getLabel())
 end
 
 function History:undo__1()
@@ -226,7 +205,7 @@ function History:undo__1()
     local c = ____value_1
     self.cursor = c:revert(self.doc)
     self.redo:push(c)
-    self:notify("undid " .. c:getLabel())
+    notify(self, "undid " .. c:getLabel())
     return true
 end
 
@@ -238,7 +217,7 @@ function History:redo__1()
     local c = ____value_2
     self.cursor = c:apply(self.doc)
     self.undo:push(c)
-    self:notify("redid " .. c:getLabel())
+    notify(self, "redid " .. c:getLabel())
     return true
 end
 
@@ -394,6 +373,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CharSequenceText = ____lualib.__K2L_CharSequenceText
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Num = ____lualib.__K2L_Num
 local __K2L_Pair = ____lualib.__K2L_Pair
 local __K2L_Str = ____lualib.__K2L_Str
@@ -403,11 +383,6 @@ local __K2L_StringSplit = ____lualib.__K2L_StringSplit
 
 local Pos = __K2L_Class("editor.text.Pos")
 Pos.____comparable = true
-
-function Pos:____init(line, col)
-    self.line = line
-    self.col = col
-end
 
 function Pos.new(line, col)
     return setmetatable({line = line, col = col}, Pos)
@@ -423,20 +398,8 @@ function Pos:toString()
     return self.line .. ":" .. self.col
 end
 
-function Pos:hashCode()
-    return (31 * self.line + self.col + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Pos:equals(other)
-    return getmetatable(other) == Pos and self.line == other.line and self.col == other.col
-end
-
+__K2L_DataClass(Pos, {"line", "col"})
 local Selection = __K2L_Class("editor.text.Selection")
-
-function Selection:____init(anchor, head)
-    self.anchor = anchor
-    self.head = head
-end
 
 function Selection.new(anchor, head)
     return setmetatable({anchor = anchor, head = head}, Selection)
@@ -454,18 +417,7 @@ function Selection:getIsEmpty()
     return self.anchor:equals(self.head)
 end
 
-function Selection:toString()
-    return "Selection(anchor=" .. __K2L_Str(self.anchor) .. ", head=" .. __K2L_Str(self.head) .. ")"
-end
-
-function Selection:hashCode()
-    return (31 * self.anchor:hashCode() + self.head:hashCode() + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Selection:equals(other)
-    return getmetatable(other) == Selection and self.anchor:equals(other.anchor) and self.head:equals(other.head)
-end
-
+__K2L_DataClass(Selection, {"anchor", "head"})
 local Document = __K2L_Class("editor.text.Document")
 
 local ____lambda_3 = function(it) return __K2L_StringBuilder.new(it) end

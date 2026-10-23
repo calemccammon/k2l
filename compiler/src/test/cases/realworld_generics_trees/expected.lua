@@ -2,8 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -31,27 +31,11 @@ end
 
 Tree.Node = __K2L_Class("generics.trees.Tree$Node", nil, Tree)
 
-function Tree.Node:____init(left, value, right)
-    self.left = left
-    self.value = value
-    self.right = right
-end
-
 function Tree.Node.new(left, value, right)
     return setmetatable({left = left, value = value, right = right}, Tree.Node)
 end
 
-function Tree.Node:toString()
-    return "Node(left=" .. __K2L_Str(self.left) .. ", value=" .. __K2L_Str(self.value) .. ", right=" .. __K2L_Str(self.right) .. ")"
-end
-
-function Tree.Node:hashCode()
-    return (31 * (31 * __K2L_Hash(self.left) + __K2L_Hash(self.value)) + __K2L_Hash(self.right) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Tree.Node:equals(other)
-    return getmetatable(other) == Tree.Node and __K2L_Equals(self.left, other.left) and __K2L_Equals(self.value, other.value) and __K2L_Equals(self.right, other.right)
-end
+__K2L_DataClass(Tree.Node, {"left", "value", "right"})
 
 local function insert(self, x)
     if __K2L_Equals(self, Tree.Empty) then
@@ -129,12 +113,11 @@ end
 
 local Rose = __K2L_Class("generics.trees.Rose")
 
-function Rose:____init(value, children)
+function Rose.new(value, children)
     if children == nil then
         children = __K2L_ListOf()
     end
-    self.value = value
-    self.children = children
+    return setmetatable({value = value, children = children}, Rose)
 end
 
 function Rose:map(f)
@@ -209,17 +192,7 @@ function Rose:paths()
     end
 end
 
-function Rose:toString()
-    return "Rose(value=" .. __K2L_Str(self.value) .. ", children=" .. __K2L_Str(self.children) .. ")"
-end
-
-function Rose:hashCode()
-    return (31 * __K2L_Hash(self.value) + __K2L_Hash(self.children) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Rose:equals(other)
-    return getmetatable(other) == Rose and __K2L_Equals(self.value, other.value) and __K2L_Equals(self.children, other.children)
-end
+__K2L_DataClass(Rose, {"value", "children"})
 
 local function rose(value, ...)
     local children = __K2L_ArrayOf(...)
@@ -229,94 +202,32 @@ end
 local Expr = __K2L_Class("generics.trees.Expr")
 Expr.Lit = __K2L_Class("generics.trees.Expr$Lit", Expr)
 
-function Expr.Lit:____init(value)
-    self.value = value
-end
-
 function Expr.Lit.new(value)
     return setmetatable({value = value}, Expr.Lit)
 end
 
-function Expr.Lit:toString()
-    return "Lit(value=" .. __K2L_Str(self.value) .. ")"
-end
-
-function Expr.Lit:hashCode()
-    return __K2L_Hash(self.value)
-end
-
-function Expr.Lit:equals(other)
-    return getmetatable(other) == Expr.Lit and __K2L_Equals(self.value, other.value)
-end
-
+__K2L_DataClass(Expr.Lit, {"value"})
 Expr.Var = __K2L_Class("generics.trees.Expr$Var", Expr)
-
-function Expr.Var:____init(name)
-    self.name = name
-end
 
 function Expr.Var.new(name)
     return setmetatable({name = name}, Expr.Var)
 end
 
-function Expr.Var:toString()
-    return "Var(name=" .. self.name .. ")"
-end
-
-function Expr.Var:hashCode()
-    return __K2L_Hash(self.name)
-end
-
-function Expr.Var:equals(other)
-    return getmetatable(other) == Expr.Var and self.name == other.name
-end
-
+__K2L_DataClass(Expr.Var, {"name"})
 Expr.Bin = __K2L_Class("generics.trees.Expr$Bin", Expr)
-
-function Expr.Bin:____init(op, left, right)
-    self.op = op
-    self.left = left
-    self.right = right
-end
 
 function Expr.Bin.new(op, left, right)
     return setmetatable({op = op, left = left, right = right}, Expr.Bin)
 end
 
-function Expr.Bin:toString()
-    return "Bin(op=" .. self.op .. ", left=" .. __K2L_Str(self.left) .. ", right=" .. __K2L_Str(self.right) .. ")"
-end
-
-function Expr.Bin:hashCode()
-    return (31 * (31 * __K2L_Hash(self.op) + __K2L_Hash(self.left)) + __K2L_Hash(self.right) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Expr.Bin:equals(other)
-    return getmetatable(other) == Expr.Bin and self.op == other.op and __K2L_Equals(self.left, other.left) and __K2L_Equals(self.right, other.right)
-end
-
+__K2L_DataClass(Expr.Bin, {"op", "left", "right"})
 Expr.Neg = __K2L_Class("generics.trees.Expr$Neg", Expr)
-
-function Expr.Neg:____init(inner)
-    self.inner = inner
-end
 
 function Expr.Neg.new(inner)
     return setmetatable({inner = inner}, Expr.Neg)
 end
 
-function Expr.Neg:toString()
-    return "Neg(inner=" .. __K2L_Str(self.inner) .. ")"
-end
-
-function Expr.Neg:hashCode()
-    return __K2L_Hash(self.inner)
-end
-
-function Expr.Neg:equals(other)
-    return getmetatable(other) == Expr.Neg and __K2L_Equals(self.inner, other.inner)
-end
-
+__K2L_DataClass(Expr.Neg, {"inner"})
 local Domain = __K2L_Class("generics.trees.Domain")
 
 function Domain:show(a)

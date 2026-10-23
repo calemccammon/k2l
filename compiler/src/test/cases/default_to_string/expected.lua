@@ -1,5 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Exception = ____lualib.__K2L_Exception
 local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -13,19 +14,11 @@ local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 
 local P = __K2L_Class("app.P")
 
-function P:____init(x)
-    self.x = x
-end
-
 function P.new(x)
     return setmetatable({x = x}, P)
 end
 
 local Hashed = __K2L_Class("app.Hashed")
-
-function Hashed:____init(id)
-    self.id = id
-end
 
 function Hashed.new(id)
     return setmetatable({id = id}, Hashed)
@@ -48,26 +41,11 @@ end
 local Singleton = __K2L_Class("app.Singleton")
 local D = __K2L_Class("app.D")
 
-function D:____init(v)
-    self.v = v
-end
-
 function D.new(v)
     return setmetatable({v = v}, D)
 end
 
-function D:toString()
-    return "D(v=" .. self.v .. ")"
-end
-
-function D:hashCode()
-    return self.v
-end
-
-function D:equals(other)
-    return getmetatable(other) == D and self.v == other.v
-end
-
+__K2L_DataClass(D, {"v"})
 local E = __K2L_Class("app.E")
 
 function E:____init(name, ordinal)

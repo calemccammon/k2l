@@ -59,11 +59,6 @@ end
 
 local Box = __K2L_Class("app.Box")
 
-function Box:____init(value, name)
-    self.value = value
-    self.name = name
-end
-
 function Box.new(value, name)
     return setmetatable({value = value, name = name}, Box)
 end
@@ -211,10 +206,6 @@ local function setHead(____this, value)
 end
 
 local Counter = __K2L_Class("app.util.Counter")
-
-function Counter:____init(count)
-    self.count = count
-end
 
 function Counter.new(count)
     return setmetatable({count = count}, Counter)

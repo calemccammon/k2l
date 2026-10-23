@@ -19,18 +19,19 @@ local __K2L_Truncate = ____lualib.__K2L_Truncate
 
 local Boid = __K2L_Class("Boid")
 
-function Boid:____init(x, y, heading, speed)
-    self.x = x
-    self.y = y
-    self.heading = heading
-    self.speed = speed
-end
-
 function Boid.new(x, y, heading, speed)
     return setmetatable({x = x, y = y, heading = heading, speed = speed}, Boid)
 end
 
 local Flock = __K2L_Class("Flock")
+
+local function wrap(self, v)
+    return v - math.floor(v / self.size) * self.size
+end
+
+local function angleDiff(self, a, b)
+    return __K2L_Num.IEEErem(b - a, 2 * math.pi)
+end
 
 function Flock:____init(count, seed, size)
     self.size = size
@@ -41,14 +42,6 @@ function Flock:____init(count, seed, size)
         ____out[____i] = Boid.new(rng:nextDouble(self.size), rng:nextDouble(self.size), rng:nextDouble(-math.pi, math.pi), rng:nextDouble(0.5, 1.5))
     end
     self.boids = __K2L_ListWrap(____out, count)
-end
-
-function Flock:wrap(v)
-    return v - math.floor(v / self.size) * self.size
-end
-
-function Flock:angleDiff(a, b)
-    return __K2L_Num.IEEErem(b - a, 2 * math.pi)
 end
 
 function Flock:step()
@@ -77,7 +70,7 @@ function Flock:step()
                     n = n + 1
                     cx = cx + o.x
                     cy = cy + o.y
-                    align = align + self:angleDiff(b.heading, o.heading)
+                    align = align + angleDiff(self, b.heading, o.heading)
                     if d < 3.0 then
                         sx = sx - (o.x - b.x) / (d * d + 1.0E-9)
                         sy = sy - (o.y - b.y) / (d * d + 1.0E-9)
@@ -90,7 +83,7 @@ function Flock:step()
             end
             local toCenter = math.atan(cy / n - b.y, cx / n - b.x)
             local away = sx == 0.0 and sy == 0.0 and b.heading or math.atan(sy, sx)
-            local turn = 0.05 * self:angleDiff(b.heading, toCenter) + 0.1 * (align / n) + 0.15 * self:angleDiff(b.heading, away)
+            local turn = 0.05 * angleDiff(self, b.heading, toCenter) + 0.1 * (align / n) + 0.15 * angleDiff(self, b.heading, away)
             local ____value = __K2L_Num.coerceIn(turn, -0.3, 0.3)
             if i < 0 or i >= turns.size then
                 __K2L_IndexError(i, turns.size, "array")
@@ -103,8 +96,8 @@ function Flock:step()
     for i = 0, ____list_2.size - 1 do
         local b = ____list_2[i + 1]
         b.heading = __K2L_Num.IEEErem(b.heading + (turns[i + 1] or __K2L_IndexError(i, turns.size, "array")), 2 * math.pi)
-        b.x = self:wrap(b.x + math.cos(b.heading) * b.speed)
-        b.y = self:wrap(b.y + math.sin(b.heading) * b.speed)
+        b.x = wrap(self, b.x + math.cos(b.heading) * b.speed)
+        b.y = wrap(self, b.y + math.sin(b.heading) * b.speed)
     end
 end
 

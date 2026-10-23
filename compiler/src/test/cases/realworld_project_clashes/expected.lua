@@ -1,17 +1,12 @@
 -- ==== geometry/Point.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_Str = ____lualib.__K2L_Str
 
 local ____exports = {}
 local Point = __K2L_Class("draw.geometry.Point")
-
-function Point:____init(x, y)
-    self.x = x
-    self.y = y
-end
 
 function Point.new(x, y)
     return setmetatable({x = x, y = y}, Point)
@@ -25,14 +20,7 @@ function Point:toString()
     return "(" .. self.x .. ", " .. self.y .. ")"
 end
 
-function Point:hashCode()
-    return (31 * __K2L_Hash(self.x) + __K2L_Hash(self.y) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Point:equals(other)
-    return getmetatable(other) == Point and self.x == other.x and self.y == other.y
-end
-
+__K2L_DataClass(Point, {"x", "y"})
 ____exports.count = 0
 
 local function format(p)
@@ -81,10 +69,6 @@ local ____Point_1 = require("text.Point")
 local ____format = require("text.format")
 local ____Style_2ecommon = require("text.Style_common")
 local Point = __K2L_Class("draw.Point")
-
-function Point:____init(label)
-    self.label = label
-end
 
 function Point.new(label)
     return setmetatable({label = label}, Point)
@@ -155,11 +139,6 @@ local __K2L_Str = ____lualib.__K2L_Str
 local ____exports = {}
 local Point = __K2L_Class("draw.text.Point")
 Point.____comparable = true
-
-function Point:____init(line, column)
-    self.line = line
-    self.column = column
-end
 
 function Point.new(line, column)
     return setmetatable({line = line, column = column}, Point)

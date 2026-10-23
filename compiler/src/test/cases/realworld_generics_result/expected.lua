@@ -1,8 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -29,47 +28,18 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 local Either = __K2L_Class("generics.result.Either")
 Either.Left = __K2L_Class("generics.result.Either$Left", nil, Either)
 
-function Either.Left:____init(____error)
-    self.error = ____error
-end
-
 function Either.Left.new(____error)
     return setmetatable({error = ____error}, Either.Left)
 end
 
-function Either.Left:toString()
-    return "Left(error=" .. __K2L_Str(self.error) .. ")"
-end
-
-function Either.Left:hashCode()
-    return __K2L_Hash(self.error)
-end
-
-function Either.Left:equals(other)
-    return getmetatable(other) == Either.Left and __K2L_Equals(self.error, other.error)
-end
-
+__K2L_DataClass(Either.Left, {"error"})
 Either.Right = __K2L_Class("generics.result.Either$Right", nil, Either)
-
-function Either.Right:____init(value)
-    self.value = value
-end
 
 function Either.Right.new(value)
     return setmetatable({value = value}, Either.Right)
 end
 
-function Either.Right:toString()
-    return "Right(value=" .. __K2L_Str(self.value) .. ")"
-end
-
-function Either.Right:hashCode()
-    return __K2L_Hash(self.value)
-end
-
-function Either.Right:equals(other)
-    return getmetatable(other) == Either.Right and __K2L_Equals(self.value, other.value)
-end
+__K2L_DataClass(Either.Right, {"value"})
 
 function Either:right(a)
     return Either.Right.new(a)
@@ -156,47 +126,18 @@ end
 local Validated = __K2L_Class("generics.result.Validated")
 Validated.Valid = __K2L_Class("generics.result.Validated$Valid", Validated)
 
-function Validated.Valid:____init(value)
-    self.value = value
-end
-
 function Validated.Valid.new(value)
     return setmetatable({value = value}, Validated.Valid)
 end
 
-function Validated.Valid:toString()
-    return "Valid(value=" .. __K2L_Str(self.value) .. ")"
-end
-
-function Validated.Valid:hashCode()
-    return __K2L_Hash(self.value)
-end
-
-function Validated.Valid:equals(other)
-    return getmetatable(other) == Validated.Valid and __K2L_Equals(self.value, other.value)
-end
-
+__K2L_DataClass(Validated.Valid, {"value"})
 Validated.Invalid = __K2L_Class("generics.result.Validated$Invalid", Validated)
-
-function Validated.Invalid:____init(errors)
-    self.errors = errors
-end
 
 function Validated.Invalid.new(errors)
     return setmetatable({errors = errors}, Validated.Invalid)
 end
 
-function Validated.Invalid:toString()
-    return "Invalid(errors=" .. __K2L_Str(self.errors) .. ")"
-end
-
-function Validated.Invalid:hashCode()
-    return __K2L_Hash(self.errors)
-end
-
-function Validated.Invalid:equals(other)
-    return getmetatable(other) == Validated.Invalid and __K2L_Equals(self.errors, other.errors)
-end
+__K2L_DataClass(Validated.Invalid, {"errors"})
 
 function Validated:map(f)
     local ____mt_5 = getmetatable(self)
@@ -274,11 +215,6 @@ Field.EMAIL = Field.new("EMAIL", 2)
 Field.____values = {Field.NAME, Field.AGE, Field.EMAIL}
 local FieldError = __K2L_Class("generics.result.FieldError")
 
-function FieldError:____init(field, message)
-    self.field = field
-    self.message = message
-end
-
 function FieldError.new(field, message)
     return setmetatable({field = field, message = message}, FieldError)
 end
@@ -287,37 +223,14 @@ function FieldError:toString()
     return self.field.name:lower() .. ": " .. self.message
 end
 
-function FieldError:hashCode()
-    return (31 * __K2L_Hash(self.field) + __K2L_Hash(self.message) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function FieldError:equals(other)
-    return getmetatable(other) == FieldError and self.field == other.field and self.message == other.message
-end
-
+__K2L_DataClass(FieldError, {"field", "message"})
 local User = __K2L_Class("generics.result.User")
-
-function User:____init(name, age, email)
-    self.name = name
-    self.age = age
-    self.email = email
-end
 
 function User.new(name, age, email)
     return setmetatable({name = name, age = age, email = email}, User)
 end
 
-function User:toString()
-    return "User(name=" .. self.name .. ", age=" .. self.age .. ", email=" .. self.email .. ")"
-end
-
-function User:hashCode()
-    return (31 * (31 * __K2L_Hash(self.name) + self.age) + __K2L_Hash(self.email) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function User:equals(other)
-    return getmetatable(other) == User and self.name == other.name and self.age == other.age and self.email == other.email
-end
+__K2L_DataClass(User, {"name", "age", "email"})
 
 local ____lambda_4 = function(it) return it:upper() end
 local function validateName(raw)

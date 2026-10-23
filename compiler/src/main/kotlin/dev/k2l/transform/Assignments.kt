@@ -90,6 +90,10 @@ private fun FileTransformer.memberPropertyTarget(
     receiverExpr: KtExpression?,
 ): Target? = with(session) {
     if (property is KtProperty && property.receiverTypeReference != null) return memberExtensionPropertyTarget(property, ref, receiverExpr)
+    privateLocal(property)?.let { local ->
+        val name = LuaName(local)
+        return Target(lateinitRead(property, name)) { assign(name, it) }
+    }
     val receiver = if (receiverExpr != null) cache(expression(receiverExpr), "object") else implicitReceiverOf(ref) ?: return null
     return Target(propertyRead(receiver, property)) { propertyWrite(receiver, property, it) }
 }

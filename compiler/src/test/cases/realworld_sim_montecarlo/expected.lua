@@ -2,8 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_CharRange = ____lualib.__K2L_CharRange
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IndexError = ____lualib.__K2L_IndexError
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -37,28 +37,11 @@ end
 
 local Walk = __K2L_Class("Walk")
 
-function Walk:____init(x, y, maxDistance, returns)
-    self.x = x
-    self.y = y
-    self.maxDistance = maxDistance
-    self.returns = returns
-end
-
 function Walk.new(x, y, maxDistance, returns)
     return setmetatable({x = x, y = y, maxDistance = maxDistance, returns = returns}, Walk)
 end
 
-function Walk:toString()
-    return "Walk(x=" .. self.x .. ", y=" .. self.y .. ", maxDistance=" .. self.maxDistance .. ", returns=" .. self.returns .. ")"
-end
-
-function Walk:hashCode()
-    return (31 * (31 * (31 * self.x + self.y) + __K2L_Hash(self.maxDistance)) + self.returns + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Walk:equals(other)
-    return getmetatable(other) == Walk and self.x == other.x and self.y == other.y and self.maxDistance == other.maxDistance and self.returns == other.returns
-end
+__K2L_DataClass(Walk, {"x", "y", "maxDistance", "returns"})
 
 local function randomWalk(rng, steps)
     local x = 0

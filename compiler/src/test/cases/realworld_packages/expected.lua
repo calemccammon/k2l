@@ -4,8 +4,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClosedRange = ____lualib.__K2L_ClosedRange
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
@@ -38,21 +37,16 @@ local __K2L_Triple = ____lualib.__K2L_Triple
 
 local Version = __K2L_Class("Version")
 Version.____comparable = true
+local NUMBER, PRE
 
-function Version:____init(major, minor, patch, pre)
+function Version.new(major, minor, patch, pre)
     if minor == nil then
         minor = 0
     end
     if patch == nil then
         patch = 0
     end
-    if pre == nil then
-        pre = nil
-    end
-    self.major = major
-    self.minor = minor
-    self.patch = patch
-    self.pre = pre
+    return setmetatable({major = major, minor = minor, patch = patch, pre = pre}, Version)
 end
 
 local ____lambda_1 = function(it) return it.major end
@@ -112,15 +106,7 @@ Version.Part.MAJOR = Version.Part.new("MAJOR", 0)
 Version.Part.MINOR = Version.Part.new("MINOR", 1)
 Version.Part.PATCH = Version.Part.new("PATCH", 2)
 Version.Part.____values = {Version.Part.MAJOR, Version.Part.MINOR, Version.Part.PATCH}
-
-function Version:hashCode()
-    return (31 * (31 * (31 * self.major + self.minor) + self.patch) + __K2L_Hash(self.pre) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Version:equals(other)
-    return getmetatable(other) == Version and self.major == other.major and self.minor == other.minor and self.patch == other.patch and self.pre == other.pre
-end
-
+__K2L_DataClass(Version, {"major", "minor", "patch", "pre"})
 Version.____companion = true
 
 local ____lambda_4 = function() return nil end
@@ -134,14 +120,14 @@ function Version:parse(s)
         local ____items, ____n = numbers:____array()
         for ____i = 1, ____n do
             local it = ____items[____i]
-            if not self.NUMBER:matches(it) then
+            if not NUMBER:matches(it) then
                 ____result = false
                 break
             end
         end
         ____cond = not ____result
     end
-    if ____cond or __K2L_StringContains(text, "-") and not self.PRE:matches(pre) then
+    if ____cond or __K2L_StringContains(text, "-") and not PRE:matches(pre) then
         error(__K2L_IllegalArgumentException.new("invalid version '" .. s .. "'"))
     end
     local ____arg_1 = __K2L_StringToInt(numbers:get(0))
@@ -152,8 +138,8 @@ function Version:parse(s)
 end
 
 function Version:____initCompanion()
-    self.NUMBER = __K2L_Regex.new("\\d+", "%d+")
-    self.PRE = __K2L_Regex.new("[\\w.]+", "[%w_%.]+")
+    NUMBER = __K2L_Regex.new("\\d+", "%d+")
+    PRE = __K2L_Regex.new("[\\w.]+", "[%w_%.]+")
 end
 
 __K2L_LazyObject(Version, "____initCompanion")
@@ -164,10 +150,6 @@ end
 
 local Constraint = __K2L_Class("Constraint")
 Constraint.Exact = __K2L_Class("Constraint$Exact", nil, Constraint)
-
-function Constraint.Exact:____init(v)
-    self.v = v
-end
 
 function Constraint.Exact.new(v)
     return setmetatable({v = v}, Constraint.Exact)
@@ -181,20 +163,8 @@ function Constraint.Exact:toString()
     return "=" .. __K2L_Str(self.v)
 end
 
-function Constraint.Exact:hashCode()
-    return self.v:hashCode()
-end
-
-function Constraint.Exact:equals(other)
-    return getmetatable(other) == Constraint.Exact and self.v:equals(other.v)
-end
-
+__K2L_DataClass(Constraint.Exact, {"v"})
 Constraint.Range = __K2L_Class("Constraint$Range", nil, Constraint)
-
-function Constraint.Range:____init(range, upperExclusive)
-    self.range = range
-    self.upperExclusive = upperExclusive
-end
 
 function Constraint.Range.new(range, upperExclusive)
     return setmetatable({range = range, upperExclusive = upperExclusive}, Constraint.Range)
@@ -208,19 +178,8 @@ function Constraint.Range:toString()
     return "[" .. __K2L_Str(self.range.first) .. ", " .. __K2L_Str(self.range.last) .. (self.upperExclusive and ")" or "]")
 end
 
-function Constraint.Range:hashCode()
-    return (31 * __K2L_Hash(self.range) + (self.upperExclusive and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Constraint.Range:equals(other)
-    return getmetatable(other) == Constraint.Range and __K2L_Equals(self.range, other.range) and self.upperExclusive == other.upperExclusive
-end
-
+__K2L_DataClass(Constraint.Range, {"range", "upperExclusive"})
 Constraint.AnyOf = __K2L_Class("Constraint$AnyOf", nil, Constraint)
-
-function Constraint.AnyOf:____init(options)
-    self.options = options
-end
 
 function Constraint.AnyOf.new(options)
     return setmetatable({options = options}, Constraint.AnyOf)
@@ -244,14 +203,7 @@ function Constraint.AnyOf:toString()
     return self.options:joinToString(" || ")
 end
 
-function Constraint.AnyOf:hashCode()
-    return __K2L_Hash(self.options)
-end
-
-function Constraint.AnyOf:equals(other)
-    return getmetatable(other) == Constraint.AnyOf and __K2L_Equals(self.options, other.options)
-end
-
+__K2L_DataClass(Constraint.AnyOf, {"options"})
 Constraint.Any = __K2L_Class("Constraint$Any", nil, Constraint)
 
 function Constraint.Any:allows(v)
@@ -355,36 +307,19 @@ end
 
 local Resolver = __K2L_Class("Resolver")
 
-function Resolver:____init(registry)
-    self.registry = registry
-    self.attempts = 0
-end
-
-function Resolver:resolve(root)
-    local pending = root:map(function(____destructured_1)
-        local n, c = ____destructured_1.key, ____destructured_1.value
-        return __K2L_Triple.new("<root>", n, Constraint:parse(c))
-    end)
-    local ____value_6 = self:solve(__K2L_SortedMapOf(nil), pending)
-    if ____value_6 == nil then
-        error(ResolutionException.new("no solution for " .. __K2L_Str(root) .. " after " .. self.attempts .. " attempts"))
-    end
-    return ____value_6
-end
-
-function Resolver:solve(chosen, pending)
+local function solve(self, chosen, pending)
     self.attempts = self.attempts + 1
-    local ____value_7 = pending:firstOrNull()
-    if ____value_7 == nil then
+    local ____value_6 = pending:firstOrNull()
+    if ____value_6 == nil then
         return chosen
     end
-    local from, name, constraint = ____value_7.first, ____value_7.second, ____value_7.third
+    local from, name, constraint = ____value_6.first, ____value_6.second, ____value_6.third
     local rest = pending:drop(1)
     local ____receiver_10 = chosen:get(name)
     if ____receiver_10 ~= nil then
         local ____result_3
         if constraint:allows(____receiver_10) then
-            return self:solve(chosen, rest)
+            return solve(self, chosen, rest)
         else
             return nil
         end
@@ -392,11 +327,11 @@ function Resolver:solve(chosen, pending)
     local ____list_2 = self.registry:candidates(name, constraint)
     for ____i_3 = 1, ____list_2.size do
         local v = ____list_2[____i_3]
-        local newDeps = self.registry:deps(name, v):map(function(____destructured_2)
-            local n, c = ____destructured_2.key, ____destructured_2.value
+        local newDeps = self.registry:deps(name, v):map(function(____destructured_1)
+            local n, c = ____destructured_1.key, ____destructured_1.value
             return __K2L_Triple.new(name .. "@" .. __K2L_Str(v), n, c)
         end)
-        local result = self:solve(chosen:plus(__K2L_Pair.new(name, v)), rest:plusAll(newDeps))
+        local result = solve(self, chosen:plus(__K2L_Pair.new(name, v)), rest:plusAll(newDeps))
         if result ~= nil then
             return result
         end
@@ -405,6 +340,23 @@ function Resolver:solve(chosen, pending)
         return nil
     end
     return nil
+end
+
+function Resolver:____init(registry)
+    self.registry = registry
+    self.attempts = 0
+end
+
+function Resolver:resolve(root)
+    local pending = root:map(function(____destructured_2)
+        local n, c = ____destructured_2.key, ____destructured_2.value
+        return __K2L_Triple.new("<root>", n, Constraint:parse(c))
+    end)
+    local ____value_7 = solve(self, __K2L_SortedMapOf(nil), pending)
+    if ____value_7 == nil then
+        error(ResolutionException.new("no solution for " .. __K2L_Str(root) .. " after " .. self.attempts .. " attempts"))
+    end
+    return ____value_7
 end
 
 local function lockFile(solution, registry)

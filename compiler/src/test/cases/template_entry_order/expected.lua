@@ -11,10 +11,6 @@ local __K2L_StringBuilder = ____lualib.__K2L_StringBuilder
 local ____exports = {}
 local Box = __K2L_Class("Box")
 
-function Box:____init(n)
-    self.n = n
-end
-
 function Box.new(n)
     return setmetatable({n = n}, Box)
 end

@@ -37,10 +37,6 @@ end
 
 local Holder = __K2L_Class("Holder")
 
-function Holder:____init(items)
-    self.items = items
-end
-
 function Holder.new(items)
     return setmetatable({items = items}, Holder)
 end

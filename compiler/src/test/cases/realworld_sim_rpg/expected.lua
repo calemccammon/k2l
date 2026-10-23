@@ -1,6 +1,6 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_IntRange = ____lualib.__K2L_IntRange
 local __K2L_ListOf = ____lualib.__K2L_ListOf
@@ -34,7 +34,7 @@ Element.NONE = Element.new("NONE", 3)
 Element.____values = {Element.FIRE, Element.ICE, Element.POISON, Element.NONE}
 local Item = __K2L_Class("Item")
 
-function Item:____init(name, attack, defense, heal, element)
+function Item.new(name, attack, defense, heal, element)
     if attack == nil then
         attack = 0
     end
@@ -47,94 +47,32 @@ function Item:____init(name, attack, defense, heal, element)
     if element == nil then
         element = Element.NONE
     end
-    self.name = name
-    self.attack = attack
-    self.defense = defense
-    self.heal = heal
-    self.element = element
+    return setmetatable({name = name, attack = attack, defense = defense, heal = heal, element = element}, Item)
 end
 
-function Item:toString()
-    return "Item(name=" .. self.name .. ", attack=" .. self.attack .. ", defense=" .. self.defense .. ", heal=" .. self.heal .. ", element=" .. __K2L_Str(self.element) .. ")"
-end
-
-function Item:hashCode()
-    return (31 * (31 * (31 * (31 * __K2L_Hash(self.name) + self.attack) + self.defense) + self.heal) + __K2L_Hash(self.element) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Item:equals(other)
-    return getmetatable(other) == Item and self.name == other.name and self.attack == other.attack and self.defense == other.defense and self.heal == other.heal and self.element == other.element
-end
-
+__K2L_DataClass(Item, {"name", "attack", "defense", "heal", "element"})
 local Effect = __K2L_Class("Effect")
 Effect.Burn = __K2L_Class("Effect$Burn", nil, Effect)
-
-function Effect.Burn:____init(turns, damage)
-    self.turns = turns
-    self.damage = damage
-end
 
 function Effect.Burn.new(turns, damage)
     return setmetatable({turns = turns, damage = damage}, Effect.Burn)
 end
 
-function Effect.Burn:toString()
-    return "Burn(turns=" .. self.turns .. ", damage=" .. self.damage .. ")"
-end
-
-function Effect.Burn:hashCode()
-    return (31 * self.turns + self.damage + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Effect.Burn:equals(other)
-    return getmetatable(other) == Effect.Burn and self.turns == other.turns and self.damage == other.damage
-end
-
+__K2L_DataClass(Effect.Burn, {"turns", "damage"})
 Effect.Freeze = __K2L_Class("Effect$Freeze", nil, Effect)
-
-function Effect.Freeze:____init(turns)
-    self.turns = turns
-end
 
 function Effect.Freeze.new(turns)
     return setmetatable({turns = turns}, Effect.Freeze)
 end
 
-function Effect.Freeze:toString()
-    return "Freeze(turns=" .. self.turns .. ")"
-end
-
-function Effect.Freeze:hashCode()
-    return self.turns
-end
-
-function Effect.Freeze:equals(other)
-    return getmetatable(other) == Effect.Freeze and self.turns == other.turns
-end
-
+__K2L_DataClass(Effect.Freeze, {"turns"})
 Effect.Poison = __K2L_Class("Effect$Poison", nil, Effect)
-
-function Effect.Poison:____init(turns, percent)
-    self.turns = turns
-    self.percent = percent
-end
 
 function Effect.Poison.new(turns, percent)
     return setmetatable({turns = turns, percent = percent}, Effect.Poison)
 end
 
-function Effect.Poison:toString()
-    return "Poison(turns=" .. self.turns .. ", percent=" .. self.percent .. ")"
-end
-
-function Effect.Poison:hashCode()
-    return (31 * self.turns + self.percent + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Effect.Poison:equals(other)
-    return getmetatable(other) == Effect.Poison and self.turns == other.turns and self.percent == other.percent
-end
-
+__K2L_DataClass(Effect.Poison, {"turns", "percent"})
 local Fighter = __K2L_Class("Fighter")
 
 function Fighter:____init(name, maxHp, baseAttack, baseDefense, agility)
@@ -231,19 +169,13 @@ end
 local loot = LootTable.new(__K2L_ListOf(__K2L_Pair.new(Item.new("potion", nil, nil, 25), 40), __K2L_Pair.new(Item.new("dagger", 3), 20), __K2L_Pair.new(Item.new("flame sword", 7, nil, nil, Element.FIRE), 8), __K2L_Pair.new(Item.new("frost axe", 6, nil, nil, Element.ICE), 8), __K2L_Pair.new(Item.new("venom blade", 5, nil, nil, Element.POISON), 8), __K2L_Pair.new(Item.new("leather", nil, 2), 20), __K2L_Pair.new(Item.new("plate", nil, 6), 6)))
 local Battle = __K2L_Class("Battle")
 
-function Battle:____init(rng, log)
-    self.rng = rng
-    self.log = log
-    self.rounds = 0
-end
-
-function Battle:say(s)
+local function say(self, s)
     if self.log then
         print(s)
     end
 end
 
-function Battle:tickEffects(f)
+local function tickEffects(self, f)
     local frozen = false
     local remaining = __K2L_ListOf()
     local ____list_4 = f.effects
@@ -252,14 +184,14 @@ function Battle:tickEffects(f)
         local ____mt = getmetatable(e)
         if ____mt == Effect.Burn then
             local ____value_1 = e.damage
-            self:say("  " .. f.name .. " burns for " .. ____value_1)
+            say(self, "  " .. f.name .. " burns for " .. ____value_1)
             f.hp = f.hp - ____value_1
         elseif ____mt == Effect.Poison then
             local ____value = math.max(1, f.maxHp * e.percent // 100)
-            self:say("  " .. f.name .. " takes " .. ____value .. " poison")
+            say(self, "  " .. f.name .. " takes " .. ____value .. " poison")
             f.hp = f.hp - ____value
         elseif ____mt == Effect.Freeze then
-            self:say("  " .. f.name .. " is frozen")
+            say(self, "  " .. f.name .. " is frozen")
             frozen = true
         end
         if e.turns > 1 then
@@ -280,9 +212,9 @@ function Battle:tickEffects(f)
     return frozen
 end
 
-function Battle:strike(a, d)
+local function strike(self, a, d)
     if self.rng:nextInt(100) < d.agility then
-        self:say("  " .. d.name .. " dodges " .. a.name)
+        say(self, "  " .. d.name .. " dodges " .. a.name)
         return
     end
     local variance = self.rng:nextDouble(0.85, 1.15)
@@ -293,7 +225,7 @@ function Battle:strike(a, d)
     end
     damage = math.max(1, damage)
     d.hp = d.hp - damage
-    self:say("  " .. a.name .. " hits " .. d.name .. " for " .. damage .. (crit and " (critical)" or ""))
+    say(self, "  " .. a.name .. " hits " .. d.name .. " for " .. damage .. (crit and " (critical)" or ""))
     local ____receiver_2 = a.weapon
     local ____subject = ____receiver_2 and ____receiver_2.element
     if ____subject == Element.FIRE then
@@ -321,8 +253,14 @@ function Battle:strike(a, d)
     end
     if not d:getAlive() then
         a.kills = a.kills + 1
-        self:say("  " .. d.name .. " falls")
+        say(self, "  " .. d.name .. " falls")
     end
+end
+
+function Battle:____init(rng, log)
+    self.rng = rng
+    self.log = log
+    self.rounds = 0
 end
 
 local ____lambda_3 = function(it) return it.agility end
@@ -354,7 +292,7 @@ function Battle:fight(heroes, ____monsters)
             break
         end
         self.rounds = self.rounds + 1
-        self:say("round " .. self.rounds)
+        say(self, "round " .. self.rounds)
         local ____list_6 = heroes:plusAll(____monsters)
         local ____out_2 = {}
         local ____count_2 = 0
@@ -373,7 +311,7 @@ function Battle:fight(heroes, ____monsters)
                 if not f:getAlive() then
                     goto ____continue
                 end
-                if self:tickEffects(f) or not f:getAlive() then
+                if tickEffects(self, f) or not f:getAlive() then
                     goto ____continue
                 end
                 local ____list_7 = heroes:contains(f) and ____monsters or heroes
@@ -405,10 +343,10 @@ function Battle:fight(heroes, ____monsters)
                 if potion ~= nil and f.hp < f.maxHp // 3 then
                     f.inventory:remove(potion)
                     f.hp = math.min(f.maxHp, f.hp + potion.heal)
-                    self:say("  " .. f.name .. " drinks a " .. potion.name)
+                    say(self, "  " .. f.name .. " drinks a " .. potion.name)
                     goto ____continue
                 end
-                self:strike(f, foes:random(self.rng))
+                strike(self, f, foes:random(self.rng))
             end
             ::____continue::
         end

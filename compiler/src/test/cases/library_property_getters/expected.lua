@@ -21,10 +21,6 @@ local RequestId
 local RequestKey = __K2L_Class("RequestKey")
 RequestId = __K2L_Class("RequestId")
 
-function RequestId:____init(id)
-    self.id = id
-end
-
 function RequestId.new(id)
     return setmetatable({id = id}, RequestId)
 end

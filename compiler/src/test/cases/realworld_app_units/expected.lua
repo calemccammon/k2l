@@ -127,7 +127,7 @@ return {describe = describe}
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
 local __K2L_List = ____lualib.__K2L_List
@@ -188,18 +188,7 @@ function Leg:getCo2()
     return ____Quantities.Kilograms.new(self.mode.emissionsPerKm * self.distance:getKm())
 end
 
-function Leg:toString()
-    return "Leg(mode=" .. __K2L_Str(self.mode) .. ", distance=" .. __K2L_Str(self.distance) .. ", duration=" .. __K2L_Str(self.duration) .. ")"
-end
-
-function Leg:hashCode()
-    return (31 * (31 * __K2L_Hash(self.mode) + __K2L_Hash(self.distance)) + __K2L_Hash(self.duration) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Leg:equals(other)
-    return getmetatable(other) == Leg and self.mode == other.mode and self.distance:equals(other.distance) and self.duration:equals(other.duration)
-end
-
+__K2L_DataClass(Leg, {"mode", "distance", "duration"})
 local SpeedingException = __K2L_Class("phys.trip.SpeedingException", __K2L_IllegalStateException)
 
 function SpeedingException:____init(leg)
@@ -336,7 +325,7 @@ return {Mode = Mode, Leg = Leg, SpeedingException = SpeedingException, Trip = Tr
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_StringPadStart = ____lualib.__K2L_StringPadStart
 
@@ -396,10 +385,6 @@ end
 
 local Meters = __K2L_Class("phys.units.Meters", nil, Quantity)
 
-function Meters:____init(si)
-    self.si = si
-end
-
 function Meters.new(si)
     return setmetatable({si = si}, Meters)
 end
@@ -424,19 +409,8 @@ function Meters:toString()
     return self:format()
 end
 
-function Meters:hashCode()
-    return __K2L_Hash(self.si)
-end
-
-function Meters:equals(other)
-    return getmetatable(other) == Meters and self.si == other.si
-end
-
+__K2L_DataClass(Meters, {"si"})
 local Seconds = __K2L_Class("phys.units.Seconds", nil, Quantity)
-
-function Seconds:____init(si)
-    self.si__Seconds = si
-end
 
 function Seconds.new(si)
     return setmetatable({si__Seconds = si}, Seconds)
@@ -466,19 +440,8 @@ function Seconds:toString()
     return h > 0 and h .. "h" .. __K2L_StringPadStart(tostring(m), 2, "0") .. "m" or m .. "m" .. __K2L_StringPadStart(tostring(s), 2, "0") .. "s"
 end
 
-function Seconds:hashCode()
-    return __K2L_Hash(self.si)
-end
-
-function Seconds:equals(other)
-    return getmetatable(other) == Seconds and self.si == other.si
-end
-
+__K2L_DataClass(Seconds, {{"si", "si__Seconds"}})
 local Speed = __K2L_Class("phys.units.Speed", nil, Quantity)
-
-function Speed:____init(si)
-    self.si__Speed = si
-end
 
 function Speed.new(si)
     return setmetatable({si__Speed = si}, Speed)
@@ -504,19 +467,8 @@ function Speed:toString()
     return fixed(self:getKmh(), 1) .. " km/h"
 end
 
-function Speed:hashCode()
-    return __K2L_Hash(self.si)
-end
-
-function Speed:equals(other)
-    return getmetatable(other) == Speed and self.si == other.si
-end
-
+__K2L_DataClass(Speed, {{"si", "si__Speed"}})
 local Kilograms = __K2L_Class("phys.units.Kilograms", nil, Quantity)
-
-function Kilograms:____init(si)
-    self.si__Kilograms = si
-end
 
 function Kilograms.new(si)
     return setmetatable({si__Kilograms = si}, Kilograms)
@@ -538,13 +490,7 @@ function Kilograms:toString()
     return self:format(1)
 end
 
-function Kilograms:hashCode()
-    return __K2L_Hash(self.si)
-end
-
-function Kilograms:equals(other)
-    return getmetatable(other) == Kilograms and self.si == other.si
-end
+__K2L_DataClass(Kilograms, {{"si", "si__Kilograms"}})
 
 local function div(____this, t)
     return Speed.new(____this:getSi() / t:getSi())

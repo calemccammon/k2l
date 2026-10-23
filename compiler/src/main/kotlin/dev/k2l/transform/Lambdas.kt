@@ -312,6 +312,7 @@ private fun FileTransformer.functionReference(e: KtCallableReferenceExpression, 
     val withoutSelf = noSelf.isNoSelf(psi)
     // `::method` inside the class (or object, companion, `with` block) is bound to the implicit `this`
     val implicit = if (receiverExpr == null) implicitReferenceReceiver(e) else null
+    privateLocal(psi)?.let { local -> return privateFunctionReference(psi, LuaName(local), boundReceiver, implicit) }
     if (boundReceiver != null || implicit != null) {
         // obj::method
         val target = cache(implicit ?: expression(boundReceiver!!), "receiver")
@@ -327,6 +328,23 @@ private fun FileTransformer.functionReference(e: KtCallableReferenceExpression, 
         null,
         1,
     )
+}
+
+/**
+ * A reference to a private member function that is a local (see [planPrivateLocals]): the local itself, which takes the
+ * instance first (`C::f`) or, in an object, nothing; `obj::f` and `::f` in a class close over the instance.
+ */
+private fun FileTransformer.privateFunctionReference(
+    psi: KtNamedFunction,
+    local: LuaName,
+    boundReceiver: KtExpression?,
+    implicit: LuaExpr?,
+): ReferenceValue = with(session) {
+    if (psi.containingClassOrObject is KtObjectDeclaration) return ReferenceValue(local, null)
+    if (boundReceiver == null && implicit == null) return ReferenceValue(local, null, 1)
+    val target = cache(implicit ?: expression(boundReceiver!!), "receiver")
+    val call = LuaCall(local, listOf(target, LuaName("...")))
+    ReferenceValue(LuaFunction(emptyList(), listOf(LuaReturn(listOf(call))), isVararg = true), target)
 }
 
 /** `List<Int>` and `Map.Entry<K, V>` in `List<Int>::size` parse as calls with type arguments only. */

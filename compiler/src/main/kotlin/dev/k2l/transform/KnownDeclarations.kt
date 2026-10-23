@@ -78,6 +78,9 @@ internal val ITERATED_KINDS =
 /** Name of the per-module table that collects exported declarations. */
 internal const val EXPORTS = "____exports"
 
+/** With globals: the one global holding the internal declarations that several files use (see FileChunk.kt). */
+const val MODULE_TABLE = "____internal"
+
 /** Name of the generated initializer method; constructors with a suffix append it (`____init1`). */
 internal const val INIT = "____init"
 

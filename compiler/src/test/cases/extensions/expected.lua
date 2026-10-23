@@ -16,11 +16,6 @@ end
 
 local Vec = __K2L_Class("Vec")
 
-function Vec:____init(x, y)
-    self.x = x
-    self.y = y
-end
-
 function Vec.new(x, y)
     return setmetatable({x = x, y = y}, Vec)
 end

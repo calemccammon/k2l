@@ -1,8 +1,7 @@
 -- ==== http/Http.lua ====
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Equals = ____lualib.__K2L_Equals
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Lazy = ____lualib.__K2L_Lazy
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_MapOf = ____lualib.__K2L_MapOf
@@ -87,27 +86,14 @@ function Request:withHeader(name, value)
     return Request.new(self.method, self.path, self.headers:plus(__K2L_Pair.new(name, value)), self.body)
 end
 
-function Request:toString()
-    return "Request(method=" .. __K2L_Str(self.method) .. ", path=" .. self.path .. ", headers=" .. __K2L_Str(self.headers) .. ", body=" .. self.body .. ")"
-end
-
-function Request:hashCode()
-    return (31 * (31 * (31 * __K2L_Hash(self.method) + __K2L_Hash(self.path)) + __K2L_Hash(self.headers)) + __K2L_Hash(self.body) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Request:equals(other)
-    return getmetatable(other) == Request and self.method == other.method and self.path == other.path and __K2L_Equals(self.headers, other.headers) and self.body == other.body
-end
-
+__K2L_DataClass(Request, {"method", "path", "headers", "body"})
 local Response = __K2L_Class("web.http.Response")
 
-function Response:____init(status, body, headers)
+function Response.new(status, body, headers)
     if headers == nil then
         headers = __K2L_MapOf()
     end
-    self.status = status
-    self.body = body
-    self.headers = headers
+    return setmetatable({status = status, body = body, headers = headers}, Response)
 end
 
 function Response:getOk()
@@ -115,18 +101,7 @@ function Response:getOk()
     return ____value >= 200 and ____value <= 299
 end
 
-function Response:toString()
-    return "Response(status=" .. self.status .. ", body=" .. self.body .. ", headers=" .. __K2L_Str(self.headers) .. ")"
-end
-
-function Response:hashCode()
-    return (31 * (31 * self.status + __K2L_Hash(self.body)) + __K2L_Hash(self.headers) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Response:equals(other)
-    return getmetatable(other) == Response and self.status == other.status and self.body == other.body and __K2L_Equals(self.headers, other.headers)
-end
-
+__K2L_DataClass(Response, {"status", "body", "headers"})
 Response.Companion = __K2L_Class("web.http.Response$Companion")
 
 function Response.Companion:ok(body)
@@ -150,10 +125,6 @@ function HttpException:____init(status, message)
 end
 
 local Params = __K2L_Class("web.http.Params")
-
-function Params:____init(values)
-    self.values = values
-end
 
 function Params.new(values)
     return setmetatable({values = values}, Params)
@@ -228,6 +199,10 @@ local ____Http = require("http.Http")
 local ____Middleware = require("middleware.Middleware")
 local Router = __K2L_Class("web.Router")
 
+local function add(self, method, pattern, action)
+    self.routes:add(Router.Route.new(method, pattern, action))
+end
+
 function Router:____init()
     self.routes = __K2L_ListOf()
     self.handler = __K2L_FunInterface(____Http.Handler, "handle", function(req)
@@ -253,26 +228,16 @@ end
 
 Router.Route = __K2L_Class("web.Router$Route")
 
-function Router.Route:____init(method, pattern, action)
-    self.method = method
-    self.pattern = pattern
-    self.action = action
-end
-
 function Router.Route.new(method, pattern, action)
     return setmetatable({method = method, pattern = pattern, action = action}, Router.Route)
 end
 
 function Router:get(pattern, action)
-    self:add(____Http.Method.GET, pattern, action)
+    add(self, ____Http.Method.GET, pattern, action)
 end
 
 function Router:post(pattern, action)
-    self:add(____Http.Method.POST, pattern, action)
-end
-
-function Router:add(method, pattern, action)
-    self.routes:add(Router.Route.new(method, pattern, action))
+    add(self, ____Http.Method.POST, pattern, action)
 end
 
 local UserStore = __K2L_Class("web.UserStore")

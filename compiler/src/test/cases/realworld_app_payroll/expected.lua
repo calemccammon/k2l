@@ -14,11 +14,6 @@ local ____Employees = require("staff.Employees")
 local ____Payroll = require("pay.Payroll")
 local Contractor = __K2L_Class("corp.Contractor", nil, ____Employees.Payable)
 
-function Contractor:____init(company, monthly)
-    self.company = company
-    self.monthly = monthly
-end
-
 function Contractor.new(company, monthly)
     return setmetatable({company = company, monthly = monthly}, Contractor)
 end
@@ -131,7 +126,7 @@ return {Contractor = Contractor, printTrace = printTrace}
 local ____lualib = require("lualib_bundle")
 local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
 local __K2L_Map = ____lualib.__K2L_Map
@@ -140,72 +135,28 @@ local __K2L_Pair = ____lualib.__K2L_Pair
 local Adjustment = __K2L_Class("corp.pay.Adjustment")
 local Bonus = __K2L_Class("corp.pay.Bonus", nil, Adjustment)
 
-function Bonus:____init(amount, reason)
-    self.amount = amount
-    self.reason = reason
-end
-
 function Bonus.new(amount, reason)
     return setmetatable({amount = amount, reason = reason}, Bonus)
 end
 
-function Bonus:toString()
-    return "Bonus(amount=" .. self.amount .. ", reason=" .. self.reason .. ")"
-end
-
-function Bonus:hashCode()
-    return (31 * self.amount + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Bonus:equals(other)
-    return getmetatable(other) == Bonus and self.amount == other.amount and self.reason == other.reason
-end
-
+__K2L_DataClass(Bonus, {"amount", "reason"})
 local Deduction = __K2L_Class("corp.pay.Deduction", nil, Adjustment)
-
-function Deduction:____init(amount, reason)
-    self.amount = amount
-    self.reason = reason
-end
 
 function Deduction.new(amount, reason)
     return setmetatable({amount = amount, reason = reason}, Deduction)
 end
 
-function Deduction:toString()
-    return "Deduction(amount=" .. self.amount .. ", reason=" .. self.reason .. ")"
-end
-
-function Deduction:hashCode()
-    return (31 * self.amount + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Deduction:equals(other)
-    return getmetatable(other) == Deduction and self.amount == other.amount and self.reason == other.reason
-end
-
+__K2L_DataClass(Deduction, {"amount", "reason"})
 local Raise = __K2L_Class("corp.pay.Raise", nil, Adjustment)
 
-function Raise:____init(percent, reason)
+function Raise.new(percent, reason)
     if reason == nil then
         reason = "annual review"
     end
-    self.percent = percent
-    self.reason = reason
+    return setmetatable({percent = percent, reason = reason}, Raise)
 end
 
-function Raise:toString()
-    return "Raise(percent=" .. self.percent .. ", reason=" .. self.reason .. ")"
-end
-
-function Raise:hashCode()
-    return (31 * self.percent + __K2L_Hash(self.reason) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Raise:equals(other)
-    return getmetatable(other) == Raise and self.percent == other.percent and self.reason == other.reason
-end
-
+__K2L_DataClass(Raise, {"percent", "reason"})
 local Ledger = __K2L_Class("corp.pay.Ledger")
 
 function Ledger:____init()
@@ -227,10 +178,6 @@ function Ledger:payees()
 end
 
 local Payroll = __K2L_Class("corp.pay.Payroll")
-
-function Payroll:____init(ledger)
-    self.ledger = ledger
-end
 
 function Payroll.new(ledger)
     return setmetatable({ledger = ledger}, Payroll)
@@ -337,13 +284,14 @@ end
 
 local Reportable = __K2L_Class("corp.staff.Reportable")
 local Employee = __K2L_Class("corp.staff.Employee", nil, Payable, Reportable)
+local nextBadge
 
 function Employee:____init(name, baseSalary)
     self.name = name
     self.baseSalary = baseSalary
     self.title = "employee"
-    local ____old = Employee.nextBadge
-    Employee.nextBadge = Employee.nextBadge + 1
+    local ____old = nextBadge
+    nextBadge = nextBadge + 1
     self.badge = ____old
     self.tag = __K2L_Text.take(self.name, 3):upper() .. "-" .. self.badge
     trace:add("Employee(" .. self.name .. ") title=" .. self:getTitle())
@@ -388,12 +336,12 @@ function Employee:hashCode()
 end
 
 function Employee:resetBadges()
-    self.nextBadge = 100
+    nextBadge = 100
 end
 
 function Employee:____initCompanion()
     self.DEFAULT_SALARY = 36000
-    self.nextBadge = 100
+    nextBadge = 100
 end
 
 Employee:____initCompanion()

@@ -3,6 +3,7 @@ local __K2L_ArrayOf = ____lualib.__K2L_ArrayOf
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_CollectionExtras = ____lualib.__K2L_CollectionExtras
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Extras = ____lualib.__K2L_Extras
 local __K2L_GenerateSequence = ____lualib.__K2L_GenerateSequence
@@ -28,26 +29,11 @@ local __K2L_Text = ____lualib.__K2L_Text
 
 local Sale = __K2L_Class("Sale")
 
-function Sale:____init(region, amount)
-    self.region = region
-    self.amount = amount
-end
-
 function Sale.new(region, amount)
     return setmetatable({region = region, amount = amount}, Sale)
 end
 
-function Sale:toString()
-    return "Sale(region=" .. self.region .. ", amount=" .. self.amount .. ")"
-end
-
-function Sale:hashCode()
-    return (31 * __K2L_Hash(self.region) + self.amount + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Sale:equals(other)
-    return getmetatable(other) == Sale and self.region == other.region and self.amount == other.amount
-end
+__K2L_DataClass(Sale, {"region", "amount"})
 
 local ____lambda_1 = function(it) return __K2L_Text.take(it, 1) end
 local ____lambda_2 = function(it) return #it end

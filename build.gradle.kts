@@ -18,10 +18,20 @@ val ktlintRules = mapOf(
 )
 
 subprojects {
-    apply(plugin = "dev.detekt")
-    apply(plugin = "com.diffplug.spotless")
     // `./gradlew publishToMavenLocal` installs every project into ~/.m2; nothing is published anywhere else.
     apply(plugin = "maven-publish")
+
+    plugins.withId("org.jetbrains.kotlin.jvm") {
+        configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+            compilerOptions.allWarningsAsErrors.set(true)
+        }
+    }
+
+    // The linters check k2l's own build only. A build that includes k2l skips them, and so the deprecated
+    // Configuration.setVisible that detekt's plugin still calls.
+    if (gradle.parent != null) return@subprojects
+    apply(plugin = "dev.detekt")
+    apply(plugin = "com.diffplug.spotless")
 
     configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         val ktlintVersion = rootProject.libs.versions.ktlint.get()
@@ -32,12 +42,6 @@ subprojects {
         }
         kotlinGradle {
             ktlint(ktlintVersion).editorConfigOverride(ktlintRules)
-        }
-    }
-
-    plugins.withId("org.jetbrains.kotlin.jvm") {
-        configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
-            compilerOptions.allWarningsAsErrors.set(true)
         }
     }
 

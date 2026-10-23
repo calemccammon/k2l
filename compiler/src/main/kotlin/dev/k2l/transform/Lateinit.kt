@@ -29,7 +29,7 @@ internal fun FileTransformer.lateinitIsInitialized(call: KtExpression): LuaExpr?
 
         property.isTopLevel -> topLevelRef(property)
 
-        else -> {
+        else -> privateLocal(property)?.let(::LuaName) ?: run {
             val receiver = ref.receiverExpression?.let { expression(it) } ?: implicitReferenceReceiver(ref) ?: return null
             LuaIndex(receiver, LuaString(fieldKey(property)))
         }

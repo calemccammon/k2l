@@ -109,10 +109,6 @@ end
 
 local Box = __K2L_Class("Box")
 
-function Box:____init(value)
-    self.value = value
-end
-
 function Box.new(value)
     return setmetatable({value = value}, Box)
 end
@@ -275,10 +271,6 @@ local function main()
 end
 
 local Hooks = __K2L_Class("Hooks")
-
-function Hooks:____init(onStart)
-    self.onStart = onStart
-end
 
 function Hooks.new(onStart)
     return setmetatable({onStart = onStart}, Hooks)

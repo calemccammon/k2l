@@ -1,6 +1,7 @@
 local ____lualib = require("lualib_bundle")
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_IsComparable = ____lualib.__K2L_IsComparable
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_ListWrap = ____lualib.__K2L_ListWrap
@@ -65,10 +66,6 @@ end
 Joker:____init()
 local Money = __K2L_Class("Money")
 
-function Money:____init(cents)
-    self.cents = cents
-end
-
 function Money.new(cents)
     return setmetatable({cents = cents}, Money)
 end
@@ -80,10 +77,6 @@ end
 local Point = __K2L_Class("Point")
 Point.____comparable = true
 
-function Point:____init(x)
-    self.x = x
-end
-
 function Point.new(x)
     return setmetatable({x = x}, Point)
 end
@@ -92,18 +85,7 @@ function Point:compareTo(other)
     return self.x - other.x
 end
 
-function Point:toString()
-    return "Point(x=" .. self.x .. ")"
-end
-
-function Point:hashCode()
-    return self.x
-end
-
-function Point:equals(other)
-    return getmetatable(other) == Point and self.x == other.x
-end
-
+__K2L_DataClass(Point, {"x"})
 Point.____companion = true
 
 function Point:origin()

@@ -57,10 +57,6 @@ end
 
 local Point = __K2L_Class("Point")
 
-function Point:____init(x)
-    self.x = x
-end
-
 function Point.new(x)
     return setmetatable({x = x}, Point)
 end

@@ -31,6 +31,10 @@ end
 Util:____init()
 local Scaler = __K2L_Class("Scaler")
 
+local function format(self, x)
+    return "<" .. x .. ">"
+end
+
 function Scaler:____init(k)
     self.k = k
     self.total = 0
@@ -67,11 +71,7 @@ function Scaler.Report:____init(____outer)
 end
 
 function Scaler.Report:lines(xs)
-    return xs:map(function(...) return self.____outer:scale(...) end):map(function(...) return self:format(...) end)
-end
-
-function Scaler.Report:format(x)
-    return "<" .. x .. ">"
+    return xs:map(function(...) return self.____outer:scale(...) end):map(function(...) return format(self, ...) end)
 end
 
 function Scaler:parse(s)

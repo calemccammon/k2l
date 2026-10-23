@@ -149,10 +149,14 @@ cache.
 Some Lua hosts have no `require`. They load each file themselves, in an order they set, for example from a manifest.
 For them, use `--modules global` (`"moduleMode": "global"`).
 
-- A file's public and internal top-level functions, properties, classes, objects and interfaces are Lua globals.
-  Private ones stay `local`.
+- A file's public top-level functions, properties, classes, objects and interfaces are Lua globals. They are what the
+  host and hand-written Lua call.
+- Internal ones are not globals. One that only its own file uses is `local`, like a private one. One that other files use
+  is a field of `____internal`, a single global table the files share. Whichever file loads first creates it.
+- Private ones stay `local`.
 - A global has the declaration's Lua name, without the package. `@LuaName` changes it.
-- Files use each other's declarations as globals. They do not `require` each other and do not return a table.
+- Files use each other's declarations through these globals and `____internal`. They do not `require` each other and
+  do not return a table.
 - External declarations with `@LuaRequire` still use `require`.
 - `main` runs at the end of its file.
 
@@ -167,7 +171,7 @@ Load order:
 - k2l does not know the order the host loads the files in.
 - A file's top-level code runs when it loads: property initializers, objects that are created where they are declared,
   and `main`. Load the files this code uses before it.
-- Functions and methods use other files' globals only when they are called.
+- Functions and methods use other files' globals and `____internal` fields only when they are called.
 - Top-level properties are initialized when their file loads. Where k2l would initialize them on first use (see
   [Language](language.md#supported)), it initializes them at the end of the file, after its functions and classes.
 
@@ -175,7 +179,9 @@ Names:
 
 - All files share one set of globals. Two declarations with the same global name are an error, also in different
   packages. Rename one, or give a function or property another name with `@LuaName`.
-- A declaration named `____lualib` is an error.
+- Two internal declarations in `____internal` with the same name are an error, also in different packages.
+- A public declaration named `____lualib` or `____internal` is an error.
+- A file cannot use another file's global if it has a private or internal declaration with the same Lua name.
 - A global replaces a global of the same name that the host defines.
 
 ## Diagnostics and `--check`

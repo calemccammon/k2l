@@ -5,6 +5,7 @@ local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_Compare = ____lualib.__K2L_Compare
 local __K2L_CompareBy = ____lualib.__K2L_CompareBy
 local __K2L_CompareValues = ____lualib.__K2L_CompareValues
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_IllegalArgumentException = ____lualib.__K2L_IllegalArgumentException
 local __K2L_IllegalStateException = ____lualib.__K2L_IllegalStateException
@@ -335,11 +336,6 @@ end
 local Version = __K2L_Class("containers.Version")
 Version.____comparable = true
 
-function Version:____init(major, minor)
-    self.major = major
-    self.minor = minor
-end
-
 function Version.new(major, minor)
     return setmetatable({major = major, minor = minor}, Version)
 end
@@ -354,13 +350,7 @@ function Version:toString()
     return self.major .. "." .. self.minor
 end
 
-function Version:hashCode()
-    return (31 * self.major + self.minor + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Version:equals(other)
-    return getmetatable(other) == Version and self.major == other.major and self.minor == other.minor
-end
+__K2L_DataClass(Version, {"major", "minor"})
 
 local ____lambda_9 = function(it) return it * 2 end
 local ____lambda_10 = function(x) return math.type(x) == "integer" end

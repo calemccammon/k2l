@@ -3,6 +3,7 @@ package dev.k2l.transform
 import com.intellij.psi.PsiElement
 import dev.k2l.CompilerOptions
 import dev.k2l.Diagnostic
+import dev.k2l.ModuleMode
 import dev.k2l.Origin
 import dev.k2l.Severity
 import dev.k2l.codegen.LuaPrinter
@@ -24,7 +25,13 @@ class TransformContext(val options: CompilerOptions) {
     /** With `ModuleMode.Global`: the Lua globals this file defines, with the declaration defining each. */
     val globals = mutableListOf<Pair<String, KtNamedDeclaration>>()
 
-    private val generated = mutableMapOf<String, Int>()
+    /** With `ModuleMode.Global`: the fields of the module table ([MODULE_TABLE]) this file defines, with the declaration of each. */
+    val shared = mutableListOf<Pair<String, KtNamedDeclaration>>()
+
+    /** How often each generated name is in use; with globals, the module table's name is taken. */
+    private val generated = mutableMapOf<String, Int>().apply {
+        if (options.moduleMode == ModuleMode.Global) put(MODULE_TABLE.removePrefix("____"), 1)
+    }
 
     /** Kotlin position of the statements the transformer emitted; only filled with [CompilerOptions.sourceMap]. */
     val origins = IdentityHashMap<LuaStmt, Origin>()

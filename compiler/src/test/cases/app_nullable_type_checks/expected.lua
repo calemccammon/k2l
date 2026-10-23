@@ -2,7 +2,7 @@ local ____lualib = require("lualib_bundle")
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
 local __K2L_ClassCastException = ____lualib.__K2L_ClassCastException
-local __K2L_Hash = ____lualib.__K2L_Hash
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_ListOf = ____lualib.__K2L_ListOf
 local __K2L_RunMain = ____lualib.__K2L_RunMain
@@ -11,25 +11,11 @@ local __K2L_ToThrowable = ____lualib.__K2L_ToThrowable
 
 local Person = __K2L_Class("Person")
 
-function Person:____init(name)
-    self.name = name
-end
-
 function Person.new(name)
     return setmetatable({name = name}, Person)
 end
 
-function Person:toString()
-    return "Person(name=" .. self.name .. ")"
-end
-
-function Person:hashCode()
-    return __K2L_Hash(self.name)
-end
-
-function Person:equals(other)
-    return getmetatable(other) == Person and self.name == other.name
-end
+__K2L_DataClass(Person, {"name"})
 
 local function kind(x)
     if math.type(x) == "integer" then

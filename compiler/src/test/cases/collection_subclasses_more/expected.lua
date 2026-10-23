@@ -5,6 +5,7 @@ local __K2L_AbstractMap = ____lualib.__K2L_AbstractMap
 local __K2L_AbstractSet = ____lualib.__K2L_AbstractSet
 local __K2L_AsSequence = ____lualib.__K2L_AsSequence
 local __K2L_Class = ____lualib.__K2L_Class
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Entry = ____lualib.__K2L_Entry
 local __K2L_Equals = ____lualib.__K2L_Equals
 local __K2L_Exception = ____lualib.__K2L_Exception
@@ -89,11 +90,6 @@ end
 __K2L_PropertyOverride(Tags, "size", "getSize")
 CountingIterator = __K2L_Class("CountingIterator")
 
-function CountingIterator:____init(owner, inner)
-    self.owner = owner
-    self.inner = inner
-end
-
 function CountingIterator.new(owner, inner)
     return setmetatable({owner = owner, inner = inner}, CountingIterator)
 end
@@ -115,27 +111,11 @@ end
 local Pair2 = __K2L_Class("Pair2")
 rawget(Pair2, "____interfaces")[__K2L_Entry] = true
 
-function Pair2:____init(key, value)
-    self.key = key
-    self.value = value
-end
-
 function Pair2.new(key, value)
     return setmetatable({key = key, value = value}, Pair2)
 end
 
-function Pair2:toString()
-    return "Pair2(key=" .. self.key .. ", value=" .. self.value .. ")"
-end
-
-function Pair2:hashCode()
-    return (31 * __K2L_Hash(self.key) + self.value + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Pair2:equals(other)
-    return getmetatable(other) == Pair2 and self.key == other.key and self.value == other.value
-end
-
+__K2L_DataClass(Pair2, {"key", "value"})
 local Squares = __K2L_Class("Squares", __K2L_AbstractMap)
 
 function Squares:____init(n)

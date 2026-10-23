@@ -2,9 +2,8 @@ local ____lualib = require("lualib_bundle")
 local __K2L_ArrayDeque = ____lualib.__K2L_ArrayDeque
 local __K2L_CastFail = ____lualib.__K2L_CastFail
 local __K2L_Class = ____lualib.__K2L_Class
-local __K2L_Equals = ____lualib.__K2L_Equals
+local __K2L_DataClass = ____lualib.__K2L_DataClass
 local __K2L_Exception = ____lualib.__K2L_Exception
-local __K2L_Hash = ____lualib.__K2L_Hash
 local __K2L_InstanceOf = ____lualib.__K2L_InstanceOf
 local __K2L_IsNumber = ____lualib.__K2L_IsNumber
 local __K2L_Iterable = ____lualib.__K2L_Iterable
@@ -35,120 +34,39 @@ local __K2L_Truncate = ____lualib.__K2L_Truncate
 local Node = __K2L_Class("Node")
 local Text = __K2L_Class("Text", Node)
 
-function Text:____init(text)
-    self.text = text
-end
-
 function Text.new(text)
     return setmetatable({text = text}, Text)
 end
 
-function Text:toString()
-    return "Text(text=" .. self.text .. ")"
-end
-
-function Text:hashCode()
-    return __K2L_Hash(self.text)
-end
-
-function Text:equals(other)
-    return getmetatable(other) == Text and self.text == other.text
-end
-
+__K2L_DataClass(Text, {"text"})
 local Value = __K2L_Class("Value", Node)
-
-function Value:____init(path, filters, raw)
-    self.path = path
-    self.filters = filters
-    self.raw = raw
-end
 
 function Value.new(path, filters, raw)
     return setmetatable({path = path, filters = filters, raw = raw}, Value)
 end
 
-function Value:toString()
-    return "Value(path=" .. self.path .. ", filters=" .. __K2L_Str(self.filters) .. ", raw=" .. tostring(self.raw) .. ")"
-end
-
-function Value:hashCode()
-    return (31 * (31 * __K2L_Hash(self.path) + __K2L_Hash(self.filters)) + (self.raw and 1231 or 1237) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Value:equals(other)
-    return getmetatable(other) == Value and self.path == other.path and __K2L_Equals(self.filters, other.filters) and self.raw == other.raw
-end
-
+__K2L_DataClass(Value, {"path", "filters", "raw"})
 local Each = __K2L_Class("Each", Node)
-
-function Each:____init(path, body)
-    self.path = path
-    self.body = body
-end
 
 function Each.new(path, body)
     return setmetatable({path = path, body = body}, Each)
 end
 
-function Each:toString()
-    return "Each(path=" .. self.path .. ", body=" .. __K2L_Str(self.body) .. ")"
-end
-
-function Each:hashCode()
-    return (31 * __K2L_Hash(self.path) + __K2L_Hash(self.body) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function Each:equals(other)
-    return getmetatable(other) == Each and self.path == other.path and __K2L_Equals(self.body, other.body)
-end
-
+__K2L_DataClass(Each, {"path", "body"})
 local If = __K2L_Class("If", Node)
-
-function If:____init(path, negate, ____then, otherwise)
-    self.path = path
-    self.negate = negate
-    self["then"] = ____then
-    self.otherwise = otherwise
-end
 
 function If.new(path, negate, ____then, otherwise)
     return setmetatable({path = path, negate = negate, ["then"] = ____then, otherwise = otherwise}, If)
 end
 
-function If:toString()
-    return "If(path=" .. self.path .. ", negate=" .. tostring(self.negate) .. ", then=" .. __K2L_Str(self["then"]) .. ", otherwise=" .. __K2L_Str(self.otherwise) .. ")"
-end
-
-function If:hashCode()
-    return (31 * (31 * (31 * __K2L_Hash(self.path) + (self.negate and 1231 or 1237)) + __K2L_Hash(self["then"])) + __K2L_Hash(self.otherwise) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-end
-
-function If:equals(other)
-    return getmetatable(other) == If and self.path == other.path and self.negate == other.negate and __K2L_Equals(self["then"], other["then"]) and __K2L_Equals(self.otherwise, other.otherwise)
-end
-
+__K2L_DataClass(If, {"path", "negate", "then", "otherwise"})
 local Partial = __K2L_Class("Partial", Node)
-
-function Partial:____init(name)
-    self.name = name
-end
 
 function Partial.new(name)
     return setmetatable({name = name}, Partial)
 end
 
-function Partial:toString()
-    return "Partial(name=" .. self.name .. ")"
-end
-
-function Partial:hashCode()
-    return __K2L_Hash(self.name)
-end
-
-function Partial:equals(other)
-    return getmetatable(other) == Partial and self.name == other.name
-end
-
+__K2L_DataClass(Partial, {"name"})
 local TemplateError = __K2L_Class("TemplateError", __K2L_Exception)
 
 function TemplateError:____init(msg)
@@ -161,23 +79,12 @@ local ____lambda_1 = function(it) return "" end
 local function parseTemplate(src)
     local Frame = __K2L_Class("MainKt$parseTemplate$Frame")
     function Frame:____init(kind, arg, nodes, otherwise)
-        if otherwise == nil then
-            otherwise = nil
-        end
         self.kind = kind
         self.arg = arg
         self.nodes = nodes
         self.otherwise = otherwise
     end
-    function Frame:toString()
-        return "Frame(kind=" .. self.kind .. ", arg=" .. self.arg .. ", nodes=" .. __K2L_Str(self.nodes) .. ", otherwise=" .. __K2L_Str(self.otherwise) .. ")"
-    end
-    function Frame:hashCode()
-        return (31 * (31 * (31 * __K2L_Hash(self.kind) + __K2L_Hash(self.arg)) + __K2L_Hash(self.nodes)) + __K2L_Hash(self.otherwise) + 0x80000000 & 0xFFFFFFFF) - 0x80000000
-    end
-    function Frame:equals(other)
-        return getmetatable(other) == Frame and self.kind == other.kind and self.arg == other.arg and __K2L_Equals(self.nodes, other.nodes) and __K2L_Equals(self.otherwise, other.otherwise)
-    end
+    __K2L_DataClass(Frame, {"kind", "arg", "nodes", "otherwise"})
     local stack = __K2L_ArrayDeque.new()
     stack:addLast(Frame.new("root", "", __K2L_ListOf()))
     local last = 0
@@ -278,13 +185,24 @@ end
 
 local Scope = __K2L_Class("Scope")
 
-function Scope:____init(value, parent, locals)
+local function field(self, obj, key)
+    if __K2L_InstanceOf(obj, __K2L_Map) then
+        return obj:get(key)
+    elseif __K2L_InstanceOf(obj, __K2L_List) then
+        local ____receiver = __K2L_StringToIntOrNull(key)
+        return ____receiver and obj:getOrNull(____receiver) or (key == "length" and obj.size or nil)
+    elseif type(obj) == "string" then
+        return key == "length" and #obj or nil
+    else
+        return nil
+    end
+end
+
+function Scope.new(value, parent, locals)
     if locals == nil then
         locals = __K2L_MapOf()
     end
-    self.value = value
-    self.parent = parent
-    self.locals = locals
+    return setmetatable({value = value, parent = parent, locals = locals}, Scope)
 end
 
 function Scope:lookup(path)
@@ -294,34 +212,21 @@ function Scope:lookup(path)
     if __K2L_StringStartsWith(path, "@") then
         local ____value_1 = self.locals:get(path)
         if ____value_1 == nil then
-            local ____receiver = self.parent
-            ____value_1 = ____receiver and ____receiver:lookup(path)
+            local ____receiver_1 = self.parent
+            ____value_1 = ____receiver_1 and ____receiver_1:lookup(path)
         end
         return ____value_1
     end
     local keys = __K2L_StringSplit(path, ".")
     local scope = self
     while scope ~= nil do
-        local head = self:field(scope.value, keys:get(0))
+        local head = field(self, scope.value, keys:get(0))
         if head ~= nil then
-            return keys:drop(1):fold(head, function(acc, k) return self:field(acc, k) end)
+            return keys:drop(1):fold(head, function(acc, k) return field(self, acc, k) end)
         end
         scope = scope.parent
     end
     return nil
-end
-
-function Scope:field(obj, key)
-    if __K2L_InstanceOf(obj, __K2L_Map) then
-        return obj:get(key)
-    elseif __K2L_InstanceOf(obj, __K2L_List) then
-        local ____receiver_1 = __K2L_StringToIntOrNull(key)
-        return ____receiver_1 and obj:getOrNull(____receiver_1) or (key == "length" and obj.size or nil)
-    elseif type(obj) == "string" then
-        return key == "length" and #obj or nil
-    else
-        return nil
-    end
 end
 
 local function truthy(v)

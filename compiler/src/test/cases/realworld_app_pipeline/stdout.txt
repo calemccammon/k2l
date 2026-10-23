@@ -10,7 +10,7 @@ GET /users/2/greeting/es -> 400 unknown language es
 POST /users -> 201 created 3 [X-Path=POST:1]
 POST /users -> 500 IllegalArgumentException: empty name
 GET /users -> 200 ada, grace, linus [X-Path=GET:1]
-GET /crash/0 -> 500 RuntimeException: main.lua:99: attempt to divide by zero
+GET /crash/0 -> 500 RuntimeException: main.lua:93: attempt to divide by zero
 GET /crash/zero -> 400 bad number: For input string: "zero"
 DELETE /users/1 -> 404 no route for /users/1 [X-Path=DELETE:2]
 log: [log> GET /health, log< 200, log> GET /users, log< 401, log> GET /users, log< 200] ... 30 lines
