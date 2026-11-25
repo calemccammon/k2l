@@ -4,9 +4,13 @@ k2l compiles Kotlin to plain, readable Lua. It is the Kotlin counterpart of
 [TypeScriptToLua](https://typescripttolua.github.io/).
 
 - At compile time you get Kotlin's checks and features: types, null safety, sealed classes, data classes, generics.
-- At run time you get plain Lua for Lua 5.1, 5.2, 5.3, 5.4 and LuaJIT. It needs no third-party code.
+- At run time you get plain Lua for Lua 5.1, 5.2, 5.3, 5.4 and LuaJIT. It needs no third-party code, and the output
+  copies in only the parts of k2l's own Lua runtime that the program uses.
 - k2l does not emulate the JVM. The differences are listed in [Caveats](docs/caveats.md), and anything k2l cannot
   translate is a compile error.
+- Parsing and type checking go through the Kotlin Analysis API.
+- The tests are golden programs: CI compiles each one and runs it on all five interpreters, and other cases check
+  the compiler's error messages. See [Development](docs/development.md).
 
 ## Example
 
